@@ -9,7 +9,7 @@ import json
 import threading
 import re
 import traceback
-
+import importlib
 import torch
 import onmt.opts
 
@@ -91,7 +91,9 @@ class TranslationServer(object):
                                         parameter for model #%d""" % i)
             kwargs = {'timeout': conf.get('timeout', None),
                       'load': conf.get('load', None),
+                      'preprocess_opt': conf.get('preprocess', None),
                       'tokenizer_opt': conf.get('tokenizer', None),
+                      'postprocess_opt': conf.get('postprocess', None),
                       'on_timeout': conf.get('on_timeout', None),
                       'model_root': conf.get('model_root', self.models_root)
                       }
@@ -184,7 +186,11 @@ class ServerModel(object):
     Args:
         opt (dict): Options for the Translator
         model_id (int): Model ID
+        preprocess_opt (list): Options for preprocess processus or None
+                               (extend for CJK)
         tokenizer_opt (dict): Options for the tokenizer or None
+        postprocess_opt (list): Options for postprocess processus or None
+                                (extend for CJK)
         load (bool): whether to load the model during :func:`__init__()`
         timeout (int): Seconds before running :func:`do_timeout()`
             Negative values means no timeout
@@ -194,15 +200,18 @@ class ServerModel(object):
             it must contain the model and tokenizer file
     """
 
-    def __init__(self, opt, model_id, tokenizer_opt=None, load=False,
-                 timeout=-1, on_timeout="to_cpu", model_root="./"):
+    def __init__(self, opt, model_id, preprocess_opt=None, tokenizer_opt=None,
+                 postprocess_opt=None, load=False, timeout=-1,
+                 on_timeout="to_cpu", model_root="./"):
         self.model_root = model_root
         self.opt = self.parse_opt(opt)
         if self.opt.n_best > 1:
             raise ValueError("Values of n_best > 1 are not supported")
 
         self.model_id = model_id
+        self.preprocess_opt = preprocess_opt
         self.tokenizer_opt = tokenizer_opt
+        self.postprocess_opt = postprocess_opt
         self.timeout = timeout
         self.on_timeout = on_timeout
 
@@ -284,6 +293,14 @@ class ServerModel(object):
             raise ServerModelError("Runtime Error: %s" % str(e))
 
         timer.tick("model_loading")
+        if self.preprocess_opt is not None:
+            self.logger.info("Loading preprocessor")
+            self.preprocessor = []
+
+            for function_path in self.preprocess_opt:
+                function = get_function_by_path(function_path)
+                self.preprocessor.append(function)
+
         if self.tokenizer_opt is not None:
             self.logger.info("Loading tokenizer")
 
@@ -321,6 +338,14 @@ class ServerModel(object):
                 self.tokenizer = tokenizer
             else:
                 raise ValueError("Invalid value for tokenizer type")
+
+        if self.postprocess_opt is not None:
+            self.logger.info("Loading postprocessor")
+            self.postprocessor = []
+
+            for function_path in self.postprocess_opt:
+                function = get_function_by_path(function_path)
+                self.postprocessor.append(function)
 
         self.load_time = timer.tick()
         self.reset_unload_timer()
@@ -380,7 +405,8 @@ class ServerModel(object):
                 if match_after is not None:
                     whitespaces_after = match_after.group(0)
                 head_spaces.append(whitespaces_before)
-                tok = self.maybe_tokenize(src.strip())
+                preprocessed_src = self.maybe_preprocess(src.strip())
+                tok = self.maybe_tokenize(preprocessed_src)
                 texts.append(tok)
                 sslength.append(len(tok.split()))
                 tail_spaces.append(whitespaces_after)
@@ -394,7 +420,9 @@ class ServerModel(object):
             try:
                 scores, predictions = self.translator.translate(
                     texts_to_translate,
-                    batch_size=self.opt.batch_size)
+                    batch_size=len(texts_to_translate)
+                    if self.opt.batch_size == 0
+                    else self.opt.batch_size)
             except (RuntimeError, Exception) as e:
                 err = "Error: %s" % str(e)
                 self.logger.error(err)
@@ -423,6 +451,8 @@ class ServerModel(object):
         results = [self.maybe_detokenize(item)
                    for item in results]
 
+        results = [self.maybe_postprocess(item)
+                   for item in results]
         # build back results with empty texts
         for i in empty_indices:
             results.insert(i, "")
@@ -494,6 +524,30 @@ class ServerModel(object):
         torch.cuda.set_device(self.opt.gpu)
         self.translator.model.cuda()
 
+    def maybe_preprocess(self, sequence):
+        """Preprocess the sequence (or not)
+
+        """
+
+        if self.preprocess_opt is not None:
+            return self.preprocess(sequence)
+        return sequence
+
+    def preprocess(self, sequence):
+        """Preprocess a single sequence.
+
+        Args:
+            sequence (str): The sequence to preprocess.
+
+        Returns:
+            sequence (str): The preprocessed sequence.
+        """
+        if self.preprocessor is None:
+            raise ValueError("No preprocessor loaded")
+        for function in self.preprocessor:
+            sequence = function(sequence)
+        return sequence
+
     def maybe_tokenize(self, sequence):
         """Tokenize the sequence (or not).
 
@@ -550,3 +604,39 @@ class ServerModel(object):
             detok = self.tokenizer.detokenize(sequence.split())
 
         return detok
+
+    def maybe_postprocess(self, sequence):
+        """Postprocess the sequence (or not)
+
+        """
+
+        if self.postprocess_opt is not None:
+            return self.postprocess(sequence)
+        return sequence
+
+    def postprocess(self, sequence):
+        """Preprocess a single sequence.
+
+        Args:
+            sequence (str): The sequence to process.
+
+        Returns:
+            sequence (str): The postprocessed sequence.
+        """
+        if self.postprocessor is None:
+            raise ValueError("No postprocessor loaded")
+        for function in self.postprocessor:
+            sequence = function(sequence)
+        return sequence
+
+
+def get_function_by_path(path, args=[], kwargs={}):
+    module_name = ".".join(path.split(".")[:-1])
+    function_name = path.split(".")[-1]
+    try:
+        module = importlib.import_module(module_name)
+    except ValueError as e:
+        print("Cannot import module '%s'" % module_name)
+        raise e
+    function = getattr(module, function_name)
+    return function

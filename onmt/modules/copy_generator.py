@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 from onmt.utils.misc import aeq
-from onmt.utils.loss import LossComputeBase
+from onmt.utils.loss import NMTLossCompute
 
 
 def collapse_copy_scores(scores, batch, tgt_vocab, src_vocabs=None,
@@ -177,10 +177,12 @@ class CopyGeneratorLoss(nn.Module):
         return loss
 
 
-class CopyGeneratorLossCompute(LossComputeBase):
+class CopyGeneratorLossCompute(NMTLossCompute):
     """Copy Generator Loss Computation."""
-    def __init__(self, criterion, generator, tgt_vocab, normalize_by_length):
-        super(CopyGeneratorLossCompute, self).__init__(criterion, generator)
+    def __init__(self, criterion, generator, tgt_vocab, normalize_by_length,
+                 lambda_coverage=0.0):
+        super(CopyGeneratorLossCompute, self).__init__(
+            criterion, generator, lambda_coverage=lambda_coverage)
         self.tgt_vocab = tgt_vocab
         self.normalize_by_length = normalize_by_length
 
@@ -190,14 +192,17 @@ class CopyGeneratorLossCompute(LossComputeBase):
             raise AssertionError("using -copy_attn you need to pass in "
                                  "-dynamic_dict during preprocess stage.")
 
-        return {
-            "output": output,
-            "target": batch.tgt[range_[0] + 1: range_[1], :, 0],
+        shard_state = super(CopyGeneratorLossCompute, self)._make_shard_state(
+            batch, output, range_, attns)
+
+        shard_state.update({
             "copy_attn": attns.get("copy"),
             "align": batch.alignment[range_[0] + 1: range_[1]]
-        }
+        })
+        return shard_state
 
-    def _compute_loss(self, batch, output, target, copy_attn, align):
+    def _compute_loss(self, batch, output, target, copy_attn, align,
+                      std_attn=None, coverage_attn=None):
         """Compute the loss.
 
         The args must match :func:`self._make_shard_state()`.
@@ -209,13 +214,17 @@ class CopyGeneratorLossCompute(LossComputeBase):
             copy_attn: the copy attention value.
             align: the align info.
         """
-
         target = target.view(-1)
         align = align.view(-1)
         scores = self.generator(
             self._bottle(output), self._bottle(copy_attn), batch.src_map
         )
         loss = self.criterion(scores, align, target)
+
+        if self.lambda_coverage != 0.0:
+            coverage_loss = self._compute_coverage_loss(std_attn,
+                                                        coverage_attn)
+            loss += coverage_loss
 
         # this block does not depend on the loss value computed above
         # and is used only for stats

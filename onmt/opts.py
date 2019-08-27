@@ -60,10 +60,10 @@ def model_opts(parser):
     # Encoder-Decoder Options
     group = parser.add_argument_group('Model- Encoder-Decoder')
     group.add('--model_type', '-model_type', default='text',
-              choices=['text', 'img', 'audio'],
+              choices=['text', 'img', 'audio', 'vec'],
               help="Type of source model to use. Allows "
                    "the system to incorporate non-text inputs. "
-                   "Options are [text|img|audio].")
+                   "Options are [text|img|audio|vec].")
     group.add('--model_dtype', '-model_dtype', default='fp32',
               choices=['fp32', 'fp16'],
               help='Data type of the model.')
@@ -151,6 +151,8 @@ def model_opts(parser):
               help='Number of heads for transformer self-attention')
     group.add('--transformer_ff', '-transformer_ff', type=int, default=2048,
               help='Size of hidden transformer feed-forward')
+    group.add('--aan_useffn', '-aan_useffn', action="store_true",
+              help='Turn on the FFN layer in the AAN decoder')
 
     # Generator and loss options.
     group.add('--copy_attn', '-copy_attn', action="store_true",
@@ -174,8 +176,8 @@ def model_opts(parser):
               help="Divide copy loss by length of sequence")
     group.add('--coverage_attn', '-coverage_attn', action="store_true",
               help='Train a coverage attention layer.')
-    group.add('--lambda_coverage', '-lambda_coverage', type=float, default=1,
-              help='Lambda value for coverage.')
+    group.add('--lambda_coverage', '-lambda_coverage', type=float, default=0.0,
+              help='Lambda value for coverage loss of See et al (2017)')
     group.add('--loss_scale', '-loss_scale', type=float, default=0,
               help="For FP16 training, the static loss scale to use. If not "
                    "set, the loss scale is dynamically computed.")
@@ -191,7 +193,7 @@ def preprocess_opts(parser):
     group = parser.add_argument_group('Data')
     group.add('--data_type', '-data_type', default="text",
               help="Type of the source input. "
-                   "Options are [text|img|audio].")
+                   "Options are [text|img|audio|vec].")
 
     group.add('--train_src', '-train_src', required=True, nargs='+',
               help="Path(s) to the training source data")
@@ -452,6 +454,9 @@ def train_opts(parser):
                    "max_grad_norm")
     group.add('--dropout', '-dropout', type=float, default=[0.3], nargs='+',
               help="Dropout probability; applied in LSTM stacks.")
+    group.add('--attention_dropout', '-attention_dropout', type=float,
+              default=[0.1], nargs='+',
+              help="Attention Dropout probability.")
     group.add('--dropout_steps', '-dropout_steps', type=int, nargs='+',
               default=[0], help="Steps at which dropout changes.")
     group.add('--truncated_decoder', '-truncated_decoder', type=int, default=0,
