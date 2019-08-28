@@ -699,6 +699,10 @@ def translate_opts(parser):
     group = parser.add_argument_group('Efficiency')
     group.add('--batch_size', '-batch_size', type=int, default=30,
               help='Batch size')
+    group.add('--batch_type', '-batch_type', default='sents',
+              choices=["sents", "tokens"],
+              help="Batch grouping for batch_size. Standard "
+                   "is sents. Tokens will do dynamic batching")
     group.add('--gpu', '-gpu', type=int, default=-1,
               help="Device to run on")
 

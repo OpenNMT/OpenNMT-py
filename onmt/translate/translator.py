@@ -42,6 +42,25 @@ def build_translator(opt, report_score=True, logger=None, out_file=None):
     return translator
 
 
+def max_tok_len(new, count, sofar):
+    """
+    In token batching scheme, the number of sequences is limited
+    such that the total number of src/tgt tokens (including padding)
+    in a batch <= batch_size
+    """
+    # Maintains the longest src and tgt length in the current batch
+    global max_src_in_batch  # this is a hack
+    # Reset current longest length at a new batch (count=1)
+    if count == 1:
+        max_src_in_batch = 0
+        # max_tgt_in_batch = 0
+    # Src: [<bos> w1 ... wN <eos>]
+    max_src_in_batch = max(max_src_in_batch, len(new.src[0]) + 2)
+    # Tgt: [w1 ... wM <eos>]
+    src_elements = count * max_src_in_batch
+    return src_elements
+
+
 class Translator(object):
     """Translate a batch of sentences with a saved model.
 
@@ -267,6 +286,7 @@ class Translator(object):
             tgt=None,
             src_dir=None,
             batch_size=None,
+            batch_type="sents",
             attn_debug=False,
             phrase_table=""):
         """Translate content of ``src`` and get gold scores from ``tgt``.
@@ -304,6 +324,7 @@ class Translator(object):
             dataset=data,
             device=self._dev,
             batch_size=batch_size,
+            batch_size_fn=max_tok_len if batch_type == "tokens" else None,
             train=False,
             sort=False,
             sort_within_batch=True,
