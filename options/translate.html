@@ -209,10 +209,11 @@
                     <span class="p">[</span><span class="o">--</span><span class="n">ignore_when_blocking</span> <span class="n">IGNORE_WHEN_BLOCKING</span> <span class="p">[</span><span class="n">IGNORE_WHEN_BLOCKING</span> <span class="o">...</span><span class="p">]]</span>
                     <span class="p">[</span><span class="o">--</span><span class="n">replace_unk</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">phrase_table</span> <span class="n">PHRASE_TABLE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">verbose</span><span class="p">]</span>
                     <span class="p">[</span><span class="o">--</span><span class="n">log_file</span> <span class="n">LOG_FILE</span><span class="p">]</span>
-                    <span class="p">[</span><span class="o">--</span><span class="n">log_file_level</span> <span class="p">{</span><span class="n">WARNING</span><span class="p">,</span><span class="n">INFO</span><span class="p">,</span><span class="n">DEBUG</span><span class="p">,</span><span class="n">CRITICAL</span><span class="p">,</span><span class="n">ERROR</span><span class="p">,</span><span class="n">NOTSET</span><span class="p">,</span><span class="mi">30</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="mi">40</span><span class="p">,</span><span class="mi">0</span><span class="p">}]</span>
+                    <span class="p">[</span><span class="o">--</span><span class="n">log_file_level</span> <span class="p">{</span><span class="n">WARNING</span><span class="p">,</span><span class="n">INFO</span><span class="p">,</span><span class="n">ERROR</span><span class="p">,</span><span class="n">CRITICAL</span><span class="p">,</span><span class="n">NOTSET</span><span class="p">,</span><span class="n">DEBUG</span><span class="p">,</span><span class="mi">30</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">40</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">10</span><span class="p">}]</span>
                     <span class="p">[</span><span class="o">--</span><span class="n">attn_debug</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">dump_beam</span> <span class="n">DUMP_BEAM</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">n_best</span> <span class="n">N_BEST</span><span class="p">]</span>
-                    <span class="p">[</span><span class="o">--</span><span class="n">batch_size</span> <span class="n">BATCH_SIZE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">gpu</span> <span class="n">GPU</span><span class="p">]</span>
-                    <span class="p">[</span><span class="o">--</span><span class="n">sample_rate</span> <span class="n">SAMPLE_RATE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">window_size</span> <span class="n">WINDOW_SIZE</span><span class="p">]</span>
+                    <span class="p">[</span><span class="o">--</span><span class="n">batch_size</span> <span class="n">BATCH_SIZE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">batch_type</span> <span class="p">{</span><span class="n">sents</span><span class="p">,</span><span class="n">tokens</span><span class="p">}]</span>
+                    <span class="p">[</span><span class="o">--</span><span class="n">gpu</span> <span class="n">GPU</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">sample_rate</span> <span class="n">SAMPLE_RATE</span><span class="p">]</span>
+                    <span class="p">[</span><span class="o">--</span><span class="n">window_size</span> <span class="n">WINDOW_SIZE</span><span class="p">]</span>
                     <span class="p">[</span><span class="o">--</span><span class="n">window_stride</span> <span class="n">WINDOW_STRIDE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">window</span> <span class="n">WINDOW</span><span class="p">]</span>
                     <span class="p">[</span><span class="o">--</span><span class="n">image_channel_size</span> <span class="p">{</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">}]</span>
 </pre></div>
@@ -383,7 +384,7 @@
 <p>Default: “”</p>
 </dd>
 <dt><kbd>--log_file_level, -log_file_level</kbd></dt>
-<dd><p>Possible choices: WARNING, INFO, DEBUG, CRITICAL, ERROR, NOTSET, 30, 20, 10, 50, 40, 0</p>
+<dd><p>Possible choices: WARNING, INFO, ERROR, CRITICAL, NOTSET, DEBUG, 30, 20, 40, 50, 0, 10</p>
 <p>Default: “0”</p>
 </dd>
 <dt><kbd>--attn_debug, -attn_debug</kbd></dt>
@@ -406,6 +407,11 @@
 <dt><kbd>--batch_size, -batch_size</kbd></dt>
 <dd><p>Batch size</p>
 <p>Default: 30</p>
+</dd>
+<dt><kbd>--batch_type, -batch_type</kbd></dt>
+<dd><p>Possible choices: sents, tokens</p>
+<p>Batch grouping for batch_size. Standard is sents. Tokens will do dynamic batching</p>
+<p>Default: “sents”</p>
 </dd>
 <dt><kbd>--gpu, -gpu</kbd></dt>
 <dd><p>Device to run on</p>
