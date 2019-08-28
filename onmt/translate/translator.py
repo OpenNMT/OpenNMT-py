@@ -41,6 +41,7 @@ def build_translator(opt, report_score=True, logger=None, out_file=None):
     )
     return translator
 
+
 def max_tok_len(new, count, sofar):
     """
     In token batching scheme, the number of sequences is limited
@@ -58,6 +59,7 @@ def max_tok_len(new, count, sofar):
     # Tgt: [w1 ... wM <eos>]
     src_elements = count * max_src_in_batch
     return src_elements
+
 
 class Translator(object):
     """Translate a batch of sentences with a saved model.
