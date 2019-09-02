@@ -1,7 +1,6 @@
 import torch
 
 import torch.nn as nn
-import onmt
 from onmt.utils import get_activation_fn
 
 
@@ -100,7 +99,7 @@ class BertPredictionTransform(nn.Module):
         super(BertPredictionTransform, self).__init__()
         self.dense = nn.Linear(hidden_size, hidden_size)
         self.activation = get_activation_fn('gelu')
-        self.layer_norm = onmt.encoders.BertLayerNorm(hidden_size, eps=1e-12)
+        self.layer_norm = nn.LayerNorm(hidden_size, eps=1e-12)
 
     def forward(self, hidden_states):
         """

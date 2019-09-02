@@ -1,10 +1,9 @@
-import torch
 import torch.nn as nn
 from onmt.encoders.transformer import TransformerEncoderLayer
 
 
 class BertEncoder(nn.Module):
-    """BERT Encoder: A Transformer Encoder with BertLayerNorm and BertPooler.
+    """BERT Encoder: A Transformer Encoder with LayerNorm and BertPooler.
     :cite:`DBLP:journals/corr/abs-1810-04805`
 
     Args:
@@ -35,7 +34,7 @@ class BertEncoder(nn.Module):
              max_relative_positions=max_relative_positions,
              activation='gelu', is_bert=True) for _ in range(num_layers)])
 
-        self.layer_norm = BertLayerNorm(d_model, eps=1e-12)
+        self.layer_norm = nn.LayerNorm(d_model, eps=1e-12)
         self.pooler = BertPooler(d_model)
 
     @classmethod
@@ -119,26 +118,3 @@ class BertPooler(nn.Module):
         first_token_tensor = hidden_states[:, 0, :]  # [batch, d_model]
         pooled_output = self.activation_fn(self.dense(first_token_tensor))
         return pooled_output
-
-
-class BertLayerNorm(nn.Module):
-    def __init__(self, hidden_size, eps=1e-12):
-        """Layernorm module in the TF style(epsilon inside the square root).
-        https://www.tensorflow.org/api_docs/python/tf/contrib/layers/layer_norm.
-
-        Args:
-            hidden_size (int): size of hidden layer.
-        """
-
-        super(BertLayerNorm, self).__init__()
-        self.weight = nn.Parameter(torch.ones(hidden_size))
-        self.bias = nn.Parameter(torch.zeros(hidden_size))
-        self.variance_epsilon = eps
-
-    def forward(self, x):
-        """layer normalization is perform on input x."""
-
-        u = x.mean(-1, keepdim=True)
-        s = (x - u).pow(2).mean(-1, keepdim=True)
-        x = (x - u) / torch.sqrt(s + self.variance_epsilon)
-        return self.weight * x + self.bias

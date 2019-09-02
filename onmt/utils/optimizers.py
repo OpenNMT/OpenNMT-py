@@ -53,11 +53,14 @@ def build_torch_optimizer(model, opt):
             betas=betas,
             eps=1e-9)
     elif opt.optim == 'bertadam':
-        optimizer = BertAdam(
+        optimizer = AdamW(
             params,
             lr=opt.learning_rate,
             betas=betas,
-            eps=1e-9)
+            eps=1e-9,
+            amsgrad=False,
+            correct_bias=False,
+            weight_decay=0.01)
     elif opt.optim == 'sparseadam':
         dense = []
         sparse = []
@@ -620,23 +623,38 @@ class AdaFactor(torch.optim.Optimizer):
         return loss
 
 
-class BertAdam(torch.optim.Optimizer):
-    """Implements Adam algorithm with weight decay fix
-       (used in BERT while doesn't compensate for bias).
-        :cite:`DBLP:journals/corr/abs-1711-05101`
+class AdamW(torch.optim.Optimizer):
+    r"""Implements Adam algorithm with weight decay fix, compensate for bias
+    can be turned off (as in BERT) with option correct_bias.
+        Enable not use correct_bias comparing to torch.optim.adamw.
 
     Args:
+        params (iterable): iterable of parameters to optimize or dicts define
+            parameter groups
         lr (float): learning rate
         betas (tuple of float): Adam (beta1, beta2). Default: (0.9, 0.999)
         eps (float): Adams epsilon. Default: 1e-6
+        amsgrad (bool): whether to use the AMSGrad variant of this algorithm
+            from the paper `On the Convergence of Adam and Beyond`_
+            Default: False.
         weight_decay (float): Weight decay. Default: 0.01
-        max_grad_norm (float): -1 means no gradients clipping.
+        correct_bias (bool): whether to use bias correction. Default: True.
+
+    .. _Adam\: A Method for Stochastic Optimization:
+        https://arxiv.org/abs/1412.6980
+    .. _Decoupled Weight Decay Regularization:
+        https://arxiv.org/abs/1711.05101
+    .. _On the Convergence of Adam and Beyond:
+        https://openreview.net/forum?id=ryQu7f-RZ
     """
 
-    def __init__(self, params, lr=None, betas=(0.9, 0.999),
-                 eps=1e-6, weight_decay=0.01, max_grad_norm=1.0, **kwargs):
-        if not lr >= 0.0:
+    def __init__(self, params, lr=None, betas=(0.9, 0.999), eps=1e-6,
+                 amsgrad=False, correct_bias=True, weight_decay=0.01):
+        if not 0.0 <= lr:
             raise ValueError("Invalid learning rate: {}".format(lr) +
+                             " - should be >= 0.0")
+        if not 0.0 <= eps:
+            raise ValueError("Invalid epsilon value: {}".format(eps) +
                              " - should be >= 0.0")
         if not 0.0 <= betas[0] < 1.0:
             raise ValueError("Invalid betas[0] parameter: {}".format(
@@ -644,13 +662,14 @@ class BertAdam(torch.optim.Optimizer):
         if not 0.0 <= betas[1] < 1.0:
             raise ValueError("Invalid betas[1] parameter: {}".format(
                              betas[1]) + " - should be in [0.0, 1.0)")
-        if not eps >= 0.0:
-            raise ValueError("Invalid epsilon value: {}".format(eps) +
-                             " - should be >= 0.0")
-        defaults = dict(lr=lr, betas=betas,
-                        eps=eps, weight_decay=weight_decay,
-                        max_grad_norm=max_grad_norm)
-        super(BertAdam, self).__init__(params, defaults)
+        defaults = dict(lr=lr, betas=betas, eps=eps, amsgrad=amsgrad,
+                        correct_bias=correct_bias, weight_decay=weight_decay)
+        super(AdamW, self).__init__(params, defaults)
+
+    def __setstate__(self, state):
+        super(AdamW, self).__setstate__(state)
+        for group in self.param_groups:
+            group.setdefault('amsgrad', False)
 
     def step(self, closure=None):
         """Performs a single optimization step.
@@ -671,54 +690,51 @@ class BertAdam(torch.optim.Optimizer):
                 if grad.is_sparse:
                     raise RuntimeError('Adam: not support sparse gradients,' +
                                        'please consider SparseAdam instead')
+                amsgrad = group['amsgrad']
 
                 state = self.state[p]
 
                 # State initialization
                 if len(state) == 0:
-                    # state['step'] = 0
+                    state['step'] = 0
                     # Exponential moving average of gradient values
                     state['exp_avg'] = torch.zeros_like(p.data)
                     # Exponential moving average of squared gradient values
                     state['exp_avg_sq'] = torch.zeros_like(p.data)
+                    if amsgrad:
+                        # Maintains max of all exp. moving avg. of sq. grad.
+                        state['max_exp_avg_sq'] = torch.zeros_like(p.data)
 
                 exp_avg, exp_avg_sq = state['exp_avg'], state['exp_avg_sq']
+                if amsgrad:
+                    max_exp_avg_sq = state['max_exp_avg_sq']
                 beta1, beta2 = group['betas']
 
-                # NOTE: Add grad clipping, DONE before step function
-                # if group['max_grad_norm'] > 0:
-                #     clip_grad_norm_(p, group['max_grad_norm'])
+                state['step'] += 1
 
                 # Decay first and second moment running average coefficient
-                # In-place operations to update the averages at the same time
                 # exp_avg = exp_avg * beta1 + (1-beta1)*grad
                 exp_avg.mul_(beta1).add_(1 - beta1, grad)
                 # exp_avg_sq = exp_avg_sq * beta2 + (1 - beta2)*grad**2
                 exp_avg_sq.mul_(beta2).addcmul_(1 - beta2, grad, grad)
-                update = exp_avg / (exp_avg_sq.sqrt() + group['eps'])
+                if amsgrad:
+                    # Maintains max of all 2nd moment running avg. till now
+                    torch.max(max_exp_avg_sq, exp_avg_sq, out=max_exp_avg_sq)
+                    # Use the max. for normalizing running avg. of gradient
+                    denom = max_exp_avg_sq.sqrt().add_(group['eps'])
+                else:
+                    denom = exp_avg_sq.sqrt().add_(group['eps'])
 
-                # Ref: https://arxiv.org/abs/1711.05101
-                # Just adding the square of the weights to the loss function
-                # is *not* the correct way of using L2/weight decay with Adam,
-                # since it will interact with m/v parameters in strange ways.
-                #
-                # Instead we want to decay the weights that does not interact
-                # with the m/v. This is equivalent to add the square
-                # of the weights to the loss with plain (non-momentum) SGD.
-                if group['weight_decay'] > 0.0:
-                    update += group['weight_decay'] * p.data
+                step_size = group['lr']
+                # NOTE: AdamW used in Bert has "No bias correction"
+                if group['correct_bias']:
+                    bias_correction1 = 1 - beta1 ** state['step']
+                    bias_correction2 = 1 - beta2 ** state['step']
+                    step_size = (step_size * sqrt(bias_correction2)
+                                 / bias_correction1)
 
-                lr_scheduled = group['lr']
+                p.data.addcdiv_(-step_size, exp_avg, denom)
 
-                update_with_lr = lr_scheduled * update
-                p.data.add_(-update_with_lr)
-
-                # state['step'] += 1
-
-                # NOTE: BertAdam "No bias correction" comparing to standard
-                # bias_correction1 = 1 - betas[0] ** state['step']
-                # bias_correction2 = 1 - betas[1] ** state['step']
-                # step_size = lr_scheduled * math.sqrt(bias_correction2)
-                #              / bias_correction1
-
+                # Perform correct weight decay(rather than L2)
+                p.data.mul_(1 - group['lr'] * group['weight_decay'])
         return loss
