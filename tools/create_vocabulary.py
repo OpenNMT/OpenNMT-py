@@ -79,7 +79,7 @@ def main():
         import torch
         try:
             from onmt.inputters.inputter import _old_style_vocab
-        except ImportError as error:
+        except ImportError:
             sys.path.insert(1, os.path.join(sys.path[0], '..'))
             from onmt.inputters.inputter import _old_style_vocab
 
