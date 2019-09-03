@@ -17,7 +17,7 @@ from onmt.inputters.inputter import build_dataset_iter, \
 from itertools import cycle
 
 
-def main(opt):
+def train(opt):
     ArgumentParser.validate_train_opts(opt)
     ArgumentParser.update_model_opts(opt)
     ArgumentParser.validate_model_opts(opt)
@@ -193,8 +193,12 @@ def _get_parser():
     return parser
 
 
-if __name__ == "__main__":
+def main():
     parser = _get_parser()
 
     opt = parser.parse_args()
-    main(opt)
+    train(opt)
+
+
+if __name__ == "__main__":
+    main()

@@ -230,7 +230,7 @@ def count_features(path):
         return len(first_tok.split(u"￨")) - 1
 
 
-def main(opt):
+def preprocess(opt):
     ArgumentParser.validate_preprocess_args(opt)
     torch.manual_seed(opt.seed)
 
@@ -276,8 +276,12 @@ def _get_parser():
     return parser
 
 
-if __name__ == "__main__":
+def main():
     parser = _get_parser()
 
     opt = parser.parse_args()
-    main(opt)
+    preprocess(opt)
+
+
+if __name__ == "__main__":
+    main()

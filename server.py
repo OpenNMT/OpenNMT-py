@@ -122,8 +122,12 @@ def _get_parser():
     return parser
 
 
-if __name__ == '__main__':
+def main():
     parser = _get_parser()
     args = parser.parse_args()
     start(args.config, url_root=args.url_root, host=args.ip, port=args.port,
           debug=args.debug)
+
+
+if __name__ == "__main__":
+    main()

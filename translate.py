@@ -12,7 +12,7 @@ import onmt.opts as opts
 from onmt.utils.parse import ArgumentParser
 
 
-def main(opt):
+def translate(opt):
     ArgumentParser.validate_translate_opts(opt)
     logger = init_logger(opt.log_file)
 
@@ -42,8 +42,12 @@ def _get_parser():
     return parser
 
 
-if __name__ == "__main__":
+def main():
     parser = _get_parser()
 
     opt = parser.parse_args()
-    main(opt)
+    translate(opt)
+
+
+if __name__ == "__main__":
+    main()
