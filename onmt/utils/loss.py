@@ -268,7 +268,7 @@ class NMTLossCompute(LossComputeBase):
         return loss, stats
 
     def _compute_coverage_loss(self, std_attn, coverage_attn):
-        covloss = torch.min(std_attn, coverage_attn).sum(2).view(-1)
+        covloss = torch.min(std_attn, coverage_attn).sum()
         covloss *= self.lambda_coverage
         return covloss
 
