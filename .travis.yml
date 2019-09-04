@@ -1,7 +1,6 @@
 dist: xenial
 language: python
 python:
-  - "2.7"
   - "3.5"
 git:
   depth: false
@@ -14,8 +13,7 @@ addons:
       - sox
 before_install:
   # Install CPU version of PyTorch.
-  - if [[ $TRAVIS_PYTHON_VERSION == 2.7 ]]; then pip install https://download.pytorch.org/whl/cpu/torch-1.1.0-cp27-cp27mu-linux_x86_64.whl; fi
-  - if [[ $TRAVIS_PYTHON_VERSION == 3.5 ]]; then pip install https://download.pytorch.org/whl/cpu/torch-1.1.0-cp35-cp35m-linux_x86_64.whl; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == 3.5 ]]; then pip install torch==1.2.0+cpu -f https://download.pytorch.org/whl/torch_stable.html; fi
   - pip install -r requirements.txt
   - pip install -r requirements.opt.txt
 install:
@@ -66,7 +64,7 @@ env:
 matrix:
   include:
     - env: LINT_CHECK
-      python: "2.7"
+      python: "3.5"
       install: pip install flake8 pep8-naming==0.7.0
       script: flake8
     - python: "3.5"

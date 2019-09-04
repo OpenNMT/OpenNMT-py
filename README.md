@@ -34,12 +34,15 @@ All dependencies can be installed via:
 pip install -r requirements.txt
 ```
 
-NOTE: If you have MemoryError in the install try to use: 
+Note: If you have MemoryError in the install try to use: 
 
 ```bash
 pip install -r requirements.txt --no-cache-dir
 ```
-Note that we currently only support PyTorch 1.1 (should work with 1.0)
+Note:
+
+- some features require Python 3.5 and after (eg: Distributed multigpu, entmax)
+- we currently only support PyTorch 1.2 (should work with 1.1)
 
 ## Features
 
