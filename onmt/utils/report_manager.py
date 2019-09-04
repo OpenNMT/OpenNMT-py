@@ -10,7 +10,7 @@ from onmt.utils.logging import logger
 
 def build_report_manager(opt):
     if opt.tensorboard:
-        from tensorboardX import SummaryWriter
+        from torch.utils.tensorboard import SummaryWriter
         tensorboard_log_dir = opt.tensorboard_log_dir
 
         if not opt.train_from:
