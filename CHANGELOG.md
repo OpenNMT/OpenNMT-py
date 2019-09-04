@@ -5,6 +5,16 @@
 ## [Unreleased]
 ### Fixes and improvements
 
+## [0.9.2](https://github.com/OpenNMT/OpenNMT-py/tree/0.9.2) (2019-09-04)
+* Switch to Pytorch 1.2
+* Pre/post processing on the translation server
+* option to remove the FFN layer in AAN + AAN optimization (faster)
+* Coverage loss (per Abisee paper 2017) implementation
+* Video Captioning task: Thanks Dylan Flaute!
+* Token batch at inference
+* Small fixes and add-ons
+
+
 ## [0.9.1](https://github.com/OpenNMT/OpenNMT-py/tree/0.9.1) (2019-06-13)
 * New mechanism for MultiGPU training "1 batch producer / multi batch consumers"
   resulting in big memory saving when handling huge datasets
