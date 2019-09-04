@@ -445,7 +445,7 @@
         <span class="k">return</span> <span class="n">loss</span><span class="p">,</span> <span class="n">stats</span>
 
     <span class="k">def</span> <span class="nf">_compute_coverage_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">std_attn</span><span class="p">,</span> <span class="n">coverage_attn</span><span class="p">):</span>
-        <span class="n">covloss</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">std_attn</span><span class="p">,</span> <span class="n">coverage_attn</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">covloss</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">std_attn</span><span class="p">,</span> <span class="n">coverage_attn</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
         <span class="n">covloss</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lambda_coverage</span>
         <span class="k">return</span> <span class="n">covloss</span>
 
