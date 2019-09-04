@@ -103,12 +103,10 @@ class ModelSaver(ModelSaverBase):
         real_generator = (real_model.generator.module
                           if isinstance(real_model.generator, nn.DataParallel)
                           else real_model.generator)
-        if hasattr(real_model, 'bert'):
-            model_state_dict = real_model.bert.state_dict()
-        else:
-            model_state_dict = real_model.state_dict()
-            model_state_dict = {k: v for k, v in model_state_dict.items()
-                                if 'generator' not in k}
+
+        model_state_dict = real_model.state_dict()
+        model_state_dict = {k: v for k, v in model_state_dict.items()
+                            if 'generator' not in k}
         generator_state_dict = real_generator.state_dict()
 
         # NOTE: We need to trim the vocab to remove any unk tokens that

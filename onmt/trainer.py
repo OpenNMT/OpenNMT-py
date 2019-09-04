@@ -338,7 +338,7 @@ class Trainer(object):
                     token_type_ids = batch.segment_ids
                     # F-prop through the model.
                     all_encoder_layers, pooled_out = \
-                        valid_model.bert(input_ids, token_type_ids)
+                        valid_model(input_ids, token_type_ids)
                     seq_class_log_prob, prediction_log_prob = \
                         valid_model.generator(all_encoder_layers, pooled_out)
 
