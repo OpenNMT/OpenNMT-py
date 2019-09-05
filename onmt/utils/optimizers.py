@@ -272,7 +272,7 @@ class Optimizer(object):
             optim_opt.learning_rate,
             learning_rate_decay_fn=make_learning_rate_decay_fn(optim_opt),
             max_grad_norm=optim_opt.max_grad_norm)
-        optimizer._fp16 = ( opt.model_dtype == "fp16" )
+        optimizer._fp16 = (opt.model_dtype == "fp16")
         if optim_state_dict:
             optimizer.load_state_dict(optim_state_dict)
         return optimizer
