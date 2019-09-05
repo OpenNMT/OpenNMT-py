@@ -222,8 +222,7 @@ class Optimizer(object):
         self._max_grad_norm = max_grad_norm or 0
         self._training_step = 1
         self._decay_step = 1
-        self._with_fp16_wrapper = (
-            optimizer.__class__.__name__ == "FP16_Optimizer")
+        self._fp16 = False
 
     @classmethod
     def from_opt(cls, model, opt, checkpoint=None):
@@ -273,6 +272,7 @@ class Optimizer(object):
             optim_opt.learning_rate,
             learning_rate_decay_fn=make_learning_rate_decay_fn(optim_opt),
             max_grad_norm=optim_opt.max_grad_norm)
+        optimizer._fp16 = (opt.model_dtype == "fp16")
         if optim_state_dict:
             optimizer.load_state_dict(optim_state_dict)
         return optimizer
@@ -311,7 +311,7 @@ class Optimizer(object):
     def backward(self, loss):
         """Wrapper for backward pass. Some optimizer requires ownership of the
         backward pass."""
-        if self._with_fp16_wrapper:
+        if self._fp16:
             import apex
             with apex.amp.scale_loss(loss, self._optimizer) as scaled_loss:
                 scaled_loss.backward()
@@ -325,7 +325,7 @@ class Optimizer(object):
         rate.
         """
         learning_rate = self.learning_rate()
-        if self._with_fp16_wrapper:
+        if self._fp16:
             if hasattr(self._optimizer, "update_master_grads"):
                 self._optimizer.update_master_grads()
             if hasattr(self._optimizer, "clip_master_grads") and \
@@ -335,7 +335,7 @@ class Optimizer(object):
                     apex.amp.master_params(self), self._max_grad_norm)
         for group in self._optimizer.param_groups:
             group['lr'] = learning_rate
-            if not self._with_fp16_wrapper and self._max_grad_norm > 0:
+            if not self._fp16 and self._max_grad_norm > 0:
                 clip_grad_norm_(group['params'], self._max_grad_norm)
         self._optimizer.step()
         self._decay_step += 1
