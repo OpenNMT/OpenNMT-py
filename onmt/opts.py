@@ -440,7 +440,7 @@ def train_opts(parser):
               nargs="*", default=None,
               help='Criteria to use for early stopping.')
     group.add('--optim', '-optim', default='sgd',
-              choices=['sgd', 'adagrad', 'adadelta', 'adam',
+              choices=['sgd', 'adagrad', 'adadelta', 'adam', 'lamb',
                        'sparseadam', 'adafactor', 'fusedadam'],
               help="Optimization method.")
     group.add('--adagrad_accumulator_init', '-adagrad_accumulator_init',
@@ -480,6 +480,14 @@ def train_opts(parser):
                    'suggested a value of 0.98 for beta2, this parameter may '
                    'not work well for normal models / default '
                    'baselines.')
+    group.add('--lamb_beta1', '-lamb_beta1', type=float, default=0.9,
+              help="The beta1 parameter used by Lamb.")
+    group.add('--lamb_beta2', '-lamb_beta2', type=float, default=0.999,
+              help="The beta2 parameter used by Lamb.")
+    group.add('--lamb_eps', '-lamb_eps', type=float, default=1e-8,
+              help="The epsilon parameter used by Lamb.")
+    group.add('--lamb_wd', '-lamb_wd', type=float, default=0.0,
+              help="The weight decay parameter used by Lamb.")
     group.add('--label_smoothing', '-label_smoothing', type=float, default=0.0,
               help="Label smoothing value epsilon. "
                    "Probabilities of all non-true labels "
