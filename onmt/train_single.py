@@ -142,5 +142,5 @@ def main(opt, device_id, batch_queue=None, semaphore=None):
         valid_iter=valid_iter,
         valid_steps=opt.valid_steps)
 
-    if opt.tensorboard:
+    if trainer.report_manager.tensorboard_writer is not None:
         trainer.report_manager.tensorboard_writer.close()
