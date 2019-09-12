@@ -230,7 +230,8 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
 
     model.generator = generator
     model.to(device)
-
+    if model_opt.model_dtype == 'fp16' and model_opt.optim == 'fusedadam':
+        model.half()
     return model
 
 
