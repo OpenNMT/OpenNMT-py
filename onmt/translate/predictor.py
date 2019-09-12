@@ -8,6 +8,7 @@ import torch
 import torchtext.data
 import onmt.model_builder
 import onmt.inputters as inputters
+from onmt.inputters.inputter import max_tok_len
 from onmt.utils.misc import set_random_seed
 
 
@@ -165,13 +166,15 @@ class Classifier(Predictor):
         label_field = self.fields["category"]
         self.label_vocab = label_field.vocab
 
-    def classify(self, data, batch_size, tokenizer,
-                 delimiter=' ||| ', max_seq_len=256):
+    def classify(self, data, batch_size, tokenizer, delimiter=' ||| ',
+                 max_seq_len=256, batch_type="sents"):
         """Classify content of ``data``.
 
         Args:
             data (list of str): ['Sentence1 ||| Sentence2',...].
             batch_size (int): size of examples per mini-batch
+            batch_type (str): Batch grouping for batch_size. Chose from
+                {'sents', 'tokens'}, default batch_size count by sentence.
 
         Returns:
             all_predictions (list of str):[c1, ..., cn].
@@ -183,6 +186,7 @@ class Classifier(Predictor):
         data_iter = torchtext.data.Iterator(
             dataset=dataset,
             batch_size=batch_size,
+            batch_size_fn=max_tok_len if batch_type == "tokens" else None,
             device=self._dev,
             train=False,
             sort=False,
@@ -265,13 +269,15 @@ class Tagger(Predictor):
         self.pad_token = label_field.pad_token
         self.pad_index = self.label_vocab.stoi[self.pad_token]
 
-    def tagging(self, data, batch_size, tokenizer,
-                delimiter=' ', max_seq_len=256):
+    def tagging(self, data, batch_size, tokenizer, delimiter=' ',
+                max_seq_len=256, batch_type="sents"):
         """Tagging content of ``data``.
 
         Args:
             data (list of str): ['T1 T2 ... Tn',...].
             batch_size (int): size of examples per mini-batch
+            batch_type (str): Batch grouping for batch_size. Chose from
+                {'sents', 'tokens'}, default batch_size count by sentence.
 
         Returns:
             all_predictions (list of list of str): [['L1', ..., 'Ln'],...].
@@ -282,6 +288,7 @@ class Tagger(Predictor):
         data_iter = torchtext.data.Iterator(
             dataset=dataset,
             batch_size=batch_size,
+            batch_size_fn=max_tok_len if batch_type == "tokens" else None,
             device=self._dev,
             train=False,
             sort=False,

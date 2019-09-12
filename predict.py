@@ -19,7 +19,7 @@ def main(opt):
         opt.vocab_model, do_lower_case=opt.do_lower_case)
     data_shards = split_corpus(opt.data, opt.shard_size)
     if opt.task == 'classification':
-        classifier = build_classifier(opt)
+        classifier = build_classifier(opt, logger)
         for i, data_shard in enumerate(data_shards):
             logger.info("Classify shard %d." % i)
             data = [seq.decode("utf-8") for seq in data_shard]
@@ -28,10 +28,11 @@ def main(opt):
                 opt.batch_size,
                 tokenizer,
                 delimiter=opt.delimiter,
-                max_seq_len=opt.max_seq_len
+                max_seq_len=opt.max_seq_len,
+                batch_type=opt.batch_type
             )
     if opt.task == 'tagging':
-        tagger = build_tagger(opt)
+        tagger = build_tagger(opt, logger)
         for i, data_shard in enumerate(data_shards):
             logger.info("Tagging shard %d." % i)
             data = [seq.decode("utf-8") for seq in data_shard]
@@ -40,7 +41,8 @@ def main(opt):
                 opt.batch_size,
                 tokenizer,
                 delimiter=opt.delimiter,
-                max_seq_len=opt.max_seq_len
+                max_seq_len=opt.max_seq_len,
+                batch_type=opt.batch_type
             )
 
 

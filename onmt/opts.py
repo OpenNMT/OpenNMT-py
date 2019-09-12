@@ -856,6 +856,10 @@ def predict_opts(parser):
     group = parser.add_argument_group('Efficiency')
     group.add('--batch_size', '-batch_size', type=int, default=8,
               help='Batch size')
+    group.add('--batch_type', '-batch_type', default='sents',
+              choices=["sents", "tokens"],
+              help="Batch grouping for batch_size. Standard "
+                   "is sents. Tokens will do dynamic batching")
     group.add('--gpu', '-gpu', type=int, default=-1, help="Device to run on")
     group.add('--seed', '-seed', type=int, default=829, help="Random seed")
     group.add('--log_file', '-log_file', type=str, default="",
