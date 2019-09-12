@@ -78,8 +78,7 @@ def build_torch_optimizer(model, opt):
                  betas=betas,
                  eps=1e-8)])
     elif opt.optim == 'fusedadam':
-        import apex
-        # we copied an old version of FusedAdam since the new one is not working
+        # we use here a FusedAdam() copy of an old Apex repo
         optimizer = FusedAdam(
             params,
             lr=opt.learning_rate,
@@ -89,18 +88,23 @@ def build_torch_optimizer(model, opt):
 
     if opt.model_dtype == 'fp16':
         import apex
-        static_loss_scale = opt.loss_scale
-        dynamic_loss_scale = opt.loss_scale == 0
-        # TODO: clean this up when APEX unify its optimizer API.
-        if opt.optim.startswith('fused'):
-            namespace = apex.optimizers  # Faster wrapper.
+        if opt.optim != 'fusedadam':
+            # In this case use the new AMP API from apex
+            loss_scale = "dynamic" if opt.loss_scale == 0 else opt.loss_scale
+            model, optimizer = apex.amp.initialize(
+                [model, model.generator],
+                optimizer,
+                opt_level=opt.apex_opt_level,
+                loss_scale=loss_scale,
+                keep_batchnorm_fp32=None)
         else:
-            #namespace = apex.fp16_utils
-            namespace = apex.optimizers
-        optimizer = namespace.FP16_Optimizer(
-            optimizer,
-            static_loss_scale=static_loss_scale,
-            dynamic_loss_scale=dynamic_loss_scale)
+            # In this case use the old FusedAdam with FP16_optimizer wrapper
+            static_loss_scale = opt.loss_scale
+            dynamic_loss_scale = opt.loss_scale == 0
+            optimizer = apex.optimizers.FP16_Optimizer(
+                optimizer,
+                static_loss_scale=static_loss_scale,
+                dynamic_loss_scale=dynamic_loss_scale)
     return optimizer
 
 
@@ -230,7 +234,7 @@ class Optimizer(object):
         self._max_grad_norm = max_grad_norm or 0
         self._training_step = 1
         self._decay_step = 1
-        self._fp16 = False
+        self._fp16 = None
 
     @classmethod
     def from_opt(cls, model, opt, checkpoint=None):
@@ -280,8 +284,11 @@ class Optimizer(object):
             optim_opt.learning_rate,
             learning_rate_decay_fn=make_learning_rate_decay_fn(optim_opt),
             max_grad_norm=optim_opt.max_grad_norm)
-        
-        optimizer._fp16 = (opt.model_dtype == "fp16")
+        if opt.model_dtype == "fp16":
+            if opt.optim == "fusedadam":
+                optimizer._fp16 = "legacy"
+            else:
+                optimizer._fp16 = "amp"
         if optim_state_dict:
             optimizer.load_state_dict(optim_state_dict)
         return optimizer
@@ -320,7 +327,11 @@ class Optimizer(object):
     def backward(self, loss):
         """Wrapper for backward pass. Some optimizer requires ownership of the
         backward pass."""
-        if self._fp16:
+        if self._fp16 == "amp":
+            import apex
+            with apex.amp.scale_loss(loss, self._optimizer) as scaled_loss:
+                scaled_loss.backward()
+        elif self._fp16 == "legacy":
             kwargs = {}
             if "update_master_grads" in fn_args(self._optimizer.backward):
                 kwargs["update_master_grads"] = True
@@ -335,15 +346,21 @@ class Optimizer(object):
         rate.
         """
         learning_rate = self.learning_rate()
-        if self._fp16:
+        if self._fp16 == "legacy":
             if hasattr(self._optimizer, "update_master_grads"):
                 self._optimizer.update_master_grads()
             if hasattr(self._optimizer, "clip_master_grads") and \
                self._max_grad_norm > 0:
                 self._optimizer.clip_master_grads(self._max_grad_norm)
+        elif self._fp16 == "amp":
+            if self._max_grad_norm > 0:
+                import apex
+                torch.nn.utils.clip_grad_norm_(
+                    apex.amp.master_params(self._optimizer),
+                    self._max_grad_norm)
         for group in self._optimizer.param_groups:
             group['lr'] = learning_rate
-            if not self._fp16 and self._max_grad_norm > 0:
+            if self._fp16 is None and self._max_grad_norm > 0:
                 clip_grad_norm_(group['params'], self._max_grad_norm)
         self._optimizer.step()
         self._decay_step += 1
@@ -525,7 +542,8 @@ class AdaFactor(torch.optim.Optimizer):
 
 class FusedAdam(torch.optim.Optimizer):
 
-    """Implements Adam algorithm. Currently GPU-only.  Requires Apex to be installed via
+    """Implements Adam algorithm. Currently GPU-only.
+       Requires Apex to be installed via
     ``python setup.py install --cuda_ext --cpp_ext``.
     It has been proposed in `Adam: A Method for Stochastic Optimization`_.
     Arguments:
@@ -533,7 +551,8 @@ class FusedAdam(torch.optim.Optimizer):
             parameter groups.
         lr (float, optional): learning rate. (default: 1e-3)
         betas (Tuple[float, float], optional): coefficients used for computing
-            running averages of gradient and its square. (default: (0.9, 0.999))
+            running averages of gradient and its square.
+            (default: (0.9, 0.999))
         eps (float, optional): term added to the denominator to improve
             numerical stability. (default: 1e-8)
         weight_decay (float, optional): weight decay (L2 penalty) (default: 0)
@@ -551,21 +570,22 @@ class FusedAdam(torch.optim.Optimizer):
     """
 
     def __init__(self, params,
-                 lr=1e-3, bias_correction = True,
-                 betas=(0.9, 0.999), eps=1e-8, eps_inside_sqrt = False,
+                 lr=1e-3, bias_correction=True,
+                 betas=(0.9, 0.999), eps=1e-8, eps_inside_sqrt=False,
                  weight_decay=0., max_grad_norm=0., amsgrad=False):
         global fused_adam_cuda
         fused_adam_cuda = importlib.import_module("fused_adam_cuda")
 
         if amsgrad:
-            raise RuntimeError('FusedAdam does not support the AMSGrad variant.')
+            raise RuntimeError('AMSGrad variant not supported.')
         defaults = dict(lr=lr, bias_correction=bias_correction,
                         betas=betas, eps=eps, weight_decay=weight_decay,
                         max_grad_norm=max_grad_norm)
         super(FusedAdam, self).__init__(params, defaults)
-        self.eps_mode = 0 if  eps_inside_sqrt else 1
+        self.eps_mode = 0 if eps_inside_sqrt else 1
 
-    def step(self, closure=None, grads=None, output_params=None, scale=1., grad_norms=None):
+    def step(self, closure=None, grads=None, output_params=None,
+             scale=1., grad_norms=None):
         """Performs a single optimization step.
         Arguments:
             closure (callable, optional): A closure that reevaluates the model
@@ -575,7 +595,8 @@ class FusedAdam(torch.optim.Optimizer):
                 are expected to be in type torch.float. (default: None)
             output params (list of tensors, optional): A reduced precision copy
                 of the updated weights written out in addition to the regular
-                updated weights. Have to be of same type as gradients. (default: None)
+                updated weights. Have to be of same type as gradients.
+                (default: None)
             scale (float, optional): factor to divide gradient tensor values
                 by before applying to weights. (default: 1)
         """
@@ -589,7 +610,7 @@ class FusedAdam(torch.optim.Optimizer):
         # assuming a list/generator of parameter means single group
         elif isinstance(grads, types.GeneratorType):
             grads_group = [grads]
-        elif type(grads[0])!=list:
+        elif type(grads[0]) != list:
             grads_group = [grads]
         else:
             grads_group = grads
@@ -598,7 +619,7 @@ class FusedAdam(torch.optim.Optimizer):
             output_params_group = [None]*len(self.param_groups)
         elif isinstance(output_params, types.GeneratorType):
             output_params_group = [output_params]
-        elif type(output_params[0])!=list:
+        elif type(output_params[0]) != list:
             output_params_group = [output_params]
         else:
             output_params_group = output_params
@@ -606,11 +627,13 @@ class FusedAdam(torch.optim.Optimizer):
         if grad_norms is None:
             grad_norms = [None]*len(self.param_groups)
 
-        for group, grads_this_group, output_params_this_group, grad_norm in zip(self.param_groups, grads_group, output_params_group, grad_norms):
+        for group, grads_this_group, output_params_this_group, \
+            grad_norm in zip(self.param_groups, grads_group,
+                             output_params_group, grad_norms):
             if grads_this_group is None:
-               grads_this_group = [None]*len(group['params'])
+                grads_this_group = [None]*len(group['params'])
             if output_params_this_group is None:
-               output_params_this_group = [None]*len(group['params'])
+                output_params_this_group = [None]*len(group['params'])
 
             # compute combined scale factor for this group
             combined_scale = scale
@@ -622,14 +645,19 @@ class FusedAdam(torch.optim.Optimizer):
 
             bias_correction = 1 if group['bias_correction'] else 0
 
-            for p, grad, output_param in zip(group['params'], grads_this_group, output_params_this_group):
-                #note: p.grad should not ever be set for correct operation of mixed precision optimizer that sometimes sends None gradients
+            for p, grad, output_param in zip(group['params'],
+                                             grads_this_group,
+                                             output_params_this_group):
+                # note: p.grad should not ever be set for correct operation of
+                # mixed precision optimizer that sometimes sends None gradients
                 if p.grad is None and grad is None:
                     continue
                 if grad is None:
                     grad = p.grad.data
                 if grad.is_sparse:
-                    raise RuntimeError('FusedAdam does not support sparse gradients, please consider SparseAdam instead')
+                    raise RuntimeError('FusedAdam does not support sparse \
+                                       gradients, please consider \
+                                       SparseAdam instead')
 
                 state = self.state[p]
 
@@ -646,7 +674,8 @@ class FusedAdam(torch.optim.Optimizer):
 
                 state['step'] += 1
 
-                out_p = torch.tensor([], dtype = torch.float) if output_param is None else output_param
+                out_p = torch.tensor([], dtype=torch.float) if output_param \
+                    is None else output_param
                 fused_adam_cuda.adam(p.data,
                                      out_p,
                                      exp_avg,
@@ -662,6 +691,3 @@ class FusedAdam(torch.optim.Optimizer):
                                      bias_correction,
                                      group['weight_decay'])
         return loss
-
-
-
