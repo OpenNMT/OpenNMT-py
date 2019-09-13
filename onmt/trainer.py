@@ -294,7 +294,8 @@ class Trainer(object):
             valid_model = deepcopy(self.model)
             for avg, param in zip(self.moving_average,
                                   valid_model.parameters()):
-                param.data = avg.data
+                param.data = avg.data.half() if self.optim._fp16 == "legacy" \
+                    else avg.data
         else:
             valid_model = self.model
 

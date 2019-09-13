@@ -1,6 +1,5 @@
 import os
 import torch
-import torch.nn as nn
 
 from collections import deque
 from onmt.utils.logging import logger
@@ -97,17 +96,10 @@ class ModelSaver(ModelSaverBase):
     """Simple model saver to filesystem"""
 
     def _save(self, step, model):
-        real_model = (model.module
-                      if isinstance(model, nn.DataParallel)
-                      else model)
-        real_generator = (real_model.generator.module
-                          if isinstance(real_model.generator, nn.DataParallel)
-                          else real_model.generator)
-
-        model_state_dict = real_model.state_dict()
+        model_state_dict = model.state_dict()
         model_state_dict = {k: v for k, v in model_state_dict.items()
                             if 'generator' not in k}
-        generator_state_dict = real_generator.state_dict()
+        generator_state_dict = model.generator.state_dict()
 
         # NOTE: We need to trim the vocab to remove any unk tokens that
         # were not originally here.
