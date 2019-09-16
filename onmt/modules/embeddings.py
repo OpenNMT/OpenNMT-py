@@ -158,9 +158,9 @@ class Embeddings(nn.Module):
             feat_dims = [word_vec_size] * len(feat_vocab_sizes)
         elif len(feat_vec_size) != 0:
             if len(feat_vocab_sizes) == 0:
-	        feat_dims = []
+                feat_dims = []
             else:
-	        feat_dims = feat_vec_size
+                feat_dims = feat_vec_size
         else:
             feat_dims = [int(vocab ** feat_vec_exponent)
                          for vocab in feat_vocab_sizes]
