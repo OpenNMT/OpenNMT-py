@@ -156,8 +156,11 @@ class Embeddings(nn.Module):
         # (these have no effect if feat_vocab_sizes is empty)
         if feat_merge == 'sum':
             feat_dims = [word_vec_size] * len(feat_vocab_sizes)
-        elif feat_vec_size > 0:
-            feat_dims = [feat_vec_size] * len(feat_vocab_sizes)
+        elif len(feat_vec_size) != 0:
+	    if len(feat_vocab_sizes)==0:
+	        feat_dims=[]
+            else:
+	        feat_dims=feat_vec_size
         else:
             feat_dims = [int(vocab ** feat_vec_exponent)
                          for vocab in feat_vocab_sizes]
@@ -209,10 +212,10 @@ class Embeddings(nn.Module):
             if feat_vec_exponent != 0.7:
                 warnings.warn("Merging with sum, but got non-default "
                               "feat_vec_exponent. It will be unused.")
-            if feat_vec_size != -1:
+            if len(feat_vec_size) != 0:
                 warnings.warn("Merging with sum, but got non-default "
                               "feat_vec_size. It will be unused.")
-        elif feat_vec_size > 0:
+        elif len(feat_vec_size) != 0:
             # features will use feat_vec_size
             if feat_vec_exponent != -1:
                 warnings.warn("Not merging with sum and positive "

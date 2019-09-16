@@ -47,7 +47,7 @@ def model_opts(parser):
               choices=['concat', 'sum', 'mlp'],
               help="Merge action for incorporating features embeddings. "
                    "Options [concat|sum|mlp].")
-    group.add('--feat_vec_size', '-feat_vec_size', type=int, default=-1,
+    group.add('--feat_vec_size', '-feat_vec_size', type=int, default=[], nargs='*',
               help="If specified, feature embedding sizes "
                    "will be set to this. Otherwise, feat_vec_exponent "
                    "will be used.")
