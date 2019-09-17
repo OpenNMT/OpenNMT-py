@@ -19,6 +19,9 @@ from onmt.utils.parse import ArgumentParser
 from onmt.inputters.inputter import _build_fields_vocab,\
                                     _load_vocab
 
+from multiprocessing.pool import Pool, ThreadPool
+from functools import partial
+
 
 def check_existing_pt_files(opt):
     """ Check if there are existing .pt files to avoid overwriting them """
@@ -29,6 +32,95 @@ def check_existing_pt_files(opt):
             sys.stderr.write("Please backup existing pt files: %s, "
                              "to avoid overwriting them!\n" % path)
             sys.exit(1)
+
+
+def process_one_shard(corpus_params, params):
+    corpus_type, fields, src_reader, tgt_reader, opt, existing_fields,\
+    src_vocab, tgt_vocab, filter_pred, maybe_id = corpus_params
+    i, (src_shard, tgt_shard) = params
+    # create one counter per shard
+    sub_sub_counter = defaultdict(Counter)
+    assert len(src_shard) == len(tgt_shard)
+    logger.info("Building shard %d." % i)
+    dataset = inputters.Dataset(
+        fields,
+        readers=([src_reader, tgt_reader]
+                 if tgt_reader else [src_reader]),
+        data=([("src", src_shard), ("tgt", tgt_shard)]
+              if tgt_reader else [("src", src_shard)]),
+        dirs=([opt.src_dir, None]
+              if tgt_reader else [opt.src_dir]),
+        sort_key=inputters.str2sortkey[opt.data_type],
+        filter_pred=filter_pred
+    )
+    if corpus_type == "train" and existing_fields is None:
+        for ex in dataset.examples:
+            for name, field in fields.items():
+                try:
+                    f_iter = iter(field)
+                except TypeError:
+                    f_iter = [(name, field)]
+                    all_data = [getattr(ex, name, None)]
+                else:
+                    all_data = getattr(ex, name)
+                for (sub_n, sub_f), fd in zip(
+                        f_iter, all_data):
+                    has_vocab = (sub_n == 'src' and
+                                 src_vocab is not None) or \
+                                (sub_n == 'tgt' and
+                                 tgt_vocab is not None)
+                    if (hasattr(sub_f, 'sequential')
+                            and sub_f.sequential and not has_vocab):
+                        val = fd
+                        sub_sub_counter[sub_n].update(val)
+    if maybe_id:
+        shard_base = corpus_type + "_" + maybe_id
+    else:
+        shard_base = corpus_type
+    data_path = "{:s}.{:s}.{:d}.pt".\
+        format(opt.save_data, shard_base, i)
+
+    logger.info(" * saving %sth %s data shard to %s."
+                % (i, shard_base, data_path))
+
+    dataset.save(data_path)
+
+    del dataset.examples
+    gc.collect()
+    del dataset
+    gc.collect()
+
+    return sub_sub_counter
+
+def build_save_one_corpus(dataset_params, params):
+    corpus_type, fields, src_reader, tgt_reader,\
+    opt, existing_fields, src_vocab, tgt_vocab = dataset_params
+    src, tgt, maybe_id = params
+    logger.info("Reading source and target files: %s %s." % (src, tgt))
+
+    # create one counter per corpus
+    sub_counter = defaultdict(Counter)
+
+    src_shards = split_corpus(src, opt.shard_size)
+    tgt_shards = split_corpus(tgt, opt.shard_size)
+    shard_pairs = zip(src_shards, tgt_shards)
+
+    if (corpus_type == "train" or opt.filter_valid) and tgt is not None:
+        filter_pred = partial(
+            inputters.filter_example, use_src_len=opt.data_type == "text",
+            max_src_len=opt.src_seq_length, max_tgt_len=opt.tgt_seq_length)
+    else:
+        filter_pred = None
+
+    with Pool(opt.shards_threads) as p:
+        corpus_params = (process_one_shard, corpus_type, fields,
+            src_reader, tgt_reader, opt, existing_fields,
+            src_vocab, tgt_vocab, filter_pred, maybe_id)
+        func = partial(corpus_params)
+        for sub_sub_counter in p.imap(func, enumerate(shard_pairs)):
+            for key, value in sub_sub_counter.items():
+                this_counter[key].update(value)
+    return sub_counter
 
 
 def build_save_dataset(corpus_type, fields, src_reader, tgt_reader, opt):
@@ -44,92 +136,35 @@ def build_save_dataset(corpus_type, fields, src_reader, tgt_reader, opt):
         tgts = [opt.valid_tgt]
         ids = [None]
 
-    for src, tgt, maybe_id in zip(srcs, tgts, ids):
-        logger.info("Reading source and target files: %s %s." % (src, tgt))
-
-        src_shards = split_corpus(src, opt.shard_size)
-        tgt_shards = split_corpus(tgt, opt.shard_size)
-        shard_pairs = zip(src_shards, tgt_shards)
-        dataset_paths = []
-        if (corpus_type == "train" or opt.filter_valid) and tgt is not None:
-            filter_pred = partial(
-                inputters.filter_example, use_src_len=opt.data_type == "text",
-                max_src_len=opt.src_seq_length, max_tgt_len=opt.tgt_seq_length)
+    if corpus_type == "train":
+        existing_fields = None
+        if opt.src_vocab != "":
+            try:
+                logger.info("Using existing vocabulary...")
+                existing_fields = torch.load(opt.src_vocab)
+            except torch.serialization.pickle.UnpicklingError:
+                logger.info("Building vocab from text file...")
+                src_vocab, src_vocab_size = _load_vocab(
+                    opt.src_vocab, "src", counters,
+                    opt.src_words_min_frequency)
         else:
-            filter_pred = None
+            src_vocab = None
 
-        if corpus_type == "train":
-            existing_fields = None
-            if opt.src_vocab != "":
-                try:
-                    logger.info("Using existing vocabulary...")
-                    existing_fields = torch.load(opt.src_vocab)
-                except torch.serialization.pickle.UnpicklingError:
-                    logger.info("Building vocab from text file...")
-                    src_vocab, src_vocab_size = _load_vocab(
-                        opt.src_vocab, "src", counters,
-                        opt.src_words_min_frequency)
-            else:
-                src_vocab = None
+        if opt.tgt_vocab != "":
+            tgt_vocab, tgt_vocab_size = _load_vocab(
+                opt.tgt_vocab, "tgt", counters,
+                opt.tgt_words_min_frequency)
+        else:
+            tgt_vocab = None
 
-            if opt.tgt_vocab != "":
-                tgt_vocab, tgt_vocab_size = _load_vocab(
-                    opt.tgt_vocab, "tgt", counters,
-                    opt.tgt_words_min_frequency)
-            else:
-                tgt_vocab = None
+    with ThreadPool(opt.corpus_threads) as p:
+        dataset_params = (corpus_type, fields, src_reader, tgt_reader,
+            opt, existing_fields, src_vocab, tgt_vocab)
+        func = partial(build_save_one_corpus, dataset_params)
+        for sub_counter in p.imap(func, zip(srcs, tgts, ids)):
+            for key, value in sub_counter.items():
+                counters[key].update(value)
 
-        for i, (src_shard, tgt_shard) in enumerate(shard_pairs):
-            assert len(src_shard) == len(tgt_shard)
-            logger.info("Building shard %d." % i)
-            dataset = inputters.Dataset(
-                fields,
-                readers=([src_reader, tgt_reader]
-                         if tgt_reader else [src_reader]),
-                data=([("src", src_shard), ("tgt", tgt_shard)]
-                      if tgt_reader else [("src", src_shard)]),
-                dirs=([opt.src_dir, None]
-                      if tgt_reader else [opt.src_dir]),
-                sort_key=inputters.str2sortkey[opt.data_type],
-                filter_pred=filter_pred
-            )
-            if corpus_type == "train" and existing_fields is None:
-                for ex in dataset.examples:
-                    for name, field in fields.items():
-                        try:
-                            f_iter = iter(field)
-                        except TypeError:
-                            f_iter = [(name, field)]
-                            all_data = [getattr(ex, name, None)]
-                        else:
-                            all_data = getattr(ex, name)
-                        for (sub_n, sub_f), fd in zip(
-                                f_iter, all_data):
-                            has_vocab = (sub_n == 'src' and
-                                         src_vocab is not None) or \
-                                        (sub_n == 'tgt' and
-                                         tgt_vocab is not None)
-                            if (hasattr(sub_f, 'sequential')
-                                    and sub_f.sequential and not has_vocab):
-                                val = fd
-                                counters[sub_n].update(val)
-            if maybe_id:
-                shard_base = corpus_type + "_" + maybe_id
-            else:
-                shard_base = corpus_type
-            data_path = "{:s}.{:s}.{:d}.pt".\
-                format(opt.save_data, shard_base, i)
-            dataset_paths.append(data_path)
-
-            logger.info(" * saving %sth %s data shard to %s."
-                        % (i, shard_base, data_path))
-
-            dataset.save(data_path)
-
-            del dataset.examples
-            gc.collect()
-            del dataset
-            gc.collect()
 
     if corpus_type == "train":
         vocab_path = opt.save_data + '.vocab.pt'
