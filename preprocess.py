@@ -137,8 +137,8 @@ def build_save_dataset(corpus_type, fields, src_reader, tgt_reader, opt):
         tgts = [opt.valid_tgt]
         ids = [None]
 
+    existing_fields = None
     if corpus_type == "train":
-        existing_fields = None
         if opt.src_vocab != "":
             try:
                 logger.info("Using existing vocabulary...")
