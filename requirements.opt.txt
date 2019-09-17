@@ -7,7 +7,7 @@ git+git://github.com/pytorch/audio.git@d92de5b97fc6204db4b1e3ed20c03ac06f5d53f0
 pyrouge
 pyonmttok
 opencv-python
-git+https://github.com/NVIDIA/apex.git@4a8c4ac088b6f84a10569ee89db3a938b48922b4
+git+https://github.com/NVIDIA/apex
 flask
 tensorboard>=1.14
 pretrainedmodels
