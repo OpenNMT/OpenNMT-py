@@ -16,7 +16,6 @@ before_install:
   - if [[ $TRAVIS_PYTHON_VERSION == 3.5 ]]; then pip install torch==1.2.0+cpu -f https://download.pytorch.org/whl/torch_stable.html; fi
   - pip install -r requirements.txt
   - pip install -r requirements.opt.txt
-install:
   - python setup.py install   
 env:
   global:
