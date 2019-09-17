@@ -116,7 +116,7 @@ def build_save_one_corpus(dataset_params, params):
         corpus_params = (process_one_shard, corpus_type, fields,
                          src_reader, tgt_reader, opt, existing_fields,
                          src_vocab, tgt_vocab, filter_pred, maybe_id)
-        func = partial(corpus_params)
+        func = partial(build_save_one_shard, corpus_params)
         for sub_sub_counter in p.imap(func, enumerate(shard_pairs)):
             for key, value in sub_sub_counter.items():
                 sub_counter[key].update(value)
