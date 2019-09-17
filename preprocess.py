@@ -113,7 +113,7 @@ def build_save_one_corpus(dataset_params, params):
         filter_pred = None
 
     with Pool(opt.shards_threads) as p:
-        corpus_params = (process_one_shard, corpus_type, fields,
+        corpus_params = (corpus_type, fields,
                          src_reader, tgt_reader, opt, existing_fields,
                          src_vocab, tgt_vocab, filter_pred, maybe_id)
         func = partial(process_one_shard, corpus_params)
