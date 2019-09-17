@@ -63,15 +63,12 @@ env:
 
 matrix:
   include:
-    - env: LINT_CHECK
-      python: "3.5"
-      install: pip install flake8 pep8-naming==0.7.0
-      script: flake8
     - python: "3.5"
       install:
         - python setup.py install
-        - pip install doctr
+        - pip install doctr flake8 pep8-naming==0.7.0
       script:
+        - flake8
         - pip install -r docs/requirements.txt
         - set -e
         - cd docs/ && make html && cd ..
