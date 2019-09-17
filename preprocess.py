@@ -8,7 +8,6 @@ import glob
 import sys
 import gc
 import torch
-from functools import partial
 from collections import Counter, defaultdict
 
 from onmt.utils.logging import init_logger, logger
@@ -19,8 +18,8 @@ from onmt.utils.parse import ArgumentParser
 from onmt.inputters.inputter import _build_fields_vocab,\
                                     _load_vocab
 
-from multiprocessing.pool import Pool, ThreadPool
 from functools import partial
+from multiprocessing.pool import Pool, ThreadPool
 
 
 def check_existing_pt_files(opt):
@@ -36,7 +35,7 @@ def check_existing_pt_files(opt):
 
 def process_one_shard(corpus_params, params):
     corpus_type, fields, src_reader, tgt_reader, opt, existing_fields,\
-    src_vocab, tgt_vocab, filter_pred, maybe_id = corpus_params
+        src_vocab, tgt_vocab, filter_pred, maybe_id = corpus_params
     i, (src_shard, tgt_shard) = params
     # create one counter per shard
     sub_sub_counter = defaultdict(Counter)
@@ -92,9 +91,10 @@ def process_one_shard(corpus_params, params):
 
     return sub_sub_counter
 
+
 def build_save_one_corpus(dataset_params, params):
     corpus_type, fields, src_reader, tgt_reader,\
-    opt, existing_fields, src_vocab, tgt_vocab = dataset_params
+        opt, existing_fields, src_vocab, tgt_vocab = dataset_params
     src, tgt, maybe_id = params
     logger.info("Reading source and target files: %s %s." % (src, tgt))
 
@@ -114,12 +114,13 @@ def build_save_one_corpus(dataset_params, params):
 
     with Pool(opt.shards_threads) as p:
         corpus_params = (process_one_shard, corpus_type, fields,
-            src_reader, tgt_reader, opt, existing_fields,
-            src_vocab, tgt_vocab, filter_pred, maybe_id)
+                         src_reader, tgt_reader, opt, existing_fields,
+                         src_vocab, tgt_vocab, filter_pred, maybe_id)
         func = partial(corpus_params)
         for sub_sub_counter in p.imap(func, enumerate(shard_pairs)):
             for key, value in sub_sub_counter.items():
-                this_counter[key].update(value)
+                sub_counter[key].update(value)
+
     return sub_counter
 
 
@@ -159,12 +160,11 @@ def build_save_dataset(corpus_type, fields, src_reader, tgt_reader, opt):
 
     with ThreadPool(opt.corpus_threads) as p:
         dataset_params = (corpus_type, fields, src_reader, tgt_reader,
-            opt, existing_fields, src_vocab, tgt_vocab)
+                          opt, existing_fields, src_vocab, tgt_vocab)
         func = partial(build_save_one_corpus, dataset_params)
         for sub_counter in p.imap(func, zip(srcs, tgts, ids)):
             for key, value in sub_counter.items():
                 counters[key].update(value)
-
 
     if corpus_type == "train":
         vocab_path = opt.save_data + '.vocab.pt'
