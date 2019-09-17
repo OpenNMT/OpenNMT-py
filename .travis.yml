@@ -1,7 +1,6 @@
 dist: xenial
 language: python
 python:
-  - "2.7"
   - "3.5"
 git:
   depth: false
@@ -14,7 +13,6 @@ addons:
       - sox
 before_install:
   # Install CPU version of PyTorch.
-  - if [[ $TRAVIS_PYTHON_VERSION == 2.7 ]]; then pip install https://download.pytorch.org/whl/cpu/torch-1.1.0-cp27-cp27mu-linux_x86_64.whl; fi
   - if [[ $TRAVIS_PYTHON_VERSION == 3.5 ]]; then pip install https://download.pytorch.org/whl/cpu/torch-1.1.0-cp35-cp35m-linux_x86_64.whl; fi
   - pip install -r requirements.txt
   - pip install -r requirements.opt.txt
@@ -63,13 +61,12 @@ env:
     # Doctr deploy key for OpenNMT/OpenNMT-py
     - secure: "gL0Soefo1cQgAqwiHUrlNyZd/+SI1eJAAjLD3BEDQWXW160eXyjQAAujGgJoCirjOM7cPHVwLzwmK3S7Y3PVM3JOZguOX5Yl4uxMh/mhiEM+RG77SZyv4OGoLFsEQ8RTvIdYdtP6AwyjlkRDXvZql88TqFNYjpXDu8NG+JwEfiIoGIDYxxZ5SlbrZN0IqmQSZ4/CsV6VQiuq99Jn5kqi4MnUZBTcmhqjaztCP1omvsMRdbrG2IVhDKQOCDIO0kaPJrMy2SGzP4GV7ar52bdBtpeP3Xbm6ZOuhDNfds7M/OMHp1wGdl7XwKtolw9MeXhnGBC4gcrqhhMfcQ6XtfVLMLnsB09Ezl3FXX5zWgTB5Pm0X6TgnGrMA25MAdVqKGJpfqZxOKTh4EMb04b6OXrVbxZ88mp+V0NopuxwlTPD8PMfYLWlTe9chh1BnT0iQlLqeA4Hv3+NdpiFb4aq3V3cWTTgMqOoWSGq4t318pqIZ3qbBXBq12DLFgO5n6+M6ZrdxbDUGQvgh8nAiZcIEdodKJ4ABHi1SNCeWOzCoedUdegcbjShHfkMVmNKrncB18aRWwQ3GQJ5qdkjgJmC++uZmkS6+GPM8UmmAy1ZIkRW0aWiitjG6teqtvUHOofNd/TCxX4bhnxAj+mtVIrARCE/ci8topJ6uG4wVJ1TrIkUlAY="
 
-matrix:
+jobs:
   include:
     - env: LINT_CHECK
-      python: "2.7"
       install: pip install flake8 pep8-naming==0.7.0
       script: flake8
-    - python: "3.5"
+    - name: "Build Docs"
       install:
         - python setup.py install
         - pip install doctr
