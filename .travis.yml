@@ -11,7 +11,13 @@ addons:
       - libsox-dev
       - libsox-fmt-all
       - sox
-   
+before_install:
+  # Install CPU version of PyTorch.
+  - if [[ $TRAVIS_PYTHON_VERSION == 3.5 ]]; then pip install https://download.pytorch.org/whl/cpu/torch-1.1.0-cp35-cp35m-linux_x86_64.whl; fi
+  - pip install -r requirements.txt
+  - pip install -r requirements.opt.txt
+install:
+  - python setup.py install   
 env:
   global:
     # Doctr deploy key for OpenNMT/OpenNMT-py
@@ -24,7 +30,6 @@ jobs:
       script: flake8
     - name: "Build Docs"
       install:
-        - python setup.py install
         - pip install doctr
       script:
         - pip install -r docs/requirements.txt
@@ -32,13 +37,6 @@ jobs:
         - cd docs/ && make html && cd ..
         - doctr deploy --built-docs docs/build/html/ .
     - name: "Unit tests"
-      before_install:
-        # Install CPU version of PyTorch.
-        - if [[ $TRAVIS_PYTHON_VERSION == 3.5 ]]; then pip install https://download.pytorch.org/whl/cpu/torch-1.1.0-cp35-cp35m-linux_x86_64.whl; fi
-        - pip install -r requirements.txt
-        - pip install -r requirements.opt.txt
-      install:
-        - python setup.py install
       # Please also add tests to `test/pull_request_chk.sh`.
       script:
         - wget -O /tmp/im2text.tgz http://lstm.seas.harvard.edu/latex/im2text_small.tgz; tar zxf /tmp/im2text.tgz -C /tmp/; head /tmp/im2text/src-train.txt > /tmp/im2text/src-train-head.txt; head /tmp/im2text/tgt-train.txt > /tmp/im2text/tgt-train-head.txt; head /tmp/im2text/src-val.txt > /tmp/im2text/src-val-head.txt; head /tmp/im2text/tgt-val.txt > /tmp/im2text/tgt-val-head.txt
