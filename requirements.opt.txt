@@ -10,3 +10,4 @@ opencv-python
 git+https://github.com/NVIDIA/apex.git@4a8c4ac088b6f84a10569ee89db3a938b48922b4
 flask
 tensorboard>=1.14
+pretrainedmodels
