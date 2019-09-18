@@ -124,9 +124,10 @@ def build_save_one_corpus(dataset_params, params):
     return sub_counter
 
 
-def maybe_load_vocab(corpus_type, opt):
+def maybe_load_vocab(corpus_type, counters, opt):
     src_vocab = None
     tgt_vocab = None
+    existing_fields = None
     if corpus_type == "train":
         if opt.src_vocab != "":
             try:
@@ -141,7 +142,8 @@ def maybe_load_vocab(corpus_type, opt):
             tgt_vocab, tgt_vocab_size = _load_vocab(
                 opt.tgt_vocab, "tgt", counters,
                 opt.tgt_words_min_frequency)
-    return src_vocab, tgt_vocab
+    return src_vocab, tgt_vocab, existing_fields
+
 
 def build_save_dataset(corpus_type, fields, src_reader, tgt_reader, opt):
     assert corpus_type in ['train', 'valid']
@@ -152,12 +154,12 @@ def build_save_dataset(corpus_type, fields, src_reader, tgt_reader, opt):
         tgts = opt.train_tgt
         ids = opt.train_ids
     else:
+        counters = None
         srcs = [opt.valid_src]
         tgts = [opt.valid_tgt]
         ids = [None]
 
-    existing_fields = None
-    src_vocab, tgt_vocab = maybe_load_vocab(corpus_type, opt)
+    src_vocab, tgt_vocab, existing_fields = maybe_load_vocab(corpus_type, counters, opt)
 
     with ThreadPool(opt.corpus_threads) as p:
         dataset_params = (corpus_type, fields, src_reader, tgt_reader,
