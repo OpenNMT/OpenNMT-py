@@ -124,6 +124,25 @@ def build_save_one_corpus(dataset_params, params):
     return sub_counter
 
 
+def maybe_load_vocab(corpus_type, opt):
+    src_vocab = None
+    tgt_vocab = None
+    if corpus_type == "train":
+        if opt.src_vocab != "":
+            try:
+                logger.info("Using existing vocabulary...")
+                existing_fields = torch.load(opt.src_vocab)
+            except torch.serialization.pickle.UnpicklingError:
+                logger.info("Building vocab from text file...")
+                src_vocab, src_vocab_size = _load_vocab(
+                    opt.src_vocab, "src", counters,
+                    opt.src_words_min_frequency)
+        if opt.tgt_vocab != "":
+            tgt_vocab, tgt_vocab_size = _load_vocab(
+                opt.tgt_vocab, "tgt", counters,
+                opt.tgt_words_min_frequency)
+    return src_vocab, tgt_vocab
+
 def build_save_dataset(corpus_type, fields, src_reader, tgt_reader, opt):
     assert corpus_type in ['train', 'valid']
 
@@ -138,25 +157,7 @@ def build_save_dataset(corpus_type, fields, src_reader, tgt_reader, opt):
         ids = [None]
 
     existing_fields = None
-    if corpus_type == "train":
-        if opt.src_vocab != "":
-            try:
-                logger.info("Using existing vocabulary...")
-                existing_fields = torch.load(opt.src_vocab)
-            except torch.serialization.pickle.UnpicklingError:
-                logger.info("Building vocab from text file...")
-                src_vocab, src_vocab_size = _load_vocab(
-                    opt.src_vocab, "src", counters,
-                    opt.src_words_min_frequency)
-        else:
-            src_vocab = None
-
-        if opt.tgt_vocab != "":
-            tgt_vocab, tgt_vocab_size = _load_vocab(
-                opt.tgt_vocab, "tgt", counters,
-                opt.tgt_words_min_frequency)
-        else:
-            tgt_vocab = None
+    src_vocab, tgt_vocab = maybe_load_vocab(corpus_type, opt)
 
     with ThreadPool(opt.corpus_threads) as p:
         dataset_params = (corpus_type, fields, src_reader, tgt_reader,
