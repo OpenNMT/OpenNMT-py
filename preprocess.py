@@ -55,6 +55,8 @@ def process_one_shard(corpus_params, params):
     if corpus_type == "train" and existing_fields is None:
         for ex in dataset.examples:
             for name, field in fields.items():
+                if ((opt.data_type == "audio") and
+                   (name == "src")): continue
                 try:
                     f_iter = iter(field)
                 except TypeError:
