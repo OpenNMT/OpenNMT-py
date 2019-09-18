@@ -159,7 +159,8 @@ def build_save_dataset(corpus_type, fields, src_reader, tgt_reader, opt):
         tgts = [opt.valid_tgt]
         ids = [None]
 
-    src_vocab, tgt_vocab, existing_fields = maybe_load_vocab(corpus_type, counters, opt)
+    src_vocab, tgt_vocab, existing_fields = maybe_load_vocab(
+        corpus_type, counters, opt)
 
     with ThreadPool(opt.corpus_threads) as p:
         dataset_params = (corpus_type, fields, src_reader, tgt_reader,
