@@ -34,7 +34,15 @@ All dependencies can be installed via:
 pip install -r requirements.txt
 ```
 
-Note that we currently only support PyTorch 1.0.0
+Note: If you have MemoryError in the install try to use: 
+
+```bash
+pip install -r requirements.txt --no-cache-dir
+```
+Note:
+
+- some features require Python 3.5 and after (eg: Distributed multigpu, entmax)
+- we currently only support PyTorch 1.2 (should work with 1.1)
 
 ## Features
 
@@ -52,7 +60,7 @@ Note that we currently only support PyTorch 1.0.0
 - Inference time loss functions.
 - [Conv2Conv convolution model]
 - SRU "RNNs faster than CNN" paper
-- FP16 training (mixed-precision with Apex)
+- Mixed-precision training with [APEX](https://github.com/NVIDIA/apex), optimized on [Tensor Cores](https://developer.nvidia.com/tensor-cores)
 
 ## Quickstart
 

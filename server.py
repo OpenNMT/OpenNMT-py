@@ -28,6 +28,12 @@ def start(config_file,
         out = translation_server.list_models()
         return jsonify(out)
 
+    @app.route('/health', methods=['GET'])
+    def health():
+        out = {}
+        out['status'] = STATUS_OK
+        return jsonify(out)
+
     @app.route('/clone_model/<int:model_id>', methods=['POST'])
     def clone_model(model_id):
         out = {}

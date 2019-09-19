@@ -5,12 +5,12 @@ OpenNMT-py is a community developed project and we love developer contributions.
 ## Guidelines
 Before sending a PR, please do this checklist first:
 
-- Please run `tools/pull_request_chk.sh` and fix any errors. When adding new functionality, also add tests to this script. Included checks:
+- Please run `onmt/tests/pull_request_chk.sh` and fix any errors. When adding new functionality, also add tests to this script. Included checks:
     1. flake8 check for coding style;
     2. unittest;
     3. continuous integration tests listed in `.travis.yml`.
 - When adding/modifying class constructor, please make the arguments as same naming style as its superclass in PyTorch.
-- If your change is based on a paper, please include a clear comment and reference in the code (more on that below). 
+- If your change is based on a paper, please include a clear comment and reference in the code (more on that below).
 
 ### Docstrings
 Above all, try to follow the Google docstring format
@@ -40,19 +40,19 @@ For multiple returns, the following works well with Sphinx and is still very rea
   ```python
   def foo(a, b):
       """This is my docstring.
-      
+
       Args:
           a (object): Something.
           b (class): Another thing.
-    
+
       Returns:
           (object, class):
-        
+
           * a: Something or rather with a long
             description that spills over.
           * b: And another thing.
       """
-    
+
       return a, b
   ```
 - When citing a paper, avoid directly linking in the docstring! Add a Bibtex entry to `docs/source/refs.bib`.
@@ -67,12 +67,12 @@ citation into `refs.bib`. Then, in your docstring, use ``:cite:`DBLP:journals/co
   the parentheses format with single ticks).
     - Again, a different style is better than no shape documentation.
 - Please avoid unnecessary space characters, try to capitalize, and try to punctuate.
-    
+
   For multi-line docstrings, add a blank line after the closing ``"""``.
   Don't use a blank line before the closing quotes.
-  
+
   ``""" not this """`` ``"""This."""``
-  
+
   ```python
   """
       Not this.

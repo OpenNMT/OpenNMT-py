@@ -13,7 +13,7 @@ from onmt.encoders import str2enc
 
 from onmt.decoders import str2dec
 
-from onmt.modules import Embeddings, CopyGenerator
+from onmt.modules import Embeddings, VecEmbedding, CopyGenerator
 from onmt.modules.util_class import Cast
 from onmt.utils.misc import use_gpu
 from onmt.utils.logging import logger
@@ -28,6 +28,15 @@ def build_embeddings(opt, text_field, for_encoder=True):
         for_encoder(bool): build Embeddings for encoder or decoder?
     """
     emb_dim = opt.src_word_vec_size if for_encoder else opt.tgt_word_vec_size
+
+    if opt.model_type == "vec" and for_encoder:
+        return VecEmbedding(
+            opt.feat_vec_size,
+            emb_dim,
+            position_encoding=opt.position_encoding,
+            dropout=(opt.dropout[0] if type(opt.dropout) is list
+                     else opt.dropout),
+        )
 
     pad_indices = [f.vocab.stoi[f.pad_token] for _, f in text_field]
     word_padding_idx, feat_pad_indices = pad_indices[0], pad_indices[1:]
@@ -44,7 +53,7 @@ def build_embeddings(opt, text_field, for_encoder=True):
         feat_merge=opt.feat_merge,
         feat_vec_exponent=opt.feat_vec_exponent,
         feat_vec_size=opt.feat_vec_size,
-        dropout=opt.dropout,
+        dropout=opt.dropout[0] if type(opt.dropout) is list else opt.dropout,
         word_padding_idx=word_padding_idx,
         feat_padding_idx=feat_pad_indices,
         word_vocab_size=num_word_embeddings,
@@ -62,7 +71,8 @@ def build_encoder(opt, embeddings):
         opt: the option in current environment.
         embeddings (Embeddings): vocab embeddings for this encoder.
     """
-    enc_type = opt.encoder_type if opt.model_type == "text" else opt.model_type
+    enc_type = opt.encoder_type if opt.model_type == "text" \
+        or opt.model_type == "vec" else opt.model_type
     return str2enc[enc_type].from_opt(opt, embeddings)
 
 
@@ -122,8 +132,14 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
         the NMTModel.
     """
 
+    # for back compat when attention_dropout was not defined
+    try:
+        model_opt.attention_dropout
+    except AttributeError:
+        model_opt.attention_dropout = model_opt.dropout
+
     # Build embeddings.
-    if model_opt.model_type == "text":
+    if model_opt.model_type == "text" or model_opt.model_type == "vec":
         src_field = fields["src"]
         src_emb = build_embeddings(model_opt, src_field)
     else:
@@ -214,9 +230,8 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
 
     model.generator = generator
     model.to(device)
-    if model_opt.model_dtype == 'fp16':
+    if model_opt.model_dtype == 'fp16' and model_opt.optim == 'fusedadam':
         model.half()
-
     return model
 
 

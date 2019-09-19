@@ -7,6 +7,7 @@ import torch.nn as nn
 from onmt.encoders.encoder import EncoderBase
 from onmt.modules import MultiHeadedAttention
 from onmt.modules.position_ffn import PositionwiseFeedForward
+from onmt.utils.misc import sequence_mask
 
 
 class TransformerEncoderLayer(nn.Module):
@@ -22,12 +23,12 @@ class TransformerEncoderLayer(nn.Module):
         dropout (float): dropout probability(0-1.0).
     """
 
-    def __init__(self, d_model, heads, d_ff, dropout,
+    def __init__(self, d_model, heads, d_ff, dropout, attention_dropout,
                  max_relative_positions=0):
         super(TransformerEncoderLayer, self).__init__()
 
         self.self_attn = MultiHeadedAttention(
-            heads, d_model, dropout=dropout,
+            heads, d_model, dropout=attention_dropout,
             max_relative_positions=max_relative_positions)
         self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout)
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
@@ -37,7 +38,7 @@ class TransformerEncoderLayer(nn.Module):
         """
         Args:
             inputs (FloatTensor): ``(batch_size, src_len, model_dim)``
-            mask (LongTensor): ``(batch_size, src_len, src_len)``
+            mask (LongTensor): ``(batch_size, 1, src_len)``
 
         Returns:
             (FloatTensor):
@@ -46,9 +47,14 @@ class TransformerEncoderLayer(nn.Module):
         """
         input_norm = self.layer_norm(inputs)
         context, _ = self.self_attn(input_norm, input_norm, input_norm,
-                                    mask=mask, type="self")
+                                    mask=mask, attn_type="self")
         out = self.dropout(context) + inputs
         return self.feed_forward(out)
+
+    def update_dropout(self, dropout, attention_dropout):
+        self.self_attn.update_dropout(attention_dropout)
+        self.feed_forward.update_dropout(dropout)
+        self.dropout.p = dropout
 
 
 class TransformerEncoder(EncoderBase):
@@ -82,14 +88,14 @@ class TransformerEncoder(EncoderBase):
         * memory_bank ``(src_len, batch_size, model_dim)``
     """
 
-    def __init__(self, num_layers, d_model, heads, d_ff, dropout, embeddings,
-                 max_relative_positions):
+    def __init__(self, num_layers, d_model, heads, d_ff, dropout,
+                 attention_dropout, embeddings, max_relative_positions):
         super(TransformerEncoder, self).__init__()
 
         self.embeddings = embeddings
         self.transformer = nn.ModuleList(
             [TransformerEncoderLayer(
-                d_model, heads, d_ff, dropout,
+                d_model, heads, d_ff, dropout, attention_dropout,
                 max_relative_positions=max_relative_positions)
              for i in range(num_layers)])
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
@@ -102,7 +108,9 @@ class TransformerEncoder(EncoderBase):
             opt.enc_rnn_size,
             opt.heads,
             opt.transformer_ff,
-            opt.dropout,
+            opt.dropout[0] if type(opt.dropout) is list else opt.dropout,
+            opt.attention_dropout[0] if type(opt.attention_dropout)
+            is list else opt.attention_dropout,
             embeddings,
             opt.max_relative_positions)
 
@@ -113,13 +121,15 @@ class TransformerEncoder(EncoderBase):
         emb = self.embeddings(src)
 
         out = emb.transpose(0, 1).contiguous()
-        words = src[:, :, 0].transpose(0, 1)
-        w_batch, w_len = words.size()
-        padding_idx = self.embeddings.word_padding_idx
-        mask = words.data.eq(padding_idx).unsqueeze(1)  # [B, 1, T]
+        mask = ~sequence_mask(lengths).unsqueeze(1)
         # Run the forward pass of every layer of the tranformer.
         for layer in self.transformer:
             out = layer(out, mask)
         out = self.layer_norm(out)
 
         return emb, out.transpose(0, 1).contiguous(), lengths
+
+    def update_dropout(self, dropout, attention_dropout):
+        self.embeddings.update_dropout(dropout)
+        for layer in self.transformer:
+            layer.update_dropout(dropout, attention_dropout)
