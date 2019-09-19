@@ -88,7 +88,7 @@ class BeamSearch(DecodeStrategy):
         self._coverage = None
 
         self._stepwise_cov_pen = (
-                stepwise_penalty and self.global_scorer.has_cov_pen)
+            stepwise_penalty and self.global_scorer.has_cov_pen)
         self._vanilla_cov_pen = (
             not stepwise_penalty and self.global_scorer.has_cov_pen)
         self._cov_pen = self.global_scorer.has_cov_pen
@@ -142,7 +142,6 @@ class BeamSearch(DecodeStrategy):
         # for testing
         return self.select_indices.view(self.batch_size, self.beam_size)\
             .fmod(self.beam_size)
-        
     @property
     def batch_offset(self):
         return self._batch_offset
@@ -165,16 +164,16 @@ class BeamSearch(DecodeStrategy):
 
         # Multiply probs by the beam probability.
         log_probs += self.topk_log_probs.view(_B * self.beam_size, 1)
-        
+
         # self.block_ngram_repeats(log_probs)
 
         # if the sequence ends now, then the penalty is the current
         # length + 1, to include the EOS token
         length_penalty = self.global_scorer.length_penalty(
             step + 1, alpha=self.global_scorer.alpha)
-        
+
         curr_scores = log_probs / length_penalty
-        
+
         # Avoid any direction that would repeat unwanted ngrams
         self.block_ngram_repeats_efficient(curr_scores)
 
@@ -198,9 +197,9 @@ class BeamSearch(DecodeStrategy):
         self.alive_seq = torch.cat(
             [self.alive_seq.index_select(0, self.select_indices),
              self.topk_ids.view(_B * self.beam_size, 1)], -1)
-            
+
         self.maybe_update_forbidden_tokens()
-        
+
         if self.return_attention or self._cov_pen:
             current_attn = attn.index_select(1, self.select_indices)
             if step == 1:
