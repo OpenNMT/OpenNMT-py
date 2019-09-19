@@ -192,7 +192,7 @@ class DecodeStrategy(object):
             if set(current_ngram) & self.exclusion_tokens: continue
         
             forbidden_tokens[-1].setdefault(current_ngram[:-1], list())
-            forbidden_tokens[-1][current_ngram].append(current_ngram[-1])
+            forbidden_tokens[-1][current_ngram[:-1].append(current_ngram[-1])
             
         self.forbidden_tokens = forbidden_tokens
 
