@@ -199,7 +199,7 @@ class BeamSearch(DecodeStrategy):
             [self.alive_seq.index_select(0, self.select_indices),
              self.topk_ids.view(_B * self.beam_size, 1)], -1)
             
-        self.maybe_update_forbiden_tokens()
+        self.maybe_update_forbidden_tokens()
         
         if self.return_attention or self._cov_pen:
             current_attn = attn.index_select(1, self.select_indices)

@@ -76,7 +76,7 @@ class DecodeStrategy(object):
         
         self.block_ngram_repeat = block_ngram_repeat
         n_paths = batch_size * parallel_paths
-        self.forbiden_tokens = [dict() for _ in range(n_paths)]
+        self.forbidden_tokens = [dict() for _ in range(n_paths)]
         
         self.exclusion_tokens = exclusion_tokens
         self.return_attention = return_attention
@@ -164,12 +164,12 @@ class DecodeStrategy(object):
             # we check paths one by one
         
             current_ngram = tuple(self.alive_seq[path_idx, -N:].tolist())
-            forbiden_tokens = self.forbiden_tokens[path_idx].get(current_ngram, None)
-            if forbiden_tokens is not None:
-                log_probs[path_idx, forbiden_tokens] = -1e20
+            forbidden_tokens = self.forbidden_tokens[path_idx].get(current_ngram, None)
+            if forbidden_tokens is not None:
+                log_probs[path_idx, forbidden_tokens] = -1e20
                 
-    def maybe_update_forbiden_tokens(self):
-        """We complete and reorder the list of forbiden_tokens"""
+    def maybe_update_forbidden_tokens(self):
+        """We complete and reorder the list of forbidden_tokens"""
         
         # we don't forbid nothing if the user doesn't want it
         if self.block_ngram_repeat <= 0: return
@@ -179,11 +179,11 @@ class DecodeStrategy(object):
     
         N = self.block_ngram_repeat
         
-        forbiden_tokens = list()
+        forbidden_tokens = list()
         for path_idx, seq in zip(self.select_indices, self.alive_seq):
             
-            # Reordering forbiden_tokens following beam selection
-            forbiden_tokens.append(self.forbiden_tokens[path_idx])
+            # Reordering forbidden_tokens following beam selection
+            forbidden_tokens.append(self.forbidden_tokens[path_idx])
             
             # Grabing the newly selected tokens and associated ngram
             current_ngram = tuple(seq[-N:].tolist())
@@ -191,10 +191,10 @@ class DecodeStrategy(object):
             # skip the blocking if any token in gram is excluded
             if set(gram) & self.exclusion_tokens: continue
         
-            forbiden_tokens[-1].setdefault(current_ngram[:-1], list())
-            forbiden_tokens[-1][current_ngram].append(current_ngram[-1])
+            forbidden_tokens[-1].setdefault(current_ngram[:-1], list())
+            forbidden_tokens[-1][current_ngram].append(current_ngram[-1])
             
-        self.forbiden_tokens = forbiden_tokens
+        self.forbidden_tokens = forbidden_tokens
 
     def advance(self, log_probs, attn):
         """DecodeStrategy subclasses should override :func:`advance()`.
