@@ -117,6 +117,7 @@ class BeamSearch(DecodeStrategy):
         # for testing
         return self.select_indices.view(self.batch_size, self.beam_size)\
             .fmod(self.beam_size)
+        
 
     def advance(self, log_probs, attn):
         vocab_size = log_probs.size(-1)
