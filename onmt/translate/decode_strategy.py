@@ -169,7 +169,7 @@ class DecodeStrategy(object):
             forbidden_tokens = self.forbidden_tokens[path_idx].get(
                 current_ngram, None)
             if forbidden_tokens is not None:
-                log_probs[path_idx, forbidden_tokens] = -1e20
+                log_probs[path_idx, forbidden_tokens] = -10e20
 
     def maybe_update_forbidden_tokens(self):
         """We complete and reorder the list of forbidden_tokens"""
