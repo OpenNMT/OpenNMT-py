@@ -138,18 +138,18 @@ class DecodeStrategy(object):
         We prevent the beam from going in any direction that would repeat any 
         ngram of size <block_ngram_repeat> more thant once.
         
-        The way we do it: we maintain a list of all ngrams of size <block_ngram_repeat>
-        that is updated each time the beam advances, and manually put any
-        token that would lead to a repeated ngram to 0.
+        The way we do it: we maintain a list of all ngrams of size
+        <block_ngram_repeat> that is updated each time the beam advances, and
+        manually put any token that would lead to a repeated ngram to 0.
         
         This improves on the previous version's complexity:
-            - previous version's complexity: batch_size * beam_size * len(self)
-            - current version's complexity: batch_size * beam_size
+           - previous version's complexity: batch_size * beam_size * len(self)
+           - current version's complexity: batch_size * beam_size
             
         This improves on the previous version's accuracy;
-            - Previous version blocks the whole beam, whereas here we only
+           - Previous version blocks the whole beam, whereas here we only
             block specific tokens.
-            - Before the translation would fail when all beams contained
+           - Before the translation would fail when all beams contained
             repeated ngrams. This is sure to never happen here.
         """
         
@@ -188,8 +188,8 @@ class DecodeStrategy(object):
             # Grabing the newly selected tokens and associated ngram
             current_ngram = tuple(seq[-N:].tolist())
             
-            # skip the blocking if any token in gram is excluded
-            if set(gram) & self.exclusion_tokens: continue
+            # skip the blocking if any token in current_ngram is excluded
+            if set(current_ngram) & self.exclusion_tokens: continue
         
             forbidden_tokens[-1].setdefault(current_ngram[:-1], list())
             forbidden_tokens[-1][current_ngram].append(current_ngram[-1])
@@ -206,7 +206,7 @@ class DecodeStrategy(object):
         raise NotImplementedError()
 
     def update_finished(self):
-        """DecodeStrategy subclasses should override :func:`update_finished()`.
+        """DecodeStrategy subclasses should override :func:`update_finished()`.)
 
         ``update_finished`` is used to update ``self.predictions``,
         ``self.scores``, and other "output" attributes.
