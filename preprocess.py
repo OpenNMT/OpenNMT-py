@@ -22,15 +22,26 @@ from functools import partial
 from multiprocessing.pool import Pool, ThreadPool
 
 
-def check_existing_pt_files(opt):
+def check_existing_pt_files(opt, corpus_type, ids, existing_fields):
     """ Check if there are existing .pt files to avoid overwriting them """
-    pattern = opt.save_data + '.{}*.pt'
-    for t in ['train', 'valid']:
-        path = pattern.format(t)
-        if glob.glob(path):
-            sys.stderr.write("Please backup existing pt files: %s, "
-                             "to avoid overwriting them!\n" % path)
-            sys.exit(1)
+    existing_shards = []
+    for maybe_id in ids:
+        if maybe_id:
+            shard_base = corpus_type + "_" + maybe_id
+        else:
+            shard_base = corpus_type
+        pattern = opt.save_data + '.{}.*.pt'.format(shard_base)
+        if glob.glob(pattern):
+            logger.warning("Shards for corpus {} already exist, "
+                "may be overwritten if `overwrite` option is set."
+                .format(shard_base))
+            existing_shards += [maybe_id]
+            if corpus_type == "train":
+                assert existing_fields is not None,\
+                    ("A 'vocab.pt' file should be passed to "
+                     "`-src_vocab` when adding a corpus to "
+                     "a set of already existing shards.")
+    return existing_shards
 
 
 def process_one_shard(corpus_params, params):
@@ -95,9 +106,19 @@ def process_one_shard(corpus_params, params):
 
 
 def build_save_one_corpus(dataset_params, params):
-    corpus_type, fields, src_reader, tgt_reader,\
-        opt, existing_fields, src_vocab, tgt_vocab = dataset_params
+    (corpus_type, fields, src_reader, tgt_reader,
+        opt, existing_shards, existing_fields,
+        src_vocab, tgt_vocab) = dataset_params
     src, tgt, maybe_id = params
+
+    if maybe_id in existing_shards:
+        if opt.overwrite:
+            logger.warning("Overwrite shards for corpus {}".format(maybe_id))
+        else:
+            logger.warning("Ignore corpus {} because shards already exist"
+                           .format(maybe_id))
+            return
+
     logger.info("Reading source and target files: %s %s." % (src, tgt))
 
     # create one counter per corpus
@@ -120,8 +141,9 @@ def build_save_one_corpus(dataset_params, params):
                          src_vocab, tgt_vocab, filter_pred, maybe_id)
         func = partial(process_one_shard, corpus_params)
         for sub_sub_counter in p.imap(func, enumerate(shard_pairs)):
-            for key, value in sub_sub_counter.items():
-                sub_counter[key].update(value)
+            if sub_sub_counter is not None:
+                for key, value in sub_sub_counter.items():
+                    sub_counter[key].update(value)
 
     return sub_counter
 
@@ -155,7 +177,7 @@ def build_save_dataset(corpus_type, fields, src_reader, tgt_reader, opt):
         srcs = opt.train_src
         tgts = opt.train_tgt
         ids = opt.train_ids
-    else:
+    elif corpus_type == 'valid':
         counters = None
         srcs = [opt.valid_src]
         tgts = [opt.valid_tgt]
@@ -164,13 +186,22 @@ def build_save_dataset(corpus_type, fields, src_reader, tgt_reader, opt):
     src_vocab, tgt_vocab, existing_fields = maybe_load_vocab(
         corpus_type, counters, opt)
 
+    existing_shards = check_existing_pt_files(
+        opt, corpus_type, ids, existing_fields)
+
+    # every corpus has shards, no new one
+    if existing_shards == ids:
+        return
+
     with ThreadPool(opt.corpus_threads) as p:
-        dataset_params = (corpus_type, fields, src_reader, tgt_reader,
-                          opt, existing_fields, src_vocab, tgt_vocab)
+        dataset_params = (corpus_type, fields, src_reader, tgt_reader, opt,
+                          existing_shards, existing_fields,
+                          src_vocab, tgt_vocab)
         func = partial(build_save_one_corpus, dataset_params)
         for sub_counter in p.imap(func, zip(srcs, tgts, ids)):
-            for key, value in sub_counter.items():
-                counters[key].update(value)
+            if sub_counter is not None:
+                for key, value in sub_counter.items():
+                    counters[key].update(value)
 
     if corpus_type == "train":
         vocab_path = opt.save_data + '.vocab.pt'
@@ -210,10 +241,9 @@ def count_features(path):
 def main(opt):
     ArgumentParser.validate_preprocess_args(opt)
     torch.manual_seed(opt.seed)
-    if not(opt.overwrite):
-        check_existing_pt_files(opt)
 
     init_logger(opt.log_file)
+
     logger.info("Extracting features...")
 
     src_nfeats = 0
