@@ -5,7 +5,6 @@
 """
 import codecs
 import glob
-import sys
 import gc
 import torch
 from collections import Counter, defaultdict
@@ -33,8 +32,8 @@ def check_existing_pt_files(opt, corpus_type, ids, existing_fields):
         pattern = opt.save_data + '.{}.*.pt'.format(shard_base)
         if glob.glob(pattern):
             logger.warning("Shards for corpus {} already exist, "
-                "may be overwritten if `overwrite` option is set."
-                .format(shard_base))
+                           "may be overwritten if `overwrite` "
+                           "option is set.".format(shard_base))
             existing_shards += [maybe_id]
             if corpus_type == "train":
                 assert existing_fields is not None,\
