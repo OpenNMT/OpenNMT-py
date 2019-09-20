@@ -31,15 +31,15 @@ def check_existing_pt_files(opt, corpus_type, ids, existing_fields):
             shard_base = corpus_type
         pattern = opt.save_data + '.{}.*.pt'.format(shard_base)
         if glob.glob(pattern):
-            logger.warning("Shards for corpus {} already exist, "
-                           "may be overwritten if `overwrite` "
-                           "option is set.".format(shard_base))
+            if opt.overwrite:
+                maybe_overwrite = ("will be overwritten because "
+                                  "`-overwrite` option is set.")
+            else:
+                maybe_overwrite = ("won't be overwritten, pass the "
+                                   "`-overwrite` option if you want to.")
+            logger.warning("Shards for corpus {} already exist, {}"
+                           .format(shard_base, maybe_overwrite))
             existing_shards += [maybe_id]
-            if corpus_type == "train":
-                assert existing_fields is not None,\
-                    ("A 'vocab.pt' file should be passed to "
-                     "`-src_vocab` when adding a corpus to "
-                     "a set of already existing shards.")
     return existing_shards
 
 
@@ -114,6 +114,11 @@ def build_save_one_corpus(dataset_params, params):
         if opt.overwrite:
             logger.warning("Overwrite shards for corpus {}".format(maybe_id))
         else:
+            if corpus_type == "train":
+                assert existing_fields is not None,\
+                    ("A 'vocab.pt' file should be passed to "
+                     "`-src_vocab` when adding a corpus to "
+                     "a set of already existing shards.")
             logger.warning("Ignore corpus {} because shards already exist"
                            .format(maybe_id))
             return
@@ -189,7 +194,7 @@ def build_save_dataset(corpus_type, fields, src_reader, tgt_reader, opt):
         opt, corpus_type, ids, existing_fields)
 
     # every corpus has shards, no new one
-    if existing_shards == ids:
+    if existing_shards == ids and not opt.overwrite:
         return
 
     with ThreadPool(opt.corpus_threads) as p:
