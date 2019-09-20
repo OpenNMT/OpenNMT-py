@@ -33,7 +33,7 @@ def check_existing_pt_files(opt, corpus_type, ids, existing_fields):
         if glob.glob(pattern):
             if opt.overwrite:
                 maybe_overwrite = ("will be overwritten because "
-                                  "`-overwrite` option is set.")
+                                   "`-overwrite` option is set.")
             else:
                 maybe_overwrite = ("won't be overwritten, pass the "
                                    "`-overwrite` option if you want to.")
