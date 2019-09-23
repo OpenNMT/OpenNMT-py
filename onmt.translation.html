@@ -333,7 +333,7 @@ for certain types of data).</p></li>
 <p>Build a word-based translation from the batch output
 of translator and the underlying dictionaries.</p>
 <p>Replacement based on “Addressing the Rare Word
-Problem in Neural Machine Translation” <a class="reference internal" href="ref.html#luong2015b" id="id1">[LSL+15]</a></p>
+Problem in Neural Machine Translation” <a class="bibtex reference internal" href="ref.html#luong2015b" id="id1">[LSL+15]</a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -641,7 +641,7 @@ the length penalty.</p></li>
 <dt id="onmt.translate.penalties.PenaltyBuilder.coverage_wu">
 <code class="sig-name descname">coverage_wu</code><span class="sig-paren">(</span><em class="sig-param">cov</em>, <em class="sig-param">beta=0.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/penalties.html#PenaltyBuilder.coverage_wu"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.penalties.PenaltyBuilder.coverage_wu" title="Permalink to this definition">¶</a></dt>
 <dd><p>GNMT coverage re-ranking score.</p>
-<p>See “Google’s Neural Machine Translation System” <a class="reference internal" href="ref.html#wu2016google" id="id2">[WSC+16]</a>.
+<p>See “Google’s Neural Machine Translation System” <a class="bibtex reference internal" href="ref.html#wu2016google" id="id2">[WSC+16]</a>.
 <code class="docutils literal notranslate"><span class="pre">cov</span></code> is expected to be sized <code class="docutils literal notranslate"><span class="pre">(*,</span> <span class="pre">seq_len)</span></code>, where <code class="docutils literal notranslate"><span class="pre">*</span></code> is
 probably <code class="docutils literal notranslate"><span class="pre">batch_size</span> <span class="pre">x</span> <span class="pre">beam_size</span></code> but could be several
 dimensions like <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">beam_size)</span></code>. If <code class="docutils literal notranslate"><span class="pre">cov</span></code> is attention,
@@ -664,7 +664,7 @@ then the <code class="docutils literal notranslate"><span class="pre">seq_len</s
 <dt id="onmt.translate.penalties.PenaltyBuilder.length_wu">
 <code class="sig-name descname">length_wu</code><span class="sig-paren">(</span><em class="sig-param">cur_len</em>, <em class="sig-param">alpha=0.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/penalties.html#PenaltyBuilder.length_wu"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.penalties.PenaltyBuilder.length_wu" title="Permalink to this definition">¶</a></dt>
 <dd><p>GNMT length re-ranking score.</p>
-<p>See “Google’s Neural Machine Translation System” <a class="reference internal" href="ref.html#wu2016google" id="id3">[WSC+16]</a>.</p>
+<p>See “Google’s Neural Machine Translation System” <a class="bibtex reference internal" href="ref.html#wu2016google" id="id3">[WSC+16]</a>.</p>
 </dd></dl>
 
 </dd></dl>
