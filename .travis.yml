@@ -13,7 +13,7 @@ addons:
       - sox
 before_install:
   # Install CPU version of PyTorch.
-  - if [[ $TRAVIS_PYTHON_VERSION == 3.5 ]]; then pip install torch==1.2.0+cpu -f https://download.pytorch.org/whl/torch_stable.html; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == 3.5 ]]; then pip install torch==1.2.0 -f https://download.pytorch.org/whl/cpu/torch_stable.html; fi
   - pip install -r requirements.txt
   - pip install -r requirements.opt.txt
   - python setup.py install   
@@ -24,7 +24,8 @@ env:
 
 jobs:
   include:
-    - env: LINT_CHECK
+    - name: "Flake8 Lint Check"
+      env: LINT_CHECK
       install: pip install flake8 pep8-naming==0.7.0
       script: flake8
     - name: "Build Docs"
