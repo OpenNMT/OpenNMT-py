@@ -45,8 +45,8 @@ def check_existing_pt_files(opt, corpus_type, ids, existing_fields):
 
 def process_one_shard(corpus_params, params):
     corpus_type, fields, src_reader, tgt_reader, opt, existing_fields,\
-        src_vocab, tgt_vocab, filter_pred, maybe_id = corpus_params
-    i, (src_shard, tgt_shard) = params
+        src_vocab, tgt_vocab = corpus_params
+    i, (src_shard, tgt_shard, maybe_id, filter_pred) = params
     # create one counter per shard
     sub_sub_counter = defaultdict(Counter)
     assert len(src_shard) == len(tgt_shard)
@@ -104,54 +104,6 @@ def process_one_shard(corpus_params, params):
     return sub_sub_counter
 
 
-def build_save_one_corpus(dataset_params, params):
-    (corpus_type, fields, src_reader, tgt_reader,
-        opt, existing_shards, existing_fields,
-        src_vocab, tgt_vocab) = dataset_params
-    src, tgt, maybe_id = params
-
-    if maybe_id in existing_shards:
-        if opt.overwrite:
-            logger.warning("Overwrite shards for corpus {}".format(maybe_id))
-        else:
-            if corpus_type == "train":
-                assert existing_fields is not None,\
-                    ("A 'vocab.pt' file should be passed to "
-                     "`-src_vocab` when adding a corpus to "
-                     "a set of already existing shards.")
-            logger.warning("Ignore corpus {} because shards already exist"
-                           .format(maybe_id))
-            return
-
-    logger.info("Reading source and target files: %s %s." % (src, tgt))
-
-    # create one counter per corpus
-    sub_counter = defaultdict(Counter)
-
-    src_shards = split_corpus(src, opt.shard_size)
-    tgt_shards = split_corpus(tgt, opt.shard_size)
-    shard_pairs = zip(src_shards, tgt_shards)
-
-    if (corpus_type == "train" or opt.filter_valid) and tgt is not None:
-        filter_pred = partial(
-            inputters.filter_example, use_src_len=opt.data_type == "text",
-            max_src_len=opt.src_seq_length, max_tgt_len=opt.tgt_seq_length)
-    else:
-        filter_pred = None
-
-    with Pool(opt.shards_threads) as p:
-        corpus_params = (corpus_type, fields,
-                         src_reader, tgt_reader, opt, existing_fields,
-                         src_vocab, tgt_vocab, filter_pred, maybe_id)
-        func = partial(process_one_shard, corpus_params)
-        for sub_sub_counter in p.imap(func, enumerate(shard_pairs)):
-            if sub_sub_counter is not None:
-                for key, value in sub_sub_counter.items():
-                    sub_counter[key].update(value)
-
-    return sub_counter
-
-
 def maybe_load_vocab(corpus_type, counters, opt):
     src_vocab = None
     tgt_vocab = None
@@ -197,12 +149,48 @@ def build_save_dataset(corpus_type, fields, src_reader, tgt_reader, opt):
     if existing_shards == ids and not opt.overwrite:
         return
 
-    with ThreadPool(opt.corpus_threads) as p:
-        dataset_params = (corpus_type, fields, src_reader, tgt_reader, opt,
-                          existing_shards, existing_fields,
-                          src_vocab, tgt_vocab)
-        func = partial(build_save_one_corpus, dataset_params)
-        for sub_counter in p.imap(func, zip(srcs, tgts, ids)):
+    def shard_iterator(srcs, tgts, ids, existing_shards,
+                       existing_fields, corpus_type, opt):
+        """
+        Builds a single iterator yielding every shard of every corpus.
+        """
+        for src, tgt, maybe_id in zip(srcs, tgts, ids):
+            if maybe_id in existing_shards:
+                if opt.overwrite:
+                    logger.warning("Overwrite shards for corpus {}"
+                                   .format(maybe_id))
+                else:
+                    if corpus_type == "train":
+                        assert existing_fields is not None,\
+                            ("A 'vocab.pt' file should be passed to "
+                             "`-src_vocab` when adding a corpus to "
+                             "a set of already existing shards.")
+                    logger.warning("Ignore corpus {} because "
+                                   "shards already exist"
+                                   .format(maybe_id))
+                    continue
+            if ((corpus_type == "train" or opt.filter_valid)
+                    and tgt is not None):
+                filter_pred = partial(
+                    inputters.filter_example,
+                    use_src_len=opt.data_type == "text",
+                    max_src_len=opt.src_seq_length,
+                    max_tgt_len=opt.tgt_seq_length)
+            else:
+                filter_pred = None
+            src_shards = split_corpus(src, opt.shard_size)
+            tgt_shards = split_corpus(tgt, opt.shard_size)
+            for i, (ss, ts) in enumerate(zip(src_shards, tgt_shards)):
+                yield (i, (ss, ts, maybe_id, filter_pred))
+
+    shard_iter = shard_iterator(srcs, tgts, ids, existing_shards,
+                               existing_fields, corpus_type, opt)
+
+    with Pool(opt.num_threads) as p:
+        dataset_params = (corpus_type, fields, src_reader, tgt_reader,
+                          opt, existing_fields, src_vocab, tgt_vocab)
+        func = partial(process_one_shard, dataset_params)
+        for sub_counter in p.imap(func, shard_iter):
             if sub_counter is not None:
                 for key, value in sub_counter.items():
                     counters[key].update(value)

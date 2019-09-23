@@ -224,12 +224,8 @@ def preprocess_opts(parser):
                    "shard_size>0 means segment dataset into multiple shards, "
                    "each shard has shard_size samples")
 
-    group.add('--corpus_threads', '-corpus_threads', type=int, default=1,
-              help="Number of corpora to handle in parallel "
-                   "when preprocessing multiple corpora.")
-    group.add('--shards_threads', '-shards_threads', type=int, default=1,
-              help="Number of shards to build in parallel "
-                   "for a single corpus.")
+    group.add('--num_threads', '-num_threads', type=int, default=1,
+              help="Number of shards to build in parallel.")
 
     group.add('--overwrite', '-overwrite', action="store_true",
               help="Overwrite existing shards if any.")
