@@ -18,7 +18,7 @@ from onmt.inputters.inputter import _build_fields_vocab,\
                                     _load_vocab
 
 from functools import partial
-from multiprocessing.pool import Pool, ThreadPool
+from multiprocessing import Pool
 
 
 def check_existing_pt_files(opt, corpus_type, ids, existing_fields):
@@ -184,7 +184,7 @@ def build_save_dataset(corpus_type, fields, src_reader, tgt_reader, opt):
                 yield (i, (ss, ts, maybe_id, filter_pred))
 
     shard_iter = shard_iterator(srcs, tgts, ids, existing_shards,
-                               existing_fields, corpus_type, opt)
+                                existing_fields, corpus_type, opt)
 
     with Pool(opt.num_threads) as p:
         dataset_params = (corpus_type, fields, src_reader, tgt_reader,
