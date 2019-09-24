@@ -20,10 +20,10 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "onmt_server=server:main",
-            "onmt_train=train:main",
-            "onmt_translate=translate:main",
-            "onmt_preprocess=preprocess:main",
+            "onmt_server=onmt.bin.server:main",
+            "onmt_train=onmt.bin.train:main",
+            "onmt_translate=onmt.bin.translate:main",
+            "onmt_preprocess=onmt.bin.preprocess:main",
         ],
     }
 )
