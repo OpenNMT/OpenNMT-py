@@ -3,13 +3,13 @@ This includes: LossComputeBase and the standard NMTLossCompute, and
                sharded loss compute stuff.
 """
 from __future__ import division
+from functools import partial
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 import onmt
-from onmt.modules.sparse_losses import SparsemaxLoss
-from onmt.modules.sparse_activations import LogSparsemax
+from entmax import SparsemaxLoss, Entmax15Loss
 
 
 def build_loss_compute(model, tgt_field, opt, train=True):
@@ -39,16 +39,19 @@ def build_loss_compute(model, tgt_field, opt, train=True):
         criterion = LabelSmoothingLoss(
             opt.label_smoothing, len(tgt_field.vocab), ignore_index=padding_idx
         )
-    elif isinstance(model.generator[-1], LogSparsemax):
-        criterion = SparsemaxLoss(ignore_index=padding_idx, reduction='sum')
     else:
-        criterion = nn.NLLLoss(ignore_index=padding_idx, reduction='sum')
+        # future idea: use nn.CrossEntropyLoss for softmax, to parallel entmax
+        loss_funcs = {"softmax": nn.NLLLoss,
+                      "sparsemax": partial(SparsemaxLoss, k=512),
+                      "entmax15": partial(Entmax15Loss, k=512)}
+        assert opt.generator_function in loss_funcs
+        loss_func = loss_funcs[opt.generator_function]
+        criterion = loss_func(ignore_index=padding_idx, reduction='sum')
 
     # if the loss function operates on vectors of raw logits instead of
-    # probabilities, only the first part of the generator needs to be
-    # passed to the NMTLossCompute. At the moment, the only supported
-    # loss function of this kind is the sparsemax loss.
-    use_raw_logits = isinstance(criterion, SparsemaxLoss)
+    # probabilities, the second part of the generator is not passed to
+    # NMTLossCompute. This is true for sparsemax and entmax losses.
+    use_raw_logits = opt.generator_function != "softmax"
     loss_gen = model.generator[0] if use_raw_logits else model.generator
     if opt.copy_attn:
         compute = onmt.modules.CopyGeneratorLossCompute(

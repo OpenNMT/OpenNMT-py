@@ -3,6 +3,7 @@ This file is for models creation, which consults options
 and creates each encoder and decoder accordingly.
 """
 import re
+from functools import partial
 import torch
 import torch.nn as nn
 from torch.nn.init import xavier_uniform_
@@ -14,6 +15,7 @@ from onmt.encoders import str2enc
 from onmt.decoders import str2dec
 
 from onmt.modules import Embeddings, VecEmbedding, CopyGenerator
+from onmt.modules.sparse_activations import LogSparsemax, LogEntmax15
 from onmt.modules.util_class import Cast
 from onmt.utils.misc import use_gpu
 from onmt.utils.logging import logger
@@ -173,10 +175,11 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
 
     # Build Generator.
     if not model_opt.copy_attn:
-        if model_opt.generator_function == "sparsemax":
-            gen_func = onmt.modules.sparse_activations.LogSparsemax(dim=-1)
-        else:
-            gen_func = nn.LogSoftmax(dim=-1)
+        gen_funcs = {"softmax": nn.LogSoftmax,
+                     "sparsemax": partial(LogSparsemax, k=512),
+                     "entmax15": partial(LogEntmax15, k=512)}
+        assert model_opt.generator_function in gen_funcs
+        gen_func = gen_funcs[model_opt.generator_function](dim=-1)
         generator = nn.Sequential(
             nn.Linear(model_opt.dec_rnn_size,
                       len(fields["tgt"].base_field.vocab)),
