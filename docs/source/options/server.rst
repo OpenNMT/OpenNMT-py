@@ -2,6 +2,6 @@ Server
 =========
 
 .. argparse::
-    :filename: ../server.py
+    :filename: ../onmt/bin/server.py
     :func: _get_parser
     :prog: server.py
