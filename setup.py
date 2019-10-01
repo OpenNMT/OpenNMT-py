@@ -5,12 +5,12 @@ from setuptools import setup, find_packages
 setup(
     name='OpenNMT-py',
     description='A python implementation of OpenNMT',
-    version='0.9.2',
+    version='1.0.0.rc1',
     packages=find_packages(),
     install_requires=[
         "six",
         "tqdm~=4.30.0",
-        "torch>=1.1",
+        "torch>=1.2",
         "torchtext==0.4.0",
         "future",
         "configargparse",
