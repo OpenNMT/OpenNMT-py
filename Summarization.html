@@ -386,21 +386,137 @@ The installation instructions can be found <a class="reference external" href="h
 <p>The website generator has trouble rendering tables, if you can’t read the results, please go <a class="reference external" href="https://github.com/OpenNMT/OpenNMT-py/blob/master/docs/source/Summarization">here</a> for correct format.</p>
 <div class="section" id="id1">
 <h3>CNN-DM<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
-<p>| Model Type    | Model    | R1 R  | R1 P  | R1 F  | R2 R  | R2 P  | R2 F  | RL R  | RL P  | RL F  |
-| ————- |  ——– | —–:| —–:| —–:|——:| —–:| —–:|—–: | —–:| —–:|
-| Pointer-Generator + Coverage [2]     | <a class="reference external" href="https://github.com/abisee/pointer-generator">link</a>  | 39.05 |	43.02 |	39.53 |	17.16 | 18.77 | 17.28  | 35.98 | 39.56 | 36.38 |
-| Pointer-Generator [2]  |  <a class="reference external" href="https://github.com/abisee/pointer-generator">link</a>  | 37.76 | 37.60| 36.44| 16.31| 16.12| 15.66| 34.66| 34.46| 33.42 |
-| OpenNMT BRNN  (1 layer, emb 128, hid 512)  |  <a class="reference external" href="https://s3.amazonaws.com/opennmt-models/Summary/ada6_bridge_oldcopy_tagged_acc_54.17_ppl_11.17_e20.pt">link</a>     | 40.90| 40.20| 	39.02| 	17.91| 	17.99| 	17.25| 	37.76	| 37.18| 	36.05 |
-| OpenNMT BRNN  (1 layer, emb 128, hid 512, shared embeddings)  |  <a class="reference external" href="https://s3.amazonaws.com/opennmt-models/Summary/ada6_bridge_oldcopy_tagged_share_acc_54.50_ppl_10.89_e20.pt">link</a>     | 38.59	| 40.60	| 37.97	| 16.75	| 17.93	| 16.59	| 35.67	| 37.60	| 35.13 |
-| OpenNMT BRNN (2 layer, emb 256, hid 1024)   |  <a class="reference external" href="https://s3.amazonaws.com/opennmt-models/Summary/ada6_bridge_oldcopy_tagged_larger_acc_54.84_ppl_10.58_e17.pt">link</a>     | 40.41	| 40.94 | 39.12 | 17.76 | 18.38 | 17.35 | 37.27 | 37.83 | 36.12 |
-| OpenNMT Transformer  |  <a class="reference external" href="https://s3.amazonaws.com/opennmt-models/sum_transformer_model_acc_57.25_ppl_9.22_e16.pt">link</a>  | 40.31	| 41.09	| 39.25	| 17.97	| 18.46	| 17.54	| 37.41	| 38.18	| 36.45 |</p>
-</div>
+<table border="1" class="docutils">
+<thead>
+<tr>
+<th>Model Type</th>
+<th>Model</th>
+<th align="right">R1 R</th>
+<th align="right">R1 P</th>
+<th align="right">R1 F</th>
+<th align="right">R2 R</th>
+<th align="right">R2 P</th>
+<th align="right">R2 F</th>
+<th align="right">RL R</th>
+<th align="right">RL P</th>
+<th align="right">RL F</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pointer-Generator + Coverage [2]</td>
+<td><a href="https://github.com/abisee/pointer-generator">link</a></td>
+<td align="right">39.05</td>
+<td align="right">43.02</td>
+<td align="right">39.53</td>
+<td align="right">17.16</td>
+<td align="right">18.77</td>
+<td align="right">17.28</td>
+<td align="right">35.98</td>
+<td align="right">39.56</td>
+<td align="right">36.38</td>
+</tr>
+<tr>
+<td>Pointer-Generator [2]</td>
+<td><a href="https://github.com/abisee/pointer-generator">link</a></td>
+<td align="right">37.76</td>
+<td align="right">37.60</td>
+<td align="right">36.44</td>
+<td align="right">16.31</td>
+<td align="right">16.12</td>
+<td align="right">15.66</td>
+<td align="right">34.66</td>
+<td align="right">34.46</td>
+<td align="right">33.42</td>
+</tr>
+<tr>
+<td>OpenNMT BRNN  (1 layer, emb 128, hid 512)</td>
+<td><a href="https://s3.amazonaws.com/opennmt-models/Summary/ada6_bridge_oldcopy_tagged_acc_54.17_ppl_11.17_e20.pt">link</a></td>
+<td align="right">40.90</td>
+<td align="right">40.20</td>
+<td align="right">39.02</td>
+<td align="right">17.91</td>
+<td align="right">17.99</td>
+<td align="right">17.25</td>
+<td align="right">37.76</td>
+<td align="right">37.18</td>
+<td align="right">36.05</td>
+</tr>
+<tr>
+<td>OpenNMT BRNN  (1 layer, emb 128, hid 512, shared embeddings)</td>
+<td><a href="https://s3.amazonaws.com/opennmt-models/Summary/ada6_bridge_oldcopy_tagged_share_acc_54.50_ppl_10.89_e20.pt">link</a></td>
+<td align="right">38.59</td>
+<td align="right">40.60</td>
+<td align="right">37.97</td>
+<td align="right">16.75</td>
+<td align="right">17.93</td>
+<td align="right">16.59</td>
+<td align="right">35.67</td>
+<td align="right">37.60</td>
+<td align="right">35.13</td>
+</tr>
+<tr>
+<td>OpenNMT BRNN (2 layer, emb 256, hid 1024)</td>
+<td><a href="https://s3.amazonaws.com/opennmt-models/Summary/ada6_bridge_oldcopy_tagged_larger_acc_54.84_ppl_10.58_e17.pt">link</a></td>
+<td align="right">40.41</td>
+<td align="right">40.94</td>
+<td align="right">39.12</td>
+<td align="right">17.76</td>
+<td align="right">18.38</td>
+<td align="right">17.35</td>
+<td align="right">37.27</td>
+<td align="right">37.83</td>
+<td align="right">36.12</td>
+</tr>
+<tr>
+<td>OpenNMT Transformer</td>
+<td><a href="https://s3.amazonaws.com/opennmt-models/sum_transformer_model_acc_57.25_ppl_9.22_e16.pt">link</a></td>
+<td align="right">40.31</td>
+<td align="right">41.09</td>
+<td align="right">39.25</td>
+<td align="right">17.97</td>
+<td align="right">18.46</td>
+<td align="right">17.54</td>
+<td align="right">37.41</td>
+<td align="right">38.18</td>
+<td align="right">36.45</td>
+</tr>
+</tbody>
+</table></div>
 <div class="section" id="id2">
 <h3>Gigaword<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
-<p>| Model Type    | Model    | R1 R  | R1 P  | R1 F  | R2 R  | R2 P  | R2 F  | RL R  | RL P  | RL F  |
-| ————- |  ——– | —–:| —–:| —–:|——:| —–:| —–:|—–: | —–:| —–:|
-| OpenNMT, no penalties | <a class="reference external" href="https://s3.amazonaws.com/opennmt-models/gigaword_copy_acc_51.78_ppl_11.71_e20.pt">link</a>  | ? |	? |	35.51 |	? | ? | 17.35  | ? | ? | 33.17 |</p>
-</div>
+<table border="1" class="docutils">
+<thead>
+<tr>
+<th>Model Type</th>
+<th>Model</th>
+<th align="right">R1 R</th>
+<th align="right">R1 P</th>
+<th align="right">R1 F</th>
+<th align="right">R2 R</th>
+<th align="right">R2 P</th>
+<th align="right">R2 F</th>
+<th align="right">RL R</th>
+<th align="right">RL P</th>
+<th align="right">RL F</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>OpenNMT, no penalties</td>
+<td><a href="https://s3.amazonaws.com/opennmt-models/gigaword_copy_acc_51.78_ppl_11.71_e20.pt">link</a></td>
+<td align="right">?</td>
+<td align="right">?</td>
+<td align="right">35.51</td>
+<td align="right">?</td>
+<td align="right">?</td>
+<td align="right">17.35</td>
+<td align="right">?</td>
+<td align="right">?</td>
+<td align="right">33.17</td>
+</tr>
+</tbody>
+</table></div>
 </div>
 <div class="section" id="references">
 <h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
