@@ -5,10 +5,10 @@
 ## [Unreleased]
 ### Fixes and improvements
 
-## [1.0](https://github.com/OpenNMT/OpenNMT-py/tree/1.0) (2019-10-01)
+## [1.0.0.rc1](https://github.com/OpenNMT/OpenNMT-py/tree/1.0.0.rc1) (2019-10-01)
 * Fix Apex / FP16 training (Apex new API is buggy)
 * Multithread preprocessing way faster (Thanks François Hernandez)
-* Pip Installation (thanks Paul Trady)
+* Pip Installation v1.0.0.rc1 (thanks Paul Tardy)
 
 ## [0.9.2](https://github.com/OpenNMT/OpenNMT-py/tree/0.9.2) (2019-09-04)
 * Switch to Pytorch 1.2

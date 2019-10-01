@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 setup(
     name='OpenNMT-py',
     description='A python implementation of OpenNMT',
-    version='1.0',
+    version='1.0.0.rc1',
     packages=find_packages(),
     install_requires=[
         "six",
