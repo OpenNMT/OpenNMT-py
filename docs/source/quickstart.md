@@ -6,7 +6,7 @@
 ### Step 1: Preprocess the data
 
 ```bash
-python preprocess.py -train_src data/src-train.txt -train_tgt data/tgt-train.txt -valid_src data/src-val.txt -valid_tgt data/tgt-val.txt -save_data data/demo
+onmt_preprocess -train_src data/src-train.txt -train_tgt data/tgt-train.txt -valid_src data/src-val.txt -valid_tgt data/tgt-val.txt -save_data data/demo
 ```
 
 We will be working with some example data in `data/` folder.
@@ -30,7 +30,7 @@ Federal Master Trainer and Senior Instructor of the Italian Federation of Aerobi
 ### Step 2: Train the model
 
 ```bash
-python train.py -data data/demo -save_model demo-model
+onmt_train -data data/demo -save_model demo-model
 ```
 
 The main train command is quite simple. Minimally it takes a data file
@@ -44,7 +44,7 @@ To know more about distributed training on single or multi nodes, read the FAQ s
 ### Step 3: Translate
 
 ```bash
-python translate.py -model demo-model_XYZ.pt -src data/src-test.txt -output pred.txt -replace_unk -verbose
+onmt_translate -model demo-model_XYZ.pt -src data/src-test.txt -output pred.txt -replace_unk -verbose
 ```
 
 Now you have a model which you can use to predict on new data. We do this by running beam search. This will output predictions into `pred.txt`.
