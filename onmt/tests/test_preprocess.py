@@ -12,7 +12,7 @@ import codecs
 import onmt
 import onmt.inputters
 import onmt.opts
-import preprocess
+import onmt.bin.preprocess as preprocess
 
 
 parser = configargparse.ArgumentParser(description='preprocess.py')
