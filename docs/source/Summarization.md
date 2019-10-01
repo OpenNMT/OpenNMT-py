@@ -231,7 +231,7 @@ The website generator has trouble rendering tables, if you can't read the result
 | Pointer-Generator [2]  |  [link](https://github.com/abisee/pointer-generator)  | 37.76 | 37.60| 36.44| 16.31| 16.12| 15.66| 34.66| 34.46| 33.42 |
 | OpenNMT BRNN  (1 layer, emb 128, hid 512)  |  [link](https://s3.amazonaws.com/opennmt-models/Summary/ada6_bridge_oldcopy_tagged_acc_54.17_ppl_11.17_e20.pt)     | 40.90| 40.20| 	39.02| 	17.91| 	17.99| 	17.25| 	37.76	| 37.18| 	36.05 |
 | OpenNMT BRNN  (1 layer, emb 128, hid 512, shared embeddings)  |  [link](https://s3.amazonaws.com/opennmt-models/Summary/ada6_bridge_oldcopy_tagged_share_acc_54.50_ppl_10.89_e20.pt)     | 38.59	| 40.60	| 37.97	| 16.75	| 17.93	| 16.59	| 35.67	| 37.60	| 35.13 |
-| OpenNMT BRNN (2 layer, emb 256, hid 1024)   |  [link](https://s3.amazonaws.com/opennmt-models/Summary/ada6_bridge_oldcopy_tagged_larger_acc_54.84_ppl_10.58_e17.ptt)     | 40.41	| 40.94 | 39.12 | 17.76 | 18.38 | 17.35 | 37.27 | 37.83 | 36.12 |
+| OpenNMT BRNN (2 layer, emb 256, hid 1024)   |  [link](https://s3.amazonaws.com/opennmt-models/Summary/ada6_bridge_oldcopy_tagged_larger_acc_54.84_ppl_10.58_e17.pt)     | 40.41	| 40.94 | 39.12 | 17.76 | 18.38 | 17.35 | 37.27 | 37.83 | 36.12 |
 | OpenNMT Transformer  |  [link](https://s3.amazonaws.com/opennmt-models/sum_transformer_model_acc_57.25_ppl_9.22_e16.pt)  | 40.31	| 41.09	| 39.25	| 17.97	| 18.46	| 17.54	| 37.41	| 38.18	| 36.45 |
 
 
