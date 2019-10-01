@@ -219,30 +219,30 @@ We additionally turn off truncation of the source to ensure that inputs longer t
 For CNN-DM we follow See et al. [2] and additionally truncate the source length at 400 tokens and the target at 100. We also note that in CNN-DM, we found models to work better if the target surrounds sentences with tags such that a sentence looks like <code class="docutils literal notranslate"><span class="pre">&lt;t&gt;</span> <span class="pre">w1</span> <span class="pre">w2</span> <span class="pre">w3</span> <span class="pre">.</span> <span class="pre">&lt;/t&gt;</span></code>. If you use this formatting, you can remove the tags after the inference step with the commands <code class="docutils literal notranslate"><span class="pre">sed</span> <span class="pre">-i</span> <span class="pre">'s/</span> <span class="pre">&lt;\/t&gt;//g'</span> <span class="pre">FILE.txt</span></code> and <code class="docutils literal notranslate"><span class="pre">sed</span> <span class="pre">-i</span> <span class="pre">'s/&lt;t&gt;</span> <span class="pre">//g'</span> <span class="pre">FILE.txt</span></code>.</p>
 <p><strong>Command used</strong>:</p>
 <p>(1) CNN-DM</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">preprocess</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">train_src</span> <span class="n">data</span><span class="o">/</span><span class="n">cnndm</span><span class="o">/</span><span class="n">train</span><span class="o">.</span><span class="n">txt</span><span class="o">.</span><span class="n">src</span> \
-                     <span class="o">-</span><span class="n">train_tgt</span> <span class="n">data</span><span class="o">/</span><span class="n">cnndm</span><span class="o">/</span><span class="n">train</span><span class="o">.</span><span class="n">txt</span><span class="o">.</span><span class="n">tgt</span><span class="o">.</span><span class="n">tagged</span> \
-                     <span class="o">-</span><span class="n">valid_src</span> <span class="n">data</span><span class="o">/</span><span class="n">cnndm</span><span class="o">/</span><span class="n">val</span><span class="o">.</span><span class="n">txt</span><span class="o">.</span><span class="n">src</span> \
-                     <span class="o">-</span><span class="n">valid_tgt</span> <span class="n">data</span><span class="o">/</span><span class="n">cnndm</span><span class="o">/</span><span class="n">val</span><span class="o">.</span><span class="n">txt</span><span class="o">.</span><span class="n">tgt</span><span class="o">.</span><span class="n">tagged</span> \
-                     <span class="o">-</span><span class="n">save_data</span> <span class="n">data</span><span class="o">/</span><span class="n">cnndm</span><span class="o">/</span><span class="n">CNNDM</span> \
-                     <span class="o">-</span><span class="n">src_seq_length</span> <span class="mi">10000</span> \
-                     <span class="o">-</span><span class="n">tgt_seq_length</span> <span class="mi">10000</span> \
-                     <span class="o">-</span><span class="n">src_seq_length_trunc</span> <span class="mi">400</span> \
-                     <span class="o">-</span><span class="n">tgt_seq_length_trunc</span> <span class="mi">100</span> \
-                     <span class="o">-</span><span class="n">dynamic_dict</span> \
-                     <span class="o">-</span><span class="n">share_vocab</span> \
-                     <span class="o">-</span><span class="n">shard_size</span> <span class="mi">100000</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_preprocess -train_src data/cnndm/train.txt.src <span class="se">\</span>
+                -train_tgt data/cnndm/train.txt.tgt.tagged <span class="se">\</span>
+                -valid_src data/cnndm/val.txt.src <span class="se">\</span>
+                -valid_tgt data/cnndm/val.txt.tgt.tagged <span class="se">\</span>
+                -save_data data/cnndm/CNNDM <span class="se">\</span>
+                -src_seq_length <span class="m">10000</span> <span class="se">\</span>
+                -tgt_seq_length <span class="m">10000</span> <span class="se">\</span>
+                -src_seq_length_trunc <span class="m">400</span> <span class="se">\</span>
+                -tgt_seq_length_trunc <span class="m">100</span> <span class="se">\</span>
+                -dynamic_dict <span class="se">\</span>
+                -share_vocab <span class="se">\</span>
+                -shard_size <span class="m">100000</span>
 </pre></div>
 </div>
 <p>(2) Gigaword</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">preprocess</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">train_src</span> <span class="n">data</span><span class="o">/</span><span class="n">giga</span><span class="o">/</span><span class="n">train</span><span class="o">.</span><span class="n">article</span><span class="o">.</span><span class="n">txt</span> \
-                     <span class="o">-</span><span class="n">train_tgt</span> <span class="n">data</span><span class="o">/</span><span class="n">giga</span><span class="o">/</span><span class="n">train</span><span class="o">.</span><span class="n">title</span><span class="o">.</span><span class="n">txt</span> \
-                     <span class="o">-</span><span class="n">valid_src</span> <span class="n">data</span><span class="o">/</span><span class="n">giga</span><span class="o">/</span><span class="n">valid</span><span class="o">.</span><span class="n">article</span><span class="o">.</span><span class="n">txt</span> \
-                     <span class="o">-</span><span class="n">valid_tgt</span> <span class="n">data</span><span class="o">/</span><span class="n">giga</span><span class="o">/</span><span class="n">valid</span><span class="o">.</span><span class="n">title</span><span class="o">.</span><span class="n">txt</span> \
-                     <span class="o">-</span><span class="n">save_data</span> <span class="n">data</span><span class="o">/</span><span class="n">giga</span><span class="o">/</span><span class="n">GIGA</span> \
-                     <span class="o">-</span><span class="n">src_seq_length</span> <span class="mi">10000</span> \
-                     <span class="o">-</span><span class="n">dynamic_dict</span> \
-                     <span class="o">-</span><span class="n">share_vocab</span> \
-                     <span class="o">-</span><span class="n">shard_size</span> <span class="mi">100000</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_preprocess -train_src data/giga/train.article.txt <span class="se">\</span>
+                -train_tgt data/giga/train.title.txt <span class="se">\</span>
+                -valid_src data/giga/valid.article.txt <span class="se">\</span>
+                -valid_tgt data/giga/valid.title.txt <span class="se">\</span>
+                -save_data data/giga/GIGA <span class="se">\</span>
+                -src_seq_length <span class="m">10000</span> <span class="se">\</span>
+                -dynamic_dict <span class="se">\</span>
+                -share_vocab <span class="se">\</span>
+                -shard_size <span class="m">100000</span>
 </pre></div>
 </div>
 </div>
@@ -263,69 +263,69 @@ For CNN-DM we follow See et al. [2] and additionally truncate the source length 
 <p>We additionally set the maximum norm of the gradient to 2, and renormalize if the gradient norm exceeds this value and do not use any dropout.</p>
 <p><strong>commands used</strong>:</p>
 <p>(1) CNN-DM</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">train</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">save_model</span> <span class="n">models</span><span class="o">/</span><span class="n">cnndm</span> \
-                <span class="o">-</span><span class="n">data</span> <span class="n">data</span><span class="o">/</span><span class="n">cnndm</span><span class="o">/</span><span class="n">CNNDM</span> \
-                <span class="o">-</span><span class="n">copy_attn</span> \
-                <span class="o">-</span><span class="n">global_attention</span> <span class="n">mlp</span> \
-                <span class="o">-</span><span class="n">word_vec_size</span> <span class="mi">128</span> \
-                <span class="o">-</span><span class="n">rnn_size</span> <span class="mi">512</span> \
-                <span class="o">-</span><span class="n">layers</span> <span class="mi">1</span> \
-                <span class="o">-</span><span class="n">encoder_type</span> <span class="n">brnn</span> \
-                <span class="o">-</span><span class="n">train_steps</span> <span class="mi">200000</span> \
-                <span class="o">-</span><span class="n">max_grad_norm</span> <span class="mi">2</span> \
-                <span class="o">-</span><span class="n">dropout</span> <span class="mf">0.</span> \
-                <span class="o">-</span><span class="n">batch_size</span> <span class="mi">16</span> \
-                <span class="o">-</span><span class="n">valid_batch_size</span> <span class="mi">16</span> \
-                <span class="o">-</span><span class="n">optim</span> <span class="n">adagrad</span> \
-                <span class="o">-</span><span class="n">learning_rate</span> <span class="mf">0.15</span> \
-                <span class="o">-</span><span class="n">adagrad_accumulator_init</span> <span class="mf">0.1</span> \
-                <span class="o">-</span><span class="n">reuse_copy_attn</span> \
-                <span class="o">-</span><span class="n">copy_loss_by_seqlength</span> \
-                <span class="o">-</span><span class="n">bridge</span> \
-                <span class="o">-</span><span class="n">seed</span> <span class="mi">777</span> \
-                <span class="o">-</span><span class="n">world_size</span> <span class="mi">2</span> \
-                <span class="o">-</span><span class="n">gpu_ranks</span> <span class="mi">0</span> <span class="mi">1</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_train -save_model models/cnndm <span class="se">\</span>
+           -data data/cnndm/CNNDM <span class="se">\</span>
+           -copy_attn <span class="se">\</span>
+           -global_attention mlp <span class="se">\</span>
+           -word_vec_size <span class="m">128</span> <span class="se">\</span>
+           -rnn_size <span class="m">512</span> <span class="se">\</span>
+           -layers <span class="m">1</span> <span class="se">\</span>
+           -encoder_type brnn <span class="se">\</span>
+           -train_steps <span class="m">200000</span> <span class="se">\</span>
+           -max_grad_norm <span class="m">2</span> <span class="se">\</span>
+           -dropout <span class="m">0</span>. <span class="se">\</span>
+           -batch_size <span class="m">16</span> <span class="se">\</span>
+           -valid_batch_size <span class="m">16</span> <span class="se">\</span>
+           -optim adagrad <span class="se">\</span>
+           -learning_rate <span class="m">0</span>.15 <span class="se">\</span>
+           -adagrad_accumulator_init <span class="m">0</span>.1 <span class="se">\</span>
+           -reuse_copy_attn <span class="se">\</span>
+           -copy_loss_by_seqlength <span class="se">\</span>
+           -bridge <span class="se">\</span>
+           -seed <span class="m">777</span> <span class="se">\</span>
+           -world_size <span class="m">2</span> <span class="se">\</span>
+           -gpu_ranks <span class="m">0</span> <span class="m">1</span>
 </pre></div>
 </div>
 <p>(2) CNN-DM Transformer</p>
 <p>The following script trains the transformer model on CNN-DM</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">-</span><span class="n">u</span> <span class="n">train</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">data</span> <span class="n">data</span><span class="o">/</span><span class="n">cnndm</span><span class="o">/</span><span class="n">CNNDM</span> \
-                   <span class="o">-</span><span class="n">save_model</span> <span class="n">models</span><span class="o">/</span><span class="n">cnndm</span> \
-                   <span class="o">-</span><span class="n">layers</span> <span class="mi">4</span> \
-                   <span class="o">-</span><span class="n">rnn_size</span> <span class="mi">512</span> \
-                   <span class="o">-</span><span class="n">word_vec_size</span> <span class="mi">512</span> \
-                   <span class="o">-</span><span class="n">max_grad_norm</span> <span class="mi">0</span> \
-                   <span class="o">-</span><span class="n">optim</span> <span class="n">adam</span> \
-                   <span class="o">-</span><span class="n">encoder_type</span> <span class="n">transformer</span> \
-                   <span class="o">-</span><span class="n">decoder_type</span> <span class="n">transformer</span> \
-                   <span class="o">-</span><span class="n">position_encoding</span> \
-                   <span class="o">-</span><span class="n">dropout</span> <span class="mi">0</span>\<span class="o">.</span><span class="mi">2</span> \
-                   <span class="o">-</span><span class="n">param_init</span> <span class="mi">0</span> \
-                   <span class="o">-</span><span class="n">warmup_steps</span> <span class="mi">8000</span> \
-                   <span class="o">-</span><span class="n">learning_rate</span> <span class="mi">2</span> \
-                   <span class="o">-</span><span class="n">decay_method</span> <span class="n">noam</span> \
-                   <span class="o">-</span><span class="n">label_smoothing</span> <span class="mf">0.1</span> \
-                   <span class="o">-</span><span class="n">adam_beta2</span> <span class="mf">0.998</span> \
-                   <span class="o">-</span><span class="n">batch_size</span> <span class="mi">4096</span> \
-                   <span class="o">-</span><span class="n">batch_type</span> <span class="n">tokens</span> \
-                   <span class="o">-</span><span class="n">normalization</span> <span class="n">tokens</span> \
-                   <span class="o">-</span><span class="n">max_generator_batches</span> <span class="mi">2</span> \
-                   <span class="o">-</span><span class="n">train_steps</span> <span class="mi">200000</span> \
-                   <span class="o">-</span><span class="n">accum_count</span> <span class="mi">4</span> \
-                   <span class="o">-</span><span class="n">share_embeddings</span> \
-                   <span class="o">-</span><span class="n">copy_attn</span> \
-                   <span class="o">-</span><span class="n">param_init_glorot</span> \
-                   <span class="o">-</span><span class="n">world_size</span> <span class="mi">2</span> \
-                   <span class="o">-</span><span class="n">gpu_ranks</span> <span class="mi">0</span> <span class="mi">1</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_train -data data/cnndm/CNNDM <span class="se">\</span>
+           -save_model models/cnndm <span class="se">\</span>
+           -layers <span class="m">4</span> <span class="se">\</span>
+           -rnn_size <span class="m">512</span> <span class="se">\</span>
+           -word_vec_size <span class="m">512</span> <span class="se">\</span>
+           -max_grad_norm <span class="m">0</span> <span class="se">\</span>
+           -optim adam <span class="se">\</span>
+           -encoder_type transformer <span class="se">\</span>
+           -decoder_type transformer <span class="se">\</span>
+           -position_encoding <span class="se">\</span>
+           -dropout <span class="m">0</span><span class="se">\.</span><span class="m">2</span> <span class="se">\</span>
+           -param_init <span class="m">0</span> <span class="se">\</span>
+           -warmup_steps <span class="m">8000</span> <span class="se">\</span>
+           -learning_rate <span class="m">2</span> <span class="se">\</span>
+           -decay_method noam <span class="se">\</span>
+           -label_smoothing <span class="m">0</span>.1 <span class="se">\</span>
+           -adam_beta2 <span class="m">0</span>.998 <span class="se">\</span>
+           -batch_size <span class="m">4096</span> <span class="se">\</span>
+           -batch_type tokens <span class="se">\</span>
+           -normalization tokens <span class="se">\</span>
+           -max_generator_batches <span class="m">2</span> <span class="se">\</span>
+           -train_steps <span class="m">200000</span> <span class="se">\</span>
+           -accum_count <span class="m">4</span> <span class="se">\</span>
+           -share_embeddings <span class="se">\</span>
+           -copy_attn <span class="se">\</span>
+           -param_init_glorot <span class="se">\</span>
+           -world_size <span class="m">2</span> <span class="se">\</span>
+           -gpu_ranks <span class="m">0</span> <span class="m">1</span>
 </pre></div>
 </div>
 <p>(3) Gigaword</p>
 <p>Gigaword can be trained equivalently. As a baseline, we show a model trained with the following command:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">train</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">data</span> <span class="n">data</span><span class="o">/</span><span class="n">giga</span><span class="o">/</span><span class="n">GIGA</span> \
-                <span class="o">-</span><span class="n">save_model</span> <span class="n">models</span><span class="o">/</span><span class="n">giga</span> \
-                <span class="o">-</span><span class="n">copy_attn</span> \
-                <span class="o">-</span><span class="n">reuse_copy_attn</span> \
-                <span class="o">-</span><span class="n">train_steps</span> <span class="mi">200000</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">onmt_train</span> <span class="o">-</span><span class="n">data</span> <span class="n">data</span><span class="o">/</span><span class="n">giga</span><span class="o">/</span><span class="n">GIGA</span> \
+           <span class="o">-</span><span class="n">save_model</span> <span class="n">models</span><span class="o">/</span><span class="n">giga</span> \
+           <span class="o">-</span><span class="n">copy_attn</span> \
+           <span class="o">-</span><span class="n">reuse_copy_attn</span> \
+           <span class="o">-</span><span class="n">train_steps</span> <span class="mi">200000</span>
 </pre></div>
 </div>
 </div>
@@ -343,22 +343,22 @@ For CNN-DM we follow See et al. [2] and additionally truncate the source length 
 </ul>
 <p><strong>commands used</strong>:</p>
 <p>(1) CNN-DM</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">translate</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">gpu</span> <span class="n">X</span> \
-                    <span class="o">-</span><span class="n">batch_size</span> <span class="mi">20</span> \
-                    <span class="o">-</span><span class="n">beam_size</span> <span class="mi">10</span> \
-                    <span class="o">-</span><span class="n">model</span> <span class="n">models</span><span class="o">/</span><span class="n">cnndm</span><span class="o">...</span> \
-                    <span class="o">-</span><span class="n">src</span> <span class="n">data</span><span class="o">/</span><span class="n">cnndm</span><span class="o">/</span><span class="n">test</span><span class="o">.</span><span class="n">txt</span><span class="o">.</span><span class="n">src</span> \
-                    <span class="o">-</span><span class="n">output</span> <span class="n">testout</span><span class="o">/</span><span class="n">cnndm</span><span class="o">.</span><span class="n">out</span> \
-                    <span class="o">-</span><span class="n">min_length</span> <span class="mi">35</span> \
-                    <span class="o">-</span><span class="n">verbose</span> \
-                    <span class="o">-</span><span class="n">stepwise_penalty</span> \
-                    <span class="o">-</span><span class="n">coverage_penalty</span> <span class="n">summary</span> \
-                    <span class="o">-</span><span class="n">beta</span> <span class="mi">5</span> \
-                    <span class="o">-</span><span class="n">length_penalty</span> <span class="n">wu</span> \
-                    <span class="o">-</span><span class="n">alpha</span> <span class="mf">0.9</span> \
-                    <span class="o">-</span><span class="n">verbose</span> \
-                    <span class="o">-</span><span class="n">block_ngram_repeat</span> <span class="mi">3</span> \
-                    <span class="o">-</span><span class="n">ignore_when_blocking</span> <span class="s2">&quot;.&quot;</span> <span class="s2">&quot;&lt;/t&gt;&quot;</span> <span class="s2">&quot;&lt;t&gt;&quot;</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">onmt_translate</span> <span class="o">-</span><span class="n">gpu</span> <span class="n">X</span> \
+               <span class="o">-</span><span class="n">batch_size</span> <span class="mi">20</span> \
+               <span class="o">-</span><span class="n">beam_size</span> <span class="mi">10</span> \
+               <span class="o">-</span><span class="n">model</span> <span class="n">models</span><span class="o">/</span><span class="n">cnndm</span><span class="o">...</span> \
+               <span class="o">-</span><span class="n">src</span> <span class="n">data</span><span class="o">/</span><span class="n">cnndm</span><span class="o">/</span><span class="n">test</span><span class="o">.</span><span class="n">txt</span><span class="o">.</span><span class="n">src</span> \
+               <span class="o">-</span><span class="n">output</span> <span class="n">testout</span><span class="o">/</span><span class="n">cnndm</span><span class="o">.</span><span class="n">out</span> \
+               <span class="o">-</span><span class="n">min_length</span> <span class="mi">35</span> \
+               <span class="o">-</span><span class="n">verbose</span> \
+               <span class="o">-</span><span class="n">stepwise_penalty</span> \
+               <span class="o">-</span><span class="n">coverage_penalty</span> <span class="n">summary</span> \
+               <span class="o">-</span><span class="n">beta</span> <span class="mi">5</span> \
+               <span class="o">-</span><span class="n">length_penalty</span> <span class="n">wu</span> \
+               <span class="o">-</span><span class="n">alpha</span> <span class="mf">0.9</span> \
+               <span class="o">-</span><span class="n">verbose</span> \
+               <span class="o">-</span><span class="n">block_ngram_repeat</span> <span class="mi">3</span> \
+               <span class="o">-</span><span class="n">ignore_when_blocking</span> <span class="s2">&quot;.&quot;</span> <span class="s2">&quot;&lt;/t&gt;&quot;</span> <span class="s2">&quot;&lt;t&gt;&quot;</span>
 </pre></div>
 </div>
 </div>
@@ -383,7 +383,6 @@ The installation instructions can be found <a class="reference external" href="h
 </div>
 <div class="section" id="scores-and-models">
 <h2>Scores and Models<a class="headerlink" href="#scores-and-models" title="Permalink to this headline">¶</a></h2>
-<p>The website generator has trouble rendering tables, if you can’t read the results, please go <a class="reference external" href="https://github.com/OpenNMT/OpenNMT-py/blob/master/docs/source/Summarization">here</a> for correct format.</p>
 <div class="section" id="id1">
 <h3>CNN-DM<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
 <table border="1" class="docutils">

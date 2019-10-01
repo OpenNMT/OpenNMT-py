@@ -317,15 +317,15 @@ annotations. We skip the test videos since they are handled separately at transl
 We preprocess with a small shard size of 1000. This keeps the amount of data in memory (RAM) to a
 manageable 10 G. If you have more RAM, you can increase the shard size.</p>
 <p>Preprocess the data with</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python preprocess.py -data_type vec -train_src <span class="nv">$YT2T</span>/yt2t_train_files.txt -src_dir <span class="nv">$YT2T</span>/r152/ -train_tgt <span class="nv">$YT2T</span>/yt2t_train_cap.txt -valid_src <span class="nv">$YT2T</span>/yt2t_val_files.txt -valid_tgt <span class="nv">$YT2T</span>/yt2t_val_cap.txt -save_data data/yt2t --shard_size <span class="m">1000</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_preprocess -data_type vec -train_src <span class="nv">$YT2T</span>/yt2t_train_files.txt -src_dir <span class="nv">$YT2T</span>/r152/ -train_tgt <span class="nv">$YT2T</span>/yt2t_train_cap.txt -valid_src <span class="nv">$YT2T</span>/yt2t_val_files.txt -valid_tgt <span class="nv">$YT2T</span>/yt2t_val_cap.txt -save_data data/yt2t --shard_size <span class="m">1000</span>
 </pre></div>
 </div>
 <p>Train with</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python train.py -data data/yt2t -save_model yt2t-model -world_size <span class="m">2</span> -gpu_ranks <span class="m">0</span> <span class="m">1</span> -model_type vec -batch_size <span class="m">64</span> -train_steps <span class="m">10000</span> -valid_steps <span class="m">500</span> -save_checkpoint_steps <span class="m">500</span> -encoder_type brnn -optim adam -learning_rate .0001 -feat_vec_size <span class="m">2048</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_train -data data/yt2t -save_model yt2t-model -world_size <span class="m">2</span> -gpu_ranks <span class="m">0</span> <span class="m">1</span> -model_type vec -batch_size <span class="m">64</span> -train_steps <span class="m">10000</span> -valid_steps <span class="m">500</span> -save_checkpoint_steps <span class="m">500</span> -encoder_type brnn -optim adam -learning_rate .0001 -feat_vec_size <span class="m">2048</span>
 </pre></div>
 </div>
 <p>Translate with</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>python translate.py -model yt2t-model_step_7200.pt -src $YT2T/yt2t_test_files.txt -output pred.txt -verbose -data_type vec -src_dir $YT2T/r152 -gpu 0 -batch_size 10
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>onmt_translate -model yt2t-model_step_7200.pt -src $YT2T/yt2t_test_files.txt -output pred.txt -verbose -data_type vec -src_dir $YT2T/r152 -gpu 0 -batch_size 10
 </pre></div>
 </div>
 <div class="admonition note">
@@ -521,11 +521,11 @@ tokenization similar to what the authors report.</p>
 </div>
 <p>Then preprocess the data with max-length filtering. (Note you will be prompted to remove the
 old data. Do this, i.e. <code class="docutils literal notranslate"><span class="pre">rm</span> <span class="pre">data/yt2t.*.pt.</span></code>)</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python preprocess.py -data_type vec -train_src <span class="nv">$YT2T</span>/yt2t_train_files.txt -src_dir <span class="nv">$YT2T</span>/r152/ -train_tgt <span class="nv">$YT2T</span>/yt2t_train_cap.txt -valid_src <span class="nv">$YT2T</span>/yt2t_val_files.txt -valid_tgt <span class="nv">$YT2T</span>/yt2t_val_cap.txt -save_data data/yt2t --shard_size <span class="m">1000</span> --src_seq_length <span class="m">50</span> --tgt_seq_length <span class="m">20</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_preprocess -data_type vec -train_src <span class="nv">$YT2T</span>/yt2t_train_files.txt -src_dir <span class="nv">$YT2T</span>/r152/ -train_tgt <span class="nv">$YT2T</span>/yt2t_train_cap.txt -valid_src <span class="nv">$YT2T</span>/yt2t_val_files.txt -valid_tgt <span class="nv">$YT2T</span>/yt2t_val_cap.txt -save_data data/yt2t --shard_size <span class="m">1000</span> --src_seq_length <span class="m">50</span> --tgt_seq_length <span class="m">20</span>
 </pre></div>
 </div>
 <p>Delete the old checkpoints and train a transformer model on this data.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>rm -r yt2t-model_step_*.pt<span class="p">;</span> python train.py -data data/yt2t -save_model yt2t-model -world_size <span class="m">2</span> -gpu_ranks <span class="m">0</span> <span class="m">1</span> -model_type vec -batch_size <span class="m">64</span> -train_steps <span class="m">8000</span> -valid_steps <span class="m">400</span> -save_checkpoint_steps <span class="m">400</span> -optim adam -learning_rate .0001 -feat_vec_size <span class="m">2048</span> -layers <span class="m">4</span> -rnn_size <span class="m">512</span> -word_vec_size <span class="m">512</span> -transformer_ff <span class="m">2048</span> -heads <span class="m">8</span> -encoder_type transformer -decoder_type transformer -position_encoding -dropout <span class="m">0</span>.3 -param_init <span class="m">0</span> -param_init_glorot -report_every <span class="m">400</span> --share_decoder_embedding --seed <span class="m">7000</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>rm -r yt2t-model_step_*.pt<span class="p">;</span> onmt_train -data data/yt2t -save_model yt2t-model -world_size <span class="m">2</span> -gpu_ranks <span class="m">0</span> <span class="m">1</span> -model_type vec -batch_size <span class="m">64</span> -train_steps <span class="m">8000</span> -valid_steps <span class="m">400</span> -save_checkpoint_steps <span class="m">400</span> -optim adam -learning_rate .0001 -feat_vec_size <span class="m">2048</span> -layers <span class="m">4</span> -rnn_size <span class="m">512</span> -word_vec_size <span class="m">512</span> -transformer_ff <span class="m">2048</span> -heads <span class="m">8</span> -encoder_type transformer -decoder_type transformer -position_encoding -dropout <span class="m">0</span>.3 -param_init <span class="m">0</span> -param_init_glorot -report_every <span class="m">400</span> --share_decoder_embedding --seed <span class="m">7000</span>
 </pre></div>
 </div>
 <p>Note we use the hyperparameters described in the paper.
@@ -629,7 +629,7 @@ touch results.txt
 <span class="k">for</span> file in <span class="k">$(</span> ls -1v yt2t-model_step*.pt <span class="k">)</span>
 <span class="k">do</span>
     <span class="nb">echo</span> <span class="nv">$file</span>
-    python translate.py -model <span class="nv">$file</span> -src <span class="nv">$YT2T</span>/yt2t_val_folded_files.txt -output pred.txt -verbose -data_type vec -src_dir <span class="nv">$YT2T</span>/r152 -gpu <span class="m">0</span> -batch_size <span class="m">16</span> -max_length <span class="m">20</span> &gt;/dev/null <span class="m">2</span>&gt;/dev/null
+    onmt_translate -model <span class="nv">$file</span> -src <span class="nv">$YT2T</span>/yt2t_val_folded_files.txt -output pred.txt -verbose -data_type vec -src_dir <span class="nv">$YT2T</span>/r152 -gpu <span class="m">0</span> -batch_size <span class="m">16</span> -max_length <span class="m">20</span> &gt;/dev/null <span class="m">2</span>&gt;/dev/null
     <span class="nb">echo</span> -e <span class="s2">&quot;</span><span class="nv">$file</span><span class="s2">\n&quot;</span> &gt;&gt; results.txt
     python coco.py -s val &gt;&gt; results.txt
     <span class="nb">echo</span> -e <span class="s2">&quot;\n\n&quot;</span> &gt;&gt; results.txt
@@ -647,7 +647,7 @@ touch test_results.txt
         <span class="nv">metric</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span> <span class="nv">$line</span> <span class="p">|</span> awk <span class="s1">&#39;{print $1}&#39;</span><span class="k">)</span>
     <span class="nv">step</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span> <span class="nv">$line</span> <span class="p">|</span> awk <span class="s1">&#39;{print $NF}&#39;</span><span class="k">)</span>
     <span class="nb">echo</span> <span class="nv">$metric</span> early stopped @ <span class="nv">$step</span> <span class="p">|</span> tee -a test_results.txt
-    python translate.py -model <span class="s2">&quot;yt2t-model_step_</span><span class="si">${</span><span class="nv">step</span><span class="si">}</span><span class="s2">.pt&quot;</span> -src <span class="nv">$YT2T</span>/yt2t_test_files.txt -output pred.txt -data_type vec -src_dir <span class="nv">$YT2T</span>/r152 -gpu <span class="m">0</span> -batch_size <span class="m">16</span> -max_length <span class="m">20</span> &gt;/dev/null <span class="m">2</span>&gt;/dev/null
+    onmt_translate -model <span class="s2">&quot;yt2t-model_step_</span><span class="si">${</span><span class="nv">step</span><span class="si">}</span><span class="s2">.pt&quot;</span> -src <span class="nv">$YT2T</span>/yt2t_test_files.txt -output pred.txt -data_type vec -src_dir <span class="nv">$YT2T</span>/r152 -gpu <span class="m">0</span> -batch_size <span class="m">16</span> -max_length <span class="m">20</span> &gt;/dev/null <span class="m">2</span>&gt;/dev/null
     python coco.py -s <span class="s1">&#39;test&#39;</span> &gt;&gt; test_results.txt
     <span class="nb">echo</span> -e <span class="s2">&quot;\n\n&quot;</span> &gt;&gt; test_results.txt
     <span class="k">fi</span>

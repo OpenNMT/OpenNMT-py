@@ -158,19 +158,19 @@ Preprocess the data with
 
 .. code-block:: bash
 
-    python preprocess.py -data_type vec -train_src $YT2T/yt2t_train_files.txt -src_dir $YT2T/r152/ -train_tgt $YT2T/yt2t_train_cap.txt -valid_src $YT2T/yt2t_val_files.txt -valid_tgt $YT2T/yt2t_val_cap.txt -save_data data/yt2t --shard_size 1000
+    onmt_preprocess -data_type vec -train_src $YT2T/yt2t_train_files.txt -src_dir $YT2T/r152/ -train_tgt $YT2T/yt2t_train_cap.txt -valid_src $YT2T/yt2t_val_files.txt -valid_tgt $YT2T/yt2t_val_cap.txt -save_data data/yt2t --shard_size 1000
 
 Train with
 
 .. code-block:: bash
 
-    python train.py -data data/yt2t -save_model yt2t-model -world_size 2 -gpu_ranks 0 1 -model_type vec -batch_size 64 -train_steps 10000 -valid_steps 500 -save_checkpoint_steps 500 -encoder_type brnn -optim adam -learning_rate .0001 -feat_vec_size 2048
+    onmt_train -data data/yt2t -save_model yt2t-model -world_size 2 -gpu_ranks 0 1 -model_type vec -batch_size 64 -train_steps 10000 -valid_steps 500 -save_checkpoint_steps 500 -encoder_type brnn -optim adam -learning_rate .0001 -feat_vec_size 2048
 
 Translate with
 
 .. code-block::
 
-    python translate.py -model yt2t-model_step_7200.pt -src $YT2T/yt2t_test_files.txt -output pred.txt -verbose -data_type vec -src_dir $YT2T/r152 -gpu 0 -batch_size 10
+    onmt_translate -model yt2t-model_step_7200.pt -src $YT2T/yt2t_test_files.txt -output pred.txt -verbose -data_type vec -src_dir $YT2T/r152 -gpu 0 -batch_size 10
 
 .. note::
 
@@ -385,13 +385,13 @@ old data. Do this, i.e. ``rm data/yt2t.*.pt.``)
 
 .. code-block:: bash
 
-    python preprocess.py -data_type vec -train_src $YT2T/yt2t_train_files.txt -src_dir $YT2T/r152/ -train_tgt $YT2T/yt2t_train_cap.txt -valid_src $YT2T/yt2t_val_files.txt -valid_tgt $YT2T/yt2t_val_cap.txt -save_data data/yt2t --shard_size 1000 --src_seq_length 50 --tgt_seq_length 20
+    onmt_preprocess -data_type vec -train_src $YT2T/yt2t_train_files.txt -src_dir $YT2T/r152/ -train_tgt $YT2T/yt2t_train_cap.txt -valid_src $YT2T/yt2t_val_files.txt -valid_tgt $YT2T/yt2t_val_cap.txt -save_data data/yt2t --shard_size 1000 --src_seq_length 50 --tgt_seq_length 20
 
 Delete the old checkpoints and train a transformer model on this data.
 
 .. code-block:: bash
 
-    rm -r yt2t-model_step_*.pt; python train.py -data data/yt2t -save_model yt2t-model -world_size 2 -gpu_ranks 0 1 -model_type vec -batch_size 64 -train_steps 8000 -valid_steps 400 -save_checkpoint_steps 400 -optim adam -learning_rate .0001 -feat_vec_size 2048 -layers 4 -rnn_size 512 -word_vec_size 512 -transformer_ff 2048 -heads 8 -encoder_type transformer -decoder_type transformer -position_encoding -dropout 0.3 -param_init 0 -param_init_glorot -report_every 400 --share_decoder_embedding --seed 7000
+    rm -r yt2t-model_step_*.pt; onmt_train -data data/yt2t -save_model yt2t-model -world_size 2 -gpu_ranks 0 1 -model_type vec -batch_size 64 -train_steps 8000 -valid_steps 400 -save_checkpoint_steps 400 -optim adam -learning_rate .0001 -feat_vec_size 2048 -layers 4 -rnn_size 512 -word_vec_size 512 -transformer_ff 2048 -heads 8 -encoder_type transformer -decoder_type transformer -position_encoding -dropout 0.3 -param_init 0 -param_init_glorot -report_every 400 --share_decoder_embedding --seed 7000
 
 Note we use the hyperparameters described in the paper.
 We estimate the length of 20 epochs with ``-train_steps``. Note that this depends on
@@ -502,7 +502,7 @@ although this too is not mentioned. You can reproduce our early-stops with these
     for file in $( ls -1v yt2t-model_step*.pt )
     do
         echo $file
-        python translate.py -model $file -src $YT2T/yt2t_val_folded_files.txt -output pred.txt -verbose -data_type vec -src_dir $YT2T/r152 -gpu 0 -batch_size 16 -max_length 20 >/dev/null 2>/dev/null
+        onmt_translate -model $file -src $YT2T/yt2t_val_folded_files.txt -output pred.txt -verbose -data_type vec -src_dir $YT2T/r152 -gpu 0 -batch_size 16 -max_length 20 >/dev/null 2>/dev/null
         echo -e "$file\n" >> results.txt
         python coco.py -s val >> results.txt
         echo -e "\n\n" >> results.txt
@@ -519,7 +519,7 @@ although this too is not mentioned. You can reproduce our early-stops with these
             metric=$(echo $line | awk '{print $1}')
         step=$(echo $line | awk '{print $NF}')
         echo $metric early stopped @ $step | tee -a test_results.txt
-        python translate.py -model "yt2t-model_step_${step}.pt" -src $YT2T/yt2t_test_files.txt -output pred.txt -data_type vec -src_dir $YT2T/r152 -gpu 0 -batch_size 16 -max_length 20 >/dev/null 2>/dev/null
+        onmt_translate -model "yt2t-model_step_${step}.pt" -src $YT2T/yt2t_test_files.txt -output pred.txt -data_type vec -src_dir $YT2T/r152 -gpu 0 -batch_size 16 -max_length 20 >/dev/null 2>/dev/null
         python coco.py -s 'test' >> test_results.txt
         echo -e "\n\n" >> test_results.txt
         fi

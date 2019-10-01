@@ -35,33 +35,33 @@ For CNN-DM we follow See et al. [2] and additionally truncate the source length 
 
 (1) CNN-DM
 
-```
-python preprocess.py -train_src data/cnndm/train.txt.src \
-                     -train_tgt data/cnndm/train.txt.tgt.tagged \
-                     -valid_src data/cnndm/val.txt.src \
-                     -valid_tgt data/cnndm/val.txt.tgt.tagged \
-                     -save_data data/cnndm/CNNDM \
-                     -src_seq_length 10000 \
-                     -tgt_seq_length 10000 \
-                     -src_seq_length_trunc 400 \
-                     -tgt_seq_length_trunc 100 \
-                     -dynamic_dict \
-                     -share_vocab \
-                     -shard_size 100000
+```bash
+onmt_preprocess -train_src data/cnndm/train.txt.src \
+                -train_tgt data/cnndm/train.txt.tgt.tagged \
+                -valid_src data/cnndm/val.txt.src \
+                -valid_tgt data/cnndm/val.txt.tgt.tagged \
+                -save_data data/cnndm/CNNDM \
+                -src_seq_length 10000 \
+                -tgt_seq_length 10000 \
+                -src_seq_length_trunc 400 \
+                -tgt_seq_length_trunc 100 \
+                -dynamic_dict \
+                -share_vocab \
+                -shard_size 100000
 ```
 
 (2) Gigaword
 
-```
-python preprocess.py -train_src data/giga/train.article.txt \
-                     -train_tgt data/giga/train.title.txt \
-                     -valid_src data/giga/valid.article.txt \
-                     -valid_tgt data/giga/valid.title.txt \
-                     -save_data data/giga/GIGA \
-                     -src_seq_length 10000 \
-                     -dynamic_dict \
-                     -share_vocab \
-                     -shard_size 100000
+```bash
+onmt_preprocess -train_src data/giga/train.article.txt \
+                -train_tgt data/giga/train.title.txt \
+                -valid_src data/giga/valid.article.txt \
+                -valid_tgt data/giga/valid.title.txt \
+                -save_data data/giga/GIGA \
+                -src_seq_length 10000 \
+                -dynamic_dict \
+                -share_vocab \
+                -shard_size 100000
 ```
 
 
@@ -87,64 +87,64 @@ We additionally set the maximum norm of the gradient to 2, and renormalize if th
 
 (1) CNN-DM
 
-```
-python train.py -save_model models/cnndm \
-                -data data/cnndm/CNNDM \
-                -copy_attn \
-                -global_attention mlp \
-                -word_vec_size 128 \
-                -rnn_size 512 \
-                -layers 1 \
-                -encoder_type brnn \
-                -train_steps 200000 \
-                -max_grad_norm 2 \
-                -dropout 0. \
-                -batch_size 16 \
-                -valid_batch_size 16 \
-                -optim adagrad \
-                -learning_rate 0.15 \
-                -adagrad_accumulator_init 0.1 \
-                -reuse_copy_attn \
-                -copy_loss_by_seqlength \
-                -bridge \
-                -seed 777 \
-                -world_size 2 \
-                -gpu_ranks 0 1
+```bash
+onmt_train -save_model models/cnndm \
+           -data data/cnndm/CNNDM \
+           -copy_attn \
+           -global_attention mlp \
+           -word_vec_size 128 \
+           -rnn_size 512 \
+           -layers 1 \
+           -encoder_type brnn \
+           -train_steps 200000 \
+           -max_grad_norm 2 \
+           -dropout 0. \
+           -batch_size 16 \
+           -valid_batch_size 16 \
+           -optim adagrad \
+           -learning_rate 0.15 \
+           -adagrad_accumulator_init 0.1 \
+           -reuse_copy_attn \
+           -copy_loss_by_seqlength \
+           -bridge \
+           -seed 777 \
+           -world_size 2 \
+           -gpu_ranks 0 1
 ```
 
 (2) CNN-DM Transformer
 
 The following script trains the transformer model on CNN-DM
 
-```
-python -u train.py -data data/cnndm/CNNDM \
-                   -save_model models/cnndm \
-                   -layers 4 \
-                   -rnn_size 512 \
-                   -word_vec_size 512 \
-                   -max_grad_norm 0 \
-                   -optim adam \
-                   -encoder_type transformer \
-                   -decoder_type transformer \
-                   -position_encoding \
-                   -dropout 0\.2 \
-                   -param_init 0 \
-                   -warmup_steps 8000 \
-                   -learning_rate 2 \
-                   -decay_method noam \
-                   -label_smoothing 0.1 \
-                   -adam_beta2 0.998 \
-                   -batch_size 4096 \
-                   -batch_type tokens \
-                   -normalization tokens \
-                   -max_generator_batches 2 \
-                   -train_steps 200000 \
-                   -accum_count 4 \
-                   -share_embeddings \
-                   -copy_attn \
-                   -param_init_glorot \
-                   -world_size 2 \
-                   -gpu_ranks 0 1
+```bash
+onmt_train -data data/cnndm/CNNDM \
+           -save_model models/cnndm \
+           -layers 4 \
+           -rnn_size 512 \
+           -word_vec_size 512 \
+           -max_grad_norm 0 \
+           -optim adam \
+           -encoder_type transformer \
+           -decoder_type transformer \
+           -position_encoding \
+           -dropout 0\.2 \
+           -param_init 0 \
+           -warmup_steps 8000 \
+           -learning_rate 2 \
+           -decay_method noam \
+           -label_smoothing 0.1 \
+           -adam_beta2 0.998 \
+           -batch_size 4096 \
+           -batch_type tokens \
+           -normalization tokens \
+           -max_generator_batches 2 \
+           -train_steps 200000 \
+           -accum_count 4 \
+           -share_embeddings \
+           -copy_attn \
+           -param_init_glorot \
+           -world_size 2 \
+           -gpu_ranks 0 1
 ```
 
 (3) Gigaword
@@ -152,11 +152,11 @@ python -u train.py -data data/cnndm/CNNDM \
 Gigaword can be trained equivalently. As a baseline, we show a model trained with the following command:
 
 ```
-python train.py -data data/giga/GIGA \
-                -save_model models/giga \
-                -copy_attn \
-                -reuse_copy_attn \
-                -train_steps 200000
+onmt_train -data data/giga/GIGA \
+           -save_model models/giga \
+           -copy_attn \
+           -reuse_copy_attn \
+           -train_steps 200000
 ```
 
 
@@ -177,22 +177,22 @@ During inference, we use beam-search with a beam-size of 10. We also added speci
 (1) CNN-DM
 
 ```
-python translate.py -gpu X \
-                    -batch_size 20 \
-                    -beam_size 10 \
-                    -model models/cnndm... \
-                    -src data/cnndm/test.txt.src \
-                    -output testout/cnndm.out \
-                    -min_length 35 \
-                    -verbose \
-                    -stepwise_penalty \
-                    -coverage_penalty summary \
-                    -beta 5 \
-                    -length_penalty wu \
-                    -alpha 0.9 \
-                    -verbose \
-                    -block_ngram_repeat 3 \
-                    -ignore_when_blocking "." "</t>" "<t>"
+onmt_translate -gpu X \
+               -batch_size 20 \
+               -beam_size 10 \
+               -model models/cnndm... \
+               -src data/cnndm/test.txt.src \
+               -output testout/cnndm.out \
+               -min_length 35 \
+               -verbose \
+               -stepwise_penalty \
+               -coverage_penalty summary \
+               -beta 5 \
+               -length_penalty wu \
+               -alpha 0.9 \
+               -verbose \
+               -block_ngram_repeat 3 \
+               -ignore_when_blocking "." "</t>" "<t>"
 ```
 
 
@@ -220,8 +220,6 @@ For evaluation of large test sets such as Gigaword, we use the a parallel python
 `files2rouge giga.out test.title.txt --verbose`
 
 ### Scores and Models
-
-The website generator has trouble rendering tables, if you can't read the results, please go [here](https://github.com/OpenNMT/OpenNMT-py/blob/master/docs/source/Summarization.md) for correct format.
 
 #### CNN-DM
 

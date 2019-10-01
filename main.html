@@ -191,14 +191,19 @@
 <p>This portal provides a detailed documentation of the OpenNMT toolkit. It describes how to use the PyTorch project and how it works.</p>
 <div class="section" id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
-<p>1. <a class="reference external" href="http://pytorch.org/">Install PyTorch</a></p>
-<p>2. Clone the OpenNMT-py repository:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git clone https://github.com/OpenNMT/OpenNMT-py
-<span class="nb">cd</span> OpenNMT-py
+<p>Install from <code class="docutils literal notranslate"><span class="pre">pip</span></code>:
+Install <code class="docutils literal notranslate"><span class="pre">OpenNMT-py</span></code> from <code class="docutils literal notranslate"><span class="pre">pip</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install OpenNMT-py
 </pre></div>
 </div>
-<p>3. Install required libraries</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install -r requirements.txt
+<p>or from the sources:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git clone https://github.com/OpenNMT/OpenNMT-py.git
+<span class="nb">cd</span> OpenNMT-py
+python setup.py install
+</pre></div>
+</div>
+<p><em>(Optionnal)</em> some advanced features (e.g. working audio, image or pretrained models) requires extra packages, you can install it with:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install -r requirements.opt.txt
 </pre></div>
 </div>
 <p>And you are ready to go! Take a look at the <a class="reference internal" href="quickstart.html"><span class="doc">quickstart</span></a> to familiarize yourself with the main training workflow.</p>

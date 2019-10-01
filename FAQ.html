@@ -215,7 +215,7 @@
 <ol class="simple">
 <li><p>prepare data:</p></li>
 </ol>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">preprocess</span><span class="o">.</span><span class="n">py</span> \
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">onmt_preprocess</span> \
 <span class="o">-</span><span class="n">train_src</span> <span class="n">data</span><span class="o">/</span><span class="n">train</span><span class="o">.</span><span class="n">src</span><span class="o">.</span><span class="n">txt</span> \
 <span class="o">-</span><span class="n">train_tgt</span> <span class="n">data</span><span class="o">/</span><span class="n">train</span><span class="o">.</span><span class="n">tgt</span><span class="o">.</span><span class="n">txt</span> \
 <span class="o">-</span><span class="n">valid_src</span> <span class="n">data</span><span class="o">/</span><span class="n">valid</span><span class="o">.</span><span class="n">src</span><span class="o">.</span><span class="n">txt</span> \
@@ -234,14 +234,14 @@
 <ol class="simple">
 <li><p>train using pre-trained embeddings:</p></li>
 </ol>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">train</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">save_model</span> <span class="n">data</span><span class="o">/</span><span class="n">model</span> \
-<span class="o">-</span><span class="n">batch_size</span> <span class="mi">64</span> \
-<span class="o">-</span><span class="n">layers</span> <span class="mi">2</span> \
-<span class="o">-</span><span class="n">rnn_size</span> <span class="mi">200</span> \
-<span class="o">-</span><span class="n">word_vec_size</span> <span class="mi">100</span> \
-<span class="o">-</span><span class="n">pre_word_vecs_enc</span> <span class="s2">&quot;data/embeddings.enc.pt&quot;</span> \
-<span class="o">-</span><span class="n">pre_word_vecs_dec</span> <span class="s2">&quot;data/embeddings.dec.pt&quot;</span> \
-        <span class="o">-</span><span class="n">data</span> <span class="n">data</span><span class="o">/</span><span class="n">data</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">onmt_train</span> <span class="o">-</span><span class="n">save_model</span> <span class="n">data</span><span class="o">/</span><span class="n">model</span> \
+           <span class="o">-</span><span class="n">batch_size</span> <span class="mi">64</span> \
+           <span class="o">-</span><span class="n">layers</span> <span class="mi">2</span> \
+           <span class="o">-</span><span class="n">rnn_size</span> <span class="mi">200</span> \
+           <span class="o">-</span><span class="n">word_vec_size</span> <span class="mi">100</span> \
+           <span class="o">-</span><span class="n">pre_word_vecs_enc</span> <span class="s2">&quot;data/embeddings.enc.pt&quot;</span> \
+           <span class="o">-</span><span class="n">pre_word_vecs_dec</span> <span class="s2">&quot;data/embeddings.dec.pt&quot;</span> \
+           <span class="o">-</span><span class="n">data</span> <span class="n">data</span><span class="o">/</span><span class="n">data</span>
 </pre></div>
 </div>
 </div>
