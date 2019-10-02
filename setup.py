@@ -22,7 +22,7 @@ setup(
         "configargparse",
         "tensorboard>=1.14",
         "flask",
-        "pyonmttok",
+        "pyonmttok==1.*;platform_system=='Linux'",
     ],
     entry_points={
         "console_scripts": [
