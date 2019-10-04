@@ -188,7 +188,9 @@ class DecodeStrategy(object):
         for path_idx, seq in zip(self.select_indices, self.alive_seq):
 
             # Reordering forbidden_tokens following beam selection
-            forbidden_tokens.append(self.forbidden_tokens[path_idx])
+            # We rebuild a dict to ensure we get the value and not the pointer
+            forbidden_tokens.append(
+                {k:v for k,v in self.forbidden_tokens[path_idx]})
 
             # Grabing the newly selected tokens and associated ngram
             current_ngram = tuple(seq[-n:].tolist())
