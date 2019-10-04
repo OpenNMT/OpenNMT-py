@@ -137,7 +137,7 @@ def main():
     logger.info("\t* enc: %d match, %d missing, (%.2f%%)"
                 % calc_vocab_load_stats(enc_vocab, src_vectors))
     logger.info("\t* dec: %d match, %d missing, (%.2f%%)"
-                % calc_vocab_load_stats(dec_vocab, src_vectors))
+                % calc_vocab_load_stats(dec_vocab, tgt_vectors))
 
     # Write to file
     enc_output_file = opt.output_file + ".enc.pt"
