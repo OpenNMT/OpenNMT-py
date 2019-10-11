@@ -69,10 +69,10 @@ def model_opts(parser):
               help='Data type of the model.')
 
     group.add('--encoder_type', '-encoder_type', type=str, default='rnn',
-              choices=['rnn', 'brnn', 'mean', 'transformer', 'cnn'],
+              choices=['rnn', 'brnn', 'ggnn', 'mean', 'transformer', 'cnn'],
               help="Type of encoder layer to use. Non-RNN layers "
                    "are experimental. Options are "
-                   "[rnn|brnn|mean|transformer|cnn].")
+                   "[rnn|brnn|ggnn|mean|transformer|cnn].")
     group.add('--decoder_type', '-decoder_type', type=str, default='rnn',
               choices=['rnn', 'transformer', 'cnn'],
               help="Type of decoder layer to use. Non-RNN layers "
@@ -127,6 +127,20 @@ def model_opts(parser):
               choices=['source', 'target', 'both'],
               help="Type of context gate to use. "
                    "Do not select for no context gate.")
+
+    group.add('--annotation_dim', '-annotation_dim', type=int, default=0,
+              help='Number of annotation dimensions in the graph encoder')
+    group.add('--state_dim', '-state_dim', type=int, default=512,
+              help='Number of state dimensions in the graph encoder')
+    group.add('--n_edge_types', '-n_edge_types', type=int, default=2,
+              help='Number of edge types in the graph encoder')
+    group.add('--n_node', '-n_node', type=int, default=2,
+              help='Number of nodes in the graph encoder')
+    group.add('--n_steps', '-n_steps', type=int, default=2,
+              help='Number of steps to advance graph encoder')
+    group.add('--src_vocab', '-src_vocab', default="",
+              help="Path to an existing source vocabulary. Format: "
+                   "one word per line.")
 
     # Attention options
     group = parser.add_argument_group('Model- Attention')
