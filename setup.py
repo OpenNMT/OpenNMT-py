@@ -11,8 +11,14 @@ setup(
     description='A python implementation of OpenNMT',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    version='1.0.0.rc1',
+    version='1.0.0.rc2',
     packages=find_packages(),
+    project_urls={
+        "Documentation": "http://opennmt.net/OpenNMT-py/",
+        "Forum": "http://forum.opennmt.net/",
+        "Gitter": "https://gitter.im/OpenNMT/OpenNMT-py",
+        "Source": "https://github.com/OpenNMT/OpenNMT-py/"
+    },
     install_requires=[
         "six",
         "tqdm~=4.30.0",
