@@ -139,25 +139,68 @@ class GGNNEncoder(EncoderBase):
         nodes = lengths[0].item()
 
         if False: # torch.cuda.is_available():
-            print("SJKDEBUG: cuda nodes,lengths,self.state_dim",nodes,lengths,self.state_dim,flush=True)
+            # print("SJKDEBUG: cuda nodes,lengths,self.state_dim",nodes,lengths,self.state_dim,flush=True)
             prop_state=torch.cuda.FloatTensor(src.size()[1],nodes,self.state_dim).fill_(0)
             A=torch.cuda.FloatTensor(src.size()[1],nodes,nodes*self.n_edge_types*2).fill_(0)
         else:
-            print("SJKDEBUG: cpu nodes,lengths,self.state_dim",nodes,lengths,self.state_dim,flush=True)
+            # print("SJKDEBUG: cpu nodes,lengths,self.state_dim",nodes,lengths,self.state_dim,flush=True)
             prop_state=torch.zeros(src.size()[1],nodes,self.state_dim)
             A=torch.zeros(src.size()[1],nodes,nodes*self.n_edge_types*2)
-        for i in range(src.size()[1]):
-            for j in range(len(src)):
-                prop_state[i][j][src[j][i]] = 1.0
-                if j > 0:
-                  A[i][j-1][j] = 1.0
-                  A[i][j][nodes + j-1] = 1.0
+
+        # FIXME: We want the edges to be precomputed for full flexibility.
+        # This probably means adding options to preprocess and somehow connecting
+        # both an edge and bridge weight selection through to this encoder.
+        if False:
+            # Initialize edges as simple list, not interesting
+            for i in range(src.size()[1]):
+                for j in range(len(src)):
+                    prop_state[i][j][src[j][i]] = 1.0
+                    if j > 0:
+                      A[i][j-1][j] = 1.0
+                      A[i][j][nodes + j-1] = 1.0
+        elif True:
+            # Hardcoded tree for linear algebra equivalence explorations
+            for i in range(src.size()[1]):
+                for j in range(128):
+                    # Initialize node state
+                    # FIXME: There is probably a way to have an embedding layer here
+                    prop_state[i][j][src[j][i]] = 1.0
+
+                # For lin alg eq, edge types are 2 (left, right) and we do bidirectional
+                # Loop for both programs
+                for lvl0 in range(2):
+                    # Root is lvl0 children at +2 and +64
+                    A[i][lvl0][lvl0+2] = 1.0
+                    A[i][lvl0+2][nodes + lvl0] = 1.0
+                    A[i][lvl0][nodes*2+lvl0+64] = 1.0
+                    A[i][lvl0+64][nodes*3 + lvl0] = 1.0
+                    for lvl1 in (lvl0+2,lvl0+64):
+                        # lvl1 is this node, children at +2 and +32
+                        A[i][lvl1][lvl1+2] = 1.0
+                        A[i][lvl1+2][nodes + lvl1] = 1.0
+                        A[i][lvl1][nodes*2+lvl1+32] = 1.0
+                        A[i][lvl1+32][nodes*3 + lvl1] = 1.0
+                        for lvl2 in (lvl1+2,lvl1+32):
+                            A[i][lvl2][lvl2+2] = 1.0
+                            A[i][lvl2+2][nodes + lvl2] = 1.0
+                            A[i][lvl2][nodes*2+lvl2+16] = 1.0
+                            A[i][lvl2+16][nodes*3 + lvl2] = 1.0
+                            for lvl3 in (lvl2+2,lvl2+16):
+                                A[i][lvl3][lvl3+2] = 1.0
+                                A[i][lvl3+2][nodes + lvl3] = 1.0
+                                A[i][lvl3][nodes*2+lvl3+8] = 1.0
+                                A[i][lvl3+8][nodes*3 + lvl3] = 1.0
+                                for lvl4 in (lvl3+2,lvl3+8):
+                                    A[i][lvl4][lvl4+2] = 1.0
+                                    A[i][lvl4+2][nodes + lvl4] = 1.0
+                                    A[i][lvl4][nodes*2+lvl4+4] = 1.0
+                                    A[i][lvl4+4][nodes*3 + lvl4] = 1.0
 
         for i_step in range(self.n_steps):
             in_states = []
             out_states = []
             for i in range(self.n_edge_types):
-                print("SJKDEBUG: in_fcs, prop_state",self.in_fcs[i],prop_state,flush=True)
+                # print("SJKDEBUG: in_fcs, prop_state",self.in_fcs[i],prop_state,flush=True)
                 in_states.append(self.in_fcs[i](prop_state))
                 out_states.append(self.out_fcs[i](prop_state))
             in_states = torch.stack(in_states).transpose(0, 1).contiguous()
@@ -169,16 +212,20 @@ class GGNNEncoder(EncoderBase):
 
         # If static annotation needed: join_state = torch.cat((prop_state, annotation), 2)
         prop_state = prop_state.transpose(0,1)
-        # FIXME: for now, just average all nodes to get bridge input
-        #    In future, may want to use start/end nodes if possible
-        join_state = prop_state.mean(0)
-        join_state = torch.stack((join_state,join_state,join_state,join_state))
+        if False:
+            # FIXME: for now, just average all nodes to get bridge input
+            #    In future, may want to use start/end nodes if possible
+            join_state = prop_state.mean(0)
+            join_state = torch.stack((join_state,join_state,join_state,join_state))
+        elif True:
+            # Use roots of the 2 program trees as inputs to bridge
+            join_state = torch.stack((prop_state[0],prop_state[1],prop_state[1],prop_state[0]))
         join_state = (join_state,join_state)
 
-        print("SJKDEBUG:join_state",len(join_state),join_state[0].size())
+        # print("SJKDEBUG:join_state",len(join_state),join_state[0].size())
         encoder_final = self._bridge(join_state)
 
-        print("SJKDEBUG:encoder_final,prop_state,lengths",len(encoder_final),encoder_final[0].size(),prop_state.size(),lengths,flush=True)
+        # print("SJKDEBUG:encoder_final,prop_state,lengths",len(encoder_final),encoder_final[0].size(),prop_state.size(),lengths,flush=True)
         return encoder_final, prop_state, lengths
 
     def _initialize_bridge(self, rnn_type,
@@ -210,8 +257,8 @@ class GGNNEncoder(EncoderBase):
             outs = tuple([bottle_hidden(layer, hidden[ix])
                           for ix, layer in enumerate(self.bridge)])
         else:
-            print("SJKDEBUG:self.bridge[0],hidden.size(),self.total_hidden_dim",self.bridge[0],hidden.size(),self.total_hidden_dim,flush=True)
+            # print("SJKDEBUG:self.bridge[0],hidden.size(),self.total_hidden_dim",self.bridge[0],hidden.size(),self.total_hidden_dim,flush=True)
             outs = bottle_hidden(self.bridge[0], hidden)
-            print("SJKDEBUG:outs.size()",outs.size())
+            # print("SJKDEBUG:outs.size()",outs.size())
         return outs
 
