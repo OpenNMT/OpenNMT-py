@@ -88,7 +88,8 @@
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">FAQ</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#how-do-i-use-the-transformer-model-do-you-support-multi-gpu">How do I use the Transformer model? Do you support multi-gpu?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#how-do-i-use-the-transformer-model">How do I use the Transformer model?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#preprocessing">Preprocessing</a></li>
@@ -245,8 +246,8 @@
 </pre></div>
 </div>
 </div>
-<div class="section" id="how-do-i-use-the-transformer-model-do-you-support-multi-gpu">
-<h2>How do I use the Transformer model? Do you support multi-gpu?<a class="headerlink" href="#how-do-i-use-the-transformer-model-do-you-support-multi-gpu" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="how-do-i-use-the-transformer-model">
+<h2>How do I use the Transformer model?<a class="headerlink" href="#how-do-i-use-the-transformer-model" title="Permalink to this headline">¶</a></h2>
 <p>The transformer model is very sensitive to hyperparameters. To run it
 effectively you need to set a bunch of different options that mimic the Google
 setup. We have confirmed the following command can replicate their WMT results.</p>
@@ -271,19 +272,22 @@ setup. We have confirmed the following command can replicate their WMT results.<
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">label_smoothing</span> <span class="pre">0.1</span></code>: use label smoothing loss.</p></li>
 </ul>
-<p>Multi GPU settings
-First you need to make sure you export CUDA_VISIBLE_DEVICES=0,1,2,3
-If you want to use GPU id 1 and 3 of your OS, you will need to export CUDA_VISIBLE_DEVICES=1,3</p>
+</div>
+<div class="section" id="do-you-support-multi-gpu">
+<h2>Do you support multi-gpu?<a class="headerlink" href="#do-you-support-multi-gpu" title="Permalink to this headline">¶</a></h2>
+<p>First you need to make sure you <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">CUDA_VISIBLE_DEVICES=0,1,2,3</span></code>.</p>
+<p>If you want to use GPU id 1 and 3 of your OS, you will need to <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">CUDA_VISIBLE_DEVICES=1,3</span></code></p>
+<p>Both <code class="docutils literal notranslate"><span class="pre">-world_size</span></code> and <code class="docutils literal notranslate"><span class="pre">-gpu_ranks</span></code> need to be set. E.g. <code class="docutils literal notranslate"><span class="pre">-world_size</span> <span class="pre">4</span> <span class="pre">-gpu_ranks</span> <span class="pre">0</span> <span class="pre">1</span> <span class="pre">2</span> <span class="pre">3</span></code> will use 4 GPU on this node only.</p>
+<p>If you want to use 2 nodes with 2 GPU each, you need to set <code class="docutils literal notranslate"><span class="pre">-master_ip</span></code> and <code class="docutils literal notranslate"><span class="pre">-master_port</span></code>, and</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">world_size</span> <span class="pre">4</span> <span class="pre">gpu_ranks</span> <span class="pre">0</span> <span class="pre">1</span> <span class="pre">2</span> <span class="pre">3</span></code>: This will use 4 GPU on this node only.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-world_size</span> <span class="pre">4</span> <span class="pre">-gpu_ranks</span> <span class="pre">0</span> <span class="pre">1</span></code>: on the first node</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-world_size</span> <span class="pre">4</span> <span class="pre">-gpu_ranks</span> <span class="pre">2</span> <span class="pre">3</span></code>: on the second node</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-accum_count</span> <span class="pre">2</span></code>: This will accumulate over 2 batches before updating parameters.</p></li>
 </ul>
-<p>If you want to use 2 nodes with 2 GPU each, you need to set -master_ip and master_port, and</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">world_size</span> <span class="pre">4</span> <span class="pre">gpu_ranks</span> <span class="pre">0</span> <span class="pre">1</span></code>: on the first node</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">world_size</span> <span class="pre">4</span> <span class="pre">gpu_ranks</span> <span class="pre">2</span> <span class="pre">3</span></code>: on the second node</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">accum_count</span> <span class="pre">2</span></code>: This will accumulate over 2 batches before updating parameters.</p></li>
-</ul>
-<p>if you use a regular network card (1 Gbps) then we suggest to use a higher accum_count to minimize the inter-node communication.</p>
+<p>if you use a regular network card (1 Gbps) then we suggest to use a higher <code class="docutils literal notranslate"><span class="pre">-accum_count</span></code> to minimize the inter-node communication.</p>
+<p><strong>Note:</strong></p>
+<p>When training on several GPUs, you can’t have them in ‘Exclusive’ compute mode (<code class="docutils literal notranslate"><span class="pre">nvidia-smi</span> <span class="pre">-c</span> <span class="pre">3</span></code>).</p>
+<p>The multi-gpu setup relies on a Producer/Consumer setup. This setup means there will be <code class="docutils literal notranslate"><span class="pre">2&lt;n_gpu&gt;</span> <span class="pre">+</span> <span class="pre">1</span></code> processes spawned, with 2 processes per GPU, one for model training and one (Consumer) that hosts a <code class="docutils literal notranslate"><span class="pre">Queue</span></code> of batches that will be processed next. The additional process is the Producer, creating batches and sending them to the Consumers. This setup is beneficial for both wall time and memory, since it loads data shards ‘in advance’, and does not require to load it for each GPU process.</p>
 </div>
 <div class="section" id="how-can-i-ensemble-models-at-inference">
 <h2>How can I ensemble Models at inference?<a class="headerlink" href="#how-can-i-ensemble-models-at-inference" title="Permalink to this headline">¶</a></h2>
