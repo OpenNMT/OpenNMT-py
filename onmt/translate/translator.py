@@ -598,7 +598,8 @@ class Translator(object):
                                           src_map)
             # here we have scores [tgt_lenxbatch, vocab] or [beamxbatch, vocab]
             if batch_offset is None:
-                scores = scores.view(batch.batch_size, -1, scores.size(-1))
+                scores = scores.view(-1, batch.batch_size, scores.size(-1))
+                scores = scores.transpose(0, 1).contiguous()
             else:
                 scores = scores.view(-1, self.beam_size, scores.size(-1))
             scores = collapse_copy_scores(
