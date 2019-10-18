@@ -117,7 +117,7 @@ class TransformerEncoder(EncoderBase):
     def forward(self, src, lengths=None):
         """See :func:`EncoderBase.forward()`"""
         self._check_args(src, lengths)
-
+        # import pdb; pdb.set_trace()
         emb = self.embeddings(src)
 
         out = emb.transpose(0, 1).contiguous()

@@ -5,7 +5,7 @@ import codecs
 import os
 import math
 import time
-from itertools import count
+from itertools import count, zip_longest
 
 import torch
 
@@ -15,7 +15,7 @@ import onmt.inputters as inputters
 import onmt.decoders.ensemble
 from onmt.translate.beam_search import BeamSearch
 from onmt.translate.random_sampling import RandomSampling
-from onmt.utils.misc import tile, set_random_seed
+from onmt.utils.misc import tile, set_random_seed, extract_alignment
 from onmt.modules.copy_generator import collapse_copy_scores
 
 
@@ -36,6 +36,7 @@ def build_translator(opt, report_score=True, logger=None, out_file=None):
         model_opt,
         global_scorer=scorer,
         out_file=out_file,
+        report_align=opt.report_align,
         report_score=report_score,
         logger=logger
     )
@@ -130,6 +131,7 @@ class Translator(object):
             copy_attn=False,
             global_scorer=None,
             out_file=None,
+            report_align=False,
             report_score=True,
             logger=None,
             seed=-1):
@@ -184,6 +186,7 @@ class Translator(object):
             raise ValueError(
                 "Coverage penalty requires an attentional decoder.")
         self.out_file = out_file
+        self.report_align = report_align
         self.report_score = report_score
         self.logger = logger
 
@@ -211,6 +214,7 @@ class Translator(object):
             model_opt,
             global_scorer=None,
             out_file=None,
+            report_align=False,
             report_score=True,
             logger=None):
         """Alternate constructor.
@@ -226,6 +230,7 @@ class Translator(object):
                 :func:`__init__()`..
             out_file (TextIO or codecs.StreamReaderWriter): See
                 :func:`__init__()`.
+            report_align (bool) : See :func:`__init__()`.
             report_score (bool) : See :func:`__init__()`.
             logger (logging.Logger or NoneType): See :func:`__init__()`.
         """
@@ -259,6 +264,7 @@ class Translator(object):
             copy_attn=model_opt.copy_attn,
             global_scorer=global_scorer,
             out_file=out_file,
+            report_align=report_align,
             report_score=report_score,
             logger=logger,
             seed=opt.seed)
@@ -345,7 +351,7 @@ class Translator(object):
         all_predictions = []
 
         start_time = time.time()
-
+        # import pdb; pdb.set_trace()
         for batch in data_iter:
             batch_data = self.translate_batch(
                 batch, data.src_vocabs, attn_debug
@@ -362,6 +368,12 @@ class Translator(object):
 
                 n_best_preds = [" ".join(pred)
                                 for pred in trans.pred_sents[:self.n_best]]
+                if self.report_align:
+                    n_best_preds_align = [" ".join(align) for align
+                                          in trans.word_aligns[:self.n_best]]
+                    n_best_preds = [pred + " ||| " + align
+                                    for pred, align in zip(
+                                        n_best_preds, n_best_preds_align)]
                 all_predictions += [n_best_preds]
                 self.out_file.write('\n'.join(n_best_preds) + '\n')
                 self.out_file.flush()
@@ -517,9 +529,93 @@ class Translator(object):
                     lambda state, dim: state.index_select(dim, select_indices))
 
         results["scores"] = random_sampler.scores
-        results["predictions"] = random_sampler.predictions
+        results["predictions"] = random_sampler.predictions  # (batch, )
         results["attention"] = random_sampler.attention
+        # Do a full forward pass with padded tgt and src, to get alignment
+        # attn matrix, convert attn['align'] to List[List[Tensor]]
+        if self.report_align:
+            results["alignment"] = self._align_forword(
+                batch, random_sampler.predictions)
+        else:
+            results["alignment"] = [[] for _ in range(batch_size)]
         return results
+
+    def _build_align_batch(self, predictions):
+        """
+        padding and add BOS token in predictions.
+
+        Args:
+            predictions (List[List[Tensor]]): `(batch, n_best,)`, for each src
+                sequence contain n_best tgt predictions which are ended with
+                eos id.
+
+        Return:
+            batch_best_tgt (torch.LongTensor): `(batch, n_best, tgt_l)`
+            padding_mask (torch.BoolTensor): `(batch, n_best, tgt_l)`
+        """
+        dtype, device = predictions[0][0].dtype, predictions[0][0].device
+        flatten_tgt = [best.tolist() for bests in predictions
+                       for best in bests]
+        paded_tgt = torch.tensor(
+            list(zip_longest(*flatten_tgt, fillvalue=self._tgt_pad_idx)),
+            dtype=dtype, device=device).T
+        bos_tensor = torch.full([paded_tgt.size(0), 1], self._tgt_bos_idx,
+                                dtype=dtype, device=device)
+        full_tgt = torch.cat((bos_tensor, paded_tgt), dim=-1)
+        batch_best_tgt = full_tgt.view(
+            len(predictions), -1, full_tgt.size(-1))  # (batch, n_best, tgt_l)
+        padding_mask = batch_best_tgt.eq(self._tgt_pad_idx)
+        eos_mask = batch_best_tgt.eq(self._tgt_eos_idx)
+        bos_mask = batch_best_tgt.eq(self._tgt_bos_idx)
+        tgt_mask = padding_mask | eos_mask | bos_mask
+        return batch_best_tgt, tgt_mask
+
+    def _align_forword(self, batch, predictions):
+        """
+        For a batch of input and its prediction, return a list of batch predict
+        alignment src indice Tensor in size ``(batch, n_best,)``.
+        """
+        # (0) add BOS and padding to tgt prediction
+        # import pdb; pdb.set_trace()
+        if hasattr(batch, 'tgt'):
+            # self._tgt_vocab.itos
+            batch_tgt_idxs = batch.tgt.transpose(1, 2).transpose(0, 2)
+            tgt_mask = (batch_tgt_idxs.eq(self._tgt_pad_idx) |
+                        batch_tgt_idxs.eq(self._tgt_eos_idx) |
+                        batch_tgt_idxs.eq(self._tgt_bos_idx))
+        else:
+            batch_tgt_idxs, tgt_mask = self._build_align_batch(predictions)
+
+        n_best = batch_tgt_idxs.size(1)
+        # (1) Encoder forward.
+        src, enc_states, memory_bank, src_lengths = self._run_encoder(batch)
+
+        # (2) Repeat src objects `n_best` times.
+        # We use batch_size x n_best, get ``(src_len, batch * n_best, nfeat)``
+        src = tile(src, n_best, dim=1)
+        enc_states = tile(enc_states, n_best, dim=1)
+        if isinstance(memory_bank, tuple):
+            memory_bank = tuple(tile(x, n_best, dim=1) for x in memory_bank)
+        else:
+            memory_bank = tile(memory_bank, n_best, dim=1)
+        src_lengths = tile(src_lengths, n_best)  # ``(batch * n_best,)``
+
+        # (3) Init decoder with n_best src,
+        self.model.decoder.init_state(src, memory_bank, enc_states)
+        # reshape tgt to ``(len, batch * n_best, nfeat)``
+        tgt = batch_tgt_idxs.view(-1, batch_tgt_idxs.size(-1)).T.unsqueeze(-1)
+        dec_in = tgt[:-1]  # exclude last target from inputs
+        _, attns = self.model.decoder(
+            dec_in, memory_bank, memory_lengths=src_lengths, with_align=True)
+
+        alignment_attn = attns["align"]  # ``(B, tgt_len-1, src_len)``
+        # masked_select
+        align_tgt_mask = tgt_mask.view(-1, tgt_mask.size(-1))
+        prediction_mask = align_tgt_mask[:, 1:]  # exclude bos to match pred
+        # get aligned src id for each prediction's valid tgt tokens
+        alignement = extract_alignment(
+            alignment_attn, prediction_mask, src_lengths, n_best)
+        return alignement
 
     def translate_batch(self, batch, src_vocabs, attn_debug):
         """Translate a batch of sentences."""
@@ -719,8 +815,14 @@ class Translator(object):
                 lambda state, dim: state.index_select(dim, select_indices))
 
         results["scores"] = beam.scores
-        results["predictions"] = beam.predictions
+        results["predictions"] = beam.predictions  # (batch, n_best)
         results["attention"] = beam.attention
+        # import pdb; pdb.set_trace()
+        if self.report_align:
+            results["alignment"] = self._align_forword(
+                batch, beam.predictions)
+        else:
+            results["alignment"] = [[] for _ in range(batch_size)]
         return results
 
     # This is left in the code for now, but unsued

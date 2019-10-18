@@ -17,7 +17,7 @@ class NMTModel(nn.Module):
         self.encoder = encoder
         self.decoder = decoder
 
-    def forward(self, src, tgt, lengths, bptt=False):
+    def forward(self, src, tgt, lengths, bptt=False, with_align=False):
         """Forward propagate a `src` and `tgt` pair for training.
         Possible initialized with a beginning decoder state.
 
@@ -26,10 +26,12 @@ class NMTModel(nn.Module):
                 typically for inputs this will be a padded `LongTensor`
                 of size ``(len, batch, features)``. However, may be an
                 image or other generic input depending on encoder.
-            tgt (LongTensor): A target sequence of size ``(tgt_len, batch)``.
+            tgt (LongTensor): A target sequence passed to decoder.
+                Size ``(tgt_len, batch, features)``.
             lengths(LongTensor): The src lengths, pre-padding ``(batch,)``.
             bptt (Boolean): A flag indicating if truncated bptt is set.
                 If reset then init_state
+            with_align (Boolean): A flag indicating if compute alignment.
 
         Returns:
             (FloatTensor, dict[str, FloatTensor]):
@@ -43,8 +45,8 @@ class NMTModel(nn.Module):
 
         if bptt is False:
             self.decoder.init_state(src, memory_bank, enc_state)
-        dec_out, attns = self.decoder(tgt, memory_bank,
-                                      memory_lengths=lengths)
+        dec_out, attns = self.decoder(
+            tgt, memory_bank, memory_lengths=lengths, with_align=with_align)
         return dec_out, attns
 
     def update_dropout(self, dropout):

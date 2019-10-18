@@ -9,7 +9,7 @@ from itertools import chain, cycle
 
 import torch
 import torchtext.data
-from torchtext.data import Field, RawField
+from torchtext.data import Field, RawField, LabelField
 from torchtext.vocab import Vocab
 from torchtext.data.utils import RandomShuffler
 
@@ -58,6 +58,47 @@ def make_tgt(data, vocab):
     return alignment
 
 
+class AlignField(LabelField):
+    """
+    Parse ['<src>-<tgt>', ...] into ['<src>','<tgt>', ...]
+    """
+    def __init__(self, **kwargs):
+        kwargs['use_vocab'] = False
+        kwargs['preprocessing'] = parse_align_idx
+        super(AlignField, self).__init__(**kwargs)
+
+    def process(self, batch, device=None):
+        """ Turn a batch of align-idx to a sparse align idx Tensor"""
+        sparse_idx = []
+        # import pdb; pdb.set_trace()
+        for i, example in enumerate(batch):
+            for src, tgt in example:
+                # +1 for tgt side to keep coherent after "bos" padding,
+                # register ['sent_n_in_batch', 'tgt_id+1', 'src_id']
+                sparse_idx.append([i, tgt + 1, src])
+
+        align_idx = torch.tensor(sparse_idx, dtype=self.dtype, device=device)
+
+        return align_idx
+
+
+def parse_align_idx(align_pharaoh):
+    """
+    Parse Pharaoh alignment into [[<src>, <tgt>], ...]
+    """
+    align_list = align_pharaoh.strip().split(' ')
+    flatten_align_idx = []
+    for align in align_list:
+        try:
+            src_idx, tgt_idx = align.split('-')
+        except ValueError as e:
+            logger.warning(e)
+            logger.warning("Blank alignement line exists. Please check file!")
+            exit()
+        flatten_align_idx.append([int(src_idx), int(tgt_idx)])
+    return flatten_align_idx
+
+
 def get_fields(
     src_data_type,
     n_src_feats,
@@ -66,6 +107,7 @@ def get_fields(
     bos='<s>',
     eos='</s>',
     dynamic_dict=False,
+    guide_align=False,
     src_truncate=None,
     tgt_truncate=None
 ):
@@ -84,6 +126,7 @@ def get_fields(
             for tgt.
         dynamic_dict (bool): Whether or not to include source map and
             alignment fields.
+        guide_align (bool): Whether or not to include word align.
         src_truncate: Cut off src sequences beyond this (passed to
             ``src_data_type``'s data reader - see there for more details).
         tgt_truncate: Cut off tgt sequences beyond this (passed to
@@ -135,6 +178,13 @@ def get_fields(
             use_vocab=False, dtype=torch.long,
             postprocessing=make_tgt, sequential=False)
         fields["alignment"] = align
+
+    if guide_align:
+        # word_align = Field(
+        #     sequential=False, use_vocab=False, dtype=torch.long,
+        #     preprocessing=make_sparse_align, is_target=True)
+        word_align = AlignField()
+        fields["align"] = word_align
 
     return fields
 

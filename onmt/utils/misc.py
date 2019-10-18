@@ -3,10 +3,21 @@
 import torch
 import random
 import inspect
-from itertools import islice
+from itertools import islice, cycle
 
 
-def split_corpus(path, shard_size):
+def split_corpus(path, shard_size, default=None):
+    """yield `[default]` or a `list` containing `shard_size` line of `path`.
+    """
+    if path is not None:
+        return _split_corpus(path, shard_size)
+    else:
+        return cycle(iter([cycle(iter([default]))]))
+
+
+def _split_corpus(path, shard_size):
+    """Yield a `list` containing `shard_size` line of `path`.
+    """
     with open(path, "rb") as f:
         if shard_size <= 0:
             yield f.readlines()
@@ -124,3 +135,71 @@ def relative_matmul(x, z, transpose):
 def fn_args(fun):
     """Returns the list of function arguments name."""
     return inspect.getfullargspec(fun).args
+
+
+def make_batch_align_matrix(index_tensor, size=None, normalize=False):
+    """
+    Convert a sparse index_tensor into a batch of alignment matrix,
+    with row normalize to the sum of 1 if set normalize.
+
+    Args:
+        index_tensor (LongTensor): ``(N, 3)`` of [batch_id, tgt_id, src_id]
+        size (List[int]): Size of the sparse tensor.
+        normalize (bool): if normalize the 2nd dim of resulting tensor.
+    """
+    n_fill, device = index_tensor.size(0), index_tensor.device
+    value_tensor = torch.ones([n_fill], dtype=torch.float)
+    dense_tensor = torch.sparse_coo_tensor(
+        index_tensor.t(), value_tensor, size=size, device=device).to_dense()
+    if normalize:
+        row_sum = dense_tensor.sum(-1, keepdim=True)  # sum by row(tgt)
+        # threshold on 1 to avoid div by 0
+        torch.nn.functional.threshold(row_sum, 1, 1, inplace=True)
+        dense_tensor.div_(row_sum)
+    return dense_tensor
+
+
+def extract_alignment(alignment_matrix, tgt_mask, src_lens, n_best):
+    """
+    Extract a batched alignment_matrix into its src indice alignment lists,
+    with tgt_mask to filter out invalid tgt position as BOS/EOS/PAD.
+    ref: fairseq/utils.py 402
+
+    Args:
+        alignment_matrix (Tensor): ``(B, tgt_len, src_len)``,
+            attention head normalized by Softmax(dim=-1)
+        tgt_mask (BoolTensor): ``(B, tgt_len)``, True for BOS, EOS, PAD
+        src_lens (LongTensor): ``(B,)``, containing valid src length
+        n_best (int): a value indicating number of parallel translation.
+        * B: denote flattened batch as B = batch_size * n_best.
+
+    Returns:
+        alignments (List[List[Tensor]]): ``(batch_size, n_best,)``,
+         containing src index that each translated token correspand to.
+    """
+    # import pdb; pdb.set_trace()
+    # Convert src_length to src_mask of size (B, src_len)
+    batch_size, max_tgt_len, max_src_len = alignment_matrix.size()
+    assert batch_size % n_best == 0
+    src_mask = torch.arange(max_src_len, device=src_lens.device)\
+                    .expand(batch_size, max_src_len)\
+                    .ge(src_lens.unsqueeze(1))
+    # mask invalid src position
+    alignment_matrix.masked_fill_(src_mask.unsqueeze(1), 0)
+    src_indices = alignment_matrix.argmax(dim=-1)  # ``(B, tgt_len)``
+    alignments = [[] for _ in range(batch_size // n_best)]
+    for i, (src_idx_b, tgt_mask_b) in enumerate(zip(src_indices, tgt_mask)):
+        valid_tgt = ~tgt_mask_b
+        # get the src positions that each valid tgt token aligned to.
+        tgt_align_src_id = src_idx_b.masked_select(valid_tgt)
+        alignments[i // n_best].append(tgt_align_src_id)
+    return alignments
+
+
+def build_align_pharaoh(tgt_align_src_id):
+    """Convert Tensor of src align indice to i-j Pharaoh format.(0 indexed)"""
+    align_pairs = []
+    # import pdb; pdb.set_trace()
+    for tgt_id, src_id in enumerate(tgt_align_src_id.tolist()):
+        align_pairs.append(str(src_id) + "-" + str(tgt_id))
+    return align_pairs

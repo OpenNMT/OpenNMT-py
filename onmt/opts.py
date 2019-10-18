@@ -154,7 +154,19 @@ def model_opts(parser):
     group.add('--aan_useffn', '-aan_useffn', action="store_true",
               help='Turn on the FFN layer in the AAN decoder')
 
+    # Alignement options
+    group = parser.add_argument_group('Model - Alignement')
+    group.add('--lambda_align', '-lambda_align', type=float, default=0.0,
+              help="Lambda value for alignement loss of Garg et al (2019)"
+                   "For more detailed information, see: "
+                   "https://arxiv.org/abs/1909.02074")
+    group.add('--alignment_layer', '-alignment_layer', type=int, default=-3,
+              help='Layer number which has to be supervised.')
+    group.add('--full_context_alignment', default=False, type=bool,
+              help='Whether alignment is conditioned on full target context.')
+
     # Generator and loss options.
+    group = parser.add_argument_group('Generator')
     group.add('--copy_attn', '-copy_attn', action="store_true",
               help='Train copy attention layer.')
     group.add('--copy_attn_type', '-copy_attn_type',
@@ -199,12 +211,17 @@ def preprocess_opts(parser):
               help="Path(s) to the training source data")
     group.add('--train_tgt', '-train_tgt', required=True, nargs='+',
               help="Path(s) to the training target data")
+    group.add('--train_align', '-train_align', nargs='+', default=[None],
+              help="Path(s) to the training src-tgt alignment")
     group.add('--train_ids', '-train_ids', nargs='+', default=[None],
               help="ids to name training shards, used for corpus weighting")
+
     group.add('--valid_src', '-valid_src',
               help="Path to the validation source data")
     group.add('--valid_tgt', '-valid_tgt',
               help="Path to the validation target data")
+    group.add('--valid_align', '-valid_align', default=None,
+              help="Path(s) to the validation src-tgt alignment")
 
     group.add('--src_dir', '-src_dir', default="",
               help="Source directory for image or audio files.")
@@ -603,6 +620,8 @@ def translate_opts(parser):
     group.add('--output', '-output', default='pred.txt',
               help="Path to output the predictions (each line will "
                    "be the decoded sequence")
+    group.add('--report_align', '-report_align', action='store_true',
+              help="Report alignment for each translation.")
     group.add('--report_bleu', '-report_bleu', action='store_true',
               help="Report bleu score after translation, "
                    "call tools/multi-bleu.perl on command line")

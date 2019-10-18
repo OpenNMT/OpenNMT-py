@@ -25,7 +25,7 @@ class TransformerDecoderLayer(nn.Module):
 
     def __init__(self, d_model, heads, d_ff, dropout, attention_dropout,
                  self_attn_type="scaled-dot", max_relative_positions=0,
-                 aan_useffn=False):
+                 aan_useffn=False, full_context_alignment=False):
         super(TransformerDecoderLayer, self).__init__()
 
         if self_attn_type == "scaled-dot":
@@ -43,10 +43,30 @@ class TransformerDecoderLayer(nn.Module):
         self.layer_norm_1 = nn.LayerNorm(d_model, eps=1e-6)
         self.layer_norm_2 = nn.LayerNorm(d_model, eps=1e-6)
         self.drop = nn.Dropout(dropout)
+        self.full_context_alignment = full_context_alignment
 
-    def forward(self, inputs, memory_bank, src_pad_mask, tgt_pad_mask,
-                layer_cache=None, step=None):
+    def forward(self, *args, **kwargs):
+        """ Extend _forward for multiply decoder pass.
         """
+        with_align = kwargs.pop('with_align', False)
+        output, attns = self._forward(*args, **kwargs)
+        top_attn = attns[:, 0, :, :].contiguous()
+        attn_align = None
+        # import pdb; pdb.set_trace()
+        if with_align:
+            if self.full_context_alignment:
+                # return _, (B, Q_len, K_len)
+                _, fc_attns = self._forward(*args, **kwargs, future=True)
+                attn_align = fc_attns[:, 0, :, :].contiguous()
+            else:
+                # layer average attention across heads, get ``(B, Q, K)``
+                attn_align = attns.mean(dim=1)
+        return output, top_attn, attn_align
+
+    def _forward(self, inputs, memory_bank, src_pad_mask, tgt_pad_mask,
+                 layer_cache=None, step=None, future=False):
+        """ A naive forword pass for transformer decoder.
+        # TODO: change 1 to T as T could be 1 or tgt_len
         Args:
             inputs (FloatTensor): ``(batch_size, 1, model_dim)``
             memory_bank (FloatTensor): ``(batch_size, src_len, model_dim)``
@@ -57,45 +77,49 @@ class TransformerDecoderLayer(nn.Module):
             (FloatTensor, FloatTensor):
 
             * output ``(batch_size, 1, model_dim)``
-            * attn ``(batch_size, 1, src_len)``
+            * attns ``(batch_size, head, 1, src_len)``
 
         """
         dec_mask = None
+        # import pdb; pdb.set_trace()
         if step is None:
             tgt_len = tgt_pad_mask.size(-1)
-            future_mask = torch.ones(
-                [tgt_len, tgt_len],
-                device=tgt_pad_mask.device,
-                dtype=torch.uint8)
-            future_mask = future_mask.triu_(1).view(1, tgt_len, tgt_len)
-            # BoolTensor was introduced in pytorch 1.2
-            try:
-                future_mask = future_mask.bool()
-            except AttributeError:
-                pass
-            dec_mask = torch.gt(tgt_pad_mask + future_mask, 0)
+            if not future:  # apply future_mask, result mask in (B, T, T)
+                future_mask = torch.ones(
+                    [tgt_len, tgt_len],
+                    device=tgt_pad_mask.device,
+                    dtype=torch.uint8)
+                future_mask = future_mask.triu_(1).view(1, tgt_len, tgt_len)
+                # BoolTensor was introduced in pytorch 1.2
+                try:
+                    future_mask = future_mask.bool()
+                except AttributeError:
+                    pass
+                dec_mask = torch.gt(tgt_pad_mask + future_mask, 0)
+            else:  # only mask padding, result mask in (B, 1, T)
+                dec_mask = tgt_pad_mask
 
         input_norm = self.layer_norm_1(inputs)
 
         if isinstance(self.self_attn, MultiHeadedAttention):
-            query, attn = self.self_attn(input_norm, input_norm, input_norm,
-                                         mask=dec_mask,
-                                         layer_cache=layer_cache,
-                                         attn_type="self")
+            query, _ = self.self_attn(input_norm, input_norm, input_norm,
+                                      mask=dec_mask,
+                                      layer_cache=layer_cache,
+                                      attn_type="self")
         elif isinstance(self.self_attn, AverageAttention):
-            query, attn = self.self_attn(input_norm, mask=dec_mask,
-                                         layer_cache=layer_cache, step=step)
+            query, _ = self.self_attn(input_norm, mask=dec_mask,
+                                      layer_cache=layer_cache, step=step)
 
         query = self.drop(query) + inputs
 
         query_norm = self.layer_norm_2(query)
-        mid, attn = self.context_attn(memory_bank, memory_bank, query_norm,
-                                      mask=src_pad_mask,
-                                      layer_cache=layer_cache,
-                                      attn_type="context")
+        mid, attns = self.context_attn(memory_bank, memory_bank, query_norm,
+                                       mask=src_pad_mask,
+                                       layer_cache=layer_cache,
+                                       attn_type="context")
         output = self.feed_forward(self.drop(mid) + query)
 
-        return output, attn
+        return output, attns
 
     def update_dropout(self, dropout, attention_dropout):
         self.self_attn.update_dropout(attention_dropout)
@@ -136,7 +160,8 @@ class TransformerDecoder(DecoderBase):
 
     def __init__(self, num_layers, d_model, heads, d_ff,
                  copy_attn, self_attn_type, dropout, attention_dropout,
-                 embeddings, max_relative_positions, aan_useffn):
+                 embeddings, max_relative_positions, aan_useffn,
+                 full_context_alignment, alignment_layer):
         super(TransformerDecoder, self).__init__()
 
         self.embeddings = embeddings
@@ -148,7 +173,8 @@ class TransformerDecoder(DecoderBase):
             [TransformerDecoderLayer(d_model, heads, d_ff, dropout,
              attention_dropout, self_attn_type=self_attn_type,
              max_relative_positions=max_relative_positions,
-             aan_useffn=aan_useffn)
+             aan_useffn=aan_useffn,
+             full_context_alignment=full_context_alignment)
              for i in range(num_layers)])
 
         # previously, there was a GlobalAttention module here for copy
@@ -156,6 +182,8 @@ class TransformerDecoder(DecoderBase):
         # just reuses the context attention.
         self._copy = copy_attn
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
+        # TODO: check |alignment_layer| < layer in arg check
+        self.alignment_layer = alignment_layer
 
     @classmethod
     def from_opt(cls, opt, embeddings):
@@ -172,7 +200,9 @@ class TransformerDecoder(DecoderBase):
             is list else opt.dropout,
             embeddings,
             opt.max_relative_positions,
-            opt.aan_useffn)
+            opt.aan_useffn,
+            opt.full_context_alignment,
+            opt.alignment_layer)
 
     def init_state(self, src, memory_bank, enc_hidden):
         """Initialize decoder state."""
@@ -214,24 +244,36 @@ class TransformerDecoder(DecoderBase):
         src_pad_mask = ~sequence_mask(src_lens, src_max_len).unsqueeze(1)
         tgt_pad_mask = tgt_words.data.eq(pad_idx).unsqueeze(1)  # [B, 1, T_tgt]
 
+        with_align = kwargs.pop('with_align', False)  # if set, output align head
+        attn_aligns = []
+        # import pdb; pdb.set_trace()
         for i, layer in enumerate(self.transformer_layers):
             layer_cache = self.state["cache"]["layer_{}".format(i)] \
                 if step is not None else None
-            output, attn = layer(
+            output, attn, attn_align = layer(
                 output,
                 src_memory_bank,
                 src_pad_mask,
                 tgt_pad_mask,
                 layer_cache=layer_cache,
-                step=step)
+                step=step,
+                with_align=with_align)
+            if attn_align is not None:
+                attn_aligns.append(attn_align)
+                # TODO: layer_average_align = torch.mean(attn, 1) `(B, Q, K)`
 
         output = self.layer_norm(output)
         dec_outs = output.transpose(0, 1).contiguous()
+        # TODO [Layer_AVG]: change to return all attn
         attn = attn.transpose(0, 1).contiguous()
 
         attns = {"std": attn}
         if self._copy:
             attns["copy"] = attn
+        if with_align:
+            attns["align"] = attn_aligns[self.alignment_layer]
+            # import pdb; pdb.set_trace()
+            # attns["align"] = torch.stack(attn_aligns, 0).mean(0)
 
         # TODO change the way attns is returned dict => list or tuple (onnx)
         return dec_outs, attns

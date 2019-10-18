@@ -57,7 +57,8 @@ def build_loss_compute(model, tgt_field, opt, train=True):
         )
     else:
         compute = NMTLossCompute(
-            criterion, loss_gen, lambda_coverage=opt.lambda_coverage)
+            criterion, loss_gen, lambda_coverage=opt.lambda_coverage,
+            lambda_align=opt.lambda_align)
     compute.to(device)
 
     return compute
@@ -156,6 +157,7 @@ class LossComputeBase(nn.Module):
         if trunc_size is None:
             trunc_size = batch.tgt.size(0) - trunc_start
         trunc_range = (trunc_start, trunc_start + trunc_size)
+        # import pdb; pdb.set_trace()
         shard_state = self._make_shard_state(batch, output, trunc_range, attns)
         if shard_size == 0:
             loss, stats = self._compute_loss(batch, **shard_state)
@@ -226,9 +228,10 @@ class NMTLossCompute(LossComputeBase):
     """
 
     def __init__(self, criterion, generator, normalization="sents",
-                 lambda_coverage=0.0):
+                 lambda_coverage=0.0, lambda_align=0.0):
         super(NMTLossCompute, self).__init__(criterion, generator)
         self.lambda_coverage = lambda_coverage
+        self.lambda_align = lambda_align
 
     def _make_shard_state(self, batch, output, range_, attns=None):
         shard_state = {
@@ -248,10 +251,30 @@ class NMTLossCompute(LossComputeBase):
                 "std_attn": attns.get("std"),
                 "coverage_attn": coverage
             })
+        if self.lambda_align != 0.0:
+            # attn_align should be in (batch_size, pad_tgt_size, pad_src_size)
+            attn_align = attns.get("align", None)
+            # align_idx should be a Tensor in size([N, 3]) of [B, tgt+1, src]
+            align_idx = batch.align
+            assert attns is not None
+            assert attn_align is not None, "lambda_align != 0.0 requires " \
+                "alignement attention head"
+            assert align_idx is not None, "lambda_align != 0.0 requires " \
+                "provide guided alignement"
+            pad_tgt_size, batch_size, _ = batch.tgt.size()
+            pad_src_size = batch.src[0].size(0)
+            align_matrix_size = [batch_size, pad_tgt_size, pad_src_size]
+            ref_align = onmt.utils.make_batch_align_matrix(
+                align_idx, align_matrix_size, normalize=True)
+            # NOTE: tgt-src alignement that in range_, not take count in bos
+            shard_state.update({
+                "align_head": attn_align,
+                "ref_align": ref_align[:, range_[0] + 1: range_[1], :]
+            })
         return shard_state
 
     def _compute_loss(self, batch, output, target, std_attn=None,
-                      coverage_attn=None):
+                      coverage_attn=None, align_head=None, ref_align=None):
 
         bottled_output = self._bottle(output)
 
@@ -263,6 +286,10 @@ class NMTLossCompute(LossComputeBase):
             coverage_loss = self._compute_coverage_loss(
                 std_attn=std_attn, coverage_attn=coverage_attn)
             loss += coverage_loss
+        if self.lambda_align != 0.0:
+            align_loss = self._compute_alignement_loss(
+                align_head=align_head, ref_align=ref_align)
+            loss += align_loss
         stats = self._stats(loss.clone(), scores, gtruth)
 
         return loss, stats
@@ -271,6 +298,12 @@ class NMTLossCompute(LossComputeBase):
         covloss = torch.min(std_attn, coverage_attn).sum()
         covloss *= self.lambda_coverage
         return covloss
+
+    def _compute_alignement_loss(self, align_head, ref_align):
+        """Compute loss between 2 partial alignment matrix."""
+        align_loss = -align_head.log().mul(ref_align).sum()
+        align_loss *= self.lambda_align
+        return align_loss
 
 
 def filter_shard_state(state, shard_size=None):
