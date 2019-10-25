@@ -289,6 +289,7 @@ class NMTLossCompute(LossComputeBase):
         if self.lambda_align != 0.0:
             align_loss = self._compute_alignement_loss(
                 align_head=align_head, ref_align=ref_align)
+            # import pdb; pdb.set_trace()
             loss += align_loss
         stats = self._stats(loss.clone(), scores, gtruth)
 
@@ -301,7 +302,11 @@ class NMTLossCompute(LossComputeBase):
 
     def _compute_alignement_loss(self, align_head, ref_align):
         """Compute loss between 2 partial alignment matrix."""
-        align_loss = -align_head.log().mul(ref_align).sum()
+        # align_head contains value in [0, 1) presenting attn prob,
+        # 0 was resulted by the context attention src_pad_mask
+        # So, the correspand position in ref_align should also be 0
+        # Therefore, clip align_head to > 1e-18 should be bias free.
+        align_loss = -align_head.clamp(min=1e-18).log().mul(ref_align).sum()
         align_loss *= self.lambda_align
         return align_loss
 

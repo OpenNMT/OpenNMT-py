@@ -68,6 +68,16 @@ class ArgumentParser(cfargparse.ArgumentParser):
             if model_opt.model_type != "text":
                 raise AssertionError(
                     "--share_embeddings requires --model_type text.")
+        if model_opt.lambda_align > 0.0:
+            assert model_opt.decoder_type == 'transformer', \
+                "Only transformer is supported to joint learn alignment."
+            assert model_opt.alignment_layer < model_opt.layers, \
+                "N° alignment_layer should be smaller than number of layers."
+            print("[OPTS] Joint learn alignment at layer'{}'"
+                  " with {} heads in full_context '{}'.".format(
+                    model_opt.alignment_layer,
+                    model_opt.alignment_heads,
+                    model_opt.full_context_alignment))
 
     @classmethod
     def ckpt_model_opts(cls, ckpt_opt):

@@ -162,7 +162,10 @@ def model_opts(parser):
                    "https://arxiv.org/abs/1909.02074")
     group.add('--alignment_layer', '-alignment_layer', type=int, default=-3,
               help='Layer number which has to be supervised.')
-    group.add('--full_context_alignment', default=False, type=bool,
+    group.add('--alignment_heads', '-alignment_heads', type=int, default=None,
+              help='N. of cross attention heads per layer to supervised with')
+    group.add('--full_context_alignment', '-full_context_alignment',
+              action="store_true",
               help='Whether alignment is conditioned on full target context.')
 
     # Generator and loss options.
@@ -492,10 +495,9 @@ def train_opts(parser):
                    'Typically a value of 0.999 is recommended, as this is '
                    'the value suggested by the original paper describing '
                    'Adam, and is also the value adopted in other frameworks '
-                   'such as Tensorflow and Kerras, i.e. see: '
+                   'such as Tensorflow and Keras, i.e. see: '
                    'https://www.tensorflow.org/api_docs/python/tf/train/Adam'
-                   'Optimizer or '
-                   'https://keras.io/optimizers/ . '
+                   'Optimizer or https://keras.io/optimizers/ . '
                    'Whereas recently the paper "Attention is All You Need" '
                    'suggested a value of 0.98 for beta2, this parameter may '
                    'not work well for normal models / default '

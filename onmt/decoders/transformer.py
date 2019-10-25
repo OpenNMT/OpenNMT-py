@@ -25,7 +25,8 @@ class TransformerDecoderLayer(nn.Module):
 
     def __init__(self, d_model, heads, d_ff, dropout, attention_dropout,
                  self_attn_type="scaled-dot", max_relative_positions=0,
-                 aan_useffn=False, full_context_alignment=False):
+                 aan_useffn=False, full_context_alignment=False,
+                 alignment_heads=None):
         super(TransformerDecoderLayer, self).__init__()
 
         if self_attn_type == "scaled-dot":
@@ -44,6 +45,7 @@ class TransformerDecoderLayer(nn.Module):
         self.layer_norm_2 = nn.LayerNorm(d_model, eps=1e-6)
         self.drop = nn.Dropout(dropout)
         self.full_context_alignment = full_context_alignment
+        self.alignment_heads = alignment_heads
 
     def forward(self, *args, **kwargs):
         """ Extend _forward for multiply decoder pass.
@@ -56,11 +58,15 @@ class TransformerDecoderLayer(nn.Module):
         if with_align:
             if self.full_context_alignment:
                 # return _, (B, Q_len, K_len)
-                _, fc_attns = self._forward(*args, **kwargs, future=True)
-                attn_align = fc_attns[:, 0, :, :].contiguous()
-            else:
-                # layer average attention across heads, get ``(B, Q, K)``
-                attn_align = attns.mean(dim=1)
+                _, attns = self._forward(*args, **kwargs, future=True)
+
+            if self.alignment_heads is not None:
+                attns = attns[:, :self.alignment_heads, :, :].contiguous()
+            # layer average attention across heads, get ``(B, Q, K)``
+            # Case 1: no full_context, no align heads -> layer avg baseline
+            # Case 2: no full_context, 1 align heads -> guided align
+            # Case 3: full_context, 1 align heads -> full cte guided align
+            attn_align = attns.mean(dim=1)
         return output, top_attn, attn_align
 
     def _forward(self, inputs, memory_bank, src_pad_mask, tgt_pad_mask,
@@ -161,7 +167,7 @@ class TransformerDecoder(DecoderBase):
     def __init__(self, num_layers, d_model, heads, d_ff,
                  copy_attn, self_attn_type, dropout, attention_dropout,
                  embeddings, max_relative_positions, aan_useffn,
-                 full_context_alignment, alignment_layer):
+                 full_context, alignment_layer, alignment_heads=None):
         super(TransformerDecoder, self).__init__()
 
         self.embeddings = embeddings
@@ -174,7 +180,8 @@ class TransformerDecoder(DecoderBase):
              attention_dropout, self_attn_type=self_attn_type,
              max_relative_positions=max_relative_positions,
              aan_useffn=aan_useffn,
-             full_context_alignment=full_context_alignment)
+             full_context_alignment=full_context,
+             alignment_heads=alignment_heads)
              for i in range(num_layers)])
 
         # previously, there was a GlobalAttention module here for copy
@@ -182,7 +189,7 @@ class TransformerDecoder(DecoderBase):
         # just reuses the context attention.
         self._copy = copy_attn
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
-        # TODO: check |alignment_layer| < layer in arg check
+
         self.alignment_layer = alignment_layer
 
     @classmethod
@@ -202,7 +209,8 @@ class TransformerDecoder(DecoderBase):
             opt.max_relative_positions,
             opt.aan_useffn,
             opt.full_context_alignment,
-            opt.alignment_layer)
+            opt.alignment_layer,
+            alignment_heads=opt.alignment_heads)
 
     def init_state(self, src, memory_bank, enc_hidden):
         """Initialize decoder state."""
@@ -260,20 +268,18 @@ class TransformerDecoder(DecoderBase):
                 with_align=with_align)
             if attn_align is not None:
                 attn_aligns.append(attn_align)
-                # TODO: layer_average_align = torch.mean(attn, 1) `(B, Q, K)`
 
         output = self.layer_norm(output)
         dec_outs = output.transpose(0, 1).contiguous()
-        # TODO [Layer_AVG]: change to return all attn
         attn = attn.transpose(0, 1).contiguous()
 
         attns = {"std": attn}
         if self._copy:
             attns["copy"] = attn
         if with_align:
-            attns["align"] = attn_aligns[self.alignment_layer]
             # import pdb; pdb.set_trace()
-            # attns["align"] = torch.stack(attn_aligns, 0).mean(0)
+            attns["align"] = attn_aligns[self.alignment_layer]  # `(B, Q, K)`
+            # attns["align"] = torch.stack(attn_aligns, 0).mean(0)  # All avg
 
         # TODO change the way attns is returned dict => list or tuple (onnx)
         return dec_outs, attns

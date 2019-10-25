@@ -157,7 +157,7 @@ class Dataset(TorchtextDataset):
     def config(fields):
         readers, data, dirs = [], [], []
         for name, field in fields:
-            if field["data"]:
+            if field["data"] is not None:
                 readers.append(field["reader"])
                 data.append((name, field["data"]))
                 dirs.append(field["dir"])
