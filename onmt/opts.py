@@ -714,6 +714,8 @@ def translate_opts(parser):
               default="0")
     group.add('--attn_debug', '-attn_debug', action="store_true",
               help='Print best attn for each word')
+    group.add('--align_debug', '-align_debug', action="store_true",
+              help='Print best align for each word')
     group.add('--dump_beam', '-dump_beam', type=str, default="",
               help='File to dump beam information to.')
     group.add('--n_best', '-n_best', type=int, default=1,

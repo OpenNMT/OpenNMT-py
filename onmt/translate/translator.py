@@ -15,7 +15,8 @@ import onmt.inputters as inputters
 import onmt.decoders.ensemble
 from onmt.translate.beam_search import BeamSearch
 from onmt.translate.random_sampling import RandomSampling
-from onmt.utils.misc import tile, set_random_seed, extract_alignment
+from onmt.utils.misc import tile, set_random_seed, report_matrix, \
+    extract_alignment, build_align_pharaoh
 from onmt.modules.copy_generator import collapse_copy_scores
 
 
@@ -294,6 +295,7 @@ class Translator(object):
             batch_size=None,
             batch_type="sents",
             attn_debug=False,
+            align_debug=False,
             phrase_table=""):
         """Translate content of ``src`` and get gold scores from ``tgt``.
 
@@ -304,6 +306,7 @@ class Translator(object):
                 for certain types of data).
             batch_size (int): size of examples per mini-batch
             attn_debug (bool): enables the attention logging
+            align_debug (bool): enables the word alignment logging
 
         Returns:
             (`list`, `list`)
@@ -351,7 +354,7 @@ class Translator(object):
         all_predictions = []
 
         start_time = time.time()
-        # import pdb; pdb.set_trace()
+
         for batch in data_iter:
             batch_data = self.translate_batch(
                 batch, data.src_vocabs, attn_debug
@@ -369,8 +372,10 @@ class Translator(object):
                 n_best_preds = [" ".join(pred)
                                 for pred in trans.pred_sents[:self.n_best]]
                 if self.report_align:
+                    align_pharaohs = [build_align_pharaoh(align) for align
+                                      in trans.word_aligns[:self.n_best]]
                     n_best_preds_align = [" ".join(align) for align
-                                          in trans.word_aligns[:self.n_best]]
+                                          in align_pharaohs]
                     n_best_preds = [pred + " ||| " + align
                                     for pred, align in zip(
                                         n_best_preds, n_best_preds_align)]
@@ -394,17 +399,23 @@ class Translator(object):
                         srcs = trans.src_raw
                     else:
                         srcs = [str(item) for item in range(len(attns[0]))]
-                    header_format = "{:>10.10} " + "{:>10.7} " * len(srcs)
-                    row_format = "{:>10.10} " + "{:>10.7f} " * len(srcs)
-                    output = header_format.format("", *srcs) + '\n'
-                    for word, row in zip(preds, attns):
-                        max_index = row.index(max(row))
-                        row_format = row_format.replace(
-                            "{:>10.7f} ", "{:*>10.7f} ", max_index + 1)
-                        row_format = row_format.replace(
-                            "{:*>10.7f} ", "{:>10.7f} ", max_index)
-                        output += row_format.format(word, *row) + '\n'
-                        row_format = "{:>10.10} " + "{:>10.7f} " * len(srcs)
+                    output = report_matrix(srcs, preds, attns)
+                    if self.logger:
+                        self.logger.info(output)
+                    else:
+                        os.write(1, output.encode('utf-8'))
+
+                if align_debug:
+                    if trans.gold_sent is not None:
+                        tgts = trans.gold_sent
+                    else:
+                        tgts = trans.pred_sents[0]
+                    align = trans.word_aligns[0].tolist()
+                    if self.data_type == 'text':
+                        srcs = trans.src_raw
+                    else:
+                        srcs = [str(item) for item in range(len(align[0]))]
+                    output = report_matrix(srcs, tgts, align)
                     if self.logger:
                         self.logger.info(output)
                     else:
@@ -531,8 +542,6 @@ class Translator(object):
         results["scores"] = random_sampler.scores
         results["predictions"] = random_sampler.predictions  # (batch, )
         results["attention"] = random_sampler.attention
-        # Do a full forward pass with padded tgt and src, to get alignment
-        # attn matrix, convert attn['align'] to List[List[Tensor]]
         if self.report_align:
             results["alignment"] = self._align_forword(
                 batch, random_sampler.predictions)
@@ -817,7 +826,6 @@ class Translator(object):
         results["scores"] = beam.scores
         results["predictions"] = beam.predictions  # (batch, n_best)
         results["attention"] = beam.attention
-        # import pdb; pdb.set_trace()
         if self.report_align:
             results["alignment"] = self._align_forword(
                 batch, beam.predictions)

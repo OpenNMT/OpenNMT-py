@@ -73,7 +73,7 @@ class TranslationBuilder(object):
                     key=lambda x: x[-1])))
 
         if not any(align):  # when align is a empty nested list
-            align = None
+            align = [None] * batch_size
 
         # Sorting
         inds, perm = torch.sort(batch.indices)
@@ -99,10 +99,6 @@ class TranslationBuilder(object):
                 preds[b][n], attn[b][n])
                 for n in range(self.n_best)]
             gold_sent = None
-            word_aligns = None
-            if align is not None:
-                word_aligns = [build_align_pharaoh(align[b][n])
-                               for n in range(self.n_best)]
             if tgt is not None:
                 gold_sent = self._build_target_tokens(
                     src[:, b] if src is not None else None,
@@ -112,7 +108,7 @@ class TranslationBuilder(object):
             translation = Translation(
                 src[:, b] if src is not None else None,
                 src_raw, pred_sents, attn[b], pred_score[b],
-                gold_sent, gold_score[b], word_aligns
+                gold_sent, gold_score[b], align[b]
             )
             translations.append(translation)
 
@@ -131,7 +127,8 @@ class Translation(object):
             translation.
         gold_sent (List[str]): Words from gold translation.
         gold_score (List[float]): Log-prob of gold translation.
-        word_aligns (List[List[str]]): Words Alignment for pred_sents.
+        word_aligns (List[FloatTensor]): Words Alignment distribution for
+            each translation.
     """
 
     __slots__ = ["src", "src_raw", "pred_sents", "attns", "pred_scores",
@@ -163,7 +160,8 @@ class Translation(object):
 
         if self.word_aligns is not None:
             pred_align = self.word_aligns[0]
-            pred_align_sent = ' '.join(pred_align)
+            pred_align_pharaoh = build_align_pharaoh(pred_align)
+            pred_align_sent = ' '.join(pred_align_pharaoh)
             msg.append("ALIGN: {}\n".format(pred_align_sent))
 
         if self.gold_sent is not None:
