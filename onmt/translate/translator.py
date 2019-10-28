@@ -585,7 +585,6 @@ class Translator(object):
         alignment src indice Tensor in size ``(batch, n_best,)``.
         """
         # (0) add BOS and padding to tgt prediction
-        # import pdb; pdb.set_trace()
         if hasattr(batch, 'tgt'):
             # self._tgt_vocab.itos
             batch_tgt_idxs = batch.tgt.transpose(1, 2).transpose(0, 2)

@@ -31,7 +31,8 @@ class NMTModel(nn.Module):
             lengths(LongTensor): The src lengths, pre-padding ``(batch,)``.
             bptt (Boolean): A flag indicating if truncated bptt is set.
                 If reset then init_state
-            with_align (Boolean): A flag indicating if compute alignment.
+            with_align (Boolean): A flag indicating whether output alignment,
+                Only valid for transformer decoder.
 
         Returns:
             (FloatTensor, dict[str, FloatTensor]):

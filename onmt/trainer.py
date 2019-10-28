@@ -57,15 +57,13 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
         opt.early_stopping, scorers=onmt.utils.scorers_from_opts(opt)) \
         if opt.early_stopping > 0 else None
 
-    with_align = True if opt.lambda_align > 0 else False
-
     report_manager = onmt.utils.build_report_manager(opt, gpu_rank)
     trainer = onmt.Trainer(model, train_loss, valid_loss, optim, trunc_size,
                            shard_size, norm_method,
                            accum_count, accum_steps,
                            n_gpu, gpu_rank,
                            gpu_verbose_level, report_manager,
-                           with_align=with_align,
+                           with_align=True if opt.lambda_align > 0 else False,
                            model_saver=model_saver if gpu_rank == 0 else None,
                            average_decay=average_decay,
                            average_every=average_every,
@@ -362,7 +360,7 @@ class Trainer(object):
                 # 2. F-prop all but generator.
                 if self.accum_count == 1:
                     self.optim.zero_grad()
-                # import pdb; pdb.set_trace()
+
                 outputs, attns = self.model(src, tgt, src_lengths, bptt=bptt,
                                             with_align=self.with_align)
                 bptt = True

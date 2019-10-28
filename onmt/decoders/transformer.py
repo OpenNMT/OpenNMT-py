@@ -54,7 +54,6 @@ class TransformerDecoderLayer(nn.Module):
         output, attns = self._forward(*args, **kwargs)
         top_attn = attns[:, 0, :, :].contiguous()
         attn_align = None
-        # import pdb; pdb.set_trace()
         if with_align:
             if self.full_context_alignment:
                 # return _, (B, Q_len, K_len)
@@ -87,7 +86,7 @@ class TransformerDecoderLayer(nn.Module):
 
         """
         dec_mask = None
-        # import pdb; pdb.set_trace()
+
         if step is None:
             tgt_len = tgt_pad_mask.size(-1)
             if not future:  # apply future_mask, result mask in (B, T, T)
@@ -252,9 +251,9 @@ class TransformerDecoder(DecoderBase):
         src_pad_mask = ~sequence_mask(src_lens, src_max_len).unsqueeze(1)
         tgt_pad_mask = tgt_words.data.eq(pad_idx).unsqueeze(1)  # [B, 1, T_tgt]
 
-        with_align = kwargs.pop('with_align', False)  # if set, output align head
+        with_align = kwargs.pop('with_align', False)
         attn_aligns = []
-        # import pdb; pdb.set_trace()
+
         for i, layer in enumerate(self.transformer_layers):
             layer_cache = self.state["cache"]["layer_{}".format(i)] \
                 if step is not None else None
@@ -277,7 +276,6 @@ class TransformerDecoder(DecoderBase):
         if self._copy:
             attns["copy"] = attn
         if with_align:
-            # import pdb; pdb.set_trace()
             attns["align"] = attn_aligns[self.alignment_layer]  # `(B, Q, K)`
             # attns["align"] = torch.stack(attn_aligns, 0).mean(0)  # All avg
 

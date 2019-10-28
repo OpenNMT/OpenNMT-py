@@ -157,7 +157,6 @@ class LossComputeBase(nn.Module):
         if trunc_size is None:
             trunc_size = batch.tgt.size(0) - trunc_start
         trunc_range = (trunc_start, trunc_start + trunc_size)
-        # import pdb; pdb.set_trace()
         shard_state = self._make_shard_state(batch, output, trunc_range, attns)
         if shard_size == 0:
             loss, stats = self._compute_loss(batch, **shard_state)
@@ -289,7 +288,6 @@ class NMTLossCompute(LossComputeBase):
         if self.lambda_align != 0.0:
             align_loss = self._compute_alignement_loss(
                 align_head=align_head, ref_align=ref_align)
-            # import pdb; pdb.set_trace()
             loss += align_loss
         stats = self._stats(loss.clone(), scores, gtruth)
 

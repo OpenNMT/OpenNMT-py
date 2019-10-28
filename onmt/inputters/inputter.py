@@ -70,7 +70,6 @@ class AlignField(LabelField):
     def process(self, batch, device=None):
         """ Turn a batch of align-idx to a sparse align idx Tensor"""
         sparse_idx = []
-        # import pdb; pdb.set_trace()
         for i, example in enumerate(batch):
             for src, tgt in example:
                 # +1 for tgt side to keep coherent after "bos" padding,
