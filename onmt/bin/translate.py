@@ -30,7 +30,8 @@ def translate(opt):
             src_dir=opt.src_dir,
             batch_size=opt.batch_size,
             batch_type=opt.batch_type,
-            attn_debug=opt.attn_debug
+            attn_debug=opt.attn_debug,
+            align_debug=opt.align_debug
             )
 
 
