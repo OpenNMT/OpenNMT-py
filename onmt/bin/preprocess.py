@@ -134,7 +134,7 @@ def build_save_dataset(corpus_type, fields, r_src, r_tgt, r_align, opt):
         srcs = opt.train_src
         tgts = opt.train_tgt
         ids = opt.train_ids
-        aligns = opt.train_align  # TODO: Check this args in parser
+        aligns = opt.train_align
     elif corpus_type == 'valid':
         counters = None
         srcs = [opt.valid_src]

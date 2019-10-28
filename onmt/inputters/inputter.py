@@ -90,10 +90,10 @@ def parse_align_idx(align_pharaoh):
     for align in align_list:
         try:
             src_idx, tgt_idx = align.split('-')
-        except ValueError as e:
-            logger.warning(e)
-            logger.warning("Blank alignement line exists. Please check file!")
-            exit()
+        except ValueError:
+            logger.warning("{} in `{}`".format(align, align_pharaoh))
+            logger.warning("Bad alignement line exists. Please check file!")
+            raise
         flatten_align_idx.append([int(src_idx), int(tgt_idx)])
     return flatten_align_idx
 
@@ -179,9 +179,6 @@ def get_fields(
         fields["alignment"] = align
 
     if guide_align:
-        # word_align = Field(
-        #     sequential=False, use_vocab=False, dtype=torch.long,
-        #     preprocessing=make_sparse_align, is_target=True)
         word_align = AlignField()
         fields["align"] = word_align
 

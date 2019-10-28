@@ -143,6 +143,17 @@ class ArgumentParser(cfargparse.ArgumentParser):
         for file in opt.train_src + opt.train_tgt:
             assert os.path.isfile(file), "Please check path of %s" % file
 
+        if len(opt.train_align) == 1:
+            assert opt.train_align[0] is None \
+                or os.path.isfile(opt.train_align[0]), \
+                "Please check path of your train align file!"
+        else:
+            for file in opt.train_align:
+                assert os.path.isfile(file), "Please check path of %s" % file
+
+        assert not opt.valid_align or os.path.isfile(opt.valid_align), \
+            "Please check path of your valid alignment file!"
+
         assert not opt.valid_src or os.path.isfile(opt.valid_src), \
             "Please check path of your valid src file!"
         assert not opt.valid_tgt or os.path.isfile(opt.valid_tgt), \
