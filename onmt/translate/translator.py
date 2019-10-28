@@ -586,7 +586,6 @@ class Translator(object):
         """
         # (0) add BOS and padding to tgt prediction
         if hasattr(batch, 'tgt'):
-            # self._tgt_vocab.itos
             batch_tgt_idxs = batch.tgt.transpose(1, 2).transpose(0, 2)
             tgt_mask = (batch_tgt_idxs.eq(self._tgt_pad_idx) |
                         batch_tgt_idxs.eq(self._tgt_eos_idx) |
