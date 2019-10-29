@@ -70,7 +70,7 @@ class TransformerDecoderLayer(nn.Module):
 
     def _forward(self, inputs, memory_bank, src_pad_mask, tgt_pad_mask,
                  layer_cache=None, step=None, future=False):
-        """ A naive forword pass for transformer decoder.
+        """ A naive forward pass for transformer decoder.
         # TODO: change 1 to T as T could be 1 or tgt_len
         Args:
             inputs (FloatTensor): ``(batch_size, 1, model_dim)``

@@ -543,7 +543,7 @@ class Translator(object):
         results["predictions"] = random_sampler.predictions  # (batch, )
         results["attention"] = random_sampler.attention
         if self.report_align:
-            results["alignment"] = self._align_forword(
+            results["alignment"] = self._align_forward(
                 batch, random_sampler.predictions)
         else:
             results["alignment"] = [[] for _ in range(batch_size)]
@@ -579,7 +579,7 @@ class Translator(object):
         tgt_mask = padding_mask | eos_mask | bos_mask
         return batch_best_tgt, tgt_mask
 
-    def _align_forword(self, batch, predictions):
+    def _align_forward(self, batch, predictions):
         """
         For a batch of input and its prediction, return a list of batch predict
         alignment src indice Tensor in size ``(batch, n_best,)``.
@@ -825,7 +825,7 @@ class Translator(object):
         results["predictions"] = beam.predictions  # (batch, n_best)
         results["attention"] = beam.attention
         if self.report_align:
-            results["alignment"] = self._align_forword(
+            results["alignment"] = self._align_forward(
                 batch, beam.predictions)
         else:
             results["alignment"] = [[] for _ in range(batch_size)]

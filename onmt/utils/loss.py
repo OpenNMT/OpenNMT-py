@@ -253,7 +253,9 @@ class NMTLossCompute(LossComputeBase):
         if self.lambda_align != 0.0:
             # attn_align should be in (batch_size, pad_tgt_size, pad_src_size)
             attn_align = attns.get("align", None)
-            # align_idx should be a Tensor in size([N, 3]) of [B, tgt+1, src]
+            # align_idx should be a Tensor in size([N, 3]), N is total number
+            # of align src-tgt pair in current batch, each as
+            # ['sent_N°_in_batch', 'tgt_id+1', 'src_id'] (check AlignField)
             align_idx = batch.align
             assert attns is not None
             assert attn_align is not None, "lambda_align != 0.0 requires " \
@@ -265,7 +267,8 @@ class NMTLossCompute(LossComputeBase):
             align_matrix_size = [batch_size, pad_tgt_size, pad_src_size]
             ref_align = onmt.utils.make_batch_align_matrix(
                 align_idx, align_matrix_size, normalize=True)
-            # NOTE: tgt-src alignement that in range_, not take count in bos
+            # NOTE: tgt-src ref alignement that in range_ of shard
+            # (coherent with batch.tgt)
             shard_state.update({
                 "align_head": attn_align,
                 "ref_align": ref_align[:, range_[0] + 1: range_[1], :]

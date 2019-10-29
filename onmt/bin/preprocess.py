@@ -258,7 +258,7 @@ def preprocess(opt):
         src_nfeats,
         tgt_nfeats,
         dynamic_dict=opt.dynamic_dict,
-        guide_align=opt.train_align[0] is not None,
+        with_align=opt.train_align[0] is not None,
         src_truncate=opt.src_seq_length_trunc,
         tgt_truncate=opt.tgt_seq_length_trunc)
 

@@ -73,7 +73,7 @@ class AlignField(LabelField):
         for i, example in enumerate(batch):
             for src, tgt in example:
                 # +1 for tgt side to keep coherent after "bos" padding,
-                # register ['sent_n_in_batch', 'tgt_id+1', 'src_id']
+                # register ['N°_in_batch', 'tgt_id+1', 'src_id']
                 sparse_idx.append([i, tgt + 1, src])
 
         align_idx = torch.tensor(sparse_idx, dtype=self.dtype, device=device)
@@ -106,7 +106,7 @@ def get_fields(
     bos='<s>',
     eos='</s>',
     dynamic_dict=False,
-    guide_align=False,
+    with_align=False,
     src_truncate=None,
     tgt_truncate=None
 ):
@@ -125,7 +125,7 @@ def get_fields(
             for tgt.
         dynamic_dict (bool): Whether or not to include source map and
             alignment fields.
-        guide_align (bool): Whether or not to include word align.
+        with_align (bool): Whether or not to include word align.
         src_truncate: Cut off src sequences beyond this (passed to
             ``src_data_type``'s data reader - see there for more details).
         tgt_truncate: Cut off tgt sequences beyond this (passed to
@@ -178,7 +178,7 @@ def get_fields(
             postprocessing=make_tgt, sequential=False)
         fields["alignment"] = align
 
-    if guide_align:
+    if with_align:
         word_align = AlignField()
         fields["align"] = word_align
 

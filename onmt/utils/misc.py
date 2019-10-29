@@ -3,16 +3,17 @@
 import torch
 import random
 import inspect
-from itertools import islice, cycle
+from itertools import islice, repeat
 
 
 def split_corpus(path, shard_size, default=None):
-    """yield `[default]` or a `list` containing `shard_size` line of `path`.
+    """yield a `list` containing `shard_size` line of `path`,
+    or repeatly generate `default` if `path` is None.
     """
     if path is not None:
         return _split_corpus(path, shard_size)
     else:
-        return cycle(iter([cycle(iter([default]))]))
+        return repeat(default)
 
 
 def _split_corpus(path, shard_size):
