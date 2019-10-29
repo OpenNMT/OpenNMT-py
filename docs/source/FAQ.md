@@ -146,3 +146,21 @@ E.g.
 will mean that we'll look for `my_data.train_A.*.pt` and `my_data.train_B.*.pt`, and that when building batches, we'll take 1 example from corpus A, then 7 examples from corpus B, and so on.
 
 **Warning**: This means that we'll load as many shards as we have `-data_ids`, in order to produce batches containing data from every corpus. It may be a good idea to reduce the `-shard_size` at preprocessing.
+
+## Can I get word alignment while translation?
+
+Currently, we support producing word alignment while translating for Transformer based models. Use `--report_align` when calling translate.py, this will by default averaging the attention heads in -2 decoder layer and applying argmax w.r.t each prediction token to extract alignment Pharaoh. The resulting alignment src-tgt pharaoh will be pasted to the translation sentence, separated by ` ||| `.
+* The report alignment is in `i-j` "Pharaoh format", where a pair `i-j` indicates the i<sub>th</sub> word of source language is aligned to j<sub>th</sub> word of target language.
+* Example: {'src': 'das stimmt nicht !'; 'output': 'that is not true ! ||| 0-0 0-1 1-2 2-3 1-4 1-5 3-6'}
+* If providing `-tgt` when calling translation.py, we output alignment between src and gold tgt rather than translated tgt, assuming we're doing evaluation.
+* For converting subword alignment to word alignment or symetrizing bidirectional alignment, please refer to script in https://github.com/lilt/alignment-scripts.
+
+The quality of output alignment could be further improved by providing reference alignment while training. This will invoke multi-task learning on translation and alignment. Please refer to paper [
+Jointly Learning to Align and Translate with Transformer Models](https://arxiv.org/abs/1909.02074) for the behinding theory.
+Options for joint learn alignment are `--lambda_align`, `--alignment_layer`, `--alignment_heads` and `--full_context_alignment`.
+* `--lambda_align`: set the value > 0.0 to enable joint align training, the paper suggest to set 0.05;
+* `--alignment_layer`, `--alignment_heads`: indicate the layer and number of alignment heads to supervise with;
+* `--full_context_alignment`: do full context decoder pass (no future mask) when compute alignment. This will slow down the training (~12% in terms of tok/s) but beneficial to generate better alignment.
+
+To generate alignment training file, just indicate the path through options `--train_align`, `--valid_align` when calling preprocess.py. The original alignment file could be generate by [giza](https://github.com/moses-smt/mgiza/) or [fastalign](https://github.com/clab/fast_align).
+* NOTE: Make sure providing aligned src tgt and alignment files, and no blank lines should be exist.
