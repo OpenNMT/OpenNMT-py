@@ -18,8 +18,7 @@ def translate(opt):
 
     translator = build_translator(opt, report_score=True)
     src_shards = split_corpus(opt.src, opt.shard_size)
-    tgt_shards = split_corpus(opt.tgt, opt.shard_size) \
-        if opt.tgt is not None else repeat(None)
+    tgt_shards = split_corpus(opt.tgt, opt.shard_size)
     shard_pairs = zip(src_shards, tgt_shards)
 
     for i, (src_shard, tgt_shard) in enumerate(shard_pairs):

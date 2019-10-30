@@ -319,12 +319,13 @@ class Translator(object):
         if batch_size is None:
             raise ValueError("batch_size must be set")
 
+        src_data = {"reader": self.src_reader, "data": src, "dir": src_dir}
+        tgt_data = {"reader": self.tgt_reader, "data": tgt, "dir": None}
+        _readers, _data, _dir = inputters.Dataset.config(
+            [('src', src_data), ('tgt', tgt_data)])
+
         data = inputters.Dataset(
-            self.fields,
-            readers=([self.src_reader, self.tgt_reader]
-                     if tgt else [self.src_reader]),
-            data=[("src", src), ("tgt", tgt)] if tgt else [("src", src)],
-            dirs=[src_dir, None] if tgt else [src_dir],
+            self.fields, readers=_readers, data=_data, dirs=_dir,
             sort_key=inputters.str2sortkey[self.data_type],
             filter_pred=self._filter_pred
         )

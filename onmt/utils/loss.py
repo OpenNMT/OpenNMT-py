@@ -289,6 +289,10 @@ class NMTLossCompute(LossComputeBase):
                 std_attn=std_attn, coverage_attn=coverage_attn)
             loss += coverage_loss
         if self.lambda_align != 0.0:
+            if align_head.dtype != loss.dtype:  # Fix FP16
+                align_head = align_head.to(loss.dtype)
+            if ref_align.dtype != loss.dtype:
+                ref_align = ref_align.to(loss.dtype)
             align_loss = self._compute_alignement_loss(
                 align_head=align_head, ref_align=ref_align)
             loss += align_loss
