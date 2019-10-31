@@ -47,18 +47,20 @@ class ModelSaverBase(object):
         if self.keep_checkpoint == 0 or step == self.last_saved_step:
             return
 
+        save_model = self.model
         if moving_average:
-            save_model = deepcopy(self.model)
+            model_params_data = []
             for avg, param in zip(moving_average, save_model.parameters()):
-                param.data.copy_(avg.data)
-        else:
-            save_model = self.model
+                model_params_data.append(param.data)
+                param.data = avg.data
 
         chkpt, chkpt_name = self._save(step, save_model)
         self.last_saved_step = step
 
         if moving_average:
-            del save_model
+            for param_data, param in zip(model_params_data,
+                                         save_model.parameters()):
+                param.data = param_data
 
         if self.keep_checkpoint > 0:
             if len(self.checkpoint_queue) == self.checkpoint_queue.maxlen:
