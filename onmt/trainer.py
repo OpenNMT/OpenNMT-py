@@ -9,7 +9,6 @@
           users of this library) for the strategy things we do.
 """
 
-from copy import deepcopy
 import torch
 import traceback
 
