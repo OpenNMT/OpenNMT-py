@@ -147,20 +147,34 @@ will mean that we'll look for `my_data.train_A.*.pt` and `my_data.train_B.*.pt`,
 
 **Warning**: This means that we'll load as many shards as we have `-data_ids`, in order to produce batches containing data from every corpus. It may be a good idea to reduce the `-shard_size` at preprocessing.
 
-## Can I get word alignment while translation?
+## Can I get word alignment while translating?
 
-Currently, we support producing word alignment while translating for Transformer based models. Use `--report_align` when calling translate.py, this will by default averaging the attention heads in -2 decoder layer and applying argmax w.r.t each prediction token to extract alignment Pharaoh. The resulting alignment src-tgt pharaoh will be pasted to the translation sentence, separated by ` ||| `.
+### Raw alignments from averaging Transformer attention heads
+
+Currently, we support producing word alignment while translating for Transformer based models. Using `-report_align` when calling `translate.py` will output the inferred alignments in Pharaoh format. Those alignments are computed from an argmax on the average of the attention heads of the *second to last* decoder layer. The resulting alignment src-tgt (Pharaoh) will be pasted to the translation sentence, separated by ` ||| `.
+Note: The *second to last* default behaviour was empirically determined. It is not the same as the paper (they take the *penultimate* layer), probably because of light differences in the architecture.
+
 * The report alignment is in `i-j` "Pharaoh format", where a pair `i-j` indicates the i<sub>th</sub> word of source language is aligned to j<sub>th</sub> word of target language.
 * Example: {'src': 'das stimmt nicht !'; 'output': 'that is not true ! ||| 0-0 0-1 1-2 2-3 1-4 1-5 3-6'}
-* If providing `-tgt` when calling translation.py, we output alignment between src and gold tgt rather than translated tgt, assuming we're doing evaluation.
-* For converting subword alignment to word alignment or symetrizing bidirectional alignment, please refer to script in https://github.com/lilt/alignment-scripts.
+* Using the`-tgt` option when calling `translate.py`, we output alignments between the source and the gold target rather than the inferred target, assuming we're doing evaluation.
+* To convert subword alignments to word alignments, or symetrize bidirectional alignments, please refer to the [lilt sripts]( https://github.com/lilt/alignment-scripts).
 
-The quality of output alignment could be further improved by providing reference alignment while training. This will invoke multi-task learning on translation and alignment. Please refer to paper [
-Jointly Learning to Align and Translate with Transformer Models](https://arxiv.org/abs/1909.02074) for the behinding theory.
-Options for joint learn alignment are `--lambda_align`, `--alignment_layer`, `--alignment_heads` and `--full_context_alignment`.
-* `--lambda_align`: set the value > 0.0 to enable joint align training, the paper suggest to set 0.05;
-* `--alignment_layer`, `--alignment_heads`: indicate the layer and number of alignment heads to supervise with;
-* `--full_context_alignment`: do full context decoder pass (no future mask) when compute alignment. This will slow down the training (~12% in terms of tok/s) but beneficial to generate better alignment.
+### Supervised learning on a specific head
 
-To generate alignment training file, just indicate the path through options `--train_align`, `--valid_align` when calling preprocess.py. The original alignment file could be generate by [giza](https://github.com/moses-smt/mgiza/) or [fastalign](https://github.com/clab/fast_align).
-* NOTE: Make sure providing aligned src tgt and alignment files, and no blank lines should be exist.
+The quality of output alignments can be further improved by providing reference alignments while training. This will invoke multi-task learning on translation and alignment. This is an implementation based on the paper [
+Jointly Learning to Align and Translate with Transformer Models](https://arxiv.org/abs/1909.02074).
+
+The data need to be preprocessed with the reference alignments in order to learn the supervised task.
+When calling `preprocess.py`, add:
+* `--train_align <path>`: path(s) to the training alignments in Pharaoh format
+* `--valid_align <path>`: path to the validation set alignments in Pharaoh format (optional).
+The reference alignment file(s) could be generate by [GIZA++](https://github.com/moses-smt/mgiza/) or [fast_align](https://github.com/clab/fast_align).
+
+Note: There should be no blank lines in the alignment files provided.
+
+Options to learn such alignments are:
+* `-lambda_align`: set the value > 0.0 to enable joint align training, the paper suggests 0.05;
+* `-alignment_layer`: indicate the index of the decoder layer;
+* `-alignment_heads`:  number of alignment heads for the alignment task - should be set to 1 for the supervised task, and preferably kept to default (or same as `num_heads`) for the average task;
+* `-full_context_alignment`: do full context decoder pass (no future mask) when computing alignments. This will slow down the training (~12% in terms of tok/s) but will be beneficial to generate better alignment.
+
