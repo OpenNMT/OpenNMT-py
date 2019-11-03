@@ -219,6 +219,8 @@ class Trainer(object):
         total_stats = onmt.utils.Statistics()
         report_stats = onmt.utils.Statistics()
         self._start_report_manager(start_time=total_stats.start_time)
+        
+        last_ppl = float('inf')
 
         for i, (batches, normalization) in enumerate(
                 self._accum_batches(train_iter)):
@@ -251,11 +253,18 @@ class Trainer(object):
                 report_stats)
 
             if valid_iter is not None and step % valid_steps == 0:
+                logger.info(f'\n=======\nEPOCH {step // valid_steps + 1} END\n=======')
                 if self.gpu_verbose_level > 0:
                     logger.info('GpuRank %d: validate step %d'
                                 % (self.gpu_rank, step))
                 valid_stats = self.validate(
                     valid_iter, moving_average=self.moving_average)
+                
+                if self.optim._learning_rate_decay_fn is None and last_ppl < valid_stats.ppl():
+                    logger.info(f'-ATTENTION- last ppl {last_ppl} < this ppl {valid_stats.ppl()}, LR DECAY half!')
+                    self.optim._learning_rate = self.optim._learning_rate / 2
+                last_ppl = valid_stats.ppl()
+                
                 if self.gpu_verbose_level > 0:
                     logger.info('GpuRank %d: gather valid stat \
                                 step %d' % (self.gpu_rank, step))
