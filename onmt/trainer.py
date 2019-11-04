@@ -253,7 +253,6 @@ class Trainer(object):
                 report_stats)
 
             if valid_iter is not None and step % valid_steps == 0:
-                logger.info(f'\n=======\nEPOCH {step // valid_steps + 1} END\n=======')
                 if self.gpu_verbose_level > 0:
                     logger.info('GpuRank %d: validate step %d'
                                 % (self.gpu_rank, step))
@@ -280,11 +279,13 @@ class Trainer(object):
                     # If the patience has reached the limit, stop training
                     if self.earlystopper.has_stopped():
                         break
+                logger.info(f'\n=======\nEPOCH {step // valid_steps} END')
 
             if (self.model_saver is not None
                 and (save_checkpoint_steps != 0
                      and step % save_checkpoint_steps == 0)):
                 self.model_saver.save(step, moving_average=self.moving_average)
+                logger.info(f'SAVE checkpoint\n=======')
 
             if train_steps > 0 and step >= train_steps:
                 break
