@@ -104,6 +104,9 @@ class ArgumentParser(cfargparse.ArgumentParser):
 
         assert len(opt.attention_dropout) == len(opt.dropout_steps), \
             "Number of attention_dropout values must match accum_steps values"
+        
+        if opt.decay_method == 'smart_decay':
+            assert opt.learning_rate_decay is not None and 0 < opt.learning_rate_decay <= 1
 
     @classmethod
     def validate_translate_opts(cls, opt):
