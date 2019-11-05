@@ -110,7 +110,7 @@ def build_torch_optimizer(model, opt):
 
 def make_learning_rate_decay_fn(opt):
     """Returns the learning decay function from options."""
-    if opt.decay_method == 'smart_half':
+    if opt.decay_method == 'smart_decay':
         return None
     if opt.decay_method == 'noam':
         return functools.partial(

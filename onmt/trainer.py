@@ -70,7 +70,8 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
                            model_dtype=opt.model_dtype,
                            earlystopper=earlystopper,
                            dropout=dropout,
-                           dropout_steps=dropout_steps)
+                           dropout_steps=dropout_steps,
+                           learning_rate_decay=opt.learning_rate_decay)
     return trainer
 
 
@@ -107,7 +108,8 @@ class Trainer(object):
                  n_gpu=1, gpu_rank=1,
                  gpu_verbose_level=0, report_manager=None, model_saver=None,
                  average_decay=0, average_every=1, model_dtype='fp32',
-                 earlystopper=None, dropout=[0.3], dropout_steps=[0]):
+                 earlystopper=None, dropout=[0.3], dropout_steps=[0],
+                 learning_rate_decay=None):
         # Basic attributes.
         self.model = model
         self.train_loss = train_loss
@@ -131,6 +133,7 @@ class Trainer(object):
         self.earlystopper = earlystopper
         self.dropout = dropout
         self.dropout_steps = dropout_steps
+        self.learning_rate_decay = learning_rate_decay
 
         for i in range(len(self.accum_count_l)):
             assert self.accum_count_l[i] > 0
@@ -221,6 +224,7 @@ class Trainer(object):
         self._start_report_manager(start_time=total_stats.start_time)
         
         last_ppl = float('inf')
+        not_improving_epochs = 0
 
         for i, (batches, normalization) in enumerate(
                 self._accum_batches(train_iter)):
@@ -260,10 +264,19 @@ class Trainer(object):
                 valid_stats = self.validate(
                     valid_iter, moving_average=self.moving_average)
                 
-                if self.optim._learning_rate_decay_fn is None and last_ppl < valid_stats.ppl():
-                    logger.info(f'-ATTENTION- last ppl {last_ppl} < this ppl {valid_stats.ppl()}, LR DECAY half!')
-                    self.optim._learning_rate = self.optim._learning_rate / 2
-                last_ppl = valid_stats.ppl()
+                if self.optim._learning_rate_decay_fn is None:
+                    assert self.learning_rate_decay is not None and 0 < self.learning_rate_decay <= 1
+                    if last_ppl < valid_stats.ppl():
+                        logger.info(f'-ATTENTION- last ppl {last_ppl} < this ppl {valid_stats.ppl()}!')
+                        not_improving_epochs += 1
+                        if not_improving_epochs >= 2:
+                            logger.info(f'-ATTENTION- Learning rate * {self.learning_rate_decay}!')
+                            self.optim._learning_rate = self.optim._learning_rate * self.learning_rate_decay
+                            not_improving_epochs = 0
+                    else:
+                        not_improving_epochs = 0
+                        
+                    last_ppl = valid_stats.ppl()
                 
                 if self.gpu_verbose_level > 0:
                     logger.info('GpuRank %d: gather valid stat \

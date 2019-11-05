@@ -521,7 +521,7 @@ def train_opts(parser):
               help="Decay every decay_steps")
 
     group.add('--decay_method', '-decay_method', type=str, default="none",
-              choices=['smart_half', 'noam', 'noamwd', 'rsqrt', 'none'],
+              choices=['smart_decay', 'noam', 'noamwd', 'rsqrt', 'none'],
               help="Use a custom decay rate.")
     group.add('--warmup_steps', '-warmup_steps', type=int, default=4000,
               help="Number of warmup steps for custom decay.")
