@@ -41,7 +41,6 @@ class ReportMgrBase(object):
                 means that you will need to set it later or use `start()`
         """
         self.report_every = report_every
-        self.progress_step = 0
         self.start_time = start_time
 
     def start(self):
@@ -74,7 +73,6 @@ class ReportMgrBase(object):
                     onmt.utils.Statistics.all_gather_stats(report_stats)
             self._report_training(
                 step, num_steps, learning_rate, report_stats)
-            self.progress_step += 1
             return onmt.utils.Statistics()
         else:
             return report_stats
@@ -126,11 +124,10 @@ class ReportMgr(ReportMgrBase):
         report_stats.output(step, num_steps,
                             learning_rate, self.start_time)
 
-        # Log the progress using the number of batches on the x-axis.
         self.maybe_log_tensorboard(report_stats,
                                    "progress",
                                    learning_rate,
-                                   self.progress_step)
+                                   step)
         report_stats = onmt.utils.Statistics()
 
         return report_stats
