@@ -17,6 +17,7 @@ from onmt.translate.beam_search import BeamSearch
 from onmt.translate.random_sampling import RandomSampling
 from onmt.utils.misc import tile, set_random_seed
 from onmt.modules.copy_generator import collapse_copy_scores
+from onmt.inputters import get_seperate_bos
 
 
 def build_translator(opt, report_score=True, logger=None, out_file=None):
@@ -132,7 +133,8 @@ class Translator(object):
             out_file=None,
             report_score=True,
             logger=None,
-            seed=-1):
+            seed=-1,
+            override_bos=None):
         self.model = model
         self.fields = fields
         tgt_field = dict(self.fields)["tgt"].base_field
@@ -199,6 +201,8 @@ class Translator(object):
                 "beam_parent_ids": [],
                 "scores": [],
                 "log_probs": []}
+            
+        self.override_bos = None if override_bos is None else self._tgt_vocab.stoi[override_bos]
 
         set_random_seed(seed, self._use_cuda)
 
@@ -261,7 +265,8 @@ class Translator(object):
             out_file=out_file,
             report_score=report_score,
             logger=logger,
-            seed=opt.seed)
+            seed=opt.seed,
+            override_bos=opt.override_bos)
 
     def _log(self, msg):
         if self.logger:
@@ -471,7 +476,9 @@ class Translator(object):
             mb_device = memory_bank.device
 
         random_sampler = RandomSampling(
-            self._tgt_pad_idx, self._tgt_bos_idx, self._tgt_eos_idx,
+            self._tgt_pad_idx,
+            self._tgt_bos_idx if self.override_bos is None else self.override_bos,
+            self._tgt_eos_idx,
             batch_size, mb_device, min_length, self.block_ngram_repeat,
             self._exclusion_idxs, return_attention, self.max_length,
             sampling_temp, keep_topk, memory_lengths)
@@ -669,7 +676,7 @@ class Translator(object):
             global_scorer=self.global_scorer,
             pad=self._tgt_pad_idx,
             eos=self._tgt_eos_idx,
-            bos=self._tgt_bos_idx,
+            bos=self._tgt_bos_idx if self.override_bos is None else self.override_bos,
             min_length=min_length,
             ratio=ratio,
             max_length=max_length,

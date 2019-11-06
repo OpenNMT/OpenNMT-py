@@ -15,6 +15,7 @@ import traceback
 
 import onmt.utils
 from onmt.utils.logging import logger
+from onmt.inputters import get_seperate_bos
 
 
 def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
@@ -72,7 +73,8 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
                            dropout=dropout,
                            dropout_steps=dropout_steps,
                            learning_rate_decay=opt.learning_rate_decay,
-                           decay_method=opt.decay_method)
+                           decay_method=opt.decay_method,
+                           tgt_field=tgt_field, cross_lingual=opt.cross_lingual)
     return trainer
 
 
@@ -110,7 +112,8 @@ class Trainer(object):
                  gpu_verbose_level=0, report_manager=None, model_saver=None,
                  average_decay=0, average_every=1, model_dtype='fp32',
                  earlystopper=None, dropout=[0.3], dropout_steps=[0],
-                 learning_rate_decay=None, decay_method=None):
+                 learning_rate_decay=None, decay_method=None,
+                 tgt_field=None, cross_lingual=False):
         # Basic attributes.
         self.model = model
         self.train_loss = train_loss
@@ -136,6 +139,10 @@ class Trainer(object):
         self.dropout_steps = dropout_steps
         self.learning_rate_decay = learning_rate_decay
         self.decay_method = decay_method
+        
+        assert not cross_lingual or tgt_field is not None
+        self.tgt_field = tgt_field
+        self.cross_lingual = cross_lingual
 
         for i in range(len(self.accum_count_l)):
             assert self.accum_count_l[i] > 0
@@ -334,6 +341,9 @@ class Trainer(object):
                 src, src_lengths = batch.src if isinstance(batch.src, tuple) \
                                    else (batch.src, None)
                 tgt = batch.tgt
+                if self.cross_lingual:
+                    data_id_bos = self.tgt_field.vocab.stoi[get_seperate_bos(batch.data_id)]
+                    tgt[0, :, :] = data_id_bos
 
                 # F-prop through the model.
                 outputs, attns = valid_model(src, tgt, src_lengths)
@@ -358,6 +368,9 @@ class Trainer(object):
             self.optim.zero_grad()
 
         for k, batch in enumerate(true_batches):
+            if self.cross_lingual:
+                data_id_bos = self.tgt_field.vocab.stoi[get_seperate_bos(batch.data_id)]
+                batch.tgt[0, :, :] = data_id_bos
             target_size = batch.tgt.size(0)
             # Truncated BPTT: reminder not compatible with accum > 1
             if self.trunc_size:

@@ -123,8 +123,10 @@ def main(opt, device_id, batch_queue=None, semaphore=None):
 
         train_iter = _train_iter()
 
+    val_data_id = opt.data_ids[0] if opt.cross_lingual else None
+        
     valid_iter = build_dataset_iter(
-        "valid", fields, opt, is_train=False)
+        "valid", fields, opt, is_train=False, data_id=val_data_id)
 
     if len(opt.gpu_ranks):
         logger.info('Starting training on GPU: %s' % opt.gpu_ranks)

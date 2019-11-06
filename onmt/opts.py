@@ -235,6 +235,10 @@ def preprocess_opts(parser):
     group = parser.add_argument_group('Vocab')
     # if you want to pass an existing vocab.pt file, pass it to
     # -src_vocab alone as it already contains tgt vocab.
+    group.add('--cross_lingual', '-cross_lingual', action='store_true',
+              help="Explictly distinguish languages in decoding stage. "
+                   "If True, for N languages, vocab add extra N=len(data_ids) different bos. "
+                   "But this N bos embeddings only trained in decoder stage.")
     group.add('--src_vocab', '-src_vocab', default="",
               help="Path to an existing source vocabulary. Format: "
                    "one word per line.")
@@ -318,6 +322,12 @@ def train_opts(parser):
     """ Training and saving options """
 
     group = parser.add_argument_group('General')
+    
+    group.add('--cross_lingual', '-cross_lingual', action='store_true',
+              help='Explictly distinguish languages in decoding stage. '
+                   'If this is set, preprocess must be cross_lingual first.'
+                   ' Assert first trainset is primary and share same language with validset.')
+    
     group.add('--data', '-data', required=True,
               help='Path prefix to the ".train.pt" and '
                    '".valid.pt" file path from preprocess.py')
@@ -582,6 +592,8 @@ def translate_opts(parser):
                    "zero probability.")
 
     group = parser.add_argument_group('Data')
+    group.add('--override_bos', '-override_bos', default=None,
+              help="Used for explictly cross lingual usage.")
     group.add('--data_type', '-data_type', default="text",
               help="Type of the source input. Options: [text|img].")
 

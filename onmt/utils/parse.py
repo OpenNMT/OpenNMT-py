@@ -140,3 +140,5 @@ class ArgumentParser(cfargparse.ArgumentParser):
             "Please check path of your src vocab!"
         assert not opt.tgt_vocab or os.path.isfile(opt.tgt_vocab), \
             "Please check path of your tgt vocab!"
+        
+        assert not opt.share_vocab or len(opt.train_ids) > 1

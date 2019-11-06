@@ -26,6 +26,10 @@ from onmt.inputters.image_dataset import (  # noqa: F401
 import gc
 
 
+def get_seperate_bos(data_id):
+    return f'<{data_id}bos>'
+
+
 # monkey-patch to make torchtext Vocab's pickleable
 def _getstate(self):
     return dict(self.__dict__, stoi=dict(self.stoi))
@@ -622,9 +626,9 @@ class MultipleDatasetIterator(object):
                  opt):
         self.index = -1
         self.iterables = []
-        for shard in train_shards:
+        for i, shard in enumerate(train_shards):
             self.iterables.append(
-                build_dataset_iter(shard, fields, opt, multi=True))
+                build_dataset_iter(shard, fields, opt, multi=True, data_id=opt.data_ids[i]))
         self.init_iterators = True
         self.weights = opt.data_weights
         self.batch_size = opt.batch_size
@@ -663,9 +667,11 @@ class MultipleDatasetIterator(object):
                     self.random_shuffler,
                     self.pool_factor):
                 minibatch = sorted(minibatch, key=self.sort_key, reverse=True)
-                yield torchtext.data.Batch(minibatch,
+                this_batch = torchtext.data.Batch(minibatch,
                                            self.iterables[0].dataset,
                                            self.device)
+                this_batch.data_id = minibatch[0].data_id
+                yield this_batch
 
 
 class DatasetLazyIter(object):
@@ -683,7 +689,7 @@ class DatasetLazyIter(object):
 
     def __init__(self, dataset_paths, fields, batch_size, batch_size_fn,
                  batch_size_multiple, device, is_train, pool_factor,
-                 repeat=True, num_batches_multiple=1, yield_raw_example=False):
+                 repeat=True, num_batches_multiple=1, yield_raw_example=False, data_id=None):
         self._paths = dataset_paths
         self.fields = fields
         self.batch_size = batch_size
@@ -695,6 +701,7 @@ class DatasetLazyIter(object):
         self.num_batches_multiple = num_batches_multiple
         self.yield_raw_example = yield_raw_example
         self.pool_factor = pool_factor
+        self.data_id = data_id
 
     def _iter_dataset(self, path):
         logger.info('Loading dataset from %s' % path)
@@ -733,6 +740,7 @@ class DatasetLazyIter(object):
             paths = cycle(paths)
         for path in paths:
             for batch in self._iter_dataset(path):
+                batch.data_id = self.data_id
                 yield batch
                 num_batches += 1
         if self.is_train and not self.repeat and \
@@ -743,6 +751,7 @@ class DatasetLazyIter(object):
             # workers have the same number of batches to process.
             for path in paths:
                 for batch in self._iter_dataset(path):
+                    batch.data_id = self.data_id
                     yield batch
                     num_batches += 1
                     if num_batches % self.num_batches_multiple == 0:
@@ -770,12 +779,14 @@ def max_tok_len(new, count, sofar):
     return max(src_elements, tgt_elements)
 
 
-def build_dataset_iter(corpus_type, fields, opt, is_train=True, multi=False):
+def build_dataset_iter(corpus_type, fields, opt, is_train=True, multi=False, data_id=None):
     """
     This returns user-defined train/validate data iterator for the trainer
     to iterate over. We implement simple ordered iterator strategy here,
     but more sophisticated strategy like curriculum learning is ok too.
     """
+    assert not opt.cross_lingual or data_id is not None
+    
     dataset_paths = list(sorted(
         glob.glob(opt.data + '.' + corpus_type + '.[0-9]*.pt')))
     if not dataset_paths:
@@ -804,6 +815,7 @@ def build_dataset_iter(corpus_type, fields, opt, is_train=True, multi=False):
         device,
         is_train,
         opt.pool_factor,
+        data_id = data_id,
         repeat=not opt.single_pass,
         num_batches_multiple=max(opt.accum_count) * opt.world_size,
         yield_raw_example=multi)
