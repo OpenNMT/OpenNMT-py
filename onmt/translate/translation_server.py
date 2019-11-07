@@ -205,8 +205,6 @@ class ServerModel(object):
                  on_timeout="to_cpu", model_root="./"):
         self.model_root = model_root
         self.opt = self.parse_opt(opt)
-        if self.opt.n_best > 1:
-            raise ValueError("Values of n_best > 1 are not supported")
 
         self.model_id = model_id
         self.preprocess_opt = preprocess_opt
@@ -441,8 +439,6 @@ class ServerModel(object):
         self.reset_unload_timer()
 
         # NOTE: translator returns lists of `n_best` list
-        #       we can ignore that (i.e. flatten lists) only because
-        #       we restrict `n_best=1`
         def flatten_list(_list): return sum(_list, [])
         results = flatten_list(predictions)
         scores = [score_tensor.item()
@@ -455,9 +451,12 @@ class ServerModel(object):
                    for item in results]
         # build back results with empty texts
         for i in empty_indices:
-            results.insert(i, "")
-            scores.insert(i, 0)
+            j = i * self.opt.n_best
+            results = results[:j] + [""] * self.opt.n_best + results[j:]
+            scores = scores[:j] + [0] * self.opt.n_best + scores[j:]
 
+        head_spaces = [h for h in head_spaces for i in range(self.opt.n_best)]
+        tail_spaces = [h for h in tail_spaces for i in range(self.opt.n_best)]
         results = ["".join(items)
                    for items in zip(head_spaces, results, tail_spaces)]
 
