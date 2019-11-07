@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import unicode_literals
-from itertools import repeat
 
 from onmt.utils.logging import init_logger
 from onmt.utils.misc import split_corpus

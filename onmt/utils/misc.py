@@ -3,7 +3,7 @@
 import torch
 import random
 import inspect
-from itertools import islice, repeat
+from itertools import islice, repeat, accumulate
 
 
 def split_corpus(path, shard_size, default=None):
@@ -219,5 +219,58 @@ def build_align_pharaoh(valid_alignment):
 
     for tgt_id, src_id in enumerate(tgt_align_src_id.tolist()):
         align_pairs.append(str(src_id) + "-" + str(tgt_id))
-
+    align_pairs.sort(key=lambda x: x[-1])  # sort by tgt_id
+    align_pairs.sort(key=lambda x: x[0])  # sort by src_id
     return align_pairs
+
+
+def to_word_align(src, tgt, subword_align, mode):
+    """Convert subword alignment to word alignment.
+
+    Args:
+        src (string): tokenized sentence in source language.
+        tgt (string): tokenized sentence in target language.
+        subword_align (string): align_pharaoh correspond to src-tgt.
+        mode (string): tokenization mode used by src and tgt,
+            choose from ["joiner", "spacer"].
+
+    Returns:
+        word_align (string): converted alignments correspand to
+            detokenized src-tgt.
+    """
+    src, tgt = src.strip().split(), tgt.strip().split()
+    subword_align = {(int(a), int(b)) for a, b in (x.split("-")
+                     for x in subword_align.split())}
+    if mode == 'joiner':
+        src_map = subword_map_by_joiner(src, marker='￭')
+        tgt_map = subword_map_by_joiner(tgt, marker='￭')
+    elif mode == 'spacer':
+        src_map = subword_map_by_spacer(src, marker='▁')
+        tgt_map = subword_map_by_spacer(tgt, marker='▁')
+    else:
+        raise ValueError("Invalid value for argument mode!")
+    word_align = " ".join({"{}-{}".format(src_map[a], tgt_map[b])
+                          for a, b in subword_align})
+    return word_align
+
+
+def subword_map_by_joiner(subwords, marker='￭'):
+    flags = [0] * len(subwords)
+    for i, tok in enumerate(subwords):
+        if tok.endswith(marker):
+            flags[i] = 1
+        if tok.startswith(marker):
+            assert i >= 1 and flags[i-1] != 1, \
+                "Sentence `{}` not correct!".format(" ".join(subwords))
+            flags[i-1] = 1
+    marker_acc = list(accumulate([0] + flags[:-1]))
+    word_group = [(i - maker_sofar) for i, maker_sofar
+                  in enumerate(marker_acc)]
+    return word_group
+
+
+def subword_map_by_spacer(subwords, marker='▁'):
+    word_group = list(accumulate([int(marker in x) for x in subwords]))
+    if word_group[0] == 1:  # when dummy prefix is set
+        word_group = [item - 1 for item in word_group]
+    return word_group

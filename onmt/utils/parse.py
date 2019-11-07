@@ -71,12 +71,13 @@ class ArgumentParser(cfargparse.ArgumentParser):
         if model_opt.lambda_align > 0.0:
             assert model_opt.decoder_type == 'transformer', \
                 "Only transformer is supported to joint learn alignment."
-            assert model_opt.alignment_layer < model_opt.layers and \
-                model_opt.alignment_layer >= -model_opt.layers, \
+            assert model_opt.alignment_layer < model_opt.dec_layers and \
+                model_opt.alignment_layer >= -model_opt.dec_layers, \
                 "N° alignment_layer should be smaller than number of layers."
-            logger.info("Joint learn alignment at layer '{}' "
+            logger.info("Joint learn alignment at layer {} of {} "
                         "with {} heads in full_context '{}'.".format(
-                            model_opt.alignment_layer,
+                            model_opt.alignment_layer + 1,
+                            model_opt.dec_layers,
                             model_opt.alignment_heads,
                             model_opt.full_context_alignment))
 

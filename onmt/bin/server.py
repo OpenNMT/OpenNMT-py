@@ -75,14 +75,17 @@ def start(config_file,
         inputs = request.get_json(force=True)
         out = {}
         try:
-            trans, scores, n_best, times = translation_server.run(inputs)
+            trans, scores, n_best, _, aligns = translation_server.run(inputs)
             assert len(trans) == len(inputs) * n_best
             assert len(scores) == len(inputs) * n_best
+            assert len(aligns) == len(inputs) * n_best
 
             out = [[] for _ in range(n_best)]
             for i in range(len(trans)):
                 response = {"src": inputs[i // n_best]['src'], "tgt": trans[i],
                             "n_best": n_best, "pred_score": scores[i]}
+                if aligns[i] is not None:
+                    response["align"] = aligns[i]
                 out[i % n_best].append(response)
         except ServerModelError as e:
             out['error'] = str(e)
