@@ -26,8 +26,11 @@ from onmt.inputters.image_dataset import (  # noqa: F401
 import gc
 
 
-def get_seperate_bos(data_id):
-    return f'<{data_id}bos>'
+def get_seperate_bos(data_id, tr=False):
+    if tr:
+        return f'<{data_id}trbos>'
+    else:
+        return f'<{data_id}bos>'
 
 
 # monkey-patch to make torchtext Vocab's pickleable
