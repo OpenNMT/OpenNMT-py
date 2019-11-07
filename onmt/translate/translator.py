@@ -15,8 +15,8 @@ import onmt.inputters as inputters
 import onmt.decoders.ensemble
 from onmt.translate.beam_search import BeamSearch
 from onmt.translate.random_sampling import RandomSampling
-from onmt.utils.misc import tile, set_random_seed, report_matrix, \
-    extract_alignment, build_align_pharaoh
+from onmt.utils.misc import tile, set_random_seed, report_matrix
+from onmt.utils.alignment import extract_alignment, build_align_pharaoh
 from onmt.modules.copy_generator import collapse_copy_scores
 
 

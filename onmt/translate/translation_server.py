@@ -14,7 +14,8 @@ import torch
 import onmt.opts
 
 from onmt.utils.logging import init_logger
-from onmt.utils.misc import set_random_seed, to_word_align
+from onmt.utils.misc import set_random_seed
+from onmt.utils.alignment import to_word_align
 from onmt.utils.parse import ArgumentParser
 from onmt.translate.translator import build_translator
 

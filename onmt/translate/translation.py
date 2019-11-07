@@ -3,7 +3,7 @@ from __future__ import unicode_literals, print_function
 
 import torch
 from onmt.inputters.text_dataset import TextMultiField
-from onmt.utils.misc import build_align_pharaoh
+from onmt.utils.alignment import build_align_pharaoh
 
 
 class TranslationBuilder(object):
