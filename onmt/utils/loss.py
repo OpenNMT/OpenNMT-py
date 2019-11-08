@@ -154,7 +154,9 @@ class LossComputeBase(nn.Module):
             A tuple with the loss and a :obj:`onmt.utils.Statistics` instance.
         """
         if trunc_size is None:
-            trunc_size = batch.tgt.size(0) - trunc_start
+            tgt, _ = batch.tgt if isinstance(batch.tgt, tuple) \
+                else (batch.tgt, None)
+            trunc_size = tgt.size(0) - trunc_start
         trunc_range = (trunc_start, trunc_start + trunc_size)
         shard_state = self._make_shard_state(batch, output, trunc_range, attns)
         if shard_size == 0:
@@ -231,9 +233,11 @@ class NMTLossCompute(LossComputeBase):
         self.lambda_coverage = lambda_coverage
 
     def _make_shard_state(self, batch, output, range_, attns=None):
+        tgt, _ = batch.tgt if isinstance(batch.tgt, tuple) \
+            else (batch.tgt, None)
         shard_state = {
             "output": output,
-            "target": batch.tgt[range_[0] + 1: range_[1], :, 0],
+            "target": tgt[range_[0] + 1: range_[1], :, 0],
         }
         if self.lambda_coverage != 0.0:
             coverage = attns.get("coverage", None)

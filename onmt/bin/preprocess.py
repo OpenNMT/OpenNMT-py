@@ -174,6 +174,7 @@ def build_save_dataset(corpus_type, fields, src_reader, tgt_reader, opt):
                 filter_pred = partial(
                     inputters.filter_example,
                     use_src_len=opt.data_type == "text",
+                    use_tgt_len=True,
                     max_src_len=opt.src_seq_length,
                     max_tgt_len=opt.tgt_seq_length)
             else:
@@ -198,10 +199,12 @@ def build_save_dataset(corpus_type, fields, src_reader, tgt_reader, opt):
     if corpus_type == "train":
         
         if opt.cross_lingual and len(opt.train_ids) > 1:
-            logger.info('Assign every corpus 2 bos symbol.')
+            logger.info('Assign every corpus 2 more bos symbol.')
             max_word_cnt = counters['tgt'].most_common(1)[0][1]
-            counters['tgt'].update({inputters.get_seperate_bos(data_id):max_word_cnt for data_id in opt.train_ids})
-            counters['tgt'].update({inputters.get_seperate_bos(data_id, tr=True):max_word_cnt for data_id in opt.train_ids})
+            counters['tgt'].update({inputters.get_seperate_bos(data_id): \
+                                    max_word_cnt for data_id in opt.train_ids})
+            counters['tgt'].update({inputters.get_seperate_bos(data_id, tr=True): \
+                                    max_word_cnt for data_id in opt.train_ids})
             
         vocab_path = opt.save_data + '.vocab.pt'
         if existing_fields is None:

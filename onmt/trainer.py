@@ -174,7 +174,9 @@ class Trainer(object):
         for batch in iterator:
             batches.append(batch)
             if self.norm_method == "tokens":
-                num_tokens = batch.tgt[1:, :, 0].ne(
+                tgt, _ = batch.tgt if isinstance(batch.tgt, tuple) \
+                                   else (batch.tgt, None)
+                num_tokens = tgt[1:, :, 0].ne(
                     self.train_loss.padding_idx).sum()
                 normalization += num_tokens.item()
             else:
@@ -340,7 +342,8 @@ class Trainer(object):
             for batch in valid_iter:
                 src, src_lengths = batch.src if isinstance(batch.src, tuple) \
                                    else (batch.src, None)
-                tgt = batch.tgt
+                tgt, tgt_lengths = batch.tgt if isinstance(batch.tgt, tuple) \
+                                   else (batch.tgt, None)
                 if self.cross_lingual:
                     data_id_bos = self.tgt_field.vocab.stoi[get_seperate_bos(batch.data_id)]
                     tgt[0, :, :] = data_id_bos
@@ -368,10 +371,14 @@ class Trainer(object):
             self.optim.zero_grad()
 
         for k, batch in enumerate(true_batches):
+
+            tgt_outer, tgt_lengths = batch.tgt if isinstance(batch.tgt, tuple) \
+                else (batch.tgt, None)
+            
             if self.cross_lingual:
                 data_id_bos = self.tgt_field.vocab.stoi[get_seperate_bos(batch.data_id)]
-                batch.tgt[0, :, :] = data_id_bos
-            target_size = batch.tgt.size(0)
+                tgt_outer[0, :, :] = data_id_bos
+            target_size = tgt_outer.size(0)
             # Truncated BPTT: reminder not compatible with accum > 1
             if self.trunc_size:
                 trunc_size = self.trunc_size
@@ -382,8 +389,6 @@ class Trainer(object):
                 else (batch.src, None)
             if src_lengths is not None:
                 report_stats.n_src_words += src_lengths.sum().item()
-
-            tgt_outer = batch.tgt
 
             bptt = False
             for j in range(0, target_size-1, trunc_size):

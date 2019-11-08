@@ -107,6 +107,7 @@ class ArgumentParser(cfargparse.ArgumentParser):
         
         if opt.decay_method == 'smart_decay':
             assert opt.learning_rate_decay is not None and 0 < opt.learning_rate_decay <= 1
+        assert not opt.copy_attn, 'Not check yet since aligning src & tgt.'
 
     @classmethod
     def validate_translate_opts(cls, opt):
@@ -142,3 +143,8 @@ class ArgumentParser(cfargparse.ArgumentParser):
             "Please check path of your tgt vocab!"
         
         assert not opt.share_vocab or len(opt.train_ids) > 1
+        assert opt.data_type == 'text' or \
+            (not opt.cross_lingual and not opt.share_vocab)
+        assert not opt.dynamic_dict and \
+            opt.src_vocab == '' and opt.tgt_vocab == "", \
+            'Not check yet since align src & tgt.'

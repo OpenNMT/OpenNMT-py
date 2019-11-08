@@ -119,12 +119,19 @@ def batch_producer(generator_to_serve, queues, semaphore, opt):
                            for _ in b.src])
         else:
             b.src = b.src.to(torch.device(device_id))
-        b.tgt = b.tgt.to(torch.device(device_id))
+        if isinstance(b.tgt, tuple):
+            b.tgt = tuple([_.to(torch.device(device_id))
+                           for _ in b.tgt])
+        else:
+            b.tgt = b.tgt.to(torch.device(device_id))
+            
         b.indices = b.indices.to(torch.device(device_id))
         b.alignment = b.alignment.to(torch.device(device_id)) \
             if hasattr(b, 'alignment') else None
         b.src_map = b.src_map.to(torch.device(device_id)) \
             if hasattr(b, 'src_map') else None
+        b.tgt_map = b.tgt_map.to(torch.device(device_id)) \
+            if hasattr(b, 'tgt_map') else None
 
         # hack to dodge unpicklable `dict_keys`
         b.fields = list(b.fields)

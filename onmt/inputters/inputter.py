@@ -114,13 +114,13 @@ def get_fields(
 
     src_field_kwargs = {"n_feats": n_src_feats,
                         "include_lengths": True,
-                        "pad": pad, "bos": None, "eos": None,
+                        "pad": pad, "bos": bos, "eos": eos,
                         "truncate": src_truncate,
                         "base_name": "src"}
     fields["src"] = fields_getters[src_data_type](**src_field_kwargs)
 
     tgt_field_kwargs = {"n_feats": n_tgt_feats,
-                        "include_lengths": False,
+                        "include_lengths": True,
                         "pad": pad, "bos": bos, "eos": eos,
                         "truncate": tgt_truncate,
                         "base_name": "tgt"}
@@ -775,8 +775,8 @@ def max_tok_len(new, count, sofar):
         max_tgt_in_batch = 0
     # Src: [<bos> w1 ... wN <eos>]
     max_src_in_batch = max(max_src_in_batch, len(new.src[0]) + 2)
-    # Tgt: [w1 ... wM <eos>]
-    max_tgt_in_batch = max(max_tgt_in_batch, len(new.tgt[0]) + 1)
+    # Tgt: [<bos> w1 ... wM <eos>]
+    max_tgt_in_batch = max(max_tgt_in_batch, len(new.tgt[0]) + 2)
     src_elements = count * max_src_in_batch
     tgt_elements = count * max_tgt_in_batch
     return max(src_elements, tgt_elements)
