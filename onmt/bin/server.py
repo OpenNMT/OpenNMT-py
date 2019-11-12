@@ -75,14 +75,15 @@ def start(config_file,
         inputs = request.get_json(force=True)
         out = {}
         try:
-            translation, scores, n_best, times = translation_server.run(inputs)
-            assert len(translation) == len(inputs)
-            assert len(scores) == len(inputs)
+            trans, scores, n_best, times = translation_server.run(inputs)
+            assert len(trans) == len(inputs) * n_best
+            assert len(scores) == len(inputs) * n_best
 
-            out = [[{"src": inputs[i]['src'], "tgt": translation[i],
-                     "n_best": n_best,
-                     "pred_score": scores[i]}
-                    for i in range(len(translation))]]
+            out = [[] for _ in range(n_best)]
+            for i in range(len(trans)):
+                response = {"src": inputs[i // n_best]['src'], "tgt": trans[i],
+                            "n_best": n_best, "pred_score": scores[i]}
+                out[i % n_best].append(response)
         except ServerModelError as e:
             out['error'] = str(e)
             out['status'] = STATUS_ERROR
