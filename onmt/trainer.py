@@ -9,7 +9,6 @@
           users of this library) for the strategy things we do.
 """
 
-from copy import deepcopy
 import torch
 import traceback
 
@@ -290,14 +289,16 @@ class Trainer(object):
         Returns:
             :obj:`nmt.Statistics`: validation loss statistics
         """
+        valid_model = self.model
         if moving_average:
-            valid_model = deepcopy(self.model)
+            # swap model params w/ moving average
+            # (and keep the original parameters)
+            model_params_data = []
             for avg, param in zip(self.moving_average,
                                   valid_model.parameters()):
+                model_params_data.append(param.data)
                 param.data = avg.data.half() if self.optim._fp16 == "legacy" \
                     else avg.data
-        else:
-            valid_model = self.model
 
         # Set model in validating mode.
         valid_model.eval()
@@ -318,12 +319,13 @@ class Trainer(object):
 
                 # Update statistics.
                 stats.update(batch_stats)
-
         if moving_average:
-            del valid_model
-        else:
-            # Set model back to training mode.
-            valid_model.train()
+            for param_data, param in zip(model_params_data,
+                                         self.model.parameters()):
+                param.data = param_data
+
+        # Set model back to training mode.
+        valid_model.train()
 
         return stats
 
