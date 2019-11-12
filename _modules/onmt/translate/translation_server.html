@@ -382,8 +382,6 @@
                  <span class="n">on_timeout</span><span class="o">=</span><span class="s2">&quot;to_cpu&quot;</span><span class="p">,</span> <span class="n">model_root</span><span class="o">=</span><span class="s2">&quot;./&quot;</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model_root</span> <span class="o">=</span> <span class="n">model_root</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">opt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_opt</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">n_best</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Values of n_best &gt; 1 are not supported&quot;</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">model_id</span> <span class="o">=</span> <span class="n">model_id</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">preprocess_opt</span> <span class="o">=</span> <span class="n">preprocess_opt</span>
@@ -618,8 +616,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">reset_unload_timer</span><span class="p">()</span>
 
         <span class="c1"># NOTE: translator returns lists of `n_best` list</span>
-        <span class="c1">#       we can ignore that (i.e. flatten lists) only because</span>
-        <span class="c1">#       we restrict `n_best=1`</span>
         <span class="k">def</span> <span class="nf">flatten_list</span><span class="p">(</span><span class="n">_list</span><span class="p">):</span> <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">_list</span><span class="p">,</span> <span class="p">[])</span>
         <span class="n">results</span> <span class="o">=</span> <span class="n">flatten_list</span><span class="p">(</span><span class="n">predictions</span><span class="p">)</span>
         <span class="n">scores</span> <span class="o">=</span> <span class="p">[</span><span class="n">score_tensor</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
@@ -632,9 +628,12 @@
                    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">results</span><span class="p">]</span>
         <span class="c1"># build back results with empty texts</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">empty_indices</span><span class="p">:</span>
-            <span class="n">results</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-            <span class="n">scores</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">j</span> <span class="o">=</span> <span class="n">i</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">n_best</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="n">results</span><span class="p">[:</span><span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">n_best</span> <span class="o">+</span> <span class="n">results</span><span class="p">[</span><span class="n">j</span><span class="p">:]</span>
+            <span class="n">scores</span> <span class="o">=</span> <span class="n">scores</span><span class="p">[:</span><span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">n_best</span> <span class="o">+</span> <span class="n">scores</span><span class="p">[</span><span class="n">j</span><span class="p">:]</span>
 
+        <span class="n">head_spaces</span> <span class="o">=</span> <span class="p">[</span><span class="n">h</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">head_spaces</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">n_best</span><span class="p">)]</span>
+        <span class="n">tail_spaces</span> <span class="o">=</span> <span class="p">[</span><span class="n">h</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">tail_spaces</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">n_best</span><span class="p">)]</span>
         <span class="n">results</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
                    <span class="k">for</span> <span class="n">items</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">head_spaces</span><span class="p">,</span> <span class="n">results</span><span class="p">,</span> <span class="n">tail_spaces</span><span class="p">)]</span>
 
