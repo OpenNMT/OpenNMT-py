@@ -583,6 +583,21 @@ class ServerModel(object):
             tok = " ".join(tok)
         return tok
 
+    @property
+    def tokenizer_marker(self):
+        marker = None
+        tokenizer_type = self.tokenizer_opt.get('type', None)
+        if tokenizer_type == "pyonmttok":
+            params = self.tokenizer_opt.get('params', None)
+            if params is not None:
+                if params.get("joiner_annotate", None) is not None:
+                    marker = 'joiner'
+                elif params.get("spacer_annotate", None) is not None:
+                    marker = 'spacer'
+        elif tokenizer_type == "sentencepiece":
+            marker = 'spacer'
+        return marker
+
     def maybe_detokenize_with_align(self, sequence, src):
         """De-tokenize (or not) the sequence (with alignment).
 
@@ -600,8 +615,6 @@ class ServerModel(object):
             # output contain alignment
             sequence, align = sequence.split(' ||| ')
             align = self.maybe_convert_align(src, sequence, align)
-            align_pair = sorted(align.split(' '), key=lambda x: x[-1])
-            align = ' '.join(sorted(align_pair, key=lambda x: x[0]))
         sequence = self.maybe_detokenize(sequence)
         return (sequence, align)
 
@@ -642,28 +655,9 @@ class ServerModel(object):
         Returns:
             align (str): The alignment correspand to detokenized src/tgt.
         """
-        if self.tokenizer_opt is not None and ''.join(tgt.split()) != '':
-            return self.convert_align(src, tgt, align, self.tokenizer_opt)
+        if self.tokenizer_marker is not None and ''.join(tgt.split()) != '':
+            return to_word_align(src, tgt, align, mode=self.tokenizer_marker)
         return align
-
-    def convert_align(self, src, tgt, align, tok_opts):
-        """Convert alignment to match detokenized src/tgt.
-
-        Same args/returns as :func:`maybe_convert_align()`
-        """
-        if tok_opts["type"] == "pyonmttok":
-            if tok_opts["params"]["joiner_annotate"]:
-                mode = 'joiner'
-            elif tok_opts["params"]["spacer_annotate"]:
-                mode = 'spacer'
-            else:
-                raise ValueError("Tokenize marker (joiner/spacer) should"
-                                 " be used if want get word alignment!")
-        elif tok_opts["type"] == "sentencepiece":
-            mode = 'spacer'
-        else:
-            raise ValueError("This method has not been implemented yet!")
-        return to_word_align(src, tgt, align, mode)
 
     def maybe_postprocess(self, sequence):
         """Postprocess the sequence (or not)

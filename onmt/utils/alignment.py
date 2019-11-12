@@ -70,8 +70,8 @@ def build_align_pharaoh(valid_alignment):
 
     for tgt_id, src_id in enumerate(tgt_align_src_id.tolist()):
         align_pairs.append(str(src_id) + "-" + str(tgt_id))
-    align_pairs.sort(key=lambda x: x[-1])  # sort by tgt_id
-    align_pairs.sort(key=lambda x: x[0])  # sort by src_id
+    align_pairs.sort(key=lambda x: int(x.split('-')[-1]))  # sort by tgt_id
+    align_pairs.sort(key=lambda x: int(x.split('-')[0]))  # sort by src_id
     return align_pairs
 
 
@@ -100,12 +100,15 @@ def to_word_align(src, tgt, subword_align, mode):
         tgt_map = subword_map_by_spacer(tgt, marker='▁')
     else:
         raise ValueError("Invalid value for argument mode!")
-    word_align = " ".join({"{}-{}".format(src_map[a], tgt_map[b])
-                          for a, b in subword_align})
-    return word_align
+    word_align = list({"{}-{}".format(src_map[a], tgt_map[b])
+                       for a, b in subword_align})
+    word_align.sort(key=lambda x: int(x.split('-')[-1]))  # sort by tgt_id
+    word_align.sort(key=lambda x: int(x.split('-')[0]))  # sort by src_id
+    return " ".join(word_align)
 
 
 def subword_map_by_joiner(subwords, marker='￭'):
+    """Return word id for each subword token (annotate by joiner)."""
     flags = [0] * len(subwords)
     for i, tok in enumerate(subwords):
         if tok.endswith(marker):
@@ -121,6 +124,7 @@ def subword_map_by_joiner(subwords, marker='￭'):
 
 
 def subword_map_by_spacer(subwords, marker='▁'):
+    """Return word id for each subword token (annotate by spacer)."""
     word_group = list(accumulate([int(marker in x) for x in subwords]))
     if word_group[0] == 1:  # when dummy prefix is set
         word_group = [item - 1 for item in word_group]
