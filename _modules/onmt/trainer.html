@@ -186,7 +186,6 @@
 <span class="sd">          users of this library) for the strategy things we do.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">copy</span> <span class="k">import</span> <span class="n">deepcopy</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">traceback</span>
 
@@ -467,14 +466,16 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            :obj:`nmt.Statistics`: validation loss statistics</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">valid_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span>
         <span class="k">if</span> <span class="n">moving_average</span><span class="p">:</span>
-            <span class="n">valid_model</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+            <span class="c1"># swap model params w/ moving average</span>
+            <span class="c1"># (and keep the original parameters)</span>
+            <span class="n">model_params_data</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">avg</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">moving_average</span><span class="p">,</span>
                                   <span class="n">valid_model</span><span class="o">.</span><span class="n">parameters</span><span class="p">()):</span>
+                <span class="n">model_params_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">param</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
                 <span class="n">param</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">avg</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">half</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">_fp16</span> <span class="o">==</span> <span class="s2">&quot;legacy&quot;</span> \
                     <span class="k">else</span> <span class="n">avg</span><span class="o">.</span><span class="n">data</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">valid_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span>
 
         <span class="c1"># Set model in validating mode.</span>
         <span class="n">valid_model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
@@ -495,12 +496,13 @@
 
                 <span class="c1"># Update statistics.</span>
                 <span class="n">stats</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">batch_stats</span><span class="p">)</span>
-
         <span class="k">if</span> <span class="n">moving_average</span><span class="p">:</span>
-            <span class="k">del</span> <span class="n">valid_model</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># Set model back to training mode.</span>
-            <span class="n">valid_model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">param_data</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">model_params_data</span><span class="p">,</span>
+                                         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">()):</span>
+                <span class="n">param</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">param_data</span>
+
+        <span class="c1"># Set model back to training mode.</span>
+        <span class="n">valid_model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
 
         <span class="k">return</span> <span class="n">stats</span></div>
 
