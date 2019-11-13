@@ -419,9 +419,9 @@ class Translator(object):
                             tmp_tgt_path = self._save_tgt_tmp_file(tgt)
                         msg = self._report_rouge(tmp_tgt_path)
                         self._log(msg)
-            finally:
-                if not tmp_tgt_path and os.path.exists(tmp_tgt_path):
-                    os.remove(tmp_tgt_path)
+                finally:
+                    if not tmp_tgt_path and os.path.exists(tmp_tgt_path):
+                        os.remove(tmp_tgt_path)
 
         if self.report_time:
             total_time = end_time - start_time
