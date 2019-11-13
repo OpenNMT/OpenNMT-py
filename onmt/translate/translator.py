@@ -13,8 +13,7 @@ import onmt.model_builder
 import onmt.translate.beam
 import onmt.inputters as inputters
 import onmt.decoders.ensemble
-from onmt.translate.beam_search import BeamSearch
-from onmt.translate.random_sampling import RandomSampling
+from onmt.translate.decode_strategy import get_decode_strategy
 from onmt.utils.misc import tile, set_random_seed
 from onmt.modules.copy_generator import collapse_copy_scores
 
@@ -429,119 +428,22 @@ class Translator(object):
                       codecs.open(self.dump_beam, 'w', 'utf-8'))
         return all_scores, all_predictions
 
-    def _translate_random_sampling(
-            self,
-            batch,
-            src_vocabs,
-            max_length,
-            min_length=0,
-            sampling_temp=1.0,
-            keep_topk=-1,
-            return_attention=False):
-        """Alternative to beam search. Do random sampling at each step."""
-
-        assert self.beam_size == 1
-
-        # TODO: support these blacklisted features.
-        assert self.block_ngram_repeat == 0
-
-        batch_size = batch.batch_size
-
-        # Encoder forward.
-        src, enc_states, memory_bank, src_lengths = self._run_encoder(batch)
-        self.model.decoder.init_state(src, memory_bank, enc_states)
-
-        use_src_map = self.copy_attn
-
-        results = {
-            "predictions": None,
-            "scores": None,
-            "attention": None,
-            "batch": batch,
-            "gold_score": self._gold_score(
-                batch, memory_bank, src_lengths, src_vocabs, use_src_map,
-                enc_states, batch_size, src)}
-
-        memory_lengths = src_lengths
-        src_map = batch.src_map if use_src_map else None
-
-        if isinstance(memory_bank, tuple):
-            mb_device = memory_bank[0].device
-        else:
-            mb_device = memory_bank.device
-
-        random_sampler = RandomSampling(
-            self._tgt_pad_idx, self._tgt_bos_idx, self._tgt_eos_idx,
-            batch_size, mb_device, min_length, self.block_ngram_repeat,
-            self._exclusion_idxs, return_attention, self.max_length,
-            sampling_temp, keep_topk, memory_lengths)
-
-        for step in range(max_length):
-            # Shape: (1, B, 1)
-            decoder_input = random_sampler.alive_seq[:, -1].view(1, -1, 1)
-
-            log_probs, attn = self._decode_and_generate(
-                decoder_input,
-                memory_bank,
-                batch,
-                src_vocabs,
-                memory_lengths=memory_lengths,
-                src_map=src_map,
-                step=step,
-                batch_offset=random_sampler.select_indices
-            )
-
-            random_sampler.advance(log_probs, attn)
-            any_batch_is_finished = random_sampler.is_finished.any()
-            if any_batch_is_finished:
-                random_sampler.update_finished()
-                if random_sampler.done:
-                    break
-
-            if any_batch_is_finished:
-                select_indices = random_sampler.select_indices
-
-                # Reorder states.
-                if isinstance(memory_bank, tuple):
-                    memory_bank = tuple(x.index_select(1, select_indices)
-                                        for x in memory_bank)
-                else:
-                    memory_bank = memory_bank.index_select(1, select_indices)
-
-                memory_lengths = memory_lengths.index_select(0, select_indices)
-
-                if src_map is not None:
-                    src_map = src_map.index_select(1, select_indices)
-
-                self.model.decoder.map_state(
-                    lambda state, dim: state.index_select(dim, select_indices))
-
-        results["scores"] = random_sampler.scores
-        results["predictions"] = random_sampler.predictions
-        results["attention"] = random_sampler.attention
-        return results
-
     def translate_batch(self, batch, src_vocabs, attn_debug):
         """Translate a batch of sentences."""
         with torch.no_grad():
             if self.beam_size == 1:
-                return self._translate_random_sampling(
-                    batch,
-                    src_vocabs,
-                    self.max_length,
-                    min_length=self.min_length,
-                    sampling_temp=self.random_sampling_temp,
-                    keep_topk=self.sample_from_topk,
-                    return_attention=attn_debug or self.replace_unk)
+                # TODO: support these blacklisted features
+                assert self.block_ngram_repeat == 0
             else:
-                return self._translate_batch(
-                    batch,
-                    src_vocabs,
-                    self.max_length,
-                    min_length=self.min_length,
-                    ratio=self.ratio,
-                    n_best=self.n_best,
-                    return_attention=attn_debug or self.replace_unk)
+                # TODO: support these blacklisted features
+                assert not self.dump_beam
+            return self._translate_batch(
+                batch,
+                src_vocabs,
+                self.max_length,
+                min_length=self.min_length,
+                beam_size=self.beam_size,
+                return_attention=attn_debug or self.replace_unk)
 
     def _run_encoder(self, batch):
         src, src_lengths = batch.src if isinstance(batch.src, tuple) \
@@ -622,15 +524,23 @@ class Translator(object):
             src_vocabs,
             max_length,
             min_length=0,
-            ratio=0.,
-            n_best=1,
+            beam_size=1,
             return_attention=False):
-        # TODO: support these blacklisted features.
-        assert not self.dump_beam
+        """Translate a batch of sentences step by step using cache.
 
+        Args:
+            batch: a batch of sentences, yield by data iterator.
+            src_vocabs (list): list of torchtext.data.Vocab if can_copy.
+            max_length (int): Longest acceptable generation.
+            min_length (int): Shortest acceptable generation.
+            beam_size (int): use beam search if > 1, else random sampling.
+            return_attention (bool): whether return attention.
+
+        Returns:
+            results (dict): The translation results.
+        """
         # (0) Prep the components of the search.
         use_src_map = self.copy_attn
-        beam_size = self.beam_size
         batch_size = batch.batch_size
 
         # (1) Run the encoder on the src.
@@ -661,27 +571,28 @@ class Translator(object):
             mb_device = memory_bank.device
         memory_lengths = tile(src_lengths, beam_size)
 
-        # (0) pt 2, prep the beam object
-        beam = BeamSearch(
-            beam_size,
-            n_best=n_best,
-            batch_size=batch_size,
-            global_scorer=self.global_scorer,
-            pad=self._tgt_pad_idx,
-            eos=self._tgt_eos_idx,
+        # (0) pt 2, prep the decode strategy (beam search or random sampling)
+        strategy = get_decode_strategy(
+            beam_size, batch_size,
             bos=self._tgt_bos_idx,
-            min_length=min_length,
-            ratio=ratio,
-            max_length=max_length,
-            mb_device=mb_device,
-            return_attention=return_attention,
-            stepwise_penalty=self.stepwise_penalty,
+            eos=self._tgt_eos_idx,
+            pad=self._tgt_pad_idx,
+            device=mb_device,
+            min_length=min_length, max_length=max_length,
             block_ngram_repeat=self.block_ngram_repeat,
             exclusion_tokens=self._exclusion_idxs,
-            memory_lengths=memory_lengths)
+            return_attention=return_attention,
+            memory_lengths=memory_lengths,
+            keep_topk=self.sample_from_topk,
+            sampling_temp=self.random_sampling_temp,
+            ratio=self.ratio,
+            stepwise_penalty=self.stepwise_penalty,
+            n_best=self.n_best,
+            global_scorer=self.global_scorer
+        )
 
         for step in range(max_length):
-            decoder_input = beam.current_predictions.view(1, -1, 1)
+            decoder_input = strategy.current_predictions.view(1, -1, 1)
 
             log_probs, attn = self._decode_and_generate(
                 decoder_input,
@@ -691,18 +602,18 @@ class Translator(object):
                 memory_lengths=memory_lengths,
                 src_map=src_map,
                 step=step,
-                batch_offset=beam._batch_offset)
+                batch_offset=strategy.batch_offset)
 
-            beam.advance(log_probs, attn)
-            any_beam_is_finished = beam.is_finished.any()
-            if any_beam_is_finished:
-                beam.update_finished()
-                if beam.done:
+            strategy.advance(log_probs, attn)
+            any_finished = strategy.is_finished.any()
+            if any_finished:
+                strategy.update_finished()
+                if strategy.done:
                     break
 
-            select_indices = beam.current_origin
+            select_indices = strategy.select_indices
 
-            if any_beam_is_finished:
+            if any_finished:
                 # Reorder states.
                 if isinstance(memory_bank, tuple):
                     memory_bank = tuple(x.index_select(1, select_indices)
@@ -715,12 +626,14 @@ class Translator(object):
                 if src_map is not None:
                     src_map = src_map.index_select(1, select_indices)
 
-            self.model.decoder.map_state(
-                lambda state, dim: state.index_select(dim, select_indices))
+            if strategy.update_state:
+                strategy.update_state = False
+                self.model.decoder.map_state(
+                    lambda state, dim: state.index_select(dim, select_indices))
 
-        results["scores"] = beam.scores
-        results["predictions"] = beam.predictions
-        results["attention"] = beam.attention
+        results["scores"] = strategy.scores
+        results["predictions"] = strategy.predictions
+        results["attention"] = strategy.attention
         return results
 
     # This is left in the code for now, but unsued

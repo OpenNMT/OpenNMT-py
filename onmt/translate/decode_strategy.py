@@ -1,4 +1,38 @@
 import torch
+import onmt
+
+
+def get_decode_strategy(beam_size, batch_size, bos, eos, pad, device,
+                        min_length, max_length, block_ngram_repeat,
+                        exclusion_tokens, return_attention, memory_lengths,
+                        keep_topk=1, sampling_temp=1,  # random_sampling only
+                        ratio=0., stepwise_penalty=None,  # beam search only
+                        n_best=1, global_scorer=None):
+    if beam_size == 1:
+        strategy = onmt.translate.RandomSampling(
+            pad=pad, bos=bos, eos=eos,
+            batch_size=batch_size, device=device,
+            min_length=min_length, max_length=max_length,
+            block_ngram_repeat=block_ngram_repeat,
+            exclusion_tokens=exclusion_tokens,
+            return_attention=return_attention,
+            sampling_temp=sampling_temp, keep_topk=keep_topk,
+            memory_lengths=memory_lengths)
+    else:
+        strategy = onmt.translate.BeamSearch(
+            beam_size,
+            batch_size=batch_size,
+            pad=pad, bos=bos, eos=eos,
+            n_best=n_best, mb_device=device,
+            global_scorer=global_scorer,
+            min_length=min_length, max_length=max_length,
+            return_attention=return_attention,
+            block_ngram_repeat=block_ngram_repeat,
+            exclusion_tokens=exclusion_tokens,
+            memory_lengths=memory_lengths,
+            stepwise_penalty=stepwise_penalty,
+            ratio=ratio)
+    return strategy
 
 
 class DecodeStrategy(object):

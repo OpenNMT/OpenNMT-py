@@ -79,14 +79,14 @@ class RandomSampling(DecodeStrategy):
             :func:`~onmt.translate.random_sampling.sample_with_temperature()`.
         keep_topk (int): See
             :func:`~onmt.translate.random_sampling.sample_with_temperature()`.
-        memory_length (LongTensor): Lengths of encodings. Used for
+        memory_lengths (LongTensor): Lengths of encodings. Used for
             masking attention.
     """
 
     def __init__(self, pad, bos, eos, batch_size, device,
                  min_length, block_ngram_repeat, exclusion_tokens,
                  return_attention, max_length, sampling_temp, keep_topk,
-                 memory_length):
+                 memory_lengths):
         super(RandomSampling, self).__init__(
             pad, bos, eos, batch_size, device, 1,
             min_length, block_ngram_repeat, exclusion_tokens,
@@ -94,12 +94,21 @@ class RandomSampling(DecodeStrategy):
         self.sampling_temp = sampling_temp
         self.keep_topk = keep_topk
         self.topk_scores = None
-        self.memory_length = memory_length
+        self.memory_lengths = memory_lengths
         self.batch_size = batch_size
         self.select_indices = torch.arange(self.batch_size,
                                            dtype=torch.long, device=device)
         self.original_batch_idx = torch.arange(self.batch_size,
                                                dtype=torch.long, device=device)
+        self.update_state = False  # set True each time updates select_indices
+
+    @property
+    def current_predictions(self):
+        return self.alive_seq[:, -1]
+
+    @property
+    def batch_offset(self):
+        return self.select_indices
 
     def advance(self, log_probs, attn):
         """Select next tokens randomly from the top k possible next tokens.
@@ -138,7 +147,7 @@ class RandomSampling(DecodeStrategy):
             self.scores[b_orig].append(self.topk_scores[b, 0])
             self.predictions[b_orig].append(self.alive_seq[b, 1:])
             self.attention[b_orig].append(
-                self.alive_attn[:, b, :self.memory_length[b]]
+                self.alive_attn[:, b, :self.memory_lengths[b]]
                 if self.alive_attn is not None else [])
         self.done = self.is_finished.all()
         if self.done:
@@ -148,4 +157,5 @@ class RandomSampling(DecodeStrategy):
         if self.alive_attn is not None:
             self.alive_attn = self.alive_attn[:, is_alive]
         self.select_indices = is_alive.nonzero().view(-1)
+        self.update_state = True
         self.original_batch_idx = self.original_batch_idx[is_alive]
