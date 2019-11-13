@@ -408,12 +408,20 @@ class Translator(object):
                 msg = self._report_score('GOLD', gold_score_total,
                                          gold_words_total)
                 self._log(msg)
-                if self.report_bleu:
-                    msg = self._report_bleu(tgt)
-                    self._log(msg)
-                if self.report_rouge:
-                    msg = self._report_rouge(tgt)
-                    self._log(msg)
+                tmp_tgt_path = None
+                try:
+                    if self.report_bleu:
+                        tmp_tgt_path = self._save_tgt_tmp_file(tgt)
+                        msg = self._report_bleu(tmp_tgt_path)
+                        self._log(msg)
+                    if self.report_rouge:
+                        if not tmp_tgt_path:
+                            tmp_tgt_path = self._save_tgt_tmp_file(tgt)
+                        msg = self._report_rouge(tmp_tgt_path)
+                        self._log(msg)
+            finally:
+                if not tmp_tgt_path and os.path.exists(tmp_tgt_path):
+                    os.remove(tmp_tgt_path)
 
         if self.report_time:
             total_time = end_time - start_time
@@ -834,6 +842,13 @@ class Translator(object):
 
         return gold_scores
 
+    def _save_tgt_tmp_file(self, lines):
+        current_time = time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime())
+        tmp_tgt_path = ".score-tmp-{}-tgt.txt".format(current_time)
+        with codecs.open(tmp_tgt_path, 'w', 'utf-8') as f:
+            f.write('\n'.join([t.decode('utf-8').strip() for t in lines]))
+        return tmp_tgt_path
+
     def _report_score(self, name, score_total, words_total):
         if words_total == 0:
             msg = "%s No words predicted" % (name,)
@@ -860,7 +875,8 @@ class Translator(object):
 
     def _report_rouge(self, tgt_path):
         import subprocess
-        path = os.path.split(os.path.realpath(__file__))[0]
+        path = os.path.abspath(__file__ + "/../../..")
+        self.out_file.seek(0)
         msg = subprocess.check_output(
             "python %s/tools/test_rouge.py -r %s -c STDIN" % (path, tgt_path),
             shell=True, stdin=self.out_file
