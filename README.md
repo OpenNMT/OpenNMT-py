@@ -55,7 +55,7 @@ Note:
 ## Features
 
 - [Seq2Seq models (encoder-decoder) with multiple RNN cells (lstm/gru) and attention (dotprod/mlp) types](http://opennmt.net/OpenNMT-py/options/train.html#model-encoder-decoder)
-- [Transformer models"](http://opennmt.net/OpenNMT-py/FAQ.html#how-do-i-use-the-transformer-model)
+- [Transformer models](http://opennmt.net/OpenNMT-py/FAQ.html#how-do-i-use-the-transformer-model)
 - [Copy and Coverage Attention](http://opennmt.net/OpenNMT-py/options/train.html#model-attention)
 - [Pretrained Embeddings](http://opennmt.net/OpenNMT-py/FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove)
 - [Source word features](http://opennmt.net/OpenNMT-py/options/train.html#model-embeddings)
