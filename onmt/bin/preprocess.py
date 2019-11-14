@@ -126,7 +126,8 @@ def maybe_load_vocab(corpus_type, counters, opt):
     return src_vocab, tgt_vocab, existing_fields
 
 
-def build_save_dataset(corpus_type, fields, r_src, r_tgt, r_align, opt):
+def build_save_dataset(corpus_type, fields, src_reader, tgt_reader,
+                       align_reader, opt):
     assert corpus_type in ['train', 'valid']
 
     if corpus_type == 'train':
@@ -192,8 +193,9 @@ def build_save_dataset(corpus_type, fields, r_src, r_tgt, r_align, opt):
                                 existing_fields, corpus_type, opt)
 
     with Pool(opt.num_threads) as p:
-        dataset_params = (corpus_type, fields, r_src, r_tgt, r_align,
-                          opt, existing_fields, src_vocab, tgt_vocab)
+        dataset_params = (corpus_type, fields, src_reader, tgt_reader,
+                          align_reader, opt, existing_fields,
+                          src_vocab, tgt_vocab)
         func = partial(process_one_shard, dataset_params)
         for sub_counter in p.imap(func, shard_iter):
             if sub_counter is not None:

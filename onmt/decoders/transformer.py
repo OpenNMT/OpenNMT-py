@@ -48,7 +48,21 @@ class TransformerDecoderLayer(nn.Module):
         self.alignment_heads = alignment_heads
 
     def forward(self, *args, **kwargs):
-        """ Extend _forward for multiply decoder pass.
+        """ Extend _forward for (possibly) multiple decoder pass:
+        1. Always a default (future masked) decoder forward pass,
+        2. Possibly a second future aware decoder pass for joint learn
+            full context alignement.
+
+        Args:
+            * All arguments of _forward.
+            with_align (bool): whether return alignment attention.
+
+        Returns:
+            (FloatTensor, FloatTensor, FloatTensor or None):
+
+            * output ``(batch_size, 1, model_dim)``
+            * top_attn ``(batch_size, 1, src_len)``
+            * attn_align ``(batch_size, 1, src_len)`` or None
         """
         with_align = kwargs.pop('with_align', False)
         output, attns = self._forward(*args, **kwargs)
@@ -166,7 +180,8 @@ class TransformerDecoder(DecoderBase):
     def __init__(self, num_layers, d_model, heads, d_ff,
                  copy_attn, self_attn_type, dropout, attention_dropout,
                  embeddings, max_relative_positions, aan_useffn,
-                 full_context, alignment_layer, alignment_heads=None):
+                 full_context_alignment, alignment_layer,
+                 alignment_heads=None):
         super(TransformerDecoder, self).__init__()
 
         self.embeddings = embeddings
@@ -179,7 +194,7 @@ class TransformerDecoder(DecoderBase):
              attention_dropout, self_attn_type=self_attn_type,
              max_relative_positions=max_relative_positions,
              aan_useffn=aan_useffn,
-             full_context_alignment=full_context,
+             full_context_alignment=full_context_alignment,
              alignment_heads=alignment_heads)
              for i in range(num_layers)])
 
