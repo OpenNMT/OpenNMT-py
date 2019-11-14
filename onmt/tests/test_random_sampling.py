@@ -14,7 +14,7 @@ class TestRandomSampling(unittest.TestCase):
     def test_advance_with_repeats_gets_blocked(self):
         n_words = 100
         repeat_idx = 47
-        ngram_repeat = 3
+        ngram_repeat = 0
         for batch_sz in [1, 3]:
             samp = RandomSampling(
                 0, 1, 2, batch_sz, 0, ngram_repeat, set(),
@@ -42,7 +42,7 @@ class TestRandomSampling(unittest.TestCase):
         n_words = 100
         repeat_idx = 47
         other_repeat_idx = 12
-        ngram_repeat = 3
+        ngram_repeat = 0
         for batch_sz in [1, 3, 13]:
             samp = RandomSampling(
                 0, 1, 2, batch_sz, 0, ngram_repeat, set(),
@@ -85,7 +85,7 @@ class TestRandomSampling(unittest.TestCase):
         n_words = 100
         repeat_idx = 47  # will be repeated and should be blocked
         repeat_idx_ignored = 7  # will be repeated and should not be blocked
-        ngram_repeat = 3
+        ngram_repeat = 0
         for batch_sz in [1, 3, 17]:
             samp = RandomSampling(
                 0, 1, 2, batch_sz, 0, ngram_repeat,
@@ -125,9 +125,10 @@ class TestRandomSampling(unittest.TestCase):
             min_length = 5
             eos_idx = 2
             lengths = torch.randint(0, 30, (batch_sz,))
+            ngram_repeat = 0
             samp = RandomSampling(
                 0, 1, 2, batch_sz, min_length,
-                False, set(), False, 30, 1., 1)
+                ngram_repeat, set(), False, 30, 1., 1)
             samp._init_runtime(torch.device("cpu"), lengths)
             all_attns = []
             for i in range(min_length + 4):
@@ -165,10 +166,11 @@ class TestRandomSampling(unittest.TestCase):
                 valid_score_dist_2 = torch.log_softmax(torch.tensor(
                     [6., 1.]), dim=0)
                 eos_idx = 2
+                ngram_repeat = 0
                 lengths = torch.randint(0, 30, (batch_sz,))
                 samp = RandomSampling(
                     0, 1, 2, batch_sz, 0,
-                    False, set(), False, 30, temp, 1)
+                    ngram_repeat, set(), False, 30, temp, 1)
                 samp._init_runtime(torch.device("cpu"), lengths)
                 # initial step
                 i = 0
@@ -237,10 +239,11 @@ class TestRandomSampling(unittest.TestCase):
                 valid_score_dist_2 = torch.log_softmax(torch.tensor(
                     [6., 1.]), dim=0)
                 eos_idx = 2
+                ngram_repeat = 0
                 lengths = torch.randint(0, 30, (batch_sz,))
                 samp = RandomSampling(
                     0, 1, 2, batch_sz, 0,
-                    False, set(), False, 30, temp, 2)
+                    ngram_repeat, set(), False, 30, temp, 2)
                 samp._init_runtime(torch.device("cpu"), lengths)
                 # initial step
                 i = 0
