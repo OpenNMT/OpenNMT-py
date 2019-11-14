@@ -68,7 +68,6 @@ class RandomSampling(DecodeStrategy):
         bos (int): See base.
         eos (int): See base.
         batch_size (int): See base.
-        device (torch.device or str): See base ``device``.
         min_length (int): See base.
         max_length (int): See base.
         block_ngram_repeat (int): See base.
@@ -79,28 +78,43 @@ class RandomSampling(DecodeStrategy):
             :func:`~onmt.translate.random_sampling.sample_with_temperature()`.
         keep_topk (int): See
             :func:`~onmt.translate.random_sampling.sample_with_temperature()`.
-        memory_lengths (LongTensor): Lengths of encodings. Used for
-            masking attention.
     """
 
-    def __init__(self, pad, bos, eos, batch_size, device,
-                 min_length, block_ngram_repeat, exclusion_tokens,
-                 return_attention, max_length, sampling_temp, keep_topk,
-                 memory_lengths):
+    def __init__(self, pad, bos, eos, batch_size, min_length,
+                 block_ngram_repeat, exclusion_tokens, return_attention,
+                 max_length, sampling_temp, keep_topk):
+        assert block_ngram_repeat == 0
         super(RandomSampling, self).__init__(
-            pad, bos, eos, batch_size, device, 1,
-            min_length, block_ngram_repeat, exclusion_tokens,
-            return_attention, max_length)
+            pad, bos, eos, batch_size, 1, min_length, block_ngram_repeat,
+            exclusion_tokens, return_attention, max_length)
         self.sampling_temp = sampling_temp
         self.keep_topk = keep_topk
         self.topk_scores = None
-        self.memory_lengths = memory_lengths
         self.batch_size = batch_size
-        self.select_indices = torch.arange(self.batch_size,
-                                           dtype=torch.long, device=device)
+        self.select_indices = torch.arange(self.batch_size, dtype=torch.long)
         self.original_batch_idx = torch.arange(self.batch_size,
-                                               dtype=torch.long, device=device)
+                                               dtype=torch.long)
         self.update_state = False  # set True each time updates select_indices
+
+    def _init_runtime(self, device, memory_lengths):
+        """Perform Tensor attributes device conversion."""
+        self.memory_lengths = memory_lengths
+        super(RandomSampling, self)._init_runtime(device)
+        self.select_indices = self.select_indices.to(device=device)
+        self.original_batch_idx = self.original_batch_idx.to(device=device)
+
+    def initialize(self, memory_bank, src_lengths, src_map=None):
+        """Initialize for decoding."""
+        fn_map_state = None
+
+        if isinstance(memory_bank, tuple):
+            mb_device = memory_bank[0].device
+        else:
+            mb_device = memory_bank.device
+
+        self._init_runtime(mb_device, src_lengths)
+
+        return fn_map_state, memory_bank, src_lengths, src_map
 
     @property
     def current_predictions(self):

@@ -1,38 +1,4 @@
 import torch
-import onmt
-
-
-def get_decode_strategy(beam_size, batch_size, bos, eos, pad, device,
-                        min_length, max_length, block_ngram_repeat,
-                        exclusion_tokens, return_attention, memory_lengths,
-                        keep_topk=1, sampling_temp=1,  # random_sampling only
-                        ratio=0., stepwise_penalty=None,  # beam search only
-                        n_best=1, global_scorer=None):
-    if beam_size == 1:
-        strategy = onmt.translate.RandomSampling(
-            pad=pad, bos=bos, eos=eos,
-            batch_size=batch_size, device=device,
-            min_length=min_length, max_length=max_length,
-            block_ngram_repeat=block_ngram_repeat,
-            exclusion_tokens=exclusion_tokens,
-            return_attention=return_attention,
-            sampling_temp=sampling_temp, keep_topk=keep_topk,
-            memory_lengths=memory_lengths)
-    else:
-        strategy = onmt.translate.BeamSearch(
-            beam_size,
-            batch_size=batch_size,
-            pad=pad, bos=bos, eos=eos,
-            n_best=n_best, mb_device=device,
-            global_scorer=global_scorer,
-            min_length=min_length, max_length=max_length,
-            return_attention=return_attention,
-            block_ngram_repeat=block_ngram_repeat,
-            exclusion_tokens=exclusion_tokens,
-            memory_lengths=memory_lengths,
-            stepwise_penalty=stepwise_penalty,
-            ratio=ratio)
-    return strategy
 
 
 class DecodeStrategy(object):
@@ -43,7 +9,6 @@ class DecodeStrategy(object):
         bos (int): Magic integer in output vocab.
         eos (int): Magic integer in output vocab.
         batch_size (int): Current batch size.
-        device (torch.device or str): Device for memory bank (encoder).
         parallel_paths (int): Decoding strategies like beam search
             use parallel paths. Each batch is repeated ``parallel_paths``
             times in relevant state tensors.
@@ -88,7 +53,7 @@ class DecodeStrategy(object):
         done (bool): See above.
     """
 
-    def __init__(self, pad, bos, eos, batch_size, device, parallel_paths,
+    def __init__(self, pad, bos, eos, batch_size, parallel_paths,
                  min_length, block_ngram_repeat, exclusion_tokens,
                  return_attention, max_length):
 
@@ -104,10 +69,10 @@ class DecodeStrategy(object):
 
         self.alive_seq = torch.full(
             [batch_size * parallel_paths, 1], self.bos,
-            dtype=torch.long, device=device)
+            dtype=torch.long)
         self.is_finished = torch.zeros(
             [batch_size, parallel_paths],
-            dtype=torch.uint8, device=device)
+            dtype=torch.uint8)
         self.alive_attn = None
 
         self.min_length = min_length
@@ -117,6 +82,20 @@ class DecodeStrategy(object):
         self.return_attention = return_attention
 
         self.done = False
+
+    def _init_runtime(self, device):
+        """Perform Tensor attributes device conversion."""
+        self.alive_seq = self.alive_seq.to(device=device)
+        self.is_finished = self.is_finished.to(device=device)
+
+    def initialize(self, memory_bank, src_lengths, src_map=None):
+        """DecodeStrategy subclasses should override :func:`initialize()`.
+
+        `initialize` should be called before all actions.
+        used to prepare necessary ingredients for decode.
+        """
+        # self._init_runtime(mb_device)
+        raise NotImplementedError
 
     def __len__(self):
         return self.alive_seq.shape[1]

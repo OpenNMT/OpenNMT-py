@@ -17,8 +17,10 @@ class TestRandomSampling(unittest.TestCase):
         ngram_repeat = 3
         for batch_sz in [1, 3]:
             samp = RandomSampling(
-                0, 1, 2, batch_sz, torch.device("cpu"), 0, ngram_repeat, set(),
-                False, 30, 1., 5, torch.randint(0, 30, (batch_sz,)))
+                0, 1, 2, batch_sz, 0, ngram_repeat, set(),
+                False, 30, 1., 5)
+            samp._init_runtime(torch.device("cpu"),
+                               torch.randint(0, 30, (batch_sz,)))
             for i in range(ngram_repeat + 4):
                 # predict repeat_idx over and over again
                 word_probs = torch.full(
@@ -43,8 +45,10 @@ class TestRandomSampling(unittest.TestCase):
         ngram_repeat = 3
         for batch_sz in [1, 3, 13]:
             samp = RandomSampling(
-                0, 1, 2, batch_sz, torch.device("cpu"), 0, ngram_repeat, set(),
-                False, 30, 1., 5, torch.randint(0, 30, (batch_sz,)))
+                0, 1, 2, batch_sz, 0, ngram_repeat, set(),
+                False, 30, 1., 5)
+            samp._init_runtime(torch.device("cpu"),
+                               torch.randint(0, 30, (batch_sz,)))
             for i in range(ngram_repeat + 4):
                 word_probs = torch.full(
                     (batch_sz, n_words), -float('inf'))
@@ -84,9 +88,10 @@ class TestRandomSampling(unittest.TestCase):
         ngram_repeat = 3
         for batch_sz in [1, 3, 17]:
             samp = RandomSampling(
-                0, 1, 2, batch_sz, torch.device("cpu"), 0, ngram_repeat,
-                {repeat_idx_ignored}, False, 30, 1., 5,
-                torch.randint(0, 30, (batch_sz,)))
+                0, 1, 2, batch_sz, 0, ngram_repeat,
+                {repeat_idx_ignored}, False, 30, 1., 5)
+            samp._init_runtime(torch.device("cpu"),
+                               torch.randint(0, 30, (batch_sz,)))
             for i in range(ngram_repeat + 4):
                 word_probs = torch.full(
                     (batch_sz, n_words), -float('inf'))
@@ -121,8 +126,9 @@ class TestRandomSampling(unittest.TestCase):
             eos_idx = 2
             lengths = torch.randint(0, 30, (batch_sz,))
             samp = RandomSampling(
-                0, 1, 2, batch_sz, torch.device("cpu"), min_length,
-                False, set(), False, 30, 1., 1, lengths)
+                0, 1, 2, batch_sz, min_length,
+                False, set(), False, 30, 1., 1)
+            samp._init_runtime(torch.device("cpu"), lengths)
             all_attns = []
             for i in range(min_length + 4):
                 word_probs = torch.full(
@@ -161,9 +167,9 @@ class TestRandomSampling(unittest.TestCase):
                 eos_idx = 2
                 lengths = torch.randint(0, 30, (batch_sz,))
                 samp = RandomSampling(
-                    0, 1, 2, batch_sz, torch.device("cpu"), 0,
-                    False, set(), False, 30, temp, 1, lengths)
-
+                    0, 1, 2, batch_sz, 0,
+                    False, set(), False, 30, temp, 1)
+                samp._init_runtime(torch.device("cpu"), lengths)
                 # initial step
                 i = 0
                 word_probs = torch.full(
@@ -233,9 +239,9 @@ class TestRandomSampling(unittest.TestCase):
                 eos_idx = 2
                 lengths = torch.randint(0, 30, (batch_sz,))
                 samp = RandomSampling(
-                    0, 1, 2, batch_sz, torch.device("cpu"), 0,
-                    False, set(), False, 30, temp, 2, lengths)
-
+                    0, 1, 2, batch_sz, 0,
+                    False, set(), False, 30, temp, 2)
+                samp._init_runtime(torch.device("cpu"), lengths)
                 # initial step
                 i = 0
                 for _ in range(100):

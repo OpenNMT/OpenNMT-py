@@ -1,6 +1,7 @@
 import torch
 
 from onmt.translate.decode_strategy import DecodeStrategy
+from onmt.utils.misc import tile
 
 
 class BeamSearch(DecodeStrategy):
@@ -19,15 +20,12 @@ class BeamSearch(DecodeStrategy):
         eos (int): See base.
         n_best (int): Don't stop until at least this many beams have
             reached EOS.
-        mb_device (torch.device or str): See base ``device``.
         global_scorer (onmt.translate.GNMTGlobalScorer): Scorer instance.
         min_length (int): See base.
         max_length (int): See base.
         return_attention (bool): See base.
         block_ngram_repeat (int): See base.
         exclusion_tokens (set[int]): See base.
-        memory_lengths (LongTensor): Lengths of encodings. Used for
-            masking attentions.
 
     Attributes:
         top_beam_finished (ByteTensor): Shape ``(B,)``.
@@ -36,6 +34,8 @@ class BeamSearch(DecodeStrategy):
         alive_seq (LongTensor): See base.
         topk_log_probs (FloatTensor): Shape ``(B x beam_size,)``. These
             are the scores used for the topk operation.
+        memory_lengths (LongTensor): Lengths of encodings. Used for
+            masking attentions.
         select_indices (LongTensor or NoneType): Shape
             ``(B x beam_size,)``. This is just a flat view of the
             ``_batch_index``.
@@ -55,12 +55,12 @@ class BeamSearch(DecodeStrategy):
             of score (float), sequence (long), and attention (float or None).
     """
 
-    def __init__(self, beam_size, batch_size, pad, bos, eos, n_best, mb_device,
+    def __init__(self, beam_size, batch_size, pad, bos, eos, n_best,
                  global_scorer, min_length, max_length, return_attention,
-                 block_ngram_repeat, exclusion_tokens, memory_lengths,
+                 block_ngram_repeat, exclusion_tokens,
                  stepwise_penalty, ratio):
         super(BeamSearch, self).__init__(
-            pad, bos, eos, batch_size, mb_device, beam_size, min_length,
+            pad, bos, eos, batch_size, beam_size, min_length,
             block_ngram_repeat, exclusion_tokens, return_attention,
             max_length)
         # beam parameters
@@ -80,27 +80,22 @@ class BeamSearch(DecodeStrategy):
             self.top_beam_finished = self.top_beam_finished.bool()
         except AttributeError:
             pass
-        self.best_scores = torch.full([batch_size], -1e10, dtype=torch.float,
-                                      device=mb_device)
+        self.best_scores = torch.full([batch_size], -1e10, dtype=torch.float)
 
         self._batch_offset = torch.arange(batch_size, dtype=torch.long)
         self._beam_offset = torch.arange(
-            0, batch_size * beam_size, step=beam_size, dtype=torch.long,
-            device=mb_device)
+            0, batch_size * beam_size, step=beam_size, dtype=torch.long)
         self.topk_log_probs = torch.tensor(
-            [0.0] + [float("-inf")] * (beam_size - 1), device=mb_device
-        ).repeat(batch_size)
+            [0.0] + [float("-inf")] * (beam_size - 1)).repeat(batch_size)
         self.select_indices = None
         self.update_state = False  # set True each time updates select_indices
-        self._memory_lengths = memory_lengths
 
         # buffers for the topk scores and 'backpointer'
         self.topk_scores = torch.empty((batch_size, beam_size),
-                                       dtype=torch.float, device=mb_device)
-        self.topk_ids = torch.empty((batch_size, beam_size), dtype=torch.long,
-                                    device=mb_device)
+                                       dtype=torch.float)
+        self.topk_ids = torch.empty((batch_size, beam_size), dtype=torch.long)
         self._batch_index = torch.empty([batch_size, beam_size],
-                                        dtype=torch.long, device=mb_device)
+                                        dtype=torch.long)
         self.done = False
         # "global state" of the old beam
         self._prev_penalty = None
@@ -111,6 +106,39 @@ class BeamSearch(DecodeStrategy):
         self._vanilla_cov_pen = (
             not stepwise_penalty and self.global_scorer.has_cov_pen)
         self._cov_pen = self.global_scorer.has_cov_pen
+
+    def _init_runtime(self, device, memory_lengths):
+        """Perform Tensor attributes device conversion."""
+        self.memory_lengths = memory_lengths
+        super(BeamSearch, self)._init_runtime(device)
+        self.best_scores = self.best_scores.to(device=device)
+        self._beam_offset = self._beam_offset.to(device=device)
+        self.topk_log_probs = self.topk_log_probs.to(device=device)
+        self.topk_scores = self.topk_scores.to(device=device)
+        self.topk_ids = self.topk_ids.to(device=device)
+        self._batch_index = self._batch_index.to(device=device)
+
+    def initialize(self, memory_bank, src_lengths, src_map=None):
+        """Initialize for decoding.
+        Repeat src objects `beam_size` times.
+        """
+
+        def fn_map_state(state, dim):
+            return tile(state, self.beam_size, dim=dim)
+
+        if isinstance(memory_bank, tuple):
+            memory_bank = tuple(tile(x, self.beam_size, dim=1)
+                                for x in memory_bank)
+            mb_device = memory_bank[0].device
+        else:
+            memory_bank = tile(memory_bank, self.beam_size, dim=1)
+            mb_device = memory_bank.device
+
+        memory_lengths = tile(src_lengths, self.beam_size)
+        self._init_runtime(mb_device, memory_lengths)
+        if src_map is not None:
+            src_map = tile(src_map, self.beam_size, dim=1)
+        return fn_map_state, memory_bank, memory_lengths, src_map
 
     @property
     def current_predictions(self):
@@ -232,12 +260,12 @@ class BeamSearch(DecodeStrategy):
                 self.hypotheses[b].append((
                     self.topk_scores[i, j],
                     predictions[i, j, 1:],  # Ignore start_token.
-                    attention[:, i, j, :self._memory_lengths[i]]
+                    attention[:, i, j, :self.memory_lengths[i]]
                     if attention is not None else None))
             # End condition is the top beam finished and we can return
             # n_best hypotheses.
             if self.ratio > 0:
-                pred_len = self._memory_lengths[i] * self.ratio
+                pred_len = self.memory_lengths[i] * self.ratio
                 finish_flag = ((self.topk_scores[i, 0] / pred_len)
                                <= self.best_scores[b]) or \
                     self.is_finished[i].all()
