@@ -420,7 +420,8 @@ class Translator(object):
                         msg = self._report_rouge(tmp_tgt_path)
                         self._log(msg)
                 finally:
-                    if not tmp_tgt_path and os.path.exists(tmp_tgt_path):
+                    if tmp_tgt_path is not None and \
+                            os.path.exists(tmp_tgt_path):
                         os.remove(tmp_tgt_path)
 
         if self.report_time:
