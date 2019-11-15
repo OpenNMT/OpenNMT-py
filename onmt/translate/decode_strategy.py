@@ -79,18 +79,21 @@ class DecodeStrategy(object):
 
         self.done = False
 
-    def initialize(self, device):
+    def initialize(self, memory_bank, src_lengths, src_map=None, device=None):
         """DecodeStrategy subclasses should override :func:`initialize()`.
 
         `initialize` should be called before all actions.
         used to prepare necessary ingredients for decode.
         """
+        if device is None:
+            device = torch.device('cpu')
         self.alive_seq = torch.full(
             [self.batch_size * self.parallel_paths, 1], self.bos,
             dtype=torch.long, device=device)
         self.is_finished = torch.zeros(
             [self.batch_size, self.parallel_paths],
             dtype=torch.uint8, device=device)
+        return None, memory_bank, src_lengths, src_map
 
     def __len__(self):
         return self.alive_seq.shape[1]

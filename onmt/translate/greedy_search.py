@@ -91,7 +91,7 @@ class GreedySearch(DecodeStrategy):
         self.keep_topk = keep_topk
         self.topk_scores = None
 
-    def initialize(self, memory_bank, src_lengths, src_map=None):
+    def initialize(self, memory_bank, src_lengths, src_map=None, device=None):
         """Initialize for decoding."""
         fn_map_state = None
 
@@ -99,13 +99,16 @@ class GreedySearch(DecodeStrategy):
             mb_device = memory_bank[0].device
         else:
             mb_device = memory_bank.device
+        if device is None:
+            device = mb_device
 
         self.memory_lengths = src_lengths
-        super(GreedySearch, self).initialize(mb_device)
+        super(GreedySearch, self).initialize(
+            memory_bank, src_lengths, src_map, device)
         self.select_indices = torch.arange(
-            self.batch_size, dtype=torch.long, device=mb_device)
+            self.batch_size, dtype=torch.long, device=device)
         self.original_batch_idx = torch.arange(
-            self.batch_size, dtype=torch.long, device=mb_device)
+            self.batch_size, dtype=torch.long, device=device)
         return fn_map_state, memory_bank, self.memory_lengths, src_map
 
     @property
