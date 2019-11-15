@@ -65,7 +65,6 @@ class BeamSearch(DecodeStrategy):
         self.global_scorer = global_scorer
         self.beam_size = beam_size
         self.n_best = n_best
-        self.batch_size = batch_size
         self.ratio = ratio
 
         # result caching
@@ -78,21 +77,9 @@ class BeamSearch(DecodeStrategy):
             self.top_beam_finished = self.top_beam_finished.bool()
         except AttributeError:
             pass
-        self.best_scores = torch.full([batch_size], -1e10, dtype=torch.float)
-
         self._batch_offset = torch.arange(batch_size, dtype=torch.long)
-        self._beam_offset = torch.arange(
-            0, batch_size * beam_size, step=beam_size, dtype=torch.long)
-        self.topk_log_probs = torch.tensor(
-            [0.0] + [float("-inf")] * (beam_size - 1)).repeat(batch_size)
-        self.select_indices = None
 
-        # buffers for the topk scores and 'backpointer'
-        self.topk_scores = torch.empty((batch_size, beam_size),
-                                       dtype=torch.float)
-        self.topk_ids = torch.empty((batch_size, beam_size), dtype=torch.long)
-        self._batch_index = torch.empty([batch_size, beam_size],
-                                        dtype=torch.long)
+        self.select_indices = None
         self.done = False
         # "global state" of the old beam
         self._prev_penalty = None
@@ -103,17 +90,6 @@ class BeamSearch(DecodeStrategy):
         self._vanilla_cov_pen = (
             not stepwise_penalty and self.global_scorer.has_cov_pen)
         self._cov_pen = self.global_scorer.has_cov_pen
-
-    def _init_runtime(self, device, memory_lengths):
-        """Perform Tensor attributes device conversion."""
-        self.memory_lengths = memory_lengths
-        super(BeamSearch, self)._init_runtime(device)
-        self.best_scores = self.best_scores.to(device=device)
-        self._beam_offset = self._beam_offset.to(device=device)
-        self.topk_log_probs = self.topk_log_probs.to(device=device)
-        self.topk_scores = self.topk_scores.to(device=device)
-        self.topk_ids = self.topk_ids.to(device=device)
-        self._batch_index = self._batch_index.to(device=device)
 
     def initialize(self, memory_bank, src_lengths, src_map=None):
         """Initialize for decoding.
@@ -130,12 +106,27 @@ class BeamSearch(DecodeStrategy):
         else:
             memory_bank = tile(memory_bank, self.beam_size, dim=1)
             mb_device = memory_bank.device
-
-        memory_lengths = tile(src_lengths, self.beam_size)
-        self._init_runtime(mb_device, memory_lengths)
         if src_map is not None:
             src_map = tile(src_map, self.beam_size, dim=1)
-        return fn_map_state, memory_bank, memory_lengths, src_map
+
+        self.memory_lengths = tile(src_lengths, self.beam_size)
+        super(BeamSearch, self).initialize(mb_device)
+        self.best_scores = torch.full(
+            [self.batch_size], -1e10, dtype=torch.float, device=mb_device)
+        self._beam_offset = torch.arange(
+            0, self.batch_size * self.beam_size, step=self.beam_size,
+            dtype=torch.long, device=mb_device)
+        self.topk_log_probs = torch.tensor(
+            [0.0] + [float("-inf")] * (self.beam_size - 1), device=mb_device
+        ).repeat(self.batch_size)
+        # buffers for the topk scores and 'backpointer'
+        self.topk_scores = torch.empty((self.batch_size, self.beam_size),
+                                       dtype=torch.float, device=mb_device)
+        self.topk_ids = torch.empty((self.batch_size, self.beam_size),
+                                    dtype=torch.long, device=mb_device)
+        self._batch_index = torch.empty([self.batch_size, self.beam_size],
+                                        dtype=torch.long, device=mb_device)
+        return fn_map_state, memory_bank, self.memory_lengths, src_map
 
     @property
     def current_predictions(self):

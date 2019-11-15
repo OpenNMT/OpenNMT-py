@@ -555,7 +555,7 @@ class Translator(object):
         """
         # (0) Prep the components of the search.
         use_src_map = self.copy_attn
-        parallel_paths = decode_strategy.is_finished.shape[1]  # beam_size
+        parallel_paths = decode_strategy.parallel_paths  # beam_size
         batch_size = batch.batch_size
 
         # (1) Run the encoder on the src.

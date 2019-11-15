@@ -25,7 +25,7 @@ class TestGreedySearch(unittest.TestCase):
             samp = GreedySearch(
                 0, 1, 2, batch_sz, min_length,
                 False, set(), False, 30, 1., 1)
-            samp._init_runtime(torch.device("cpu"), lengths)
+            samp.initialize(torch.zeros(1), lengths)
             all_attns = []
             for i in range(min_length + 4):
                 word_probs = torch.full(
@@ -66,7 +66,7 @@ class TestGreedySearch(unittest.TestCase):
                 samp = GreedySearch(
                     0, 1, 2, batch_sz, 0,
                     False, set(), False, 30, temp, 1)
-                samp._init_runtime(torch.device("cpu"), lengths)
+                samp.initialize(torch.zeros(1), lengths)
                 # initial step
                 i = 0
                 word_probs = torch.full(
@@ -138,7 +138,7 @@ class TestGreedySearch(unittest.TestCase):
                 samp = GreedySearch(
                     0, 1, 2, batch_sz, 0,
                     False, set(), False, 30, temp, 2)
-                samp._init_runtime(torch.device("cpu"), lengths)
+                samp.initialize(torch.zeros(1), lengths)
                 # initial step
                 i = 0
                 for _ in range(100):

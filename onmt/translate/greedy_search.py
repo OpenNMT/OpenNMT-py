@@ -90,17 +90,6 @@ class GreedySearch(DecodeStrategy):
         self.sampling_temp = sampling_temp
         self.keep_topk = keep_topk
         self.topk_scores = None
-        self.batch_size = batch_size
-        self.select_indices = torch.arange(self.batch_size, dtype=torch.long)
-        self.original_batch_idx = torch.arange(self.batch_size,
-                                               dtype=torch.long)
-
-    def _init_runtime(self, device, memory_lengths):
-        """Perform Tensor attributes device conversion."""
-        self.memory_lengths = memory_lengths
-        super(GreedySearch, self)._init_runtime(device)
-        self.select_indices = self.select_indices.to(device=device)
-        self.original_batch_idx = self.original_batch_idx.to(device=device)
 
     def initialize(self, memory_bank, src_lengths, src_map=None):
         """Initialize for decoding."""
@@ -111,9 +100,13 @@ class GreedySearch(DecodeStrategy):
         else:
             mb_device = memory_bank.device
 
-        self._init_runtime(mb_device, src_lengths)
-
-        return fn_map_state, memory_bank, src_lengths, src_map
+        self.memory_lengths = src_lengths
+        super(GreedySearch, self).initialize(mb_device)
+        self.select_indices = torch.arange(
+            self.batch_size, dtype=torch.long, device=mb_device)
+        self.original_batch_idx = torch.arange(
+            self.batch_size, dtype=torch.long, device=mb_device)
+        return fn_map_state, memory_bank, self.memory_lengths, src_map
 
     @property
     def current_predictions(self):

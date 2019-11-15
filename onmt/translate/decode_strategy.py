@@ -62,17 +62,13 @@ class DecodeStrategy(object):
         self.bos = bos
         self.eos = eos
 
+        self.batch_size = batch_size
+        self.parallel_paths = parallel_paths
         # result caching
         self.predictions = [[] for _ in range(batch_size)]
         self.scores = [[] for _ in range(batch_size)]
         self.attention = [[] for _ in range(batch_size)]
 
-        self.alive_seq = torch.full(
-            [batch_size * parallel_paths, 1], self.bos,
-            dtype=torch.long)
-        self.is_finished = torch.zeros(
-            [batch_size, parallel_paths],
-            dtype=torch.uint8)
         self.alive_attn = None
 
         self.min_length = min_length
@@ -83,19 +79,18 @@ class DecodeStrategy(object):
 
         self.done = False
 
-    def _init_runtime(self, device):
-        """Perform Tensor attributes device conversion."""
-        self.alive_seq = self.alive_seq.to(device=device)
-        self.is_finished = self.is_finished.to(device=device)
-
-    def initialize(self, memory_bank, src_lengths, src_map=None):
+    def initialize(self, device):
         """DecodeStrategy subclasses should override :func:`initialize()`.
 
         `initialize` should be called before all actions.
         used to prepare necessary ingredients for decode.
         """
-        # self._init_runtime(mb_device)
-        raise NotImplementedError
+        self.alive_seq = torch.full(
+            [self.batch_size * self.parallel_paths, 1], self.bos,
+            dtype=torch.long, device=device)
+        self.is_finished = torch.zeros(
+            [self.batch_size, self.parallel_paths],
+            dtype=torch.uint8, device=device)
 
     def __len__(self):
         return self.alive_seq.shape[1]
