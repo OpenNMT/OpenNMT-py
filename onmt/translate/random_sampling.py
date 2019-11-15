@@ -94,7 +94,6 @@ class RandomSampling(DecodeStrategy):
         self.select_indices = torch.arange(self.batch_size, dtype=torch.long)
         self.original_batch_idx = torch.arange(self.batch_size,
                                                dtype=torch.long)
-        self.update_state = False  # set True each time updates select_indices
 
     def _init_runtime(self, device, memory_lengths):
         """Perform Tensor attributes device conversion."""
@@ -171,5 +170,4 @@ class RandomSampling(DecodeStrategy):
         if self.alive_attn is not None:
             self.alive_attn = self.alive_attn[:, is_alive]
         self.select_indices = is_alive.nonzero().view(-1)
-        self.update_state = True
         self.original_batch_idx = self.original_batch_idx[is_alive]

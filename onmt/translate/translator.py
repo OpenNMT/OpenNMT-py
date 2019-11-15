@@ -555,6 +555,7 @@ class Translator(object):
         """
         # (0) Prep the components of the search.
         use_src_map = self.copy_attn
+        parallel_paths = decode_strategy.is_finished.shape[1]  # beam_size
         batch_size = batch.batch_size
 
         # (1) Run the encoder on the src.
@@ -613,8 +614,7 @@ class Translator(object):
                 if src_map is not None:
                     src_map = src_map.index_select(1, select_indices)
 
-            if decode_strategy.update_state:
-                decode_strategy.update_state = False
+            if parallel_paths > 1 or any_finished:
                 self.model.decoder.map_state(
                     lambda state, dim: state.index_select(dim, select_indices))
 
