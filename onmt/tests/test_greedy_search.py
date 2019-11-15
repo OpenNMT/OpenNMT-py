@@ -1,10 +1,10 @@
 import unittest
-from onmt.translate.random_sampling import RandomSampling
+from onmt.translate.greedy_search import GreedySearch
 
 import torch
 
 
-class TestRandomSampling(unittest.TestCase):
+class TestGreedySearch(unittest.TestCase):
     BATCH_SZ = 3
     INP_SEQ_LEN = 53
     DEAD_SCORE = -1e20
@@ -22,7 +22,7 @@ class TestRandomSampling(unittest.TestCase):
             min_length = 5
             eos_idx = 2
             lengths = torch.randint(0, 30, (batch_sz,))
-            samp = RandomSampling(
+            samp = GreedySearch(
                 0, 1, 2, batch_sz, min_length,
                 False, set(), False, 30, 1., 1)
             samp._init_runtime(torch.device("cpu"), lengths)
@@ -63,7 +63,7 @@ class TestRandomSampling(unittest.TestCase):
                     [6., 1.]), dim=0)
                 eos_idx = 2
                 lengths = torch.randint(0, 30, (batch_sz,))
-                samp = RandomSampling(
+                samp = GreedySearch(
                     0, 1, 2, batch_sz, 0,
                     False, set(), False, 30, temp, 1)
                 samp._init_runtime(torch.device("cpu"), lengths)
@@ -135,7 +135,7 @@ class TestRandomSampling(unittest.TestCase):
                     [6., 1.]), dim=0)
                 eos_idx = 2
                 lengths = torch.randint(0, 30, (batch_sz,))
-                samp = RandomSampling(
+                samp = GreedySearch(
                     0, 1, 2, batch_sz, 0,
                     False, set(), False, 30, temp, 2)
                 samp._init_runtime(torch.device("cpu"), lengths)

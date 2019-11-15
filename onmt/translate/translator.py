@@ -14,7 +14,7 @@ import onmt.translate.beam
 import onmt.inputters as inputters
 import onmt.decoders.ensemble
 from onmt.translate.beam_search import BeamSearch
-from onmt.translate.random_sampling import RandomSampling
+from onmt.translate.greedy_search import GreedySearch
 from onmt.utils.misc import tile, set_random_seed
 from onmt.modules.copy_generator import collapse_copy_scores
 
@@ -78,9 +78,9 @@ class Translator(object):
             :class:`onmt.translate.decode_strategy.DecodeStrategy`.
         beam_size (int): Number of beams.
         random_sampling_topk (int): See
-            :class:`onmt.translate.random_sampling.RandomSampling`.
+            :class:`onmt.translate.greedy_search.GreedySearch`.
         random_sampling_temp (int): See
-            :class:`onmt.translate.random_sampling.RandomSampling`.
+            :class:`onmt.translate.greedy_search.GreedySearch`.
         stepwise_penalty (bool): Whether coverage penalty is applied every step
             or not.
         dump_beam (bool): Debugging option.
@@ -433,7 +433,7 @@ class Translator(object):
         """Translate a batch of sentences."""
         with torch.no_grad():
             if self.beam_size == 1:
-                decode_strategy = RandomSampling(
+                decode_strategy = GreedySearch(
                     pad=self._tgt_pad_idx,
                     bos=self._tgt_bos_idx,
                     eos=self._tgt_eos_idx,

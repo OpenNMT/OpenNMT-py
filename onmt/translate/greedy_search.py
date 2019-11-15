@@ -56,7 +56,7 @@ def sample_with_temperature(logits, sampling_temp, keep_topk):
     return topk_ids, topk_scores
 
 
-class RandomSampling(DecodeStrategy):
+class GreedySearch(DecodeStrategy):
     """Select next tokens randomly from the top k possible next tokens.
 
     The ``scores`` attribute's lists are the score, after applying temperature,
@@ -75,16 +75,16 @@ class RandomSampling(DecodeStrategy):
         return_attention (bool): See base.
         max_length (int): See base.
         sampling_temp (float): See
-            :func:`~onmt.translate.random_sampling.sample_with_temperature()`.
+            :func:`~onmt.translate.greedy_search.sample_with_temperature()`.
         keep_topk (int): See
-            :func:`~onmt.translate.random_sampling.sample_with_temperature()`.
+            :func:`~onmt.translate.greedy_search.sample_with_temperature()`.
     """
 
     def __init__(self, pad, bos, eos, batch_size, min_length,
                  block_ngram_repeat, exclusion_tokens, return_attention,
                  max_length, sampling_temp, keep_topk):
         assert block_ngram_repeat == 0
-        super(RandomSampling, self).__init__(
+        super(GreedySearch, self).__init__(
             pad, bos, eos, batch_size, 1, min_length, block_ngram_repeat,
             exclusion_tokens, return_attention, max_length)
         self.sampling_temp = sampling_temp
@@ -98,7 +98,7 @@ class RandomSampling(DecodeStrategy):
     def _init_runtime(self, device, memory_lengths):
         """Perform Tensor attributes device conversion."""
         self.memory_lengths = memory_lengths
-        super(RandomSampling, self)._init_runtime(device)
+        super(GreedySearch, self)._init_runtime(device)
         self.select_indices = self.select_indices.to(device=device)
         self.original_batch_idx = self.original_batch_idx.to(device=device)
 
