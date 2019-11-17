@@ -163,6 +163,9 @@ class GGNNEncoder(EncoderBase):
                 n2p={}
                 n2pidx=0
                 nullval=src[src.size()[0]-1][i]
+                dhval=57
+                dxval=58
+                # print("SJKDEBUG src 0,1:",src[0][i],src[1][i])
                 for j in range(src.size()[0]):
                     # Initialize node state
                     # FIXME: There is probably a way to have an embedding layer here
@@ -187,15 +190,34 @@ class GGNNEncoder(EncoderBase):
                 LO_in = nodes*6
                 Strt_in = nodes*7
                 End_in = nodes*8
-                L_out = nodes*9
-                R_out = nodes*10
-                LL_out = nodes*11
-                LR_out = nodes*12
-                RL_out = nodes*13
-                RR_out = nodes*14
-                LO_out = nodes*14
-                Strt_out = nodes*16
-                End_out = nodes*17
+                if self.n_edge_types > 9:
+                    LoopBody_in = nodes*9
+                    LoopVar_in = nodes*10
+                    L_out = nodes*11
+                    R_out = nodes*12
+                    LL_out = nodes*13
+                    LR_out = nodes*14
+                    RL_out = nodes*15
+                    RR_out = nodes*16
+                    LO_out = nodes*17
+                    Strt_out = nodes*18
+                    End_out = nodes*19
+                    LoopBody_out = nodes*20
+                    LoopVar_out = nodes*21
+                else:
+                    LoopBody_in = nodes*123
+                    LoopVar_in = nodes*123
+                    L_out = nodes*9
+                    R_out = nodes*10
+                    LL_out = nodes*11
+                    LR_out = nodes*12
+                    RL_out = nodes*13
+                    RR_out = nodes*14
+                    LO_out = nodes*15
+                    Strt_out = nodes*16
+                    End_out = nodes*17
+                    LoopBody_out = -2
+                    LoopVar_out = -2
                 # To help in learning, label nodes with tree location data
                 tree = 120 
                 A[i][nodes-1][Strt_in+n2p[0]] = 1.0
@@ -208,7 +230,15 @@ class GGNNEncoder(EncoderBase):
                     # Root is lvl0 children at +2 and +64
                     # Check that children aren't Null (max of 126 entries means [127] is always Null value)
                     prop_state[i][n2p[lvl0]][lvl0+tree] = 1.0
-                    if (src[lvl0+2][i] != nullval):
+                    if (src[lvl0][i].item() == dhval or src[lvl0][i].item() == dxval):
+                        A[i][n2p[lvl0]][LoopBody_in+n2p[lvl0+64]] = 1.0
+                        A[i][n2p[lvl0+64]][LoopBody_out + n2p[lvl0]] = 1.0
+                        loopvar = src[lvl0+2][i]
+                        for varsearch in range(lvl0,nodes,2):
+                            if (src[varsearch][i] == loopvar):
+                                A[i][n2p[varsearch]][LoopVar_in+n2p[lvl0]] = 1.0
+                                A[i][n2p[lvl0]][LoopVar_out + n2p[varsearch]] = 1.0
+                    elif (src[lvl0+2][i] != nullval):
                         if (src[lvl0+64][i] != nullval):
                             A[i][n2p[lvl0]][L_in+n2p[lvl0+2]] = 1.0
                             A[i][n2p[lvl0+2]][L_out+ n2p[lvl0]] = 1.0
