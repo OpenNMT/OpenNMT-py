@@ -60,7 +60,7 @@ class Predictor(object):
         fields (dict[str, torchtext.data.Field]): A dict of field.
         gpu (int): GPU device. Set to negative for no GPU.
         data_type (str): Source data type.
-        verbose (bool): Print/log every predition.
+        verbose (bool): output every predition with confidences.
         report_time (bool): Print/log total time/frequency.
         out_file (TextIO or codecs.StreamReaderWriter): Output file.
         logger (logging.Logger or NoneType): Logger.
@@ -138,7 +138,7 @@ class Classifier(Predictor):
         fields (dict[str, torchtext.data.Field]): A dict of field.
         gpu (int): GPU device. Set to negative for no GPU.
         data_type (str): Source data type.
-        verbose (bool): Print/log every predition.
+        verbose (bool): output every predition with confidences.
         report_time (bool): Print/log total time/frequency.
         out_file (TextIO or codecs.StreamReaderWriter): Output file.
         logger (logging.Logger or NoneType): Logger.
@@ -228,6 +228,13 @@ class Classifier(Predictor):
             pred_sents_ids = seq_class_log_prob.argmax(-1).tolist()
             pred_sents_labels = [self.label_vocab.itos[index]
                                  for index in pred_sents_ids]
+            if self.verbose:
+                seq_class_prob = seq_class_log_prob.exp()
+                category_probs = seq_class_prob.tolist()
+                preds = ['\t'.join(map(str, category_prob)) + '\t' + pred
+                         for category_prob, pred in zip(
+                         category_probs, pred_sents_labels)]
+                return preds
             return pred_sents_labels
 
 
@@ -239,7 +246,7 @@ class Tagger(Predictor):
         fields (dict[str, torchtext.data.Field]): A dict of field.
         gpu (int): GPU device. Set to negative for no GPU.
         data_type (str): Source data type.
-        verbose (bool): Print/log every predition.
+        verbose (bool): output every predition with confidences.
         report_time (bool): Print/log total time/frequency.
         out_file (TextIO or codecs.StreamReaderWriter): Output file.
         logger (logging.Logger or NoneType): Logger.
@@ -276,8 +283,6 @@ class Tagger(Predictor):
         Args:
             data (list of str): ['T1 T2 ... Tn',...].
             batch_size (int): size of examples per mini-batch
-            batch_type (str): Batch grouping for batch_size. Chose from
-                {'sents', 'tokens'}, default batch_size count by sentence.
 
         Returns:
             all_predictions (list of list of str): [['L1', ..., 'Ln'],...].
