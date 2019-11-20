@@ -10,12 +10,11 @@ from itertools import count
 import torch
 
 import onmt.model_builder
-import onmt.translate.beam
 import onmt.inputters as inputters
 import onmt.decoders.ensemble
 from onmt.translate.beam_search import BeamSearch
 from onmt.translate.greedy_search import GreedySearch
-from onmt.utils.misc import tile, set_random_seed
+from onmt.utils.misc import set_random_seed
 from onmt.modules.copy_generator import collapse_copy_scores
 
 
@@ -621,101 +620,6 @@ class Translator(object):
         results["scores"] = decode_strategy.scores
         results["predictions"] = decode_strategy.predictions
         results["attention"] = decode_strategy.attention
-        return results
-
-    # This is left in the code for now, but unsued
-    def _translate_batch_deprecated(self, batch, src_vocabs):
-        # (0) Prep each of the components of the search.
-        # And helper method for reducing verbosity.
-        use_src_map = self.copy_attn
-        beam_size = self.beam_size
-        batch_size = batch.batch_size
-
-        beam = [onmt.translate.Beam(
-            beam_size,
-            n_best=self.n_best,
-            cuda=self.cuda,
-            global_scorer=self.global_scorer,
-            pad=self._tgt_pad_idx,
-            eos=self._tgt_eos_idx,
-            bos=self._tgt_bos_idx,
-            min_length=self.min_length,
-            stepwise_penalty=self.stepwise_penalty,
-            block_ngram_repeat=self.block_ngram_repeat,
-            exclusion_tokens=self._exclusion_idxs)
-            for __ in range(batch_size)]
-
-        # (1) Run the encoder on the src.
-        src, enc_states, memory_bank, src_lengths = self._run_encoder(batch)
-        self.model.decoder.init_state(src, memory_bank, enc_states)
-
-        results = {
-            "predictions": [],
-            "scores": [],
-            "attention": [],
-            "batch": batch,
-            "gold_score": self._gold_score(
-                batch, memory_bank, src_lengths, src_vocabs, use_src_map,
-                enc_states, batch_size, src)}
-
-        # (2) Repeat src objects `beam_size` times.
-        # We use now  batch_size x beam_size (same as fast mode)
-        src_map = (tile(batch.src_map, beam_size, dim=1)
-                   if use_src_map else None)
-        self.model.decoder.map_state(
-            lambda state, dim: tile(state, beam_size, dim=dim))
-
-        if isinstance(memory_bank, tuple):
-            memory_bank = tuple(tile(x, beam_size, dim=1) for x in memory_bank)
-        else:
-            memory_bank = tile(memory_bank, beam_size, dim=1)
-        memory_lengths = tile(src_lengths, beam_size)
-
-        # (3) run the decoder to generate sentences, using beam search.
-        for i in range(self.max_length):
-            if all((b.done for b in beam)):
-                break
-
-            # (a) Construct batch x beam_size nxt words.
-            # Get all the pending current beam words and arrange for forward.
-
-            inp = torch.stack([b.current_predictions for b in beam])
-            inp = inp.view(1, -1, 1)
-
-            # (b) Decode and forward
-            out, beam_attn = self._decode_and_generate(
-                inp, memory_bank, batch, src_vocabs,
-                memory_lengths=memory_lengths, src_map=src_map, step=i
-            )
-            out = out.view(batch_size, beam_size, -1)
-            beam_attn = beam_attn.view(batch_size, beam_size, -1)
-
-            # (c) Advance each beam.
-            select_indices_array = []
-            # Loop over the batch_size number of beam
-            for j, b in enumerate(beam):
-                if not b.done:
-                    b.advance(out[j, :],
-                              beam_attn.data[j, :, :memory_lengths[j]])
-                select_indices_array.append(
-                    b.current_origin + j * beam_size)
-            select_indices = torch.cat(select_indices_array)
-
-            self.model.decoder.map_state(
-                lambda state, dim: state.index_select(dim, select_indices))
-
-        # (4) Extract sentences from beam.
-        for b in beam:
-            scores, ks = b.sort_finished(minimum=self.n_best)
-            hyps, attn = [], []
-            for times, k in ks[:self.n_best]:
-                hyp, att = b.get_hyp(times, k)
-                hyps.append(hyp)
-                attn.append(att)
-            results["predictions"].append(hyps)
-            results["scores"].append(scores)
-            results["attention"].append(attn)
-
         return results
 
     def _score_target(self, batch, memory_bank, src_lengths,
