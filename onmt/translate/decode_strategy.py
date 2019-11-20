@@ -9,7 +9,6 @@ class DecodeStrategy(object):
         bos (int): Magic integer in output vocab.
         eos (int): Magic integer in output vocab.
         batch_size (int): Current batch size.
-        device (torch.device or str): Device for memory bank (encoder).
         parallel_paths (int): Decoding strategies like beam search
             use parallel paths. Each batch is repeated ``parallel_paths``
             times in relevant state tensors.
@@ -54,7 +53,7 @@ class DecodeStrategy(object):
         done (bool): See above.
     """
 
-    def __init__(self, pad, bos, eos, batch_size, device, parallel_paths,
+    def __init__(self, pad, bos, eos, batch_size, parallel_paths,
                  min_length, block_ngram_repeat, exclusion_tokens,
                  return_attention, max_length):
 
@@ -63,17 +62,13 @@ class DecodeStrategy(object):
         self.bos = bos
         self.eos = eos
 
+        self.batch_size = batch_size
+        self.parallel_paths = parallel_paths
         # result caching
         self.predictions = [[] for _ in range(batch_size)]
         self.scores = [[] for _ in range(batch_size)]
         self.attention = [[] for _ in range(batch_size)]
 
-        self.alive_seq = torch.full(
-            [batch_size * parallel_paths, 1], self.bos,
-            dtype=torch.long, device=device)
-        self.is_finished = torch.zeros(
-            [batch_size, parallel_paths],
-            dtype=torch.uint8, device=device)
         self.alive_attn = None
 
         self.min_length = min_length
@@ -83,6 +78,22 @@ class DecodeStrategy(object):
         self.return_attention = return_attention
 
         self.done = False
+
+    def initialize(self, memory_bank, src_lengths, src_map=None, device=None):
+        """DecodeStrategy subclasses should override :func:`initialize()`.
+
+        `initialize` should be called before all actions.
+        used to prepare necessary ingredients for decode.
+        """
+        if device is None:
+            device = torch.device('cpu')
+        self.alive_seq = torch.full(
+            [self.batch_size * self.parallel_paths, 1], self.bos,
+            dtype=torch.long, device=device)
+        self.is_finished = torch.zeros(
+            [self.batch_size, self.parallel_paths],
+            dtype=torch.uint8, device=device)
+        return None, memory_bank, src_lengths, src_map
 
     def __len__(self):
         return self.alive_seq.shape[1]
