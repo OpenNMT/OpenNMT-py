@@ -178,6 +178,7 @@
 <span></span><span class="kn">import</span> <span class="nn">torch</span>
 
 <span class="kn">from</span> <span class="nn">onmt.translate.decode_strategy</span> <span class="k">import</span> <span class="n">DecodeStrategy</span>
+<span class="kn">from</span> <span class="nn">onmt.utils.misc</span> <span class="k">import</span> <span class="n">tile</span>
 
 
 <div class="viewcode-block" id="BeamSearch"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.BeamSearch">[docs]</a><span class="k">class</span> <span class="nc">BeamSearch</span><span class="p">(</span><span class="n">DecodeStrategy</span><span class="p">):</span>
@@ -196,15 +197,12 @@
 <span class="sd">        eos (int): See base.</span>
 <span class="sd">        n_best (int): Don&#39;t stop until at least this many beams have</span>
 <span class="sd">            reached EOS.</span>
-<span class="sd">        mb_device (torch.device or str): See base ``device``.</span>
 <span class="sd">        global_scorer (onmt.translate.GNMTGlobalScorer): Scorer instance.</span>
 <span class="sd">        min_length (int): See base.</span>
 <span class="sd">        max_length (int): See base.</span>
 <span class="sd">        return_attention (bool): See base.</span>
 <span class="sd">        block_ngram_repeat (int): See base.</span>
 <span class="sd">        exclusion_tokens (set[int]): See base.</span>
-<span class="sd">        memory_lengths (LongTensor): Lengths of encodings. Used for</span>
-<span class="sd">            masking attentions.</span>
 
 <span class="sd">    Attributes:</span>
 <span class="sd">        top_beam_finished (ByteTensor): Shape ``(B,)``.</span>
@@ -213,6 +211,8 @@
 <span class="sd">        alive_seq (LongTensor): See base.</span>
 <span class="sd">        topk_log_probs (FloatTensor): Shape ``(B x beam_size,)``. These</span>
 <span class="sd">            are the scores used for the topk operation.</span>
+<span class="sd">        memory_lengths (LongTensor): Lengths of encodings. Used for</span>
+<span class="sd">            masking attentions.</span>
 <span class="sd">        select_indices (LongTensor or NoneType): Shape</span>
 <span class="sd">            ``(B x beam_size,)``. This is just a flat view of the</span>
 <span class="sd">            ``_batch_index``.</span>
@@ -230,19 +230,18 @@
 <span class="sd">            of score (float), sequence (long), and attention (float or None).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">pad</span><span class="p">,</span> <span class="n">bos</span><span class="p">,</span> <span class="n">eos</span><span class="p">,</span> <span class="n">n_best</span><span class="p">,</span> <span class="n">mb_device</span><span class="p">,</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">pad</span><span class="p">,</span> <span class="n">bos</span><span class="p">,</span> <span class="n">eos</span><span class="p">,</span> <span class="n">n_best</span><span class="p">,</span>
                  <span class="n">global_scorer</span><span class="p">,</span> <span class="n">min_length</span><span class="p">,</span> <span class="n">max_length</span><span class="p">,</span> <span class="n">return_attention</span><span class="p">,</span>
-                 <span class="n">block_ngram_repeat</span><span class="p">,</span> <span class="n">exclusion_tokens</span><span class="p">,</span> <span class="n">memory_lengths</span><span class="p">,</span>
+                 <span class="n">block_ngram_repeat</span><span class="p">,</span> <span class="n">exclusion_tokens</span><span class="p">,</span>
                  <span class="n">stepwise_penalty</span><span class="p">,</span> <span class="n">ratio</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">BeamSearch</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">pad</span><span class="p">,</span> <span class="n">bos</span><span class="p">,</span> <span class="n">eos</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">mb_device</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="n">min_length</span><span class="p">,</span>
+            <span class="n">pad</span><span class="p">,</span> <span class="n">bos</span><span class="p">,</span> <span class="n">eos</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="n">min_length</span><span class="p">,</span>
             <span class="n">block_ngram_repeat</span><span class="p">,</span> <span class="n">exclusion_tokens</span><span class="p">,</span> <span class="n">return_attention</span><span class="p">,</span>
             <span class="n">max_length</span><span class="p">)</span>
         <span class="c1"># beam parameters</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">global_scorer</span> <span class="o">=</span> <span class="n">global_scorer</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span> <span class="o">=</span> <span class="n">beam_size</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_best</span> <span class="o">=</span> <span class="n">n_best</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch_size</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ratio</span> <span class="o">=</span> <span class="n">ratio</span>
 
         <span class="c1"># result caching</span>
@@ -255,26 +254,9 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">top_beam_finished</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">top_beam_finished</span><span class="o">.</span><span class="n">bool</span><span class="p">()</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="k">pass</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">best_scores</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">([</span><span class="n">batch_size</span><span class="p">],</span> <span class="o">-</span><span class="mf">1e10</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">,</span>
-                                      <span class="n">device</span><span class="o">=</span><span class="n">mb_device</span><span class="p">)</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">_batch_offset</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_beam_offset</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span>
-            <span class="mi">0</span><span class="p">,</span> <span class="n">batch_size</span> <span class="o">*</span> <span class="n">beam_size</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">beam_size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span>
-            <span class="n">device</span><span class="o">=</span><span class="n">mb_device</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">topk_log_probs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
-            <span class="p">[</span><span class="mf">0.0</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;-inf&quot;</span><span class="p">)]</span> <span class="o">*</span> <span class="p">(</span><span class="n">beam_size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">mb_device</span>
-        <span class="p">)</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">select_indices</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_memory_lengths</span> <span class="o">=</span> <span class="n">memory_lengths</span>
 
-        <span class="c1"># buffers for the topk scores and &#39;backpointer&#39;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">topk_scores</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">),</span>
-                                       <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">mb_device</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">topk_ids</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span>
-                                    <span class="n">device</span><span class="o">=</span><span class="n">mb_device</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_batch_index</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">([</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">],</span>
-                                        <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">mb_device</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">select_indices</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">done</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="c1"># &quot;global state&quot; of the old beam</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_prev_penalty</span> <span class="o">=</span> <span class="kc">None</span>
@@ -286,19 +268,59 @@
             <span class="ow">not</span> <span class="n">stepwise_penalty</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">global_scorer</span><span class="o">.</span><span class="n">has_cov_pen</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_cov_pen</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">global_scorer</span><span class="o">.</span><span class="n">has_cov_pen</span>
 
+<div class="viewcode-block" id="BeamSearch.initialize"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.BeamSearch.initialize">[docs]</a>    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">,</span> <span class="n">src_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize for decoding.</span>
+<span class="sd">        Repeat src objects `beam_size` times.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="nf">fn_map_state</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">dim</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">tile</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">memory_bank</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="n">memory_bank</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">tile</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                                <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">memory_bank</span><span class="p">)</span>
+            <span class="n">mb_device</span> <span class="o">=</span> <span class="n">memory_bank</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">device</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">memory_bank</span> <span class="o">=</span> <span class="n">tile</span><span class="p">(</span><span class="n">memory_bank</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">mb_device</span> <span class="o">=</span> <span class="n">memory_bank</span><span class="o">.</span><span class="n">device</span>
+        <span class="k">if</span> <span class="n">src_map</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">src_map</span> <span class="o">=</span> <span class="n">tile</span><span class="p">(</span><span class="n">src_map</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">device</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">device</span> <span class="o">=</span> <span class="n">mb_device</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">memory_lengths</span> <span class="o">=</span> <span class="n">tile</span><span class="p">(</span><span class="n">src_lengths</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">BeamSearch</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span>
+            <span class="n">memory_bank</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory_lengths</span><span class="p">,</span> <span class="n">src_map</span><span class="p">,</span> <span class="n">device</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">best_scores</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">(</span>
+            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">],</span> <span class="o">-</span><span class="mf">1e10</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_beam_offset</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span>
+            <span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span><span class="p">,</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">topk_log_probs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
+            <span class="p">[</span><span class="mf">0.0</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;-inf&quot;</span><span class="p">)]</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">)</span>
+        <span class="c1"># buffers for the topk scores and &#39;backpointer&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">topk_scores</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span><span class="p">),</span>
+                                       <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">topk_ids</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span><span class="p">),</span>
+                                    <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_batch_index</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span><span class="p">],</span>
+                                        <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">fn_map_state</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory_lengths</span><span class="p">,</span> <span class="n">src_map</span></div>
+
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">current_predictions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">alive_seq</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">current_origin</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">select_indices</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">current_backptr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># for testing</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">select_indices</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span><span class="p">)</span>\
             <span class="o">.</span><span class="n">fmod</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">batch_offset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_batch_offset</span>
 
 <div class="viewcode-block" id="BeamSearch.advance"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.BeamSearch.advance">[docs]</a>    <span class="k">def</span> <span class="nf">advance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log_probs</span><span class="p">,</span> <span class="n">attn</span><span class="p">):</span>
         <span class="n">vocab_size</span> <span class="o">=</span> <span class="n">log_probs</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
@@ -341,7 +363,6 @@
         <span class="n">torch</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">topk_ids</span><span class="p">,</span> <span class="n">vocab_size</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_batch_index</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_batch_index</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_beam_offset</span><span class="p">[:</span><span class="n">_B</span><span class="p">]</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">select_indices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_batch_index</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">_B</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span><span class="p">)</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">topk_ids</span><span class="o">.</span><span class="n">fmod_</span><span class="p">(</span><span class="n">vocab_size</span><span class="p">)</span>  <span class="c1"># resolve true word ids</span>
 
         <span class="c1"># Append last prediction.</span>
@@ -406,12 +427,12 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">hypotheses</span><span class="p">[</span><span class="n">b</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">((</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">topk_scores</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">],</span>
                     <span class="n">predictions</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="mi">1</span><span class="p">:],</span>  <span class="c1"># Ignore start_token.</span>
-                    <span class="n">attention</span><span class="p">[:,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">_memory_lengths</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+                    <span class="n">attention</span><span class="p">[:,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">memory_lengths</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
                     <span class="k">if</span> <span class="n">attention</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">))</span>
             <span class="c1"># End condition is the top beam finished and we can return</span>
             <span class="c1"># n_best hypotheses.</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ratio</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">pred_len</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_memory_lengths</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ratio</span>
+                <span class="n">pred_len</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory_lengths</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ratio</span>
                 <span class="n">finish_flag</span> <span class="o">=</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">topk_scores</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">pred_len</span><span class="p">)</span>
                                <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">best_scores</span><span class="p">[</span><span class="n">b</span><span class="p">])</span> <span class="ow">or</span> \
                     <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>

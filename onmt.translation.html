@@ -239,9 +239,9 @@ mapping each side to its list of name-Field pairs.</p></li>
 <code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.translate.decode_strategy.DecodeStrategy</span></code>.</p></li>
 <li><p><strong>beam_size</strong> (<em>int</em>) – Number of beams.</p></li>
 <li><p><strong>random_sampling_topk</strong> (<em>int</em>) – See
-<code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.translate.random_sampling.RandomSampling</span></code>.</p></li>
+<code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.translate.greedy_search.GreedySearch</span></code>.</p></li>
 <li><p><strong>random_sampling_temp</strong> (<em>int</em>) – See
-<code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.translate.random_sampling.RandomSampling</span></code>.</p></li>
+<code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.translate.greedy_search.GreedySearch</span></code>.</p></li>
 <li><p><strong>stepwise_penalty</strong> (<em>bool</em>) – Whether coverage penalty is applied every step
 or not.</p></li>
 <li><p><strong>dump_beam</strong> (<em>bool</em>) – Debugging option.</p></li>
@@ -352,7 +352,7 @@ Problem in Neural Machine Translation” <a class="bibtex reference internal" hr
 <h2>Decoding Strategies<a class="headerlink" href="#decoding-strategies" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.translate.DecodeStrategy">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.translate.</code><code class="sig-name descname">DecodeStrategy</code><span class="sig-paren">(</span><em class="sig-param">pad</em>, <em class="sig-param">bos</em>, <em class="sig-param">eos</em>, <em class="sig-param">batch_size</em>, <em class="sig-param">device</em>, <em class="sig-param">parallel_paths</em>, <em class="sig-param">min_length</em>, <em class="sig-param">block_ngram_repeat</em>, <em class="sig-param">exclusion_tokens</em>, <em class="sig-param">return_attention</em>, <em class="sig-param">max_length</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/decode_strategy.html#DecodeStrategy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.DecodeStrategy" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.translate.</code><code class="sig-name descname">DecodeStrategy</code><span class="sig-paren">(</span><em class="sig-param">pad</em>, <em class="sig-param">bos</em>, <em class="sig-param">eos</em>, <em class="sig-param">batch_size</em>, <em class="sig-param">parallel_paths</em>, <em class="sig-param">min_length</em>, <em class="sig-param">block_ngram_repeat</em>, <em class="sig-param">exclusion_tokens</em>, <em class="sig-param">return_attention</em>, <em class="sig-param">max_length</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/decode_strategy.html#DecodeStrategy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.DecodeStrategy" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Base class for generation strategies.</p>
 <dl class="field-list simple">
@@ -362,7 +362,6 @@ Problem in Neural Machine Translation” <a class="bibtex reference internal" hr
 <li><p><strong>bos</strong> (<em>int</em>) – Magic integer in output vocab.</p></li>
 <li><p><strong>eos</strong> (<em>int</em>) – Magic integer in output vocab.</p></li>
 <li><p><strong>batch_size</strong> (<em>int</em>) – Current batch size.</p></li>
-<li><p><strong>device</strong> (<em>torch.device</em><em> or </em><em>str</em>) – Device for memory bank (encoder).</p></li>
 <li><p><strong>parallel_paths</strong> (<em>int</em>) – Decoding strategies like beam search
 use parallel paths. Each batch is repeated <code class="docutils literal notranslate"><span class="pre">parallel_paths</span></code>
 times in relevant state tensors.</p></li>
@@ -419,6 +418,14 @@ and, when appropriate, <code class="docutils literal notranslate"><span class="p
 </dd></dl>
 
 <dl class="method">
+<dt id="onmt.translate.DecodeStrategy.initialize">
+<code class="sig-name descname">initialize</code><span class="sig-paren">(</span><em class="sig-param">memory_bank</em>, <em class="sig-param">src_lengths</em>, <em class="sig-param">src_map=None</em>, <em class="sig-param">device=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/decode_strategy.html#DecodeStrategy.initialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.DecodeStrategy.initialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>DecodeStrategy subclasses should override <a class="reference internal" href="#onmt.translate.DecodeStrategy.initialize" title="onmt.translate.DecodeStrategy.initialize"><code class="xref py py-func docutils literal notranslate"><span class="pre">initialize()</span></code></a>.</p>
+<p><cite>initialize</cite> should be called before all actions.
+used to prepare necessary ingredients for decode.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="onmt.translate.DecodeStrategy.update_finished">
 <code class="sig-name descname">update_finished</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/decode_strategy.html#DecodeStrategy.update_finished"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.DecodeStrategy.update_finished" title="Permalink to this definition">¶</a></dt>
 <dd><p>DecodeStrategy subclasses should override <a class="reference internal" href="#onmt.translate.DecodeStrategy.update_finished" title="onmt.translate.DecodeStrategy.update_finished"><code class="xref py py-func docutils literal notranslate"><span class="pre">update_finished()</span></code></a>.</p>
@@ -430,7 +437,7 @@ and, when appropriate, <code class="docutils literal notranslate"><span class="p
 
 <dl class="class">
 <dt id="onmt.translate.BeamSearch">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.translate.</code><code class="sig-name descname">BeamSearch</code><span class="sig-paren">(</span><em class="sig-param">beam_size</em>, <em class="sig-param">batch_size</em>, <em class="sig-param">pad</em>, <em class="sig-param">bos</em>, <em class="sig-param">eos</em>, <em class="sig-param">n_best</em>, <em class="sig-param">mb_device</em>, <em class="sig-param">global_scorer</em>, <em class="sig-param">min_length</em>, <em class="sig-param">max_length</em>, <em class="sig-param">return_attention</em>, <em class="sig-param">block_ngram_repeat</em>, <em class="sig-param">exclusion_tokens</em>, <em class="sig-param">memory_lengths</em>, <em class="sig-param">stepwise_penalty</em>, <em class="sig-param">ratio</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam_search.html#BeamSearch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.BeamSearch" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.translate.</code><code class="sig-name descname">BeamSearch</code><span class="sig-paren">(</span><em class="sig-param">beam_size</em>, <em class="sig-param">batch_size</em>, <em class="sig-param">pad</em>, <em class="sig-param">bos</em>, <em class="sig-param">eos</em>, <em class="sig-param">n_best</em>, <em class="sig-param">global_scorer</em>, <em class="sig-param">min_length</em>, <em class="sig-param">max_length</em>, <em class="sig-param">return_attention</em>, <em class="sig-param">block_ngram_repeat</em>, <em class="sig-param">exclusion_tokens</em>, <em class="sig-param">stepwise_penalty</em>, <em class="sig-param">ratio</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam_search.html#BeamSearch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.BeamSearch" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.translate.decode_strategy.DecodeStrategy</span></code></p>
 <p>Generation beam search.</p>
 <p>Note that the attributes list is not exhaustive. Rather, it highlights
@@ -447,15 +454,12 @@ size decreases as beams finish, we denote this axis with a B rather than
 <li><p><strong>eos</strong> (<em>int</em>) – See base.</p></li>
 <li><p><strong>n_best</strong> (<em>int</em>) – Don’t stop until at least this many beams have
 reached EOS.</p></li>
-<li><p><strong>mb_device</strong> (<em>torch.device</em><em> or </em><em>str</em>) – See base <code class="docutils literal notranslate"><span class="pre">device</span></code>.</p></li>
 <li><p><strong>global_scorer</strong> (<a class="reference internal" href="#onmt.translate.GNMTGlobalScorer" title="onmt.translate.GNMTGlobalScorer"><em>onmt.translate.GNMTGlobalScorer</em></a>) – Scorer instance.</p></li>
 <li><p><strong>min_length</strong> (<em>int</em>) – See base.</p></li>
 <li><p><strong>max_length</strong> (<em>int</em>) – See base.</p></li>
 <li><p><strong>return_attention</strong> (<em>bool</em>) – See base.</p></li>
 <li><p><strong>block_ngram_repeat</strong> (<em>int</em>) – See base.</p></li>
 <li><p><strong>exclusion_tokens</strong> (<em>set</em><em>[</em><em>int</em><em>]</em>) – See base.</p></li>
-<li><p><strong>memory_lengths</strong> (<em>LongTensor</em>) – Lengths of encodings. Used for
-masking attentions.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Variables</dt>
@@ -466,6 +470,8 @@ masking attentions.</p></li>
 <li><p><strong>alive_seq</strong> (<em>LongTensor</em>) – See base.</p></li>
 <li><p><strong>topk_log_probs</strong> (<em>FloatTensor</em>) – Shape <code class="docutils literal notranslate"><span class="pre">(B</span> <span class="pre">x</span> <span class="pre">beam_size,)</span></code>. These
 are the scores used for the topk operation.</p></li>
+<li><p><strong>memory_lengths</strong> (<em>LongTensor</em>) – Lengths of encodings. Used for
+masking attentions.</p></li>
 <li><p><strong>select_indices</strong> (<em>LongTensor</em><em> or </em><em>NoneType</em>) – Shape
 <code class="docutils literal notranslate"><span class="pre">(B</span> <span class="pre">x</span> <span class="pre">beam_size,)</span></code>. This is just a flat view of the
 <code class="docutils literal notranslate"><span class="pre">_batch_index</span></code>.</p></li>
@@ -493,6 +499,13 @@ and, when appropriate, <code class="docutils literal notranslate"><span class="p
 </dd></dl>
 
 <dl class="method">
+<dt id="onmt.translate.BeamSearch.initialize">
+<code class="sig-name descname">initialize</code><span class="sig-paren">(</span><em class="sig-param">memory_bank</em>, <em class="sig-param">src_lengths</em>, <em class="sig-param">src_map=None</em>, <em class="sig-param">device=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam_search.html#BeamSearch.initialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.BeamSearch.initialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize for decoding.
+Repeat src objects <cite>beam_size</cite> times.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="onmt.translate.BeamSearch.update_finished">
 <code class="sig-name descname">update_finished</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam_search.html#BeamSearch.update_finished"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.BeamSearch.update_finished" title="Permalink to this definition">¶</a></dt>
 <dd><p>DecodeStrategy subclasses should override <a class="reference internal" href="#onmt.translate.BeamSearch.update_finished" title="onmt.translate.BeamSearch.update_finished"><code class="xref py py-func docutils literal notranslate"><span class="pre">update_finished()</span></code></a>.</p>
@@ -503,8 +516,8 @@ and, when appropriate, <code class="docutils literal notranslate"><span class="p
 </dd></dl>
 
 <dl class="function">
-<dt id="onmt.translate.random_sampling.sample_with_temperature">
-<code class="sig-prename descclassname">onmt.translate.random_sampling.</code><code class="sig-name descname">sample_with_temperature</code><span class="sig-paren">(</span><em class="sig-param">logits</em>, <em class="sig-param">sampling_temp</em>, <em class="sig-param">keep_topk</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/random_sampling.html#sample_with_temperature"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.random_sampling.sample_with_temperature" title="Permalink to this definition">¶</a></dt>
+<dt id="onmt.translate.greedy_search.sample_with_temperature">
+<code class="sig-prename descclassname">onmt.translate.greedy_search.</code><code class="sig-name descname">sample_with_temperature</code><span class="sig-paren">(</span><em class="sig-param">logits</em>, <em class="sig-param">sampling_temp</em>, <em class="sig-param">keep_topk</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/greedy_search.html#sample_with_temperature"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.greedy_search.sample_with_temperature" title="Permalink to this definition">¶</a></dt>
 <dd><p>Select next tokens randomly from the top k possible next tokens.</p>
 <p>Samples from a categorical distribution over the <code class="docutils literal notranslate"><span class="pre">keep_topk</span></code> words using
 the category probabilities <code class="docutils literal notranslate"><span class="pre">logits</span> <span class="pre">/</span> <span class="pre">sampling_temp</span></code>.</p>
@@ -539,8 +552,8 @@ are essentially <code class="docutils literal notranslate"><span class="pre">(lo
 </dd></dl>
 
 <dl class="class">
-<dt id="onmt.translate.RandomSampling">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.translate.</code><code class="sig-name descname">RandomSampling</code><span class="sig-paren">(</span><em class="sig-param">pad</em>, <em class="sig-param">bos</em>, <em class="sig-param">eos</em>, <em class="sig-param">batch_size</em>, <em class="sig-param">device</em>, <em class="sig-param">min_length</em>, <em class="sig-param">block_ngram_repeat</em>, <em class="sig-param">exclusion_tokens</em>, <em class="sig-param">return_attention</em>, <em class="sig-param">max_length</em>, <em class="sig-param">sampling_temp</em>, <em class="sig-param">keep_topk</em>, <em class="sig-param">memory_length</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/random_sampling.html#RandomSampling"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.RandomSampling" title="Permalink to this definition">¶</a></dt>
+<dt id="onmt.translate.GreedySearch">
+<em class="property">class </em><code class="sig-prename descclassname">onmt.translate.</code><code class="sig-name descname">GreedySearch</code><span class="sig-paren">(</span><em class="sig-param">pad</em>, <em class="sig-param">bos</em>, <em class="sig-param">eos</em>, <em class="sig-param">batch_size</em>, <em class="sig-param">min_length</em>, <em class="sig-param">block_ngram_repeat</em>, <em class="sig-param">exclusion_tokens</em>, <em class="sig-param">return_attention</em>, <em class="sig-param">max_length</em>, <em class="sig-param">sampling_temp</em>, <em class="sig-param">keep_topk</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/greedy_search.html#GreedySearch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.GreedySearch" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.translate.decode_strategy.DecodeStrategy</span></code></p>
 <p>Select next tokens randomly from the top k possible next tokens.</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">scores</span></code> attribute’s lists are the score, after applying temperature,
@@ -553,7 +566,6 @@ that <code class="docutils literal notranslate"><span class="pre">max_length</sp
 <li><p><strong>bos</strong> (<em>int</em>) – See base.</p></li>
 <li><p><strong>eos</strong> (<em>int</em>) – See base.</p></li>
 <li><p><strong>batch_size</strong> (<em>int</em>) – See base.</p></li>
-<li><p><strong>device</strong> (<em>torch.device</em><em> or </em><em>str</em>) – See base <code class="docutils literal notranslate"><span class="pre">device</span></code>.</p></li>
 <li><p><strong>min_length</strong> (<em>int</em>) – See base.</p></li>
 <li><p><strong>max_length</strong> (<em>int</em>) – See base.</p></li>
 <li><p><strong>block_ngram_repeat</strong> (<em>int</em>) – See base.</p></li>
@@ -561,17 +573,15 @@ that <code class="docutils literal notranslate"><span class="pre">max_length</sp
 <li><p><strong>return_attention</strong> (<em>bool</em>) – See base.</p></li>
 <li><p><strong>max_length</strong> – See base.</p></li>
 <li><p><strong>sampling_temp</strong> (<em>float</em>) – See
-<a class="reference internal" href="#onmt.translate.random_sampling.sample_with_temperature" title="onmt.translate.random_sampling.sample_with_temperature"><code class="xref py py-func docutils literal notranslate"><span class="pre">sample_with_temperature()</span></code></a>.</p></li>
+<a class="reference internal" href="#onmt.translate.greedy_search.sample_with_temperature" title="onmt.translate.greedy_search.sample_with_temperature"><code class="xref py py-func docutils literal notranslate"><span class="pre">sample_with_temperature()</span></code></a>.</p></li>
 <li><p><strong>keep_topk</strong> (<em>int</em>) – See
-<a class="reference internal" href="#onmt.translate.random_sampling.sample_with_temperature" title="onmt.translate.random_sampling.sample_with_temperature"><code class="xref py py-func docutils literal notranslate"><span class="pre">sample_with_temperature()</span></code></a>.</p></li>
-<li><p><strong>memory_length</strong> (<em>LongTensor</em>) – Lengths of encodings. Used for
-masking attention.</p></li>
+<a class="reference internal" href="#onmt.translate.greedy_search.sample_with_temperature" title="onmt.translate.greedy_search.sample_with_temperature"><code class="xref py py-func docutils literal notranslate"><span class="pre">sample_with_temperature()</span></code></a>.</p></li>
 </ul>
 </dd>
 </dl>
 <dl class="method">
-<dt id="onmt.translate.RandomSampling.advance">
-<code class="sig-name descname">advance</code><span class="sig-paren">(</span><em class="sig-param">log_probs</em>, <em class="sig-param">attn</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/random_sampling.html#RandomSampling.advance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.RandomSampling.advance" title="Permalink to this definition">¶</a></dt>
+<dt id="onmt.translate.GreedySearch.advance">
+<code class="sig-name descname">advance</code><span class="sig-paren">(</span><em class="sig-param">log_probs</em>, <em class="sig-param">attn</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/greedy_search.html#GreedySearch.advance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.GreedySearch.advance" title="Permalink to this definition">¶</a></dt>
 <dd><p>Select next tokens randomly from the top k possible next tokens.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -589,8 +599,14 @@ to 1.)</p></li>
 </dd></dl>
 
 <dl class="method">
-<dt id="onmt.translate.RandomSampling.update_finished">
-<code class="sig-name descname">update_finished</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/random_sampling.html#RandomSampling.update_finished"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.RandomSampling.update_finished" title="Permalink to this definition">¶</a></dt>
+<dt id="onmt.translate.GreedySearch.initialize">
+<code class="sig-name descname">initialize</code><span class="sig-paren">(</span><em class="sig-param">memory_bank</em>, <em class="sig-param">src_lengths</em>, <em class="sig-param">src_map=None</em>, <em class="sig-param">device=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/greedy_search.html#GreedySearch.initialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.GreedySearch.initialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize for decoding.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.translate.GreedySearch.update_finished">
+<code class="sig-name descname">update_finished</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/greedy_search.html#GreedySearch.update_finished"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.GreedySearch.update_finished" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finalize scores and predictions.</p>
 </dd></dl>
 

@@ -186,7 +186,6 @@
 <span class="sd">        bos (int): Magic integer in output vocab.</span>
 <span class="sd">        eos (int): Magic integer in output vocab.</span>
 <span class="sd">        batch_size (int): Current batch size.</span>
-<span class="sd">        device (torch.device or str): Device for memory bank (encoder).</span>
 <span class="sd">        parallel_paths (int): Decoding strategies like beam search</span>
 <span class="sd">            use parallel paths. Each batch is repeated ``parallel_paths``</span>
 <span class="sd">            times in relevant state tensors.</span>
@@ -231,7 +230,7 @@
 <span class="sd">        done (bool): See above.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pad</span><span class="p">,</span> <span class="n">bos</span><span class="p">,</span> <span class="n">eos</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">parallel_paths</span><span class="p">,</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pad</span><span class="p">,</span> <span class="n">bos</span><span class="p">,</span> <span class="n">eos</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">parallel_paths</span><span class="p">,</span>
                  <span class="n">min_length</span><span class="p">,</span> <span class="n">block_ngram_repeat</span><span class="p">,</span> <span class="n">exclusion_tokens</span><span class="p">,</span>
                  <span class="n">return_attention</span><span class="p">,</span> <span class="n">max_length</span><span class="p">):</span>
 
@@ -240,17 +239,13 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">bos</span> <span class="o">=</span> <span class="n">bos</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">eos</span> <span class="o">=</span> <span class="n">eos</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parallel_paths</span> <span class="o">=</span> <span class="n">parallel_paths</span>
         <span class="c1"># result caching</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">predictions</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scores</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">attention</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)]</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">alive_seq</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">(</span>
-            <span class="p">[</span><span class="n">batch_size</span> <span class="o">*</span> <span class="n">parallel_paths</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">bos</span><span class="p">,</span>
-            <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
-            <span class="p">[</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">parallel_paths</span><span class="p">],</span>
-            <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">alive_attn</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">min_length</span> <span class="o">=</span> <span class="n">min_length</span>
@@ -260,6 +255,22 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">return_attention</span> <span class="o">=</span> <span class="n">return_attention</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">done</span> <span class="o">=</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="DecodeStrategy.initialize"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.DecodeStrategy.initialize">[docs]</a>    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">,</span> <span class="n">src_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;DecodeStrategy subclasses should override :func:`initialize()`.</span>
+
+<span class="sd">        `initialize` should be called before all actions.</span>
+<span class="sd">        used to prepare necessary ingredients for decode.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">device</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alive_seq</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">(</span>
+            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">parallel_paths</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">bos</span><span class="p">,</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parallel_paths</span><span class="p">],</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">,</span> <span class="n">src_map</span></div>
 
     <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">alive_seq</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>

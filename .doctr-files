@@ -33,8 +33,8 @@
 ./_modules/onmt/translate/beam.html
 ./_modules/onmt/translate/beam_search.html
 ./_modules/onmt/translate/decode_strategy.html
+./_modules/onmt/translate/greedy_search.html
 ./_modules/onmt/translate/penalties.html
-./_modules/onmt/translate/random_sampling.html
 ./_modules/onmt/translate/translation.html
 ./_modules/onmt/translate/translation_server.html
 ./_modules/onmt/translate/translator.html

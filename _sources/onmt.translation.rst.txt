@@ -25,9 +25,9 @@ Decoding Strategies
 .. autoclass:: onmt.translate.BeamSearch
     :members:
 
-.. autofunction:: onmt.translate.random_sampling.sample_with_temperature
+.. autofunction:: onmt.translate.greedy_search.sample_with_temperature
 
-.. autoclass:: onmt.translate.RandomSampling
+.. autoclass:: onmt.translate.GreedySearch
     :members:
 
 Scoring
