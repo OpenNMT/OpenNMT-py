@@ -452,35 +452,32 @@ class Translator(object):
                       codecs.open(self.dump_beam, 'w', 'utf-8'))
         return all_scores, all_predictions
 
-    def _build_align_batch(self, predictions):
+    def _batch_predictions(self, predictions, bos, pad):
         """
-        padding and add BOS token in predictions.
+        Padding predictions in batch and add BOS.
 
         Args:
             predictions (List[List[Tensor]]): `(batch, n_best,)`, for each src
-                sequence contain n_best tgt predictions which are ended with
+                sequence contain n_best tgt predictions all of which ended with
                 eos id.
+            bos (int): bos index to be used.
+            pad (int): pad index to be used.
 
         Return:
-            batch_best_tgt (torch.LongTensor): `(batch, n_best, tgt_l)`
-            padding_mask (torch.BoolTensor): `(batch, n_best, tgt_l)`
+            batched_nbest_predict (torch.LongTensor): `(batch, n_best, tgt_l)`
         """
         dtype, device = predictions[0][0].dtype, predictions[0][0].device
         flatten_tgt = [best.tolist() for bests in predictions
                        for best in bests]
         paded_tgt = torch.tensor(
-            list(zip_longest(*flatten_tgt, fillvalue=self._tgt_pad_idx)),
+            list(zip_longest(*flatten_tgt, fillvalue=pad)),
             dtype=dtype, device=device).T
-        bos_tensor = torch.full([paded_tgt.size(0), 1], self._tgt_bos_idx,
+        bos_tensor = torch.full([paded_tgt.size(0), 1], bos,
                                 dtype=dtype, device=device)
         full_tgt = torch.cat((bos_tensor, paded_tgt), dim=-1)
-        batch_best_tgt = full_tgt.view(
+        batched_nbest_predict = full_tgt.view(
             len(predictions), -1, full_tgt.size(-1))  # (batch, n_best, tgt_l)
-        padding_mask = batch_best_tgt.eq(self._tgt_pad_idx)
-        eos_mask = batch_best_tgt.eq(self._tgt_eos_idx)
-        bos_mask = batch_best_tgt.eq(self._tgt_bos_idx)
-        tgt_mask = padding_mask | eos_mask | bos_mask
-        return batch_best_tgt, tgt_mask
+        return batched_nbest_predict
 
     def _align_forward(self, batch, predictions):
         """
@@ -490,11 +487,12 @@ class Translator(object):
         # (0) add BOS and padding to tgt prediction
         if hasattr(batch, 'tgt'):
             batch_tgt_idxs = batch.tgt.transpose(1, 2).transpose(0, 2)
-            tgt_mask = (batch_tgt_idxs.eq(self._tgt_pad_idx) |
-                        batch_tgt_idxs.eq(self._tgt_eos_idx) |
-                        batch_tgt_idxs.eq(self._tgt_bos_idx))
         else:
-            batch_tgt_idxs, tgt_mask = self._build_align_batch(predictions)
+            batch_tgt_idxs = self._batch_predictions(
+                predictions, bos=self._tgt_bos_idx, pad=self._tgt_pad_idx)
+        tgt_mask = (batch_tgt_idxs.eq(self._tgt_pad_idx) |
+                    batch_tgt_idxs.eq(self._tgt_eos_idx) |
+                    batch_tgt_idxs.eq(self._tgt_bos_idx))
 
         n_best = batch_tgt_idxs.size(1)
         # (1) Encoder forward.
