@@ -687,7 +687,7 @@ then the <code class="docutils literal notranslate"><span class="pre">seq_len</s
 
 <dl class="class">
 <dt id="onmt.translate.GNMTGlobalScorer">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.translate.</code><code class="sig-name descname">GNMTGlobalScorer</code><span class="sig-paren">(</span><em class="sig-param">alpha</em>, <em class="sig-param">beta</em>, <em class="sig-param">length_penalty</em>, <em class="sig-param">coverage_penalty</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam.html#GNMTGlobalScorer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.GNMTGlobalScorer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.translate.</code><code class="sig-name descname">GNMTGlobalScorer</code><span class="sig-paren">(</span><em class="sig-param">alpha</em>, <em class="sig-param">beta</em>, <em class="sig-param">length_penalty</em>, <em class="sig-param">coverage_penalty</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam_search.html#GNMTGlobalScorer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.GNMTGlobalScorer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>NMT re-ranking.</p>
 <dl class="field-list simple">
@@ -710,24 +710,6 @@ then the <code class="docutils literal notranslate"><span class="pre">seq_len</s
 </ul>
 </dd>
 </dl>
-<dl class="method">
-<dt id="onmt.translate.GNMTGlobalScorer.score">
-<code class="sig-name descname">score</code><span class="sig-paren">(</span><em class="sig-param">beam</em>, <em class="sig-param">logprobs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam.html#GNMTGlobalScorer.score"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.GNMTGlobalScorer.score" title="Permalink to this definition">¶</a></dt>
-<dd><p>Rescore a prediction based on penalty functions.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="onmt.translate.GNMTGlobalScorer.update_global_state">
-<code class="sig-name descname">update_global_state</code><span class="sig-paren">(</span><em class="sig-param">beam</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam.html#GNMTGlobalScorer.update_global_state"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.GNMTGlobalScorer.update_global_state" title="Permalink to this definition">¶</a></dt>
-<dd><p>Keeps the coverage vector as sum of attentions.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="onmt.translate.GNMTGlobalScorer.update_score">
-<code class="sig-name descname">update_score</code><span class="sig-paren">(</span><em class="sig-param">beam</em>, <em class="sig-param">attn</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam.html#GNMTGlobalScorer.update_score"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.GNMTGlobalScorer.update_score" title="Permalink to this definition">¶</a></dt>
-<dd><p>Update scores of a Beam that is not finished.</p>
-</dd></dl>
-
 </dd></dl>
 
 </div>

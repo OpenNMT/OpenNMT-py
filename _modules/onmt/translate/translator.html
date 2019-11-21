@@ -187,12 +187,11 @@
 <span class="kn">import</span> <span class="nn">torch</span>
 
 <span class="kn">import</span> <span class="nn">onmt.model_builder</span>
-<span class="kn">import</span> <span class="nn">onmt.translate.beam</span>
 <span class="kn">import</span> <span class="nn">onmt.inputters</span> <span class="k">as</span> <span class="nn">inputters</span>
 <span class="kn">import</span> <span class="nn">onmt.decoders.ensemble</span>
 <span class="kn">from</span> <span class="nn">onmt.translate.beam_search</span> <span class="k">import</span> <span class="n">BeamSearch</span>
 <span class="kn">from</span> <span class="nn">onmt.translate.greedy_search</span> <span class="k">import</span> <span class="n">GreedySearch</span>
-<span class="kn">from</span> <span class="nn">onmt.utils.misc</span> <span class="k">import</span> <span class="n">tile</span><span class="p">,</span> <span class="n">set_random_seed</span>
+<span class="kn">from</span> <span class="nn">onmt.utils.misc</span> <span class="k">import</span> <span class="n">set_random_seed</span>
 <span class="kn">from</span> <span class="nn">onmt.modules.copy_generator</span> <span class="k">import</span> <span class="n">collapse_copy_scores</span>
 
 
@@ -798,101 +797,6 @@
         <span class="n">results</span><span class="p">[</span><span class="s2">&quot;scores&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">decode_strategy</span><span class="o">.</span><span class="n">scores</span>
         <span class="n">results</span><span class="p">[</span><span class="s2">&quot;predictions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">decode_strategy</span><span class="o">.</span><span class="n">predictions</span>
         <span class="n">results</span><span class="p">[</span><span class="s2">&quot;attention&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">decode_strategy</span><span class="o">.</span><span class="n">attention</span>
-        <span class="k">return</span> <span class="n">results</span>
-
-    <span class="c1"># This is left in the code for now, but unsued</span>
-    <span class="k">def</span> <span class="nf">_translate_batch_deprecated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">src_vocabs</span><span class="p">):</span>
-        <span class="c1"># (0) Prep each of the components of the search.</span>
-        <span class="c1"># And helper method for reducing verbosity.</span>
-        <span class="n">use_src_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span>
-        <span class="n">beam_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span>
-        <span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">batch_size</span>
-
-        <span class="n">beam</span> <span class="o">=</span> <span class="p">[</span><span class="n">onmt</span><span class="o">.</span><span class="n">translate</span><span class="o">.</span><span class="n">Beam</span><span class="p">(</span>
-            <span class="n">beam_size</span><span class="p">,</span>
-            <span class="n">n_best</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_best</span><span class="p">,</span>
-            <span class="n">cuda</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cuda</span><span class="p">,</span>
-            <span class="n">global_scorer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">global_scorer</span><span class="p">,</span>
-            <span class="n">pad</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_pad_idx</span><span class="p">,</span>
-            <span class="n">eos</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_eos_idx</span><span class="p">,</span>
-            <span class="n">bos</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_bos_idx</span><span class="p">,</span>
-            <span class="n">min_length</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">min_length</span><span class="p">,</span>
-            <span class="n">stepwise_penalty</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">stepwise_penalty</span><span class="p">,</span>
-            <span class="n">block_ngram_repeat</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">block_ngram_repeat</span><span class="p">,</span>
-            <span class="n">exclusion_tokens</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_exclusion_idxs</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">__</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)]</span>
-
-        <span class="c1"># (1) Run the encoder on the src.</span>
-        <span class="n">src</span><span class="p">,</span> <span class="n">enc_states</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_encoder</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">init_state</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">enc_states</span><span class="p">)</span>
-
-        <span class="n">results</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;predictions&quot;</span><span class="p">:</span> <span class="p">[],</span>
-            <span class="s2">&quot;scores&quot;</span><span class="p">:</span> <span class="p">[],</span>
-            <span class="s2">&quot;attention&quot;</span><span class="p">:</span> <span class="p">[],</span>
-            <span class="s2">&quot;batch&quot;</span><span class="p">:</span> <span class="n">batch</span><span class="p">,</span>
-            <span class="s2">&quot;gold_score&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gold_score</span><span class="p">(</span>
-                <span class="n">batch</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">,</span> <span class="n">src_vocabs</span><span class="p">,</span> <span class="n">use_src_map</span><span class="p">,</span>
-                <span class="n">enc_states</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">src</span><span class="p">)}</span>
-
-        <span class="c1"># (2) Repeat src objects `beam_size` times.</span>
-        <span class="c1"># We use now  batch_size x beam_size (same as fast mode)</span>
-        <span class="n">src_map</span> <span class="o">=</span> <span class="p">(</span><span class="n">tile</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">src_map</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-                   <span class="k">if</span> <span class="n">use_src_map</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">map_state</span><span class="p">(</span>
-            <span class="k">lambda</span> <span class="n">state</span><span class="p">,</span> <span class="n">dim</span><span class="p">:</span> <span class="n">tile</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">))</span>
-
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">memory_bank</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
-            <span class="n">memory_bank</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">tile</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">memory_bank</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">memory_bank</span> <span class="o">=</span> <span class="n">tile</span><span class="p">(</span><span class="n">memory_bank</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">memory_lengths</span> <span class="o">=</span> <span class="n">tile</span><span class="p">(</span><span class="n">src_lengths</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">)</span>
-
-        <span class="c1"># (3) run the decoder to generate sentences, using beam search.</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_length</span><span class="p">):</span>
-            <span class="k">if</span> <span class="nb">all</span><span class="p">((</span><span class="n">b</span><span class="o">.</span><span class="n">done</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">beam</span><span class="p">)):</span>
-                <span class="k">break</span>
-
-            <span class="c1"># (a) Construct batch x beam_size nxt words.</span>
-            <span class="c1"># Get all the pending current beam words and arrange for forward.</span>
-
-            <span class="n">inp</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">b</span><span class="o">.</span><span class="n">current_predictions</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">beam</span><span class="p">])</span>
-            <span class="n">inp</span> <span class="o">=</span> <span class="n">inp</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-
-            <span class="c1"># (b) Decode and forward</span>
-            <span class="n">out</span><span class="p">,</span> <span class="n">beam_attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decode_and_generate</span><span class="p">(</span>
-                <span class="n">inp</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">src_vocabs</span><span class="p">,</span>
-                <span class="n">memory_lengths</span><span class="o">=</span><span class="n">memory_lengths</span><span class="p">,</span> <span class="n">src_map</span><span class="o">=</span><span class="n">src_map</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">i</span>
-            <span class="p">)</span>
-            <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-            <span class="n">beam_attn</span> <span class="o">=</span> <span class="n">beam_attn</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-
-            <span class="c1"># (c) Advance each beam.</span>
-            <span class="n">select_indices_array</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="c1"># Loop over the batch_size number of beam</span>
-            <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">beam</span><span class="p">):</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">b</span><span class="o">.</span><span class="n">done</span><span class="p">:</span>
-                    <span class="n">b</span><span class="o">.</span><span class="n">advance</span><span class="p">(</span><span class="n">out</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="p">:],</span>
-                              <span class="n">beam_attn</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:</span><span class="n">memory_lengths</span><span class="p">[</span><span class="n">j</span><span class="p">]])</span>
-                <span class="n">select_indices_array</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                    <span class="n">b</span><span class="o">.</span><span class="n">current_origin</span> <span class="o">+</span> <span class="n">j</span> <span class="o">*</span> <span class="n">beam_size</span><span class="p">)</span>
-            <span class="n">select_indices</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">select_indices_array</span><span class="p">)</span>
-
-            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">map_state</span><span class="p">(</span>
-                <span class="k">lambda</span> <span class="n">state</span><span class="p">,</span> <span class="n">dim</span><span class="p">:</span> <span class="n">state</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">select_indices</span><span class="p">))</span>
-
-        <span class="c1"># (4) Extract sentences from beam.</span>
-        <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">beam</span><span class="p">:</span>
-            <span class="n">scores</span><span class="p">,</span> <span class="n">ks</span> <span class="o">=</span> <span class="n">b</span><span class="o">.</span><span class="n">sort_finished</span><span class="p">(</span><span class="n">minimum</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_best</span><span class="p">)</span>
-            <span class="n">hyps</span><span class="p">,</span> <span class="n">attn</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">times</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">ks</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">n_best</span><span class="p">]:</span>
-                <span class="n">hyp</span><span class="p">,</span> <span class="n">att</span> <span class="o">=</span> <span class="n">b</span><span class="o">.</span><span class="n">get_hyp</span><span class="p">(</span><span class="n">times</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
-                <span class="n">hyps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hyp</span><span class="p">)</span>
-                <span class="n">attn</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">att</span><span class="p">)</span>
-            <span class="n">results</span><span class="p">[</span><span class="s2">&quot;predictions&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hyps</span><span class="p">)</span>
-            <span class="n">results</span><span class="p">[</span><span class="s2">&quot;scores&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span>
-            <span class="n">results</span><span class="p">[</span><span class="s2">&quot;attention&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">attn</span><span class="p">)</span>
-
         <span class="k">return</span> <span class="n">results</span>
 
     <span class="k">def</span> <span class="nf">_score_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">,</span>

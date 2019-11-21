@@ -30,7 +30,6 @@
 ./_modules/onmt/modules/structured_attention.html
 ./_modules/onmt/modules/weight_norm.html
 ./_modules/onmt/trainer.html
-./_modules/onmt/translate/beam.html
 ./_modules/onmt/translate/beam_search.html
 ./_modules/onmt/translate/decode_strategy.html
 ./_modules/onmt/translate/greedy_search.html

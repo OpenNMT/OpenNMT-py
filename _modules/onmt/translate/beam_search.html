@@ -176,9 +176,11 @@
             
   <h1>Source code for onmt.translate.beam_search</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">torch</span>
-
+<span class="kn">from</span> <span class="nn">onmt.translate</span> <span class="k">import</span> <span class="n">penalties</span>
 <span class="kn">from</span> <span class="nn">onmt.translate.decode_strategy</span> <span class="k">import</span> <span class="n">DecodeStrategy</span>
 <span class="kn">from</span> <span class="nn">onmt.utils.misc</span> <span class="k">import</span> <span class="n">tile</span>
+
+<span class="kn">import</span> <span class="nn">warnings</span>
 
 
 <div class="viewcode-block" id="BeamSearch"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.BeamSearch">[docs]</a><span class="k">class</span> <span class="nc">BeamSearch</span><span class="p">(</span><span class="n">DecodeStrategy</span><span class="p">):</span>
@@ -482,6 +484,71 @@
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stepwise_cov_pen</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_prev_penalty</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prev_penalty</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span>
                         <span class="mi">0</span><span class="p">,</span> <span class="n">non_finished</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="GNMTGlobalScorer"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.GNMTGlobalScorer">[docs]</a><span class="k">class</span> <span class="nc">GNMTGlobalScorer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;NMT re-ranking.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">       alpha (float): Length parameter.</span>
+<span class="sd">       beta (float):  Coverage parameter.</span>
+<span class="sd">       length_penalty (str): Length penalty strategy.</span>
+<span class="sd">       coverage_penalty (str): Coverage penalty strategy.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        alpha (float): See above.</span>
+<span class="sd">        beta (float): See above.</span>
+<span class="sd">        length_penalty (callable): See :class:`penalties.PenaltyBuilder`.</span>
+<span class="sd">        coverage_penalty (callable): See :class:`penalties.PenaltyBuilder`.</span>
+<span class="sd">        has_cov_pen (bool): See :class:`penalties.PenaltyBuilder`.</span>
+<span class="sd">        has_len_pen (bool): See :class:`penalties.PenaltyBuilder`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_opt</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">opt</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">opt</span><span class="o">.</span><span class="n">alpha</span><span class="p">,</span>
+            <span class="n">opt</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span>
+            <span class="n">opt</span><span class="o">.</span><span class="n">length_penalty</span><span class="p">,</span>
+            <span class="n">opt</span><span class="o">.</span><span class="n">coverage_penalty</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">length_penalty</span><span class="p">,</span> <span class="n">coverage_penalty</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validate</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">length_penalty</span><span class="p">,</span> <span class="n">coverage_penalty</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="n">beta</span>
+        <span class="n">penalty_builder</span> <span class="o">=</span> <span class="n">penalties</span><span class="o">.</span><span class="n">PenaltyBuilder</span><span class="p">(</span><span class="n">coverage_penalty</span><span class="p">,</span>
+                                                   <span class="n">length_penalty</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_cov_pen</span> <span class="o">=</span> <span class="n">penalty_builder</span><span class="o">.</span><span class="n">has_cov_pen</span>
+        <span class="c1"># Term will be subtracted from probability</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cov_penalty</span> <span class="o">=</span> <span class="n">penalty_builder</span><span class="o">.</span><span class="n">coverage_penalty</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_len_pen</span> <span class="o">=</span> <span class="n">penalty_builder</span><span class="o">.</span><span class="n">has_len_pen</span>
+        <span class="c1"># Probability will be divided by this</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">length_penalty</span> <span class="o">=</span> <span class="n">penalty_builder</span><span class="o">.</span><span class="n">length_penalty</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_validate</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">length_penalty</span><span class="p">,</span> <span class="n">coverage_penalty</span><span class="p">):</span>
+        <span class="c1"># these warnings indicate that either the alpha/beta</span>
+        <span class="c1"># forces a penalty to be a no-op, or a penalty is a no-op but</span>
+        <span class="c1"># the alpha/beta would suggest otherwise.</span>
+        <span class="k">if</span> <span class="n">length_penalty</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">length_penalty</span> <span class="o">==</span> <span class="s2">&quot;none&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">alpha</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Non-default `alpha` with no length penalty. &quot;</span>
+                              <span class="s2">&quot;`alpha` has no effect.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># using some length penalty</span>
+            <span class="k">if</span> <span class="n">length_penalty</span> <span class="o">==</span> <span class="s2">&quot;wu&quot;</span> <span class="ow">and</span> <span class="n">alpha</span> <span class="o">==</span> <span class="mf">0.</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Using length penalty Wu with alpha==0 &quot;</span>
+                              <span class="s2">&quot;is equivalent to using length penalty none.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">coverage_penalty</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">coverage_penalty</span> <span class="o">==</span> <span class="s2">&quot;none&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">beta</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Non-default `beta` with no coverage penalty. &quot;</span>
+                              <span class="s2">&quot;`beta` has no effect.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># using some coverage penalty</span>
+            <span class="k">if</span> <span class="n">beta</span> <span class="o">==</span> <span class="mf">0.</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Non-default coverage penalty with beta==0 &quot;</span>
+                              <span class="s2">&quot;is equivalent to using coverage penalty none.&quot;</span><span class="p">)</span></div>
 </pre></div>
 
            </div>
