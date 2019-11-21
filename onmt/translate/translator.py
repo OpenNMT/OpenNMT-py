@@ -452,7 +452,7 @@ class Translator(object):
                       codecs.open(self.dump_beam, 'w', 'utf-8'))
         return all_scores, all_predictions
 
-    def _batch_predictions(self, predictions, bos, pad):
+    def _align_pad_prediction(self, predictions, bos, pad):
         """
         Padding predictions in batch and add BOS.
 
@@ -488,7 +488,7 @@ class Translator(object):
         if hasattr(batch, 'tgt'):
             batch_tgt_idxs = batch.tgt.transpose(1, 2).transpose(0, 2)
         else:
-            batch_tgt_idxs = self._batch_predictions(
+            batch_tgt_idxs = self._align_pad_prediction(
                 predictions, bos=self._tgt_bos_idx, pad=self._tgt_pad_idx)
         tgt_mask = (batch_tgt_idxs.eq(self._tgt_pad_idx) |
                     batch_tgt_idxs.eq(self._tgt_eos_idx) |
