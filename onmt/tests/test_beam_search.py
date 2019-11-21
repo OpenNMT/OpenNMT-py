@@ -1,6 +1,5 @@
 import unittest
-from onmt.translate.beam import GNMTGlobalScorer
-from onmt.translate.beam_search import BeamSearch
+from onmt.translate.beam_search import BeamSearch, GNMTGlobalScorer
 
 from copy import deepcopy
 
