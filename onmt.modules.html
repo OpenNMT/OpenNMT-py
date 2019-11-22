@@ -482,7 +482,7 @@ and required by <a class="reference internal" href="onmt.html#onmt.models.NMTMod
 </dl>
 <dl class="method">
 <dt id="onmt.decoders.decoder.RNNDecoderBase.forward">
-<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">tgt</em>, <em class="sig-param">memory_bank</em>, <em class="sig-param">memory_lengths=None</em>, <em class="sig-param">step=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/decoders/decoder.html#RNNDecoderBase.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.decoders.decoder.RNNDecoderBase.forward" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">tgt</em>, <em class="sig-param">memory_bank</em>, <em class="sig-param">memory_lengths=None</em>, <em class="sig-param">step=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/decoders/decoder.html#RNNDecoderBase.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.decoders.decoder.RNNDecoderBase.forward" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -912,7 +912,7 @@ of the FNN.</p></li>
 
 <dl class="class">
 <dt id="onmt.decoders.TransformerDecoder">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.decoders.</code><code class="sig-name descname">TransformerDecoder</code><span class="sig-paren">(</span><em class="sig-param">num_layers</em>, <em class="sig-param">d_model</em>, <em class="sig-param">heads</em>, <em class="sig-param">d_ff</em>, <em class="sig-param">copy_attn</em>, <em class="sig-param">self_attn_type</em>, <em class="sig-param">dropout</em>, <em class="sig-param">attention_dropout</em>, <em class="sig-param">embeddings</em>, <em class="sig-param">max_relative_positions</em>, <em class="sig-param">aan_useffn</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/decoders/transformer.html#TransformerDecoder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.decoders.TransformerDecoder" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.decoders.</code><code class="sig-name descname">TransformerDecoder</code><span class="sig-paren">(</span><em class="sig-param">num_layers</em>, <em class="sig-param">d_model</em>, <em class="sig-param">heads</em>, <em class="sig-param">d_ff</em>, <em class="sig-param">copy_attn</em>, <em class="sig-param">self_attn_type</em>, <em class="sig-param">dropout</em>, <em class="sig-param">attention_dropout</em>, <em class="sig-param">embeddings</em>, <em class="sig-param">max_relative_positions</em>, <em class="sig-param">aan_useffn</em>, <em class="sig-param">full_context_alignment</em>, <em class="sig-param">alignment_layer</em>, <em class="sig-param">alignment_heads=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/decoders/transformer.html#TransformerDecoder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.decoders.TransformerDecoder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.decoders.decoder.DecoderBase</span></code></p>
 <p>The Transformer decoder from “Attention is All You Need”.
 <a class="bibtex reference internal" href="ref.html#dblp-journals-corr-vaswanispujgkp17" id="id9">[VSP+17]</a></p>
@@ -1036,7 +1036,7 @@ zero / non-zero attention <code class="docutils literal notranslate"><span class
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p><ul class="simple">
 <li><p>output context vectors <code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">query_len,</span> <span class="pre">dim)</span></code></p></li>
-<li><p>one of the attention vectors <code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">query_len,</span> <span class="pre">key_len)</span></code></p></li>
+<li><p>Attention vector in heads <code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">head,</span> <span class="pre">query_len,</span> <span class="pre">key_len)</span></code>.</p></li>
 </ul>
 </p>
 </dd>

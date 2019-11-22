@@ -192,6 +192,7 @@
 
 <span class="kn">from</span> <span class="nn">onmt.utils.logging</span> <span class="k">import</span> <span class="n">init_logger</span>
 <span class="kn">from</span> <span class="nn">onmt.utils.misc</span> <span class="k">import</span> <span class="n">set_random_seed</span>
+<span class="kn">from</span> <span class="nn">onmt.utils.alignment</span> <span class="k">import</span> <span class="n">to_word_align</span>
 <span class="kn">from</span> <span class="nn">onmt.utils.parse</span> <span class="k">import</span> <span class="n">ArgumentParser</span>
 <span class="kn">from</span> <span class="nn">onmt.translate.translator</span> <span class="k">import</span> <span class="n">build_translator</span>
 
@@ -617,19 +618,23 @@
 
         <span class="c1"># NOTE: translator returns lists of `n_best` list</span>
         <span class="k">def</span> <span class="nf">flatten_list</span><span class="p">(</span><span class="n">_list</span><span class="p">):</span> <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">_list</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">tiled_texts</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">texts_to_translate</span>
+                       <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">n_best</span><span class="p">)]</span>
         <span class="n">results</span> <span class="o">=</span> <span class="n">flatten_list</span><span class="p">(</span><span class="n">predictions</span><span class="p">)</span>
         <span class="n">scores</span> <span class="o">=</span> <span class="p">[</span><span class="n">score_tensor</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
                   <span class="k">for</span> <span class="n">score_tensor</span> <span class="ow">in</span> <span class="n">flatten_list</span><span class="p">(</span><span class="n">scores</span><span class="p">)]</span>
 
-        <span class="n">results</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">maybe_detokenize</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
-                   <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">results</span><span class="p">]</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">maybe_detokenize_with_align</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">src</span><span class="p">)</span>
+                   <span class="k">for</span> <span class="n">result</span><span class="p">,</span> <span class="n">src</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">tiled_texts</span><span class="p">)]</span>
 
-        <span class="n">results</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">maybe_postprocess</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
-                   <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">results</span><span class="p">]</span>
+        <span class="n">aligns</span> <span class="o">=</span> <span class="p">[</span><span class="n">align</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">align</span> <span class="ow">in</span> <span class="n">results</span><span class="p">]</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">maybe_postprocess</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span> <span class="k">for</span> <span class="n">seq</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">results</span><span class="p">]</span>
+
         <span class="c1"># build back results with empty texts</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">empty_indices</span><span class="p">:</span>
             <span class="n">j</span> <span class="o">=</span> <span class="n">i</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">n_best</span>
             <span class="n">results</span> <span class="o">=</span> <span class="n">results</span><span class="p">[:</span><span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">n_best</span> <span class="o">+</span> <span class="n">results</span><span class="p">[</span><span class="n">j</span><span class="p">:]</span>
+            <span class="n">aligns</span> <span class="o">=</span> <span class="n">aligns</span><span class="p">[:</span><span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">n_best</span> <span class="o">+</span> <span class="n">aligns</span><span class="p">[</span><span class="n">j</span><span class="p">:]</span>
             <span class="n">scores</span> <span class="o">=</span> <span class="n">scores</span><span class="p">[:</span><span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">n_best</span> <span class="o">+</span> <span class="n">scores</span><span class="p">[</span><span class="n">j</span><span class="p">:]</span>
 
         <span class="n">head_spaces</span> <span class="o">=</span> <span class="p">[</span><span class="n">h</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">head_spaces</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">n_best</span><span class="p">)]</span>
@@ -638,7 +643,7 @@
                    <span class="k">for</span> <span class="n">items</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">head_spaces</span><span class="p">,</span> <span class="n">results</span><span class="p">,</span> <span class="n">tail_spaces</span><span class="p">)]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Translation Results: </span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">results</span><span class="p">,</span> <span class="n">scores</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">n_best</span><span class="p">,</span> <span class="n">timer</span><span class="o">.</span><span class="n">times</span>
+        <span class="k">return</span> <span class="n">results</span><span class="p">,</span> <span class="n">scores</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">n_best</span><span class="p">,</span> <span class="n">timer</span><span class="o">.</span><span class="n">times</span><span class="p">,</span> <span class="n">aligns</span>
 
 <div class="viewcode-block" id="ServerModel.do_timeout"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.do_timeout">[docs]</a>    <span class="k">def</span> <span class="nf">do_timeout</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Timeout function that frees GPU memory.</span>
@@ -755,6 +760,41 @@
             <span class="n">tok</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tok</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">tok</span></div>
 
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">tokenizer_marker</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">marker</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">tokenizer_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;type&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">tokenizer_type</span> <span class="o">==</span> <span class="s2">&quot;pyonmttok&quot;</span><span class="p">:</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;params&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">params</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;joiner_annotate&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">marker</span> <span class="o">=</span> <span class="s1">&#39;joiner&#39;</span>
+                <span class="k">elif</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;spacer_annotate&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">marker</span> <span class="o">=</span> <span class="s1">&#39;spacer&#39;</span>
+        <span class="k">elif</span> <span class="n">tokenizer_type</span> <span class="o">==</span> <span class="s2">&quot;sentencepiece&quot;</span><span class="p">:</span>
+            <span class="n">marker</span> <span class="o">=</span> <span class="s1">&#39;spacer&#39;</span>
+        <span class="k">return</span> <span class="n">marker</span>
+
+<div class="viewcode-block" id="ServerModel.maybe_detokenize_with_align"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.maybe_detokenize_with_align">[docs]</a>    <span class="k">def</span> <span class="nf">maybe_detokenize_with_align</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">,</span> <span class="n">src</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;De-tokenize (or not) the sequence (with alignment).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sequence (str): The sequence to detokenize, possible with</span>
+<span class="sd">                alignment seperate by ` ||| `.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            sequence (str): The detokenized sequence.</span>
+<span class="sd">            align (str): The alignment correspand to detokenized src/tgt</span>
+<span class="sd">                sorted or None if no alignment in output.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">align</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">report_align</span><span class="p">:</span>
+            <span class="c1"># output contain alignment</span>
+            <span class="n">sequence</span><span class="p">,</span> <span class="n">align</span> <span class="o">=</span> <span class="n">sequence</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; ||| &#39;</span><span class="p">)</span>
+            <span class="n">align</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maybe_convert_align</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">sequence</span><span class="p">,</span> <span class="n">align</span><span class="p">)</span>
+        <span class="n">sequence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maybe_detokenize</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">sequence</span><span class="p">,</span> <span class="n">align</span><span class="p">)</span></div>
+
 <div class="viewcode-block" id="ServerModel.maybe_detokenize"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.maybe_detokenize">[docs]</a>    <span class="k">def</span> <span class="nf">maybe_detokenize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;De-tokenize the sequence (or not)</span>
 
@@ -780,6 +820,21 @@
             <span class="n">detok</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">detokenize</span><span class="p">(</span><span class="n">sequence</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
 
         <span class="k">return</span> <span class="n">detok</span></div>
+
+<div class="viewcode-block" id="ServerModel.maybe_convert_align"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.maybe_convert_align">[docs]</a>    <span class="k">def</span> <span class="nf">maybe_convert_align</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">align</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert alignment to match detokenized src/tgt (or not).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            src (str): The tokenized source sequence.</span>
+<span class="sd">            tgt (str): The tokenized target sequence.</span>
+<span class="sd">            align (str): The alignment correspand to src/tgt pair.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            align (str): The alignment correspand to detokenized src/tgt.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_marker</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tgt</span><span class="o">.</span><span class="n">split</span><span class="p">())</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">to_word_align</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">align</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_marker</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">align</span></div>
 
 <div class="viewcode-block" id="ServerModel.maybe_postprocess"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.maybe_postprocess">[docs]</a>    <span class="k">def</span> <span class="nf">maybe_postprocess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Postprocess the sequence (or not)</span>

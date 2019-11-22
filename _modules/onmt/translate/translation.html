@@ -180,6 +180,7 @@
 
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">from</span> <span class="nn">onmt.inputters.text_dataset</span> <span class="k">import</span> <span class="n">TextMultiField</span>
+<span class="kn">from</span> <span class="nn">onmt.utils.alignment</span> <span class="k">import</span> <span class="n">build_align_pharaoh</span>
 
 
 <div class="viewcode-block" id="TranslationBuilder"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.TranslationBuilder">[docs]</a><span class="k">class</span> <span class="nc">TranslationBuilder</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -239,13 +240,17 @@
                <span class="nb">len</span><span class="p">(</span><span class="n">translation_batch</span><span class="p">[</span><span class="s2">&quot;predictions&quot;</span><span class="p">]))</span>
         <span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">batch_size</span>
 
-        <span class="n">preds</span><span class="p">,</span> <span class="n">pred_score</span><span class="p">,</span> <span class="n">attn</span><span class="p">,</span> <span class="n">gold_score</span><span class="p">,</span> <span class="n">indices</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span>
+        <span class="n">preds</span><span class="p">,</span> <span class="n">pred_score</span><span class="p">,</span> <span class="n">attn</span><span class="p">,</span> <span class="n">align</span><span class="p">,</span> <span class="n">gold_score</span><span class="p">,</span> <span class="n">indices</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span>
             <span class="o">*</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">translation_batch</span><span class="p">[</span><span class="s2">&quot;predictions&quot;</span><span class="p">],</span>
                         <span class="n">translation_batch</span><span class="p">[</span><span class="s2">&quot;scores&quot;</span><span class="p">],</span>
                         <span class="n">translation_batch</span><span class="p">[</span><span class="s2">&quot;attention&quot;</span><span class="p">],</span>
+                        <span class="n">translation_batch</span><span class="p">[</span><span class="s2">&quot;alignment&quot;</span><span class="p">],</span>
                         <span class="n">translation_batch</span><span class="p">[</span><span class="s2">&quot;gold_score&quot;</span><span class="p">],</span>
                         <span class="n">batch</span><span class="o">.</span><span class="n">indices</span><span class="o">.</span><span class="n">data</span><span class="p">),</span>
                     <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])))</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">align</span><span class="p">):</span>  <span class="c1"># when align is a empty nested list</span>
+            <span class="n">align</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">batch_size</span>
 
         <span class="c1"># Sorting</span>
         <span class="n">inds</span><span class="p">,</span> <span class="n">perm</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">indices</span><span class="p">)</span>
@@ -280,7 +285,7 @@
             <span class="n">translation</span> <span class="o">=</span> <span class="n">Translation</span><span class="p">(</span>
                 <span class="n">src</span><span class="p">[:,</span> <span class="n">b</span><span class="p">]</span> <span class="k">if</span> <span class="n">src</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
                 <span class="n">src_raw</span><span class="p">,</span> <span class="n">pred_sents</span><span class="p">,</span> <span class="n">attn</span><span class="p">[</span><span class="n">b</span><span class="p">],</span> <span class="n">pred_score</span><span class="p">[</span><span class="n">b</span><span class="p">],</span>
-                <span class="n">gold_sent</span><span class="p">,</span> <span class="n">gold_score</span><span class="p">[</span><span class="n">b</span><span class="p">]</span>
+                <span class="n">gold_sent</span><span class="p">,</span> <span class="n">gold_score</span><span class="p">[</span><span class="n">b</span><span class="p">],</span> <span class="n">align</span><span class="p">[</span><span class="n">b</span><span class="p">]</span>
             <span class="p">)</span>
             <span class="n">translations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">translation</span><span class="p">)</span>
 
@@ -299,13 +304,15 @@
 <span class="sd">            translation.</span>
 <span class="sd">        gold_sent (List[str]): Words from gold translation.</span>
 <span class="sd">        gold_score (List[float]): Log-prob of gold translation.</span>
+<span class="sd">        word_aligns (List[FloatTensor]): Words Alignment distribution for</span>
+<span class="sd">            each translation.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">,</span> <span class="s2">&quot;src_raw&quot;</span><span class="p">,</span> <span class="s2">&quot;pred_sents&quot;</span><span class="p">,</span> <span class="s2">&quot;attns&quot;</span><span class="p">,</span> <span class="s2">&quot;pred_scores&quot;</span><span class="p">,</span>
-                 <span class="s2">&quot;gold_sent&quot;</span><span class="p">,</span> <span class="s2">&quot;gold_score&quot;</span><span class="p">]</span>
+                 <span class="s2">&quot;gold_sent&quot;</span><span class="p">,</span> <span class="s2">&quot;gold_score&quot;</span><span class="p">,</span> <span class="s2">&quot;word_aligns&quot;</span><span class="p">]</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">src_raw</span><span class="p">,</span> <span class="n">pred_sents</span><span class="p">,</span>
-                 <span class="n">attn</span><span class="p">,</span> <span class="n">pred_scores</span><span class="p">,</span> <span class="n">tgt_sent</span><span class="p">,</span> <span class="n">gold_score</span><span class="p">):</span>
+                 <span class="n">attn</span><span class="p">,</span> <span class="n">pred_scores</span><span class="p">,</span> <span class="n">tgt_sent</span><span class="p">,</span> <span class="n">gold_score</span><span class="p">,</span> <span class="n">word_aligns</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">src</span> <span class="o">=</span> <span class="n">src</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">src_raw</span> <span class="o">=</span> <span class="n">src_raw</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pred_sents</span> <span class="o">=</span> <span class="n">pred_sents</span>
@@ -313,6 +320,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">pred_scores</span> <span class="o">=</span> <span class="n">pred_scores</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">gold_sent</span> <span class="o">=</span> <span class="n">tgt_sent</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">gold_score</span> <span class="o">=</span> <span class="n">gold_score</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">word_aligns</span> <span class="o">=</span> <span class="n">word_aligns</span>
 
 <div class="viewcode-block" id="Translation.log"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.Translation.log">[docs]</a>    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sent_number</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -326,6 +334,12 @@
         <span class="n">pred_sent</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">best_pred</span><span class="p">)</span>
         <span class="n">msg</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;PRED </span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sent_number</span><span class="p">,</span> <span class="n">pred_sent</span><span class="p">))</span>
         <span class="n">msg</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;PRED SCORE: </span><span class="si">{:.4f}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">best_score</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">word_aligns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">pred_align</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">word_aligns</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">pred_align_pharaoh</span> <span class="o">=</span> <span class="n">build_align_pharaoh</span><span class="p">(</span><span class="n">pred_align</span><span class="p">)</span>
+            <span class="n">pred_align_sent</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">pred_align_pharaoh</span><span class="p">)</span>
+            <span class="n">msg</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;ALIGN: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pred_align_sent</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gold_sent</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">tgt_sent</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gold_sent</span><span class="p">)</span>

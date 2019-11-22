@@ -190,7 +190,7 @@
 <h2>Translations<a class="headerlink" href="#translations" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.translate.Translation">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.translate.</code><code class="sig-name descname">Translation</code><span class="sig-paren">(</span><em class="sig-param">src</em>, <em class="sig-param">src_raw</em>, <em class="sig-param">pred_sents</em>, <em class="sig-param">attn</em>, <em class="sig-param">pred_scores</em>, <em class="sig-param">tgt_sent</em>, <em class="sig-param">gold_score</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation.html#Translation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translation" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.translate.</code><code class="sig-name descname">Translation</code><span class="sig-paren">(</span><em class="sig-param">src</em>, <em class="sig-param">src_raw</em>, <em class="sig-param">pred_sents</em>, <em class="sig-param">attn</em>, <em class="sig-param">pred_scores</em>, <em class="sig-param">tgt_sent</em>, <em class="sig-param">gold_score</em>, <em class="sig-param">word_aligns</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation.html#Translation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Container for a translated sentence.</p>
 <dl class="field-list simple">
@@ -204,6 +204,8 @@
 translation.</p></li>
 <li><p><strong>gold_sent</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – Words from gold translation.</p></li>
 <li><p><strong>gold_score</strong> (<em>List</em><em>[</em><em>float</em><em>]</em>) – Log-prob of gold translation.</p></li>
+<li><p><strong>word_aligns</strong> (<em>List</em><em>[</em><em>FloatTensor</em><em>]</em>) – Words Alignment distribution for
+each translation.</p></li>
 </ul>
 </dd>
 </dl>
@@ -220,7 +222,7 @@ translation.</p></li>
 <h2>Translator Class<a class="headerlink" href="#translator-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.translate.Translator">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.translate.</code><code class="sig-name descname">Translator</code><span class="sig-paren">(</span><em class="sig-param">model</em>, <em class="sig-param">fields</em>, <em class="sig-param">src_reader</em>, <em class="sig-param">tgt_reader</em>, <em class="sig-param">gpu=-1</em>, <em class="sig-param">n_best=1</em>, <em class="sig-param">min_length=0</em>, <em class="sig-param">max_length=100</em>, <em class="sig-param">ratio=0.0</em>, <em class="sig-param">beam_size=30</em>, <em class="sig-param">random_sampling_topk=1</em>, <em class="sig-param">random_sampling_temp=1</em>, <em class="sig-param">stepwise_penalty=None</em>, <em class="sig-param">dump_beam=False</em>, <em class="sig-param">block_ngram_repeat=0</em>, <em class="sig-param">ignore_when_blocking=frozenset({})</em>, <em class="sig-param">replace_unk=False</em>, <em class="sig-param">phrase_table=''</em>, <em class="sig-param">data_type='text'</em>, <em class="sig-param">verbose=False</em>, <em class="sig-param">report_bleu=False</em>, <em class="sig-param">report_rouge=False</em>, <em class="sig-param">report_time=False</em>, <em class="sig-param">copy_attn=False</em>, <em class="sig-param">global_scorer=None</em>, <em class="sig-param">out_file=None</em>, <em class="sig-param">report_score=True</em>, <em class="sig-param">logger=None</em>, <em class="sig-param">seed=-1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.translate.</code><code class="sig-name descname">Translator</code><span class="sig-paren">(</span><em class="sig-param">model</em>, <em class="sig-param">fields</em>, <em class="sig-param">src_reader</em>, <em class="sig-param">tgt_reader</em>, <em class="sig-param">gpu=-1</em>, <em class="sig-param">n_best=1</em>, <em class="sig-param">min_length=0</em>, <em class="sig-param">max_length=100</em>, <em class="sig-param">ratio=0.0</em>, <em class="sig-param">beam_size=30</em>, <em class="sig-param">random_sampling_topk=1</em>, <em class="sig-param">random_sampling_temp=1</em>, <em class="sig-param">stepwise_penalty=None</em>, <em class="sig-param">dump_beam=False</em>, <em class="sig-param">block_ngram_repeat=0</em>, <em class="sig-param">ignore_when_blocking=frozenset({})</em>, <em class="sig-param">replace_unk=False</em>, <em class="sig-param">phrase_table=''</em>, <em class="sig-param">data_type='text'</em>, <em class="sig-param">verbose=False</em>, <em class="sig-param">report_bleu=False</em>, <em class="sig-param">report_rouge=False</em>, <em class="sig-param">report_time=False</em>, <em class="sig-param">copy_attn=False</em>, <em class="sig-param">global_scorer=None</em>, <em class="sig-param">out_file=None</em>, <em class="sig-param">report_align=False</em>, <em class="sig-param">report_score=True</em>, <em class="sig-param">logger=None</em>, <em class="sig-param">seed=-1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Translate a batch of sentences with a saved model.</p>
 <dl class="field-list simple">
@@ -266,7 +268,7 @@ scoring/reranking object.</p></li>
 </dl>
 <dl class="method">
 <dt id="onmt.translate.Translator.from_opt">
-<em class="property">classmethod </em><code class="sig-name descname">from_opt</code><span class="sig-paren">(</span><em class="sig-param">model</em>, <em class="sig-param">fields</em>, <em class="sig-param">opt</em>, <em class="sig-param">model_opt</em>, <em class="sig-param">global_scorer=None</em>, <em class="sig-param">out_file=None</em>, <em class="sig-param">report_score=True</em>, <em class="sig-param">logger=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator.from_opt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator.from_opt" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><code class="sig-name descname">from_opt</code><span class="sig-paren">(</span><em class="sig-param">model</em>, <em class="sig-param">fields</em>, <em class="sig-param">opt</em>, <em class="sig-param">model_opt</em>, <em class="sig-param">global_scorer=None</em>, <em class="sig-param">out_file=None</em>, <em class="sig-param">report_align=False</em>, <em class="sig-param">report_score=True</em>, <em class="sig-param">logger=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator.from_opt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator.from_opt" title="Permalink to this definition">¶</a></dt>
 <dd><p>Alternate constructor.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -281,6 +283,7 @@ the model checkpoint.</p></li>
 <code class="xref py py-func docutils literal notranslate"><span class="pre">__init__()</span></code>..</p></li>
 <li><p><strong>out_file</strong> (<em>TextIO</em><em> or </em><em>codecs.StreamReaderWriter</em>) – See
 <code class="xref py py-func docutils literal notranslate"><span class="pre">__init__()</span></code>.</p></li>
+<li><p><strong>report_align</strong> (<em>bool</em>) – See <code class="xref py py-func docutils literal notranslate"><span class="pre">__init__()</span></code>.</p></li>
 <li><p><strong>report_score</strong> (<em>bool</em>) – See <code class="xref py py-func docutils literal notranslate"><span class="pre">__init__()</span></code>.</p></li>
 <li><p><strong>logger</strong> (<em>logging.Logger</em><em> or </em><em>NoneType</em>) – See <code class="xref py py-func docutils literal notranslate"><span class="pre">__init__()</span></code>.</p></li>
 </ul>
@@ -290,7 +293,7 @@ the model checkpoint.</p></li>
 
 <dl class="method">
 <dt id="onmt.translate.Translator.translate">
-<code class="sig-name descname">translate</code><span class="sig-paren">(</span><em class="sig-param">src</em>, <em class="sig-param">tgt=None</em>, <em class="sig-param">src_dir=None</em>, <em class="sig-param">batch_size=None</em>, <em class="sig-param">batch_type='sents'</em>, <em class="sig-param">attn_debug=False</em>, <em class="sig-param">phrase_table=''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator.translate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator.translate" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">translate</code><span class="sig-paren">(</span><em class="sig-param">src</em>, <em class="sig-param">tgt=None</em>, <em class="sig-param">src_dir=None</em>, <em class="sig-param">batch_size=None</em>, <em class="sig-param">batch_type='sents'</em>, <em class="sig-param">attn_debug=False</em>, <em class="sig-param">align_debug=False</em>, <em class="sig-param">phrase_table=''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator.translate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator.translate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Translate content of <code class="docutils literal notranslate"><span class="pre">src</span></code> and get gold scores from <code class="docutils literal notranslate"><span class="pre">tgt</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -301,6 +304,7 @@ the model checkpoint.</p></li>
 for certain types of data).</p></li>
 <li><p><strong>batch_size</strong> (<em>int</em>) – size of examples per mini-batch</p></li>
 <li><p><strong>attn_debug</strong> (<em>bool</em>) – enables the attention logging</p></li>
+<li><p><strong>align_debug</strong> (<em>bool</em>) – enables the word alignment logging</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>

@@ -109,6 +109,8 @@
 <li class="toctree-l2"><a class="reference internal" href="#Model-Embedding Features">Model-Embedding Features</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Model- Encoder-Decoder">Model- Encoder-Decoder</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Model- Attention">Model- Attention</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Model - Alignement">Model - Alignement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Generator">Generator</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#General">General</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Initialization">Initialization</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Optimization- Type">Optimization- Type</a></li>
@@ -220,8 +222,10 @@
                 <span class="p">[</span><span class="o">--</span><span class="n">self_attn_type</span> <span class="n">SELF_ATTN_TYPE</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">max_relative_positions</span> <span class="n">MAX_RELATIVE_POSITIONS</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">heads</span> <span class="n">HEADS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">transformer_ff</span> <span class="n">TRANSFORMER_FF</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">aan_useffn</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">copy_attn</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">copy_attn_type</span> <span class="p">{</span><span class="n">dot</span><span class="p">,</span><span class="n">general</span><span class="p">,</span><span class="n">mlp</span><span class="p">,</span><span class="n">none</span><span class="p">}]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">aan_useffn</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">lambda_align</span> <span class="n">LAMBDA_ALIGN</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">alignment_layer</span> <span class="n">ALIGNMENT_LAYER</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">alignment_heads</span> <span class="n">ALIGNMENT_HEADS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">full_context_alignment</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">copy_attn</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">copy_attn_type</span> <span class="p">{</span><span class="n">dot</span><span class="p">,</span><span class="n">general</span><span class="p">,</span><span class="n">mlp</span><span class="p">,</span><span class="n">none</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">generator_function</span> <span class="p">{</span><span class="n">softmax</span><span class="p">,</span><span class="n">sparsemax</span><span class="p">}]</span> <span class="p">[</span><span class="o">--</span><span class="n">copy_attn_force</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">reuse_copy_attn</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">copy_loss_by_seqlength</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">coverage_attn</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">lambda_coverage</span> <span class="n">LAMBDA_COVERAGE</span><span class="p">]</span>
@@ -271,7 +275,7 @@
                 <span class="p">[</span><span class="o">--</span><span class="n">decay_method</span> <span class="p">{</span><span class="n">noam</span><span class="p">,</span><span class="n">noamwd</span><span class="p">,</span><span class="n">rsqrt</span><span class="p">,</span><span class="n">none</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">warmup_steps</span> <span class="n">WARMUP_STEPS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">report_every</span> <span class="n">REPORT_EVERY</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">log_file</span> <span class="n">LOG_FILE</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">log_file_level</span> <span class="p">{</span><span class="n">INFO</span><span class="p">,</span><span class="n">DEBUG</span><span class="p">,</span><span class="n">ERROR</span><span class="p">,</span><span class="n">WARNING</span><span class="p">,</span><span class="n">NOTSET</span><span class="p">,</span><span class="n">CRITICAL</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">40</span><span class="p">,</span><span class="mi">30</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">50</span><span class="p">}]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">log_file_level</span> <span class="p">{</span><span class="n">ERROR</span><span class="p">,</span><span class="n">WARNING</span><span class="p">,</span><span class="n">DEBUG</span><span class="p">,</span><span class="n">NOTSET</span><span class="p">,</span><span class="n">CRITICAL</span><span class="p">,</span><span class="n">INFO</span><span class="p">,</span><span class="mi">40</span><span class="p">,</span><span class="mi">30</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="mi">20</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">exp_host</span> <span class="n">EXP_HOST</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">exp</span> <span class="n">EXP</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">tensorboard</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">tensorboard_log_dir</span> <span class="n">TENSORBOARD_LOG_DIR</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">sample_rate</span> <span class="n">SAMPLE_RATE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">window_size</span> <span class="n">WINDOW_SIZE</span><span class="p">]</span>
@@ -445,6 +449,33 @@
 <dd><p>Turn on the FFN layer in the AAN decoder</p>
 <p>Default: False</p>
 </dd>
+</dl>
+</div>
+<div class="section" id="Model - Alignement">
+<h2>Model - Alignement<a class="headerlink" href="#Model - Alignement" title="Permalink to this headline">¶</a></h2>
+<dl class="option-list">
+<dt><kbd>--lambda_align, -lambda_align</kbd></dt>
+<dd><p>Lambda value for alignement loss of Garg et al (2019)For more detailed information, see: <a class="reference external" href="https://arxiv.org/abs/1909.02074">https://arxiv.org/abs/1909.02074</a></p>
+<p>Default: 0.0</p>
+</dd>
+<dt><kbd>--alignment_layer, -alignment_layer</kbd></dt>
+<dd><p>Layer number which has to be supervised.</p>
+<p>Default: -3</p>
+</dd>
+<dt><kbd>--alignment_heads, -alignment_heads</kbd></dt>
+<dd><ol class="upperalpha simple" start="14">
+<li><p>of cross attention heads per layer to supervised with</p></li>
+</ol>
+</dd>
+<dt><kbd>--full_context_alignment, -full_context_alignment</kbd></dt>
+<dd><p>Whether alignment is conditioned on full target context.</p>
+<p>Default: False</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="Generator">
+<h2>Generator<a class="headerlink" href="#Generator" title="Permalink to this headline">¶</a></h2>
+<dl class="option-list">
 <dt><kbd>--copy_attn, -copy_attn</kbd></dt>
 <dd><p>Train copy attention layer.</p>
 <p>Default: False</p>
@@ -693,7 +724,7 @@ Inspired by torchtext’s pool mechanism.</p>
 <p>Default: 0.9</p>
 </dd>
 <dt><kbd>--adam_beta2, -adam_beta2</kbd></dt>
-<dd><p>The beta2 parameter used by Adam. Typically a value of 0.999 is recommended, as this is the value suggested by the original paper describing Adam, and is also the value adopted in other frameworks such as Tensorflow and Kerras, i.e. see: <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer">https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer</a> or <a class="reference external" href="https://keras.io/optimizers/">https://keras.io/optimizers/</a> . Whereas recently the paper “Attention is All You Need” suggested a value of 0.98 for beta2, this parameter may not work well for normal models / default baselines.</p>
+<dd><p>The beta2 parameter used by Adam. Typically a value of 0.999 is recommended, as this is the value suggested by the original paper describing Adam, and is also the value adopted in other frameworks such as Tensorflow and Keras, i.e. see: <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer">https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer</a> or <a class="reference external" href="https://keras.io/optimizers/">https://keras.io/optimizers/</a> . Whereas recently the paper “Attention is All You Need” suggested a value of 0.98 for beta2, this parameter may not work well for normal models / default baselines.</p>
 <p>Default: 0.999</p>
 </dd>
 <dt><kbd>--label_smoothing, -label_smoothing</kbd></dt>
@@ -752,7 +783,7 @@ Inspired by torchtext’s pool mechanism.</p>
 <p>Default: “”</p>
 </dd>
 <dt><kbd>--log_file_level, -log_file_level</kbd></dt>
-<dd><p>Possible choices: INFO, DEBUG, ERROR, WARNING, NOTSET, CRITICAL, 20, 10, 40, 30, 0, 50</p>
+<dd><p>Possible choices: ERROR, WARNING, DEBUG, NOTSET, CRITICAL, INFO, 40, 30, 10, 0, 50, 20</p>
 <p>Default: “0”</p>
 </dd>
 <dt><kbd>--exp_host, -exp_host</kbd></dt>

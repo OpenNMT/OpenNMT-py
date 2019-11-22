@@ -96,6 +96,11 @@
 <li class="toctree-l3"><a class="reference internal" href="#training">Training</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="#can-i-get-word-alignment-while-translating">Can I get word alignment while translating?</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#raw-alignments-from-averaging-transformer-attention-heads">Raw alignments from averaging Transformer attention heads</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#supervised-learning-on-a-specific-head">Supervised learning on a specific head</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="CONTRIBUTING.html">Contributors</a></li>
@@ -195,12 +200,12 @@
 <p>Using vocabularies from OpenNMT-py preprocessing outputs, <code class="docutils literal notranslate"><span class="pre">embeddings_to_torch.py</span></code> to generate encoder and decoder embeddings initialized with GloVe’s values.</p>
 <p>the script is a slightly modified version of ylhsieh’s one2.</p>
 <p>Usage:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">embeddings_to_torch</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">emb_file_both</span> <span class="n">EMB_FILE_BOTH</span><span class="p">]</span>
-                       <span class="p">[</span><span class="o">-</span><span class="n">emb_file_enc</span> <span class="n">EMB_FILE_ENC</span><span class="p">]</span>
-                       <span class="p">[</span><span class="o">-</span><span class="n">emb_file_dec</span> <span class="n">EMB_FILE_DEC</span><span class="p">]</span> <span class="o">-</span><span class="n">output_file</span>
-                       <span class="n">OUTPUT_FILE</span> <span class="o">-</span><span class="n">dict_file</span> <span class="n">DICT_FILE</span> <span class="p">[</span><span class="o">-</span><span class="n">verbose</span><span class="p">]</span>
-                       <span class="p">[</span><span class="o">-</span><span class="n">skip_lines</span> <span class="n">SKIP_LINES</span><span class="p">]</span>
-                       <span class="p">[</span><span class="o">-</span><span class="nb">type</span> <span class="p">{</span><span class="n">GloVe</span><span class="p">,</span><span class="n">word2vec</span><span class="p">}]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>embeddings_to_torch.py <span class="o">[</span>-h<span class="o">]</span> <span class="o">[</span>-emb_file_both EMB_FILE_BOTH<span class="o">]</span>
+                       <span class="o">[</span>-emb_file_enc EMB_FILE_ENC<span class="o">]</span>
+                       <span class="o">[</span>-emb_file_dec EMB_FILE_DEC<span class="o">]</span> -output_file
+                       OUTPUT_FILE -dict_file DICT_FILE <span class="o">[</span>-verbose<span class="o">]</span>
+                       <span class="o">[</span>-skip_lines SKIP_LINES<span class="o">]</span>
+                       <span class="o">[</span>-type <span class="o">{</span>GloVe,word2vec<span class="o">}]</span>
 </pre></div>
 </div>
 <p>Run embeddings_to_torch.py -h for more usagecomplete info.</p>
@@ -208,41 +213,41 @@
 <ol class="simple">
 <li><p>get GloVe files:</p></li>
 </ol>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">mkdir</span> <span class="s2">&quot;glove_dir&quot;</span>
-<span class="n">wget</span> <span class="n">http</span><span class="p">:</span><span class="o">//</span><span class="n">nlp</span><span class="o">.</span><span class="n">stanford</span><span class="o">.</span><span class="n">edu</span><span class="o">/</span><span class="n">data</span><span class="o">/</span><span class="n">glove</span><span class="o">.</span><span class="mi">6</span><span class="n">B</span><span class="o">.</span><span class="n">zip</span>
-<span class="n">unzip</span> <span class="n">glove</span><span class="o">.</span><span class="mi">6</span><span class="n">B</span><span class="o">.</span><span class="n">zip</span> <span class="o">-</span><span class="n">d</span> <span class="s2">&quot;glove_dir&quot;</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>mkdir <span class="s2">&quot;glove_dir&quot;</span>
+wget http://nlp.stanford.edu/data/glove.6B.zip
+unzip glove.6B.zip -d <span class="s2">&quot;glove_dir&quot;</span>
 </pre></div>
 </div>
 <ol class="simple">
 <li><p>prepare data:</p></li>
 </ol>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">onmt_preprocess</span> \
-<span class="o">-</span><span class="n">train_src</span> <span class="n">data</span><span class="o">/</span><span class="n">train</span><span class="o">.</span><span class="n">src</span><span class="o">.</span><span class="n">txt</span> \
-<span class="o">-</span><span class="n">train_tgt</span> <span class="n">data</span><span class="o">/</span><span class="n">train</span><span class="o">.</span><span class="n">tgt</span><span class="o">.</span><span class="n">txt</span> \
-<span class="o">-</span><span class="n">valid_src</span> <span class="n">data</span><span class="o">/</span><span class="n">valid</span><span class="o">.</span><span class="n">src</span><span class="o">.</span><span class="n">txt</span> \
-<span class="o">-</span><span class="n">valid_tgt</span> <span class="n">data</span><span class="o">/</span><span class="n">valid</span><span class="o">.</span><span class="n">tgt</span><span class="o">.</span><span class="n">txt</span> \
-<span class="o">-</span><span class="n">save_data</span> <span class="n">data</span><span class="o">/</span><span class="n">data</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>onmt_preprocess <span class="se">\</span>
+-train_src data/train.src.txt <span class="se">\</span>
+-train_tgt data/train.tgt.txt <span class="se">\</span>
+-valid_src data/valid.src.txt <span class="se">\</span>
+-valid_tgt data/valid.tgt.txt <span class="se">\</span>
+-save_data data/data
 </pre></div>
 </div>
 <ol class="simple">
 <li><p>prepare embeddings:</p></li>
 </ol>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">tools</span><span class="o">/</span><span class="n">embeddings_to_torch</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">emb_file_both</span> <span class="s2">&quot;glove_dir/glove.6B.100d.txt&quot;</span> \
-<span class="o">-</span><span class="n">dict_file</span> <span class="s2">&quot;data/data.vocab.pt&quot;</span> \
-<span class="o">-</span><span class="n">output_file</span> <span class="s2">&quot;data/embeddings&quot;</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>./tools/embeddings_to_torch.py -emb_file_both <span class="s2">&quot;glove_dir/glove.6B.100d.txt&quot;</span> <span class="se">\</span>
+-dict_file <span class="s2">&quot;data/data.vocab.pt&quot;</span> <span class="se">\</span>
+-output_file <span class="s2">&quot;data/embeddings&quot;</span>
 </pre></div>
 </div>
 <ol class="simple">
 <li><p>train using pre-trained embeddings:</p></li>
 </ol>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">onmt_train</span> <span class="o">-</span><span class="n">save_model</span> <span class="n">data</span><span class="o">/</span><span class="n">model</span> \
-           <span class="o">-</span><span class="n">batch_size</span> <span class="mi">64</span> \
-           <span class="o">-</span><span class="n">layers</span> <span class="mi">2</span> \
-           <span class="o">-</span><span class="n">rnn_size</span> <span class="mi">200</span> \
-           <span class="o">-</span><span class="n">word_vec_size</span> <span class="mi">100</span> \
-           <span class="o">-</span><span class="n">pre_word_vecs_enc</span> <span class="s2">&quot;data/embeddings.enc.pt&quot;</span> \
-           <span class="o">-</span><span class="n">pre_word_vecs_dec</span> <span class="s2">&quot;data/embeddings.dec.pt&quot;</span> \
-           <span class="o">-</span><span class="n">data</span> <span class="n">data</span><span class="o">/</span><span class="n">data</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>onmt_train -save_model data/model <span class="se">\</span>
+           -batch_size <span class="m">64</span> <span class="se">\</span>
+           -layers <span class="m">2</span> <span class="se">\</span>
+           -rnn_size <span class="m">200</span> <span class="se">\</span>
+           -word_vec_size <span class="m">100</span> <span class="se">\</span>
+           -pre_word_vecs_enc <span class="s2">&quot;data/embeddings.enc.pt&quot;</span> <span class="se">\</span>
+           -pre_word_vecs_dec <span class="s2">&quot;data/embeddings.dec.pt&quot;</span> <span class="se">\</span>
+           -data data/data
 </pre></div>
 </div>
 </div>
@@ -251,15 +256,15 @@
 <p>The transformer model is very sensitive to hyperparameters. To run it
 effectively you need to set a bunch of different options that mimic the Google
 setup. We have confirmed the following command can replicate their WMT results.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span>  <span class="n">train</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">data</span> <span class="o">/</span><span class="n">tmp</span><span class="o">/</span><span class="n">de2</span><span class="o">/</span><span class="n">data</span> <span class="o">-</span><span class="n">save_model</span> <span class="o">/</span><span class="n">tmp</span><span class="o">/</span><span class="n">extra</span> \
-        <span class="o">-</span><span class="n">layers</span> <span class="mi">6</span> <span class="o">-</span><span class="n">rnn_size</span> <span class="mi">512</span> <span class="o">-</span><span class="n">word_vec_size</span> <span class="mi">512</span> <span class="o">-</span><span class="n">transformer_ff</span> <span class="mi">2048</span> <span class="o">-</span><span class="n">heads</span> <span class="mi">8</span>  \
-        <span class="o">-</span><span class="n">encoder_type</span> <span class="n">transformer</span> <span class="o">-</span><span class="n">decoder_type</span> <span class="n">transformer</span> <span class="o">-</span><span class="n">position_encoding</span> \
-        <span class="o">-</span><span class="n">train_steps</span> <span class="mi">200000</span>  <span class="o">-</span><span class="n">max_generator_batches</span> <span class="mi">2</span> <span class="o">-</span><span class="n">dropout</span> <span class="mf">0.1</span> \
-        <span class="o">-</span><span class="n">batch_size</span> <span class="mi">4096</span> <span class="o">-</span><span class="n">batch_type</span> <span class="n">tokens</span> <span class="o">-</span><span class="n">normalization</span> <span class="n">tokens</span>  <span class="o">-</span><span class="n">accum_count</span> <span class="mi">2</span> \
-        <span class="o">-</span><span class="n">optim</span> <span class="n">adam</span> <span class="o">-</span><span class="n">adam_beta2</span> <span class="mf">0.998</span> <span class="o">-</span><span class="n">decay_method</span> <span class="n">noam</span> <span class="o">-</span><span class="n">warmup_steps</span> <span class="mi">8000</span> <span class="o">-</span><span class="n">learning_rate</span> <span class="mi">2</span> \
-        <span class="o">-</span><span class="n">max_grad_norm</span> <span class="mi">0</span> <span class="o">-</span><span class="n">param_init</span> <span class="mi">0</span>  <span class="o">-</span><span class="n">param_init_glorot</span> \
-        <span class="o">-</span><span class="n">label_smoothing</span> <span class="mf">0.1</span> <span class="o">-</span><span class="n">valid_steps</span> <span class="mi">10000</span> <span class="o">-</span><span class="n">save_checkpoint_steps</span> <span class="mi">10000</span> \
-        <span class="o">-</span><span class="n">world_size</span> <span class="mi">4</span> <span class="o">-</span><span class="n">gpu_ranks</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">2</span> <span class="mi">3</span> 
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python  train.py -data /tmp/de2/data -save_model /tmp/extra <span class="se">\</span>
+        -layers <span class="m">6</span> -rnn_size <span class="m">512</span> -word_vec_size <span class="m">512</span> -transformer_ff <span class="m">2048</span> -heads <span class="m">8</span>  <span class="se">\</span>
+        -encoder_type transformer -decoder_type transformer -position_encoding <span class="se">\</span>
+        -train_steps <span class="m">200000</span>  -max_generator_batches <span class="m">2</span> -dropout <span class="m">0</span>.1 <span class="se">\</span>
+        -batch_size <span class="m">4096</span> -batch_type tokens -normalization tokens  -accum_count <span class="m">2</span> <span class="se">\</span>
+        -optim adam -adam_beta2 <span class="m">0</span>.998 -decay_method noam -warmup_steps <span class="m">8000</span> -learning_rate <span class="m">2</span> <span class="se">\</span>
+        -max_grad_norm <span class="m">0</span> -param_init <span class="m">0</span>  -param_init_glorot <span class="se">\</span>
+        -label_smoothing <span class="m">0</span>.1 -valid_steps <span class="m">10000</span> -save_checkpoint_steps <span class="m">10000</span> <span class="se">\</span>
+        -world_size <span class="m">4</span> -gpu_ranks <span class="m">0</span> <span class="m">1</span> <span class="m">2</span> <span class="m">3</span>
 </pre></div>
 </div>
 <p>Here are what each of the parameters mean:</p>
@@ -268,8 +273,6 @@ setup. We have confirmed the following command can replicate their WMT results.<
 <li><p><code class="docutils literal notranslate"><span class="pre">position_encoding</span></code>: add sinusoidal position encoding to each embedding</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">optim</span> <span class="pre">adam</span></code>, <code class="docutils literal notranslate"><span class="pre">decay_method</span> <span class="pre">noam</span></code>, <code class="docutils literal notranslate"><span class="pre">warmup_steps</span> <span class="pre">8000</span></code>: use special learning rate.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">batch_type</span> <span class="pre">tokens</span></code>, <code class="docutils literal notranslate"><span class="pre">normalization</span> <span class="pre">tokens</span></code>, <code class="docutils literal notranslate"><span class="pre">accum_count</span> <span class="pre">4</span></code>: batch and normalize based on number of tokens and not sentences. Compute gradients based on four batches.</p></li>
-</ul>
-<ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">label_smoothing</span> <span class="pre">0.1</span></code>: use label smoothing loss.</p></li>
 </ul>
 </div>
@@ -300,12 +303,12 @@ Bear in mind that your models must share the same target vocabulary.</p>
 <h3>Preprocessing<a class="headerlink" href="#preprocessing" title="Permalink to this headline">¶</a></h3>
 <p>We introduced <code class="docutils literal notranslate"><span class="pre">-train_ids</span></code> which is a list of IDs that will be given to the preprocessed shards.</p>
 <p>E.g. we have two corpora : <code class="docutils literal notranslate"><span class="pre">parallel.en</span></code> and  <code class="docutils literal notranslate"><span class="pre">parallel.de</span></code> + <code class="docutils literal notranslate"><span class="pre">from_backtranslation.en</span></code> <code class="docutils literal notranslate"><span class="pre">from_backtranslation.de</span></code>, we can pass the following in the <code class="docutils literal notranslate"><span class="pre">preprocess.py</span></code> command:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">...</span>
-<span class="o">-</span><span class="n">train_src</span> <span class="n">parallel</span><span class="o">.</span><span class="n">en</span> <span class="n">from_backtranslation</span><span class="o">.</span><span class="n">en</span> \
-<span class="o">-</span><span class="n">train_tgt</span> <span class="n">parallel</span><span class="o">.</span><span class="n">de</span> <span class="n">from_backtranslation</span><span class="o">.</span><span class="n">de</span> \
-<span class="o">-</span><span class="n">train_ids</span> <span class="n">A</span> <span class="n">B</span> \
-<span class="o">-</span><span class="n">save_data</span> <span class="n">my_data</span> \
-<span class="o">...</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>...
+-train_src parallel.en from_backtranslation.en <span class="se">\</span>
+-train_tgt parallel.de from_backtranslation.de <span class="se">\</span>
+-train_ids A B <span class="se">\</span>
+-save_data my_data <span class="se">\</span>
+...
 </pre></div>
 </div>
 <p>and it will dump <code class="docutils literal notranslate"><span class="pre">my_data.train_A.X.pt</span></code> based on <code class="docutils literal notranslate"><span class="pre">parallel.en</span></code>//<code class="docutils literal notranslate"><span class="pre">parallel.de</span></code> and <code class="docutils literal notranslate"><span class="pre">my_data.train_B.X.pt</span></code> based on <code class="docutils literal notranslate"><span class="pre">from_backtranslation.en</span></code>//<code class="docutils literal notranslate"><span class="pre">from_backtranslation.de</span></code>.</p>
@@ -314,15 +317,48 @@ Bear in mind that your models must share the same target vocabulary.</p>
 <h3>Training<a class="headerlink" href="#training" title="Permalink to this headline">¶</a></h3>
 <p>We introduced <code class="docutils literal notranslate"><span class="pre">-data_ids</span></code> based on the same principle as above, as well as <code class="docutils literal notranslate"><span class="pre">-data_weights</span></code>, which is the list of the weight each corpus should have.
 E.g.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">...</span>
-<span class="o">-</span><span class="n">data</span> <span class="n">my_data</span> \
-<span class="o">-</span><span class="n">data_ids</span> <span class="n">A</span> <span class="n">B</span> \
-<span class="o">-</span><span class="n">data_weights</span> <span class="mi">1</span> <span class="mi">7</span> \
-<span class="o">...</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>...
+-data my_data <span class="se">\</span>
+-data_ids A B <span class="se">\</span>
+-data_weights <span class="m">1</span> <span class="m">7</span> <span class="se">\</span>
+...
 </pre></div>
 </div>
 <p>will mean that we’ll look for <code class="docutils literal notranslate"><span class="pre">my_data.train_A.*.pt</span></code> and <code class="docutils literal notranslate"><span class="pre">my_data.train_B.*.pt</span></code>, and that when building batches, we’ll take 1 example from corpus A, then 7 examples from corpus B, and so on.</p>
 <p><strong>Warning</strong>: This means that we’ll load as many shards as we have <code class="docutils literal notranslate"><span class="pre">-data_ids</span></code>, in order to produce batches containing data from every corpus. It may be a good idea to reduce the <code class="docutils literal notranslate"><span class="pre">-shard_size</span></code> at preprocessing.</p>
+</div>
+</div>
+<div class="section" id="can-i-get-word-alignment-while-translating">
+<h2>Can I get word alignment while translating?<a class="headerlink" href="#can-i-get-word-alignment-while-translating" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="raw-alignments-from-averaging-transformer-attention-heads">
+<h3>Raw alignments from averaging Transformer attention heads<a class="headerlink" href="#raw-alignments-from-averaging-transformer-attention-heads" title="Permalink to this headline">¶</a></h3>
+<p>Currently, we support producing word alignment while translating for Transformer based models. Using <code class="docutils literal notranslate"><span class="pre">-report_align</span></code> when calling <code class="docutils literal notranslate"><span class="pre">translate.py</span></code> will output the inferred alignments in Pharaoh format. Those alignments are computed from an argmax on the average of the attention heads of the <em>second to last</em> decoder layer. The resulting alignment src-tgt (Pharaoh) will be pasted to the translation sentence, separated by <code class="docutils literal notranslate"><span class="pre">|||</span></code>.
+Note: The <em>second to last</em> default behaviour was empirically determined. It is not the same as the paper (they take the <em>penultimate</em> layer), probably because of light differences in the architecture.</p>
+<ul class="simple">
+<li><p>alignments use the standard “Pharaoh format”, where a pair <code class="docutils literal notranslate"><span class="pre">i-j</span></code> indicates the i<sub>th</sub> word of source language is aligned to j<sub>th</sub> word of target language.</p></li>
+<li><p>Example: {‘src’: ‘das stimmt nicht !’; ‘output’: ‘that is not true ! ||| 0-0 0-1 1-2 2-3 1-4 1-5 3-6’}</p></li>
+<li><p>Using the<code class="docutils literal notranslate"><span class="pre">-tgt</span></code> option when calling <code class="docutils literal notranslate"><span class="pre">translate.py</span></code>, we output alignments between the source and the gold target rather than the inferred target, assuming we’re doing evaluation.</p></li>
+<li><p>To convert subword alignments to word alignments, or symetrize bidirectional alignments, please refer to the <a class="reference external" href="https://github.com/lilt/alignment-scripts">lilt scripts</a>.</p></li>
+</ul>
+</div>
+<div class="section" id="supervised-learning-on-a-specific-head">
+<h3>Supervised learning on a specific head<a class="headerlink" href="#supervised-learning-on-a-specific-head" title="Permalink to this headline">¶</a></h3>
+<p>The quality of output alignments can be further improved by providing reference alignments while training. This will invoke multi-task learning on translation and alignment. This is an implementation based on the paper <a class="reference external" href="https://arxiv.org/abs/1909.02074">Jointly Learning to Align and Translate with Transformer Models</a>.</p>
+<p>The data need to be preprocessed with the reference alignments in order to learn the supervised task.</p>
+<p>When calling <code class="docutils literal notranslate"><span class="pre">preprocess.py</span></code>, add:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">--train_align</span> <span class="pre">&lt;path&gt;</span></code>: path(s) to the training alignments in Pharaoh format</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--valid_align</span> <span class="pre">&lt;path&gt;</span></code>: path to the validation set alignments in Pharaoh format (optional).
+The reference alignment file(s) could be generated by <a class="reference external" href="https://github.com/moses-smt/mgiza/">GIZA++</a> or <a class="reference external" href="https://github.com/clab/fast_align">fast_align</a>.</p></li>
+</ul>
+<p>Note: There should be no blank lines in the alignment files provided.</p>
+<p>Options to learn such alignments are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">-lambda_align</span></code>: set the value &gt; 0.0 to enable joint align training, the paper suggests 0.05;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-alignment_layer</span></code>: indicate the index of the decoder layer;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-alignment_heads</span></code>:  number of alignment heads for the alignment task - should be set to 1 for the supervised task, and preferably kept to default (or same as <code class="docutils literal notranslate"><span class="pre">num_heads</span></code>) for the average task;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-full_context_alignment</span></code>: do full context decoder pass (no future mask) when computing alignments. This will slow down the training (~12% in terms of tok/s) but will be beneficial to generate better alignment.</p></li>
+</ul>
 </div>
 </div>
 </div>

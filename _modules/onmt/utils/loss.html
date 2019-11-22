@@ -234,7 +234,8 @@
         <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">compute</span> <span class="o">=</span> <span class="n">NMTLossCompute</span><span class="p">(</span>
-            <span class="n">criterion</span><span class="p">,</span> <span class="n">loss_gen</span><span class="p">,</span> <span class="n">lambda_coverage</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">lambda_coverage</span><span class="p">)</span>
+            <span class="n">criterion</span><span class="p">,</span> <span class="n">loss_gen</span><span class="p">,</span> <span class="n">lambda_coverage</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">lambda_coverage</span><span class="p">,</span>
+            <span class="n">lambda_align</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">lambda_align</span><span class="p">)</span>
     <span class="n">compute</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">compute</span>
@@ -403,9 +404,10 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">criterion</span><span class="p">,</span> <span class="n">generator</span><span class="p">,</span> <span class="n">normalization</span><span class="o">=</span><span class="s2">&quot;sents&quot;</span><span class="p">,</span>
-                 <span class="n">lambda_coverage</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+                 <span class="n">lambda_coverage</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">lambda_align</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">NMTLossCompute</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">criterion</span><span class="p">,</span> <span class="n">generator</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lambda_coverage</span> <span class="o">=</span> <span class="n">lambda_coverage</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lambda_align</span> <span class="o">=</span> <span class="n">lambda_align</span>
 
     <span class="k">def</span> <span class="nf">_make_shard_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">range_</span><span class="p">,</span> <span class="n">attns</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="n">shard_state</span> <span class="o">=</span> <span class="p">{</span>
@@ -425,10 +427,33 @@
                 <span class="s2">&quot;std_attn&quot;</span><span class="p">:</span> <span class="n">attns</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;std&quot;</span><span class="p">),</span>
                 <span class="s2">&quot;coverage_attn&quot;</span><span class="p">:</span> <span class="n">coverage</span>
             <span class="p">})</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lambda_align</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="c1"># attn_align should be in (batch_size, pad_tgt_size, pad_src_size)</span>
+            <span class="n">attn_align</span> <span class="o">=</span> <span class="n">attns</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;align&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="c1"># align_idx should be a Tensor in size([N, 3]), N is total number</span>
+            <span class="c1"># of align src-tgt pair in current batch, each as</span>
+            <span class="c1"># [&#39;sent_N°_in_batch&#39;, &#39;tgt_id+1&#39;, &#39;src_id&#39;] (check AlignField)</span>
+            <span class="n">align_idx</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">align</span>
+            <span class="k">assert</span> <span class="n">attns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">assert</span> <span class="n">attn_align</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;lambda_align != 0.0 requires &quot;</span> \
+                <span class="s2">&quot;alignement attention head&quot;</span>
+            <span class="k">assert</span> <span class="n">align_idx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;lambda_align != 0.0 requires &quot;</span> \
+                <span class="s2">&quot;provide guided alignement&quot;</span>
+            <span class="n">pad_tgt_size</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">tgt</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+            <span class="n">pad_src_size</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">src</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">align_matrix_size</span> <span class="o">=</span> <span class="p">[</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">pad_tgt_size</span><span class="p">,</span> <span class="n">pad_src_size</span><span class="p">]</span>
+            <span class="n">ref_align</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">make_batch_align_matrix</span><span class="p">(</span>
+                <span class="n">align_idx</span><span class="p">,</span> <span class="n">align_matrix_size</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="c1"># NOTE: tgt-src ref alignement that in range_ of shard</span>
+            <span class="c1"># (coherent with batch.tgt)</span>
+            <span class="n">shard_state</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
+                <span class="s2">&quot;align_head&quot;</span><span class="p">:</span> <span class="n">attn_align</span><span class="p">,</span>
+                <span class="s2">&quot;ref_align&quot;</span><span class="p">:</span> <span class="n">ref_align</span><span class="p">[:,</span> <span class="n">range_</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span> <span class="n">range_</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="p">:]</span>
+            <span class="p">})</span>
         <span class="k">return</span> <span class="n">shard_state</span>
 
     <span class="k">def</span> <span class="nf">_compute_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">std_attn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                      <span class="n">coverage_attn</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+                      <span class="n">coverage_attn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">align_head</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ref_align</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 
         <span class="n">bottled_output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bottle</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
 
@@ -440,6 +465,14 @@
             <span class="n">coverage_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_coverage_loss</span><span class="p">(</span>
                 <span class="n">std_attn</span><span class="o">=</span><span class="n">std_attn</span><span class="p">,</span> <span class="n">coverage_attn</span><span class="o">=</span><span class="n">coverage_attn</span><span class="p">)</span>
             <span class="n">loss</span> <span class="o">+=</span> <span class="n">coverage_loss</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lambda_align</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">align_head</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="n">loss</span><span class="o">.</span><span class="n">dtype</span><span class="p">:</span>  <span class="c1"># Fix FP16</span>
+                <span class="n">align_head</span> <span class="o">=</span> <span class="n">align_head</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">loss</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">ref_align</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="n">loss</span><span class="o">.</span><span class="n">dtype</span><span class="p">:</span>
+                <span class="n">ref_align</span> <span class="o">=</span> <span class="n">ref_align</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">loss</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="n">align_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_alignement_loss</span><span class="p">(</span>
+                <span class="n">align_head</span><span class="o">=</span><span class="n">align_head</span><span class="p">,</span> <span class="n">ref_align</span><span class="o">=</span><span class="n">ref_align</span><span class="p">)</span>
+            <span class="n">loss</span> <span class="o">+=</span> <span class="n">align_loss</span>
         <span class="n">stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stats</span><span class="p">(</span><span class="n">loss</span><span class="o">.</span><span class="n">clone</span><span class="p">(),</span> <span class="n">scores</span><span class="p">,</span> <span class="n">gtruth</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">loss</span><span class="p">,</span> <span class="n">stats</span>
@@ -448,6 +481,16 @@
         <span class="n">covloss</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">std_attn</span><span class="p">,</span> <span class="n">coverage_attn</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
         <span class="n">covloss</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lambda_coverage</span>
         <span class="k">return</span> <span class="n">covloss</span>
+
+    <span class="k">def</span> <span class="nf">_compute_alignement_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">align_head</span><span class="p">,</span> <span class="n">ref_align</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute loss between 2 partial alignment matrix.&quot;&quot;&quot;</span>
+        <span class="c1"># align_head contains value in [0, 1) presenting attn prob,</span>
+        <span class="c1"># 0 was resulted by the context attention src_pad_mask</span>
+        <span class="c1"># So, the correspand position in ref_align should also be 0</span>
+        <span class="c1"># Therefore, clip align_head to &gt; 1e-18 should be bias free.</span>
+        <span class="n">align_loss</span> <span class="o">=</span> <span class="o">-</span><span class="n">align_head</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mf">1e-18</span><span class="p">)</span><span class="o">.</span><span class="n">log</span><span class="p">()</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">ref_align</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">align_loss</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lambda_align</span>
+        <span class="k">return</span> <span class="n">align_loss</span>
 
 
 <span class="k">def</span> <span class="nf">filter_shard_state</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">shard_size</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>

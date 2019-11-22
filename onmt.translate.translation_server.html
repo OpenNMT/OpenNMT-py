@@ -227,10 +227,54 @@ attr`self.on_timemout` value</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="onmt.translate.translation_server.ServerModel.maybe_convert_align">
+<code class="sig-name descname">maybe_convert_align</code><span class="sig-paren">(</span><em class="sig-param">src</em>, <em class="sig-param">tgt</em>, <em class="sig-param">align</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel.maybe_convert_align"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel.maybe_convert_align" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert alignment to match detokenized src/tgt (or not).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>src</strong> (<em>str</em>) – The tokenized source sequence.</p></li>
+<li><p><strong>tgt</strong> (<em>str</em>) – The tokenized target sequence.</p></li>
+<li><p><strong>align</strong> (<em>str</em>) – The alignment correspand to src/tgt pair.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The alignment correspand to detokenized src/tgt.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>align (str)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
 <dt id="onmt.translate.translation_server.ServerModel.maybe_detokenize">
 <code class="sig-name descname">maybe_detokenize</code><span class="sig-paren">(</span><em class="sig-param">sequence</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel.maybe_detokenize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel.maybe_detokenize" title="Permalink to this definition">¶</a></dt>
 <dd><p>De-tokenize the sequence (or not)</p>
 <p>Same args/returns as <a class="reference internal" href="#onmt.translate.translation_server.ServerModel.tokenize" title="onmt.translate.translation_server.ServerModel.tokenize"><code class="xref py py-func docutils literal notranslate"><span class="pre">tokenize()</span></code></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.translate.translation_server.ServerModel.maybe_detokenize_with_align">
+<code class="sig-name descname">maybe_detokenize_with_align</code><span class="sig-paren">(</span><em class="sig-param">sequence</em>, <em class="sig-param">src</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel.maybe_detokenize_with_align"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel.maybe_detokenize_with_align" title="Permalink to this definition">¶</a></dt>
+<dd><p>De-tokenize (or not) the sequence (with alignment).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>sequence</strong> (<em>str</em>) – The sequence to detokenize, possible with
+alignment seperate by ` ||| <a href="#id1"><span class="problematic" id="id2">`</span></a>.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>The detokenized sequence.
+align (str): The alignment correspand to detokenized src/tgt</p>
+<blockquote>
+<div><p>sorted or None if no alignment in output.</p>
+</div></blockquote>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>sequence (str)</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">

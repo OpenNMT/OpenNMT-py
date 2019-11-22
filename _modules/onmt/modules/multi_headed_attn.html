@@ -269,7 +269,7 @@
 <span class="sd">           (FloatTensor, FloatTensor):</span>
 
 <span class="sd">           * output context vectors ``(batch, query_len, dim)``</span>
-<span class="sd">           * one of the attention vectors ``(batch, query_len, key_len)``</span>
+<span class="sd">           * Attention vector in heads ``(batch, head, query_len, key_len)``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># CHECKS</span>
@@ -396,13 +396,12 @@
         <span class="c1"># aeq(batch, batch_)</span>
         <span class="c1"># aeq(d, d_)</span>
 
-        <span class="c1"># Return one attn</span>
-        <span class="n">top_attn</span> <span class="o">=</span> <span class="n">attn</span> \
+        <span class="c1"># Return multi-head attn</span>
+        <span class="n">attns</span> <span class="o">=</span> <span class="n">attn</span> \
             <span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">head_count</span><span class="p">,</span>
-                  <span class="n">query_len</span><span class="p">,</span> <span class="n">key_len</span><span class="p">)[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> \
-            <span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
+                  <span class="n">query_len</span><span class="p">,</span> <span class="n">key_len</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">output</span><span class="p">,</span> <span class="n">top_attn</span></div>
+        <span class="k">return</span> <span class="n">output</span><span class="p">,</span> <span class="n">attns</span></div>
 
 <div class="viewcode-block" id="MultiHeadedAttention.update_dropout"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.MultiHeadedAttention.update_dropout">[docs]</a>    <span class="k">def</span> <span class="nf">update_dropout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dropout</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">dropout</span></div></div>

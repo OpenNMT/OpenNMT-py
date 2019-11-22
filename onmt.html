@@ -203,7 +203,7 @@ for a simple, generic encoder + decoder model.</p>
 </dl>
 <dl class="method">
 <dt id="onmt.models.NMTModel.forward">
-<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">src</em>, <em class="sig-param">tgt</em>, <em class="sig-param">lengths</em>, <em class="sig-param">bptt=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/models/model.html#NMTModel.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.models.NMTModel.forward" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">src</em>, <em class="sig-param">tgt</em>, <em class="sig-param">lengths</em>, <em class="sig-param">bptt=False</em>, <em class="sig-param">with_align=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/models/model.html#NMTModel.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.models.NMTModel.forward" title="Permalink to this definition">¶</a></dt>
 <dd><p>Forward propagate a <cite>src</cite> and <cite>tgt</cite> pair for training.
 Possible initialized with a beginning decoder state.</p>
 <dl class="field-list simple">
@@ -213,10 +213,13 @@ Possible initialized with a beginning decoder state.</p>
 typically for inputs this will be a padded <cite>LongTensor</cite>
 of size <code class="docutils literal notranslate"><span class="pre">(len,</span> <span class="pre">batch,</span> <span class="pre">features)</span></code>. However, may be an
 image or other generic input depending on encoder.</p></li>
-<li><p><strong>tgt</strong> (<em>LongTensor</em>) – A target sequence of size <code class="docutils literal notranslate"><span class="pre">(tgt_len,</span> <span class="pre">batch)</span></code>.</p></li>
+<li><p><strong>tgt</strong> (<em>LongTensor</em>) – A target sequence passed to decoder.
+Size <code class="docutils literal notranslate"><span class="pre">(tgt_len,</span> <span class="pre">batch,</span> <span class="pre">features)</span></code>.</p></li>
 <li><p><strong>lengths</strong> (<em>LongTensor</em>) – The src lengths, pre-padding <code class="docutils literal notranslate"><span class="pre">(batch,)</span></code>.</p></li>
 <li><p><strong>bptt</strong> (<em>Boolean</em>) – A flag indicating if truncated bptt is set.
 If reset then init_state</p></li>
+<li><p><strong>with_align</strong> (<em>Boolean</em>) – A flag indicating whether output alignment,
+Only valid for transformer decoder.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -239,7 +242,7 @@ If reset then init_state</p></li>
 <h2>Trainer<a class="headerlink" href="#trainer" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.Trainer">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.</code><code class="sig-name descname">Trainer</code><span class="sig-paren">(</span><em class="sig-param">model, train_loss, valid_loss, optim, trunc_size=0, shard_size=32, norm_method='sents', accum_count=[1], accum_steps=[0], n_gpu=1, gpu_rank=1, gpu_verbose_level=0, report_manager=None, model_saver=None, average_decay=0, average_every=1, model_dtype='fp32', earlystopper=None, dropout=[0.3], dropout_steps=[0]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.</code><code class="sig-name descname">Trainer</code><span class="sig-paren">(</span><em class="sig-param">model, train_loss, valid_loss, optim, trunc_size=0, shard_size=32, norm_method='sents', accum_count=[1], accum_steps=[0], n_gpu=1, gpu_rank=1, gpu_verbose_level=0, report_manager=None, with_align=False, model_saver=None, average_decay=0, average_every=1, model_dtype='fp32', earlystopper=None, dropout=[0.3], dropout_steps=[0]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Class that controls the training process.</p>
 <dl class="field-list simple">

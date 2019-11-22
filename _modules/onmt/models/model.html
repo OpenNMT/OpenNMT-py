@@ -194,7 +194,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span> <span class="o">=</span> <span class="n">encoder</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span> <span class="o">=</span> <span class="n">decoder</span>
 
-<div class="viewcode-block" id="NMTModel.forward"><a class="viewcode-back" href="../../../onmt.html#onmt.models.NMTModel.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">lengths</span><span class="p">,</span> <span class="n">bptt</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="NMTModel.forward"><a class="viewcode-back" href="../../../onmt.html#onmt.models.NMTModel.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">lengths</span><span class="p">,</span> <span class="n">bptt</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">with_align</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Forward propagate a `src` and `tgt` pair for training.</span>
 <span class="sd">        Possible initialized with a beginning decoder state.</span>
 
@@ -203,10 +203,13 @@
 <span class="sd">                typically for inputs this will be a padded `LongTensor`</span>
 <span class="sd">                of size ``(len, batch, features)``. However, may be an</span>
 <span class="sd">                image or other generic input depending on encoder.</span>
-<span class="sd">            tgt (LongTensor): A target sequence of size ``(tgt_len, batch)``.</span>
+<span class="sd">            tgt (LongTensor): A target sequence passed to decoder.</span>
+<span class="sd">                Size ``(tgt_len, batch, features)``.</span>
 <span class="sd">            lengths(LongTensor): The src lengths, pre-padding ``(batch,)``.</span>
 <span class="sd">            bptt (Boolean): A flag indicating if truncated bptt is set.</span>
 <span class="sd">                If reset then init_state</span>
+<span class="sd">            with_align (Boolean): A flag indicating whether output alignment,</span>
+<span class="sd">                Only valid for transformer decoder.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            (FloatTensor, dict[str, FloatTensor]):</span>
@@ -214,14 +217,15 @@
 <span class="sd">            * decoder output ``(tgt_len, batch, hidden)``</span>
 <span class="sd">            * dictionary attention dists of ``(tgt_len, batch, src_len)``</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">tgt</span> <span class="o">=</span> <span class="n">tgt</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># exclude last target from inputs</span>
+        <span class="n">dec_in</span> <span class="o">=</span> <span class="n">tgt</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># exclude last target from inputs</span>
 
         <span class="n">enc_state</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">lengths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">lengths</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">bptt</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">init_state</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">enc_state</span><span class="p">)</span>
-        <span class="n">dec_out</span><span class="p">,</span> <span class="n">attns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="p">(</span><span class="n">tgt</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span>
-                                      <span class="n">memory_lengths</span><span class="o">=</span><span class="n">lengths</span><span class="p">)</span>
+        <span class="n">dec_out</span><span class="p">,</span> <span class="n">attns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="p">(</span><span class="n">dec_in</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span>
+                                      <span class="n">memory_lengths</span><span class="o">=</span><span class="n">lengths</span><span class="p">,</span>
+                                      <span class="n">with_align</span><span class="o">=</span><span class="n">with_align</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">dec_out</span><span class="p">,</span> <span class="n">attns</span></div>
 
     <span class="k">def</span> <span class="nf">update_dropout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dropout</span><span class="p">):</span>
