@@ -220,7 +220,7 @@ class BeamSearch(DecodeStrategy):
             cov_penalty = self.global_scorer.cov_penalty(
                 self._coverage,
                 beta=self.global_scorer.beta)
-            self.topk_scores -= cov_penalty.view(_B, self.beam_size)
+            self.topk_scores -= cov_penalty.view(_B, self.beam_size).float()
 
         self.is_finished = self.topk_ids.eq(self.eos)
         self.ensure_max_length()
