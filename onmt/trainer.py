@@ -9,7 +9,6 @@
           users of this library) for the strategy things we do.
 """
 
-from copy import deepcopy
 import torch
 import traceback
 
@@ -64,7 +63,7 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
         opt.early_stopping, scorers=onmt.utils.scorers_from_opts(opt)) \
         if opt.early_stopping > 0 else None
 
-    report_manager = onmt.utils.build_report_manager(opt)
+    report_manager = onmt.utils.build_report_manager(opt, gpu_rank)
     trainer = onmt.Trainer(model, train_loss, valid_loss, optim, trunc_size,
                            shard_size, norm_method,
                            accum_count, accum_steps,
@@ -312,13 +311,16 @@ class Trainer(object):
         Returns:
             :obj:`nmt.Statistics`: validation loss statistics
         """
+        valid_model = self.model
         if moving_average:
-            valid_model = deepcopy(self.model)
+            # swap model params w/ moving average
+            # (and keep the original parameters)
+            model_params_data = []
             for avg, param in zip(self.moving_average,
                                   valid_model.parameters()):
-                param.data = avg.data
-        else:
-            valid_model = self.model
+                model_params_data.append(param.data)
+                param.data = avg.data.half() if self.optim._fp16 == "legacy" \
+                    else avg.data
 
         # Set model in validating mode.
         valid_model.eval()
@@ -365,10 +367,12 @@ class Trainer(object):
                     stats.update(batch_stats)
 
         if moving_average:
-            del valid_model
-        else:
-            # Set model back to training mode.
-            valid_model.train()
+            for param_data, param in zip(model_params_data,
+                                         self.model.parameters()):
+                param.data = param_data
+
+        # Set model back to training mode.
+        valid_model.train()
 
         return stats
 

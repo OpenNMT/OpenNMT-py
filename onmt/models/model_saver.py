@@ -1,6 +1,5 @@
 import os
 import torch
-import torch.nn as nn
 from torchtext.data import Field
 from collections import deque
 from onmt.utils.logging import logger
@@ -48,18 +47,20 @@ class ModelSaverBase(object):
         if self.keep_checkpoint == 0 or step == self.last_saved_step:
             return
 
+        save_model = self.model
         if moving_average:
-            save_model = deepcopy(self.model)
+            model_params_data = []
             for avg, param in zip(moving_average, save_model.parameters()):
-                param.data.copy_(avg.data)
-        else:
-            save_model = self.model
+                model_params_data.append(param.data)
+                param.data = avg.data
 
         chkpt, chkpt_name = self._save(step, save_model)
         self.last_saved_step = step
 
         if moving_average:
-            del save_model
+            for param_data, param in zip(model_params_data,
+                                         save_model.parameters()):
+                param.data = param_data
 
         if self.keep_checkpoint > 0:
             if len(self.checkpoint_queue) == self.checkpoint_queue.maxlen:
@@ -97,17 +98,10 @@ class ModelSaver(ModelSaverBase):
     """Simple model saver to filesystem"""
 
     def _save(self, step, model):
-        real_model = (model.module
-                      if isinstance(model, nn.DataParallel)
-                      else model)
-        real_generator = (real_model.generator.module
-                          if isinstance(real_model.generator, nn.DataParallel)
-                          else real_model.generator)
-
-        model_state_dict = real_model.state_dict()
+        model_state_dict = model.state_dict()
         model_state_dict = {k: v for k, v in model_state_dict.items()
                             if 'generator' not in k}
-        generator_state_dict = real_generator.state_dict()
+        generator_state_dict = model.generator.state_dict()
 
         # NOTE: We need to trim the vocab to remove any unk tokens that
         # were not originally here.

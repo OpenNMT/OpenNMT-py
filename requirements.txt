@@ -1,6 +1,0 @@
-six
-tqdm==4.30.*
-torch>=1.1
-git+https://github.com/pytorch/text.git@master#wheel=torchtext
-future
-configargparse

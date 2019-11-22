@@ -185,7 +185,7 @@ def model_opts(parser):
     group.add('--loss_scale', '-loss_scale', type=float, default=0,
               help="For FP16 training, the static loss scale to use. If not "
                    "set, the loss scale is dynamically computed.")
-    group.add('--apex_opt_level', '-apex_opt_level', type=str, default="O2",
+    group.add('--apex_opt_level', '-apex_opt_level', type=str, default="O1",
               choices=["O0", "O1", "O2", "O3"],
               help="For FP16 training, the opt_level to use."
                    "See https://nvidia.github.io/apex/amp.html#opt-levels.")
@@ -227,6 +227,9 @@ def preprocess_opts(parser):
                    "shard_size=0 means no segmentation "
                    "shard_size>0 means segment dataset into multiple shards, "
                    "each shard has shard_size samples")
+
+    group.add('--num_threads', '-num_threads', type=int, default=1,
+              help="Number of shards to build in parallel.")
 
     group.add('--overwrite', '-overwrite', action="store_true",
               help="Overwrite existing shards if any.")
@@ -626,10 +629,10 @@ def train_opts(parser):
               help="Send logs to this crayon server.")
     group.add('--exp', '-exp', type=str, default="",
               help="Name of the experiment for logging.")
-    # Use TensorboardX for visualization during training
+    # Use Tensorboard for visualization during training
     group.add('--tensorboard', '-tensorboard', action="store_true",
-              help="Use tensorboardX for visualization during training. "
-                   "Must have the library tensorboardX.")
+              help="Use tensorboard for visualization during training. "
+                   "Must have the library tensorboard >= 1.14.")
     group.add("--tensorboard_log_dir", "-tensorboard_log_dir",
               type=str, default="runs/onmt",
               help="Log directory for Tensorboard. "
@@ -789,6 +792,10 @@ def translate_opts(parser):
     group = parser.add_argument_group('Efficiency')
     group.add('--batch_size', '-batch_size', type=int, default=30,
               help='Batch size')
+    group.add('--batch_type', '-batch_type', default='sents',
+              choices=["sents", "tokens"],
+              help="Batch grouping for batch_size. Standard "
+                   "is sents. Tokens will do dynamic batching")
     group.add('--gpu', '-gpu', type=int, default=-1,
               help="Device to run on")
 

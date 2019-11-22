@@ -1,6 +1,5 @@
 import unittest
-from onmt.translate.beam import GNMTGlobalScorer
-from onmt.translate.beam_search import BeamSearch
+from onmt.translate.beam_search import BeamSearch, GNMTGlobalScorer
 
 from copy import deepcopy
 
@@ -34,12 +33,14 @@ class TestBeamSearch(unittest.TestCase):
         n_words = 100
         repeat_idx = 47
         ngram_repeat = 3
+        device_init = torch.zeros(1, 1)
         for batch_sz in [1, 3]:
             beam = BeamSearch(
                 beam_sz, batch_sz, 0, 1, 2, 2,
-                torch.device("cpu"), GlobalScorerStub(), 0, 30,
+                GlobalScorerStub(), 0, 30,
                 False, ngram_repeat, set(),
-                torch.randint(0, 30, (batch_sz,)), False, 0.)
+                False, 0.)
+            beam.initialize(device_init, torch.randint(0, 30, (batch_sz,)))
             for i in range(ngram_repeat + 4):
                 # predict repeat_idx over and over again
                 word_probs = torch.full(
@@ -64,12 +65,14 @@ class TestBeamSearch(unittest.TestCase):
         n_words = 100
         repeat_idx = 47
         ngram_repeat = 3
+        device_init = torch.zeros(1, 1)
         for batch_sz in [1, 3]:
             beam = BeamSearch(
                 beam_sz, batch_sz, 0, 1, 2, 2,
-                torch.device("cpu"), GlobalScorerStub(), 0, 30,
+                GlobalScorerStub(), 0, 30,
                 False, ngram_repeat, set(),
-                torch.randint(0, 30, (batch_sz,)), False, 0.)
+                False, 0.)
+            beam.initialize(device_init, torch.randint(0, 30, (batch_sz,)))
             for i in range(ngram_repeat + 4):
                 # non-interesting beams are going to get dummy values
                 word_probs = torch.full(
@@ -111,12 +114,14 @@ class TestBeamSearch(unittest.TestCase):
         repeat_idx = 47  # will be repeated and should be blocked
         repeat_idx_ignored = 7  # will be repeated and should not be blocked
         ngram_repeat = 3
+        device_init = torch.zeros(1, 1)
         for batch_sz in [1, 3]:
             beam = BeamSearch(
                 beam_sz, batch_sz, 0, 1, 2, 2,
-                torch.device("cpu"), GlobalScorerStub(), 0, 30,
+                GlobalScorerStub(), 0, 30,
                 False, ngram_repeat, {repeat_idx_ignored},
-                torch.randint(0, 30, (batch_sz,)), False, 0.)
+                False, 0.)
+            beam.initialize(device_init, torch.randint(0, 30, (batch_sz,)))
             for i in range(ngram_repeat + 4):
                 # non-interesting beams are going to get dummy values
                 word_probs = torch.full(
@@ -171,9 +176,11 @@ class TestBeamSearch(unittest.TestCase):
             eos_idx = 2
             lengths = torch.randint(0, 30, (batch_sz,))
             beam = BeamSearch(beam_sz, batch_sz, 0, 1, 2, 2,
-                              torch.device("cpu"), GlobalScorerStub(),
+                              GlobalScorerStub(),
                               min_length, 30, False, 0, set(),
-                              lengths, False, 0.)
+                              False, 0.)
+            device_init = torch.zeros(1, 1)
+            beam.initialize(device_init, lengths)
             all_attns = []
             for i in range(min_length + 4):
                 # non-interesting beams are going to get dummy values
@@ -226,9 +233,11 @@ class TestBeamSearch(unittest.TestCase):
         eos_idx = 2
         beam = BeamSearch(
             beam_sz, batch_sz, 0, 1, 2, 2,
-            torch.device("cpu"), GlobalScorerStub(),
+            GlobalScorerStub(),
             min_length, 30, False, 0, set(),
-            torch.randint(0, 30, (batch_sz,)), False, 0.)
+            False, 0.)
+        device_init = torch.zeros(1, 1)
+        beam.initialize(device_init, torch.randint(0, 30, (batch_sz,)))
         for i in range(min_length + 4):
             # non-interesting beams are going to get dummy values
             word_probs = torch.full(
@@ -284,9 +293,12 @@ class TestBeamSearch(unittest.TestCase):
         inp_lens = torch.randint(1, 30, (batch_sz,))
         beam = BeamSearch(
             beam_sz, batch_sz, 0, 1, 2, 2,
-            torch.device("cpu"), GlobalScorerStub(),
+            GlobalScorerStub(),
             min_length, 30, True, 0, set(),
-            inp_lens, False, 0.)
+            False, 0.)
+        device_init = torch.zeros(1, 1)
+        _, _, inp_lens, _ = beam.initialize(device_init, inp_lens)
+        # inp_lens is tiled in initialize, reassign to make attn match
         for i in range(min_length + 2):
             # non-interesting beams are going to get dummy values
             word_probs = torch.full(
@@ -495,10 +507,11 @@ class TestBeamSearchAgainstReferenceCase(unittest.TestCase):
     def test_beam_advance_against_known_reference(self):
         beam = BeamSearch(
             self.BEAM_SZ, self.BATCH_SZ, 0, 1, 2, self.N_BEST,
-            torch.device("cpu"), GlobalScorerStub(),
+            GlobalScorerStub(),
             0, 30, False, 0, set(),
-            torch.randint(0, 30, (self.BATCH_SZ,)), False, 0.)
-
+            False, 0.)
+        device_init = torch.zeros(1, 1)
+        beam.initialize(device_init, torch.randint(0, 30, (self.BATCH_SZ,)))
         expected_beam_scores = self.init_step(beam, 1)
         expected_beam_scores = self.first_step(beam, expected_beam_scores, 1)
         expected_beam_scores = self.second_step(beam, expected_beam_scores, 1)
@@ -513,9 +526,11 @@ class TestBeamWithLengthPenalty(TestBeamSearchAgainstReferenceCase):
         scorer = GNMTGlobalScorer(0.7, 0., "avg", "none")
         beam = BeamSearch(
             self.BEAM_SZ, self.BATCH_SZ, 0, 1, 2, self.N_BEST,
-            torch.device("cpu"), scorer,
+            scorer,
             0, 30, False, 0, set(),
-            torch.randint(0, 30, (self.BATCH_SZ,)), False, 0.)
+            False, 0.)
+        device_init = torch.zeros(1, 1)
+        beam.initialize(device_init, torch.randint(0, 30, (self.BATCH_SZ,)))
         expected_beam_scores = self.init_step(beam, 1.)
         expected_beam_scores = self.first_step(beam, expected_beam_scores, 3)
         expected_beam_scores = self.second_step(beam, expected_beam_scores, 4)
