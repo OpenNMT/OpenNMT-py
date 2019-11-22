@@ -11,7 +11,7 @@ import shelve
 from random import random, randrange, randint, shuffle, choice
 from onmt.utils import BertTokenizer, PRETRAINED_VOCAB_ARCHIVE_MAP
 from onmt.utils.file_utils import cached_path
-from preprocess_bert_new import build_vocab_from_tokenizer
+from preprocess_bert import build_vocab_from_tokenizer
 import numpy as np
 import json
 from onmt.inputters.inputter import get_bert_fields

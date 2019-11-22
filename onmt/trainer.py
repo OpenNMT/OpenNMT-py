@@ -310,7 +310,10 @@ class Trainer(object):
 
     def validate(self, valid_iter, moving_average=None):
         """ Validate model.
+
+        Args:
             valid_iter: validate data iterator
+
         Returns:
             :obj:`nmt.Statistics`: validation loss statistics
         """

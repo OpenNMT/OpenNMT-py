@@ -139,7 +139,7 @@ def batch_producer(generator_to_serve, queues, semaphore, opt):
         else:
             if isinstance(b.src, tuple):
                 b.src = tuple([_.to(torch.device(device_id))
-                            for _ in b.src])
+                              for _ in b.src])
             else:
                 b.src = b.src.to(torch.device(device_id))
             b.tgt = b.tgt.to(torch.device(device_id))
