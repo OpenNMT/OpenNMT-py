@@ -263,7 +263,7 @@ After preprocessed data have been generated, you can load weights from a pretrai
 A usage example is given below:
 ```bash
 python train.py  --is_bert --task_type {pretraining, classification, tagging}
-                 --data PREPROCESSED_DATAIFILE     
+                 --data PREPROCESSED_DATAIFILE
                  --train_from CONVERTED_CHECKPOINT.pt [--param_init 0.1]
                  --save_model MODEL_PREFIX --save_checkpoint_steps 1000
                  [--world_size 2] [--gpu_ranks 0 1]
