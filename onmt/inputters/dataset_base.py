@@ -152,3 +152,13 @@ class Dataset(TorchtextDataset):
         if remove_fields:
             self.fields = []
         torch.save(self, path)
+
+    @staticmethod
+    def config(fields):
+        readers, data, dirs = [], [], []
+        for name, field in fields:
+            if field["data"] is not None:
+                readers.append(field["reader"])
+                data.append((name, field["data"]))
+                dirs.append(field["dir"])
+        return readers, data, dirs

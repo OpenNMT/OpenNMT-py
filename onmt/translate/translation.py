@@ -3,6 +3,7 @@ from __future__ import unicode_literals, print_function
 
 import torch
 from onmt.inputters.text_dataset import TextMultiField
+from onmt.utils.alignment import build_align_pharaoh
 
 
 class TranslationBuilder(object):
@@ -62,13 +63,17 @@ class TranslationBuilder(object):
                len(translation_batch["predictions"]))
         batch_size = batch.batch_size
 
-        preds, pred_score, attn, gold_score, indices = list(zip(
+        preds, pred_score, attn, align, gold_score, indices = list(zip(
             *sorted(zip(translation_batch["predictions"],
                         translation_batch["scores"],
                         translation_batch["attention"],
+                        translation_batch["alignment"],
                         translation_batch["gold_score"],
                         batch.indices.data),
                     key=lambda x: x[-1])))
+
+        if not any(align):  # when align is a empty nested list
+            align = [None] * batch_size
 
         # Sorting
         inds, perm = torch.sort(batch.indices)
@@ -103,7 +108,7 @@ class TranslationBuilder(object):
             translation = Translation(
                 src[:, b] if src is not None else None,
                 src_raw, pred_sents, attn[b], pred_score[b],
-                gold_sent, gold_score[b]
+                gold_sent, gold_score[b], align[b]
             )
             translations.append(translation)
 
@@ -122,13 +127,15 @@ class Translation(object):
             translation.
         gold_sent (List[str]): Words from gold translation.
         gold_score (List[float]): Log-prob of gold translation.
+        word_aligns (List[FloatTensor]): Words Alignment distribution for
+            each translation.
     """
 
     __slots__ = ["src", "src_raw", "pred_sents", "attns", "pred_scores",
-                 "gold_sent", "gold_score"]
+                 "gold_sent", "gold_score", "word_aligns"]
 
     def __init__(self, src, src_raw, pred_sents,
-                 attn, pred_scores, tgt_sent, gold_score):
+                 attn, pred_scores, tgt_sent, gold_score, word_aligns):
         self.src = src
         self.src_raw = src_raw
         self.pred_sents = pred_sents
@@ -136,6 +143,7 @@ class Translation(object):
         self.pred_scores = pred_scores
         self.gold_sent = tgt_sent
         self.gold_score = gold_score
+        self.word_aligns = word_aligns
 
     def log(self, sent_number):
         """
@@ -149,6 +157,12 @@ class Translation(object):
         pred_sent = ' '.join(best_pred)
         msg.append('PRED {}: {}\n'.format(sent_number, pred_sent))
         msg.append("PRED SCORE: {:.4f}\n".format(best_score))
+
+        if self.word_aligns is not None:
+            pred_align = self.word_aligns[0]
+            pred_align_pharaoh = build_align_pharaoh(pred_align)
+            pred_align_sent = ' '.join(pred_align_pharaoh)
+            msg.append("ALIGN: {}\n".format(pred_align_sent))
 
         if self.gold_sent is not None:
             tgt_sent = ' '.join(self.gold_sent)

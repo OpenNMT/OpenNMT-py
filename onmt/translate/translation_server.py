@@ -15,6 +15,7 @@ import onmt.opts
 
 from onmt.utils.logging import init_logger
 from onmt.utils.misc import set_random_seed
+from onmt.utils.alignment import to_word_align
 from onmt.utils.parse import ArgumentParser
 from onmt.translate.translator import build_translator
 
@@ -440,19 +441,23 @@ class ServerModel(object):
 
         # NOTE: translator returns lists of `n_best` list
         def flatten_list(_list): return sum(_list, [])
+        tiled_texts = [t for t in texts_to_translate
+                       for _ in range(self.opt.n_best)]
         results = flatten_list(predictions)
         scores = [score_tensor.item()
                   for score_tensor in flatten_list(scores)]
 
-        results = [self.maybe_detokenize(item)
-                   for item in results]
+        results = [self.maybe_detokenize_with_align(result, src)
+                   for result, src in zip(results, tiled_texts)]
 
-        results = [self.maybe_postprocess(item)
-                   for item in results]
+        aligns = [align for _, align in results]
+        results = [self.maybe_postprocess(seq) for seq, _ in results]
+
         # build back results with empty texts
         for i in empty_indices:
             j = i * self.opt.n_best
             results = results[:j] + [""] * self.opt.n_best + results[j:]
+            aligns = aligns[:j] + [None] * self.opt.n_best + aligns[j:]
             scores = scores[:j] + [0] * self.opt.n_best + scores[j:]
 
         head_spaces = [h for h in head_spaces for i in range(self.opt.n_best)]
@@ -461,7 +466,7 @@ class ServerModel(object):
                    for items in zip(head_spaces, results, tail_spaces)]
 
         self.logger.info("Translation Results: %d", len(results))
-        return results, scores, self.opt.n_best, timer.times
+        return results, scores, self.opt.n_best, timer.times, aligns
 
     def do_timeout(self):
         """Timeout function that frees GPU memory.
@@ -578,6 +583,41 @@ class ServerModel(object):
             tok = " ".join(tok)
         return tok
 
+    @property
+    def tokenizer_marker(self):
+        marker = None
+        tokenizer_type = self.tokenizer_opt.get('type', None)
+        if tokenizer_type == "pyonmttok":
+            params = self.tokenizer_opt.get('params', None)
+            if params is not None:
+                if params.get("joiner_annotate", None) is not None:
+                    marker = 'joiner'
+                elif params.get("spacer_annotate", None) is not None:
+                    marker = 'spacer'
+        elif tokenizer_type == "sentencepiece":
+            marker = 'spacer'
+        return marker
+
+    def maybe_detokenize_with_align(self, sequence, src):
+        """De-tokenize (or not) the sequence (with alignment).
+
+        Args:
+            sequence (str): The sequence to detokenize, possible with
+                alignment seperate by ` ||| `.
+
+        Returns:
+            sequence (str): The detokenized sequence.
+            align (str): The alignment correspand to detokenized src/tgt
+                sorted or None if no alignment in output.
+        """
+        align = None
+        if self.opt.report_align:
+            # output contain alignment
+            sequence, align = sequence.split(' ||| ')
+            align = self.maybe_convert_align(src, sequence, align)
+        sequence = self.maybe_detokenize(sequence)
+        return (sequence, align)
+
     def maybe_detokenize(self, sequence):
         """De-tokenize the sequence (or not)
 
@@ -603,6 +643,21 @@ class ServerModel(object):
             detok = self.tokenizer.detokenize(sequence.split())
 
         return detok
+
+    def maybe_convert_align(self, src, tgt, align):
+        """Convert alignment to match detokenized src/tgt (or not).
+
+        Args:
+            src (str): The tokenized source sequence.
+            tgt (str): The tokenized target sequence.
+            align (str): The alignment correspand to src/tgt pair.
+
+        Returns:
+            align (str): The alignment correspand to detokenized src/tgt.
+        """
+        if self.tokenizer_marker is not None and ''.join(tgt.split()) != '':
+            return to_word_align(src, tgt, align, mode=self.tokenizer_marker)
+        return align
 
     def maybe_postprocess(self, sequence):
         """Postprocess the sequence (or not)
