@@ -112,13 +112,17 @@ class TestServerModel(unittest.TestCase):
         sm = ServerModel(opt, model_id, model_root=model_root, load=True)
         inp = [{"src": "hello how are you today"},
                {"src": "good morning to you ."}]
-        results, scores, n_best, time = sm.run(inp)
+        results, scores, n_best, time, aligns = sm.run(inp)
         self.assertIsInstance(results, list)
         for sentence_string in results:
             self.assertIsInstance(sentence_string, string_types)
         self.assertIsInstance(scores, list)
         for elem in scores:
             self.assertIsInstance(elem, float)
+        self.assertIsInstance(aligns, list)
+        for align_string in aligns:
+            if align_string is not None:
+                self.assertIsInstance(align_string, string_types)
         self.assertEqual(len(results), len(scores))
         self.assertEqual(len(scores), len(inp) * n_best)
         self.assertEqual(len(time), 1)

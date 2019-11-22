@@ -3,10 +3,22 @@
 import torch
 import random
 import inspect
-from itertools import islice
+from itertools import islice, repeat
 
 
-def split_corpus(path, shard_size):
+def split_corpus(path, shard_size, default=None):
+    """yield a `list` containing `shard_size` line of `path`,
+    or repeatly generate `default` if `path` is None.
+    """
+    if path is not None:
+        return _split_corpus(path, shard_size)
+    else:
+        return repeat(default)
+
+
+def _split_corpus(path, shard_size):
+    """Yield a `list` containing `shard_size` line of `path`.
+    """
     with open(path, "rb") as f:
         if shard_size <= 0:
             yield f.readlines()
@@ -124,3 +136,18 @@ def relative_matmul(x, z, transpose):
 def fn_args(fun):
     """Returns the list of function arguments name."""
     return inspect.getfullargspec(fun).args
+
+
+def report_matrix(row_label, column_label, matrix):
+    header_format = "{:>10.10} " + "{:>10.7} " * len(row_label)
+    row_format = "{:>10.10} " + "{:>10.7f} " * len(row_label)
+    output = header_format.format("", *row_label) + '\n'
+    for word, row in zip(column_label, matrix):
+        max_index = row.index(max(row))
+        row_format = row_format.replace(
+            "{:>10.7f} ", "{:*>10.7f} ", max_index + 1)
+        row_format = row_format.replace(
+            "{:*>10.7f} ", "{:>10.7f} ", max_index)
+        output += row_format.format(word, *row) + '\n'
+        row_format = "{:>10.10} " + "{:>10.7f} " * len(row_label)
+    return output

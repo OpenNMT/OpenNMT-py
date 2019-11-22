@@ -125,6 +125,8 @@ def batch_producer(generator_to_serve, queues, semaphore, opt):
             if hasattr(b, 'alignment') else None
         b.src_map = b.src_map.to(torch.device(device_id)) \
             if hasattr(b, 'src_map') else None
+        b.align = b.align.to(torch.device(device_id)) \
+            if hasattr(b, 'align') else None
 
         # hack to dodge unpicklable `dict_keys`
         b.fields = list(b.fields)

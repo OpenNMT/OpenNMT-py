@@ -240,11 +240,11 @@ class BeamSearch(DecodeStrategy):
                 step - 1, _B_old, self.beam_size, self.alive_attn.size(-1))
             if self.alive_attn is not None else None)
         non_finished_batch = []
-        for i in range(self.is_finished.size(0)):
+        for i in range(self.is_finished.size(0)):  # Batch level
             b = self._batch_offset[i]
             finished_hyp = self.is_finished[i].nonzero().view(-1)
             # Store finished hypotheses for this batch.
-            for j in finished_hyp:
+            for j in finished_hyp:  # Beam level: finished beam j in batch i
                 if self.ratio > 0:
                     s = self.topk_scores[i, j] / (step + 1)
                     if self.best_scores[b] < s:
@@ -270,7 +270,7 @@ class BeamSearch(DecodeStrategy):
                     if n >= self.n_best:
                         break
                     self.scores[b].append(score)
-                    self.predictions[b].append(pred)
+                    self.predictions[b].append(pred)  # ``(batch, n_best,)``
                     self.attention[b].append(
                         attn if attn is not None else [])
             else:

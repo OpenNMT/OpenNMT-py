@@ -63,6 +63,7 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
                            accum_count, accum_steps,
                            n_gpu, gpu_rank,
                            gpu_verbose_level, report_manager,
+                           with_align=True if opt.lambda_align > 0 else False,
                            model_saver=model_saver if gpu_rank == 0 else None,
                            average_decay=average_decay,
                            average_every=average_every,
@@ -103,8 +104,8 @@ class Trainer(object):
                  trunc_size=0, shard_size=32,
                  norm_method="sents", accum_count=[1],
                  accum_steps=[0],
-                 n_gpu=1, gpu_rank=1,
-                 gpu_verbose_level=0, report_manager=None, model_saver=None,
+                 n_gpu=1, gpu_rank=1, gpu_verbose_level=0,
+                 report_manager=None, with_align=False, model_saver=None,
                  average_decay=0, average_every=1, model_dtype='fp32',
                  earlystopper=None, dropout=[0.3], dropout_steps=[0]):
         # Basic attributes.
@@ -122,6 +123,7 @@ class Trainer(object):
         self.gpu_rank = gpu_rank
         self.gpu_verbose_level = gpu_verbose_level
         self.report_manager = report_manager
+        self.with_align = with_align
         self.model_saver = model_saver
         self.average_decay = average_decay
         self.moving_average = None
@@ -312,7 +314,8 @@ class Trainer(object):
                 tgt = batch.tgt
 
                 # F-prop through the model.
-                outputs, attns = valid_model(src, tgt, src_lengths)
+                outputs, attns = valid_model(src, tgt, src_lengths,
+                                             with_align=self.with_align)
 
                 # Compute loss.
                 _, batch_stats = self.valid_loss(batch, outputs, attns)
@@ -357,7 +360,9 @@ class Trainer(object):
                 # 2. F-prop all but generator.
                 if self.accum_count == 1:
                     self.optim.zero_grad()
-                outputs, attns = self.model(src, tgt, src_lengths, bptt=bptt)
+
+                outputs, attns = self.model(src, tgt, src_lengths, bptt=bptt,
+                                            with_align=self.with_align)
                 bptt = True
 
                 # 3. Compute loss.
