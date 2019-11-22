@@ -154,7 +154,22 @@ def model_opts(parser):
     group.add('--aan_useffn', '-aan_useffn', action="store_true",
               help='Turn on the FFN layer in the AAN decoder')
 
+    # Alignement options
+    group = parser.add_argument_group('Model - Alignement')
+    group.add('--lambda_align', '-lambda_align', type=float, default=0.0,
+              help="Lambda value for alignement loss of Garg et al (2019)"
+                   "For more detailed information, see: "
+                   "https://arxiv.org/abs/1909.02074")
+    group.add('--alignment_layer', '-alignment_layer', type=int, default=-3,
+              help='Layer number which has to be supervised.')
+    group.add('--alignment_heads', '-alignment_heads', type=int, default=None,
+              help='N. of cross attention heads per layer to supervised with')
+    group.add('--full_context_alignment', '-full_context_alignment',
+              action="store_true",
+              help='Whether alignment is conditioned on full target context.')
+
     # Generator and loss options.
+    group = parser.add_argument_group('Generator')
     group.add('--copy_attn', '-copy_attn', action="store_true",
               help='Train copy attention layer.')
     group.add('--copy_attn_type', '-copy_attn_type',
@@ -199,12 +214,17 @@ def preprocess_opts(parser):
               help="Path(s) to the training source data")
     group.add('--train_tgt', '-train_tgt', required=True, nargs='+',
               help="Path(s) to the training target data")
+    group.add('--train_align', '-train_align', nargs='+', default=[None],
+              help="Path(s) to the training src-tgt alignment")
     group.add('--train_ids', '-train_ids', nargs='+', default=[None],
               help="ids to name training shards, used for corpus weighting")
+
     group.add('--valid_src', '-valid_src',
               help="Path to the validation source data")
     group.add('--valid_tgt', '-valid_tgt',
               help="Path to the validation target data")
+    group.add('--valid_align', '-valid_align', default=None,
+              help="Path(s) to the validation src-tgt alignment")
 
     group.add('--src_dir', '-src_dir', default="",
               help="Source directory for image or audio files.")
@@ -475,10 +495,9 @@ def train_opts(parser):
                    'Typically a value of 0.999 is recommended, as this is '
                    'the value suggested by the original paper describing '
                    'Adam, and is also the value adopted in other frameworks '
-                   'such as Tensorflow and Kerras, i.e. see: '
+                   'such as Tensorflow and Keras, i.e. see: '
                    'https://www.tensorflow.org/api_docs/python/tf/train/Adam'
-                   'Optimizer or '
-                   'https://keras.io/optimizers/ . '
+                   'Optimizer or https://keras.io/optimizers/ . '
                    'Whereas recently the paper "Attention is All You Need" '
                    'suggested a value of 0.98 for beta2, this parameter may '
                    'not work well for normal models / default '
@@ -603,6 +622,8 @@ def translate_opts(parser):
     group.add('--output', '-output', default='pred.txt',
               help="Path to output the predictions (each line will "
                    "be the decoded sequence")
+    group.add('--report_align', '-report_align', action='store_true',
+              help="Report alignment for each translation.")
     group.add('--report_bleu', '-report_bleu', action='store_true',
               help="Report bleu score after translation, "
                    "call tools/multi-bleu.perl on command line")
@@ -693,6 +714,8 @@ def translate_opts(parser):
               default="0")
     group.add('--attn_debug', '-attn_debug', action="store_true",
               help='Print best attn for each word')
+    group.add('--align_debug', '-align_debug', action="store_true",
+              help='Print best align for each word')
     group.add('--dump_beam', '-dump_beam', type=str, default="",
               help='File to dump beam information to.')
     group.add('--n_best', '-n_best', type=int, default=1,

@@ -5,7 +5,7 @@ import codecs
 import os
 import math
 import time
-from itertools import count
+from itertools import count, zip_longest
 
 import torch
 
@@ -14,7 +14,8 @@ import onmt.inputters as inputters
 import onmt.decoders.ensemble
 from onmt.translate.beam_search import BeamSearch
 from onmt.translate.greedy_search import GreedySearch
-from onmt.utils.misc import set_random_seed
+from onmt.utils.misc import tile, set_random_seed, report_matrix
+from onmt.utils.alignment import extract_alignment, build_align_pharaoh
 from onmt.modules.copy_generator import collapse_copy_scores
 
 
@@ -35,6 +36,7 @@ def build_translator(opt, report_score=True, logger=None, out_file=None):
         model_opt,
         global_scorer=scorer,
         out_file=out_file,
+        report_align=opt.report_align,
         report_score=report_score,
         logger=logger
     )
@@ -129,6 +131,7 @@ class Translator(object):
             copy_attn=False,
             global_scorer=None,
             out_file=None,
+            report_align=False,
             report_score=True,
             logger=None,
             seed=-1):
@@ -183,6 +186,7 @@ class Translator(object):
             raise ValueError(
                 "Coverage penalty requires an attentional decoder.")
         self.out_file = out_file
+        self.report_align = report_align
         self.report_score = report_score
         self.logger = logger
 
@@ -210,6 +214,7 @@ class Translator(object):
             model_opt,
             global_scorer=None,
             out_file=None,
+            report_align=False,
             report_score=True,
             logger=None):
         """Alternate constructor.
@@ -225,6 +230,7 @@ class Translator(object):
                 :func:`__init__()`..
             out_file (TextIO or codecs.StreamReaderWriter): See
                 :func:`__init__()`.
+            report_align (bool) : See :func:`__init__()`.
             report_score (bool) : See :func:`__init__()`.
             logger (logging.Logger or NoneType): See :func:`__init__()`.
         """
@@ -258,6 +264,7 @@ class Translator(object):
             copy_attn=model_opt.copy_attn,
             global_scorer=global_scorer,
             out_file=out_file,
+            report_align=report_align,
             report_score=report_score,
             logger=logger,
             seed=opt.seed)
@@ -287,6 +294,7 @@ class Translator(object):
             batch_size=None,
             batch_type="sents",
             attn_debug=False,
+            align_debug=False,
             phrase_table=""):
         """Translate content of ``src`` and get gold scores from ``tgt``.
 
@@ -297,6 +305,7 @@ class Translator(object):
                 for certain types of data).
             batch_size (int): size of examples per mini-batch
             attn_debug (bool): enables the attention logging
+            align_debug (bool): enables the word alignment logging
 
         Returns:
             (`list`, `list`)
@@ -309,12 +318,13 @@ class Translator(object):
         if batch_size is None:
             raise ValueError("batch_size must be set")
 
+        src_data = {"reader": self.src_reader, "data": src, "dir": src_dir}
+        tgt_data = {"reader": self.tgt_reader, "data": tgt, "dir": None}
+        _readers, _data, _dir = inputters.Dataset.config(
+            [('src', src_data), ('tgt', tgt_data)])
+
         data = inputters.Dataset(
-            self.fields,
-            readers=([self.src_reader, self.tgt_reader]
-                     if tgt else [self.src_reader]),
-            data=[("src", src), ("tgt", tgt)] if tgt else [("src", src)],
-            dirs=[src_dir, None] if tgt else [src_dir],
+            self.fields, readers=_readers, data=_data, dirs=_dir,
             sort_key=inputters.str2sortkey[self.data_type],
             filter_pred=self._filter_pred
         )
@@ -361,6 +371,14 @@ class Translator(object):
 
                 n_best_preds = [" ".join(pred)
                                 for pred in trans.pred_sents[:self.n_best]]
+                if self.report_align:
+                    align_pharaohs = [build_align_pharaoh(align) for align
+                                      in trans.word_aligns[:self.n_best]]
+                    n_best_preds_align = [" ".join(align) for align
+                                          in align_pharaohs]
+                    n_best_preds = [pred + " ||| " + align
+                                    for pred, align in zip(
+                                        n_best_preds, n_best_preds_align)]
                 all_predictions += [n_best_preds]
                 self.out_file.write('\n'.join(n_best_preds) + '\n')
                 self.out_file.flush()
@@ -381,17 +399,23 @@ class Translator(object):
                         srcs = trans.src_raw
                     else:
                         srcs = [str(item) for item in range(len(attns[0]))]
-                    header_format = "{:>10.10} " + "{:>10.7} " * len(srcs)
-                    row_format = "{:>10.10} " + "{:>10.7f} " * len(srcs)
-                    output = header_format.format("", *srcs) + '\n'
-                    for word, row in zip(preds, attns):
-                        max_index = row.index(max(row))
-                        row_format = row_format.replace(
-                            "{:>10.7f} ", "{:*>10.7f} ", max_index + 1)
-                        row_format = row_format.replace(
-                            "{:*>10.7f} ", "{:>10.7f} ", max_index)
-                        output += row_format.format(word, *row) + '\n'
-                        row_format = "{:>10.10} " + "{:>10.7f} " * len(srcs)
+                    output = report_matrix(srcs, preds, attns)
+                    if self.logger:
+                        self.logger.info(output)
+                    else:
+                        os.write(1, output.encode('utf-8'))
+
+                if align_debug:
+                    if trans.gold_sent is not None:
+                        tgts = trans.gold_sent
+                    else:
+                        tgts = trans.pred_sents[0]
+                    align = trans.word_aligns[0].tolist()
+                    if self.data_type == 'text':
+                        srcs = trans.src_raw
+                    else:
+                        srcs = [str(item) for item in range(len(align[0]))]
+                    output = report_matrix(srcs, tgts, align)
                     if self.logger:
                         self.logger.info(output)
                     else:
@@ -427,6 +451,79 @@ class Translator(object):
             json.dump(self.translator.beam_accum,
                       codecs.open(self.dump_beam, 'w', 'utf-8'))
         return all_scores, all_predictions
+
+    def _align_pad_prediction(self, predictions, bos, pad):
+        """
+        Padding predictions in batch and add BOS.
+
+        Args:
+            predictions (List[List[Tensor]]): `(batch, n_best,)`, for each src
+                sequence contain n_best tgt predictions all of which ended with
+                eos id.
+            bos (int): bos index to be used.
+            pad (int): pad index to be used.
+
+        Return:
+            batched_nbest_predict (torch.LongTensor): `(batch, n_best, tgt_l)`
+        """
+        dtype, device = predictions[0][0].dtype, predictions[0][0].device
+        flatten_tgt = [best.tolist() for bests in predictions
+                       for best in bests]
+        paded_tgt = torch.tensor(
+            list(zip_longest(*flatten_tgt, fillvalue=pad)),
+            dtype=dtype, device=device).T
+        bos_tensor = torch.full([paded_tgt.size(0), 1], bos,
+                                dtype=dtype, device=device)
+        full_tgt = torch.cat((bos_tensor, paded_tgt), dim=-1)
+        batched_nbest_predict = full_tgt.view(
+            len(predictions), -1, full_tgt.size(-1))  # (batch, n_best, tgt_l)
+        return batched_nbest_predict
+
+    def _align_forward(self, batch, predictions):
+        """
+        For a batch of input and its prediction, return a list of batch predict
+        alignment src indice Tensor in size ``(batch, n_best,)``.
+        """
+        # (0) add BOS and padding to tgt prediction
+        if hasattr(batch, 'tgt'):
+            batch_tgt_idxs = batch.tgt.transpose(1, 2).transpose(0, 2)
+        else:
+            batch_tgt_idxs = self._align_pad_prediction(
+                predictions, bos=self._tgt_bos_idx, pad=self._tgt_pad_idx)
+        tgt_mask = (batch_tgt_idxs.eq(self._tgt_pad_idx) |
+                    batch_tgt_idxs.eq(self._tgt_eos_idx) |
+                    batch_tgt_idxs.eq(self._tgt_bos_idx))
+
+        n_best = batch_tgt_idxs.size(1)
+        # (1) Encoder forward.
+        src, enc_states, memory_bank, src_lengths = self._run_encoder(batch)
+
+        # (2) Repeat src objects `n_best` times.
+        # We use batch_size x n_best, get ``(src_len, batch * n_best, nfeat)``
+        src = tile(src, n_best, dim=1)
+        enc_states = tile(enc_states, n_best, dim=1)
+        if isinstance(memory_bank, tuple):
+            memory_bank = tuple(tile(x, n_best, dim=1) for x in memory_bank)
+        else:
+            memory_bank = tile(memory_bank, n_best, dim=1)
+        src_lengths = tile(src_lengths, n_best)  # ``(batch * n_best,)``
+
+        # (3) Init decoder with n_best src,
+        self.model.decoder.init_state(src, memory_bank, enc_states)
+        # reshape tgt to ``(len, batch * n_best, nfeat)``
+        tgt = batch_tgt_idxs.view(-1, batch_tgt_idxs.size(-1)).T.unsqueeze(-1)
+        dec_in = tgt[:-1]  # exclude last target from inputs
+        _, attns = self.model.decoder(
+            dec_in, memory_bank, memory_lengths=src_lengths, with_align=True)
+
+        alignment_attn = attns["align"]  # ``(B, tgt_len-1, src_len)``
+        # masked_select
+        align_tgt_mask = tgt_mask.view(-1, tgt_mask.size(-1))
+        prediction_mask = align_tgt_mask[:, 1:]  # exclude bos to match pred
+        # get aligned src id for each prediction's valid tgt tokens
+        alignement = extract_alignment(
+            alignment_attn, prediction_mask, src_lengths, n_best)
+        return alignement
 
     def translate_batch(self, batch, src_vocabs, attn_debug):
         """Translate a batch of sentences."""
@@ -620,6 +717,11 @@ class Translator(object):
         results["scores"] = decode_strategy.scores
         results["predictions"] = decode_strategy.predictions
         results["attention"] = decode_strategy.attention
+        if self.report_align:
+            results["alignment"] = self._align_forward(
+                batch, decode_strategy.predictions)
+        else:
+            results["alignment"] = [[] for _ in range(batch_size)]
         return results
 
     def _score_target(self, batch, memory_bank, src_lengths,

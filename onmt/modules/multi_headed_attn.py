@@ -92,7 +92,7 @@ class MultiHeadedAttention(nn.Module):
            (FloatTensor, FloatTensor):
 
            * output context vectors ``(batch, query_len, dim)``
-           * one of the attention vectors ``(batch, query_len, key_len)``
+           * Attention vector in heads ``(batch, head, query_len, key_len)``.
         """
 
         # CHECKS
@@ -219,13 +219,12 @@ class MultiHeadedAttention(nn.Module):
         # aeq(batch, batch_)
         # aeq(d, d_)
 
-        # Return one attn
-        top_attn = attn \
+        # Return multi-head attn
+        attns = attn \
             .view(batch_size, head_count,
-                  query_len, key_len)[:, 0, :, :] \
-            .contiguous()
+                  query_len, key_len)
 
-        return output, top_attn
+        return output, attns
 
     def update_dropout(self, dropout):
         self.dropout.p = dropout
