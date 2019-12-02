@@ -3,7 +3,7 @@ import argparse
 import torch
 
 
-def average_models(model_files):
+def average_models(model_files, fp32=False):
     vocab = None
     opt = None
     avg_model = None
@@ -13,6 +13,12 @@ def average_models(model_files):
         m = torch.load(model_file, map_location='cpu')
         model_weights = m['model']
         generator_weights = m['generator']
+
+        if fp32:
+            for k, v in model_weights.items():
+                model_weights[k] = v.float()
+            for k, v in generator_weights.items():
+                generator_weights[k] = v.float()
 
         if i == 0:
             vocab, opt = m['vocab'], m['opt']
@@ -36,9 +42,11 @@ def main():
                         help="List of models")
     parser.add_argument("-output", "-o", required=True,
                         help="Output file")
+    parser.add_argument("-fp32", "-f", action="store_true",
+                        help="Cast params to float32")
     opt = parser.parse_args()
 
-    final = average_models(opt.models)
+    final = average_models(opt.models, opt.fp32)
     torch.save(final, opt.output)
 
 
