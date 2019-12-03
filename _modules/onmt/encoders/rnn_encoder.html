@@ -179,11 +179,11 @@
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
 <span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
 
-<span class="kn">from</span> <span class="nn">torch.nn.utils.rnn</span> <span class="k">import</span> <span class="n">pack_padded_sequence</span> <span class="k">as</span> <span class="n">pack</span>
-<span class="kn">from</span> <span class="nn">torch.nn.utils.rnn</span> <span class="k">import</span> <span class="n">pad_packed_sequence</span> <span class="k">as</span> <span class="n">unpack</span>
+<span class="kn">from</span> <span class="nn">torch.nn.utils.rnn</span> <span class="kn">import</span> <span class="n">pack_padded_sequence</span> <span class="k">as</span> <span class="n">pack</span>
+<span class="kn">from</span> <span class="nn">torch.nn.utils.rnn</span> <span class="kn">import</span> <span class="n">pad_packed_sequence</span> <span class="k">as</span> <span class="n">unpack</span>
 
-<span class="kn">from</span> <span class="nn">onmt.encoders.encoder</span> <span class="k">import</span> <span class="n">EncoderBase</span>
-<span class="kn">from</span> <span class="nn">onmt.utils.rnn_factory</span> <span class="k">import</span> <span class="n">rnn_factory</span>
+<span class="kn">from</span> <span class="nn">onmt.encoders.encoder</span> <span class="kn">import</span> <span class="n">EncoderBase</span>
+<span class="kn">from</span> <span class="nn">onmt.utils.rnn_factory</span> <span class="kn">import</span> <span class="n">rnn_factory</span>
 
 
 <div class="viewcode-block" id="RNNEncoder"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.encoders.RNNEncoder">[docs]</a><span class="k">class</span> <span class="nc">RNNEncoder</span><span class="p">(</span><span class="n">EncoderBase</span><span class="p">):</span>
@@ -199,7 +199,7 @@
 <span class="sd">       embeddings (onmt.modules.Embeddings): embedding module to use</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rnn_type</span><span class="p">,</span> <span class="n">bidirectional</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rnn_type</span><span class="p">,</span> <span class="n">bidirectional</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span>
                  <span class="n">hidden_size</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">embeddings</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">use_bridge</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">RNNEncoder</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>

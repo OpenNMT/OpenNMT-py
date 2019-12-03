@@ -185,16 +185,16 @@
 <span class="kn">import</span> <span class="nn">configargparse</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
-<span class="kn">from</span> <span class="nn">torch.autograd</span> <span class="k">import</span> <span class="n">Function</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">namedtuple</span>
+<span class="kn">from</span> <span class="nn">torch.autograd</span> <span class="kn">import</span> <span class="n">Function</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span>
 
 
 <span class="c1"># For command-line option parsing</span>
 <span class="k">class</span> <span class="nc">CheckSRU</span><span class="p">(</span><span class="n">configargparse</span><span class="o">.</span><span class="n">Action</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">option_strings</span><span class="p">,</span> <span class="n">dest</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">option_strings</span><span class="p">,</span> <span class="n">dest</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">CheckSRU</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">option_strings</span><span class="p">,</span> <span class="n">dest</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">option_string</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">option_string</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">values</span> <span class="o">==</span> <span class="s1">&#39;SRU&#39;</span><span class="p">:</span>
             <span class="n">check_sru_requirement</span><span class="p">(</span><span class="n">abort</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="c1"># Check pass, set the args.</span>
@@ -531,8 +531,8 @@
     <span class="k">global</span> <span class="n">SRU_FWD_FUNC</span><span class="p">,</span> <span class="n">SRU_BWD_FUNC</span><span class="p">,</span> <span class="n">SRU_BiFWD_FUNC</span><span class="p">,</span> <span class="n">SRU_BiBWD_FUNC</span>
     <span class="k">global</span> <span class="n">SRU_STREAM</span>
     <span class="k">if</span> <span class="n">check_sru_requirement</span><span class="p">():</span>
-        <span class="kn">from</span> <span class="nn">cupy.cuda</span> <span class="k">import</span> <span class="n">function</span>
-        <span class="kn">from</span> <span class="nn">pynvrtc.compiler</span> <span class="k">import</span> <span class="n">Program</span>
+        <span class="kn">from</span> <span class="nn">cupy.cuda</span> <span class="kn">import</span> <span class="n">function</span>
+        <span class="kn">from</span> <span class="nn">pynvrtc.compiler</span> <span class="kn">import</span> <span class="n">Program</span>
 
         <span class="c1"># This sets up device to use.</span>
         <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span><span class="p">)</span>
@@ -555,7 +555,7 @@
 
 <span class="k">class</span> <span class="nc">SRU_Compute</span><span class="p">(</span><span class="n">Function</span><span class="p">):</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">activation_type</span><span class="p">,</span> <span class="n">d_out</span><span class="p">,</span> <span class="n">bidirectional</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">activation_type</span><span class="p">,</span> <span class="n">d_out</span><span class="p">,</span> <span class="n">bidirectional</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="n">SRU_Compute</span><span class="o">.</span><span class="n">maybe_load_sru_mod</span><span class="p">()</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">SRU_Compute</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">activation_type</span> <span class="o">=</span> <span class="n">activation_type</span>
@@ -668,7 +668,7 @@
 
 
 <span class="k">class</span> <span class="nc">SRUCell</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_in</span><span class="p">,</span> <span class="n">n_out</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">rnn_dropout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_in</span><span class="p">,</span> <span class="n">n_out</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">rnn_dropout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                  <span class="n">bidirectional</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_tanh</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">use_relu</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">SRUCell</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_in</span> <span class="o">=</span> <span class="n">n_in</span>
@@ -762,7 +762,7 @@
 <span class="sd">      use_relu (bool): activation</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_size</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_size</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span>
                  <span class="n">num_layers</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">rnn_dropout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                  <span class="n">bidirectional</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_tanh</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">use_relu</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         <span class="c1"># An entry check here, will catch on train side and translate side</span>

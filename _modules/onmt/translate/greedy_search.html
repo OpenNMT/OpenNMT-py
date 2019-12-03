@@ -177,7 +177,7 @@
   <h1>Source code for onmt.translate.greedy_search</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">torch</span>
 
-<span class="kn">from</span> <span class="nn">onmt.translate.decode_strategy</span> <span class="k">import</span> <span class="n">DecodeStrategy</span>
+<span class="kn">from</span> <span class="nn">onmt.translate.decode_strategy</span> <span class="kn">import</span> <span class="n">DecodeStrategy</span>
 
 
 <div class="viewcode-block" id="sample_with_temperature"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.greedy_search.sample_with_temperature">[docs]</a><span class="k">def</span> <span class="nf">sample_with_temperature</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">sampling_temp</span><span class="p">,</span> <span class="n">keep_topk</span><span class="p">):</span>
@@ -257,7 +257,7 @@
 <span class="sd">            :func:`~onmt.translate.greedy_search.sample_with_temperature()`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pad</span><span class="p">,</span> <span class="n">bos</span><span class="p">,</span> <span class="n">eos</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">min_length</span><span class="p">,</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pad</span><span class="p">,</span> <span class="n">bos</span><span class="p">,</span> <span class="n">eos</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">min_length</span><span class="p">,</span>
                  <span class="n">block_ngram_repeat</span><span class="p">,</span> <span class="n">exclusion_tokens</span><span class="p">,</span> <span class="n">return_attention</span><span class="p">,</span>
                  <span class="n">max_length</span><span class="p">,</span> <span class="n">sampling_temp</span><span class="p">,</span> <span class="n">keep_topk</span><span class="p">):</span>
         <span class="k">assert</span> <span class="n">block_ngram_repeat</span> <span class="o">==</span> <span class="mi">0</span>

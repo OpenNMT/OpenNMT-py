@@ -176,12 +176,12 @@
             
   <h1>Source code for onmt.utils.statistics</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot; Statistics calculation utility &quot;&quot;&quot;</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">division</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">division</span>
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 
-<span class="kn">from</span> <span class="nn">onmt.utils.logging</span> <span class="k">import</span> <span class="n">logger</span>
+<span class="kn">from</span> <span class="nn">onmt.utils.logging</span> <span class="kn">import</span> <span class="n">logger</span>
 
 
 <div class="viewcode-block" id="Statistics"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.Statistics">[docs]</a><span class="k">class</span> <span class="nc">Statistics</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -194,7 +194,7 @@
 <span class="sd">    * elapsed time</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_words</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_correct</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_words</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_correct</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">loss</span> <span class="o">=</span> <span class="n">loss</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_words</span> <span class="o">=</span> <span class="n">n_words</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_correct</span> <span class="o">=</span> <span class="n">n_correct</span>
@@ -230,8 +230,8 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            our_stats(list([`Statistics`])): list of updated stats</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span> <span class="nn">torch.distributed</span> <span class="k">import</span> <span class="n">get_rank</span>
-        <span class="kn">from</span> <span class="nn">onmt.utils.distributed</span> <span class="k">import</span> <span class="n">all_gather_list</span>
+        <span class="kn">from</span> <span class="nn">torch.distributed</span> <span class="kn">import</span> <span class="n">get_rank</span>
+        <span class="kn">from</span> <span class="nn">onmt.utils.distributed</span> <span class="kn">import</span> <span class="n">all_gather_list</span>
 
         <span class="c1"># Get a list of world_size lists with len(stat_list) Statistics objects</span>
         <span class="n">all_stats</span> <span class="o">=</span> <span class="n">all_gather_list</span><span class="p">(</span><span class="n">stat_list</span><span class="p">,</span> <span class="n">max_size</span><span class="o">=</span><span class="n">max_size</span><span class="p">)</span>

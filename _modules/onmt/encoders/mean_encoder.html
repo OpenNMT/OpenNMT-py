@@ -176,8 +176,8 @@
             
   <h1>Source code for onmt.encoders.mean_encoder</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;Define a minimal encoder.&quot;&quot;&quot;</span>
-<span class="kn">from</span> <span class="nn">onmt.encoders.encoder</span> <span class="k">import</span> <span class="n">EncoderBase</span>
-<span class="kn">from</span> <span class="nn">onmt.utils.misc</span> <span class="k">import</span> <span class="n">sequence_mask</span>
+<span class="kn">from</span> <span class="nn">onmt.encoders.encoder</span> <span class="kn">import</span> <span class="n">EncoderBase</span>
+<span class="kn">from</span> <span class="nn">onmt.utils.misc</span> <span class="kn">import</span> <span class="n">sequence_mask</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 
 
@@ -189,7 +189,7 @@
 <span class="sd">       embeddings (onmt.modules.Embeddings): embedding module to use</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">MeanEncoder</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_layers</span> <span class="o">=</span> <span class="n">num_layers</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span> <span class="o">=</span> <span class="n">embeddings</span>

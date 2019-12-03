@@ -176,13 +176,13 @@
             
   <h1>Source code for onmt.inputters.text_dataset</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
-<span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">partial</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
 
 <span class="kn">import</span> <span class="nn">six</span>
 <span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">torchtext.data</span> <span class="k">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">RawField</span>
+<span class="kn">from</span> <span class="nn">torchtext.data</span> <span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">RawField</span>
 
-<span class="kn">from</span> <span class="nn">onmt.inputters.datareader_base</span> <span class="k">import</span> <span class="n">DataReaderBase</span>
+<span class="kn">from</span> <span class="nn">onmt.inputters.datareader_base</span> <span class="kn">import</span> <span class="n">DataReaderBase</span>
 
 
 <div class="viewcode-block" id="TextDataReader"><a class="viewcode-back" href="../../../onmt.inputters.html#onmt.inputters.TextDataReader">[docs]</a><span class="k">class</span> <span class="nc">TextDataReader</span><span class="p">(</span><span class="n">DataReaderBase</span><span class="p">):</span>
@@ -265,7 +265,7 @@
 <span class="sd">            ``feats_fields`` in alphabetical order.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_name</span><span class="p">,</span> <span class="n">base_field</span><span class="p">,</span> <span class="n">feats_fields</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_name</span><span class="p">,</span> <span class="n">base_field</span><span class="p">,</span> <span class="n">feats_fields</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">TextMultiField</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fields</span> <span class="o">=</span> <span class="p">[(</span><span class="n">base_name</span><span class="p">,</span> <span class="n">base_field</span><span class="p">)]</span>
         <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">ff</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">feats_fields</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">kv</span><span class="p">:</span> <span class="n">kv</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
@@ -324,7 +324,7 @@
 
         <span class="k">return</span> <span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">preprocess</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="n">item</span><span class="p">]</span>
 
 

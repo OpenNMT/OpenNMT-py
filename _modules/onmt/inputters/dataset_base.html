@@ -177,13 +177,13 @@
   <h1>Source code for onmt.inputters.dataset_base</h1><div class="highlight"><pre>
 <span></span><span class="c1"># coding: utf-8</span>
 
-<span class="kn">from</span> <span class="nn">itertools</span> <span class="k">import</span> <span class="n">chain</span><span class="p">,</span> <span class="n">starmap</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">Counter</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">chain</span><span class="p">,</span> <span class="n">starmap</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Counter</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">torchtext.data</span> <span class="k">import</span> <span class="n">Dataset</span> <span class="k">as</span> <span class="n">TorchtextDataset</span>
-<span class="kn">from</span> <span class="nn">torchtext.data</span> <span class="k">import</span> <span class="n">Example</span>
-<span class="kn">from</span> <span class="nn">torchtext.vocab</span> <span class="k">import</span> <span class="n">Vocab</span>
+<span class="kn">from</span> <span class="nn">torchtext.data</span> <span class="kn">import</span> <span class="n">Dataset</span> <span class="k">as</span> <span class="n">TorchtextDataset</span>
+<span class="kn">from</span> <span class="nn">torchtext.data</span> <span class="kn">import</span> <span class="n">Example</span>
+<span class="kn">from</span> <span class="nn">torchtext.vocab</span> <span class="kn">import</span> <span class="n">Vocab</span>
 
 
 <span class="k">def</span> <span class="nf">_join_dicts</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
@@ -284,7 +284,7 @@
 <span class="sd">            predict to copy them.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">readers</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">dirs</span><span class="p">,</span> <span class="n">sort_key</span><span class="p">,</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">readers</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">dirs</span><span class="p">,</span> <span class="n">sort_key</span><span class="p">,</span>
                  <span class="n">filter_pred</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sort_key</span> <span class="o">=</span> <span class="n">sort_key</span>
         <span class="n">can_copy</span> <span class="o">=</span> <span class="s1">&#39;src_map&#39;</span> <span class="ow">in</span> <span class="n">fields</span> <span class="ow">and</span> <span class="s1">&#39;alignment&#39;</span> <span class="ow">in</span> <span class="n">fields</span>
@@ -316,7 +316,7 @@
 
         <span class="nb">super</span><span class="p">(</span><span class="n">Dataset</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">examples</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">filter_pred</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
         <span class="c1"># avoid infinite recursion when fields isn&#39;t defined</span>
         <span class="k">if</span> <span class="s1">&#39;fields&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">AttributeError</span>

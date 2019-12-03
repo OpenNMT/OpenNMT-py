@@ -182,7 +182,7 @@
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
 
-<span class="kn">from</span> <span class="nn">onmt.modules.util_class</span> <span class="k">import</span> <span class="n">Elementwise</span>
+<span class="kn">from</span> <span class="nn">onmt.modules.util_class</span> <span class="kn">import</span> <span class="n">Elementwise</span>
 
 
 <div class="viewcode-block" id="PositionalEncoding"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.PositionalEncoding">[docs]</a><span class="k">class</span> <span class="nc">PositionalEncoding</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -196,7 +196,7 @@
 <span class="sd">       dim (int): embedding size</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">max_len</span><span class="o">=</span><span class="mi">5000</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">max_len</span><span class="o">=</span><span class="mi">5000</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">dim</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot use sin/cos positional encoding with &quot;</span>
                              <span class="s2">&quot;odd dim (got dim=</span><span class="si">{:d}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dim</span><span class="p">))</span>
@@ -232,7 +232,7 @@
 
 
 <span class="k">class</span> <span class="nc">VecEmbedding</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vec_size</span><span class="p">,</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vec_size</span><span class="p">,</span>
                  <span class="n">emb_dim</span><span class="p">,</span>
                  <span class="n">position_encoding</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                  <span class="n">dropout</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
@@ -303,7 +303,7 @@
 <span class="sd">        dropout (float): dropout probability.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">word_vec_size</span><span class="p">,</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">word_vec_size</span><span class="p">,</span>
                  <span class="n">word_vocab_size</span><span class="p">,</span>
                  <span class="n">word_padding_idx</span><span class="p">,</span>
                  <span class="n">position_encoding</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>

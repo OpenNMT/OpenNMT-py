@@ -175,7 +175,7 @@
            <div itemprop="articleBody">
             
   <h1>Source code for onmt.translate.penalties</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">division</span>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">division</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 
 
@@ -199,7 +199,7 @@
 <span class="sd">            the length penalty.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cov_pen</span><span class="p">,</span> <span class="n">length_pen</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cov_pen</span><span class="p">,</span> <span class="n">length_pen</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">has_cov_pen</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pen_is_none</span><span class="p">(</span><span class="n">cov_pen</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">coverage_penalty</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coverage_penalty</span><span class="p">(</span><span class="n">cov_pen</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">has_len_pen</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pen_is_none</span><span class="p">(</span><span class="n">length_pen</span><span class="p">)</span>

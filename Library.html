@@ -185,7 +185,7 @@ create our datasets. For instance</p>
 <div><p>onmt_preprocess -train_src data/src-train.txt -train_tgt data/tgt-train.txt -valid_src data/src-val.txt -valid_tgt data/tgt-val.txt -save_data data/data -src_vocab_size 10000 -tgt_vocab_size 10000</p>
 </div></blockquote>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="kn">as</span> <span class="nn">nn</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
 
 <span class="kn">import</span> <span class="nn">onmt</span>
 <span class="kn">import</span> <span class="nn">onmt.inputters</span>
@@ -214,13 +214,13 @@ create our datasets. For instance</p>
                                              <span class="n">word_padding_idx</span><span class="o">=</span><span class="n">src_padding</span><span class="p">)</span>
 
 <span class="n">encoder</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">encoders</span><span class="o">.</span><span class="n">RNNEncoder</span><span class="p">(</span><span class="n">hidden_size</span><span class="o">=</span><span class="n">rnn_size</span><span class="p">,</span> <span class="n">num_layers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                                   <span class="n">rnn_type</span><span class="o">=</span><span class="s2">&quot;LSTM&quot;</span><span class="p">,</span> <span class="n">bidirectional</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                                   <span class="n">rnn_type</span><span class="o">=</span><span class="s2">&quot;LSTM&quot;</span><span class="p">,</span> <span class="n">bidirectional</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                                    <span class="n">embeddings</span><span class="o">=</span><span class="n">encoder_embeddings</span><span class="p">)</span>
 
 <span class="n">decoder_embeddings</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">Embeddings</span><span class="p">(</span><span class="n">emb_size</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">tgt_vocab</span><span class="p">),</span>
                                              <span class="n">word_padding_idx</span><span class="o">=</span><span class="n">tgt_padding</span><span class="p">)</span>
 <span class="n">decoder</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">decoders</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">InputFeedRNNDecoder</span><span class="p">(</span>
-    <span class="n">hidden_size</span><span class="o">=</span><span class="n">rnn_size</span><span class="p">,</span> <span class="n">num_layers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">bidirectional_encoder</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> 
+    <span class="n">hidden_size</span><span class="o">=</span><span class="n">rnn_size</span><span class="p">,</span> <span class="n">num_layers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">bidirectional_encoder</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> 
     <span class="n">rnn_type</span><span class="o">=</span><span class="s2">&quot;LSTM&quot;</span><span class="p">,</span> <span class="n">embeddings</span><span class="o">=</span><span class="n">decoder_embeddings</span><span class="p">)</span>
 
 <span class="n">device</span> <span class="o">=</span> <span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span>
@@ -253,24 +253,24 @@ create our datasets. For instance</p>
                                                      <span class="n">fields</span><span class="o">=</span><span class="n">vocab_fields</span><span class="p">,</span>
                                                      <span class="n">batch_size</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
                                                      <span class="n">batch_size_multiple</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                                                     <span class="n">batch_size_fn</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                                                     <span class="n">batch_size_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                                                      <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
-                                                     <span class="n">is_train</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
-                                                     <span class="n">repeat</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+                                                     <span class="n">is_train</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                                     <span class="n">repeat</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 <span class="n">valid_iter</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">inputters</span><span class="o">.</span><span class="n">inputter</span><span class="o">.</span><span class="n">DatasetLazyIter</span><span class="p">(</span><span class="n">dataset_paths</span><span class="o">=</span><span class="p">[</span><span class="n">valid_data_file</span><span class="p">],</span>
                                                      <span class="n">fields</span><span class="o">=</span><span class="n">vocab_fields</span><span class="p">,</span>
                                                      <span class="n">batch_size</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
                                                      <span class="n">batch_size_multiple</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                                                     <span class="n">batch_size_fn</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                                                     <span class="n">batch_size_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                                                      <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
-                                                     <span class="n">is_train</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
-                                                     <span class="n">repeat</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+                                                     <span class="n">is_train</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                                     <span class="n">repeat</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Finally we train. Keeping track of the output requires a report manager.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">report_manager</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">ReportMgr</span><span class="p">(</span>
-    <span class="n">report_every</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">start_time</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">tensorboard_writer</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+    <span class="n">report_every</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">start_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tensorboard_writer</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 <span class="n">trainer</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">Trainer</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
                        <span class="n">train_loss</span><span class="o">=</span><span class="n">loss</span><span class="p">,</span>
                        <span class="n">valid_loss</span><span class="o">=</span><span class="n">loss</span><span class="p">,</span>
@@ -323,10 +323,10 @@ create our datasets. For instance</p>
 <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">valid_iter</span><span class="p">:</span>
     <span class="n">trans_batch</span> <span class="o">=</span> <span class="n">translator</span><span class="o">.</span><span class="n">translate_batch</span><span class="p">(</span>
         <span class="n">batch</span><span class="o">=</span><span class="n">batch</span><span class="p">,</span> <span class="n">src_vocabs</span><span class="o">=</span><span class="p">[</span><span class="n">src_vocab</span><span class="p">],</span>
-        <span class="n">attn_debug</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+        <span class="n">attn_debug</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="n">translations</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="n">from_batch</span><span class="p">(</span><span class="n">trans_batch</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">trans</span> <span class="ow">in</span> <span class="n">translations</span><span class="p">:</span>
-        <span class="k">print</span><span class="p">(</span><span class="n">trans</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">trans</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
 </pre></div>
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="mi">2019</span><span class="o">-</span><span class="mi">02</span><span class="o">-</span><span class="mi">15</span> <span class="mi">16</span><span class="p">:</span><span class="mi">48</span><span class="p">:</span><span class="mi">27</span><span class="p">,</span><span class="mi">419</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Loading</span> <span class="n">dataset</span> <span class="kn">from</span> <span class="nn">data</span><span class="o">/</span><span class="n">data</span><span class="o">.</span><span class="n">valid</span><span class="o">.</span><span class="mf">0.</span><span class="n">pt</span><span class="p">,</span> <span class="n">number</span> <span class="n">of</span> <span class="n">examples</span><span class="p">:</span> <span class="mi">3000</span>

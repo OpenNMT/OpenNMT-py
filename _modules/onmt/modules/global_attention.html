@@ -180,8 +180,8 @@
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
 <span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
 
-<span class="kn">from</span> <span class="nn">onmt.modules.sparse_activations</span> <span class="k">import</span> <span class="n">sparsemax</span>
-<span class="kn">from</span> <span class="nn">onmt.utils.misc</span> <span class="k">import</span> <span class="n">aeq</span><span class="p">,</span> <span class="n">sequence_mask</span>
+<span class="kn">from</span> <span class="nn">onmt.modules.sparse_activations</span> <span class="kn">import</span> <span class="n">sparsemax</span>
+<span class="kn">from</span> <span class="nn">onmt.utils.misc</span> <span class="kn">import</span> <span class="n">aeq</span><span class="p">,</span> <span class="n">sequence_mask</span>
 
 <span class="c1"># This class is mainly used by decoder.py for RNNs but also</span>
 <span class="c1"># by the CNN / transformer decoder when copy attention is used</span>
@@ -245,7 +245,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">coverage</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">attn_type</span><span class="o">=</span><span class="s2">&quot;dot&quot;</span><span class="p">,</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">coverage</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">attn_type</span><span class="o">=</span><span class="s2">&quot;dot&quot;</span><span class="p">,</span>
                  <span class="n">attn_func</span><span class="o">=</span><span class="s2">&quot;softmax&quot;</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">GlobalAttention</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 

@@ -180,11 +180,11 @@
 
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
 
-<span class="kn">from</span> <span class="nn">torch.nn.utils.rnn</span> <span class="k">import</span> <span class="n">pack_padded_sequence</span> <span class="k">as</span> <span class="n">pack</span>
-<span class="kn">from</span> <span class="nn">torch.nn.utils.rnn</span> <span class="k">import</span> <span class="n">pad_packed_sequence</span> <span class="k">as</span> <span class="n">unpack</span>
+<span class="kn">from</span> <span class="nn">torch.nn.utils.rnn</span> <span class="kn">import</span> <span class="n">pack_padded_sequence</span> <span class="k">as</span> <span class="n">pack</span>
+<span class="kn">from</span> <span class="nn">torch.nn.utils.rnn</span> <span class="kn">import</span> <span class="n">pad_packed_sequence</span> <span class="k">as</span> <span class="n">unpack</span>
 
-<span class="kn">from</span> <span class="nn">onmt.utils.rnn_factory</span> <span class="k">import</span> <span class="n">rnn_factory</span>
-<span class="kn">from</span> <span class="nn">onmt.encoders.encoder</span> <span class="k">import</span> <span class="n">EncoderBase</span>
+<span class="kn">from</span> <span class="nn">onmt.utils.rnn_factory</span> <span class="kn">import</span> <span class="n">rnn_factory</span>
+<span class="kn">from</span> <span class="nn">onmt.encoders.encoder</span> <span class="kn">import</span> <span class="n">EncoderBase</span>
 
 
 <div class="viewcode-block" id="AudioEncoder"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.encoders.AudioEncoder">[docs]</a><span class="k">class</span> <span class="nc">AudioEncoder</span><span class="p">(</span><span class="n">EncoderBase</span><span class="p">):</span>
@@ -204,7 +204,7 @@
 <span class="sd">        window_size (int): input spec</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rnn_type</span><span class="p">,</span> <span class="n">enc_layers</span><span class="p">,</span> <span class="n">dec_layers</span><span class="p">,</span> <span class="n">brnn</span><span class="p">,</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rnn_type</span><span class="p">,</span> <span class="n">enc_layers</span><span class="p">,</span> <span class="n">dec_layers</span><span class="p">,</span> <span class="n">brnn</span><span class="p">,</span>
                  <span class="n">enc_rnn_size</span><span class="p">,</span> <span class="n">dec_rnn_size</span><span class="p">,</span> <span class="n">enc_pooling</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span>
                  <span class="n">sample_rate</span><span class="p">,</span> <span class="n">window_size</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">AudioEncoder</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
