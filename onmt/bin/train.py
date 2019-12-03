@@ -22,6 +22,8 @@ def train(opt):
     ArgumentParser.update_model_opts(opt)
     ArgumentParser.validate_model_opts(opt)
 
+    set_random_seed(opt.seed, False)
+
     # Load checkpoint if we resume from a previous training.
     if opt.train_from:
         logger.info('Loading checkpoint from %s' % opt.train_from)
