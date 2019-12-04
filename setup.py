@@ -36,6 +36,7 @@ setup(
             "onmt_train=onmt.bin.train:main",
             "onmt_translate=onmt.bin.translate:main",
             "onmt_preprocess=onmt.bin.preprocess:main",
+            "onmt_average_models=onmt.bin.average_models:main"
         ],
     }
 )
