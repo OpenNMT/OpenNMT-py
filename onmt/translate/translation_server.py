@@ -15,6 +15,7 @@ import onmt.opts
 
 from onmt.utils.logging import init_logger
 from onmt.utils.misc import set_random_seed
+from onmt.utils.misc import check_model_config
 from onmt.utils.alignment import to_word_align
 from onmt.utils.parse import ArgumentParser
 from onmt.translate.translator import build_translator
@@ -90,6 +91,7 @@ class TranslationServer(object):
                 else:
                     raise ValueError("""Incorrect config file: missing 'models'
                                         parameter for model #%d""" % i)
+            check_model_config(conf, self.models_root)
             kwargs = {'timeout': conf.get('timeout', None),
                       'load': conf.get('load', None),
                       'preprocess_opt': conf.get('preprocess', None),
