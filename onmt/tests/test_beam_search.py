@@ -56,7 +56,7 @@ class TestBeamSearch(unittest.TestCase):
                 else:
                     # Once we start blocking, the top-proba becomes BLOCKED_SCORE
                     expected_scores = torch.tensor(
-                        [BLOCKED_SCORE] + [-float('inf')] * (beam_sz - 1))\
+                        [self.BLOCKED_SCORE] + [-float('inf')] * (beam_sz - 1))\
                     .repeat(batch_sz, 1)
                     self.assertTrue(
                         beam.topk_log_probs.equal(
