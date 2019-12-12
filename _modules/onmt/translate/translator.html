@@ -180,8 +180,8 @@
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
 <span class="kn">import</span> <span class="nn">codecs</span>
 <span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">count</span><span class="p">,</span> <span class="n">zip_longest</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
@@ -907,9 +907,11 @@
         <span class="k">if</span> <span class="n">words_total</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> No words predicted&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,)</span>
         <span class="k">else</span><span class="p">:</span>
+            <span class="n">avg_score</span> <span class="o">=</span> <span class="n">score_total</span> <span class="o">/</span> <span class="n">words_total</span>
+            <span class="n">ppl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">score_total</span> <span class="o">/</span> <span class="n">words_total</span><span class="p">)</span>
             <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> AVG SCORE: </span><span class="si">%.4f</span><span class="s2">, </span><span class="si">%s</span><span class="s2"> PPL: </span><span class="si">%.4f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
-                <span class="n">name</span><span class="p">,</span> <span class="n">score_total</span> <span class="o">/</span> <span class="n">words_total</span><span class="p">,</span>
-                <span class="n">name</span><span class="p">,</span> <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">score_total</span> <span class="o">/</span> <span class="n">words_total</span><span class="p">)))</span>
+                <span class="n">name</span><span class="p">,</span> <span class="n">avg_score</span><span class="p">,</span>
+                <span class="n">name</span><span class="p">,</span> <span class="n">ppl</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">msg</span></div>
 </pre></div>
 
