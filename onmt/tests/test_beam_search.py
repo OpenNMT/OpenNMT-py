@@ -48,11 +48,16 @@ class TestBeamSearch(unittest.TestCase):
                 attns = torch.randn(1, batch_sz * beam_sz, 53)
                 beam.advance(word_probs, attns)
                 if i <= ngram_repeat:
+                    # While not blocking the ngram, the top-proba is alway 0
                     expected_scores = torch.tensor(
                                 [0] + [-float('inf')] * (beam_sz - 1))\
                             .repeat(batch_sz, 1)
                     self.assertTrue(beam.topk_log_probs.equal(expected_scores))
                 else:
+                    # Once we start blocking, the top-proba becomes BLOCKED_SCORE
+                    expected_scores = torch.tensor(
+                        [BLOCKED_SCORE] + [-float('inf')] * (beam_sz - 1))\
+                    .repeat(batch_sz, 1)
                     self.assertTrue(
                         beam.topk_log_probs.equal(
                             torch.tensor(self.BLOCKED_SCORE)
