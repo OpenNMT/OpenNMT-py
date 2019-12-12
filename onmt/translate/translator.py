@@ -3,8 +3,8 @@
 from __future__ import print_function
 import codecs
 import os
-import math
 import time
+import numpy as np
 from itertools import count, zip_longest
 
 import torch
@@ -730,7 +730,9 @@ class Translator(object):
         if words_total == 0:
             msg = "%s No words predicted" % (name,)
         else:
+            avg_score = score_total / words_total
+            ppl = np.exp(-score_total / words_total)
             msg = ("%s AVG SCORE: %.4f, %s PPL: %.4f" % (
-                name, score_total / words_total,
-                name, math.exp(-score_total / words_total)))
+                name, avg_score,
+                name, ppl))
         return msg
