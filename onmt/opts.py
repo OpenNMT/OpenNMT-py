@@ -624,12 +624,6 @@ def translate_opts(parser):
                    "be the decoded sequence")
     group.add('--report_align', '-report_align', action='store_true',
               help="Report alignment for each translation.")
-    group.add('--report_bleu', '-report_bleu', action='store_true',
-              help="Report bleu score after translation, "
-                   "call tools/multi-bleu.perl on command line")
-    group.add('--report_rouge', '-report_rouge', action='store_true',
-              help="Report rouge 1/2/3/L/SU4 score after translation "
-                   "call tools/test_rouge.py on command line")
     group.add('--report_time', '-report_time', action='store_true',
               help="Report some translation time metrics")
 
