@@ -269,8 +269,6 @@
 <span class="sd">        replace_unk (bool): Replace unknown token.</span>
 <span class="sd">        data_type (str): Source data type.</span>
 <span class="sd">        verbose (bool): Print/log every translation.</span>
-<span class="sd">        report_bleu (bool): Print/log Bleu metric.</span>
-<span class="sd">        report_rouge (bool): Print/log Rouge metric.</span>
 <span class="sd">        report_time (bool): Print/log total time/frequency.</span>
 <span class="sd">        copy_attn (bool): Use copy attention.</span>
 <span class="sd">        global_scorer (onmt.translate.GNMTGlobalScorer): Translation</span>
@@ -302,8 +300,6 @@
             <span class="n">phrase_table</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
             <span class="n">data_type</span><span class="o">=</span><span class="s2">&quot;text&quot;</span><span class="p">,</span>
             <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-            <span class="n">report_bleu</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-            <span class="n">report_rouge</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">report_time</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">copy_attn</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">global_scorer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -351,8 +347,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">phrase_table</span> <span class="o">=</span> <span class="n">phrase_table</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span> <span class="o">=</span> <span class="n">data_type</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">report_bleu</span> <span class="o">=</span> <span class="n">report_bleu</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">report_rouge</span> <span class="o">=</span> <span class="n">report_rouge</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">report_time</span> <span class="o">=</span> <span class="n">report_time</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span> <span class="o">=</span> <span class="n">copy_attn</span>
@@ -435,8 +429,6 @@
             <span class="n">phrase_table</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">phrase_table</span><span class="p">,</span>
             <span class="n">data_type</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">data_type</span><span class="p">,</span>
             <span class="n">verbose</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">verbose</span><span class="p">,</span>
-            <span class="n">report_bleu</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">report_bleu</span><span class="p">,</span>
-            <span class="n">report_rouge</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">report_rouge</span><span class="p">,</span>
             <span class="n">report_time</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">report_time</span><span class="p">,</span>
             <span class="n">copy_attn</span><span class="o">=</span><span class="n">model_opt</span><span class="o">.</span><span class="n">copy_attn</span><span class="p">,</span>
             <span class="n">global_scorer</span><span class="o">=</span><span class="n">global_scorer</span><span class="p">,</span>
@@ -608,12 +600,6 @@
                 <span class="n">msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_report_score</span><span class="p">(</span><span class="s1">&#39;GOLD&#39;</span><span class="p">,</span> <span class="n">gold_score_total</span><span class="p">,</span>
                                          <span class="n">gold_words_total</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_bleu</span><span class="p">:</span>
-                    <span class="n">msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_report_bleu</span><span class="p">(</span><span class="n">tgt</span><span class="p">)</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_rouge</span><span class="p">:</span>
-                    <span class="n">msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_report_rouge</span><span class="p">(</span><span class="n">tgt</span><span class="p">)</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_time</span><span class="p">:</span>
             <span class="n">total_time</span> <span class="o">=</span> <span class="n">end_time</span> <span class="o">-</span> <span class="n">start_time</span>
@@ -924,30 +910,6 @@
             <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> AVG SCORE: </span><span class="si">%.4f</span><span class="s2">, </span><span class="si">%s</span><span class="s2"> PPL: </span><span class="si">%.4f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
                 <span class="n">name</span><span class="p">,</span> <span class="n">score_total</span> <span class="o">/</span> <span class="n">words_total</span><span class="p">,</span>
                 <span class="n">name</span><span class="p">,</span> <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">score_total</span> <span class="o">/</span> <span class="n">words_total</span><span class="p">)))</span>
-        <span class="k">return</span> <span class="n">msg</span>
-
-    <span class="k">def</span> <span class="nf">_report_bleu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tgt_path</span><span class="p">):</span>
-        <span class="kn">import</span> <span class="nn">subprocess</span>
-        <span class="n">base_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span> <span class="o">+</span> <span class="s2">&quot;/../../..&quot;</span><span class="p">)</span>
-        <span class="c1"># Rollback pointer to the beginning.</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">out_file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">()</span>
-
-        <span class="n">res</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span>
-            <span class="s2">&quot;perl </span><span class="si">%s</span><span class="s2">/tools/multi-bleu.perl </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">base_dir</span><span class="p">,</span> <span class="n">tgt_path</span><span class="p">),</span>
-            <span class="n">stdin</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">out_file</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span>
-        <span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
-
-        <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;&gt;&gt; &quot;</span> <span class="o">+</span> <span class="n">res</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
-        <span class="k">return</span> <span class="n">msg</span>
-
-    <span class="k">def</span> <span class="nf">_report_rouge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tgt_path</span><span class="p">):</span>
-        <span class="kn">import</span> <span class="nn">subprocess</span>
-        <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">msg</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span>
-            <span class="s2">&quot;python </span><span class="si">%s</span><span class="s2">/tools/test_rouge.py -r </span><span class="si">%s</span><span class="s2"> -c STDIN&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">tgt_path</span><span class="p">),</span>
-            <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">stdin</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">out_file</span>
-        <span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">msg</span></div>
 </pre></div>
 
