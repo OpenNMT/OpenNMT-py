@@ -92,8 +92,6 @@ class Translator(object):
         replace_unk (bool): Replace unknown token.
         data_type (str): Source data type.
         verbose (bool): Print/log every translation.
-        report_bleu (bool): Print/log Bleu metric.
-        report_rouge (bool): Print/log Rouge metric.
         report_time (bool): Print/log total time/frequency.
         copy_attn (bool): Use copy attention.
         global_scorer (onmt.translate.GNMTGlobalScorer): Translation
@@ -125,8 +123,6 @@ class Translator(object):
             phrase_table="",
             data_type="text",
             verbose=False,
-            report_bleu=False,
-            report_rouge=False,
             report_time=False,
             copy_attn=False,
             global_scorer=None,
@@ -174,8 +170,6 @@ class Translator(object):
         self.phrase_table = phrase_table
         self.data_type = data_type
         self.verbose = verbose
-        self.report_bleu = report_bleu
-        self.report_rouge = report_rouge
         self.report_time = report_time
 
         self.copy_attn = copy_attn
@@ -258,8 +252,6 @@ class Translator(object):
             phrase_table=opt.phrase_table,
             data_type=opt.data_type,
             verbose=opt.verbose,
-            report_bleu=opt.report_bleu,
-            report_rouge=opt.report_rouge,
             report_time=opt.report_time,
             copy_attn=model_opt.copy_attn,
             global_scorer=global_scorer,
@@ -431,12 +423,6 @@ class Translator(object):
                 msg = self._report_score('GOLD', gold_score_total,
                                          gold_words_total)
                 self._log(msg)
-                if self.report_bleu:
-                    msg = self._report_bleu(tgt)
-                    self._log(msg)
-                if self.report_rouge:
-                    msg = self._report_rouge(tgt)
-                    self._log(msg)
 
         if self.report_time:
             total_time = end_time - start_time
@@ -747,28 +733,4 @@ class Translator(object):
             msg = ("%s AVG SCORE: %.4f, %s PPL: %.4f" % (
                 name, score_total / words_total,
                 name, math.exp(-score_total / words_total)))
-        return msg
-
-    def _report_bleu(self, tgt_path):
-        import subprocess
-        base_dir = os.path.abspath(__file__ + "/../../..")
-        # Rollback pointer to the beginning.
-        self.out_file.seek(0)
-        print()
-
-        res = subprocess.check_output(
-            "perl %s/tools/multi-bleu.perl %s" % (base_dir, tgt_path),
-            stdin=self.out_file, shell=True
-        ).decode("utf-8")
-
-        msg = ">> " + res.strip()
-        return msg
-
-    def _report_rouge(self, tgt_path):
-        import subprocess
-        path = os.path.split(os.path.realpath(__file__))[0]
-        msg = subprocess.check_output(
-            "python %s/tools/test_rouge.py -r %s -c STDIN" % (path, tgt_path),
-            shell=True, stdin=self.out_file
-        ).decode("utf-8").strip()
         return msg
