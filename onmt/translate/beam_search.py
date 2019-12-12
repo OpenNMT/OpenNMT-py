@@ -142,6 +142,7 @@ class BeamSearch(DecodeStrategy):
         # for testing
         return self.select_indices.view(self.batch_size, self.beam_size)\
             .fmod(self.beam_size)
+
     @property
     def batch_offset(self):
         return self._batch_offset
