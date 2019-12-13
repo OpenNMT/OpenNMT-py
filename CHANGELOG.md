@@ -5,10 +5,20 @@
 ## [Unreleased]
 ### Fixes and improvements
 
-## [1.0.0.rc1](https://github.com/OpenNMT/OpenNMT-py/tree/1.0.0.rc1) (2019-10-01)
+## [1.0.0](https://github.com/OpenNMT/OpenNMT-py/tree/1.0.0) (2019-10-01)
+### New features
+* Implementation of "Jointly Learning to Align & Translate with Transformer" (@Zenglinxiao)
+
+### Fixes and improvements
+* Add nbest support to REST server (@Zenglinxiao)
+* Merge greedy and beam search codepaths (@Zenglinxiao)
+* Fix "block ngram repeats" (@KaijuML, @pltrdy)
+* Small fixes, some more docs
+
+## [1.0.0.rc2](https://github.com/OpenNMT/OpenNMT-py/tree/1.0.0.rc1) (2019-10-01)
 * Fix Apex / FP16 training (Apex new API is buggy)
-* Multithread preprocessing way faster (Thanks François Hernandez)
-* Pip Installation v1.0.0.rc1 (thanks Paul Tardy)
+* Multithread preprocessing way faster (Thanks @francoishernandez)
+* Pip Installation v1.0.0.rc1 (thanks @pltrdy)
 
 ## [0.9.2](https://github.com/OpenNMT/OpenNMT-py/tree/0.9.2) (2019-09-04)
 * Switch to Pytorch 1.2
