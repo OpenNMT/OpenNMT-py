@@ -113,27 +113,6 @@ class DecodeStrategy(object):
             self.is_finished.fill_(1)
 
     def block_ngram_repeats(self, log_probs):
-        cur_len = len(self)
-        if self.block_ngram_repeat > 0 and cur_len > 1:
-            for path_idx in range(self.alive_seq.shape[0]):
-                # skip BOS
-                hyp = self.alive_seq[path_idx, 1:]
-                ngrams = set()
-                fail = False
-                gram = []
-                for i in range(cur_len - 1):
-                    # Last n tokens, n = block_ngram_repeat
-                    gram = (gram + [hyp[i].item()])[-self.block_ngram_repeat:]
-                    # skip the blocking if any token in gram is excluded
-                    if set(gram) & self.exclusion_tokens:
-                        continue
-                    if tuple(gram) in ngrams:
-                        fail = True
-                    ngrams.add(tuple(gram))
-                if fail:
-                    log_probs[path_idx] = -10e20
-
-    def block_ngram_repeats_efficient(self, log_probs):
         """
         We prevent the beam from going in any direction that would repeat any
         ngram of size <block_ngram_repeat> more thant once.
@@ -214,7 +193,7 @@ class DecodeStrategy(object):
         raise NotImplementedError()
 
     def update_finished(self):
-        """DecodeStrategy subclasses should override :func:`update_finished()`.)
+        """DecodeStrategy subclasses should override :func:`update_finished()`.
 
         ``update_finished`` is used to update ``self.predictions``,
         ``self.scores``, and other "output" attributes.

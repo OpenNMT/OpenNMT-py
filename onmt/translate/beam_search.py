@@ -166,8 +166,6 @@ class BeamSearch(DecodeStrategy):
         # Multiply probs by the beam probability.
         log_probs += self.topk_log_probs.view(_B * self.beam_size, 1)
 
-        # self.block_ngram_repeats(log_probs)
-
         # if the sequence ends now, then the penalty is the current
         # length + 1, to include the EOS token
         length_penalty = self.global_scorer.length_penalty(
@@ -176,7 +174,7 @@ class BeamSearch(DecodeStrategy):
         curr_scores = log_probs / length_penalty
 
         # Avoid any direction that would repeat unwanted ngrams
-        self.block_ngram_repeats_efficient(curr_scores)
+        self.block_ngram_repeats(curr_scores)
 
         # Flatten probs into a list of possibilities.
         curr_scores = curr_scores.reshape(_B, self.beam_size * vocab_size)
