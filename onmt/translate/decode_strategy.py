@@ -73,7 +73,11 @@ class DecodeStrategy(object):
 
         self.min_length = min_length
         self.max_length = max_length
+
         self.block_ngram_repeat = block_ngram_repeat
+        n_paths = batch_size * parallel_paths
+        self.forbidden_tokens = [dict() for _ in range(n_paths)]
+
         self.exclusion_tokens = exclusion_tokens
         self.return_attention = return_attention
 
@@ -109,25 +113,75 @@ class DecodeStrategy(object):
             self.is_finished.fill_(1)
 
     def block_ngram_repeats(self, log_probs):
-        cur_len = len(self)
-        if self.block_ngram_repeat > 0 and cur_len > 1:
-            for path_idx in range(self.alive_seq.shape[0]):
-                # skip BOS
-                hyp = self.alive_seq[path_idx, 1:]
-                ngrams = set()
-                fail = False
-                gram = []
-                for i in range(cur_len - 1):
-                    # Last n tokens, n = block_ngram_repeat
-                    gram = (gram + [hyp[i].item()])[-self.block_ngram_repeat:]
-                    # skip the blocking if any token in gram is excluded
-                    if set(gram) & self.exclusion_tokens:
-                        continue
-                    if tuple(gram) in ngrams:
-                        fail = True
-                    ngrams.add(tuple(gram))
-                if fail:
-                    log_probs[path_idx] = -10e20
+        """
+        We prevent the beam from going in any direction that would repeat any
+        ngram of size <block_ngram_repeat> more thant once.
+
+        The way we do it: we maintain a list of all ngrams of size
+        <block_ngram_repeat> that is updated each time the beam advances, and
+        manually put any token that would lead to a repeated ngram to 0.
+
+        This improves on the previous version's complexity:
+           - previous version's complexity: batch_size * beam_size * len(self)
+           - current version's complexity: batch_size * beam_size
+
+        This improves on the previous version's accuracy;
+           - Previous version blocks the whole beam, whereas here we only
+            block specific tokens.
+           - Before the translation would fail when all beams contained
+            repeated ngrams. This is sure to never happen here.
+        """
+
+        # we don't block nothing if the user doesn't want it
+        if self.block_ngram_repeat <= 0:
+            return
+
+        # we can't block nothing beam's too short
+        if len(self) < self.block_ngram_repeat:
+            return
+
+        n = self.block_ngram_repeat - 1
+        for path_idx in range(self.alive_seq.shape[0]):
+            # we check paths one by one
+
+            current_ngram = tuple(self.alive_seq[path_idx, -n:].tolist())
+            forbidden_tokens = self.forbidden_tokens[path_idx].get(
+                current_ngram, None)
+            if forbidden_tokens is not None:
+                log_probs[path_idx, list(forbidden_tokens)] = -10e20
+
+    def maybe_update_forbidden_tokens(self):
+        """We complete and reorder the list of forbidden_tokens"""
+
+        # we don't forbid nothing if the user doesn't want it
+        if self.block_ngram_repeat <= 0:
+            return
+
+        # we can't forbid nothing if beam's too short
+        if len(self) < self.block_ngram_repeat:
+            return
+
+        n = self.block_ngram_repeat
+
+        forbidden_tokens = list()
+        for path_idx, seq in zip(self.select_indices, self.alive_seq):
+
+            # Reordering forbidden_tokens following beam selection
+            # We rebuild a dict to ensure we get the value and not the pointer
+            forbidden_tokens.append(
+                dict(self.forbidden_tokens[path_idx]))
+
+            # Grabing the newly selected tokens and associated ngram
+            current_ngram = tuple(seq[-n:].tolist())
+
+            # skip the blocking if any token in current_ngram is excluded
+            if set(current_ngram) & self.exclusion_tokens:
+                continue
+
+            forbidden_tokens[-1].setdefault(current_ngram[:-1], set())
+            forbidden_tokens[-1][current_ngram[:-1]].add(current_ngram[-1])
+
+        self.forbidden_tokens = forbidden_tokens
 
     def advance(self, log_probs, attn):
         """DecodeStrategy subclasses should override :func:`advance()`.
