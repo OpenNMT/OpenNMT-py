@@ -420,11 +420,47 @@ and, when appropriate, <code class="docutils literal notranslate"><span class="p
 </dd></dl>
 
 <dl class="method">
+<dt id="onmt.translate.DecodeStrategy.block_ngram_repeats">
+<code class="sig-name descname">block_ngram_repeats</code><span class="sig-paren">(</span><em class="sig-param">log_probs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/decode_strategy.html#DecodeStrategy.block_ngram_repeats"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.DecodeStrategy.block_ngram_repeats" title="Permalink to this definition">¶</a></dt>
+<dd><p>We prevent the beam from going in any direction that would repeat any
+ngram of size &lt;block_ngram_repeat&gt; more thant once.</p>
+<p>The way we do it: we maintain a list of all ngrams of size
+&lt;block_ngram_repeat&gt; that is updated each time the beam advances, and
+manually put any token that would lead to a repeated ngram to 0.</p>
+<dl>
+<dt>This improves on the previous version’s complexity:</dt><dd><ul class="simple">
+<li><p>previous version’s complexity: batch_size * beam_size * len(self)</p></li>
+<li><p>current version’s complexity: batch_size * beam_size</p></li>
+</ul>
+</dd>
+<dt>This improves on the previous version’s accuracy;</dt><dd><ul class="simple">
+<li><p>Previous version blocks the whole beam, whereas here we only</p></li>
+</ul>
+<blockquote>
+<div><p>block specific tokens.</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>Before the translation would fail when all beams contained</p></li>
+</ul>
+<blockquote>
+<div><p>repeated ngrams. This is sure to never happen here.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
 <dt id="onmt.translate.DecodeStrategy.initialize">
 <code class="sig-name descname">initialize</code><span class="sig-paren">(</span><em class="sig-param">memory_bank</em>, <em class="sig-param">src_lengths</em>, <em class="sig-param">src_map=None</em>, <em class="sig-param">device=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/decode_strategy.html#DecodeStrategy.initialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.DecodeStrategy.initialize" title="Permalink to this definition">¶</a></dt>
 <dd><p>DecodeStrategy subclasses should override <a class="reference internal" href="#onmt.translate.DecodeStrategy.initialize" title="onmt.translate.DecodeStrategy.initialize"><code class="xref py py-func docutils literal notranslate"><span class="pre">initialize()</span></code></a>.</p>
 <p><cite>initialize</cite> should be called before all actions.
 used to prepare necessary ingredients for decode.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.translate.DecodeStrategy.maybe_update_forbidden_tokens">
+<code class="sig-name descname">maybe_update_forbidden_tokens</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/decode_strategy.html#DecodeStrategy.maybe_update_forbidden_tokens"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.DecodeStrategy.maybe_update_forbidden_tokens" title="Permalink to this definition">¶</a></dt>
+<dd><p>We complete and reorder the list of forbidden_tokens</p>
 </dd></dl>
 
 <dl class="method">

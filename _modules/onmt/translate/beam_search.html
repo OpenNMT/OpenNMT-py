@@ -265,7 +265,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_coverage</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_stepwise_cov_pen</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">stepwise_penalty</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">global_scorer</span><span class="o">.</span><span class="n">has_cov_pen</span><span class="p">)</span>
+            <span class="n">stepwise_penalty</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">global_scorer</span><span class="o">.</span><span class="n">has_cov_pen</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_vanilla_cov_pen</span> <span class="o">=</span> <span class="p">(</span>
             <span class="ow">not</span> <span class="n">stepwise_penalty</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">global_scorer</span><span class="o">.</span><span class="n">has_cov_pen</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_cov_pen</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">global_scorer</span><span class="o">.</span><span class="n">has_cov_pen</span>
@@ -343,15 +343,17 @@
         <span class="c1"># Multiply probs by the beam probability.</span>
         <span class="n">log_probs</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">topk_log_probs</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">_B</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">block_ngram_repeats</span><span class="p">(</span><span class="n">log_probs</span><span class="p">)</span>
-
         <span class="c1"># if the sequence ends now, then the penalty is the current</span>
         <span class="c1"># length + 1, to include the EOS token</span>
         <span class="n">length_penalty</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">global_scorer</span><span class="o">.</span><span class="n">length_penalty</span><span class="p">(</span>
             <span class="n">step</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">global_scorer</span><span class="o">.</span><span class="n">alpha</span><span class="p">)</span>
 
-        <span class="c1"># Flatten probs into a list of possibilities.</span>
         <span class="n">curr_scores</span> <span class="o">=</span> <span class="n">log_probs</span> <span class="o">/</span> <span class="n">length_penalty</span>
+
+        <span class="c1"># Avoid any direction that would repeat unwanted ngrams</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">block_ngram_repeats</span><span class="p">(</span><span class="n">curr_scores</span><span class="p">)</span>
+
+        <span class="c1"># Flatten probs into a list of possibilities.</span>
         <span class="n">curr_scores</span> <span class="o">=</span> <span class="n">curr_scores</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">_B</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span> <span class="o">*</span> <span class="n">vocab_size</span><span class="p">)</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">topk</span><span class="p">(</span><span class="n">curr_scores</span><span class="p">,</span>  <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
                    <span class="n">out</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">topk_scores</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">topk_ids</span><span class="p">))</span>
@@ -371,6 +373,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">alive_seq</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
             <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">alive_seq</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">select_indices</span><span class="p">),</span>
              <span class="bp">self</span><span class="o">.</span><span class="n">topk_ids</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">_B</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">)],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">maybe_update_forbidden_tokens</span><span class="p">()</span>
+
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_attention</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cov_pen</span><span class="p">:</span>
             <span class="n">current_attn</span> <span class="o">=</span> <span class="n">attn</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">select_indices</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">step</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>

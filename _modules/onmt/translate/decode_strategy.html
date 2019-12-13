@@ -250,7 +250,11 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">min_length</span> <span class="o">=</span> <span class="n">min_length</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_length</span> <span class="o">=</span> <span class="n">max_length</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">block_ngram_repeat</span> <span class="o">=</span> <span class="n">block_ngram_repeat</span>
+        <span class="n">n_paths</span> <span class="o">=</span> <span class="n">batch_size</span> <span class="o">*</span> <span class="n">parallel_paths</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">forbidden_tokens</span> <span class="o">=</span> <span class="p">[</span><span class="nb">dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_paths</span><span class="p">)]</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">exclusion_tokens</span> <span class="o">=</span> <span class="n">exclusion_tokens</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">return_attention</span> <span class="o">=</span> <span class="n">return_attention</span>
 
@@ -285,26 +289,76 @@
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_length</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span><span class="o">.</span><span class="n">fill_</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">block_ngram_repeats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log_probs</span><span class="p">):</span>
-        <span class="n">cur_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_ngram_repeat</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">cur_len</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">path_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alive_seq</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
-                <span class="c1"># skip BOS</span>
-                <span class="n">hyp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">alive_seq</span><span class="p">[</span><span class="n">path_idx</span><span class="p">,</span> <span class="mi">1</span><span class="p">:]</span>
-                <span class="n">ngrams</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-                <span class="n">fail</span> <span class="o">=</span> <span class="kc">False</span>
-                <span class="n">gram</span> <span class="o">=</span> <span class="p">[]</span>
-                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">cur_len</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
-                    <span class="c1"># Last n tokens, n = block_ngram_repeat</span>
-                    <span class="n">gram</span> <span class="o">=</span> <span class="p">(</span><span class="n">gram</span> <span class="o">+</span> <span class="p">[</span><span class="n">hyp</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()])[</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">block_ngram_repeat</span><span class="p">:]</span>
-                    <span class="c1"># skip the blocking if any token in gram is excluded</span>
-                    <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">gram</span><span class="p">)</span> <span class="o">&amp;</span> <span class="bp">self</span><span class="o">.</span><span class="n">exclusion_tokens</span><span class="p">:</span>
-                        <span class="k">continue</span>
-                    <span class="k">if</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">gram</span><span class="p">)</span> <span class="ow">in</span> <span class="n">ngrams</span><span class="p">:</span>
-                        <span class="n">fail</span> <span class="o">=</span> <span class="kc">True</span>
-                    <span class="n">ngrams</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">gram</span><span class="p">))</span>
-                <span class="k">if</span> <span class="n">fail</span><span class="p">:</span>
-                    <span class="n">log_probs</span><span class="p">[</span><span class="n">path_idx</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">10e20</span>
+<div class="viewcode-block" id="DecodeStrategy.block_ngram_repeats"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.DecodeStrategy.block_ngram_repeats">[docs]</a>    <span class="k">def</span> <span class="nf">block_ngram_repeats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log_probs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        We prevent the beam from going in any direction that would repeat any</span>
+<span class="sd">        ngram of size &lt;block_ngram_repeat&gt; more thant once.</span>
+
+<span class="sd">        The way we do it: we maintain a list of all ngrams of size</span>
+<span class="sd">        &lt;block_ngram_repeat&gt; that is updated each time the beam advances, and</span>
+<span class="sd">        manually put any token that would lead to a repeated ngram to 0.</span>
+
+<span class="sd">        This improves on the previous version&#39;s complexity:</span>
+<span class="sd">           - previous version&#39;s complexity: batch_size * beam_size * len(self)</span>
+<span class="sd">           - current version&#39;s complexity: batch_size * beam_size</span>
+
+<span class="sd">        This improves on the previous version&#39;s accuracy;</span>
+<span class="sd">           - Previous version blocks the whole beam, whereas here we only</span>
+<span class="sd">            block specific tokens.</span>
+<span class="sd">           - Before the translation would fail when all beams contained</span>
+<span class="sd">            repeated ngrams. This is sure to never happen here.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># we don&#39;t block nothing if the user doesn&#39;t want it</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_ngram_repeat</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="c1"># we can&#39;t block nothing beam&#39;s too short</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_ngram_repeat</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_ngram_repeat</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">path_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alive_seq</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="c1"># we check paths one by one</span>
+
+            <span class="n">current_ngram</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alive_seq</span><span class="p">[</span><span class="n">path_idx</span><span class="p">,</span> <span class="o">-</span><span class="n">n</span><span class="p">:]</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+            <span class="n">forbidden_tokens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forbidden_tokens</span><span class="p">[</span><span class="n">path_idx</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="n">current_ngram</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">forbidden_tokens</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">log_probs</span><span class="p">[</span><span class="n">path_idx</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">forbidden_tokens</span><span class="p">)]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">10e20</span></div>
+
+<div class="viewcode-block" id="DecodeStrategy.maybe_update_forbidden_tokens"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.DecodeStrategy.maybe_update_forbidden_tokens">[docs]</a>    <span class="k">def</span> <span class="nf">maybe_update_forbidden_tokens</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;We complete and reorder the list of forbidden_tokens&quot;&quot;&quot;</span>
+
+        <span class="c1"># we don&#39;t forbid nothing if the user doesn&#39;t want it</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_ngram_repeat</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="c1"># we can&#39;t forbid nothing if beam&#39;s too short</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_ngram_repeat</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_ngram_repeat</span>
+
+        <span class="n">forbidden_tokens</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">path_idx</span><span class="p">,</span> <span class="n">seq</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">select_indices</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">alive_seq</span><span class="p">):</span>
+
+            <span class="c1"># Reordering forbidden_tokens following beam selection</span>
+            <span class="c1"># We rebuild a dict to ensure we get the value and not the pointer</span>
+            <span class="n">forbidden_tokens</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">forbidden_tokens</span><span class="p">[</span><span class="n">path_idx</span><span class="p">]))</span>
+
+            <span class="c1"># Grabing the newly selected tokens and associated ngram</span>
+            <span class="n">current_ngram</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">seq</span><span class="p">[</span><span class="o">-</span><span class="n">n</span><span class="p">:]</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+
+            <span class="c1"># skip the blocking if any token in current_ngram is excluded</span>
+            <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">current_ngram</span><span class="p">)</span> <span class="o">&amp;</span> <span class="bp">self</span><span class="o">.</span><span class="n">exclusion_tokens</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="n">forbidden_tokens</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">current_ngram</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nb">set</span><span class="p">())</span>
+            <span class="n">forbidden_tokens</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">current_ngram</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">current_ngram</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">forbidden_tokens</span> <span class="o">=</span> <span class="n">forbidden_tokens</span></div>
 
 <div class="viewcode-block" id="DecodeStrategy.advance"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.DecodeStrategy.advance">[docs]</a>    <span class="k">def</span> <span class="nf">advance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log_probs</span><span class="p">,</span> <span class="n">attn</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;DecodeStrategy subclasses should override :func:`advance()`.</span>
