@@ -731,7 +731,7 @@ class Translator(object):
             msg = "%s No words predicted" % (name,)
         else:
             avg_score = score_total / words_total
-            ppl = np.exp(-score_total / words_total)
+            ppl = np.exp(-score_total.item() / words_total)
             msg = ("%s AVG SCORE: %.4f, %s PPL: %.4f" % (
                 name, avg_score,
                 name, ppl))
