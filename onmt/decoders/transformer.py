@@ -13,12 +13,17 @@ from onmt.utils.misc import sequence_mask
 
 class TransformerDecoderLayer(nn.Module):
     """Transformer Decoder layer block in Pre-Norm style.
+    Pre-Norm style is an improvement w.r.t. Original paper's Post-Norm style,
+    providing better converge speed and performance. This is also the actual
+    implementation in tensor2tensor and also avalable in fairseq.
+    See https://tunz.kr/post/4 and :cite:`DeeperTransformer`.
 
     .. mermaid::
 
         graph LR
+        %% "*SubLayer" can be self-attn, src-attn or feed forward block
             A(input) --> B[Norm]
-            B --> C[sublayer]
+            B --> C["*SubLayer"]
             C --> D[Drop]
             D --> E((+))
             A --> E
