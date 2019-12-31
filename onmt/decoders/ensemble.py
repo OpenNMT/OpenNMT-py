@@ -61,7 +61,7 @@ class EnsembleDecoder(DecoderBase):
         dec_outs, attns = zip(*[
             model_decoder(
                 tgt, memory_bank[i],
-                memory_lengths=memory_lengths, step=step)
+                memory_lengths=memory_lengths, step=step, **kwargs)
             for i, model_decoder in enumerate(self.model_decoders)])
         mean_attns = self.combine_attns(attns)
         return EnsembleDecoderOutput(dec_outs), mean_attns
