@@ -912,7 +912,7 @@ of the FNN.</p></li>
 
 <dl class="class">
 <dt id="onmt.decoders.TransformerDecoder">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.decoders.</code><code class="sig-name descname">TransformerDecoder</code><span class="sig-paren">(</span><em class="sig-param">num_layers</em>, <em class="sig-param">d_model</em>, <em class="sig-param">heads</em>, <em class="sig-param">d_ff</em>, <em class="sig-param">copy_attn</em>, <em class="sig-param">self_attn_type</em>, <em class="sig-param">dropout</em>, <em class="sig-param">attention_dropout</em>, <em class="sig-param">embeddings</em>, <em class="sig-param">max_relative_positions</em>, <em class="sig-param">aan_useffn</em>, <em class="sig-param">full_context_alignment</em>, <em class="sig-param">alignment_layer</em>, <em class="sig-param">alignment_heads=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/decoders/transformer.html#TransformerDecoder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.decoders.TransformerDecoder" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.decoders.</code><code class="sig-name descname">TransformerDecoder</code><span class="sig-paren">(</span><em class="sig-param">num_layers</em>, <em class="sig-param">d_model</em>, <em class="sig-param">heads</em>, <em class="sig-param">d_ff</em>, <em class="sig-param">copy_attn</em>, <em class="sig-param">self_attn_type</em>, <em class="sig-param">dropout</em>, <em class="sig-param">attention_dropout</em>, <em class="sig-param">embeddings</em>, <em class="sig-param">max_relative_positions</em>, <em class="sig-param">aan_useffn</em>, <em class="sig-param">full_context_alignment</em>, <em class="sig-param">alignment_layer</em>, <em class="sig-param">alignment_heads</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/decoders/transformer.html#TransformerDecoder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.decoders.TransformerDecoder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.decoders.decoder.DecoderBase</span></code></p>
 <p>The Transformer decoder from “Attention is All You Need”.
 <a class="bibtex reference internal" href="ref.html#dblp-journals-corr-vaswanispujgkp17" id="id9">[VSP+17]</a></p>
@@ -943,8 +943,17 @@ of the FNN.</p></li>
 <li><p><strong>d_ff</strong> (<em>int</em>) – size of the inner FF layer</p></li>
 <li><p><strong>copy_attn</strong> (<em>bool</em>) – if using a separate copy attention</p></li>
 <li><p><strong>self_attn_type</strong> (<em>str</em>) – type of self-attention scaled-dot, average</p></li>
-<li><p><strong>dropout</strong> (<em>float</em>) – dropout parameters</p></li>
+<li><p><strong>dropout</strong> (<em>float</em>) – dropout in residual, self-attn(dot) and feed-forward</p></li>
+<li><p><strong>attention_dropout</strong> (<em>float</em>) – dropout in context_attn (and self-attn(avg))</p></li>
 <li><p><strong>embeddings</strong> (<a class="reference internal" href="#onmt.modules.Embeddings" title="onmt.modules.Embeddings"><em>onmt.modules.Embeddings</em></a>) – embeddings to use, should have positional encodings</p></li>
+<li><p><strong>max_relative_positions</strong> (<em>int</em>) – Max distance between inputs in relative positions representations</p></li>
+<li><p><strong>aan_useffn</strong> (<em>bool</em>) – Turn on the FFN layer in the AAN decoder</p></li>
+<li><p><strong>full_context_alignment</strong> (<em>bool</em>) – whether enable an extra full context decoder forward for alignment</p></li>
+<li><p><strong>alignment_layer</strong> (<em>int</em>) – N° Layer to supervise with for alignment guiding</p></li>
+<li><p><strong>alignment_heads</strong> (<em>int</em>) – <ol class="upperalpha simple" start="14">
+<li><p>of cross attention heads to use for alignment guiding</p></li>
+</ol>
+</p></li>
 </ul>
 </dd>
 </dl>

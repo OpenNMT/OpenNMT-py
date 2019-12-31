@@ -189,21 +189,46 @@
 
 
 <span class="k">class</span> <span class="nc">TransformerDecoderLayer</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Transformer Decoder layer block in Pre-Norm style.</span>
+<span class="sd">    Pre-Norm style is an improvement w.r.t. Original paper&#39;s Post-Norm style,</span>
+<span class="sd">    providing better converge speed and performance. This is also the actual</span>
+<span class="sd">    implementation in tensor2tensor and also avalable in fairseq.</span>
+<span class="sd">    See https://tunz.kr/post/4 and :cite:`DeeperTransformer`.</span>
+
+<span class="sd">    .. mermaid::</span>
+
+<span class="sd">        graph LR</span>
+<span class="sd">        %% &quot;*SubLayer&quot; can be self-attn, src-attn or feed forward block</span>
+<span class="sd">            A(input) --&gt; B[Norm]</span>
+<span class="sd">            B --&gt; C[&quot;*SubLayer&quot;]</span>
+<span class="sd">            C --&gt; D[Drop]</span>
+<span class="sd">            D --&gt; E((+))</span>
+<span class="sd">            A --&gt; E</span>
+<span class="sd">            E --&gt; F(out)</span>
+
+
 <span class="sd">    Args:</span>
-<span class="sd">      d_model (int): the dimension of keys/values/queries in</span>
-<span class="sd">          :class:`MultiHeadedAttention`, also the input size of</span>
-<span class="sd">          the first-layer of the :class:`PositionwiseFeedForward`.</span>
-<span class="sd">      heads (int): the number of heads for MultiHeadedAttention.</span>
-<span class="sd">      d_ff (int): the second-layer of the :class:`PositionwiseFeedForward`.</span>
-<span class="sd">      dropout (float): dropout probability.</span>
-<span class="sd">      self_attn_type (string): type of self-attention scaled-dot, average</span>
+<span class="sd">        d_model (int): the dimension of keys/values/queries in</span>
+<span class="sd">            :class:`MultiHeadedAttention`, also the input size of</span>
+<span class="sd">            the first-layer of the :class:`PositionwiseFeedForward`.</span>
+<span class="sd">        heads (int): the number of heads for MultiHeadedAttention.</span>
+<span class="sd">        d_ff (int): the second-layer of the :class:`PositionwiseFeedForward`.</span>
+<span class="sd">        dropout (float): dropout in residual, self-attn(dot) and feed-forward</span>
+<span class="sd">        attention_dropout (float): dropout in context_attn (and self-attn(avg))</span>
+<span class="sd">        self_attn_type (string): type of self-attention scaled-dot, average</span>
+<span class="sd">        max_relative_positions (int):</span>
+<span class="sd">            Max distance between inputs in relative positions representations</span>
+<span class="sd">        aan_useffn (bool): Turn on the FFN layer in the AAN decoder</span>
+<span class="sd">        full_context_alignment (bool):</span>
+<span class="sd">            whether enable an extra full context decoder forward for alignment</span>
+<span class="sd">        alignment_heads (int):</span>
+<span class="sd">            N. of cross attention heads to use for alignment guiding</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d_model</span><span class="p">,</span> <span class="n">heads</span><span class="p">,</span> <span class="n">d_ff</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">attention_dropout</span><span class="p">,</span>
                  <span class="n">self_attn_type</span><span class="o">=</span><span class="s2">&quot;scaled-dot&quot;</span><span class="p">,</span> <span class="n">max_relative_positions</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                  <span class="n">aan_useffn</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">full_context_alignment</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                 <span class="n">alignment_heads</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+                 <span class="n">alignment_heads</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">TransformerDecoderLayer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="n">self_attn_type</span> <span class="o">==</span> <span class="s2">&quot;scaled-dot&quot;</span><span class="p">:</span>
@@ -225,10 +250,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">alignment_heads</span> <span class="o">=</span> <span class="n">alignment_heads</span>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; Extend _forward for (possibly) multiple decoder pass:</span>
-<span class="sd">        1. Always a default (future masked) decoder forward pass,</span>
-<span class="sd">        2. Possibly a second future aware decoder pass for joint learn</span>
-<span class="sd">            full context alignement.</span>
+        <span class="sd">&quot;&quot;&quot; Extend `_forward` for (possibly) multiple decoder pass:</span>
+<span class="sd">        Always a default (future masked) decoder forward pass,</span>
+<span class="sd">        Possibly a second future aware decoder pass for joint learn</span>
+<span class="sd">        full context alignement, :cite:`garg2019jointly`.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            * All arguments of _forward.</span>
@@ -237,9 +262,9 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            (FloatTensor, FloatTensor, FloatTensor or None):</span>
 
-<span class="sd">            * output ``(batch_size, 1, model_dim)``</span>
-<span class="sd">            * top_attn ``(batch_size, 1, src_len)``</span>
-<span class="sd">            * attn_align ``(batch_size, 1, src_len)`` or None</span>
+<span class="sd">            * output ``(batch_size, T, model_dim)``</span>
+<span class="sd">            * top_attn ``(batch_size, T, src_len)``</span>
+<span class="sd">            * attn_align ``(batch_size, T, src_len)`` or None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">with_align</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;with_align&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
         <span class="n">output</span><span class="p">,</span> <span class="n">attns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_forward</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -250,7 +275,7 @@
                 <span class="c1"># return _, (B, Q_len, K_len)</span>
                 <span class="n">_</span><span class="p">,</span> <span class="n">attns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_forward</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span> <span class="n">future</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">alignment_heads</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">alignment_heads</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">attns</span> <span class="o">=</span> <span class="n">attns</span><span class="p">[:,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">alignment_heads</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
             <span class="c1"># layer average attention across heads, get ``(B, Q, K)``</span>
             <span class="c1"># Case 1: no full_context, no align heads -&gt; layer avg baseline</span>
@@ -262,18 +287,23 @@
     <span class="k">def</span> <span class="nf">_forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_pad_mask</span><span class="p">,</span> <span class="n">tgt_pad_mask</span><span class="p">,</span>
                  <span class="n">layer_cache</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">future</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; A naive forward pass for transformer decoder.</span>
-<span class="sd">        # TODO: change 1 to T as T could be 1 or tgt_len</span>
+
+<span class="sd">        # T: could be 1 in the case of stepwise decoding or tgt_len</span>
+
 <span class="sd">        Args:</span>
-<span class="sd">            inputs (FloatTensor): ``(batch_size, 1, model_dim)``</span>
+<span class="sd">            inputs (FloatTensor): ``(batch_size, T, model_dim)``</span>
 <span class="sd">            memory_bank (FloatTensor): ``(batch_size, src_len, model_dim)``</span>
 <span class="sd">            src_pad_mask (LongTensor): ``(batch_size, 1, src_len)``</span>
-<span class="sd">            tgt_pad_mask (LongTensor): ``(batch_size, 1, 1)``</span>
+<span class="sd">            tgt_pad_mask (LongTensor): ``(batch_size, 1, T)``</span>
+<span class="sd">            layer_cache (dict or None): cached layer info when stepwise decode</span>
+<span class="sd">            step (int or None): stepwise decoding counter</span>
+<span class="sd">            future (bool): If set True, do not apply future_mask.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            (FloatTensor, FloatTensor):</span>
 
-<span class="sd">            * output ``(batch_size, 1, model_dim)``</span>
-<span class="sd">            * attns ``(batch_size, head, 1, src_len)``</span>
+<span class="sd">            * output ``(batch_size, T, model_dim)``</span>
+<span class="sd">            * attns ``(batch_size, head, T, src_len)``</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">dec_mask</span> <span class="o">=</span> <span class="kc">None</span>
@@ -343,22 +373,31 @@
 
 
 <span class="sd">    Args:</span>
-<span class="sd">       num_layers (int): number of encoder layers.</span>
-<span class="sd">       d_model (int): size of the model</span>
-<span class="sd">       heads (int): number of heads</span>
-<span class="sd">       d_ff (int): size of the inner FF layer</span>
-<span class="sd">       copy_attn (bool): if using a separate copy attention</span>
-<span class="sd">       self_attn_type (str): type of self-attention scaled-dot, average</span>
-<span class="sd">       dropout (float): dropout parameters</span>
-<span class="sd">       embeddings (onmt.modules.Embeddings):</span>
-<span class="sd">          embeddings to use, should have positional encodings</span>
+<span class="sd">        num_layers (int): number of encoder layers.</span>
+<span class="sd">        d_model (int): size of the model</span>
+<span class="sd">        heads (int): number of heads</span>
+<span class="sd">        d_ff (int): size of the inner FF layer</span>
+<span class="sd">        copy_attn (bool): if using a separate copy attention</span>
+<span class="sd">        self_attn_type (str): type of self-attention scaled-dot, average</span>
+<span class="sd">        dropout (float): dropout in residual, self-attn(dot) and feed-forward</span>
+<span class="sd">        attention_dropout (float): dropout in context_attn (and self-attn(avg))</span>
+<span class="sd">        embeddings (onmt.modules.Embeddings):</span>
+<span class="sd">            embeddings to use, should have positional encodings</span>
+<span class="sd">        max_relative_positions (int):</span>
+<span class="sd">            Max distance between inputs in relative positions representations</span>
+<span class="sd">        aan_useffn (bool): Turn on the FFN layer in the AAN decoder</span>
+<span class="sd">        full_context_alignment (bool):</span>
+<span class="sd">            whether enable an extra full context decoder forward for alignment</span>
+<span class="sd">        alignment_layer (int): N° Layer to supervise with for alignment guiding</span>
+<span class="sd">        alignment_heads (int):</span>
+<span class="sd">            N. of cross attention heads to use for alignment guiding</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span> <span class="n">d_model</span><span class="p">,</span> <span class="n">heads</span><span class="p">,</span> <span class="n">d_ff</span><span class="p">,</span>
                  <span class="n">copy_attn</span><span class="p">,</span> <span class="n">self_attn_type</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">attention_dropout</span><span class="p">,</span>
                  <span class="n">embeddings</span><span class="p">,</span> <span class="n">max_relative_positions</span><span class="p">,</span> <span class="n">aan_useffn</span><span class="p">,</span>
                  <span class="n">full_context_alignment</span><span class="p">,</span> <span class="n">alignment_layer</span><span class="p">,</span>
-                 <span class="n">alignment_heads</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+                 <span class="n">alignment_heads</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">TransformerDecoder</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span> <span class="o">=</span> <span class="n">embeddings</span>
