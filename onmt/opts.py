@@ -162,7 +162,7 @@ def model_opts(parser):
                    "https://arxiv.org/abs/1909.02074")
     group.add('--alignment_layer', '-alignment_layer', type=int, default=-3,
               help='Layer number which has to be supervised.')
-    group.add('--alignment_heads', '-alignment_heads', type=int, default=None,
+    group.add('--alignment_heads', '-alignment_heads', type=int, default=0,
               help='N. of cross attention heads per layer to supervised with')
     group.add('--full_context_alignment', '-full_context_alignment',
               action="store_true",

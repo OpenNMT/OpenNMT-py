@@ -12,21 +12,46 @@ from onmt.utils.misc import sequence_mask
 
 
 class TransformerDecoderLayer(nn.Module):
-    """
+    """Transformer Decoder layer block in Pre-Norm style.
+    Pre-Norm style is an improvement w.r.t. Original paper's Post-Norm style,
+    providing better converge speed and performance. This is also the actual
+    implementation in tensor2tensor and also avalable in fairseq.
+    See https://tunz.kr/post/4 and :cite:`DeeperTransformer`.
+
+    .. mermaid::
+
+        graph LR
+        %% "*SubLayer" can be self-attn, src-attn or feed forward block
+            A(input) --> B[Norm]
+            B --> C["*SubLayer"]
+            C --> D[Drop]
+            D --> E((+))
+            A --> E
+            E --> F(out)
+
+
     Args:
-      d_model (int): the dimension of keys/values/queries in
-          :class:`MultiHeadedAttention`, also the input size of
-          the first-layer of the :class:`PositionwiseFeedForward`.
-      heads (int): the number of heads for MultiHeadedAttention.
-      d_ff (int): the second-layer of the :class:`PositionwiseFeedForward`.
-      dropout (float): dropout probability.
-      self_attn_type (string): type of self-attention scaled-dot, average
+        d_model (int): the dimension of keys/values/queries in
+            :class:`MultiHeadedAttention`, also the input size of
+            the first-layer of the :class:`PositionwiseFeedForward`.
+        heads (int): the number of heads for MultiHeadedAttention.
+        d_ff (int): the second-layer of the :class:`PositionwiseFeedForward`.
+        dropout (float): dropout in residual, self-attn(dot) and feed-forward
+        attention_dropout (float): dropout in context_attn (and self-attn(avg))
+        self_attn_type (string): type of self-attention scaled-dot, average
+        max_relative_positions (int):
+            Max distance between inputs in relative positions representations
+        aan_useffn (bool): Turn on the FFN layer in the AAN decoder
+        full_context_alignment (bool):
+            whether enable an extra full context decoder forward for alignment
+        alignment_heads (int):
+            N. of cross attention heads to use for alignment guiding
     """
 
     def __init__(self, d_model, heads, d_ff, dropout, attention_dropout,
                  self_attn_type="scaled-dot", max_relative_positions=0,
                  aan_useffn=False, full_context_alignment=False,
-                 alignment_heads=None):
+                 alignment_heads=0):
         super(TransformerDecoderLayer, self).__init__()
 
         if self_attn_type == "scaled-dot":
@@ -48,10 +73,10 @@ class TransformerDecoderLayer(nn.Module):
         self.alignment_heads = alignment_heads
 
     def forward(self, *args, **kwargs):
-        """ Extend _forward for (possibly) multiple decoder pass:
-        1. Always a default (future masked) decoder forward pass,
-        2. Possibly a second future aware decoder pass for joint learn
-            full context alignement.
+        """ Extend `_forward` for (possibly) multiple decoder pass:
+        Always a default (future masked) decoder forward pass,
+        Possibly a second future aware decoder pass for joint learn
+        full context alignement, :cite:`garg2019jointly`.
 
         Args:
             * All arguments of _forward.
@@ -60,9 +85,9 @@ class TransformerDecoderLayer(nn.Module):
         Returns:
             (FloatTensor, FloatTensor, FloatTensor or None):
 
-            * output ``(batch_size, 1, model_dim)``
-            * top_attn ``(batch_size, 1, src_len)``
-            * attn_align ``(batch_size, 1, src_len)`` or None
+            * output ``(batch_size, T, model_dim)``
+            * top_attn ``(batch_size, T, src_len)``
+            * attn_align ``(batch_size, T, src_len)`` or None
         """
         with_align = kwargs.pop('with_align', False)
         output, attns = self._forward(*args, **kwargs)
@@ -73,7 +98,7 @@ class TransformerDecoderLayer(nn.Module):
                 # return _, (B, Q_len, K_len)
                 _, attns = self._forward(*args, **kwargs, future=True)
 
-            if self.alignment_heads is not None:
+            if self.alignment_heads > 0:
                 attns = attns[:, :self.alignment_heads, :, :].contiguous()
             # layer average attention across heads, get ``(B, Q, K)``
             # Case 1: no full_context, no align heads -> layer avg baseline
@@ -85,18 +110,23 @@ class TransformerDecoderLayer(nn.Module):
     def _forward(self, inputs, memory_bank, src_pad_mask, tgt_pad_mask,
                  layer_cache=None, step=None, future=False):
         """ A naive forward pass for transformer decoder.
-        # TODO: change 1 to T as T could be 1 or tgt_len
+
+        # T: could be 1 in the case of stepwise decoding or tgt_len
+
         Args:
-            inputs (FloatTensor): ``(batch_size, 1, model_dim)``
+            inputs (FloatTensor): ``(batch_size, T, model_dim)``
             memory_bank (FloatTensor): ``(batch_size, src_len, model_dim)``
             src_pad_mask (LongTensor): ``(batch_size, 1, src_len)``
-            tgt_pad_mask (LongTensor): ``(batch_size, 1, 1)``
+            tgt_pad_mask (LongTensor): ``(batch_size, 1, T)``
+            layer_cache (dict or None): cached layer info when stepwise decode
+            step (int or None): stepwise decoding counter
+            future (bool): If set True, do not apply future_mask.
 
         Returns:
             (FloatTensor, FloatTensor):
 
-            * output ``(batch_size, 1, model_dim)``
-            * attns ``(batch_size, head, 1, src_len)``
+            * output ``(batch_size, T, model_dim)``
+            * attns ``(batch_size, head, T, src_len)``
 
         """
         dec_mask = None
@@ -166,22 +196,31 @@ class TransformerDecoder(DecoderBase):
 
 
     Args:
-       num_layers (int): number of encoder layers.
-       d_model (int): size of the model
-       heads (int): number of heads
-       d_ff (int): size of the inner FF layer
-       copy_attn (bool): if using a separate copy attention
-       self_attn_type (str): type of self-attention scaled-dot, average
-       dropout (float): dropout parameters
-       embeddings (onmt.modules.Embeddings):
-          embeddings to use, should have positional encodings
+        num_layers (int): number of encoder layers.
+        d_model (int): size of the model
+        heads (int): number of heads
+        d_ff (int): size of the inner FF layer
+        copy_attn (bool): if using a separate copy attention
+        self_attn_type (str): type of self-attention scaled-dot, average
+        dropout (float): dropout in residual, self-attn(dot) and feed-forward
+        attention_dropout (float): dropout in context_attn (and self-attn(avg))
+        embeddings (onmt.modules.Embeddings):
+            embeddings to use, should have positional encodings
+        max_relative_positions (int):
+            Max distance between inputs in relative positions representations
+        aan_useffn (bool): Turn on the FFN layer in the AAN decoder
+        full_context_alignment (bool):
+            whether enable an extra full context decoder forward for alignment
+        alignment_layer (int): N° Layer to supervise with for alignment guiding
+        alignment_heads (int):
+            N. of cross attention heads to use for alignment guiding
     """
 
     def __init__(self, num_layers, d_model, heads, d_ff,
                  copy_attn, self_attn_type, dropout, attention_dropout,
                  embeddings, max_relative_positions, aan_useffn,
                  full_context_alignment, alignment_layer,
-                 alignment_heads=None):
+                 alignment_heads):
         super(TransformerDecoder, self).__init__()
 
         self.embeddings = embeddings
