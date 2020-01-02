@@ -5,7 +5,7 @@ from torch.nn.utils import clip_grad_norm_
 import operator
 import functools
 from copy import copy
-from math import sqrt
+from math import sqrt, cos, pi
 import types
 import importlib
 from onmt.utils.misc import fn_args
@@ -55,6 +55,15 @@ def build_torch_optimizer(model, opt):
             lr=opt.learning_rate,
             betas=betas,
             eps=1e-9)
+    elif opt.optim == 'bertadam':
+        optimizer = AdamW(
+            params,
+            lr=opt.learning_rate,
+            betas=betas,
+            eps=1e-9,
+            amsgrad=False,
+            correct_bias=False,
+            weight_decay=0.01)
     elif opt.optim == 'sparseadam':
         dense = []
         sparse = []
@@ -123,6 +132,33 @@ def make_learning_rate_decay_fn(opt):
             rate=opt.learning_rate_decay,
             decay_steps=opt.decay_steps,
             start_step=opt.start_decay_steps)
+    elif opt.decay_method == 'linear':
+        return functools.partial(
+            linear_decay,
+            warmup_steps=opt.warmup_steps,
+            total_steps=opt.train_steps)
+    elif opt.decay_method == 'linearconst':
+        return functools.partial(
+            linear_decay,
+            warmup_steps=opt.warmup_steps)
+    elif opt.decay_method == 'cosine':
+        return functools.partial(
+            cosine_decay,
+            warmup_steps=opt.warmup_steps,
+            total_steps=opt.train_steps,
+            cycles=opt.cycles if opt.cycles is not None else 0.5)
+    elif opt.decay_method == 'cosine_hard_restart':
+        return functools.partial(
+            cosine_hard_restart_decay,
+            warmup_steps=opt.warmup_steps,
+            total_steps=opt.train_steps,
+            cycles=opt.cycles if opt.cycles is not None else 1.0)
+    elif opt.decay_method == 'cosine_warmup_restart':
+        return functools.partial(
+            cosine_warmup_restart_decay,
+            warmup_steps=opt.warmup_steps,
+            total_steps=opt.train_steps,
+            cycles=opt.cycles if opt.cycles is not None else 1.0)
     elif opt.decay_method == 'rsqrt':
         return functools.partial(
             rsqrt_decay, warmup_steps=opt.warmup_steps)
@@ -163,6 +199,77 @@ def exponential_decay(step, rate, decay_steps, start_step=0):
 def rsqrt_decay(step, warmup_steps):
     """Decay based on the reciprocal of the step square root."""
     return 1.0 / sqrt(max(step, warmup_steps))
+
+
+def linear_decay(step, warmup_steps, total_steps):
+    """Linearly increase the lr from 0 to 1 over (0, warmup_steps),
+    Then, linearly decrease the lr from 1 to 0 over (warmup_steps, train_step)
+    """
+    if not 0 <= warmup_steps < total_steps:
+        raise ValueError("Invalid decay: check warmup_step & train_steps")
+    if step < warmup_steps:
+        return step / warmup_steps * 1.0
+    else:
+        return max((total_steps - step) / (total_steps - warmup_steps), 0)
+
+
+def linear_constant_decay(step, warmup_steps):
+    """Linearly increase the lr from 0 to 1 over (0, warmup_steps),
+    Then, keep constant.
+    """
+    if step < warmup_steps:
+        return step / warmup_steps * 1.0
+    return 1.0
+
+
+def cosine_decay(step, warmup_steps, total_steps, cycles=0.5):
+    """Linearly increase the lr from 0 to 1 over (0, warmup_steps),
+    Then, decrease lr from 1 to 0 over (warmup_steps, train_step)
+    following cosine curve.
+    """
+
+    if not 0 <= warmup_steps < total_steps:
+        raise ValueError("Invalid decay: check warmup_step & train_steps")
+    if step < warmup_steps:
+        return step / warmup_steps * 1.0
+    else:
+        progress = (step - warmup_steps) / (total_steps - warmup_steps)
+        return 0.5 * (1 + cos(pi * cycles * 2 * progress))
+
+
+def cosine_hard_restart_decay(step, warmup_steps, total_steps, cycles=1.0):
+    """Linearly increase the lr from 0 to 1 over (0, warmup_steps),
+    Then, decrease the lr from 1 over (warmup_steps, train_step)
+    following cosine curve.
+    If `cycles` is different from default(1.0), learning rate follows
+    `cycles` times a cosine decaying learning rate (with hard restarts).
+    """
+    assert(cycles >= 1.0)
+    if not 0 <= warmup_steps < total_steps:
+        raise ValueError("Invalid decay: check warmup_step & train_steps")
+    if step < warmup_steps:
+        return step / warmup_steps * 1.0
+    else:
+        progress = (step - warmup_steps) / (total_steps - warmup_steps)
+        return 0.5 * (1 + cos(pi * ((cycles * progress) % 1)))
+
+
+def cosine_warmup_restart_decay(step, warmup_steps, total_steps, cycles=1.0):
+    """Linearly increase the lr from 0 to 1 over (0, warmup_steps),
+    Then, decrease the lr from 1 to 0 over (warmup_steps, train_step)
+    following cosine curve.
+    """
+    if not 0 <= warmup_steps < total_steps:
+        raise ValueError("Invalid decay: check warmup_step & train_steps")
+    if not cycles * warmup_steps / total_steps < 1.0:
+        raise ValueError("Invalid decay: Error for decay! Check cycles!")
+    warmup_ratio = warmup_steps * cycles / total_steps
+    progress = (step * cycles / total_steps) % 1
+    if progress < warmup_ratio:
+        return progress / warmup_ratio
+    else:
+        progress = (progress - warmup_ratio) / (1 - warmup_ratio)
+        return 0.5 * (1 + cos(pi * progress))
 
 
 class MultipleOptimizer(object):
@@ -252,7 +359,8 @@ class Optimizer(object):
         optim_opt = opt
         optim_state_dict = None
 
-        if opt.train_from and checkpoint is not None:
+        if opt.train_from and checkpoint is not None \
+           and 'optim' in checkpoint:
             optim = checkpoint['optim']
             ckpt_opt = checkpoint['opt']
             ckpt_state_dict = {}
@@ -532,6 +640,123 @@ class AdaFactor(torch.optim.Optimizer):
                 if group['weight_decay'] != 0:
                     p.data.add_(-group['weight_decay'] * lr_t, p.data)
 
+        return loss
+
+
+class AdamW(torch.optim.Optimizer):
+    r"""Implements Adam algorithm with weight decay fix, compensate for bias
+    can be turned off (as in BERT) with option correct_bias.
+        Enable not use correct_bias comparing to torch.optim.adamw.
+
+    Args:
+        params (iterable): iterable of parameters to optimize or dicts define
+            parameter groups
+        lr (float): learning rate
+        betas (tuple of float): Adam (beta1, beta2). Default: (0.9, 0.999)
+        eps (float): Adams epsilon. Default: 1e-6
+        amsgrad (bool): whether to use the AMSGrad variant of this algorithm
+            from the paper `On the Convergence of Adam and Beyond`_
+            Default: False.
+        weight_decay (float): Weight decay. Default: 0.01
+        correct_bias (bool): whether to use bias correction. Default: True.
+
+    .. _Adam\: A Method for Stochastic Optimization:
+        https://arxiv.org/abs/1412.6980
+    .. _Decoupled Weight Decay Regularization:
+        https://arxiv.org/abs/1711.05101
+    .. _On the Convergence of Adam and Beyond:
+        https://openreview.net/forum?id=ryQu7f-RZ
+    """
+
+    def __init__(self, params, lr=None, betas=(0.9, 0.999), eps=1e-6,
+                 amsgrad=False, correct_bias=True, weight_decay=0.01):
+        if not 0.0 <= lr:
+            raise ValueError("Invalid learning rate: {}".format(lr) +
+                             " - should be >= 0.0")
+        if not 0.0 <= eps:
+            raise ValueError("Invalid epsilon value: {}".format(eps) +
+                             " - should be >= 0.0")
+        if not 0.0 <= betas[0] < 1.0:
+            raise ValueError("Invalid betas[0] parameter: {}".format(
+                             betas[0]) + " - should be in [0.0, 1.0)")
+        if not 0.0 <= betas[1] < 1.0:
+            raise ValueError("Invalid betas[1] parameter: {}".format(
+                             betas[1]) + " - should be in [0.0, 1.0)")
+        defaults = dict(lr=lr, betas=betas, eps=eps, amsgrad=amsgrad,
+                        correct_bias=correct_bias, weight_decay=weight_decay)
+        super(AdamW, self).__init__(params, defaults)
+
+    def __setstate__(self, state):
+        super(AdamW, self).__setstate__(state)
+        for group in self.param_groups:
+            group.setdefault('amsgrad', False)
+
+    def step(self, closure=None):
+        """Performs a single optimization step.
+
+        Args:
+            closure (callable, optional): A closure that reevaluates the model
+                and returns the loss.
+        """
+        loss = None
+        if closure is not None:
+            loss = closure()
+
+        for group in self.param_groups:
+            for p in group['params']:
+                if p.grad is None:
+                    continue
+                grad = p.grad.data
+                if grad.is_sparse:
+                    raise RuntimeError('Adam: not support sparse gradients,' +
+                                       'please consider SparseAdam instead')
+                amsgrad = group['amsgrad']
+
+                state = self.state[p]
+
+                # State initialization
+                if len(state) == 0:
+                    state['step'] = 0
+                    # Exponential moving average of gradient values
+                    state['exp_avg'] = torch.zeros_like(p.data)
+                    # Exponential moving average of squared gradient values
+                    state['exp_avg_sq'] = torch.zeros_like(p.data)
+                    if amsgrad:
+                        # Maintains max of all exp. moving avg. of sq. grad.
+                        state['max_exp_avg_sq'] = torch.zeros_like(p.data)
+
+                exp_avg, exp_avg_sq = state['exp_avg'], state['exp_avg_sq']
+                if amsgrad:
+                    max_exp_avg_sq = state['max_exp_avg_sq']
+                beta1, beta2 = group['betas']
+
+                state['step'] += 1
+
+                # Decay first and second moment running average coefficient
+                # exp_avg = exp_avg * beta1 + (1-beta1)*grad
+                exp_avg.mul_(beta1).add_(1 - beta1, grad)
+                # exp_avg_sq = exp_avg_sq * beta2 + (1 - beta2)*grad**2
+                exp_avg_sq.mul_(beta2).addcmul_(1 - beta2, grad, grad)
+                if amsgrad:
+                    # Maintains max of all 2nd moment running avg. till now
+                    torch.max(max_exp_avg_sq, exp_avg_sq, out=max_exp_avg_sq)
+                    # Use the max. for normalizing running avg. of gradient
+                    denom = max_exp_avg_sq.sqrt().add_(group['eps'])
+                else:
+                    denom = exp_avg_sq.sqrt().add_(group['eps'])
+
+                step_size = group['lr']
+                # NOTE: AdamW used in Bert has "No bias correction"
+                if group['correct_bias']:
+                    bias_correction1 = 1 - beta1 ** state['step']
+                    bias_correction2 = 1 - beta2 ** state['step']
+                    step_size = (step_size * sqrt(bias_correction2)
+                                 / bias_correction1)
+
+                p.data.addcdiv_(-step_size, exp_avg, denom)
+
+                # Perform correct weight decay(rather than L2)
+                p.data.mul_(1 - group['lr'] * group['weight_decay'])
         return loss
 
 

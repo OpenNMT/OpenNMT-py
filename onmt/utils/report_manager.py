@@ -73,6 +73,8 @@ class ReportMgrBase(object):
                     onmt.utils.Statistics.all_gather_stats(report_stats)
             self._report_training(
                 step, num_steps, learning_rate, report_stats)
+            if isinstance(report_stats, onmt.utils.BertStatistics):
+                return onmt.utils.BertStatistics()
             return onmt.utils.Statistics()
         else:
             return report_stats
@@ -128,7 +130,10 @@ class ReportMgr(ReportMgrBase):
                                    "progress",
                                    learning_rate,
                                    step)
-        report_stats = onmt.utils.Statistics()
+        if isinstance(report_stats, onmt.utils.BertStatistics):
+            report_stats = onmt.utils.BertStatistics()
+        else:
+            report_stats = onmt.utils.Statistics()
 
         return report_stats
 
@@ -138,7 +143,14 @@ class ReportMgr(ReportMgrBase):
         """
         if train_stats is not None:
             self.log('Train perplexity: %g' % train_stats.ppl())
-            self.log('Train accuracy: %g' % train_stats.accuracy())
+            if train_stats.accuracy() is None:
+                assert isinstance(train_stats, onmt.utils.BertStatistics)
+                accuracy = train_stats.sentence_accuracy()
+            else:
+                accuracy = train_stats.accuracy()
+            self.log('Train accuracy: %g' % accuracy)
+            if hasattr(train_stats, 'f1') and train_stats.f1 != 0:
+                self.log('Train F1: %g' % train_stats.f1)
 
             self.maybe_log_tensorboard(train_stats,
                                        "train",
@@ -147,7 +159,14 @@ class ReportMgr(ReportMgrBase):
 
         if valid_stats is not None:
             self.log('Validation perplexity: %g' % valid_stats.ppl())
-            self.log('Validation accuracy: %g' % valid_stats.accuracy())
+            if valid_stats.accuracy() is None:
+                assert isinstance(valid_stats, onmt.utils.BertStatistics)
+                accuracy = valid_stats.sentence_accuracy()
+            else:
+                accuracy = valid_stats.accuracy()
+            self.log('Validation accuracy: %g' % accuracy)
+            if hasattr(valid_stats, 'f1') and valid_stats.f1 != 0:
+                self.log('Validation F1: %g' % valid_stats.f1)
 
             self.maybe_log_tensorboard(valid_stats,
                                        "valid",

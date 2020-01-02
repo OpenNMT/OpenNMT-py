@@ -5,6 +5,7 @@ import torch
 
 import onmt.opts as opts
 from onmt.utils.logging import logger
+from onmt.utils import PRETRAINED_VOCAB_ARCHIVE_MAP
 
 
 class ArgumentParser(cfargparse.ArgumentParser):
@@ -45,6 +46,9 @@ class ArgumentParser(cfargparse.ArgumentParser):
 
         if model_opt.copy_attn_type is None:
             model_opt.copy_attn_type = model_opt.global_attention
+
+        if not hasattr(model_opt, 'is_bert'):
+            model_opt.is_bert = False
 
         if model_opt.alignment_layer is None:
             model_opt.alignment_layer = -2
@@ -91,6 +95,16 @@ class ArgumentParser(cfargparse.ArgumentParser):
 
     @classmethod
     def validate_train_opts(cls, opt):
+        if opt.is_bert:
+            logger.info("WE ARE IN BERT MODE.")
+            if opt.task_type == "none":
+                raise ValueError(
+                    "Downstream task should be chosen when use BERT.")
+            if opt.reuse_embeddings is True:
+                if opt.task_type != "pretraining":
+                    opt.reuse_embeddings = False
+                    logger.warning(
+                        "reuse_embeddings not available for this task.")
         if opt.epochs:
             raise AssertionError(
                   "-epochs is deprecated please use -train_steps.")
@@ -164,3 +178,70 @@ class ArgumentParser(cfargparse.ArgumentParser):
             "Please check path of your src vocab!"
         assert not opt.tgt_vocab or os.path.isfile(opt.tgt_vocab), \
             "Please check path of your tgt vocab!"
+
+    @classmethod
+    def validate_preprocess_bert_opts(cls, opt):
+        assert opt.vocab_model in PRETRAINED_VOCAB_ARCHIVE_MAP.keys(), \
+            "Unsupported Pretrain model '%s'" % (opt.vocab_model)
+        if '-cased' in opt.vocab_model and opt.do_lower_case is True:
+            logger.warning("The pre-trained model you are loading is " +
+                           "cased model, you shouldn't set `do_lower_case`," +
+                           "we turned it off for you.")
+            opt.do_lower_case = False
+        elif '-cased' not in opt.vocab_model and not opt.do_lower_case:
+            logger.warning("The pre-trained model you are loading is " +
+                           "uncased model, you should set `do_lower_case`, " +
+                           "we turned it on for you.")
+            opt.do_lower_case = True
+
+        for filename in opt.data:
+            assert os.path.isfile(filename),\
+                "Please check path of %s" % filename
+
+        if opt.task == "tagging":
+            assert opt.file_type == 'txt' and len(opt.data) == 1,\
+                "For sequence tagging, only single txt file is supported."
+            opt.data = opt.data[0]
+
+            assert len(opt.input_columns) == 1,\
+                "For sequence tagging, only one column for input tokens."
+            opt.input_columns = opt.input_columns[0]
+
+            assert opt.label_column is not None,\
+                "For sequence tagging, label column should be given."
+
+        if opt.task == "classification":
+            if opt.file_type == "csv":
+                assert len(opt.data) == 1,\
+                    "For csv, only single file is needed."
+                opt.data = opt.data[0]
+                assert len(opt.input_columns) in [1, 2],\
+                    "Please indicate colomn of sentence A (and B)"
+                assert opt.label_column is not None,\
+                    "For csv file, label column should be given."
+                if opt.delimiter != '\t':
+                    logger.warning("for csv file, we set delimiter to '\t'")
+                    opt.delimiter = '\t'
+        return opt
+
+    @classmethod
+    def validate_predict_opts(cls, opt):
+        if opt.delimiter is None:
+            if opt.task == 'classification':
+                opt.delimiter = ' ||| '
+            else:
+                opt.delimiter = ' '
+        logger.info("NOTICE: opt.delimiter set to `%s`" % opt.delimiter)
+        assert opt.vocab_model in PRETRAINED_VOCAB_ARCHIVE_MAP.keys(), \
+            "Unsupported Pretrain model '%s'" % (opt.vocab_model)
+        if '-cased' in opt.vocab_model and opt.do_lower_case is True:
+            logger.info("WARNING: The pre-trained model you are loading " +
+                        "is cased model, you shouldn't set `do_lower_case`," +
+                        "we turned it off for you.")
+            opt.do_lower_case = False
+        elif '-cased' not in opt.vocab_model and not opt.do_lower_case:
+            logger.info("WARNING: The pre-trained model you are loading " +
+                        "is uncased model, you should set `do_lower_case`, " +
+                        "we turned it on for you.")
+            opt.do_lower_case = True
+        return opt

@@ -21,18 +21,37 @@ class TransformerEncoderLayer(nn.Module):
         heads (int): the number of head for MultiHeadedAttention.
         d_ff (int): the second-layer of the PositionwiseFeedForward.
         dropout (float): dropout probability(0-1.0).
+        activation (str): activation function to chose from
+                          ['relu', 'gelu']
+        is_bert (bool): default False. When set True,
+                        layer_norm will be performed on the
+                        direct connection of residual block.
     """
 
     def __init__(self, d_model, heads, d_ff, dropout, attention_dropout,
-                 max_relative_positions=0):
+                 max_relative_positions=0, activation='relu', is_bert=False):
         super(TransformerEncoderLayer, self).__init__()
 
         self.self_attn = MultiHeadedAttention(
             heads, d_model, dropout=attention_dropout,
             max_relative_positions=max_relative_positions)
-        self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout)
-        self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
+        self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout,
+                                                    activation, is_bert)
+        self.layer_norm = nn.LayerNorm(
+            d_model, eps=1e-12 if is_bert else 1e-6)
         self.dropout = nn.Dropout(dropout)
+        self.is_bert = is_bert
+
+    def residual(self, output, x):
+        """A Residual connection.
+
+        Official BERT perform residual connection on layer normed input.
+        BERT's layer_norm is done before pass into next block while onmt's
+        layer_norm is performed at the begining.
+        """
+
+        maybe_norm = self.layer_norm(x) if self.is_bert else x
+        return output + maybe_norm
 
     def forward(self, inputs, mask):
         """
@@ -45,10 +64,11 @@ class TransformerEncoderLayer(nn.Module):
 
             * outputs ``(batch_size, src_len, model_dim)``
         """
+
         input_norm = self.layer_norm(inputs)
         context, _ = self.self_attn(input_norm, input_norm, input_norm,
                                     mask=mask, attn_type="self")
-        out = self.dropout(context) + inputs
+        out = self.residual(self.dropout(context), inputs)
         return self.feed_forward(out)
 
     def update_dropout(self, dropout, attention_dropout):

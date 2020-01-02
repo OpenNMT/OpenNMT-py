@@ -7,8 +7,9 @@ from onmt.translate.greedy_search import GreedySearch
 from onmt.translate.penalties import PenaltyBuilder
 from onmt.translate.translation_server import TranslationServer, \
     ServerModelError
+from onmt.translate.predictor import Classifier, Tagger
 
 __all__ = ['Translator', 'Translation', 'BeamSearch',
            'GNMTGlobalScorer', 'TranslationBuilder',
            'PenaltyBuilder', 'TranslationServer', 'ServerModelError',
-           "DecodeStrategy", "GreedySearch"]
+           "DecodeStrategy", "GreedySearch", "Classifier", "Tagger"]

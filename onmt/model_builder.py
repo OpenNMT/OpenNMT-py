@@ -13,20 +13,34 @@ from onmt.encoders import str2enc
 
 from onmt.decoders import str2dec
 
-from onmt.modules import Embeddings, VecEmbedding, CopyGenerator
+from onmt.modules import Embeddings, VecEmbedding, CopyGenerator, \
+    BertEmbeddings
 from onmt.modules.util_class import Cast
 from onmt.utils.misc import use_gpu
 from onmt.utils.logging import logger
 from onmt.utils.parse import ArgumentParser
+
+from onmt.models import BertPreTrainingHeads, ClassificationHead, \
+    TokenGenerationHead, TokenTaggingHead
 
 
 def build_embeddings(opt, text_field, for_encoder=True):
     """
     Args:
         opt: the option in current environment.
-        text_field(TextMultiField): word and feats field.
+        text_field(TextMultiField | Field): word and feats field.
         for_encoder(bool): build Embeddings for encoder or decoder?
     """
+    if opt.is_bert:
+        token_fields_vocab = text_field.vocab
+        vocab_size = len(token_fields_vocab)
+        emb_dim = opt.word_vec_size
+        return BertEmbeddings(
+            vocab_size, emb_dim,
+            dropout=(opt.dropout[0] if type(opt.dropout) is list
+                     else opt.dropout)
+        )
+
     emb_dim = opt.src_word_vec_size if for_encoder else opt.tgt_word_vec_size
 
     if opt.model_type == "vec" and for_encoder:
@@ -71,8 +85,11 @@ def build_encoder(opt, embeddings):
         opt: the option in current environment.
         embeddings (Embeddings): vocab embeddings for this encoder.
     """
-    enc_type = opt.encoder_type if opt.model_type == "text" \
-        or opt.model_type == "vec" else opt.model_type
+    if opt.is_bert:
+        enc_type = 'bert'
+    else:
+        enc_type = opt.encoder_type if opt.model_type == "text" \
+            or opt.model_type == "vec" else opt.model_type
     return str2enc[enc_type].from_opt(opt, embeddings)
 
 
@@ -90,6 +107,7 @@ def build_decoder(opt, embeddings):
 
 def load_test_model(opt, model_path=None):
     if model_path is None:
+        assert hasattr(opt, 'models')
         model_path = opt.models[0]
     checkpoint = torch.load(model_path,
                             map_location=lambda storage, loc: storage)
@@ -129,7 +147,7 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
         gpu_id (int or NoneType): Which GPU to use.
 
     Returns:
-        the NMTModel.
+        the NMTModel or BertEncoder(with generator).
     """
 
     # for back compat when attention_dropout was not defined
@@ -139,7 +157,10 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
         model_opt.attention_dropout = model_opt.dropout
 
     # Build embeddings.
-    if model_opt.model_type == "text" or model_opt.model_type == "vec":
+    if model_opt.is_bert:
+        src_field = fields["tokens"]
+        src_emb = build_embeddings(model_opt, src_field)
+    elif model_opt.model_type == "text" or model_opt.model_type == "vec":
         src_field = fields["src"]
         src_emb = build_embeddings(model_opt, src_field)
     else:
@@ -148,31 +169,32 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
     # Build encoder.
     encoder = build_encoder(model_opt, src_emb)
 
-    # Build decoder.
-    tgt_field = fields["tgt"]
-    tgt_emb = build_embeddings(model_opt, tgt_field, for_encoder=False)
+    if not model_opt.is_bert:
+        # Build decoder.
+        tgt_field = fields["tgt"]
+        tgt_emb = build_embeddings(model_opt, tgt_field, for_encoder=False)
 
-    # Share the embedding matrix - preprocess with share_vocab required.
-    if model_opt.share_embeddings:
-        # src/tgt vocab should be the same if `-share_vocab` is specified.
-        assert src_field.base_field.vocab == tgt_field.base_field.vocab, \
-            "preprocess with -share_vocab if you use share_embeddings"
+        # Share the embedding matrix - preprocess with share_vocab required.
+        if model_opt.share_embeddings:
+            # src/tgt vocab should be the same if `-share_vocab` is specified.
+            assert src_field.base_field.vocab == tgt_field.base_field.vocab, \
+                "preprocess with -share_vocab if you use share_embeddings"
 
-        tgt_emb.word_lut.weight = src_emb.word_lut.weight
+            tgt_emb.word_lut.weight = src_emb.word_lut.weight
 
-    decoder = build_decoder(model_opt, tgt_emb)
+        decoder = build_decoder(model_opt, tgt_emb)
 
-    # Build NMTModel(= encoder + decoder).
     if gpu and gpu_id is not None:
         device = torch.device("cuda", gpu_id)
     elif gpu and not gpu_id:
         device = torch.device("cuda")
     elif not gpu:
         device = torch.device("cpu")
-    model = onmt.models.NMTModel(encoder, decoder)
 
     # Build Generator.
-    if not model_opt.copy_attn:
+    if model_opt.is_bert:
+        generator = build_bert_generator(model_opt, fields, encoder)
+    elif not model_opt.copy_attn:
         if model_opt.generator_function == "sparsemax":
             gen_func = onmt.modules.sparse_activations.LogSparsemax(dim=-1)
         else:
@@ -191,40 +213,62 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
         pad_idx = tgt_base_field.vocab.stoi[tgt_base_field.pad_token]
         generator = CopyGenerator(model_opt.dec_rnn_size, vocab_size, pad_idx)
 
-    # Load the model states from checkpoint or initialize them.
-    if checkpoint is not None:
-        # This preserves backward-compat for models using customed layernorm
-        def fix_key(s):
-            s = re.sub(r'(.*)\.layer_norm((_\d+)?)\.b_2',
-                       r'\1.layer_norm\2.bias', s)
-            s = re.sub(r'(.*)\.layer_norm((_\d+)?)\.a_2',
-                       r'\1.layer_norm\2.weight', s)
-            return s
-
-        checkpoint['model'] = {fix_key(k): v
-                               for k, v in checkpoint['model'].items()}
-        # end of patch for backward compatibility
-
-        model.load_state_dict(checkpoint['model'], strict=False)
-        generator.load_state_dict(checkpoint['generator'], strict=False)
+    if model_opt.is_bert:
+        model = encoder
     else:
-        if model_opt.param_init != 0.0:
-            for p in model.parameters():
-                p.data.uniform_(-model_opt.param_init, model_opt.param_init)
-            for p in generator.parameters():
-                p.data.uniform_(-model_opt.param_init, model_opt.param_init)
-        if model_opt.param_init_glorot:
-            for p in model.parameters():
-                if p.dim() > 1:
-                    xavier_uniform_(p)
-            for p in generator.parameters():
-                if p.dim() > 1:
-                    xavier_uniform_(p)
+        # Build NMTModel(= encoder + decoder).
+        model = onmt.models.NMTModel(encoder, decoder)
+    # Load the model states from checkpoint or initialize them.
+    model_init = {'model': False, 'generator': False}
+    if checkpoint is not None:
+        assert 'model' in checkpoint
+        if not model_opt.is_bert:
+            # This preserves back-compat for models using customed layernorm
+            def fix_key(s):
+                s = re.sub(r'(.*)\.layer_norm((_\d+)?)\.b_2',
+                           r'\1.layer_norm\2.bias', s)
+                s = re.sub(r'(.*)\.layer_norm((_\d+)?)\.a_2',
+                           r'\1.layer_norm\2.weight', s)
+                return s
 
-        if hasattr(model.encoder, 'embeddings'):
+            checkpoint['model'] = {fix_key(k): v
+                                   for k, v in checkpoint['model'].items()}
+            # end of patch for backward compatibility
+        # if model.state_dict().keys() != checkpoint['model'].keys():
+        #     raise ValueError("Checkpoint don't match actual model!")
+        logger.info("Load Model Parameters...")
+        model.load_state_dict(checkpoint['model'], strict=True)
+        model_init['model'] = True
+        if generator.state_dict().keys() == checkpoint['generator'].keys():
+            logger.info("Load generator Parameters...")
+            generator.load_state_dict(checkpoint['generator'], strict=True)
+            model_init['generator'] = True
+
+    for module_name, is_init in model_init.items():
+        if not is_init:
+            logger.info("Initialize {} Parameters...".format(module_name))
+            sub_module = model if module_name == 'model' else generator
+            if model_opt.param_init != 0.0:
+                logger.info('Initialize weights using a uniform distribution')
+                for p in sub_module.parameters():
+                    p.data.uniform_(-model_opt.param_init,
+                                    model_opt.param_init)
+            if model_opt.param_init_normal != 0.0:
+                logger.info('Initialize weights using a normal distribution')
+                normal_std = model_opt.param_init_normal
+                for p in sub_module.parameters():
+                    p.data.normal_(mean=0, std=normal_std)
+            if model_opt.param_init_glorot:
+                logger.info('Glorot initialization')
+                for p in sub_module.parameters():
+                    if p.dim() > 1:
+                        xavier_uniform_(p)
+
+    if checkpoint is None:
+        if hasattr(model, 'encoder') and hasattr(model.encoder, 'embeddings'):
             model.encoder.embeddings.load_pretrained_vectors(
                 model_opt.pre_word_vecs_enc)
-        if hasattr(model.decoder, 'embeddings'):
+        if hasattr(model, 'decoder') and hasattr(model.decoder, 'embeddings'):
             model.decoder.embeddings.load_pretrained_vectors(
                 model_opt.pre_word_vecs_dec)
 
@@ -240,3 +284,39 @@ def build_model(model_opt, opt, fields, checkpoint):
     model = build_base_model(model_opt, fields, use_gpu(opt), checkpoint)
     logger.info(model)
     return model
+
+
+def build_bert_generator(model_opt, fields, bert_encoder):
+    """Main part for transfer learning:
+       set opt.task_type to `pretraining` if want finetuning Bert;
+       set opt.task_type to `classification` if want sentence level task;
+       set opt.task_type to `generation` if want token level task.
+       Both all_encoder_layers and pooled_output will be feed to generator,
+       pretraining task will use the two,
+       while only pooled_output will be used for classification generator;
+       only all_encoder_layers will be used for generation generator
+    """
+    task = model_opt.task_type
+    dropout = model_opt.dropout[0] if type(model_opt.dropout) is list \
+        else model_opt.dropout
+    if task == 'pretraining':
+        generator = BertPreTrainingHeads(
+            bert_encoder.d_model, bert_encoder.embeddings.vocab_size)
+        if model_opt.reuse_embeddings:
+            generator.mask_lm.decode.weight = \
+                bert_encoder.embeddings.word_embeddings.weight
+    elif task == 'generation':
+        generator = TokenGenerationHead(
+            bert_encoder.d_model, bert_encoder.vocab_size)
+        if model_opt.reuse_embeddings:
+            generator.decode.weight = \
+                bert_encoder.embeddings.word_embeddings.weight
+    elif task == 'classification':
+        n_class = len(fields["category"].vocab.stoi)
+        logger.info('Generator of classification with %s class.' % n_class)
+        generator = ClassificationHead(bert_encoder.d_model, n_class, dropout)
+    elif task == 'tagging':
+        n_class = len(fields["token_labels"].vocab.stoi)
+        logger.info('Generator of tagging with %s tag.' % n_class)
+        generator = TokenTaggingHead(bert_encoder.d_model, n_class, dropout)
+    return generator

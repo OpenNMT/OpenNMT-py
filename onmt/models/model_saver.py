@@ -1,6 +1,6 @@
 import os
 import torch
-
+from torchtext.data import Field
 from collections import deque
 from onmt.utils.logging import logger
 
@@ -107,15 +107,29 @@ class ModelSaver(ModelSaverBase):
         # were not originally here.
 
         vocab = deepcopy(self.fields)
-        for side in ["src", "tgt"]:
-            keys_to_pop = []
-            if hasattr(vocab[side], "fields"):
-                unk_token = vocab[side].fields[0][1].vocab.itos[0]
-                for key, value in vocab[side].fields[0][1].vocab.stoi.items():
-                    if value == 0 and key != unk_token:
-                        keys_to_pop.append(key)
-                for key in keys_to_pop:
-                    vocab[side].fields[0][1].vocab.stoi.pop(key, None)
+        for name, field in vocab.items():
+            if isinstance(field, Field):
+                if hasattr(field, "vocab") and \
+                   (field.unk_token is not None):
+                    assert name == 'tokens'
+                    keys_to_pop = []
+                    unk_token = field.unk_token
+                    unk_id = field.vocab.stoi[unk_token]
+                    for key, value in field.vocab.stoi.items():
+                        if value == unk_id and key != unk_token:
+                            keys_to_pop.append(key)
+                    for key in keys_to_pop:
+                        field.vocab.stoi.pop(key, None)
+            else:
+                if hasattr(field, "fields"):
+                    assert name in ["src", "tgt"]
+                    keys_to_pop = []
+                    unk_token = field.fields[0][1].vocab.itos[0]
+                    for key, value in field.fields[0][1].vocab.stoi.items():
+                        if value == 0 and key != unk_token:
+                            keys_to_pop.append(key)
+                    for key in keys_to_pop:
+                        field.fields[0][1].vocab.stoi.pop(key, None)
 
         checkpoint = {
             'model': model_state_dict,

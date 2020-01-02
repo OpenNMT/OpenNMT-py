@@ -51,11 +51,19 @@ def main(opt, device_id, batch_queue=None, semaphore=None):
         logger.info('Loading checkpoint from %s' % opt.train_from)
         checkpoint = torch.load(opt.train_from,
                                 map_location=lambda storage, loc: storage)
-        model_opt = ArgumentParser.ckpt_model_opts(checkpoint["opt"])
-        ArgumentParser.update_model_opts(model_opt)
-        ArgumentParser.validate_model_opts(model_opt)
-        logger.info('Loading vocab from checkpoint at %s.' % opt.train_from)
-        vocab = checkpoint['vocab']
+        if 'opt' in checkpoint:
+            model_opt = ArgumentParser.ckpt_model_opts(checkpoint["opt"])
+            ArgumentParser.update_model_opts(model_opt)
+            ArgumentParser.validate_model_opts(model_opt)
+        else:
+            model_opt = opt
+
+        if 'vocab' in checkpoint:
+            logger.info('Loading vocab from checkpoint at %s.',
+                        opt.train_from)
+            vocab = checkpoint['vocab']
+        else:
+            vocab = torch.load(opt.data + '.vocab.pt')
     else:
         checkpoint = None
         model_opt = opt
@@ -69,23 +77,31 @@ def main(opt, device_id, batch_queue=None, semaphore=None):
     else:
         fields = vocab
 
-    # Report src and tgt vocab sizes, including for features
-    for side in ['src', 'tgt']:
-        f = fields[side]
-        try:
-            f_iter = iter(f)
-        except TypeError:
-            f_iter = [(side, f)]
-        for sn, sf in f_iter:
-            if sf.use_vocab:
-                logger.info(' * %s vocab size = %d' % (sn, len(sf.vocab)))
+    if opt.is_bert:
+        # Report bert tokens vocab sizes, including for features
+        f = fields['tokens']
+        logger.info(' * %s vocab size = %d' % ("BERT", len(f.vocab)))
+    else:
+        # Report src and tgt vocab sizes, including for features
+        for side in ['src', 'tgt']:
+            f = fields[side]
+            try:
+                f_iter = iter(f)
+            except TypeError:
+                f_iter = [(side, f)]
+            for sn, sf in f_iter:
+                if sf.use_vocab:
+                    logger.info(' * %s vocab size = %d' % (sn, len(sf.vocab)))
 
-    # Build model.
     model = build_model(model_opt, opt, fields, checkpoint)
     n_params, enc, dec = _tally_parameters(model)
     logger.info('encoder: %d' % enc)
-    logger.info('decoder: %d' % dec)
+    if opt.is_bert:
+        logger.info('generator: %d' % dec)
+    else:
+        logger.info('decoder: %d' % dec)
     logger.info('* number of parameters: %d' % n_params)
+
     _check_save_model_path(opt)
 
     # Build optimizer.

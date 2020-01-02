@@ -59,6 +59,7 @@ def model_opts(parser):
 
     # Encoder-Decoder Options
     group = parser.add_argument_group('Model- Encoder-Decoder')
+    group.add('--is_bert', '-is_bert', action='store_true')
     group.add('--model_type', '-model_type', default='text',
               choices=['text', 'img', 'audio', 'vec'],
               help="Type of source model to use. Allows "
@@ -151,6 +152,9 @@ def model_opts(parser):
               help='Number of heads for transformer self-attention')
     group.add('--transformer_ff', '-transformer_ff', type=int, default=2048,
               help='Size of hidden transformer feed-forward')
+    group.add('--activation', '-activation', default='relu',
+              choices=['relu', 'gelu'],
+              help='type of activation function used in Bert encoder.')
     group.add('--aan_useffn', '-aan_useffn', action="store_true",
               help='Turn on the FFN layer in the AAN decoder')
 
@@ -334,8 +338,86 @@ def preprocess_opts(parser):
                    "model faster and smaller")
 
 
+def preprocess_bert_opts(parser):
+    """ Pre-procesing options for pretrained model """
+    # Data options
+    group = parser.add_argument_group('Common')
+    group.add('--task', '-task', type=str, required=True,
+              choices=["classification", "tagging"],
+              help="Target task to perform")
+    group.add('--corpus_type', '-corpus_type', type=str, default="train",
+              choices=['train', 'valid'],
+              help="corpus type choose from ['train', 'valid'], " +
+              "Vocab file will be generate if `train`")
+
+    group = parser.add_argument_group('Data')
+    group.add('--file_type', type=str, default="txt", choices=["csv", "txt"],
+              help="input file type. Choose [txt|csv]")
+    group.add('--data', '-data', type=str, nargs='+', default=[],
+              required=True,
+              help="input datas to prepare: [CLS]" +
+              "Single file for csv with column indicate label," +
+              "One file for each class as path/label/file; [TAG]" +
+              "Single file contain (tok, tag) in each line," +
+              "Sentence separated by blank line.")
+    group.add('--skip_head', '-skip_head', action="store_true",
+              help="CSV: If csv file contain head line.")
+    group.add('--do_lower_case', '-lower', action='store_true',
+              help='lowercase data')
+    group.add("--max_seq_len", type=int, default=256,
+              help="Maximum sequence length to keep.")
+    group.add('--save_data', '-save_data', type=str, required=True,
+              help="Output file Prefix for the prepared data")
+
+    group = parser.add_argument_group('Columns')
+    # options for column-like input file with fields seperate by -delimiter
+    group.add('--delimiter', '-delimiter', type=str, default=' ',
+              help="delimiter used in input file for seperate fields.")
+    group.add('--input_columns', type=int, nargs='+', default=[],
+              help="Column where contain sentence A(,B)")
+    group.add('--label_column', type=int, default=None,
+              help="Column where contain label")
+
+    group = parser.add_argument_group('Vocab')
+    group.add('--labels', '-labels', type=str, nargs='+', default=[],
+              help="Candidate labels, will be used to build label vocab. " +
+              "If not given, this will be built from input file.")
+    group.add('--sort_label_vocab', '-sort_label', type=bool, default=True,
+              help="sort label vocab in alphabetic order.")
+    group.add("--vocab_model", "-vm", type=str, default="bert-base-uncased",
+              choices=["bert-base-uncased", "bert-large-uncased",
+                       "bert-base-cased", "bert-large-cased",
+                       "bert-base-multilingual-uncased",
+                       "bert-base-multilingual-cased",
+                       "bert-base-chinese", "bert-base-german-cased",
+                       "bert-large-uncased-whole-word-masking",
+                       "bert-large-cased-whole-word-masking",
+                       "bert-base-cased-finetuned-mrpc"],
+              help="Pretrained BertTokenizer model use to tokenizer text.")
+
+    # Data processing options
+    group = parser.add_argument_group('Random')
+    group.add('--do_shuffle', '-shuffle', action="store_true",
+              help="Shuffle data")
+
+    group = parser.add_argument_group('Logging')
+    group.add('--log_file', '-log_file', type=str, default="",
+              help="Output logs to a file under this path.")
+
+
 def train_opts(parser):
     """ Training and saving options """
+
+    group = parser.add_argument_group('Pretrain-finetuning')
+    group.add('--task_type', '-task_type', type=str, default="none",
+              choices=["none", "pretraining", "classification", "tagging"],
+              help="Downstream task for Bert if is_bert set True"
+                   "Choose from pretraining Bert,"
+                   "use pretrained Bert for classification,"
+                   "use pretrained Bert for token generation.")
+    group.add('--reuse_embeddings', '-reuse_embeddings', type=bool,
+              default=False, help="if reuse embeddings for generator " +
+              "only for generation or pretraining task")
 
     group = parser.add_argument_group('General')
     group.add('--data', '-data', required=True,
@@ -391,6 +473,10 @@ def train_opts(parser):
     group.add('--param_init_glorot', '-param_init_glorot', action='store_true',
               help="Init parameters with xavier_uniform. "
                    "Required for transformer.")
+    group.add('--param_init_normal', '-param_normal', type=float, default=0.0,
+              help="Parameters are initialized over normal distribution "
+              "with (mean=0, std=param_init_normal). Used in BERT with 0.02."
+              "Set value > 0 and param_init 0.0 to activate.")
 
     group.add('--train_from', '-train_from', default='', type=str,
               help="If training from a checkpoint then this is the "
@@ -463,7 +549,7 @@ def train_opts(parser):
               nargs="*", default=None,
               help='Criteria to use for early stopping.')
     group.add('--optim', '-optim', default='sgd',
-              choices=['sgd', 'adagrad', 'adadelta', 'adam',
+              choices=['sgd', 'adagrad', 'adadelta', 'adam', 'bertadam',
                        'sparseadam', 'adafactor', 'fusedadam'],
               help="Optimization method.")
     group.add('--adagrad_accumulator_init', '-adagrad_accumulator_init',
@@ -540,10 +626,14 @@ def train_opts(parser):
               help="Decay every decay_steps")
 
     group.add('--decay_method', '-decay_method', type=str, default="none",
-              choices=['noam', 'noamwd', 'rsqrt', 'none'],
+              choices=['none', 'noam', 'noamwd', 'rsqrt', 'linear',
+                       'linearconst', 'cosine', 'cosine_hard_restart',
+                       'cosine_warmup_restart'],
               help="Use a custom decay rate.")
     group.add('--warmup_steps', '-warmup_steps', type=int, default=4000,
               help="Number of warmup steps for custom decay.")
+    group.add('--cycles', '-cycles', type=int, default=None,
+              help="required for cosine related decay.")
 
     group = parser.add_argument_group('Logging')
     group.add('--report_every', '-report_every', type=int, default=50,
@@ -743,6 +833,66 @@ def translate_opts(parser):
               help="Using grayscale image can training "
                    "model faster and smaller")
 
+
+def predict_opts(parser):
+    """ Prediction [Using Pretrained model] options """
+    group = parser.add_argument_group('Model')
+    group.add("--vocab_model", type=str,
+              default="bert-base-uncased",
+              choices=["bert-base-uncased", "bert-large-uncased",
+                       "bert-base-cased", "bert-large-cased",
+                       "bert-base-multilingual-uncased",
+                       "bert-base-multilingual-cased",
+                       "bert-base-chinese", "bert-base-german-cased",
+                       "bert-large-uncased-whole-word-masking",
+                       "bert-large-cased-whole-word-masking",
+                       "bert-base-cased-finetuned-mrpc"],
+              help="Bert pretrained tokenizer model to use.")
+    group.add("--model", type=str, default=None, required=True,
+              help="Path to Bert model that for predicting.")
+    group.add('--task', type=str, default=None, required=True,
+              choices=["classification", "tagging"],
+              help="Target task to perform")
+
+    group = parser.add_argument_group('Data')
+    group.add('--data', '-i', type=str, default=None, required=True,
+              help="predicting data for classification / tagging" +
+              "Classification: Sentence1 ||| Sentence2, " +
+              "Tagging: one tokenized sentence a line")
+    group.add("--do_lower_case", action="store_true", help='lowercase data')
+    group.add('--delimiter', '-d', type=str, default=None,
+              help="Delimiter used for seperate sentence/word. " +
+              "Default: ' ||| ' for sentence used in [CLS], " +
+              " ' ' for word used in [TAG].")
+    group.add("--max_seq_len", type=int, default=256,
+              help="max sequence length for prepared data,"
+              "set the limite of position encoding")
+    group.add('--output', '-output', default=None, required=True,
+              help="Path to output the predictions")
+    group.add('--shard_size', '-shard_size', type=int, default=10000,
+              help="Divide data into smaller multiple data files, "
+                   "then build shards, each shard will have "
+                   "opt.shard_size samples except last shard. "
+                   "shard_size=0 means no segmentation "
+                   "shard_size>0 segment data into multiple shards, "
+                   "each shard has shard_size samples")
+
+    group = parser.add_argument_group('Efficiency')
+    group.add('--batch_size', '-batch_size', type=int, default=8,
+              help='Batch size')
+    group.add('--batch_type', '-batch_type', default='sents',
+              choices=["sents", "tokens"],
+              help="Batch grouping for batch_size. Standard "
+                   "is sents. Tokens will do dynamic batching")
+    group.add('--gpu', '-gpu', type=int, default=-1, help="Device to run on")
+    group.add('--seed', '-seed', type=int, default=829, help="Random seed")
+    group.add('--log_file', '-log_file', type=str, default="",
+              help="Output logs to a file under this path.")
+    group.add('--fp32', '-fp32', action='store_true',
+              help="Force the model to be in FP32 "
+                   "because FP16 is very slow on GTX1080(ti).")
+    group.add('--verbose', '-verbose', action="store_true",
+              help='Print scores and predictions for each sentence')
 
 # Copyright 2016 The Chromium Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be

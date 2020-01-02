@@ -8,3 +8,5 @@ pyrouge
 opencv-python
 git+https://github.com/NVIDIA/apex
 pretrainedmodels
+boto3
+sklearn

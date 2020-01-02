@@ -29,8 +29,12 @@ def train(opt):
         logger.info('Loading checkpoint from %s' % opt.train_from)
         checkpoint = torch.load(opt.train_from,
                                 map_location=lambda storage, loc: storage)
-        logger.info('Loading vocab from checkpoint at %s.' % opt.train_from)
-        vocab = checkpoint['vocab']
+        if 'vocab' in checkpoint:
+            logger.info('Loading vocab from checkpoint at %s.'
+                        % opt.train_from)
+            vocab = checkpoint['vocab']
+        else:
+            vocab = torch.load(opt.data + '.vocab.pt')
     else:
         vocab = torch.load(opt.data + '.vocab.pt')
 
@@ -116,19 +120,38 @@ def batch_producer(generator_to_serve, queues, semaphore, opt):
 
     for device_id, q in cycle(enumerate(queues)):
         b.dataset = None
-        if isinstance(b.src, tuple):
-            b.src = tuple([_.to(torch.device(device_id))
-                           for _ in b.src])
+        if opt.is_bert:
+            if isinstance(b.tokens, tuple):
+                b.tokens = tuple([_.to(torch.device(device_id))
+                                 for _ in b.tokens])
+            else:
+                b.tokens = b.tokens.to(torch.device(device_id))
+            b.segment_ids = b.segment_ids.to(torch.device(device_id))
+            if opt.task_type == 'pretraining':
+                b.is_next = b.is_next.to(torch.device(device_id))
+                b.lm_labels_ids = b.lm_labels_ids.to(torch.device(device_id))
+            elif opt.task_type == 'classification':
+                b.category = b.category.to(torch.device(device_id))
+            elif opt.task_type == 'prediction' or opt.task_type == 'tagging':
+                b.token_labels = b.token_labels.to(
+                    torch.device(device_id))
+            else:
+                raise ValueError("task type Error")
+
         else:
-            b.src = b.src.to(torch.device(device_id))
-        b.tgt = b.tgt.to(torch.device(device_id))
-        b.indices = b.indices.to(torch.device(device_id))
-        b.alignment = b.alignment.to(torch.device(device_id)) \
-            if hasattr(b, 'alignment') else None
-        b.src_map = b.src_map.to(torch.device(device_id)) \
-            if hasattr(b, 'src_map') else None
-        b.align = b.align.to(torch.device(device_id)) \
-            if hasattr(b, 'align') else None
+            if isinstance(b.src, tuple):
+                b.src = tuple([_.to(torch.device(device_id))
+                              for _ in b.src])
+            else:
+                b.src = b.src.to(torch.device(device_id))
+            b.tgt = b.tgt.to(torch.device(device_id))
+            b.indices = b.indices.to(torch.device(device_id))
+            b.alignment = b.alignment.to(torch.device(device_id)) \
+                if hasattr(b, 'alignment') else None
+            b.src_map = b.src_map.to(torch.device(device_id)) \
+                if hasattr(b, 'src_map') else None
+            b.align = b.align.to(torch.device(device_id)) \
+                if hasattr(b, 'align') else None
 
         # hack to dodge unpicklable `dict_keys`
         b.fields = list(b.fields)

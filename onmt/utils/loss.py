@@ -10,6 +10,7 @@ import torch.nn.functional as F
 import onmt
 from onmt.modules.sparse_losses import SparsemaxLoss
 from onmt.modules.sparse_activations import LogSparsemax
+from sklearn.metrics import f1_score
 
 
 def build_loss_compute(model, tgt_field, opt, train=True):
@@ -22,46 +23,215 @@ def build_loss_compute(model, tgt_field, opt, train=True):
     for when using a copy mechanism.
     """
     device = torch.device("cuda" if onmt.utils.misc.use_gpu(opt) else "cpu")
-
-    padding_idx = tgt_field.vocab.stoi[tgt_field.pad_token]
-    unk_idx = tgt_field.vocab.stoi[tgt_field.unk_token]
-
-    if opt.lambda_coverage != 0:
-        assert opt.coverage_attn, "--coverage_attn needs to be set in " \
-            "order to use --lambda_coverage != 0"
-
-    if opt.copy_attn:
-        criterion = onmt.modules.CopyGeneratorLoss(
-            len(tgt_field.vocab), opt.copy_attn_force,
-            unk_index=unk_idx, ignore_index=padding_idx
-        )
-    elif opt.label_smoothing > 0 and train:
-        criterion = LabelSmoothingLoss(
-            opt.label_smoothing, len(tgt_field.vocab), ignore_index=padding_idx
-        )
-    elif isinstance(model.generator[-1], LogSparsemax):
-        criterion = SparsemaxLoss(ignore_index=padding_idx, reduction='sum')
+    if opt.is_bert:
+        if tgt_field.pad_token is not None:
+            if tgt_field.use_vocab:
+                padding_idx = tgt_field.vocab.stoi[tgt_field.pad_token]
+            else:  # target is pre-numerized: -1 for unmasked token in mlm
+                padding_idx = tgt_field.pad_token
+            criterion = nn.NLLLoss(ignore_index=padding_idx, reduction='mean')
+        else:  # sentence level
+            criterion = nn.NLLLoss(reduction='mean')
+        task = opt.task_type
+        compute = BertLoss(criterion, task)
     else:
-        criterion = nn.NLLLoss(ignore_index=padding_idx, reduction='sum')
+        assert isinstance(model, onmt.models.NMTModel)
+        padding_idx = tgt_field.vocab.stoi[tgt_field.pad_token]
+        unk_idx = tgt_field.vocab.stoi[tgt_field.unk_token]
+        if opt.lambda_coverage != 0:
+            assert opt.coverage_attn, "--coverage_attn needs to be set in " \
+                "order to use --lambda_coverage != 0"
+        if opt.copy_attn:
+            criterion = onmt.modules.CopyGeneratorLoss(
+                len(tgt_field.vocab), opt.copy_attn_force,
+                unk_index=unk_idx, ignore_index=padding_idx
+            )
+        elif opt.label_smoothing > 0 and train:
+            criterion = LabelSmoothingLoss(opt.label_smoothing,
+                                           len(tgt_field.vocab),
+                                           ignore_index=padding_idx)
+        elif isinstance(model.generator[-1], LogSparsemax):
+            criterion = SparsemaxLoss(ignore_index=padding_idx,
+                                      reduction='sum')
+        else:
+            criterion = nn.NLLLoss(ignore_index=padding_idx, reduction='sum')
 
-    # if the loss function operates on vectors of raw logits instead of
-    # probabilities, only the first part of the generator needs to be
-    # passed to the NMTLossCompute. At the moment, the only supported
-    # loss function of this kind is the sparsemax loss.
-    use_raw_logits = isinstance(criterion, SparsemaxLoss)
-    loss_gen = model.generator[0] if use_raw_logits else model.generator
-    if opt.copy_attn:
-        compute = onmt.modules.CopyGeneratorLossCompute(
-            criterion, loss_gen, tgt_field.vocab, opt.copy_loss_by_seqlength,
-            lambda_coverage=opt.lambda_coverage
-        )
-    else:
-        compute = NMTLossCompute(
-            criterion, loss_gen, lambda_coverage=opt.lambda_coverage,
-            lambda_align=opt.lambda_align)
+        # if the loss function operates on vectors of raw logits instead of
+        # probabilities, only the first part of the generator needs to be
+        # passed to the NMTLossCompute. At the moment, the only supported
+        # loss function of this kind is the sparsemax loss.
+        use_raw_logits = isinstance(criterion, SparsemaxLoss)
+        loss_gen = model.generator[0] if use_raw_logits else model.generator
+        if opt.copy_attn:
+            compute = onmt.modules.CopyGeneratorLossCompute(
+                criterion, loss_gen, tgt_field.vocab,
+                opt.copy_loss_by_seqlength,
+                lambda_coverage=opt.lambda_coverage
+            )
+        else:
+            compute = NMTLossCompute(
+                criterion, loss_gen, lambda_coverage=opt.lambda_coverage,
+                lambda_align=opt.lambda_align)
     compute.to(device)
-
     return compute
+
+
+class BertLoss(nn.Module):
+    """Class for managing BERT loss computation which is reduced by mean.
+
+    Args:
+        criterion (:obj:`nn.NLLLoss`) : module that measures loss
+            between input and target.
+        task (str): BERT downstream task.
+    """
+    def __init__(self, criterion, task):
+        super(BertLoss, self).__init__()
+        self.criterion = criterion
+        self.task = task
+
+    @property
+    def padding_idx(self):
+        return self.criterion.ignore_index
+
+    def _bottle(self, _v):
+        return _v.view(-1, _v.size(2))
+
+    def _stats(self, loss, tokens_scores, tokens_target,
+               sents_scores, sents_target):
+        """
+        Args:
+            loss (:obj:`FloatTensor`): the loss reduced by mean.
+            tokens_scores (:obj:`FloatTensor`): scores for each token
+            tokens_target (:obj:`FloatTensor`): true targets for each token
+            sents_scores (:obj:`FloatTensor`): scores for each sentence
+            sents_target (:obj:`FloatTensor`): true targets for each sentence
+
+        Returns:
+            :obj:`onmt.utils.BertStatistics` : statistics for this batch.
+        """
+        if self.task == 'pretraining':
+            # masked lm task: token level
+            pred_tokens = tokens_scores.argmax(1)  # (B*S, V) -> (B*S)
+            non_padding = tokens_target.ne(self.padding_idx)  # mask: (B*S)
+            tokens_match = pred_tokens.eq(
+                tokens_target).masked_select(non_padding)
+            n_correct_tokens = tokens_match.sum().item()
+            n_tokens = non_padding.sum().item()
+            f1 = 0
+            # next sentence prediction task: sentence level
+            pred_sents = sents_scores.argmax(-1)  # (B, 2) -> (2)
+            n_correct_sents = sents_target.eq(pred_sents).sum().item()
+            n_sentences = len(sents_target)
+
+        elif self.task == 'classification':
+            # token level task: Not valide
+            n_correct_tokens = 0
+            n_tokens = 0
+            f1 = 0
+            # sentence level task:
+            pred_sents = sents_scores.argmax(-1)  # (B, n_label) -> (n_label)
+            n_correct_sents = sents_target.eq(pred_sents).sum().item()
+            n_sentences = len(sents_target)
+
+        elif self.task == 'tagging':
+            # token level task:
+            pred_tokens = tokens_scores.argmax(1)  # (B*S, V) -> (B*S)
+            non_padding = tokens_target.ne(self.padding_idx)  # mask: (B*S)
+            tokens_match = pred_tokens.eq(
+                tokens_target).masked_select(non_padding)
+            n_correct_tokens = tokens_match.sum().item()
+            n_tokens = non_padding.sum().item()
+            # for f1:
+            tokens_target_select = tokens_target.masked_select(non_padding)
+            pred_tokens_select = pred_tokens.masked_select(non_padding)
+            f1 = f1_score(tokens_target_select.cpu(),
+                          pred_tokens_select.cpu(), average="micro")
+
+            # sentence level task: Not valide
+            n_correct_sents = 0
+            n_sentences = 0
+
+        elif self.task == 'generation':
+            # token level task:
+            pred_tokens = tokens_scores.argmax(1)  # (B*S, V) -> (B*S)
+            non_padding = tokens_target.ne(self.padding_idx)  # mask: (B*S)
+            tokens_match = pred_tokens.eq(
+                tokens_target).masked_select(non_padding)
+            n_correct_tokens = tokens_match.sum().item()
+            n_tokens = non_padding.sum().item()
+            f1 = 0
+            # sentence level task: Not valide
+            n_correct_sents = 0
+            n_sentences = 0
+        else:
+            raise ValueError("task %s not available!" % (self.task))
+
+        return onmt.utils.BertStatistics(loss.item(), n_tokens,
+                                         n_correct_tokens, n_sentences,
+                                         n_correct_sents, f1)
+
+    def forward(self, batch, outputs):
+        """
+        Args:
+            batch (Tensor): batch of examples
+            outputs (tuple of Tensor): (seq_class_log_prob:``(B, 2)``,
+                prediction_log_prob:``(B, S, vocab)``)
+
+        Returns:
+            (float, BertStatistics)
+            * total_loss: total loss of input batch reduced by 'mean'.
+            * stats: A statistic object.
+        """
+
+        assert isinstance(outputs, tuple)
+        seq_class_log_prob, prediction_log_prob = outputs
+        if self.task == 'pretraining':
+            assert list(seq_class_log_prob.size()) == [len(batch), 2]
+            # masked lm task: token level(loss mean by number of tokens)
+            gtruth_tokens = batch.lm_labels_ids  # (B, S)
+            bottled_gtruth_tokens = gtruth_tokens.view(-1)  # (B, S)
+            # prediction: (B, S, V) -> (B * S, V)
+            bottled_prediction_log_prob = self._bottle(prediction_log_prob)
+            mask_loss = self.criterion(bottled_prediction_log_prob,
+                                       bottled_gtruth_tokens)
+            # next sentence prediction task: sentence level(mean by sentence)
+            gtruth_sentences = batch.is_next  # (B,)
+            next_loss = self.criterion(seq_class_log_prob, gtruth_sentences)
+            total_loss = next_loss + mask_loss  # total_loss reduced by mean
+
+        elif self.task == 'classification':
+            assert prediction_log_prob is None
+            assert hasattr(batch, 'category')
+            # token level task: Not valide
+            bottled_prediction_log_prob = None
+            bottled_gtruth_tokens = None
+            # sentence level task: loss mean by number of sentences
+            gtruth_sentences = batch.category
+            total_loss = self.criterion(seq_class_log_prob, gtruth_sentences)
+
+        elif self.task == 'tagging' or self.task == 'generation':
+            assert seq_class_log_prob is None
+            assert hasattr(batch, 'token_labels')
+            # token level task: loss mean by number of tokens
+            gtruth_tokens = batch.token_labels  # (B, S)
+            bottled_gtruth_tokens = gtruth_tokens.view(-1)  # (B, S)
+            # prediction: (B, S, V) -> (B * S, V)
+            bottled_prediction_log_prob = self._bottle(prediction_log_prob)
+            total_loss = self.criterion(bottled_prediction_log_prob,
+                                        bottled_gtruth_tokens)
+            # sentence level task: Not valide
+            seq_class_log_prob = None
+            gtruth_sentences = None
+
+        else:
+            raise ValueError("task %s not available!" % (self.task))
+
+        stats = self._stats(total_loss.clone(),
+                            bottled_prediction_log_prob,
+                            bottled_gtruth_tokens,
+                            seq_class_log_prob,
+                            gtruth_sentences)
+        return total_loss, stats
 
 
 class LossComputeBase(nn.Module):
