@@ -2,6 +2,7 @@
 import configargparse
 
 from flask import Flask, jsonify, request
+from waitress import serve
 from onmt.translate import TranslationServer, ServerModelError
 
 STATUS_OK = "ok"
@@ -109,8 +110,7 @@ def start(config_file,
         out['status'] = STATUS_OK
         return jsonify(out)
 
-    app.run(debug=debug, host=host, port=port, use_reloader=False,
-            threaded=True)
+    serve(app, host=host, port=port)
 
 
 def _get_parser():
