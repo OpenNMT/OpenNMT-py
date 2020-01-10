@@ -13,6 +13,8 @@ try:
     from torchvision import transforms
     import cv2
 except ImportError:
+    import traceback
+    traceback.print_exc()
     Image, transforms, cv2 = None, None, None
 
 
