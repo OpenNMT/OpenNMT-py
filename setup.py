@@ -22,12 +22,13 @@ setup(
     install_requires=[
         "six",
         "tqdm~=4.30.0",
-        "torch>=1.2",
+        "torch>=1.3.1",
         "torchtext==0.4.0",
         "future",
         "configargparse",
         "tensorboard>=1.14",
         "flask",
+        "waitress",
         "pyonmttok==1.*;platform_system=='Linux'",
     ],
     entry_points={
