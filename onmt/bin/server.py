@@ -25,7 +25,7 @@ def start(config_file,
         logger = logging.getLogger("main")
         log_format = logging.Formatter("[%(asctime)s %(levelname)s] %(message)s")
         file_handler = RotatingFileHandler("all_requests.log",
-            maxBytes=1000, backupCount=10)
+            maxBytes=1000000, backupCount=10)
         file_handler.setFormatter(log_format)
         logger.addHandler(file_handler)
 
