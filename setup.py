@@ -23,6 +23,7 @@ setup(
         "six",
         "tqdm~=4.30.0",
         "torch>=1.3.1",
+        "torchvision>=0.4.2",
         "torchtext==0.4.0",
         "future",
         "configargparse",
