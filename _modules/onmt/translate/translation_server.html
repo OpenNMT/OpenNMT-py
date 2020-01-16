@@ -410,6 +410,60 @@
 
         <span class="n">set_random_seed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">seed</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">cuda</span><span class="p">)</span>
 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">preprocess_opt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading preprocessor&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">preprocessor</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="k">for</span> <span class="n">function_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">preprocess_opt</span><span class="p">:</span>
+                <span class="n">function</span> <span class="o">=</span> <span class="n">get_function_by_path</span><span class="p">(</span><span class="n">function_path</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">preprocessor</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">function</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading tokenizer&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="s2">&quot;type&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Missing mandatory tokenizer option &#39;type&#39;&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;sentencepiece&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s2">&quot;model&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="s2">&quot;Missing mandatory tokenizer option &#39;model&#39;&quot;</span><span class="p">)</span>
+                <span class="kn">import</span> <span class="nn">sentencepiece</span> <span class="k">as</span> <span class="nn">spm</span>
+                <span class="n">sp</span> <span class="o">=</span> <span class="n">spm</span><span class="o">.</span><span class="n">SentencePieceProcessor</span><span class="p">()</span>
+                <span class="n">model_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_root</span><span class="p">,</span>
+                                          <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span><span class="p">[</span><span class="s1">&#39;model&#39;</span><span class="p">])</span>
+                <span class="n">sp</span><span class="o">.</span><span class="n">Load</span><span class="p">(</span><span class="n">model_path</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span> <span class="o">=</span> <span class="n">sp</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;pyonmttok&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s2">&quot;params&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="s2">&quot;Missing mandatory tokenizer option &#39;params&#39;&quot;</span><span class="p">)</span>
+                <span class="kn">import</span> <span class="nn">pyonmttok</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span><span class="p">[</span><span class="s2">&quot;mode&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span><span class="p">[</span><span class="s2">&quot;mode&quot;</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">mode</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="c1"># load can be called multiple times: modify copy</span>
+                <span class="n">tokenizer_params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">])</span>
+                <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;path&quot;</span><span class="p">):</span>
+                        <span class="n">tokenizer_params</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">model_root</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+                <span class="n">tokenizer</span> <span class="o">=</span> <span class="n">pyonmttok</span><span class="o">.</span><span class="n">Tokenizer</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span>
+                                                <span class="o">**</span><span class="n">tokenizer_params</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span> <span class="o">=</span> <span class="n">tokenizer</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid value for tokenizer type&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">postprocess_opt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading postprocessor&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">postprocessor</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="k">for</span> <span class="n">function_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">postprocess_opt</span><span class="p">:</span>
+                <span class="n">function</span> <span class="o">=</span> <span class="n">get_function_by_path</span><span class="p">(</span><span class="n">function_path</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">postprocessor</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">function</span><span class="p">)</span>
+
         <span class="k">if</span> <span class="n">load</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
 
@@ -471,60 +525,6 @@
             <span class="k">raise</span> <span class="n">ServerModelError</span><span class="p">(</span><span class="s2">&quot;Runtime Error: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
 
         <span class="n">timer</span><span class="o">.</span><span class="n">tick</span><span class="p">(</span><span class="s2">&quot;model_loading&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">preprocess_opt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading preprocessor&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">preprocessor</span> <span class="o">=</span> <span class="p">[]</span>
-
-            <span class="k">for</span> <span class="n">function_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">preprocess_opt</span><span class="p">:</span>
-                <span class="n">function</span> <span class="o">=</span> <span class="n">get_function_by_path</span><span class="p">(</span><span class="n">function_path</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">preprocessor</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">function</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading tokenizer&quot;</span><span class="p">)</span>
-
-            <span class="k">if</span> <span class="s2">&quot;type&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;Missing mandatory tokenizer option &#39;type&#39;&quot;</span><span class="p">)</span>
-
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;sentencepiece&#39;</span><span class="p">:</span>
-                <span class="k">if</span> <span class="s2">&quot;model&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                        <span class="s2">&quot;Missing mandatory tokenizer option &#39;model&#39;&quot;</span><span class="p">)</span>
-                <span class="kn">import</span> <span class="nn">sentencepiece</span> <span class="k">as</span> <span class="nn">spm</span>
-                <span class="n">sp</span> <span class="o">=</span> <span class="n">spm</span><span class="o">.</span><span class="n">SentencePieceProcessor</span><span class="p">()</span>
-                <span class="n">model_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_root</span><span class="p">,</span>
-                                          <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span><span class="p">[</span><span class="s1">&#39;model&#39;</span><span class="p">])</span>
-                <span class="n">sp</span><span class="o">.</span><span class="n">Load</span><span class="p">(</span><span class="n">model_path</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span> <span class="o">=</span> <span class="n">sp</span>
-            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;pyonmttok&#39;</span><span class="p">:</span>
-                <span class="k">if</span> <span class="s2">&quot;params&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                        <span class="s2">&quot;Missing mandatory tokenizer option &#39;params&#39;&quot;</span><span class="p">)</span>
-                <span class="kn">import</span> <span class="nn">pyonmttok</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span><span class="p">[</span><span class="s2">&quot;mode&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span><span class="p">[</span><span class="s2">&quot;mode&quot;</span><span class="p">]</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">mode</span> <span class="o">=</span> <span class="kc">None</span>
-                <span class="c1"># load can be called multiple times: modify copy</span>
-                <span class="n">tokenizer_params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">])</span>
-                <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_opt</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                    <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;path&quot;</span><span class="p">):</span>
-                        <span class="n">tokenizer_params</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">model_root</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
-                <span class="n">tokenizer</span> <span class="o">=</span> <span class="n">pyonmttok</span><span class="o">.</span><span class="n">Tokenizer</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span>
-                                                <span class="o">**</span><span class="n">tokenizer_params</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span> <span class="o">=</span> <span class="n">tokenizer</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid value for tokenizer type&quot;</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">postprocess_opt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading postprocessor&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">postprocessor</span> <span class="o">=</span> <span class="p">[]</span>
-
-            <span class="k">for</span> <span class="n">function_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">postprocess_opt</span><span class="p">:</span>
-                <span class="n">function</span> <span class="o">=</span> <span class="n">get_function_by_path</span><span class="p">(</span><span class="n">function_path</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">postprocessor</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">function</span><span class="p">)</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">load_time</span> <span class="o">=</span> <span class="n">timer</span><span class="o">.</span><span class="n">tick</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">reset_unload_timer</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">loading_lock</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
@@ -668,6 +668,7 @@
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">translator</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">cuda</span><span class="p">:</span>
             <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">empty_cache</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stop_unload_timer</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">unload_timer</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">def</span> <span class="nf">stop_unload_timer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
