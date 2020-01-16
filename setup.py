@@ -22,7 +22,7 @@ setup(
     install_requires=[
         "six",
         "tqdm~=4.30.0",
-        "torch>=1.3.1",
+        "torch>=1.4.0",
         "torchtext==0.4.0",
         "future",
         "configargparse",
