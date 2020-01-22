@@ -43,13 +43,10 @@ def build_embeddings(opt, text_field, for_encoder=True):
     word_padding_idx, feat_pad_indices = pad_indices[0], pad_indices[1:]
 
     num_embs = [len(f.vocab) for _, f in text_field]
-    print("NUM EMBS", num_embs)
     num_word_embeddings, num_feat_embeddings = num_embs[0], num_embs[1:]
 
     fix_word_vecs = opt.fix_word_vecs_enc if for_encoder \
         else opt.fix_word_vecs_dec
-
-    print("FIELD", text_field.fields)
 
     emb = Embeddings(
         word_vec_size=emb_dim,
@@ -92,7 +89,6 @@ def build_decoder(opt, embeddings):
     return str2dec[dec_type].from_opt(opt, embeddings)
 
 def build_generator(model_opt, fields):
-    # print(fields['tgt'].fields)
     gen_sizes = [len(field[1].vocab) for field in fields['tgt'].fields]
     if not model_opt.copy_attn:
         if model_opt.generator_function == "sparsemax":
