@@ -13,7 +13,8 @@ from onmt.encoders import str2enc
 
 from onmt.decoders import str2dec
 
-from onmt.modules import Embeddings, VecEmbedding, CopyGenerator
+from onmt.modules import Embeddings, VecEmbedding, \
+                         Generator, CopyGenerator
 from onmt.modules.util_class import Cast
 from onmt.utils.misc import use_gpu
 from onmt.utils.logging import logger
@@ -93,19 +94,12 @@ def build_decoder(opt, embeddings):
 def build_generator(model_opt, fields):
     # print(fields['tgt'].fields)
     gen_sizes = [len(field[1].vocab) for field in fields['tgt'].fields]
-    print(gen_sizes)
-    exit()
     if not model_opt.copy_attn:
         if model_opt.generator_function == "sparsemax":
             gen_func = onmt.modules.sparse_activations.LogSparsemax(dim=-1)
         else:
             gen_func = nn.LogSoftmax(dim=-1)
-        generator = nn.Sequential(
-            nn.Linear(model_opt.dec_rnn_size,
-                      len(fields["tgt"].base_field.vocab)),
-            Cast(torch.float32),
-            gen_func
-        )
+        generator = Generator(model_opt.rnn_size, gen_sizes, gen_func)
         if model_opt.share_decoder_embeddings:
             generator[0].weight = decoder.embeddings.word_lut.weight
     else:
