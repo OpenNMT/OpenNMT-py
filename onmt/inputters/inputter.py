@@ -582,6 +582,26 @@ def _pool(data, batch_size, batch_size_fn, batch_size_multiple,
             yield b
 
 
+class OnmtBatch(torchtext.data.Batch):
+    def __init__(self, data=None, dataset=None, device=None):
+        super(OnmtBatch, self).__init__(data, dataset, device)
+        # we need to shift target features if needed
+        if self.tgt.size(-1) > 1:
+            # tokens: [ len x batch x 1]
+            tokens = self.tgt[:,:,0].unsqueeze(-1)
+            # feats: [ len x batch x num_feats ]
+            feats = self.tgt[:,:,1:]
+            # shift feats one step to the right
+            feats = torch.cat((
+                feats[-1,:,:].unsqueeze(0),
+                feats[:-1,:,:]
+                ))
+            # build back target tensor
+            self.tgt = torch.cat((
+                tokens,
+                feats
+                ), dim=-1)
+
 class OrderedIterator(torchtext.data.Iterator):
 
     def __init__(self,
@@ -627,7 +647,7 @@ class OrderedIterator(torchtext.data.Iterator):
         """
         Extended version of the definition in torchtext.data.Iterator.
         Added yield_raw_example behaviour to yield a torchtext.data.Example
-        instead of a torchtext.data.Batch object.
+        instead of an OnmtBatch object.
         """
         while True:
             self.init_epoch()
@@ -648,7 +668,7 @@ class OrderedIterator(torchtext.data.Iterator):
                 if self.yield_raw_example:
                     yield minibatch[0]
                 else:
-                    yield torchtext.data.Batch(
+                    yield OnmtBatch(
                         minibatch,
                         self.dataset,
                         self.device)
@@ -709,9 +729,9 @@ class MultipleDatasetIterator(object):
                     self.random_shuffler,
                     self.pool_factor):
                 minibatch = sorted(minibatch, key=self.sort_key, reverse=True)
-                yield torchtext.data.Batch(minibatch,
-                                           self.iterables[0].dataset,
-                                           self.device)
+                yield OnmtBatch(minibatch,
+                                self.iterables[0].dataset,
+                                self.device)
 
 
 class DatasetLazyIter(object):
