@@ -677,7 +677,6 @@ class Translator(object):
                 step=step,
                 batch_offset=decode_strategy.batch_offset)
 
-            # print("PROBS", [item.size() for item in log_probs])
             # Note: we may have probs over several features
             decode_strategy.advance(log_probs, attn)
             any_finished = decode_strategy.is_finished.any()
