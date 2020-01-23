@@ -33,15 +33,25 @@ class TranslationBuilder(object):
         self.phrase_table = phrase_table
         self.has_tgt = has_tgt
 
-    def _build_target_tokens(self, src, src_vocab, src_raw, pred, attn):
-        tgt_field = dict(self.fields)["tgt"].base_field
+    def _build_target_tokens(self, src, src_vocab, src_raw, pred, all_feats, attn):
+        # feats need do be shifted back one step to the left
+        all_feats = [list(feat[1:]) + [feat[0]] for feat in all_feats] # TODO find a better way
+        tgt_fields = dict(self.fields)["tgt"]
+        tgt_field = tgt_fields.base_field
         vocab = tgt_field.vocab
+        feats_vocabs = [field.vocab for name, field in tgt_fields.fields[1:]]
         tokens = []
-        for tok in pred:
+        for tok_feats in zip(pred, *all_feats):
+            tok = tok_feats[0]
             if tok < len(vocab):
-                tokens.append(vocab.itos[tok])
+                token = vocab.itos[tok]
             else:
-                tokens.append(src_vocab.itos[tok - len(vocab)])
+                token = src_vocab.itos[tok - len(vocab)]
+            if len(tok_feats) > 1:
+                feats = tok_feats[1:]
+                for feat, fv in zip(feats, feats_vocabs):
+                    token += u"￨" + fv.itos[feat]
+            tokens.append(token)
             if tokens[-1] == tgt_field.eos_token:
                 tokens = tokens[:-1]
                 break
@@ -63,8 +73,9 @@ class TranslationBuilder(object):
                len(translation_batch["predictions"]))
         batch_size = batch.batch_size
 
-        preds, pred_score, attn, align, gold_score, indices = list(zip(
+        preds, feats, pred_score, attn, align, gold_score, indices = list(zip(
             *sorted(zip(translation_batch["predictions"],
+                        translation_batch["features"],
                         translation_batch["scores"],
                         translation_batch["attention"],
                         translation_batch["alignment"],
@@ -96,7 +107,7 @@ class TranslationBuilder(object):
             pred_sents = [self._build_target_tokens(
                 src[:, b] if src is not None else None,
                 src_vocab, src_raw,
-                preds[b][n], attn[b][n])
+                preds[b][n], feats[b][n], attn[b][n])
                 for n in range(self.n_best)]
             gold_sent = None
             if tgt is not None:
