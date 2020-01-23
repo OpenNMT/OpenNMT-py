@@ -586,7 +586,7 @@ class OnmtBatch(torchtext.data.Batch):
     def __init__(self, data=None, dataset=None, device=None):
         super(OnmtBatch, self).__init__(data, dataset, device)
         # we need to shift target features if needed
-        if self.tgt.size(-1) > 1:
+        if hasattr(self, 'tgt') and self.tgt.size(-1) > 1:
             # tokens: [ len x batch x 1]
             tokens = self.tgt[:,:,0].unsqueeze(-1)
             # feats: [ len x batch x num_feats ]
