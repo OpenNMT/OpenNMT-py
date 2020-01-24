@@ -167,9 +167,10 @@ class PrefixTransform(Transform):
         return set(self.prefix)
 
     def apply(self, tpl, group, is_train=True):
-        src, tgt = tpl
+        # src is required, tgt is optional
+        src, tail = tpl[0], tpl[1:]
         src = self.prefix + tuple(src)
-        return src, tgt
+        return (src,) + tail
 
 
 def mix_half(xs, ys):
