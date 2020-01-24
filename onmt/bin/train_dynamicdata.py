@@ -44,10 +44,20 @@ def train(opt):
     dataset_adaptor = DatasetAdaptor(fields)
 
     mixer, group_epochs = build_mixer(data_config, transforms, is_train=True, bucket_size=opt.bucket_size)
-    train_iter = build_dataset_adaptor_iter(mixer, dataset_adaptor, opt, is_train=True)
+    def mb_callback(i):
+        if i % opt.report_every == 0:
+            print('*** mb', i, 'epochs',
+                  {key: ge.epoch for key, ge in group_epochs.items()})
+            for group in transforms:
+                print('*** transform stats ({})'.format(group))
+                for transform in transforms[group]:
+                    transform.stats()
+    train_iter = build_dataset_adaptor_iter(mixer, dataset_adaptor, opt, mb_callback, is_train=True)
 
-    valid_mixer, valid_group_epochs = build_mixer(data_config, transforms, is_train=False, bucket_size=opt.bucket_size)
-    valid_iter = lambda: build_dataset_adaptor_iter(valid_mixer, dataset_adaptor, opt, is_train=False)
+    valid_mixer, valid_group_epochs = build_mixer(data_config, transforms,
+                                                  is_train=False, bucket_size=opt.bucket_size)
+    valid_iter = list(build_dataset_adaptor_iter(valid_mixer, dataset_adaptor, opt,
+                                                 mb_callback=None, is_train=False))
 
     nb_gpu = len(opt.gpu_ranks)
 
@@ -114,14 +124,14 @@ def batch_producer(generator_to_serve, queues, semaphore, opt):
         b = next_batch()
 
 
-def run(opt, device_id, error_queue, batch_queue, semaphore):
+def run(opt, device_id, error_queue, batch_queue, semaphore, valid_iter):
     """ run process """
     try:
         gpu_rank = onmt.utils.distributed.multi_init(opt, device_id)
         if gpu_rank != opt.gpu_ranks[device_id]:
             raise AssertionError("An error occurred in \
                   Distributed initialization")
-        single_main(opt, device_id, batch_queue, semaphore)
+        single_main(opt, device_id, batch_queue, semaphore, valid_iter)
     except KeyboardInterrupt:
         pass  # killed by parent, do nothing
     except Exception:
