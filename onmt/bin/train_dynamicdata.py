@@ -16,7 +16,7 @@ from onmt.dynamicdata.config import read_data_config, verify_shard_config
 from onmt.dynamicdata.transforms import set_train_opts
 from onmt.dynamicdata.vocab import load_fields, load_transforms
 from onmt.dynamicdata.iterators import build_mixer
-from onmt.dynamicdata.dataset import DatasetAdaptor, build_dataset_adaptor_iter
+from onmt.dynamicdata.dataset import DatasetAdaptor, DatasetAdaptorIterator
 
 from itertools import cycle
 
@@ -52,12 +52,12 @@ def train(opt):
                 print('*** transform stats ({})'.format(group))
                 for transform in transforms[group]:
                     transform.stats()
-    train_iter = build_dataset_adaptor_iter(mixer, dataset_adaptor, opt, mb_callback, is_train=True)
+    train_iter = DatasetAdaptorIterator(mixer, dataset_adaptor, opt, mb_callback, is_train=True)
 
     valid_mixer, valid_group_epochs = build_mixer(data_config, transforms,
                                                   is_train=False, bucket_size=opt.bucket_size)
-    valid_iter = list(build_dataset_adaptor_iter(valid_mixer, dataset_adaptor, opt,
-                                                 mb_callback=None, is_train=False))
+    valid_iter = DatasetAdaptorIterator(valid_mixer, dataset_adaptor, opt,
+                                                 mb_callback=None, is_train=False)
 
     nb_gpu = len(opt.gpu_ranks)
 
@@ -73,16 +73,26 @@ def train(opt):
     for device_id in range(nb_gpu):
         q = mp.Queue(opt.queue_size)
         queues += [q]
+        print('before')
         procs.append(mp.Process(target=run, args=(
             opt, device_id, error_queue, q, semaphore,
-            valid_iter if device_id == 0 else None), daemon=True))
+            #valid_iter if device_id == 0 else None),
+            None),
+            daemon=True))
+        print('mid')
         procs[device_id].start()
+        print('after')
         logger.info(" Starting process pid: %d  " % procs[device_id].pid)
         error_handler.add_child(procs[device_id].pid)
+    print('make producer')
+    import pickle
+    pickle.dumps(train_iter)
     producer = mp.Process(target=batch_producer,
                             args=(train_iter, queues, semaphore, opt,),
                             daemon=True)
+    print('mid')
     producer.start()
+    print('after')
     error_handler.add_child(producer.pid)
 
     for p in procs:
@@ -131,7 +141,7 @@ def run(opt, device_id, error_queue, batch_queue, semaphore, valid_iter):
         if gpu_rank != opt.gpu_ranks[device_id]:
             raise AssertionError("An error occurred in \
                   Distributed initialization")
-        single_main(opt, device_id, batch_queue, semaphore, valid_iter)
+        single_main(opt, device_id, batch_queue, semaphore, list(valid_iter))
     except KeyboardInterrupt:
         pass  # killed by parent, do nothing
     except Exception:

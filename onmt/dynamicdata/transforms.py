@@ -191,6 +191,7 @@ def flatten(deep):
 class MorfessorEmStdTransform(Transform):
     def __init__(self, data_config, seg_model, group):
         super().__init__(data_config)
+        self.data_config = data_config
         self.seg_model = seg_model
         self.group = group
         # TODO params from config? can't override in set_train_opts
@@ -224,6 +225,7 @@ class MorfessorEmStdTransform(Transform):
 class MorfessorEmTabooTransform(Transform):
     def __init__(self, data_config, seg_model, group):
         super().__init__(data_config)
+        self.data_config = data_config
         self.seg_model = seg_model
         self.group = group
         self.lang = self.data_config['groups'][group]['meta']['src_lang']

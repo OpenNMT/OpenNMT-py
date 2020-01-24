@@ -6,7 +6,6 @@ import random
 from glob import glob
 
 from .utils import *
-from .dataset import DatasetAdaptor, build_dataset_adaptor_iter
 
 RE_SHARD = re.compile(r'([0-9]*)\.([a-z]*)(\.gz)?')
 

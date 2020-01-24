@@ -143,9 +143,11 @@ def main(opt, device_id, batch_queue=None, semaphore=None):
         valid_steps=opt.valid_steps)
 
     if trainer.report_manager.tensorboard_writer is not None:
+        trainer.report_manager.tensorboard_writer.close()
+        trainer.report_manager.tensorboard_writer.close()
 
 def main_dynamicdata(opt, device_id, batch_queue=None, semaphore=None, valid_iter=None):
-# NOTE: It's important that ``opt`` has been validated and updated
+    # NOTE: It's important that ``opt`` has been validated and updated
     # at this point.
     configure_process(opt, device_id)
     init_logger(opt.log_file)
