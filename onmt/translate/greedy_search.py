@@ -131,8 +131,6 @@ class GreedySearch(DecodeStrategy):
                 to 1.)
             attn (FloatTensor): Shaped ``(1, B, inp_seq_len)``.
         """
-        # print("PROBS", [toto.size() for toto in log_probs])
-        # print("ALIVE", self.alive_seq.size())
 
         # we need to get the feature first
         if len(log_probs) > 1:

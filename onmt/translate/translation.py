@@ -52,7 +52,7 @@ class TranslationBuilder(object):
                 for feat, fv in zip(feats, feats_vocabs):
                     token += u"￨" + fv.itos[feat]
             tokens.append(token)
-            if tokens[-1] == tgt_field.eos_token:
+            if token.split(u"￨")[0] == tgt_field.eos_token:
                 tokens = tokens[:-1]
                 break
         if self.replace_unk and attn is not None and src is not None:
