@@ -81,8 +81,9 @@ def build_data_loader(opt):
 def batch_producer(queues, semaphore, opt):
     data_config, transforms, dataset_adaptor = build_data_loader(opt)
     mixer, group_epochs = build_mixer(data_config, transforms, is_train=True, bucket_size=opt.bucket_size)
+    report_every = max(opt.queue_size, opt.report_every)
     def mb_callback(i):
-        if i % opt.report_every == 0:
+        if i % report_every == 0:
             print('*** mb', i, 'epochs',
                   {key: ge.epoch for key, ge in group_epochs.items()})
             for group in transforms:
