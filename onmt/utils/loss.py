@@ -12,7 +12,7 @@ from onmt.modules.sparse_losses import SparsemaxLoss
 from onmt.modules.sparse_activations import LogSparsemax
 
 
-def build_loss_compute(model, tgt_field, opt, train=True):
+def build_loss_compute(model, tgt_fields, opt, train=True):
     """
     Returns a LossCompute subclass which wraps around an nn.Module subclass
     (such as nn.NLLLoss) which defines the loss criterion. The LossCompute
@@ -22,7 +22,7 @@ def build_loss_compute(model, tgt_field, opt, train=True):
     for when using a copy mechanism.
     """
     device = torch.device("cuda" if onmt.utils.misc.use_gpu(opt) else "cpu")
-
+    tgt_field = tgt_fields.base_field
     padding_idx = tgt_field.vocab.stoi[tgt_field.pad_token]
     unk_idx = tgt_field.vocab.stoi[tgt_field.unk_token]
 
@@ -31,33 +31,42 @@ def build_loss_compute(model, tgt_field, opt, train=True):
             "order to use --lambda_coverage != 0"
 
     if opt.copy_attn:
-        criterion = onmt.modules.CopyGeneratorLoss(
+        criterions = [onmt.modules.CopyGeneratorLoss(
             len(tgt_field.vocab), opt.copy_attn_force,
             unk_index=unk_idx, ignore_index=padding_idx
-        )
+        )]
     elif opt.label_smoothing > 0 and train:
-        criterion = LabelSmoothingLoss(
+        criterions = [LabelSmoothingLoss(
             opt.label_smoothing, len(tgt_field.vocab), ignore_index=padding_idx
-        )
+        )]
     elif isinstance(model.generator[-1], LogSparsemax):
-        criterion = SparsemaxLoss(ignore_index=padding_idx, reduction='sum')
+        criterions = [SparsemaxLoss(ignore_index=padding_idx, reduction='sum')]
     else:
-        criterion = nn.NLLLoss(ignore_index=padding_idx, reduction='sum')
+        criterions = [nn.NLLLoss(ignore_index=padding_idx, reduction='sum')]
+
+    # we need to add as many additional criterion as we have features
+    for field in tgt_fields.fields[1:]:
+        padding_idx = field[1].vocab.stoi[field[1].pad_token]
+        criterions.append(
+            nn.NLLLoss(ignore_index=padding_idx, reduction='sum')
+        )
 
     # if the loss function operates on vectors of raw logits instead of
     # probabilities, only the first part of the generator needs to be
     # passed to the NMTLossCompute. At the moment, the only supported
     # loss function of this kind is the sparsemax loss.
-    use_raw_logits = isinstance(criterion, SparsemaxLoss)
+    use_raw_logits = isinstance(criterions[0], SparsemaxLoss)
+    # TODO make this compatible with target features !!!
     loss_gen = model.generator[0] if use_raw_logits else model.generator
     if opt.copy_attn:
+        # TODO make this compatible with target features...
         compute = onmt.modules.CopyGeneratorLossCompute(
-            criterion, loss_gen, tgt_field.vocab, opt.copy_loss_by_seqlength,
+            criterions, loss_gen, tgt_field.vocab, opt.copy_loss_by_seqlength,
             lambda_coverage=opt.lambda_coverage
         )
     else:
         compute = NMTLossCompute(
-            criterion, loss_gen, lambda_coverage=opt.lambda_coverage,
+            criterions, loss_gen, lambda_coverage=opt.lambda_coverage,
             lambda_align=opt.lambda_align)
     compute.to(device)
 
@@ -83,14 +92,15 @@ class LossComputeBase(nn.Module):
         normalzation (str): normalize by "sents" or "tokens"
     """
 
-    def __init__(self, criterion, generator):
+    def __init__(self, criterions, generator):
         super(LossComputeBase, self).__init__()
-        self.criterion = criterion
+        # We may have several criterions in the case of target word features
+        self.criterions = criterions
         self.generator = generator
 
     @property
     def padding_idx(self):
-        return self.criterion.ignore_index
+        return self.criterions[0].ignore_index
 
     def _make_shard_state(self, batch, output, range_, attns=None):
         """
@@ -178,7 +188,8 @@ class LossComputeBase(nn.Module):
         Returns:
             :obj:`onmt.utils.Statistics` : statistics for this batch.
         """
-        pred = scores.max(1)[1]
+        # TODO we need to add some stats for features
+        pred = scores[0].max(1)[1]
         non_padding = target.ne(self.padding_idx)
         num_correct = pred.eq(target).masked_select(non_padding).sum().item()
         num_non_padding = non_padding.sum().item()
@@ -214,7 +225,7 @@ class LabelSmoothingLoss(nn.Module):
         output (FloatTensor): batch_size x n_classes
         target (LongTensor): batch_size
         """
-        model_prob = self.one_hot.repeat(target.size(0), 1)
+        model_prob = self.one_hot.repeat(target.size(0), 1).to(target.device)
         model_prob.scatter_(1, target.unsqueeze(1), self.confidence)
         model_prob.masked_fill_((target == self.ignore_index).unsqueeze(1), 0)
 
@@ -226,9 +237,9 @@ class NMTLossCompute(LossComputeBase):
     Standard NMT Loss Computation.
     """
 
-    def __init__(self, criterion, generator, normalization="sents",
+    def __init__(self, criterions, generator, normalization="sents",
                  lambda_coverage=0.0, lambda_align=0.0):
-        super(NMTLossCompute, self).__init__(criterion, generator)
+        super(NMTLossCompute, self).__init__(criterions, generator)
         self.lambda_coverage = lambda_coverage
         self.lambda_align = lambda_align
 
@@ -237,6 +248,9 @@ class NMTLossCompute(LossComputeBase):
             "output": output,
             "target": batch.tgt[range_[0] + 1: range_[1], :, 0],
         }
+        if batch.tgt.size(-1) > 1:
+            shard_state["features"] = [batch.tgt[range_[0] + 1: range_[1], :, i+1]
+                                       for i in range(batch.tgt.size(-1) - 1)]
         if self.lambda_coverage != 0.0:
             coverage = attns.get("coverage", None)
             std = attns.get("std", None)
@@ -275,15 +289,18 @@ class NMTLossCompute(LossComputeBase):
             })
         return shard_state
 
-    def _compute_loss(self, batch, output, target, std_attn=None,
+    def _compute_loss(self, batch, output, target, features, std_attn=None,
                       coverage_attn=None, align_head=None, ref_align=None):
 
         bottled_output = self._bottle(output)
 
         scores = self.generator(bottled_output)
         gtruth = target.view(-1)
-
-        loss = self.criterion(scores, gtruth)
+        loss = self.criterions[0](scores[0], gtruth)
+        if features is not None:
+            for score, crit, feat in zip(scores[1:], self.criterions[1:], features):
+                truth = feat.view(-1)
+                loss += crit(score, truth)
         if self.lambda_coverage != 0.0:
             coverage_loss = self._compute_coverage_loss(
                 std_attn=std_attn, coverage_attn=coverage_attn)

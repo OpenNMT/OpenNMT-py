@@ -88,7 +88,7 @@ def build_decoder(opt, embeddings):
                else opt.decoder_type
     return str2dec[dec_type].from_opt(opt, embeddings)
 
-def build_generator(model_opt, fields):
+def build_generator(model_opt, fields, decoder):
     gen_sizes = [len(field[1].vocab) for field in fields['tgt'].fields]
     if not model_opt.copy_attn:
         if model_opt.generator_function == "sparsemax":
@@ -96,6 +96,7 @@ def build_generator(model_opt, fields):
         else:
             gen_func = nn.LogSoftmax(dim=-1)
         generator = Generator(model_opt.rnn_size, gen_sizes, gen_func)
+        # TODO this can't work with target features ???
         if model_opt.share_decoder_embeddings:
             generator[0].weight = decoder.embeddings.word_lut.weight
     else:
@@ -193,7 +194,7 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
     model = onmt.models.NMTModel(encoder, decoder)
 
     # Build Generator.
-    generator = build_generator(model_opt, fields)
+    generator = build_generator(model_opt, fields, decoder)
 
     # Load the model states from checkpoint or initialize them.
     if checkpoint is not None:
