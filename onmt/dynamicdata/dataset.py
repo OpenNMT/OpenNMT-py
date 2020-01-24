@@ -9,8 +9,13 @@ class DatasetAdaptor():
         self._select_fields()
 
     def _select_fields(self):
-        self.field_list = [(col, self.fields[col].base_field)
-                           for col in ('src', 'tgt')]
+        self.field_list = []
+        for col in ('src', 'tgt', 'indices'):
+            #try:
+            #    field = self.fields[col].base_field
+            #except AttributeError:
+            field = self.fields[col]
+            self.field_list.append((col, field))
 
     def _to_examples(self, bucket):
         examples = [torchtext.data.Example.fromlist(tpl, self.field_list)

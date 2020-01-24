@@ -80,7 +80,8 @@ class ShardIterator():
             fobj.close()
         transformed = self.transform(shuffled, is_train)
         #transformed = debug(transformed, 'transformed')
-        yield from transformed
+        indexed = self.add_index(transformed)
+        yield from indexed
 
     def tokenize(self, stream):
         for line in stream:
@@ -101,6 +102,10 @@ class ShardIterator():
                     raise Exception('Cannot filter validation set')
                 continue
             yield tpl
+
+    def add_index(self, stream):
+        for i, tpl in enumerate(stream):
+            yield tpl + (i,)
 
 def yield_infinite(group_epoch, group, transforms, is_train):
     for tpl in infinite_iterator(group_epoch.yield_epoch):

@@ -648,6 +648,7 @@ class OrderedIterator(torchtext.data.Iterator):
                 if self.yield_raw_example:
                     yield minibatch[0]
                 else:
+                    # creating a Batch causes process function to be run
                     yield torchtext.data.Batch(
                         minibatch,
                         self.dataset,

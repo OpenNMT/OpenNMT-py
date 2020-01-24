@@ -50,22 +50,16 @@ def train(opt):
     for device_id in range(nb_gpu):
         q = mp.Queue(opt.queue_size)
         queues += [q]
-        print('before')
         procs.append(mp.Process(target=run, args=(
             opt, device_id, error_queue, q, semaphore,),
             daemon=True))
-        print('mid')
         procs[device_id].start()
-        print('after')
         logger.info(" Starting process pid: %d  " % procs[device_id].pid)
         error_handler.add_child(procs[device_id].pid)
-    print('make producer')
     producer = mp.Process(target=batch_producer,
                             args=(queues, semaphore, opt,),
                             daemon=True)
-    print('mid')
     producer.start()
-    print('after')
     error_handler.add_child(producer.pid)
 
     for p in procs:
@@ -99,14 +93,13 @@ def batch_producer(queues, semaphore, opt):
 
     init_logger(opt.log_file)
     set_random_seed(opt.seed, False)
-    # generator_to_serve = iter(generator_to_serve)
 
     def next_batch():
-        new_batch = next(generator_to_serve)
+        new_batch = next(train_iter)
         semaphore.acquire()
         return new_batch
 
-    b = next_batch(0)
+    b = next_batch()
 
     for device_id, q in cycle(enumerate(queues)):
         b.dataset = None
