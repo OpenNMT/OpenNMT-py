@@ -16,7 +16,7 @@ from onmt.dynamicdata.config import read_data_config, verify_shard_config
 from onmt.dynamicdata.transforms import set_train_opts
 from onmt.dynamicdata.vocab import load_fields, load_transforms
 from onmt.dynamicdata.iterators import build_mixer
-from onmt.dynamicdata.dataset import DatasetAdaptor, DatasetAdaptorIterator
+from onmt.dynamicdata.dataset import DatasetAdaptor, build_dataset_adaptor_iter
 
 from itertools import cycle
 
@@ -36,29 +36,6 @@ def train(opt):
         #logger.info('Loading vocab from checkpoint at %s.' % opt.train_from)
         #fields = checkpoint['vocab']
 
-    data_config = read_data_config(opt.data_config)
-    verify_shard_config(data_config)
-    transform_models, transforms = load_transforms(data_config)
-    set_train_opts(data_config, transforms)
-    fields = load_fields(data_config)
-    dataset_adaptor = DatasetAdaptor(fields)
-
-    mixer, group_epochs = build_mixer(data_config, transforms, is_train=True, bucket_size=opt.bucket_size)
-    def mb_callback(i):
-        if i % opt.report_every == 0:
-            print('*** mb', i, 'epochs',
-                  {key: ge.epoch for key, ge in group_epochs.items()})
-            for group in transforms:
-                print('*** transform stats ({})'.format(group))
-                for transform in transforms[group]:
-                    transform.stats()
-    train_iter = DatasetAdaptorIterator(mixer, dataset_adaptor, opt, mb_callback, is_train=True)
-
-    valid_mixer, valid_group_epochs = build_mixer(data_config, transforms,
-                                                  is_train=False, bucket_size=opt.bucket_size)
-    valid_iter = DatasetAdaptorIterator(valid_mixer, dataset_adaptor, opt,
-                                                 mb_callback=None, is_train=False)
-
     nb_gpu = len(opt.gpu_ranks)
 
     # always using producer/consumer
@@ -75,9 +52,7 @@ def train(opt):
         queues += [q]
         print('before')
         procs.append(mp.Process(target=run, args=(
-            opt, device_id, error_queue, q, semaphore,
-            #valid_iter if device_id == 0 else None),
-            None),
+            opt, device_id, error_queue, q, semaphore,),
             daemon=True))
         print('mid')
         procs[device_id].start()
@@ -85,10 +60,8 @@ def train(opt):
         logger.info(" Starting process pid: %d  " % procs[device_id].pid)
         error_handler.add_child(procs[device_id].pid)
     print('make producer')
-    import pickle
-    pickle.dumps(train_iter)
     producer = mp.Process(target=batch_producer,
-                            args=(train_iter, queues, semaphore, opt,),
+                            args=(queues, semaphore, opt,),
                             daemon=True)
     print('mid')
     producer.start()
@@ -99,8 +72,31 @@ def train(opt):
         p.join()
     producer.terminate()
 
+def build_data_loader(opt):
+    # because generators cannot be pickled,
+    # the data loader components should be built in the producer process
+    data_config = read_data_config(opt.data_config)
+    verify_shard_config(data_config)
+    transform_models, transforms = load_transforms(data_config)
+    set_train_opts(data_config, transforms)
+    fields = load_fields(data_config)
+    dataset_adaptor = DatasetAdaptor(fields)
+    return data_config, transforms, dataset_adaptor
 
-def batch_producer(generator_to_serve, queues, semaphore, opt):
+
+def batch_producer(queues, semaphore, opt):
+    data_config, transforms, dataset_adaptor = build_data_loader(opt)
+    mixer, group_epochs = build_mixer(data_config, transforms, is_train=True, bucket_size=opt.bucket_size)
+    def mb_callback(i):
+        if i % opt.report_every == 0:
+            print('*** mb', i, 'epochs',
+                  {key: ge.epoch for key, ge in group_epochs.items()})
+            for group in transforms:
+                print('*** transform stats ({})'.format(group))
+                for transform in transforms[group]:
+                    transform.stats()
+    train_iter = build_dataset_adaptor_iter(mixer, dataset_adaptor, opt, mb_callback, is_train=True)
+
     init_logger(opt.log_file)
     set_random_seed(opt.seed, False)
     # generator_to_serve = iter(generator_to_serve)
@@ -134,14 +130,24 @@ def batch_producer(generator_to_serve, queues, semaphore, opt):
         b = next_batch()
 
 
-def run(opt, device_id, error_queue, batch_queue, semaphore, valid_iter):
+def run(opt, device_id, error_queue, batch_queue, semaphore):
     """ run process """
     try:
+        if device_id == 0:
+            data_config, transforms, dataset_adaptor = build_data_loader(opt)
+            valid_mixer, valid_group_epochs = build_mixer(data_config, transforms,
+                                                        is_train=False, bucket_size=opt.bucket_size)
+            valid_iter = build_dataset_adaptor_iter(valid_mixer, dataset_adaptor, opt,
+                                                        mb_callback=None, is_train=False)
+            valid_iter = list(valid_iter)
+        else:
+            valid_iter = None
+
         gpu_rank = onmt.utils.distributed.multi_init(opt, device_id)
         if gpu_rank != opt.gpu_ranks[device_id]:
             raise AssertionError("An error occurred in \
                   Distributed initialization")
-        single_main(opt, device_id, batch_queue, semaphore, list(valid_iter))
+        single_main(opt, device_id, batch_queue, semaphore, valid_iter)
     except KeyboardInterrupt:
         pass  # killed by parent, do nothing
     except Exception:

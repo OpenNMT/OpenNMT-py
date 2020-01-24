@@ -14,6 +14,8 @@ from onmt.models import build_model_saver
 from onmt.utils.logging import init_logger, logger
 from onmt.utils.parse import ArgumentParser
 
+from onmt.dynamicdata.config import read_data_config
+from onmt.dynamicdata.vocab import load_fields
 
 def _check_save_model_path(opt):
     save_model_path = os.path.abspath(opt.save_model)
