@@ -107,9 +107,12 @@ def _build_field_vocab(field, counter, size_multiple=1, specials=None, **kwargs)
 
 def prepare_vocabulary(data_config, specials):
     wordcounter = Vocabulary(data_config)
+    # TODO: support for features
+    src_nfeats = 0
+    tgt_nfeats = 0
     fields = onmt.inputters.get_fields(
         'text',
-        1, 1)
+        src_nfeats, tgt_nfeats)
     src_base_field = fields['src'].base_field
     tgt_base_field = fields['tgt'].base_field
     src_base_field.tokenize = no_tokenize
