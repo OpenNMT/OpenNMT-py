@@ -75,10 +75,12 @@ class ShardIterator():
     def __call__(self, is_train=True):
         fobjs = [open(path, 'r') for path in self.files]
         tokenized = [self.tokenize(stream) for stream in fobjs]
-        shuffled = self.shuffle(tokenized)
+        transposed = self.transpose(tokenized)
+        if is_train:
+            random.shuffle(transposed)
         for fobj in fobjs:
             fobj.close()
-        transformed = self.transform(shuffled, is_train)
+        transformed = self.transform(transposed, is_train)
         #transformed = debug(transformed, 'transformed')
         indexed = self.add_index(transformed)
         yield from indexed
@@ -87,9 +89,8 @@ class ShardIterator():
         for line in stream:
             yield tuple(line.rstrip('\n').split())
 
-    def shuffle(self, streams):
+    def transpose(self, streams):
         tpls = list(zip(*streams))
-        random.shuffle(tpls)
         return tpls
 
     def transform(self, stream, is_train):
@@ -116,6 +117,11 @@ def yield_once(group_epoch, group, transforms, is_train):
     for tpl in group_epoch.yield_epoch():
         si = ShardIterator(group, tpl, transforms)
         yield from si(is_train=is_train)
+
+def yield_translate(files, group, transforms):
+    for tpl in files:
+        si = ShardIterator(group, tpl, transforms)
+        yield from si(is_train=False)
 
 class MixingWeightSchedule():
     def __init__(self, data_config, keys):

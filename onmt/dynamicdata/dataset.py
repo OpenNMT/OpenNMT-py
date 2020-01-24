@@ -4,8 +4,9 @@ from onmt.inputters.inputter import max_tok_len, OrderedIterator
 
 class DatasetAdaptor():
     """ creates torchtext Datasets from GroupMixer buckets """
-    def __init__(self, fields):
+    def __init__(self, fields, has_tgt=True):
         self.fields = fields
+        self.has_tgt = has_tgt
         self._select_fields()
 
     def _select_fields(self):
@@ -18,8 +19,12 @@ class DatasetAdaptor():
             self.field_list.append((col, field))
 
     def _to_examples(self, bucket):
-        examples = [torchtext.data.Example.fromlist(tpl, self.field_list)
-                    for tpl in bucket]
+        examples = []
+        for tpl in bucket:
+            if not self.has_tgt:
+                src, indices = tpl
+                tpl = (src, (), indices)
+            examples.append(torchtext.data.Example.fromlist(tpl, self.field_list))
         return examples
 
     def __call__(self, bucket):
@@ -50,7 +55,8 @@ def build_dataset_adaptor_iter(mixer, dataset_adaptor, opt, mb_callback, is_trai
             sort=False,
             sort_within_batch=True,
             sort_key=sort_key,
-            repeat=False)
+            repeat=False,
+        )
         # due to the separation of producer and consumer,
         # the gradient update count is not easily available here
         # and the mixer is not easily available in the trainer.
@@ -60,3 +66,22 @@ def build_dataset_adaptor_iter(mixer, dataset_adaptor, opt, mb_callback, is_trai
                 mb_callback(i)
             yield batch
             i += 1
+
+def build_translate_iter(dataset, opt):
+    batch_size = opt.batch_size
+    device = "cuda" if opt.gpu_ranks else "cpu"
+    sort_key = str2sortkey['text']  #[opt.data_type]
+
+    data_iter = OrderedIterator(
+        dataset=dataset,
+        device=device,
+        batch_size=batch_size,
+        batch_size_fn=None,
+        train=False,
+        sort=False,
+        sort_within_batch=True,
+        sort_key=sort_key,
+        shuffle=False,
+        repeat=False,
+    )
+    yield from data_iter
