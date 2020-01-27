@@ -342,7 +342,8 @@ def train_opts(parser):
               help='Path prefix to the ".train.pt" and '
                    '".valid.pt" file path from preprocess.py')
     group.add('--data_config', '-data_config',
-              help='Path to data config yaml file.')
+              help='Path to data config yaml file. '
+                   'Turns on dynamic data loader.')
 
     group.add('--data_ids', '-data_ids', nargs='+', default=[None],
               help="In case there are several corpora.")
@@ -605,6 +606,12 @@ def translate_opts(parser):
                    "zero probability.")
 
     group = parser.add_argument_group('Data')
+    group.add('--data_config', '-data_config',
+              help='Path to data config yaml file. '
+                   'Turns on dynamic data loader.')
+    group.add('--transform_group',
+              help='Apply the same transforms as for the specified '
+                   'training data group.')
     group.add('--data_type', '-data_type', default="text",
               help="Type of the source input. Options: [text|img].")
 

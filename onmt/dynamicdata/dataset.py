@@ -67,6 +67,7 @@ def build_dataset_adaptor_iter(mixer, dataset_adaptor, opt, mb_callback, is_trai
             yield batch
             i += 1
 
+# FIXME: WIP to make obsolete
 def build_translate_iter(dataset, opt):
     batch_size = opt.batch_size
     device = "cuda" if opt.gpu_ranks else "cpu"

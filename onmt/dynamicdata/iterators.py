@@ -123,6 +123,23 @@ def yield_translate(files, group, transforms):
         si = ShardIterator(group, tpl, transforms)
         yield from si(is_train=False)
 
+class TransformReader():
+    def __init__(self, group, transforms):
+        self.group = group
+        self.transforms = transforms
+
+    def read(self, src_file, side, _dir=None):
+        if side != 'src':
+            # TODO: make a hacky thing that buffers the joint data
+            # and provides access to src and tgt separately via
+            # two objects having a read method
+            raise Exception("dynamicdata doesn't support tgt")
+        print('src_file', src_file, type(src_file))
+        files = [(src_file,)]
+        stream = yield_translate(files, self.group, self.transforms)
+        for (src, idx) in stream:
+            yield {'src': src, 'indices': idx}
+
 class MixingWeightSchedule():
     def __init__(self, data_config, keys):
         self.keys = keys
