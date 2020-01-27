@@ -39,8 +39,7 @@ def build_dataset_adaptor_iter(mixer, dataset_adaptor, opt, mb_callback, is_trai
         if opt.batch_type == "tokens" else None
     batch_size_multiple = 8 if opt.model_dtype == "fp16" else 1
     device = "cuda" if opt.gpu_ranks else "cpu"
-    # FIXME: --data_type is a prep option, not train
-    sort_key = str2sortkey['text']  #[opt.data_type]
+    sort_key = str2sortkey[opt.data_type]
 
     i = 0
     for bucket in mixer():
@@ -66,23 +65,3 @@ def build_dataset_adaptor_iter(mixer, dataset_adaptor, opt, mb_callback, is_trai
                 mb_callback(i)
             yield batch
             i += 1
-
-# FIXME: WIP to make obsolete
-def build_translate_iter(dataset, opt):
-    batch_size = opt.batch_size
-    device = "cuda" if opt.gpu_ranks else "cpu"
-    sort_key = str2sortkey['text']  #[opt.data_type]
-
-    data_iter = OrderedIterator(
-        dataset=dataset,
-        device=device,
-        batch_size=batch_size,
-        batch_size_fn=None,
-        train=False,
-        sort=False,
-        sort_within_batch=True,
-        sort_key=sort_key,
-        shuffle=False,
-        repeat=False,
-    )
-    yield from data_iter
