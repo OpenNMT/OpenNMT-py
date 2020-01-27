@@ -72,19 +72,6 @@ class ShardIterator():
         self.files = files
         self.transforms = transforms
 
-    def __call__(self, is_train=True):
-        fobjs = [open(path, 'r') for path in self.files]
-        tokenized = [self.tokenize(stream) for stream in fobjs]
-        transposed = self.transpose(tokenized)
-        if is_train:
-            random.shuffle(transposed)
-        for fobj in fobjs:
-            fobj.close()
-        transformed = self.transform(transposed, is_train)
-        #transformed = debug(transformed, 'transformed')
-        indexed = self.add_index(transformed)
-        yield from indexed
-
     def tokenize(self, stream):
         for line in stream:
             yield tuple(line.rstrip('\n').split())
@@ -108,19 +95,48 @@ class ShardIterator():
         for i, tpl in enumerate(stream):
             yield tpl + (i,)
 
+class TrainShardIterator(ShardIterator):
+    def __call__(self, is_train=True):
+        fobjs = [open(path, 'r') for path in self.files]
+        tokenized = [self.tokenize(stream) for stream in fobjs]
+        transposed = self.transpose(tokenized)
+        if is_train:
+            random.shuffle(transposed)
+        for fobj in fobjs:
+            fobj.close()
+        transformed = self.transform(transposed, is_train)
+        #transformed = debug(transformed, 'transformed')
+        indexed = self.add_index(transformed)
+        yield from indexed
+
+class TranslateShardIterator(ShardIterator):
+    def __call__(self, is_train=False):
+        assert not is_train
+        decoded = [self.decode(stream) for stream in self.files]
+        tokenized = [self.tokenize(stream) for stream in decoded]
+        transposed = self.transpose(tokenized)
+        transformed = self.transform(transposed, is_train)
+        #transformed = debug(transformed, 'transformed')
+        indexed = self.add_index(transformed)
+        yield from indexed
+
+    def decode(self, stream):
+        for bstr in stream:
+            yield bstr.decode("utf-8")
+
 def yield_infinite(group_epoch, group, transforms, is_train):
     for tpl in infinite_iterator(group_epoch.yield_epoch):
-        si = ShardIterator(group, tpl, transforms)
+        si = TrainShardIterator(group, tpl, transforms)
         yield from si(is_train=is_train)
 
 def yield_once(group_epoch, group, transforms, is_train):
     for tpl in group_epoch.yield_epoch():
-        si = ShardIterator(group, tpl, transforms)
+        si = TrainShardIterator(group, tpl, transforms)
         yield from si(is_train=is_train)
 
 def yield_translate(files, group, transforms):
     for tpl in files:
-        si = ShardIterator(group, tpl, transforms)
+        si = TranslateShardIterator(group, tpl, transforms)
         yield from si(is_train=False)
 
 class TransformReader():
@@ -134,7 +150,6 @@ class TransformReader():
             # and provides access to src and tgt separately via
             # two objects having a read method
             raise Exception("dynamicdata doesn't support tgt")
-        print('src_file', src_file, type(src_file))
         files = [(src_file,)]
         stream = yield_translate(files, self.group, self.transforms)
         for (src, idx) in stream:
