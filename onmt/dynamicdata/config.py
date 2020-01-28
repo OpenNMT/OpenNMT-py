@@ -47,7 +47,7 @@ def _normalize_sizes(data_config):
 def _all_transforms(data_config):
     all_transforms = set()
     for group in data_config['groups']:
-        all_transforms.update(data_config['groups'][group]['transforms'])
+        all_transforms.update(data_config['groups'][group].get('transforms', []))
     data_config['_transforms'] = list(sorted(all_transforms))
 
 def _group_defaults(data_config):
