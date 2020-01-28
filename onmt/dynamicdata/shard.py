@@ -7,9 +7,15 @@ import random
 from .vocab import SimpleSharedVocabulary
 from .utils import *
 
+def open_for_reading(path):
+    if path.endswith('.gz'):
+        return gzip.open(path, 'tr')
+    else:
+        return open(path, 'r')
+
 def para_reader(input):
-    with open(input['src'], 'r') as src_fobj:
-        with open(input['tgt'], 'r') as tgt_fobj:
+    with open_for_reading(input['src']) as src_fobj:
+        with open_for_reading(input['tgt']) as tgt_fobj:
             while True:
                 src = next(src_fobj, None)
                 tgt = next(tgt_fobj, None)
@@ -24,7 +30,7 @@ def para_reader(input):
                 yield src, tgt
 
 def mono_reader(input):
-    with open(input['mono'], 'r') as fobj:
+    with open_for_reading(input['mono']) as fobj:
         for line in fobj:
             yield (line,)
 
