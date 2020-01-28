@@ -130,7 +130,8 @@ class Translator(object):
             report_align=False,
             report_score=True,
             logger=None,
-            seed=-1):
+            seed=-1,
+            feat_no_time_shift=False):
         self.model = model
         self.fields = fields
         tgt_field = dict(self.fields)["tgt"].base_field
@@ -186,6 +187,8 @@ class Translator(object):
 
         self.use_filter_pred = False
         self._filter_pred = None
+
+        self.feat_no_time_shift = feat_no_time_shift
 
         # for debugging
         self.beam_trace = self.dump_beam != ""
@@ -259,7 +262,8 @@ class Translator(object):
             report_align=report_align,
             report_score=report_score,
             logger=logger,
-            seed=opt.seed)
+            seed=opt.seed,
+            feat_no_time_shift=vars(opt).get("feat_no_time_shift", False))
 
     def _log(self, msg):
         if self.logger:
@@ -334,7 +338,7 @@ class Translator(object):
 
         xlation_builder = onmt.translate.TranslationBuilder(
             data, self.fields, self.n_best, self.replace_unk, tgt,
-            self.phrase_table
+            self.phrase_table, self.feat_no_time_shift
         )
 
         # Statistics

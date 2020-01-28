@@ -56,6 +56,10 @@ def model_opts(parser):
               help="If -feat_merge_size is not set, feature "
                    "embedding sizes will be set to N^feat_vec_exponent "
                    "where N is the number of values the feature takes.")
+    group.add('--feat_no_time_shift', '-feat_no_time_shift',
+              action='store_true',
+              help="If set, do not shift the target features one step "
+                   "to the right.")
 
     # Encoder-Decoder Options
     group = parser.add_argument_group('Model- Encoder-Decoder')

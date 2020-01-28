@@ -23,7 +23,7 @@ class TranslationBuilder(object):
     """
 
     def __init__(self, data, fields, n_best=1, replace_unk=False,
-                 has_tgt=False, phrase_table=""):
+                 has_tgt=False, phrase_table="", feat_no_time_shift=False):
         self.data = data
         self.fields = fields
         self._has_text_src = isinstance(
@@ -32,16 +32,22 @@ class TranslationBuilder(object):
         self.replace_unk = replace_unk
         self.phrase_table = phrase_table
         self.has_tgt = has_tgt
+        self.feat_no_time_shift = feat_no_time_shift
 
-    def _build_target_tokens(self, src, src_vocab, src_raw, pred, all_feats, attn):
+    def _build_target_tokens(self, src, src_vocab, src_raw, pred, attn, all_feats=None):
         # feats need do be shifted back one step to the left
-        all_feats = [list(feat[1:]) + [feat[0]] for feat in all_feats] # TODO find a better way
+        if all_feats is not None:
+            if self.feat_no_time_shift:
+                all_feats = [list(feat[1:]) + [feat[0]] for feat in all_feats]
+                pred_iter = zip(pred, *all_feats)
+        else:
+            pred_iter = [(item,) for item in pred]
         tgt_fields = dict(self.fields)["tgt"]
         tgt_field = tgt_fields.base_field
         vocab = tgt_field.vocab
         feats_vocabs = [field.vocab for name, field in tgt_fields.fields[1:]]
         tokens = []
-        for tok_feats in zip(pred, *all_feats):
+        for tok_feats in pred_iter:
             tok = tok_feats[0]
             if tok < len(vocab):
                 token = vocab.itos[tok]
@@ -107,7 +113,7 @@ class TranslationBuilder(object):
             pred_sents = [self._build_target_tokens(
                 src[:, b] if src is not None else None,
                 src_vocab, src_raw,
-                preds[b][n], feats[b][n], attn[b][n])
+                preds[b][n], attn[b][n], feats[b][n] if len(feats[0]) > 0 else None)
                 for n in range(self.n_best)]
             gold_sent = None
             if tgt is not None:
