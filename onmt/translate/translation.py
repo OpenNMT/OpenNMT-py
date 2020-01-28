@@ -39,7 +39,7 @@ class TranslationBuilder(object):
         if all_feats is not None:
             if self.feat_no_time_shift:
                 all_feats = [list(feat[1:]) + [feat[0]] for feat in all_feats]
-                pred_iter = zip(pred, *all_feats)
+            pred_iter = zip(pred, *all_feats)
         else:
             pred_iter = [(item,) for item in pred]
         tgt_fields = dict(self.fields)["tgt"]
