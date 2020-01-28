@@ -162,13 +162,20 @@ class MixingWeightSchedule():
             data_config['meta']['train'].get('mixing_weight_schedule', []))
         self.schedule_steps.append(None)
         self.mixing_weights = {
-            key: self._list(data_config['groups'][key]['weight'])
+            key: self._list(data_config['groups'][key]['weight'], len(self.schedule_steps))
             for key in keys}
+        for key in keys:
+            if len(self.mixing_weights[key]) != len(self.schedule_steps):
+                raise Exception('group "{}" has {} mixing weights, expecting {}'.format(
+                    key, len(self.mixing_weights[key]), len(self.schedule_steps)))
         self.next_threshold = 0
 
-    def _list(self, val):
+    def _list(self, val, repeat=None):
         if isinstance(val, int):
-            return [val]
+            if repeat:
+                return [val] * repeat
+            else:
+                return [val]
         return list(val)
 
     def __call__(self, i):
@@ -178,10 +185,12 @@ class MixingWeightSchedule():
         if i < self.next_threshold:
             # no adjustment yet
             return None
-        self.next_threshold = self.schedule_steps.pop(0)
-        new_weights = []
-        for key in self.keys:
-            new_weights.append(self.mixing_weights[key].pop(0))
+        new_weights = None
+        while self.next_threshold is not None and self.next_threshold <= i:
+            self.next_threshold = self.schedule_steps.pop(0)
+            new_weights = []
+            for key in self.keys:
+                new_weights.append(self.mixing_weights[key].pop(0))
         return new_weights
 
     def min_bucket_size(self):
