@@ -58,13 +58,16 @@ class Vocabulary():
             for w, c in tokens.most_common():
                 fobj.write('{}\t{}\n'.format(c, w))
 
-    def load(self, key, segmentation=None):
+    def path(self, key, segmentation=None):
         if segmentation is None:
             segmentation = self.data_config['meta']['train']['name']
         path = os.path.join(
             self.data_config['meta']['shard']['rootdir'],
             segmentation,
             '{}.vocab'.format(key))
+        return path
+
+    def load(self, path):
         counter = SortedCounter()
         with open(path, 'r') as fobj:
             seen_noncomment = False
@@ -106,7 +109,7 @@ def _build_field_vocab(field, counter, size_multiple=1, specials=None, **kwargs)
             field.vocab, size_multiple)
 
 def prepare_vocabulary(data_config, specials):
-    wordcounter = Vocabulary(data_config)
+    tokencounter = Vocabulary(data_config)
     # TODO: support for features
     src_nfeats = 0
     tgt_nfeats = 0
@@ -118,7 +121,8 @@ def prepare_vocabulary(data_config, specials):
     src_base_field.tokenize = no_tokenize
     tgt_base_field.tokenize = no_tokenize
     if data_config['meta']['shard']['share_vocab']:
-        counter = wordcounter.load('shared')
+        vocab_path = data_config['meta']['train']['vocab_path']
+        counter = tokencounter.load(vocab_path)
         _build_field_vocab(tgt_base_field, counter, specials=specials)
         src_base_field.vocab = tgt_base_field.vocab
     else:

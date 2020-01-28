@@ -189,6 +189,11 @@ def flatten(deep):
         out.extend(token)
     return tuple(out)
 
+def load_word_counts(data_config):
+    vocab = Vocabulary(data_config)
+    path = vocab.path('shared', segmentation='words')
+    return vocab.load(path)
+
 class MorfessorEmStdTransform(Transform):
     def __init__(self, data_config, seg_model, group):
         super().__init__(data_config)
@@ -205,8 +210,7 @@ class MorfessorEmStdTransform(Transform):
 
     def warm_up(self):
         # load the word (not subword) counts
-        counts = Vocabulary(self.data_config).load(
-            'shared', segmentation='words')
+        counts = load_word_counts(self.data_config)
         # populate cache for most frequent words
         for w, c in counts.most_common(WARM_UP):
             self._cache._populate_cache(w)
@@ -240,8 +244,7 @@ class MorfessorEmTabooTransform(Transform):
 
     def warm_up(self):
         # load the word (not subword) counts
-        counts = Vocabulary(self.data_config).load(
-            'shared', segmentation='words')
+        counts = load_word_counts(self.data_config)
         # populate cache for most frequent words
         for w, c in counts.most_common(WARM_UP):
             self._cache._populate_cache(w)
