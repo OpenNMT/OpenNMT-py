@@ -787,7 +787,7 @@ class DatasetLazyIter(object):
             sort_within_batch=True,
             repeat=False,
             yield_raw_example=self.yield_raw_example,
-            shiftfeat_no_time_=self.feat_no_time_shift
+            feat_no_time_shift=self.feat_no_time_shift
         )
         for batch in cur_iter:
             self.dataset = cur_iter.dataset
