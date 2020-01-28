@@ -231,7 +231,7 @@ class GroupMixer():
         new_weights = self.schedule(i)
         if new_weights is not None:
             self.current_weights = new_weights
-            print('***', i, 'set weights to', self.current_weights)
+            print('***', i, 'set weights to', list(zip(self.keys, self.current_weights)))
         self.mixed = weighted_roundrobin(
             [self.group_streams[key] for key in self.keys],
             self.current_weights)

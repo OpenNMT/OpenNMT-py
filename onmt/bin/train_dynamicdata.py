@@ -35,6 +35,11 @@ def train(opt):
                                 map_location=lambda storage, loc: storage)
         #logger.info('Loading vocab from checkpoint at %s.' % opt.train_from)
         #fields = checkpoint['vocab']
+        # N.B: if multiple producers are used, training_step will no longer
+        # match the data mixer schedule counter
+        training_step = checkpoint['optim']['training_step']
+    else:
+        training_step = 0
 
     nb_gpu = len(opt.gpu_ranks)
 
@@ -57,7 +62,7 @@ def train(opt):
         logger.info(" Starting process pid: %d  " % procs[device_id].pid)
         error_handler.add_child(procs[device_id].pid)
     producer = mp.Process(target=batch_producer,
-                            args=(queues, semaphore, opt,),
+                            args=(queues, semaphore, opt, training_step),
                             daemon=True)
     producer.start()
     error_handler.add_child(producer.pid)
@@ -78,7 +83,7 @@ def build_data_loader(opt):
     return data_config, transforms, dataset_adaptor
 
 
-def batch_producer(queues, semaphore, opt):
+def batch_producer(queues, semaphore, opt, training_step):
     data_config, transforms, dataset_adaptor = build_data_loader(opt)
     mixer, group_epochs = build_mixer(data_config, transforms, is_train=True, bucket_size=opt.bucket_size)
     report_every = max(opt.queue_size, opt.report_every)
@@ -90,7 +95,8 @@ def batch_producer(queues, semaphore, opt):
                 print('*** transform stats ({})'.format(group))
                 for transform in transforms[group]:
                     transform.stats()
-    train_iter = build_dataset_adaptor_iter(mixer, dataset_adaptor, opt, mb_callback, is_train=True)
+    train_iter = build_dataset_adaptor_iter(
+        mixer, dataset_adaptor, opt, mb_callback, training_step, is_train=True)
 
     init_logger(opt.log_file)
     set_random_seed(opt.seed, False)
@@ -132,7 +138,7 @@ def run(opt, device_id, error_queue, batch_queue, semaphore):
             valid_mixer, valid_group_epochs = build_mixer(data_config, transforms,
                                                         is_train=False, bucket_size=opt.bucket_size)
             valid_iter = build_dataset_adaptor_iter(valid_mixer, dataset_adaptor, opt,
-                                                        mb_callback=None, is_train=False)
+                                                    mb_callback=None, training_step=0, is_train=False)
             valid_iter = list(valid_iter)
         else:
             valid_iter = None

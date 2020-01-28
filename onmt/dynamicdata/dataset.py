@@ -33,7 +33,8 @@ class DatasetAdaptor():
             examples, self.field_list)
         return dataset
 
-def build_dataset_adaptor_iter(mixer, dataset_adaptor, opt, mb_callback, is_train=True):
+def build_dataset_adaptor_iter(mixer, dataset_adaptor, opt, mb_callback, training_step,
+                               is_train=True):
     batch_size = opt.batch_size
     batch_size_fn = max_tok_len \
         if opt.batch_type == "tokens" else None
@@ -41,7 +42,7 @@ def build_dataset_adaptor_iter(mixer, dataset_adaptor, opt, mb_callback, is_trai
     device = "cuda" if opt.gpu_ranks else "cpu"
     sort_key = str2sortkey[opt.data_type]
 
-    i = 0
+    i = training_step
     for bucket in mixer():
         dataset = dataset_adaptor(bucket)
         train_iter = OrderedIterator(
