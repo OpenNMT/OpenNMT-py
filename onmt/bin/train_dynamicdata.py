@@ -85,6 +85,10 @@ def build_data_loader(opt):
 
 def batch_producer(queues, semaphore, opt, training_step):
     data_config, transforms, dataset_adaptor = build_data_loader(opt)
+    for group, group_transforms in transforms.items():
+        print('group "{}" transforms:'.format(group))
+        for transform in group_transforms:
+            print('\t{}'.format(transform))
     mixer, group_epochs = build_mixer(data_config, transforms, is_train=True, bucket_size=opt.bucket_size)
     report_every = max(opt.queue_size, opt.report_every)
     def mb_callback(i):

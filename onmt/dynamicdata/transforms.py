@@ -50,6 +50,9 @@ class Transform():
     def stats(self):
         pass
 
+    def __repr__(self):
+        return self.__class__.__name__
+
 class SimpleTransform(Transform):
     """ A Transform that is its own TransformModel """
     def __init__(self, data_config):
@@ -83,6 +86,10 @@ class PeturbOrderTransform(SimpleTransform):
         src, tgt = tpl
         src = self._peturb(src)
         return src, tgt
+
+    def __repr__(self):
+        return '{}({})'.format(self.__class__.__name__, self.max_dist)
+
 
 class DropTransform(SimpleTransform):
     def __init__(self, data_config):
@@ -121,6 +128,9 @@ class DropTransform(SimpleTransform):
             print('tokens dropped {} / {} = {}'.format(
                 self._sum_draw, self._sum_toks, self._sum_draw / self._sum_toks))
 
+    def __repr__(self):
+        return '{}({})'.format(self.__class__.__name__, self.temperature)
+
 class FilterTooLongTransform(SimpleTransform):
     def __init__(self, data_config):
         super().__init__(data_config)
@@ -147,6 +157,9 @@ class FilterTooLongTransform(SimpleTransform):
             print('length filtered {} / {} = {}'.format(
                 self._n_dropped, tot, self._n_dropped / tot))
 
+    def __repr__(self):
+        return '{}({})'.format(self.__class__.__name__, self.max_len)
+
 class PrefixTransformModel(TransformModel):
     def __init__(self, data_config):
         super().__init__(data_config)
@@ -171,6 +184,9 @@ class PrefixTransform(Transform):
         src, tail = tpl[0], tpl[1:]
         src = self.prefix + tuple(src)
         return (src,) + tail
+
+    def __repr__(self):
+        return '{}({})'.format(self.__class__.__name__, self.prefix)
 
 
 def mix_half(xs, ys):

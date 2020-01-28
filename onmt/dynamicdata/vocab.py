@@ -131,6 +131,10 @@ def prepare_vocabulary(data_config, specials):
 
 def save_fields(data_config, fields):
     segmentation = data_config['meta']['train']['name']
+    vocabdir = os.path.join(
+        data_config['meta']['shard']['rootdir'],
+        segmentation)
+    os.makedirs(vocabdir, exist_ok=True)
     path = os.path.join(
         data_config['meta']['shard']['rootdir'],
         segmentation,
