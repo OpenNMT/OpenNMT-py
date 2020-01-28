@@ -34,6 +34,16 @@ def mono_reader(input):
         for line in fobj:
             yield (line,)
 
+def check_exist(input):
+    if 'mono' in input:
+        if not os.path.exists(input['mono']):
+            raise Exception('Missing: {}'.format(input['mono']))
+    else:
+        for side in ('src', 'tgt'):
+            if not os.path.exists(input[side]):
+                raise Exception('Missing: {}'.format(input[side]))
+
+
 def pretokenize(stream, tokenizer):
     for tpl in stream:
         out = []
@@ -67,6 +77,9 @@ class DataSharder():
         self._last_shard = None
 
     def __call__(self):
+        for group in self.data_config['groups']:
+            for input in self.data_config['groups'][group]['_inputs']:
+                check_exist(self.data_config['inputs'][input])
         os.makedirs(
             self.data_config['meta']['shard']['rootdir'],
             exist_ok=True)
