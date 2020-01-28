@@ -583,19 +583,20 @@ def _pool(data, batch_size, batch_size_fn, batch_size_multiple,
 
 
 class OnmtBatch(torchtext.data.Batch):
-    def __init__(self, data=None, dataset=None, device=None, feat_no_time_shift=False):
+    def __init__(self, data=None, dataset=None,
+                 device=None, feat_no_time_shift=False):
         super(OnmtBatch, self).__init__(data, dataset, device)
         # we need to shift target features if needed
         if not(feat_no_time_shift):
             if hasattr(self, 'tgt') and self.tgt.size(-1) > 1:
                 # tokens: [ len x batch x 1]
-                tokens = self.tgt[:,:,0].unsqueeze(-1)
+                tokens = self.tgt[:, :, 0].unsqueeze(-1)
                 # feats: [ len x batch x num_feats ]
-                feats = self.tgt[:,:,1:]
+                feats = self.tgt[:, :, 1:]
                 # shift feats one step to the right
                 feats = torch.cat((
-                    feats[-1,:,:].unsqueeze(0),
-                    feats[:-1,:,:]
+                    feats[-1, :, :].unsqueeze(0),
+                    feats[:-1, :, :]
                     ))
                 # build back target tensor
                 self.tgt = torch.cat((
@@ -603,8 +604,8 @@ class OnmtBatch(torchtext.data.Batch):
                     feats
                     ), dim=-1)
 
-class OrderedIterator(torchtext.data.Iterator):
 
+class OrderedIterator(torchtext.data.Iterator):
     def __init__(self,
                  dataset,
                  batch_size,

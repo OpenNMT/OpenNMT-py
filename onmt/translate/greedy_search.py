@@ -91,7 +91,8 @@ class GreedySearch(DecodeStrategy):
         self.keep_topk = keep_topk
         self.topk_scores = None
 
-    def initialize(self, memory_bank, src_lengths, num_features, src_map=None, device=None):
+    def initialize(self, memory_bank, src_lengths, num_features,
+                   src_map=None, device=None):
         """Initialize for decoding."""
         fn_map_state = None
 
@@ -155,14 +156,15 @@ class GreedySearch(DecodeStrategy):
                 topk_ids, features_id
                 ), dim=-1)
 
-        self.alive_seq = torch.cat([self.alive_seq, topk_ids.unsqueeze(-1)], -1)
+        self.alive_seq = torch.cat([
+            self.alive_seq,
+            topk_ids.unsqueeze(-1)], -1)
         if self.return_attention:
             if self.alive_attn is None:
                 self.alive_attn = attn
             else:
                 self.alive_attn = torch.cat([self.alive_attn, attn], 0)
         self.ensure_max_length()
-
 
     def update_finished(self):
         """Finalize scores and predictions."""

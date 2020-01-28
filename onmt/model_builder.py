@@ -13,9 +13,7 @@ from onmt.encoders import str2enc
 
 from onmt.decoders import str2dec
 
-from onmt.modules import Embeddings, VecEmbedding, \
-                         Generator, CopyGenerator
-from onmt.modules.util_class import Cast
+from onmt.modules import Embeddings, VecEmbedding, Generator
 from onmt.utils.misc import use_gpu
 from onmt.utils.logging import logger
 from onmt.utils.parse import ArgumentParser
@@ -88,10 +86,12 @@ def build_decoder(opt, embeddings):
                else opt.decoder_type
     return str2dec[dec_type].from_opt(opt, embeddings)
 
+
 def build_generator(model_opt, fields, decoder):
     gen_sizes = [len(field[1].vocab) for field in fields['tgt'].fields]
     if model_opt.share_decoder_embeddings:
-        rnn_sizes = ([model_opt.rnn_size - (model_opt.feat_vec_size * (len(gen_sizes) -1) )]
+        rnn_sizes = ([model_opt.rnn_size -
+                      (model_opt.feat_vec_size * (len(gen_sizes) - 1))]
                      + [model_opt.feat_vec_size] * (len(gen_sizes) - 1))
     else:
         rnn_sizes = [model_opt.rnn_size] * len(gen_sizes)

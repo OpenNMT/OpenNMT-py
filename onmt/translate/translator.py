@@ -662,14 +662,16 @@ class Translator(object):
         num_features = batch.src[0].size(-1)
         src_map = batch.src_map if use_src_map else None
         fn_map_state, memory_bank, memory_lengths, src_map = \
-            decode_strategy.initialize(memory_bank, src_lengths,
+            decode_strategy.initialize(
+                memory_bank, src_lengths,
                 num_features, src_map)
         if fn_map_state is not None:
             self.model.decoder.map_state(fn_map_state)
 
         # (3) Begin decoding step by step:
         for step in range(decode_strategy.max_length):
-            decoder_input = decode_strategy.current_predictions.view(1, -1, num_features)
+            decoder_input = decode_strategy.current_predictions\
+                                           .view(1, -1, num_features)
 
             log_probs, attn = self._decode_and_generate(
                 decoder_input,

@@ -249,8 +249,9 @@ class NMTLossCompute(LossComputeBase):
             "target": batch.tgt[range_[0] + 1: range_[1], :, 0],
         }
         if batch.tgt.size(-1) > 1:
-            shard_state["features"] = [batch.tgt[range_[0] + 1: range_[1], :, i+1]
-                                       for i in range(batch.tgt.size(-1) - 1)]
+            shard_state["features"] = [
+                batch.tgt[range_[0] + 1: range_[1], :, i+1]
+                for i in range(batch.tgt.size(-1) - 1)]
         if self.lambda_coverage != 0.0:
             coverage = attns.get("coverage", None)
             std = attns.get("std", None)
@@ -289,8 +290,9 @@ class NMTLossCompute(LossComputeBase):
             })
         return shard_state
 
-    def _compute_loss(self, batch, output, target, features=None, std_attn=None,
-                      coverage_attn=None, align_head=None, ref_align=None):
+    def _compute_loss(self, batch, output, target, features=None,
+                      std_attn=None, coverage_attn=None,
+                      align_head=None, ref_align=None):
 
         bottled_output = self._bottle(output)
 
@@ -298,7 +300,8 @@ class NMTLossCompute(LossComputeBase):
         gtruth = target.view(-1)
         loss = self.criterions[0](scores[0], gtruth)
         if features is not None:
-            for score, crit, feat in zip(scores[1:], self.criterions[1:], features):
+            for score, crit, feat in zip(scores[1:],
+                                         self.criterions[1:], features):
                 truth = feat.view(-1)
                 loss += crit(score, truth)
         if self.lambda_coverage != 0.0:

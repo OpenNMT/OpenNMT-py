@@ -2,15 +2,14 @@
 import torch
 import torch.nn as nn
 
-from torch.nn.modules.module import _addindent
-
 from onmt.modules.util_class import Cast
 
 from onmt.modules.copy_generator import CopyGenerator
 
 
 class Generator(nn.Module):
-    def __init__(self, rnn_sizes, gen_sizes, gen_func, shared=False, copy_attn=False, pad_idx=None):
+    def __init__(self, rnn_sizes, gen_sizes, gen_func,
+                 shared=False, copy_attn=False, pad_idx=None):
         super(Generator, self).__init__()
         self.generators = nn.ModuleList()
         self.shared = shared
@@ -36,14 +35,13 @@ class Generator(nn.Module):
             self.generators.append(
                 simple_generator(rnn_size, gen_size, gen_func))
 
-
     def forward(self, dec_out):
         # if shared_decoder_embeddings, we slice the decoder output
         if self.shared:
             outs = []
             offset = 0
             for generator, s in zip(self.generators, self.rnn_sizes):
-                sliced_dec_out = dec_out[:,offset:offset+s]
+                sliced_dec_out = dec_out[:, offset:offset+s]
                 out = generator(sliced_dec_out)
                 offset += s
                 outs.append(out)

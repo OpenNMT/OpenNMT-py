@@ -34,7 +34,8 @@ class TranslationBuilder(object):
         self.has_tgt = has_tgt
         self.feat_no_time_shift = feat_no_time_shift
 
-    def _build_target_tokens(self, src, src_vocab, src_raw, pred, attn, all_feats=None):
+    def _build_target_tokens(self, src, src_vocab, src_raw,
+                             pred, attn, all_feats=None):
         # feats need do be shifted back one step to the left
         if all_feats is not None:
             if self.feat_no_time_shift:
@@ -113,7 +114,8 @@ class TranslationBuilder(object):
             pred_sents = [self._build_target_tokens(
                 src[:, b] if src is not None else None,
                 src_vocab, src_raw,
-                preds[b][n], attn[b][n], feats[b][n] if len(feats[0]) > 0 else None)
+                preds[b][n], attn[b][n],
+                feats[b][n] if len(feats[0]) > 0 else None)
                 for n in range(self.n_best)]
             gold_sent = None
             if tgt is not None:
