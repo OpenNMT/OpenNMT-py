@@ -308,6 +308,34 @@ class MorfessorEmTransformModel():
             raise Exception('Unknown transform {}'.format(transform))
         return transform_cls(self.data_config, self.seg_model, group)
 
+class SentencepieceTransform(SimpleTransform):
+    def __init__(self, data_config):
+        super().__init__(data_config)
+        self.data_config = data_config
+        self.model_path = self.data_config['meta']['train']['segmentation_model']
+
+    def warm_up(self):
+        # load the segmentation model
+        import sentencepiece as spm
+        self.seg_model = spm.SentencePieceProcessor()
+        self.seg_model.Load(self.model_path)
+
+    def apply(self, tpl, group, is_train=True):
+        out = []
+        for tokens in tpl:
+            out.append(tuple(self.seg_model.SampleEncodeAsPieces(
+                ' '.join(tokens), -1, 0.5)))
+        return tuple(out)
+
+    def __getstate__(self):
+        return {'data_config': self.data_config,
+                'model_path': self.model_path}
+
+    def __setstate__(self, d):
+        self.data_config = d['data_config']
+        self.model_path = d['model_path']
+        self.warm_up()
+
 class SampleCache(object):
     def __init__(self, model, n_samples=5,
                  addcount=0, theta=0.5, maxlen=30):
@@ -390,6 +418,7 @@ DEFAULT_TRANSFORMS = {
     'lang_prefix_both': PrefixTransformModel,
     'morfessor_em': MorfessorEmTransformModel,
     'morfessor_em_taboo': MorfessorEmTransformModel,
+    'sentencepiece': SentencepieceTransform,
     'filter_too_long': FilterTooLongTransform,
 }
 
