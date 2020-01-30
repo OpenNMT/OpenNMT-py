@@ -114,19 +114,7 @@ def batch_producer(queues, semaphore, opt, training_step):
 
     for device_id, q in cycle(enumerate(queues)):
         b.dataset = None
-        if isinstance(b.src, tuple):
-            b.src = tuple([x.to(torch.device(device_id))
-                           for x in b.src])
-        else:
-            b.src = b.src.to(torch.device(device_id))
-        b.tgt = b.tgt.to(torch.device(device_id))
-        b.indices = b.indices.to(torch.device(device_id))
-        b.alignment = b.alignment.to(torch.device(device_id)) \
-            if hasattr(b, 'alignment') else None
-        b.src_map = b.src_map.to(torch.device(device_id)) \
-            if hasattr(b, 'src_map') else None
-        b.align = b.align.to(torch.device(device_id)) \
-            if hasattr(b, 'align') else None
+        # the training process has the gpu, and is responsible for calling torch.device
 
         # hack to dodge unpicklable `dict_keys`
         b.fields = list(b.fields)

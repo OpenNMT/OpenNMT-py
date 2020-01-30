@@ -39,7 +39,10 @@ def build_dataset_adaptor_iter(mixer, dataset_adaptor, opt, mb_callback, trainin
     batch_size_fn = max_tok_len \
         if opt.batch_type == "tokens" else None
     batch_size_multiple = 8 if opt.model_dtype == "fp16" else 1
-    device = "cuda" if opt.gpu_ranks else "cpu"
+    # data loader cannot access the gpu when CUDA Compute Mode is set to Exclusive_Process
+    # otherwise results in "CUDA error: all CUDA-capable devices are busy or unavailable"
+    #device = "cuda" if opt.gpu_ranks else "cpu"
+    device = 'cpu'
     sort_key = str2sortkey[opt.data_type]
 
     i = training_step

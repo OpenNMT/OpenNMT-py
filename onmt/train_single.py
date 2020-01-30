@@ -120,6 +120,21 @@ def main(opt, device_id, batch_queue=None, semaphore=None):
         def _train_iter():
             while True:
                 batch = batch_queue.get()
+                # the training process has the gpu, and is responsible for calling torch.device
+                if isinstance(batch.src, tuple):
+                    batch.src = tuple([x.to(torch.device(device_id))
+                                for x in batch.src])
+                else:
+                    batch.src = batch.src.to(torch.device(device_id))
+                batch.tgt = batch.tgt.to(torch.device(device_id))
+                batch.indices = batch.indices.to(torch.device(device_id))
+                batch.alignment = batch.alignment.to(torch.device(device_id)) \
+                    if hasattr(batch, 'alignment') else None
+                batch.src_map = batch.src_map.to(torch.device(device_id)) \
+                    if hasattr(batch, 'src_map') else None
+                batch.align = batch.align.to(torch.device(device_id)) \
+                    if hasattr(batch, 'align') else None
+
                 semaphore.release()
                 yield batch
 
