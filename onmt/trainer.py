@@ -70,7 +70,8 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
                            model_dtype=opt.model_dtype,
                            earlystopper=earlystopper,
                            dropout=dropout,
-                           dropout_steps=dropout_steps)
+                           dropout_steps=dropout_steps,
+                           encode_tgt=True if opt.lambda_cosine > 0 else False)
     return trainer
 
 
@@ -107,7 +108,8 @@ class Trainer(object):
                  n_gpu=1, gpu_rank=1, gpu_verbose_level=0,
                  report_manager=None, with_align=False, model_saver=None,
                  average_decay=0, average_every=1, model_dtype='fp32',
-                 earlystopper=None, dropout=[0.3], dropout_steps=[0]):
+                 earlystopper=None, dropout=[0.3], dropout_steps=[0],
+                 encode_tgt=False):
         # Basic attributes.
         self.model = model
         self.train_loss = train_loss
@@ -132,6 +134,7 @@ class Trainer(object):
         self.earlystopper = earlystopper
         self.dropout = dropout
         self.dropout_steps = dropout_steps
+        self.encode_tgt = encode_tgt
 
         for i in range(len(self.accum_count_l)):
             assert self.accum_count_l[i] > 0
@@ -314,11 +317,13 @@ class Trainer(object):
                 tgt = batch.tgt
 
                 # F-prop through the model.
-                outputs, attns = valid_model(src, tgt, src_lengths,
-                                             with_align=self.with_align)
+                outputs, attns, enc_src, enc_tgt = valid_model(
+                    src, tgt, src_lengths,
+                    with_align=self.with_align)
 
                 # Compute loss.
-                _, batch_stats = self.valid_loss(batch, outputs, attns)
+                _, batch_stats = self.valid_loss(
+                    batch, outputs, attns, enc_src, enc_tgt)
 
                 # Update statistics.
                 stats.update(batch_stats)
@@ -361,8 +366,9 @@ class Trainer(object):
                 if self.accum_count == 1:
                     self.optim.zero_grad()
 
-                outputs, attns = self.model(src, tgt, src_lengths, bptt=bptt,
-                                            with_align=self.with_align)
+                outputs, attns, enc_src, enc_tgt = self.model(
+                    src, tgt, src_lengths, bptt=bptt,
+                    with_align=self.with_align, encode_tgt=self.encode_tgt)
                 bptt = True
 
                 # 3. Compute loss.
@@ -371,6 +377,8 @@ class Trainer(object):
                         batch,
                         outputs,
                         attns,
+                        enc_src,
+                        enc_tgt,
                         normalization=normalization,
                         shard_size=self.shard_size,
                         trunc_start=j,

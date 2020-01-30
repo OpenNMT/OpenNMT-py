@@ -1,5 +1,6 @@
 """ Onmt NMT Model base class definition """
 import torch.nn as nn
+import torch
 
 
 class NMTModel(nn.Module):
@@ -17,7 +18,8 @@ class NMTModel(nn.Module):
         self.encoder = encoder
         self.decoder = decoder
 
-    def forward(self, src, tgt, lengths, bptt=False, with_align=False):
+    def forward(self, src, tgt, lengths, bptt=False,
+                with_align=False, encode_tgt=False):
         """Forward propagate a `src` and `tgt` pair for training.
         Possible initialized with a beginning decoder state.
 
@@ -44,12 +46,22 @@ class NMTModel(nn.Module):
 
         enc_state, memory_bank, lengths = self.encoder(src, lengths)
 
+        if encode_tgt:
+            # tgt for zero shot alignment loss
+            tgt_lengths = torch.Tensor(tgt.size(1))\
+                               .type_as(memory_bank) \
+                               .long() \
+                               .fill_(tgt.size(0))
+            embs_tgt, memory_bank_tgt, ltgt = self.encoder(tgt, tgt_lengths)
+        else:
+            memory_bank_tgt = None
+
         if bptt is False:
             self.decoder.init_state(src, memory_bank, enc_state)
         dec_out, attns = self.decoder(dec_in, memory_bank,
                                       memory_lengths=lengths,
                                       with_align=with_align)
-        return dec_out, attns
+        return dec_out, attns, memory_bank, memory_bank_tgt
 
     def update_dropout(self, dropout):
         self.encoder.update_dropout(dropout)

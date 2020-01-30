@@ -58,7 +58,7 @@ def build_loss_compute(model, tgt_field, opt, train=True):
     else:
         compute = NMTLossCompute(
             criterion, loss_gen, lambda_coverage=opt.lambda_coverage,
-            lambda_align=opt.lambda_align)
+            lambda_align=opt.lambda_align, lambda_cosine=opt.lambda_cosine)
     compute.to(device)
 
     return compute
@@ -123,6 +123,8 @@ class LossComputeBase(nn.Module):
                  batch,
                  output,
                  attns,
+                 enc_src,
+                 enc_tgt,
                  normalization=1.0,
                  shard_size=0,
                  trunc_start=0,
@@ -157,18 +159,19 @@ class LossComputeBase(nn.Module):
         if trunc_size is None:
             trunc_size = batch.tgt.size(0) - trunc_start
         trunc_range = (trunc_start, trunc_start + trunc_size)
-        shard_state = self._make_shard_state(batch, output, trunc_range, attns)
+        shard_state = self._make_shard_state(
+            batch, output, enc_src, enc_tgt, trunc_range, attns)
         if shard_size == 0:
-            loss, stats = self._compute_loss(batch, **shard_state)
-            return loss / float(normalization), stats
+            loss, stats = self._compute_loss(batch, normalization, **shard_state)
+            return loss, stats
         batch_stats = onmt.utils.Statistics()
         for shard in shards(shard_state, shard_size):
             loss, stats = self._compute_loss(batch, **shard)
-            loss.div(float(normalization)).backward()
+            loss.backward()
             batch_stats.update(stats)
         return None, batch_stats
 
-    def _stats(self, loss, scores, target):
+    def _stats(self, loss, cosine_loss, scores, target, num_ex):
         """
         Args:
             loss (:obj:`FloatTensor`): the loss computed by the loss criterion.
@@ -182,7 +185,9 @@ class LossComputeBase(nn.Module):
         non_padding = target.ne(self.padding_idx)
         num_correct = pred.eq(target).masked_select(non_padding).sum().item()
         num_non_padding = non_padding.sum().item()
-        return onmt.utils.Statistics(loss.item(), num_non_padding, num_correct)
+        return onmt.utils.Statistics(
+            loss.item(), cosine_loss.item() if cosine_loss is not None else 0,
+            num_non_padding, num_correct, num_ex)
 
     def _bottle(self, _v):
         return _v.view(-1, _v.size(2))
@@ -227,15 +232,18 @@ class NMTLossCompute(LossComputeBase):
     """
 
     def __init__(self, criterion, generator, normalization="sents",
-                 lambda_coverage=0.0, lambda_align=0.0):
+                 lambda_coverage=0.0, lambda_align=0.0, lambda_cosine=0.0):
         super(NMTLossCompute, self).__init__(criterion, generator)
         self.lambda_coverage = lambda_coverage
         self.lambda_align = lambda_align
+        self.lambda_cosine = lambda_cosine
 
-    def _make_shard_state(self, batch, output, range_, attns=None):
+    def _make_shard_state(self, batch, output, enc_src, enc_tgt, range_, attns=None):
         shard_state = {
             "output": output,
             "target": batch.tgt[range_[0] + 1: range_[1], :, 0],
+            "enc_src": enc_src,
+            "enc_tgt": enc_tgt
         }
         if self.lambda_coverage != 0.0:
             coverage = attns.get("coverage", None)
@@ -275,7 +283,7 @@ class NMTLossCompute(LossComputeBase):
             })
         return shard_state
 
-    def _compute_loss(self, batch, output, target, std_attn=None,
+    def _compute_loss(self, batch, normalization, output, target, enc_src, enc_tgt, std_attn=None,
                       coverage_attn=None, align_head=None, ref_align=None):
 
         bottled_output = self._bottle(output)
@@ -284,6 +292,7 @@ class NMTLossCompute(LossComputeBase):
         gtruth = target.view(-1)
 
         loss = self.criterion(scores, gtruth)
+
         if self.lambda_coverage != 0.0:
             coverage_loss = self._compute_coverage_loss(
                 std_attn=std_attn, coverage_attn=coverage_attn)
@@ -296,7 +305,28 @@ class NMTLossCompute(LossComputeBase):
             align_loss = self._compute_alignement_loss(
                 align_head=align_head, ref_align=ref_align)
             loss += align_loss
-        stats = self._stats(loss.clone(), scores, gtruth)
+
+        loss = loss/float(normalization)
+
+        if self.lambda_cosine != 0.0:
+            max_src = enc_src.max(axis=0)[0]
+            max_tgt = enc_tgt.max(axis=0)[0]
+            cosine_loss = torch.nn.functional.cosine_similarity(
+            max_src.float(), max_tgt.float(), dim=1)
+            ones = torch.ones(cosine_loss.size()).to(cosine_loss.device)
+            cosine_loss = ones - cosine_loss
+            num_ex = cosine_loss.size(0)
+            cosine_loss = cosine_loss.sum()
+            loss += self.lambda_cosine * (cosine_loss / num_ex)
+        else:
+            cosine_loss = None
+            num_ex = 0
+
+
+        stats = self._stats(loss.clone() * normalization,
+                            cosine_loss.clone() if cosine_loss is not None
+                            else cosine_loss,
+                            scores, gtruth, num_ex)
 
         return loss, stats
 
