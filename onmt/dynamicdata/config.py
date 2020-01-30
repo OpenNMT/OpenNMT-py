@@ -19,6 +19,21 @@ def _inverse_groups(data_config):
             data_config['groups'][group]['_inputs'] = []
         data_config['groups'][group]['_inputs'].append(input)
 
+def _share_inputs(data_config):
+    for group in data_config['groups']:
+        if 'share_inputs' in data_config['groups'][group]:
+            share_from = data_config['groups'][group]['share_inputs']
+            inputs = data_config['groups'][share_from]['_inputs']
+            data_config['groups'][group]['_inputs'] = inputs
+
+def _remove_shared_inputs(shard_config):
+    to_remove = []
+    for group in shard_config['groups']:
+        if 'share_inputs' in shard_config['groups'][group]:
+            to_remove.append(group)
+    for group in to_remove:
+        del shard_config['groups'][group]
+
 def _normalize_sizes(data_config):
     size_per_group = collections.Counter()
     corpora_per_group = collections.Counter()
@@ -103,6 +118,7 @@ def sharding_only(data_config):
     sub_config = {}
     for key in data_config:
         _filter_config(data_config, sub_config, [key], rules)
+    _remove_shared_inputs(sub_config)
     return sub_config
 
 def save_shard_config(data_config):

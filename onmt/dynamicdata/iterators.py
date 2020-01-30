@@ -23,9 +23,10 @@ class GroupEpoch():
         self.files = collections.defaultdict(list)
         self.compressed = False
         self.epoch = 0
+        data_group = self.data_config['groups'][group].get('share_inputs', group)
         self.groupdir = os.path.join(
             self.data_config['meta']['shard']['rootdir'],
-            group)
+            data_group)
         self.group_type = self.data_config['groups'][group]['type']
         if self.group_type == 'para':
             self.sides = ('src', 'tgt')
@@ -107,7 +108,7 @@ class TrainShardIterator(ShardIterator):
         for fobj in fobjs:
             fobj.close()
         transformed = self.transform(transposed, is_train)
-        #transformed = debug(transformed, 'transformed')
+        transformed = debug(transformed, 'transformed')
         indexed = self.add_index(transformed)
         yield from indexed
 
