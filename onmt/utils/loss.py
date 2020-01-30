@@ -162,7 +162,8 @@ class LossComputeBase(nn.Module):
         shard_state = self._make_shard_state(
             batch, output, enc_src, enc_tgt, trunc_range, attns)
         if shard_size == 0:
-            loss, stats = self._compute_loss(batch, normalization, **shard_state)
+            loss, stats = self._compute_loss(batch, normalization,
+                                             **shard_state)
             return loss, stats
         batch_stats = onmt.utils.Statistics()
         for shard in shards(shard_state, shard_size):
@@ -238,7 +239,8 @@ class NMTLossCompute(LossComputeBase):
         self.lambda_align = lambda_align
         self.lambda_cosine = lambda_cosine
 
-    def _make_shard_state(self, batch, output, enc_src, enc_tgt, range_, attns=None):
+    def _make_shard_state(self, batch, output, enc_src, enc_tgt,
+                          range_, attns=None):
         shard_state = {
             "output": output,
             "target": batch.tgt[range_[0] + 1: range_[1], :, 0],
@@ -283,7 +285,8 @@ class NMTLossCompute(LossComputeBase):
             })
         return shard_state
 
-    def _compute_loss(self, batch, normalization, output, target, enc_src, enc_tgt, std_attn=None,
+    def _compute_loss(self, batch, normalization, output, target,
+                      enc_src, enc_tgt, std_attn=None,
                       coverage_attn=None, align_head=None, ref_align=None):
 
         bottled_output = self._bottle(output)
@@ -312,7 +315,7 @@ class NMTLossCompute(LossComputeBase):
             max_src = enc_src.max(axis=0)[0]
             max_tgt = enc_tgt.max(axis=0)[0]
             cosine_loss = torch.nn.functional.cosine_similarity(
-            max_src.float(), max_tgt.float(), dim=1)
+                max_src.float(), max_tgt.float(), dim=1)
             ones = torch.ones(cosine_loss.size()).to(cosine_loss.device)
             cosine_loss = ones - cosine_loss
             num_ex = cosine_loss.size(0)
@@ -321,7 +324,6 @@ class NMTLossCompute(LossComputeBase):
         else:
             cosine_loss = None
             num_ex = 0
-
 
         stats = self._stats(loss.clone() * normalization,
                             cosine_loss.clone() if cosine_loss is not None
