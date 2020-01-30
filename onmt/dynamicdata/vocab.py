@@ -108,8 +108,17 @@ def _build_field_vocab(field, counter, size_multiple=1, specials=None, **kwargs)
         onmt.inputters.inputter._pad_vocab_to_multiple(
             field.vocab, size_multiple)
 
-def prepare_vocabulary(data_config, specials):
+def load_vocabulary(data_config):
     tokencounter = Vocabulary(data_config)
+    counters = {}
+    if data_config['meta']['shard']['share_vocab']:
+        vocab_path = data_config['meta']['train']['vocab_path']
+        counters['shared'] = tokencounter.load(vocab_path)
+    else:
+        raise NotImplementedError()
+    return counters
+
+def prepare_fields(data_config, counters, specials):
     # TODO: support for features
     src_nfeats = 0
     tgt_nfeats = 0
@@ -121,9 +130,7 @@ def prepare_vocabulary(data_config, specials):
     src_base_field.tokenize = no_tokenize
     tgt_base_field.tokenize = no_tokenize
     if data_config['meta']['shard']['share_vocab']:
-        vocab_path = data_config['meta']['train']['vocab_path']
-        counter = tokencounter.load(vocab_path)
-        _build_field_vocab(tgt_base_field, counter, specials=specials)
+        _build_field_vocab(tgt_base_field, counters['shared'], specials=specials)
         src_base_field.vocab = tgt_base_field.vocab
     else:
         raise NotImplementedError()

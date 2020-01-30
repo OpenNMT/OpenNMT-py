@@ -65,7 +65,7 @@ class GroupEpoch():
 
 def debug(stream, prefix='debug'):
     for item in stream:
-        logger.debug('{}: {}'.format(prefix, item))
+        print('{}: {}'.format(prefix, item))
         yield item
 
 class ShardIterator():

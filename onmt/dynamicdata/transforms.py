@@ -22,7 +22,7 @@ class TransformModel():
     def __init__(self, data_config):
         self.data_config = data_config
 
-    def warm_up(self):
+    def warm_up(self, vocabs):
         pass
 
     def get_transform(self, transform, group):
@@ -34,7 +34,7 @@ class Transform():
     def __init__(self, data_config):
         pass
 
-    def warm_up(self):
+    def warm_up(self, vocabs):
         pass
 
     def set_train_opts(self, data_config):
@@ -126,6 +126,70 @@ class DropTransform(SimpleTransform):
             yield('no tokens dropped')
         else:
             yield('tokens dropped {} / {} = {}'.format(
+                self._sum_draw, self._sum_toks, self._sum_draw / self._sum_toks))
+
+    def __repr__(self):
+        return '{}({})'.format(self.__class__.__name__, self.temperature)
+
+
+class SwitchOutTransformModel(TransformModel):
+    def __init__(self, data_config):
+        super().__init__(data_config)
+        self.vocab = None
+
+    def warm_up(self, vocabs):
+        # assumes shared vocab
+        self.vocab = list(vocabs['shared'].keys())
+
+    def get_transform(self, transform, group):
+        return SwitchOutTransform(self.data_config, self.vocab)
+
+
+class SwitchOutTransform(Transform):
+    def __init__(self, data_config, vocab):
+        super().__init__(data_config)
+        self.vocab = vocab
+        self._sum_draw = 0
+        self._sum_toks = 0
+
+    def set_train_opts(self, data_config):
+        self.temperature = data_config['meta']['train'].get(
+            'switchout_temperature', 1.3) * -1
+
+    def _replace(self, token):
+        return random.choice(self.vocab)
+
+    def _switchout(self, tokens):
+        n_tokens = len(tokens)
+        indices = np.arange(n_tokens)
+        logits = indices * self.temperature
+        logits = softmax(logits)
+        n_switchouts = np.random.choice(indices, p=logits)
+        self._sum_draw += n_switchouts
+        self._sum_toks += n_tokens
+
+        switchout_indices = set(np.random.choice(indices, size=n_switchouts, replace=False))
+        out = []
+        for (i, tok) in enumerate(tokens):
+            if i in switchout_indices:
+                out.append(self._replace(tok))
+            else:
+                out.append(tok)
+        return tuple(out)
+
+    def apply(self, tpl, group, is_train=True):
+        if not is_train:
+            return tpl
+        src, tgt = tpl
+        src = self._switchout(src)
+        tgt = self._switchout(tgt)
+        return src, tgt
+
+    def stats(self):
+        if self._sum_toks == 0:
+            yield('no tokens switched out')
+        else:
+            yield('switchout  {} / {} = {}'.format(
                 self._sum_draw, self._sum_toks, self._sum_draw / self._sum_toks))
 
     def __repr__(self):
@@ -224,7 +288,7 @@ class MorfessorEmStdTransform(Transform):
             theta=0.5,
             maxlen=30)
 
-    def warm_up(self):
+    def warm_up(self, vocabs):
         # load the word (not subword) counts
         counts = load_word_counts(self.data_config)
         # populate cache for most frequent words
@@ -258,7 +322,7 @@ class MorfessorEmTabooTransform(Transform):
             theta=0.5,
             maxlen=30)
 
-    def warm_up(self):
+    def warm_up(self, vocabs):
         # load the word (not subword) counts
         counts = load_word_counts(self.data_config)
         # populate cache for most frequent words
@@ -292,7 +356,7 @@ class MorfessorEmTransformModel():
     def __init__(self, data_config):
         self.data_config = data_config
 
-    def warm_up(self):
+    def warm_up(self, vocabs):
         # load the segmentation model
         io = morfessor.MorfessorIO()
         expected = io.read_expected_file(
@@ -314,7 +378,7 @@ class SentencepieceTransform(SimpleTransform):
         self.data_config = data_config
         self.model_path = self.data_config['meta']['train']['segmentation_model']
 
-    def warm_up(self):
+    def warm_up(self, vocabs=None):
         # load the segmentation model
         import sentencepiece as spm
         self.seg_model = spm.SentencePieceProcessor()
@@ -415,6 +479,7 @@ DEFAULT_TRANSFORMS = {
     'duplicate_mono': DuplicateMonoTransform,
     'peturb_order': PeturbOrderTransform,
     'drop': DropTransform,
+    'switchout': SwitchOutTransformModel,
     'lang_prefix_both': PrefixTransformModel,
     'morfessor_em': MorfessorEmTransformModel,
     'morfessor_em_taboo': MorfessorEmTransformModel,
@@ -422,25 +487,25 @@ DEFAULT_TRANSFORMS = {
     'filter_too_long': FilterTooLongTransform,
 }
 
-def make_transform_models(data_config, custom_transforms=None):
+def make_transform_models(data_config, vocabs, custom_transforms=None):
     transform_model_classes = dict(DEFAULT_TRANSFORMS)
     if custom_transforms is not None:
         transform_model_classes.update(custom_transforms)
     transform_models = {}
     for key in data_config['_transforms']:
         transform_model = transform_model_classes[key](data_config)
-        transform_model.warm_up()
+        transform_model.warm_up(vocabs)
         transform_models[key] = transform_model
     return transform_models
 
-def make_transforms(transform_models, data_config):
+def make_transforms(transform_models, data_config, vocabs):
     transforms = {}
     for group in data_config['groups']:
         keys = data_config['groups'][group]['transforms']
         transforms[group] = [transform_models[key].get_transform(key, group)
                              for key in keys]
         for transform in transforms[group]:
-            transform.warm_up()
+            transform.warm_up(vocabs)
     return transforms
 
 def get_specials(transforms):
