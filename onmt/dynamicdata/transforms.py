@@ -13,6 +13,7 @@ import torchtext
 from scipy.special import softmax
 
 from .vocab import Vocabulary
+from .utils import UNDER
 
 WARM_UP = 50000
 
@@ -194,6 +195,44 @@ class SwitchOutTransform(Transform):
 
     def __repr__(self):
         return '{}({})'.format(self.__class__.__name__, self.temperature)
+
+class WbNoiseTransformModel(TransformModel):
+    def __init__(self, data_config):
+        super().__init__(data_config)
+        self.vocab = None
+
+    def warm_up(self, vocabs):
+        # assumes shared vocab
+        self.vocab = set(vocabs['shared'].keys())
+
+    def get_transform(self, transform, group):
+        return WbNoiseTransform(self.data_config, self.vocab)
+
+
+class WbNoiseTransform(SwitchOutTransform):
+    def set_train_opts(self, data_config):
+        self.temperature = data_config['meta']['train'].get(
+            'wb_noise_temperature', 1.3) * -1
+
+    def _replace(self, token):
+        if token[0] == UNDER:
+            # wb -> no wb
+            proposed = token[1:]
+        else:
+            # no wb -> wb
+            proposed = UNDER + token
+        if len(proposed) == 0:
+            return token
+        if proposed not in self.vocab:
+            return token
+        return proposed
+
+    def stats(self):
+        if self._sum_toks == 0:
+            yield('no wb_noise')
+        else:
+            yield('wb_noise  {} / {} = {}'.format(
+                self._sum_draw, self._sum_toks, self._sum_draw / self._sum_toks))
 
 class FilterTooLongTransform(SimpleTransform):
     def __init__(self, data_config):
@@ -480,6 +519,7 @@ DEFAULT_TRANSFORMS = {
     'peturb_order': PeturbOrderTransform,
     'drop': DropTransform,
     'switchout': SwitchOutTransformModel,
+    'wb_noise': WbNoiseTransformModel,
     'lang_prefix_both': PrefixTransformModel,
     'morfessor_em': MorfessorEmTransformModel,
     'morfessor_em_taboo': MorfessorEmTransformModel,
