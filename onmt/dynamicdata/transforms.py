@@ -48,7 +48,7 @@ class Transform():
         return tpl
 
     def stats(self):
-        pass
+        return ()
 
     def __repr__(self):
         return self.__class__.__name__
@@ -123,9 +123,9 @@ class DropTransform(SimpleTransform):
 
     def stats(self):
         if self._sum_toks == 0:
-            print('no tokens dropped')
+            yield('no tokens dropped')
         else:
-            print('tokens dropped {} / {} = {}'.format(
+            yield('tokens dropped {} / {} = {}'.format(
                 self._sum_draw, self._sum_toks, self._sum_draw / self._sum_toks))
 
     def __repr__(self):
@@ -152,9 +152,9 @@ class FilterTooLongTransform(SimpleTransform):
     def stats(self):
         tot = self._n_dropped + self._n_kept
         if tot <= 0:
-            print('nothing filtered')
+            yield('nothing filtered')
         else:
-            print('length filtered {} / {} = {}'.format(
+            yield('length filtered {} / {} = {}'.format(
                 self._n_dropped, tot, self._n_dropped / tot))
 
     def __repr__(self):
@@ -241,7 +241,7 @@ class MorfessorEmStdTransform(Transform):
         return tuple(out)
 
     def stats(self):
-        print('hits {} vs misses {}'.format(self._cache.hits, self._cache.misses))
+        yield('hits {} vs misses {}'.format(self._cache.hits, self._cache.misses))
 
 class MorfessorEmTabooTransform(Transform):
     def __init__(self, data_config, seg_model, group):
@@ -281,7 +281,7 @@ class MorfessorEmTabooTransform(Transform):
         return src, tgt
 
     def stats(self):
-        print('hits {} vs misses {}'.format(self._cache.hits, self._cache.misses))
+        yield('hits {} vs misses {}'.format(self._cache.hits, self._cache.misses))
 
 class MorfessorEmTransformModel():
     transform_classes = {

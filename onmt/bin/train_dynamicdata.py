@@ -4,6 +4,8 @@ import os
 import signal
 import torch
 
+from pprint import pformat
+
 import onmt.opts as opts
 import onmt.utils.distributed
 
@@ -84,26 +86,25 @@ def build_data_loader(opt):
 
 
 def batch_producer(queues, semaphore, opt, training_step):
+    init_logger(opt.log_file)
+    set_random_seed(opt.seed, False)
+
     data_config, transforms, dataset_adaptor = build_data_loader(opt)
-    for group, group_transforms in transforms.items():
-        print('group "{}" transforms:'.format(group))
-        for transform in group_transforms:
-            print('\t{}'.format(transform))
+    logger.info('Transforms:')
+    logger.info(pformat(transforms))
     mixer, group_epochs = build_mixer(data_config, transforms, is_train=True, bucket_size=opt.bucket_size)
     report_every = max(opt.queue_size, opt.report_every)
     def mb_callback(i):
         if i % report_every == 0:
-            print('*** mb', i, 'epochs',
-                  {key: ge.epoch for key, ge in group_epochs.items()})
+            logger.info('mb %s epochs %s',
+                  i, {key: ge.epoch for key, ge in group_epochs.items()})
             for group in transforms:
-                print('*** transform stats ({})'.format(group))
+                logger.info('* transform stats ({})'.format(group))
                 for transform in transforms[group]:
-                    transform.stats()
+                    for line in transform.stats():
+                        logger.info('\t{}'.format(line))
     train_iter = build_dataset_adaptor_iter(
         mixer, dataset_adaptor, opt, mb_callback, training_step, is_train=True)
-
-    init_logger(opt.log_file)
-    set_random_seed(opt.seed, False)
 
     def next_batch():
         new_batch = next(train_iter)

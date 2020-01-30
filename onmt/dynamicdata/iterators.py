@@ -7,6 +7,8 @@ from glob import glob
 
 from .utils import *
 
+from onmt.utils.logging import logger
+
 RE_SHARD = re.compile(r'([0-9]*)\.([a-z]*)(\.gz)?')
 
 def infinite_iterator(iterator_factory):
@@ -63,7 +65,7 @@ class GroupEpoch():
 
 def debug(stream, prefix='debug'):
     for item in stream:
-        print('{}: {}'.format(prefix, item))
+        logger.debug('{}: {}'.format(prefix, item))
         yield item
 
 class ShardIterator():
@@ -210,7 +212,7 @@ class GroupMixer():
         min_bucket_size = self.schedule.min_bucket_size()
         if bucket_size < min_bucket_size:
             bucket_size = min_bucket_size
-            print('increased bucket_size to {}'.format(bucket_size))
+            logger.info('increased bucket_size to {}'.format(bucket_size))
         self.bucket_size = bucket_size
 
     def __call__(self):
@@ -240,7 +242,7 @@ class GroupMixer():
         new_weights = self.schedule(i)
         if new_weights is not None:
             self.current_weights = new_weights
-            print('***', i, 'set weights to', list(zip(self.keys, self.current_weights)))
+            logger.info('*** mb %s set weights to %s', i, list(zip(self.keys, self.current_weights)))
         self.mixed = weighted_roundrobin(
             [self.group_streams[key] for key in self.keys],
             self.current_weights)
