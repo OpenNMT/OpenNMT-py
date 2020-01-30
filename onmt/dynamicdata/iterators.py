@@ -23,6 +23,7 @@ class GroupEpoch():
         self.files = collections.defaultdict(list)
         self.compressed = False
         self.epoch = 0
+        # share_inputs causes this group to use another one's data
         data_group = self.data_config['groups'][group].get('share_inputs', group)
         self.groupdir = os.path.join(
             self.data_config['meta']['shard']['rootdir'],
@@ -35,6 +36,11 @@ class GroupEpoch():
         else:
             raise Exception('Unrecognized group type "{}"'.format(
                 self.group_type))
+        # reverse causes roles of src and tgt data to be reversed
+        # useful for backtranslation
+        # (note that meta src_lang and trg_lang are not modified)
+        if self.data_config['meta']['train'].get('reverse', False):
+            self.sides = self.sides[::-1]
         self._find_shards()
 
     def _find_shards(self):
@@ -108,7 +114,7 @@ class TrainShardIterator(ShardIterator):
         for fobj in fobjs:
             fobj.close()
         transformed = self.transform(transposed, is_train)
-        transformed = debug(transformed, 'transformed')
+        #transformed = debug(transformed, 'transformed')
         indexed = self.add_index(transformed)
         yield from indexed
 
