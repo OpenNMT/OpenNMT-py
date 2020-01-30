@@ -309,6 +309,22 @@ class Trainer(object):
             stats = onmt.utils.Statistics()
 
             for batch in valid_iter:
+                # the training process has the gpu, and is responsible for calling torch.device
+                # FIXME: duplicating this code is ugly
+                if isinstance(batch.src, tuple):
+                    batch.src = tuple([x.to(torch.device(self.gpu_rank))
+                                for x in batch.src])
+                else:
+                    batch.src = batch.src.to(torch.device(self.gpu_rank))
+                batch.tgt = batch.tgt.to(torch.device(self.gpu_rank))
+                batch.indices = batch.indices.to(torch.device(self.gpu_rank))
+                batch.alignment = batch.alignment.to(torch.device(self.gpu_rank)) \
+                    if hasattr(batch, 'alignment') and batch.alignment is not None else None
+                batch.src_map = batch.src_map.to(torch.device(self.gpu_rank)) \
+                    if hasattr(batch, 'src_map') and batch.src_map is not None else None
+                batch.align = batch.align.to(torch.device(self.gpu_rank)) \
+                    if hasattr(batch, 'align') and batch.align is not None else None
+
                 src, src_lengths = batch.src if isinstance(batch.src, tuple) \
                                    else (batch.src, None)
                 tgt = batch.tgt
