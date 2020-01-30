@@ -175,8 +175,9 @@ class GreedySearch(DecodeStrategy):
             self.scores[b_orig].append(self.topk_scores[b, 0])
             self.predictions[b_orig].append(self.alive_seq[b, 0, 1:])
             # check on first item of the batch ot get num_features
-            for i in range(len(self.features[0])):
-                self.features[b_orig][i].append(self.alive_seq[b, 1+i, 1:])
+            self.features[b_orig] = [[]]
+            for i in range(self.num_features):
+                self.features[b_orig][0].append(self.alive_seq[b, 1+i, 1:])
             self.attention[b_orig].append(
                 self.alive_attn[:, b, :self.memory_lengths[b]]
                 if self.alive_attn is not None else [])

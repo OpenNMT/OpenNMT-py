@@ -38,7 +38,7 @@ class TranslationBuilder(object):
                              pred, attn, all_feats=None):
         # feats need do be shifted back one step to the left
         if all_feats is not None:
-            if self.feat_no_time_shift:
+            if not(self.feat_no_time_shift):
                 all_feats = [list(feat[1:]) + [feat[0]] for feat in all_feats]
             pred_iter = zip(pred, *all_feats)
         else:

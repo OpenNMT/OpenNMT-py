@@ -68,6 +68,8 @@ class DecodeStrategy(object):
         self.predictions = [[] for _ in range(batch_size)]
         self.scores = [[] for _ in range(batch_size)]
         self.attention = [[] for _ in range(batch_size)]
+        # initialize features
+        self.features = [[] for _ in range(batch_size)]
 
         self.alive_attn = None
 
@@ -99,9 +101,7 @@ class DecodeStrategy(object):
         self.is_finished = torch.zeros(
             [self.batch_size, self.parallel_paths],
             dtype=torch.uint8, device=device)
-        # initialize features (we need to know num_features)
-        self.features = [[[] for _ in range(num_features - 1)]
-                         for _ in range(self.batch_size)]
+        self.num_features = num_features - 1  # tokens are not features
         return None, memory_bank, src_lengths, src_map
 
     def __len__(self):
