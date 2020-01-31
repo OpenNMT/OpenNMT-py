@@ -37,11 +37,18 @@ def train(opt):
                                 map_location=lambda storage, loc: storage)
         #logger.info('Loading vocab from checkpoint at %s.' % opt.train_from)
         #fields = checkpoint['vocab']
-        # N.B: if multiple producers are used, training_step will no longer
-        # match the data mixer schedule counter
-        training_step = checkpoint['optim']['training_step']
+        if 'data_loader_step' in checkpoint['opt']:
+            data_loader_step = checkpoint['opt'].data_loader_step
+            print('Set data_loader_step {} from model_opt'.format(data_loader_step))
+        elif opt.data_loader_step is not None:
+            data_loader_step = opt.data_loader_step
+            print('Overrode data_loader_step {} from opt'.format(data_loader_step))
+        else:
+            data_loader_step = checkpoint['optim']['training_step']
+            print('Approximated data_loader_step {} from optim. '
+                  'Consider using --data_loader_step'.format(data_loader_step))
     else:
-        training_step = 0
+        data_loader_step = 0
 
     nb_gpu = len(opt.gpu_ranks)
 
@@ -64,7 +71,7 @@ def train(opt):
         logger.info(" Starting process pid: %d  " % procs[device_id].pid)
         error_handler.add_child(procs[device_id].pid)
     producer = mp.Process(target=batch_producer,
-                            args=(queues, semaphore, opt, training_step),
+                            args=(queues, semaphore, opt, data_loader_step),
                             daemon=True)
     producer.start()
     error_handler.add_child(producer.pid)
@@ -85,7 +92,7 @@ def build_data_loader(opt):
     return data_config, transforms, dataset_adaptor
 
 
-def batch_producer(queues, semaphore, opt, training_step):
+def batch_producer(queues, semaphore, opt, data_loader_step):
     init_logger(opt.log_file)
     set_random_seed(opt.seed, False)
 
@@ -104,7 +111,7 @@ def batch_producer(queues, semaphore, opt, training_step):
                     for line in transform.stats():
                         logger.info('\t{}'.format(line))
     train_iter = build_dataset_adaptor_iter(
-        mixer, dataset_adaptor, opt, mb_callback, training_step, is_train=True)
+        mixer, dataset_adaptor, opt, mb_callback, data_loader_step, is_train=True)
 
     def next_batch():
         new_batch = next(train_iter)
@@ -131,7 +138,7 @@ def run(opt, device_id, error_queue, batch_queue, semaphore):
             valid_mixer, valid_group_epochs = build_mixer(data_config, transforms,
                                                         is_train=False, bucket_size=opt.bucket_size)
             valid_iter = build_dataset_adaptor_iter(valid_mixer, dataset_adaptor, opt,
-                                                    mb_callback=None, training_step=0, is_train=False)
+                                                    mb_callback=None, data_loader_step=0, is_train=False)
             valid_iter = list(valid_iter)
         else:
             valid_iter = None

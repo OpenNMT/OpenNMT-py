@@ -347,6 +347,9 @@ def train_opts(parser):
     group.add('--data_type', '-data_type', default="text",
               help="Type of the source input. "
                    "Options are [text|img|audio|vec].")
+    group.add('--data_loader_step', '-data_loader_step', type=int, default=None,
+              help='Override the data loader step. '
+                   'Useful for old models and messing with the mixing schedule.')
 
     group.add('--data_ids', '-data_ids', nargs='+', default=[None],
               help="In case there are several corpora.")

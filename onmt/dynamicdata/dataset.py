@@ -33,7 +33,7 @@ class DatasetAdaptor():
             examples, self.field_list)
         return dataset
 
-def build_dataset_adaptor_iter(mixer, dataset_adaptor, opt, mb_callback, training_step,
+def build_dataset_adaptor_iter(mixer, dataset_adaptor, opt, mb_callback, data_loader_step,
                                is_train=True):
     batch_size = opt.batch_size
     batch_size_fn = max_tok_len \
@@ -45,7 +45,7 @@ def build_dataset_adaptor_iter(mixer, dataset_adaptor, opt, mb_callback, trainin
     device = 'cpu'
     sort_key = str2sortkey[opt.data_type]
 
-    i = training_step
+    i = data_loader_step
     for bucket in mixer():
         dataset = dataset_adaptor(bucket)
         train_iter = OrderedIterator(
@@ -64,6 +64,7 @@ def build_dataset_adaptor_iter(mixer, dataset_adaptor, opt, mb_callback, trainin
         # the gradient update count is not easily available here
         # and the mixer is not easily available in the trainer.
         for batch in train_iter:
+            batch.data_loader_step = i
             mixer.maybe_adjust_mix(i)
             if mb_callback is not None:
                 mb_callback(i)

@@ -354,6 +354,8 @@ class Trainer(object):
             self.optim.zero_grad()
 
         for k, batch in enumerate(true_batches):
+            if hasattr(batch, 'data_loader_step'):
+                self.model.data_loader_step = batch.data_loader_step
             target_size = batch.tgt.size(0)
             # Truncated BPTT: reminder not compatible with accum > 1
             if self.trunc_size:
