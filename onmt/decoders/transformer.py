@@ -56,7 +56,7 @@ class TransformerDecoderLayer(nn.Module):
 
         if self_attn_type == "scaled-dot":
             self.self_attn = MultiHeadedAttention(
-                heads, d_model, dropout=dropout,
+                heads, d_model, dropout=attention_dropout,
                 max_relative_positions=max_relative_positions)
         elif self_attn_type == "average":
             self.self_attn = AverageAttention(d_model,
