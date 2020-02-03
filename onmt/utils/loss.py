@@ -167,7 +167,7 @@ class LossComputeBase(nn.Module):
             return loss, stats
         batch_stats = onmt.utils.Statistics()
         for shard in shards(shard_state, shard_size):
-            loss, stats = self._compute_loss(batch, **shard)
+            loss, stats = self._compute_loss(batch, normalization, **shard)
             loss.backward()
             batch_stats.update(stats)
         return None, batch_stats
@@ -243,9 +243,7 @@ class NMTLossCompute(LossComputeBase):
                           range_, attns=None):
         shard_state = {
             "output": output,
-            "target": batch.tgt[range_[0] + 1: range_[1], :, 0],
-            "enc_src": enc_src,
-            "enc_tgt": enc_tgt
+            "target": batch.tgt[range_[0] + 1: range_[1], :, 0]
         }
         if self.lambda_coverage != 0.0:
             coverage = attns.get("coverage", None)
@@ -283,10 +281,15 @@ class NMTLossCompute(LossComputeBase):
                 "align_head": attn_align,
                 "ref_align": ref_align[:, range_[0] + 1: range_[1], :]
             })
+        if self.lambda_cosine != 0.0:
+            shard_state.update({
+                "enc_src": enc_src,
+                "enc_tgt": enc_tgt
+                })
         return shard_state
 
     def _compute_loss(self, batch, normalization, output, target,
-                      enc_src, enc_tgt, std_attn=None,
+                      enc_src=None, enc_tgt=None, std_attn=None,
                       coverage_attn=None, align_head=None, ref_align=None):
 
         bottled_output = self._bottle(output)
@@ -400,7 +403,7 @@ def shards(state, shard_size, eval_only=False):
         # over the shards, not over the keys: therefore, the values need
         # to be re-zipped by shard and then each shard can be paired
         # with the keys.
-        for shard_tensors in zip(*values):
+        for i, shard_tensors in enumerate(zip(*values)):
             yield dict(zip(keys, shard_tensors))
 
         # Assumed backprop'd
