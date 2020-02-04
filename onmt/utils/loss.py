@@ -92,7 +92,8 @@ class LossComputeBase(nn.Module):
     def padding_idx(self):
         return self.criterion.ignore_index
 
-    def _make_shard_state(self, batch, output, range_, attns=None):
+    def _make_shard_state(self, batch, enc_src, enc_tgt,
+                          output, range_, attns=None):
         """
         Make shard state dictionary for shards() to return iterable
         shards for efficient loss computation. Subclass must define
@@ -315,14 +316,7 @@ class NMTLossCompute(LossComputeBase):
         loss = loss/float(normalization)
 
         if self.lambda_cosine != 0.0:
-            max_src = enc_src.max(axis=0)[0]
-            max_tgt = enc_tgt.max(axis=0)[0]
-            cosine_loss = torch.nn.functional.cosine_similarity(
-                max_src.float(), max_tgt.float(), dim=1)
-            ones = torch.ones(cosine_loss.size()).to(cosine_loss.device)
-            cosine_loss = ones - cosine_loss
-            num_ex = cosine_loss.size(0)
-            cosine_loss = cosine_loss.sum()
+            cosine_loss, num_ex = self._compute_cosine_loss(enc_src, enc_tgt)
             loss += self.lambda_cosine * (cosine_loss / num_ex)
         else:
             cosine_loss = None
@@ -339,6 +333,16 @@ class NMTLossCompute(LossComputeBase):
         covloss = torch.min(std_attn, coverage_attn).sum()
         covloss *= self.lambda_coverage
         return covloss
+
+    def _compute_cosine_loss(self, enc_src, enc_tgt):
+        max_src = enc_src.max(axis=0)[0]
+        max_tgt = enc_tgt.max(axis=0)[0]
+        cosine_loss = torch.nn.functional.cosine_similarity(
+            max_src.float(), max_tgt.float(), dim=1)
+        ones = torch.ones(cosine_loss.size()).to(cosine_loss.device)
+        cosine_loss = ones - cosine_loss
+        num_ex = cosine_loss.size(0)
+        return cosine_loss.sum(), num_ex
 
     def _compute_alignement_loss(self, align_head, ref_align):
         """Compute loss between 2 partial alignment matrix."""

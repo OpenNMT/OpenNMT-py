@@ -186,14 +186,14 @@ class CopyGeneratorLossCompute(NMTLossCompute):
         self.tgt_vocab = tgt_vocab
         self.normalize_by_length = normalize_by_length
 
-    def _make_shard_state(self, batch, output, range_, attns):
+    def _make_shard_state(self, batch, output, enc_src, enc_tgt, range_, attns):
         """See base class for args description."""
         if getattr(batch, "alignment", None) is None:
             raise AssertionError("using -copy_attn you need to pass in "
                                  "-dynamic_dict during preprocess stage.")
 
         shard_state = super(CopyGeneratorLossCompute, self)._make_shard_state(
-            batch, output, range_, attns)
+            batch, output, enc_src, enc_tgt, range_, attns)
 
         shard_state.update({
             "copy_attn": attns.get("copy"),
@@ -201,7 +201,8 @@ class CopyGeneratorLossCompute(NMTLossCompute):
         })
         return shard_state
 
-    def _compute_loss(self, batch, output, target, copy_attn, align,
+    def _compute_loss(self, batch, normalization, output, target,
+                      copy_attn, align, enc_src=None, enc_tgt=None,
                       std_attn=None, coverage_attn=None):
         """Compute the loss.
 
@@ -244,8 +245,18 @@ class CopyGeneratorLossCompute(NMTLossCompute):
         offset_align = align[correct_mask] + len(self.tgt_vocab)
         target_data[correct_mask] += offset_align
 
+        if self.lambda_cosine != 0.0:
+            cosine_loss, num_ex = self._compute_cosine_loss(enc_src, enc_tgt)
+            loss += self.lambda_cosine * (cosine_loss / num_ex)
+        else:
+            cosine_loss = None
+            num_ex = 0
+
         # Compute sum of perplexities for stats
-        stats = self._stats(loss.sum().clone(), scores_data, target_data)
+        stats = self._stats(loss.sum().clone(),
+                            cosine_loss.clone() if cosine_loss is not None
+                            else cosine_loss,
+                            scores_data, target_data, num_ex)
 
         # this part looks like it belongs in CopyGeneratorLoss
         if self.normalize_by_length:
