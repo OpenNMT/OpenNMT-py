@@ -19,47 +19,47 @@ embeddings_to_torch.py [-h] [-emb_file_both EMB_FILE_BOTH]
 
 Run embeddings_to_torch.py -h for more usagecomplete info.
 
-Example
+### Example
 
-1) get GloVe files:
+1. Get GloVe files:
 
-```shell
-mkdir "glove_dir"
-wget http://nlp.stanford.edu/data/glove.6B.zip
-unzip glove.6B.zip -d "glove_dir"
-```
+    ```shell
+    mkdir "glove_dir"
+    wget http://nlp.stanford.edu/data/glove.6B.zip
+    unzip glove.6B.zip -d "glove_dir"
+    ```
 
-2) prepare data:
+2. Prepare data:
 
-```shell
-onmt_preprocess \
--train_src data/train.src.txt \
--train_tgt data/train.tgt.txt \
--valid_src data/valid.src.txt \
--valid_tgt data/valid.tgt.txt \
--save_data data/data
-```
+    ```shell
+    onmt_preprocess \
+    -train_src data/train.src.txt \
+    -train_tgt data/train.tgt.txt \
+    -valid_src data/valid.src.txt \
+    -valid_tgt data/valid.tgt.txt \
+    -save_data data/data
+    ```
 
-3) prepare embeddings:
+3. Prepare embeddings:
 
-```shell
-./tools/embeddings_to_torch.py -emb_file_both "glove_dir/glove.6B.100d.txt" \
--dict_file "data/data.vocab.pt" \
--output_file "data/embeddings"
-```
+    ```shell
+    ./tools/embeddings_to_torch.py -emb_file_both "glove_dir/glove.6B.100d.txt" \
+    -dict_file "data/data.vocab.pt" \
+    -output_file "data/embeddings"
+    ```
 
-4) train using pre-trained embeddings:
+4. Train using pre-trained embeddings:
 
-```shell
-onmt_train -save_model data/model \
-           -batch_size 64 \
-           -layers 2 \
-           -rnn_size 200 \
-           -word_vec_size 100 \
-           -pre_word_vecs_enc "data/embeddings.enc.pt" \
-           -pre_word_vecs_dec "data/embeddings.dec.pt" \
-           -data data/data
-```
+    ```shell
+    onmt_train -save_model data/model \
+               -batch_size 64 \
+               -layers 2 \
+               -rnn_size 200 \
+               -word_vec_size 100 \
+               -pre_word_vecs_enc "data/embeddings.enc.pt" \
+               -pre_word_vecs_dec "data/embeddings.dec.pt" \
+               -data data/data
+    ```
 
 ## How do I use the Transformer model?
 
