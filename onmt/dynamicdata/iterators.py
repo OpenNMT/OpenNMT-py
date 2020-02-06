@@ -113,6 +113,7 @@ class TrainShardIterator(ShardIterator):
             random.shuffle(transposed)
         for fobj in fobjs:
             fobj.close()
+        #transposed = debug(transposed, 'transposed')
         transformed = self.transform(transposed, is_train)
         #transformed = debug(transformed, 'transformed')
         indexed = self.add_index(transformed)

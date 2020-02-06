@@ -20,13 +20,18 @@ def shard_main(config_file):
     max_shard_size = data_config['meta']['shard'].get('shard_size', 100000)
     initial_shards = data_config['meta']['shard'].get('initial_shards', 10)
     compress = data_config['meta']['shard'].get('compress', False)
-    pretokenize = data_config['meta']['shard'].get('pretokenize', True)
+    pretokenize = data_config['meta']['shard'].get('pretokenize', False)
+    predetokenize = data_config['meta']['shard'].get('predetokenize', False)
+    if pretokenize and predetokenize:
+        raise Exception('Cannot both pretokenize and predetokenize')
+    pre = 'tokenize' if pretokenize else None
+    pre = 'detokenize' if predetokenize else None
     data_sharder = DataSharder(
         data_config,
         max_shard_size=max_shard_size,
         initial_shards=initial_shards,
         compress=compress,
-        pretokenize=pretokenize,
+        pre=pre,
         vocab_counter=vocab,
         )
     data_sharder()

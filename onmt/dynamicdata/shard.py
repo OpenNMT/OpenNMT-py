@@ -52,26 +52,39 @@ def pretokenize(stream, tokenizer):
             out.append(' '.join(tokens) + '\n')
         yield tuple(out)
 
+def predetokenize(stream):
+    for tpl in stream:
+        out = []
+        for side in tpl:
+            side = side.replace(' ', '')
+            side = side.lstrip(UNDER)
+            side = side.replace(UNDER, ' ')
+            out.append(side)
+        yield tuple(out)
+
 class DataSharder():
     def __init__(self, data_config,
                  max_shard_size, initial_shards,
                  compress=True, vocab_counter=None,
-                 pretokenize=False):
+                 pre=None):
         self.data_config = data_config
         self.max_shard_size = max_shard_size
         self.initial_shards = initial_shards
         self.compress = compress
         self.vocab_counter = vocab_counter
-        if pretokenize:
+        if pre == 'tokenize':
             import pyonmttok
-            self.tokenizer = pyonmttok.Tokenizer(
+            tokenizer = pyonmttok.Tokenizer(
                 'aggressive',
                 joiner=UNDER,
                 joiner_annotate=False,
                 spacer_annotate=True,
                 segment_alphabet_change=True)
+            self.tokenize = lambda stream: pretokenize(stream, tokenizer)
+        elif pre == 'detokenize':
+            self.tokenize = predetokenize
         else:
-            self.tokenizer = None
+            self.tokenize = None
 
         self._open_shards = []
         self._last_shard = None
@@ -114,8 +127,8 @@ class DataSharder():
             streams.append(reader_func(self.data_config['inputs'][input]))
             weights.append(self.data_config['inputs'][input]['size'])
         stream = weighted_roundrobin(streams, weights)
-        if self.tokenizer is not None:
-            stream = pretokenize(stream, self.tokenizer)
+        if self.tokenize is not None:
+            stream = self.tokenize(stream)
         while True:
             # read a bucket
             bucket = list(itertools.islice(stream, self.initial_shards * 100))
