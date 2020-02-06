@@ -87,7 +87,10 @@
 <li class="toctree-l1"><a class="reference internal" href="main.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">FAQ</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#example">Example</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#how-do-i-use-the-transformer-model">How do I use the Transformer model?</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
@@ -209,18 +212,17 @@
 </pre></div>
 </div>
 <p>Run embeddings_to_torch.py -h for more usagecomplete info.</p>
-<p>Example</p>
-<ol class="simple">
-<li><p>get GloVe files:</p></li>
-</ol>
+<div class="section" id="example">
+<h3>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h3>
+<ol>
+<li><p>Get GloVe files:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>mkdir <span class="s2">&quot;glove_dir&quot;</span>
 wget http://nlp.stanford.edu/data/glove.6B.zip
 unzip glove.6B.zip -d <span class="s2">&quot;glove_dir&quot;</span>
 </pre></div>
 </div>
-<ol class="simple">
-<li><p>prepare data:</p></li>
-</ol>
+</li>
+<li><p>Prepare data:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>onmt_preprocess <span class="se">\</span>
 -train_src data/train.src.txt <span class="se">\</span>
 -train_tgt data/train.tgt.txt <span class="se">\</span>
@@ -229,17 +231,15 @@ unzip glove.6B.zip -d <span class="s2">&quot;glove_dir&quot;</span>
 -save_data data/data
 </pre></div>
 </div>
-<ol class="simple">
-<li><p>prepare embeddings:</p></li>
-</ol>
+</li>
+<li><p>Prepare embeddings:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>./tools/embeddings_to_torch.py -emb_file_both <span class="s2">&quot;glove_dir/glove.6B.100d.txt&quot;</span> <span class="se">\</span>
 -dict_file <span class="s2">&quot;data/data.vocab.pt&quot;</span> <span class="se">\</span>
 -output_file <span class="s2">&quot;data/embeddings&quot;</span>
 </pre></div>
 </div>
-<ol class="simple">
-<li><p>train using pre-trained embeddings:</p></li>
-</ol>
+</li>
+<li><p>Train using pre-trained embeddings:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>onmt_train -save_model data/model <span class="se">\</span>
            -batch_size <span class="m">64</span> <span class="se">\</span>
            -layers <span class="m">2</span> <span class="se">\</span>
@@ -249,6 +249,9 @@ unzip glove.6B.zip -d <span class="s2">&quot;glove_dir&quot;</span>
            -pre_word_vecs_dec <span class="s2">&quot;data/embeddings.dec.pt&quot;</span> <span class="se">\</span>
            -data data/data
 </pre></div>
+</div>
+</li>
+</ol>
 </div>
 </div>
 <div class="section" id="how-do-i-use-the-transformer-model">
