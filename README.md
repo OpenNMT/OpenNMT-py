@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.org/OpenNMT/OpenNMT-py.svg?branch=master)](https://travis-ci.org/OpenNMT/OpenNMT-py)
 [![Run on FH](https://img.shields.io/badge/Run%20on-FloydHub-blue.svg)](https://floydhub.com/run?template=https://github.com/OpenNMT/OpenNMT-py)
 
-This is a [Pytorch](https://github.com/pytorch/pytorch)
+This is a [PyTorch](https://github.com/pytorch/pytorch)
 port of [OpenNMT](https://github.com/OpenNMT/OpenNMT),
 an open-source (MIT) neural machine translation system. It is designed to be research friendly to try out new ideas in translation, summary, image-to-text, morphology, and many other domains. Some companies have proven the code to be production ready.
 
@@ -42,7 +42,7 @@ python setup.py install
 
 Note: If you have MemoryError in the install try to use `pip` with `--no-cache-dir`.
 
-*(Optionnal)* some advanced features (e.g. working audio, image or pretrained models) requires extra packages, you can install it with:
+*(Optional)* some advanced features (e.g. working audio, image or pretrained models) requires extra packages, you can install it with:
 ```bash
 pip install -r requirements.opt.txt
 ```
@@ -112,7 +112,7 @@ The main train command is quite simple. Minimally it takes a data file
 and a save file.  This will run the default model, which consists of a
 2-layer LSTM with 500 hidden units on both the encoder/decoder.
 If you want to train on GPU, you need to set, as an example:
-CUDA_VISIBLE_DEVICES=1,3
+`CUDA_VISIBLE_DEVICES=1,3`
 `-world_size 2 -gpu_ranks 0 1` to use (say) GPU 1 and 3 on this node only.
 To know more about distributed training on single or multi nodes, read the FAQ section.
 
@@ -162,7 +162,7 @@ Major contributors are:
 [Dylan Flaute](http://github.com/flauted (University of Dayton)
 and more !
 
-OpentNMT-py belongs to the OpenNMT project along with OpenNMT-Lua and OpenNMT-tf.
+OpenNMT-py belongs to the OpenNMT project along with OpenNMT-Lua and OpenNMT-tf.
 
 ## Citation
 
