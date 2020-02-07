@@ -386,10 +386,32 @@ class MorfessorEmTabooTransform(Transform):
     def stats(self):
         yield('hits {} vs misses {}'.format(self._cache.hits, self._cache.misses))
 
+class MorfessorEmTabooPeturbedTransform(MorfessorEmTabooTransform):
+    """ taboo segmentation, after peturbing src """
+    def apply(self, tpl, group, is_train=True):
+        # src -> xs, ys
+        src, tgt = tpl
+        all_morphs = sorted(set(src).union(tgt))
+        xs, ys = zip(*[self._cache.segment(token) for token in all_morphs])
+        # mix sides (per type)
+        src_segs, tgt_segs = mix_half(xs, ys)
+        # apply side-specific segmentation maps
+        src_map = {morph: src_seg for morph, src_seg in zip(all_morphs, src_segs)}
+        tgt_map = {morph: tgt_seg for morph, tgt_seg in zip(all_morphs, tgt_segs)}
+        src = [src_map[token] for token in src]
+        tgt = [tgt_map[token] for token in tgt]
+        src = flatten(src)
+        tgt = flatten(tgt)
+        # prepend '<TABOO_AE_{lang}>'
+        src = self.prefix + src
+        return src, tgt
+
+
 class MorfessorEmTransformModel():
     transform_classes = {
         'morfessor_em': MorfessorEmStdTransform,
         'morfessor_em_taboo': MorfessorEmTabooTransform,
+        'morfessor_em_taboo_peturbed': MorfessorEmTabooPeturbedTransform,
     }
 
     def __init__(self, data_config):
@@ -523,6 +545,7 @@ DEFAULT_TRANSFORMS = {
     'lang_prefix_both': PrefixTransformModel,
     'morfessor_em': MorfessorEmTransformModel,
     'morfessor_em_taboo': MorfessorEmTransformModel,
+    'morfessor_em_taboo_peturbed': MorfessorEmTransformModel,
     'sentencepiece': SentencepieceTransform,
     'filter_too_long': FilterTooLongTransform,
 }
