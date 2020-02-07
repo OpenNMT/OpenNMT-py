@@ -84,8 +84,6 @@ class Statistics(object):
         self.loss += stat.loss
         self.n_words += stat.n_words
         self.n_correct += stat.n_correct
-        # print("LOSS update", stat.loss)
-        # print("ZS_LOSS update", stat.zs_loss)
         self.cosine_loss += stat.cosine_loss
         self.num_ex += stat.num_ex
 
@@ -105,7 +103,7 @@ class Statistics(object):
         return math.exp(min(self.loss / self.n_words, 100))
 
     def cos(self):
-        # print("ZS LOSS", self.zs_loss)
+        """ normalize cosine distance per example"""
         return self.cosine_loss / self.num_ex
 
     def elapsed_time(self):

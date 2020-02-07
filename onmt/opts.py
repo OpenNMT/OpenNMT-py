@@ -194,7 +194,8 @@ def model_opts(parser):
     group.add('--lambda_coverage', '-lambda_coverage', type=float, default=0.0,
               help='Lambda value for coverage loss of See et al (2017)')
     group.add('--lambda_cosine', '-lambda_cosine', type=float, default=0.0,
-              help='Lambda value for cosine alignment loss #TODO cite')
+              help='Lambda value for cosine alignment loss '
+                   'of https://arxiv.org/abs/1903.07091 ')
     group.add('--loss_scale', '-loss_scale', type=float, default=0,
               help="For FP16 training, the static loss scale to use. If not "
                    "set, the loss scale is dynamically computed.")
