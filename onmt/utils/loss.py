@@ -339,8 +339,7 @@ class NMTLossCompute(LossComputeBase):
         max_tgt = enc_tgt.max(axis=0)[0]
         cosine_loss = torch.nn.functional.cosine_similarity(
             max_src.float(), max_tgt.float(), dim=1)
-        ones = torch.ones(cosine_loss.size()).to(cosine_loss.device)
-        cosine_loss = ones - cosine_loss
+        cosine_loss = 1 - cosine_loss
         num_ex = cosine_loss.size(0)
         return cosine_loss.sum(), num_ex
 
