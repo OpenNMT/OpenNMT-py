@@ -153,6 +153,7 @@ def main_dynamicdata(opt, device_id, batch_queue=None, semaphore=None, valid_ite
     # at this point.
     configure_process(opt, device_id)
     init_logger(opt.log_file)
+    logger.info('Set random seed to %s' % opt.seed)
     assert len(opt.accum_count) == len(opt.accum_steps), \
         'Number of accum_count values must match number of accum_steps'
     # Load checkpoint if we resume from a previous training.
