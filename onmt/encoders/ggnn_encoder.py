@@ -95,6 +95,7 @@ class GGNNEncoder(EncoderBase):
         self.n_edge_types = n_edge_types
         self.n_node = n_node
         self.n_steps = n_steps
+        self.bidir_edges = True; # FIXME: have actual input
 
         for i in range(self.n_edge_types):
             # incoming and outgoing edge embedding
@@ -105,6 +106,24 @@ class GGNNEncoder(EncoderBase):
 
         self.in_fcs = GGNNAttrProxy(self, "in_")
         self.out_fcs = GGNNAttrProxy(self, "out_")
+
+        # Find vocab data for tree builting
+        f = open(src_vocab,"r")
+        idx=0
+        self.COMMA=-1
+        self.DELIMITER=-1
+        self.idx2num=[]
+        for ln in f:
+            ln = ln.strip('\n')
+            if ln == ",":
+                self.COMMA = idx
+            if ln == "<EOT>":
+                self.DELIMITER = idx
+            if ln.isdigit():
+                self.idx2num.append(int(ln))
+            else:
+                self.idx2num.append(-1)
+            idx+=1
 
         # Propogation Model
         self.propogator = GGNNPropogator(self.state_dim, self.n_node, self.n_edge_types)
@@ -149,15 +168,47 @@ class GGNNEncoder(EncoderBase):
         # FIXME: We want the edges to be precomputed for full flexibility.
         # This probably means adding options to preprocess and somehow connecting
         # both an edge and bridge weight selection through to this encoder.
-        if False:
-            # Initialize edges as simple list, not interesting
+        if True:
+            # Initialize graph using formatted input sequence
             for i in range(src.size()[1]):
+                tokens_done = False
+                # Number of flagged nodes defines node count for this sample
+                # (Nodes can have no flags on them, but must be in 'flags' list).
+                flags = 0
+                flags_done = False
+                edge = 0
+                source_node = 0
                 for j in range(len(src)):
-                    prop_state[i][j][src[j][i]] = 1.0
-                    if j > 0:
-                      A[i][j-1][j] = 1.0
-                      A[i][j][nodes + j-1] = 1.0
-        elif True:
+                    if not tokens_done:
+                        if src[j][i] == self.DELIMITER:
+                            tokens_done = True
+                        else:
+                            prop_state[i][j][src[j][i]] = 1.0
+                    elif src[j][i] == self.DELIMITER:
+                        flags += 1
+                        flags_done = True
+                        assert flags <= nodes
+                    elif src[j][i] == self.COMMA:
+                        if flags_done:
+                            source_node +=1
+                            if source_node == flags:
+                                source_node = 0
+                                edge += 1
+                                assert edge <= 2*self.n_edge_types and (not self.bidir_edges or edge < self.n_edge_types)
+                        else:
+                            flags += 1
+                    elif not flags_done:
+                        # The total number of integers in the vocab should allow
+                        # for all features and edges to be defined.
+                        prop_state[i][flags][self.idx2num[src[j][i]]+self.DELIMITER] = 1.0
+                    else:
+                        A[i][source_node][self.idx2num[src[j][i]]+nodes*edge] = 1.0
+                        if self.bidir_edges:
+                            A[i][self.idx2num[src[j][i]]][nodes*(edge+self.n_edge_types) + source_node] = 1.0
+                # for j in range(flags):
+                    # print ("SJKDBG:prop_state[i][",j,"]:",list(filter(lambda x : prop_state[i][j][x] == 1.0, range(len(prop_state[i][j])))),flush=True)
+                    # print ("SJKDBG:A[i][",j,"]:",list(filter(lambda x : A[i][j][x] == 1.0, range(len(A[i][j])))),flush=True)
+        elif False:
             # Hardcoded tree for linear algebra equivalence explorations
             for i in range(src.size()[1]):
                 n2p={}
