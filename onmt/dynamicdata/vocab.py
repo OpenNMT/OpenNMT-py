@@ -146,6 +146,8 @@ def save_fields(data_config, fields):
         data_config['meta']['shard']['rootdir'],
         segmentation,
         'fields.pt')
+    if os.path.exists(path):
+        raise Exception('Refusing to clobber existing {}'.format(path))
     with open(path, 'wb') as fobj:
         torch.save(fields, fobj)
 
@@ -165,6 +167,8 @@ def save_transforms(data_config, transform_models, transforms):
         data_config['meta']['shard']['rootdir'],
         segmentation,
         'transforms.pt')
+    if os.path.exists(path):
+        raise Exception('Refusing to clobber existing {}'.format(path))
     with open(path, 'wb') as fobj:
         torch.save(transform_models, fobj)
         torch.save(transforms, fobj)
