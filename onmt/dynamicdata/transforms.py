@@ -319,12 +319,17 @@ class MorfessorEmStdTransform(Transform):
         self.data_config = data_config
         self.seg_model = seg_model
         self.group = group
-        # TODO params from config? can't override in set_train_opts
+        # can NOT override in set_train_opts
+        self.n_samples = data_config['meta']['train'].get(
+            'seg_n_samples', 5)
+        self.theta = data_config['meta']['train'].get(
+            'seg_theta', 0.5)
+        print('n_samples {} theta {}'.format(self.n_samples, self.theta))
         self._cache = StdSampleCache(
             self.seg_model,
-            n_samples=5,
+            n_samples=self.n_samples,
             addcount=0,
-            theta=0.5,
+            theta=self.theta,
             maxlen=30)
 
     def warm_up(self, vocabs):
@@ -346,6 +351,13 @@ class MorfessorEmStdTransform(Transform):
     def stats(self):
         yield('hits {} vs misses {}'.format(self._cache.hits, self._cache.misses))
 
+    def __repr__(self):
+        try:
+            return '{}({}, {})'.format(self.__class__.__name__, self.n_samples, self.theta)
+        except AttributeError:
+            return '{}[{}]'.format(self.__class__.__name__, 'old')
+
+
 class MorfessorEmTabooTransform(Transform):
     def __init__(self, data_config, seg_model, group):
         super().__init__(data_config)
@@ -354,11 +366,17 @@ class MorfessorEmTabooTransform(Transform):
         self.group = group
         self.lang = self.data_config['groups'][group]['meta']['src_lang']
         self.prefix = ('<TABOO_AE_{}>'.format(self.lang),)
+        # can NOT override in set_train_opts
+        self.n_samples = data_config['meta']['train'].get(
+            'seg_n_samples', 5)
+        self.theta = data_config['meta']['train'].get(
+            'seg_theta', 0.5)
+        print('n_samples {} theta {}'.format(self.n_samples, self.theta))
         self._cache = TabooSampleCache(
             self.seg_model,
-            n_samples=5,
+            n_samples=self.n_samples,
             addcount=0,
-            theta=0.5,
+            theta=self.theta,
             maxlen=30)
 
     def warm_up(self, vocabs):
@@ -385,6 +403,12 @@ class MorfessorEmTabooTransform(Transform):
 
     def stats(self):
         yield('hits {} vs misses {}'.format(self._cache.hits, self._cache.misses))
+
+    def __repr__(self):
+        try:
+            return '{}({}, {})'.format(self.__class__.__name__, self.n_samples, self.theta)
+        except AttributeError:
+            return '{}[{}]'.format(self.__class__.__name__, 'old')
 
 class MorfessorEmTabooPeturbedTransform(MorfessorEmTabooTransform):
     """ taboo segmentation, after peturbing src """
