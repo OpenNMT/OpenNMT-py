@@ -268,11 +268,15 @@ class PrefixTransformModel(TransformModel):
         super().__init__(data_config)
 
     def get_transform(self, transform, group):
-        # TODO could also implement other types of prefix
         src_lang = self.data_config['groups'][group]['meta']['src_lang']
         tgt_lang = self.data_config['groups'][group]['meta']['tgt_lang']
         prefix = ('<FROM_{}>'.format(src_lang),
                   '<TO_{}>'.format(tgt_lang))
+        try:
+            extra_prefix = self.data_config['groups'][group]['meta']['extra_prefix']
+            prefix = prefix + (extra_prefix,)
+        except KeyError:
+            pass
         return PrefixTransform(prefix)
 
 class PrefixTransform(Transform):
