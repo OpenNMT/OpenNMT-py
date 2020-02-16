@@ -268,6 +268,7 @@ class PrefixTransformModel(TransformModel):
         super().__init__(data_config)
 
     def get_transform(self, transform, group):
+        # FIXME can NOT override in set_train_opts
         src_lang = self.data_config['groups'][group]['meta']['src_lang']
         tgt_lang = self.data_config['groups'][group]['meta']['tgt_lang']
         prefix = ('<FROM_{}>'.format(src_lang),
