@@ -46,6 +46,13 @@ class NMTModel(nn.Module):
 
         enc_state, memory_bank, lengths = self.encoder(src, lengths)
 
+        if bptt is False:
+            self.decoder.init_state(src, memory_bank, enc_state)
+
+        dec_out, attns = self.decoder(dec_in, memory_bank,
+                                      memory_lengths=lengths,
+                                      with_align=with_align)
+
         if encode_tgt:
             # tgt for zero shot alignment loss
             tgt_lengths = torch.Tensor(tgt.size(1))\
@@ -53,15 +60,9 @@ class NMTModel(nn.Module):
                                .long() \
                                .fill_(tgt.size(0))
             embs_tgt, memory_bank_tgt, ltgt = self.encoder(tgt, tgt_lengths)
-        else:
-            memory_bank_tgt = None
+            return dec_out, attns, memory_bank, memory_bank_tgt
 
-        if bptt is False:
-            self.decoder.init_state(src, memory_bank, enc_state)
-        dec_out, attns = self.decoder(dec_in, memory_bank,
-                                      memory_lengths=lengths,
-                                      with_align=with_align)
-        return dec_out, attns, memory_bank, memory_bank_tgt
+        return dec_out, attns
 
     def update_dropout(self, dropout):
         self.encoder.update_dropout(dropout)

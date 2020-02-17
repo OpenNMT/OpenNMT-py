@@ -317,13 +317,21 @@ class Trainer(object):
                 tgt = batch.tgt
 
                 # F-prop through the model.
-                outputs, attns, enc_src, enc_tgt = valid_model(
-                    src, tgt, src_lengths,
-                    with_align=self.with_align)
+                if self.encode_tgt:
+                    outputs, attns, enc_src, enc_tgt = valid_model(
+                        src, tgt, src_lengths,
+                        with_align=self.with_align,
+                        encode_tgt=self.encode_tgt)
+                else:
+                    output, attns = valid_model(
+                        src, tgt, src_lengths,
+                        with_align=self.with_align)
+                    enc_src, enc_tgt = None, None
 
                 # Compute loss.
                 _, batch_stats = self.valid_loss(
-                    batch, outputs, attns, enc_src, enc_tgt)
+                    batch, outputs, attns,
+                    enc_src=enc_src, enc_tgt=enc_tgt)
 
                 # Update statistics.
                 stats.update(batch_stats)
@@ -366,9 +374,16 @@ class Trainer(object):
                 if self.accum_count == 1:
                     self.optim.zero_grad()
 
-                outputs, attns, enc_src, enc_tgt = self.model(
-                    src, tgt, src_lengths, bptt=bptt,
-                    with_align=self.with_align, encode_tgt=self.encode_tgt)
+                if self.encode_tgt:
+                    outputs, attns, enc_src, enc_tgt = self.model(
+                        src, tgt, src_lengths, bptt=bptt,
+                        with_align=self.with_align, encode_tgt=self.encode_tgt)
+                else:
+                    output, attns = self.model(
+                        src, tgt, src_lengths, bptt=bptt,
+                        with_align=self.with_align)
+                    enc_src, enc_tgt = None, None
+
                 bptt = True
 
                 # 3. Compute loss.
@@ -377,8 +392,8 @@ class Trainer(object):
                         batch,
                         outputs,
                         attns,
-                        enc_src,
-                        enc_tgt,
+                        enc_src=enc_src,
+                        enc_tgt=enc_tgt,
                         normalization=normalization,
                         shard_size=self.shard_size,
                         trunc_start=j,
