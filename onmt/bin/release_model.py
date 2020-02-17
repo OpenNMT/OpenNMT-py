@@ -5,18 +5,22 @@ import torch
 
 def get_ctranslate2_model_spec(opt):
     """Creates a CTranslate2 model specification from the model options."""
-    is_vanilla_transformer = (
+    with_relative_position = getattr(opt, "max_relative_positions", 0) > 0
+    is_ct2_compatible = (
         opt.encoder_type == "transformer"
         and opt.decoder_type == "transformer"
-        and opt.position_encoding
         and opt.enc_layers == opt.dec_layers
         and getattr(opt, "self_attn_type", "scaled-dot") == "scaled-dot"
-        and getattr(opt, "max_relative_positions", 0) == 0)
-    if not is_vanilla_transformer:
+        and ((opt.position_encoding and not with_relative_position)
+             or (with_relative_position and not opt.position_encoding)))
+    if not is_ct2_compatible:
         return None
     import ctranslate2
     num_heads = getattr(opt, "heads", 8)
-    return ctranslate2.specs.TransformerSpec(opt.layers, num_heads)
+    return ctranslate2.specs.TransformerSpec(
+        opt.layers,
+        num_heads,
+        with_relative_position=with_relative_position)
 
 
 def main():
