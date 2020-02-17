@@ -323,7 +323,7 @@ class Trainer(object):
                         with_align=self.with_align,
                         encode_tgt=self.encode_tgt)
                 else:
-                    output, attns = valid_model(
+                    outputs, attns = valid_model(
                         src, tgt, src_lengths,
                         with_align=self.with_align)
                     enc_src, enc_tgt = None, None
@@ -379,7 +379,7 @@ class Trainer(object):
                         src, tgt, src_lengths, bptt=bptt,
                         with_align=self.with_align, encode_tgt=self.encode_tgt)
                 else:
-                    output, attns = self.model(
+                    outputs, attns = self.model(
                         src, tgt, src_lengths, bptt=bptt,
                         with_align=self.with_align)
                     enc_src, enc_tgt = None, None
