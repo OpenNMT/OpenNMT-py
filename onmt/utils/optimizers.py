@@ -101,7 +101,7 @@ def build_torch_optimizer(model, opt):
             # In this case use the old FusedAdam with FP16_optimizer wrapper
             static_loss_scale = opt.loss_scale
             dynamic_loss_scale = opt.loss_scale == 0
-            optimizer = apex.optimizers.FP16_Optimizer(
+            optimizer = apex.contrib.optimizers.FP16_Optimizer(
                 optimizer,
                 static_loss_scale=static_loss_scale,
                 dynamic_loss_scale=dynamic_loss_scale)
