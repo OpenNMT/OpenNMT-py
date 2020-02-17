@@ -3,7 +3,13 @@
 
 
 ## [Unreleased]
+## [1.0.1](https://github.com/OpenNMT/OpenNMT-py/tree/1.0.1) (2020-02-17)
 ### Fixes and improvements
+* Ctranslate2 conversion handled in release script (1b50e0c)
+* Use `attention_dropout` properly in MHA (f5c9cd4)
+* Update apex FP16_Optimizer path (d3e2268)
+* Some REST server optimizations
+* Fix and add some docs
 
 ## [1.0.0](https://github.com/OpenNMT/OpenNMT-py/tree/1.0.0) (2019-10-01)
 ### New features
