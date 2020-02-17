@@ -21,12 +21,12 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../../_static/language_data.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-        <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
 
@@ -278,7 +278,7 @@
             <span class="c1"># In this case use the old FusedAdam with FP16_optimizer wrapper</span>
             <span class="n">static_loss_scale</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">loss_scale</span>
             <span class="n">dynamic_loss_scale</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">loss_scale</span> <span class="o">==</span> <span class="mi">0</span>
-            <span class="n">optimizer</span> <span class="o">=</span> <span class="n">apex</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">FP16_Optimizer</span><span class="p">(</span>
+            <span class="n">optimizer</span> <span class="o">=</span> <span class="n">apex</span><span class="o">.</span><span class="n">contrib</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">FP16_Optimizer</span><span class="p">(</span>
                 <span class="n">optimizer</span><span class="p">,</span>
                 <span class="n">static_loss_scale</span><span class="o">=</span><span class="n">static_loss_scale</span><span class="p">,</span>
                 <span class="n">dynamic_loss_scale</span><span class="o">=</span><span class="n">dynamic_loss_scale</span><span class="p">)</span>
