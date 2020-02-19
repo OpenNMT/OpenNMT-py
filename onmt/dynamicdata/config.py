@@ -18,6 +18,9 @@ def _inverse_groups(data_config):
         if '_inputs' not in data_config['groups'][group]:
             data_config['groups'][group]['_inputs'] = []
         data_config['groups'][group]['_inputs'].append(input)
+    for group in data_config['groups']:
+        if '_inputs' in data_config['groups'][group]:
+            data_config['groups'][group]['_inputs'].sort()
 
 def _share_inputs(data_config):
     for group in data_config['groups']:
@@ -159,6 +162,9 @@ def verify_shard_config(data_config):
     shard_config = sharding_only(data_config)
     with open(stored_shard_config_file, 'r') as fobj:
         stored_shard_config = yaml.safe_load(fobj)
+    for group in stored_shard_config['groups']:
+        if '_inputs' in stored_shard_config['groups'][group]:
+            stored_shard_config['groups'][group]['_inputs'].sort()
     if not shard_config == stored_shard_config:
         old, new = dict_diff(stored_shard_config, shard_config)
         raise Exception(
