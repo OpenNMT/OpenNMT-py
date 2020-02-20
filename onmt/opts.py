@@ -2,6 +2,8 @@
 from __future__ import print_function
 
 import configargparse
+import onmt
+
 from onmt.models.sru import CheckSRU
 
 
@@ -520,6 +522,12 @@ def train_opts(parser):
               help="Step for moving average. "
                    "Default is every update, "
                    "if -average_decay is set.")
+    group.add("--src_noise", "-src_noise", type=str, nargs='+',
+              default=[],
+              choices=onmt.modules.source_noise.MultiNoise.NOISES.keys())
+    group.add("--src_noise_prob", "-src_noise_prob", type=float, nargs='+',
+              default=[],
+              help="Probabilities of src_noise functions")
 
     # learning rate
     group = parser.add_argument_group('Optimization- Rate')

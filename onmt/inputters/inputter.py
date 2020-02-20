@@ -62,6 +62,7 @@ class AlignField(LabelField):
     """
     Parse ['<src>-<tgt>', ...] into ['<src>','<tgt>', ...]
     """
+
     def __init__(self, **kwargs):
         kwargs['use_vocab'] = False
         kwargs['preprocessing'] = parse_align_idx
@@ -382,6 +383,7 @@ def _build_fields_vocab(fields, counters, data_type, share_vocab,
             counters,
             build_fv_args,
             size_multiple=vocab_size_multiple if not share_vocab else 1)
+
         if share_vocab:
             # `tgt_vocab_size` is ignored when sharing vocabularies
             logger.info(" * merging src and tgt vocab...")
@@ -393,7 +395,32 @@ def _build_fields_vocab(fields, counters, data_type, share_vocab,
                 vocab_size_multiple=vocab_size_multiple)
             logger.info(" * merged vocab size: %d." % len(src_field.vocab))
 
+    build_noise_field(src_multifield.base_field)
     return fields
+
+
+def build_noise_field(src_field, subword=True,
+                      subword_prefix="▁", sentence_breaks=[".", "?", "!"]):
+    """In place add noise related fields i.e.:
+         - word_start
+         - end_of_sentence
+    """
+    if subword:
+        def is_word_start(x): return x.startswith(subword_prefix)
+        sentence_breaks = [subword_prefix + t for t in sentence_breaks]
+    else:
+        def is_word_start(x): return True
+
+    vocab_size = len(src_field.vocab)
+    word_start_mask = torch.zeros([vocab_size]).bool()
+    end_of_sentence_mask = torch.zeros([vocab_size]).bool()
+    for i, t in enumerate(src_field.vocab.itos):
+        if is_word_start(t):
+            word_start_mask[i] = True
+        if t in sentence_breaks:
+            end_of_sentence_mask[i] = True
+    src_field.word_start_mask = word_start_mask
+    src_field.end_of_sentence_mask = end_of_sentence_mask
 
 
 def build_vocab(train_dataset_files, fields, data_type, share_vocab,
