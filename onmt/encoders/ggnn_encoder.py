@@ -1,4 +1,5 @@
 """Define GGNN-based encoders."""
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -154,257 +155,66 @@ class GGNNEncoder(EncoderBase):
     def forward(self, src, lengths=None):
         """See :func:`EncoderBase.forward()`"""
         self._check_args(src, lengths)
-        # First length tells us how many nodes for this batch
         nodes = self.n_node
+        batch_size=src.size()[1]
+        first_extra=np.zeros(batch_size,dtype=np.int32)
+        prop_state=np.zeros((batch_size,nodes,self.state_dim),dtype=np.int32)
+        A=np.zeros((batch_size,nodes,nodes*self.n_edge_types*2),dtype=np.int32)
+        npsrc = src[:,:,0].cpu().data.numpy().astype(np.int32)
 
-        # FIXME: Perhaps this should be part of the model?
-        if torch.cuda.is_available():
-            prop_state=torch.cuda.FloatTensor(src.size()[1],nodes,self.state_dim).fill_(0)
-            A=torch.cuda.FloatTensor(src.size()[1],nodes,nodes*self.n_edge_types*2).fill_(0)
-        else:
-            prop_state=torch.zeros(src.size()[1],nodes,self.state_dim)
-            A=torch.zeros(src.size()[1],nodes,nodes*self.n_edge_types*2)
-
-        # FIXME: We want the edges to be precomputed for full flexibility.
-        # This probably means adding options to preprocess and somehow connecting
-        # both an edge and bridge weight selection through to this encoder.
-        if True:
-            # Initialize graph using formatted input sequence
-            for i in range(src.size()[1]):
-                tokens_done = False
-                # Number of flagged nodes defines node count for this sample
-                # (Nodes can have no flags on them, but must be in 'flags' list).
-                flags = 0
-                flags_done = False
-                edge = 0
-                source_node = 0
-                for j in range(len(src)):
-                    if not tokens_done:
-                        if src[j][i] == self.DELIMITER:
-                            tokens_done = True
-                        else:
-                            prop_state[i][j][src[j][i]] = 1.0
-                    elif src[j][i] == self.DELIMITER:
-                        flags += 1
-                        flags_done = True
-                        assert flags <= nodes
-                    elif src[j][i] == self.COMMA:
-                        if flags_done:
-                            source_node +=1
-                            if source_node == flags:
-                                source_node = 0
-                                edge += 1
-                                assert edge <= 2*self.n_edge_types and (not self.bidir_edges or edge < self.n_edge_types)
-                        else:
-                            flags += 1
-                    elif not flags_done:
-                        # The total number of integers in the vocab should allow
-                        # for all features and edges to be defined.
-                        prop_state[i][flags][self.idx2num[src[j][i]]+self.DELIMITER] = 1.0
+        # Initialize graph using formatted input sequence
+        for i in range(batch_size):
+            tokens_done = False
+            # Number of flagged nodes defines node count for this sample
+            # (Nodes can have no flags on them, but must be in 'flags' list).
+            flags = 0
+            flags_done = False
+            edge = 0
+            source_node = -1
+            for j in range(len(npsrc)):
+                token = npsrc[j][i]
+                if not tokens_done:
+                    if token == self.DELIMITER:
+                        tokens_done = True
+                        first_extra[i]=j
                     else:
-                        A[i][source_node][self.idx2num[src[j][i]]+nodes*edge] = 1.0
-                        if self.bidir_edges:
-                            A[i][self.idx2num[src[j][i]]][nodes*(edge+self.n_edge_types) + source_node] = 1.0
-                # for j in range(flags):
-                    # print ("SJKDBG:prop_state[i][",j,"]:",list(filter(lambda x : prop_state[i][j][x] == 1.0, range(len(prop_state[i][j])))),flush=True)
-                    # print ("SJKDBG:A[i][",j,"]:",list(filter(lambda x : A[i][j][x] == 1.0, range(len(A[i][j])))),flush=True)
-        elif False:
-            # Hardcoded tree for linear algebra equivalence explorations
-            for i in range(src.size()[1]):
-                n2p={}
-                n2pidx=0
-                nullval=src[src.size()[0]-1][i]
-                dhval=57
-                dxval=58
-                # print("SJKDEBUG src 0,1:",src[0][i],src[1][i])
-                for j in range(src.size()[0]):
-                    # Initialize node state
-                    # FIXME: There is probably a way to have an embedding layer here
-                    if (src[j][i] != nullval):
-                        n2p[j] = n2pidx
-                        n2pidx += 1
-                        prop_state[i][n2p[j]][src[j][i]] = 1.0
-                if (n2pidx >= nodes-1):
-                    print("Error: Too many nodes in graph: ",n2pidx," >= ",nodes-1,flush=True)
-                    raise ValueError("Too many nodes in graph!")
-                # print("SJKDEBUG i",i,"n2pidx",n2pidx,"nodes",nodes,"src.size()",src.size())
-                # Last node is flagged as aggregator and left and right children are the programs
-                prop_state[i][nodes-1][self.state_dim-1] = 1.0
-                # For lin alg eq, edge types are 8 (left, right, LL, LR, RL, RR, 
-                # startprog, endprog) and we do bidirectional as 2nd half of A matrix
-                L_in = 0
-                R_in = nodes
-                LL_in = nodes*2
-                LR_in = nodes*3
-                RL_in = nodes*4
-                RR_in = nodes*5
-                LO_in = nodes*6
-                Strt_in = nodes*7
-                End_in = nodes*8
-                if self.n_edge_types > 9:
-                    LoopBody_in = nodes*9
-                    LoopVar_in = nodes*10
-                    L_out = nodes*11
-                    R_out = nodes*12
-                    LL_out = nodes*13
-                    LR_out = nodes*14
-                    RL_out = nodes*15
-                    RR_out = nodes*16
-                    LO_out = nodes*17
-                    Strt_out = nodes*18
-                    End_out = nodes*19
-                    LoopBody_out = nodes*20
-                    LoopVar_out = nodes*21
+                        prop_state[i][j][token] = 1
+                elif token == self.DELIMITER:
+                    flags += 1
+                    flags_done = True
+                    assert flags <= nodes
+                elif not flags_done:
+                    # The total number of integers in the vocab should allow
+                    # for all features and edges to be defined.
+                    if token == self.COMMA:
+                        flags = 0
+                    else:
+                        if self.idx2num[token] >= 0:
+                            prop_state[i][flags][self.idx2num[token]+self.DELIMITER] = 1
+                        flags += 1
+                elif token == self.COMMA:
+                    edge += 1
+                    assert source_node == -1
+                    assert edge <= 2*self.n_edge_types and (not self.bidir_edges or edge < self.n_edge_types)
                 else:
-                    LoopBody_in = nodes*123
-                    LoopVar_in = nodes*123
-                    L_out = nodes*9
-                    R_out = nodes*10
-                    LL_out = nodes*11
-                    LR_out = nodes*12
-                    RL_out = nodes*13
-                    RR_out = nodes*14
-                    LO_out = nodes*15
-                    Strt_out = nodes*16
-                    End_out = nodes*17
-                    LoopBody_out = -2
-                    LoopVar_out = -2
-                # To help in learning, label nodes with tree location data
-                tree = 120 
-                A[i][nodes-1][Strt_in+n2p[0]] = 1.0
-                A[i][n2p[0]][Strt_out + nodes-1] = 1.0
-                A[i][nodes-1][End_in + n2p[1]] = 1.0
-                A[i][n2p[1]][End_out + nodes-1] = 1.0
+                    if source_node < 0:
+                        source_node = self.idx2num[token]
+                    else:
+                        A[i][source_node][self.idx2num[token]+nodes*edge] = 1
+                        if self.bidir_edges:
+                            A[i][self.idx2num[token]][nodes*(edge+self.n_edge_types) + source_node] = 1
+                        source_node = -1
 
-                # Loop for both programs
-                for lvl0 in range(2):
-                    # Root is lvl0 children at +2 and +64
-                    # Check that children aren't Null (max of 126 entries means [127] is always Null value)
-                    prop_state[i][n2p[lvl0]][lvl0+tree] = 1.0
-                    if (src[lvl0][i].item() == dhval or src[lvl0][i].item() == dxval):
-                        A[i][n2p[lvl0]][LoopBody_in+n2p[lvl0+64]] = 1.0
-                        A[i][n2p[lvl0+64]][LoopBody_out + n2p[lvl0]] = 1.0
-                        loopvar = src[lvl0+2][i]
-                        for varsearch in range(lvl0,nodes,2):
-                            if (src[varsearch][i] == loopvar):
-                                A[i][n2p[varsearch]][LoopVar_in+n2p[lvl0]] = 1.0
-                                A[i][n2p[lvl0]][LoopVar_out + n2p[varsearch]] = 1.0
-                    elif (src[lvl0+2][i] != nullval):
-                        if (src[lvl0+64][i] != nullval):
-                            A[i][n2p[lvl0]][L_in+n2p[lvl0+2]] = 1.0
-                            A[i][n2p[lvl0+2]][L_out+ n2p[lvl0]] = 1.0
-                            A[i][n2p[lvl0]][R_in+n2p[lvl0+64]] = 1.0
-                            A[i][n2p[lvl0+64]][R_out + n2p[lvl0]] = 1.0
-                        else:
-                            A[i][n2p[lvl0]][LO_in+n2p[lvl0+2]] = 1.0
-                            A[i][n2p[lvl0+2]][LO_out+ n2p[lvl0]] = 1.0
-                    if (src[lvl0+4][i] != nullval):
-                        A[i][n2p[lvl0]][LL_in+n2p[lvl0+4]] = 1.0
-                        A[i][n2p[lvl0+4]][LL_out+ n2p[lvl0]] = 1.0
-                    if (src[lvl0+66][i] != nullval):
-                        A[i][n2p[lvl0]][RL_in+n2p[lvl0+66]] = 1.0
-                        A[i][n2p[lvl0+66]][RL_out + n2p[lvl0]] = 1.0
-                    if (src[lvl0+34][i] != nullval):
-                        A[i][n2p[lvl0]][LR_in+n2p[lvl0+34]] = 1.0
-                        A[i][n2p[lvl0+34]][LR_out+ n2p[lvl0]] = 1.0
-                    if (src[lvl0+96][i] != nullval):
-                        A[i][n2p[lvl0]][RR_in+n2p[lvl0+96]] = 1.0
-                        A[i][n2p[lvl0+96]][RR_out + n2p[lvl0]] = 1.0
-                    for lvl1 in (lvl0+2,lvl0+64):
-                        # lvl1 is this node, children at +2 and +32
-                        if (src[lvl1][i] == nullval):
-                            continue
-                        prop_state[i][n2p[lvl1]][lvl0+2+tree] = 1.0
-                        if (src[lvl1+2][i] != nullval):
-                            if (src[lvl1+32][i] != nullval):
-                                A[i][n2p[lvl1]][L_in + n2p[lvl1+2]] = 1.0
-                                A[i][n2p[lvl1+2]][L_out + n2p[lvl1]] = 1.0
-                                A[i][n2p[lvl1]][R_in+n2p[lvl1+32]] = 1.0
-                                A[i][n2p[lvl1+32]][R_out + n2p[lvl1]] = 1.0
-                            else:
-                                A[i][n2p[lvl1]][LO_in + n2p[lvl1+2]] = 1.0
-                                A[i][n2p[lvl1+2]][LO_out + n2p[lvl1]] = 1.0
-                        elif (src[lvl1+32][i] != nullval):
-                            print("Error: Found right node without left node!",flush=True)
-                            raise ValueError("Found right node without left node!")
-                        if (src[lvl1+4][i] != nullval):
-                            A[i][n2p[lvl1]][LL_in + n2p[lvl1+4]] = 1.0
-                            A[i][n2p[lvl1+4]][LL_out + n2p[lvl1]] = 1.0
-                        if (src[lvl1+34][i] != nullval):
-                            A[i][n2p[lvl1]][RL_in+n2p[lvl1+34]] = 1.0
-                            A[i][n2p[lvl1+34]][RL_out + n2p[lvl1]] = 1.0
-                        if (src[lvl1+18][i] != nullval):
-                            A[i][n2p[lvl1]][LR_in + n2p[lvl1+18]] = 1.0
-                            A[i][n2p[lvl1+18]][LR_out + n2p[lvl1]] = 1.0
-                        if (src[lvl1+48][i] != nullval):
-                            A[i][n2p[lvl1]][RR_in+n2p[lvl1+48]] = 1.0
-                            A[i][n2p[lvl1+48]][RR_out + n2p[lvl1]] = 1.0
-                        for lvl2 in (lvl1+2,lvl1+32):
-                            if (src[lvl2][i] == nullval):
-                                continue
-                            prop_state[i][n2p[lvl2]][lvl0+4+tree] = 1.0
-                            if (src[lvl2+2][i] != nullval):
-                                if (src[lvl2+16][i] != nullval):
-                                    A[i][n2p[lvl2]][L_in + n2p[lvl2+2]] = 1.0
-                                    A[i][n2p[lvl2+2]][L_out + n2p[lvl2]] = 1.0
-                                    A[i][n2p[lvl2]][R_in+n2p[lvl2+16]] = 1.0
-                                    A[i][n2p[lvl2+16]][R_out + n2p[lvl2]] = 1.0
-                                else:
-                                    A[i][n2p[lvl2]][LO_in + n2p[lvl2+2]] = 1.0
-                                    A[i][n2p[lvl2+2]][LO_out + n2p[lvl2]] = 1.0
-                            if (src[lvl2+4][i] != nullval):
-                                A[i][n2p[lvl2]][LL_in + n2p[lvl2+4]] = 1.0
-                                A[i][n2p[lvl2+4]][LL_out + n2p[lvl2]] = 1.0
-                            if (src[lvl2+18][i] != nullval):
-                                A[i][n2p[lvl2]][RL_in+n2p[lvl2+18]] = 1.0
-                                A[i][n2p[lvl2+18]][RL_out + n2p[lvl2]] = 1.0
-                            if (src[lvl2+10][i] != nullval):
-                                A[i][n2p[lvl2]][LR_in + n2p[lvl2+10]] = 1.0
-                                A[i][n2p[lvl2+10]][LR_out + n2p[lvl2]] = 1.0
-                            if (src[lvl2+24][i] != nullval):
-                                A[i][n2p[lvl2]][RR_in+n2p[lvl2+24]] = 1.0
-                                A[i][n2p[lvl2+24]][RR_out + n2p[lvl2]] = 1.0
-                            for lvl3 in (lvl2+2,lvl2+16):
-                                if (src[lvl3][i] == nullval):
-                                    continue
-                                prop_state[i][n2p[lvl3]][lvl0+6+tree] = 1.0
-                                if (src[lvl3+2][i] != nullval):
-                                    if (src[lvl3+8][i] != nullval):
-                                        A[i][n2p[lvl3]][L_in + n2p[lvl3+2]] = 1.0
-                                        A[i][n2p[lvl3+2]][L_out + n2p[lvl3]] = 1.0
-                                        A[i][n2p[lvl3]][R_in+n2p[lvl3+8]] = 1.0
-                                        A[i][n2p[lvl3+8]][R_out + n2p[lvl3]] = 1.0
-                                    else:
-                                        A[i][n2p[lvl3]][LO_in + n2p[lvl3+2]] = 1.0
-                                        A[i][n2p[lvl3+2]][LO_out + n2p[lvl3]] = 1.0
-                                if (src[lvl3+4][i] != nullval):
-                                    A[i][n2p[lvl3]][LL_in + n2p[lvl3+4]] = 1.0
-                                    A[i][n2p[lvl3+4]][LL_out + n2p[lvl3]] = 1.0
-                                if (src[lvl3+10][i] != nullval):
-                                    A[i][n2p[lvl3]][RL_in+n2p[lvl3+10]] = 1.0
-                                    A[i][n2p[lvl3+10]][RL_out + n2p[lvl3]] = 1.0
-                                if (src[lvl3+6][i] != nullval):
-                                    A[i][n2p[lvl3]][LR_in + n2p[lvl3+6]] = 1.0
-                                    A[i][n2p[lvl3+6]][LR_out + n2p[lvl3]] = 1.0
-                                if (src[lvl3+12][i] != nullval):
-                                    A[i][n2p[lvl3]][RR_in+n2p[lvl3+12]] = 1.0
-                                    A[i][n2p[lvl3+12]][RR_out + n2p[lvl3]] = 1.0
-                                for lvl4 in (lvl3+2,lvl3+8):
-                                    if (src[lvl4][i] == nullval):
-                                        continue
-                                    prop_state[i][n2p[lvl4]][lvl0+8+tree] = 1.0
-                                    if (src[lvl4+2][i] != nullval):
-                                        prop_state[i][n2p[lvl4+2]][lvl0+10+tree] = 1.0
-                                        if (src[lvl4+4][i] != nullval):
-                                            prop_state[i][n2p[lvl4+4]][lvl0+10+tree] = 1.0
-                                            A[i][n2p[lvl4]][L_in + n2p[lvl4+2]] = 1.0
-                                            A[i][n2p[lvl4+2]][L_out + n2p[lvl4]] = 1.0
-                                            A[i][n2p[lvl4]][R_in+n2p[lvl4+4]] = 1.0
-                                            A[i][n2p[lvl4+4]][R_out + n2p[lvl4]] = 1.0
-                                        else:
-                                            A[i][n2p[lvl4]][LO_in + n2p[lvl4+2]] = 1.0
-                                            A[i][n2p[lvl4+2]][LO_out + n2p[lvl4]] = 1.0
-
+        if torch.cuda.is_available():
+            prop_state=torch.from_numpy(prop_state).float().to("cuda:0")
+            A=torch.from_numpy(A).float().to("cuda:0")
+        else:
+            prop_state=torch.from_numpy(prop_state).float()
+            A=torch.from_numpy(A).float()
+#        for i in range(2):
+#          for j in range(nodes):
+#            print("SJKDEBUG:prop_state",i,",",j,":",list(filter(lambda x: prop_state[i][j][x] > 0, range(len(prop_state[i][j])))),flush=True)
+#            print("SJKDEBUG:A",i,",",j,":",list(filter(lambda x: A[i][j][x] > 0, range(len(A[i][j])))),flush=True)
         for i_step in range(self.n_steps):
             in_states = []
             out_states = []
@@ -419,7 +229,6 @@ class GGNNEncoder(EncoderBase):
 
             prop_state = self.propogator(in_states, out_states, prop_state, A, nodes)
 
-        # If static annotation needed: join_state = torch.cat((prop_state, annotation), 2)
         prop_state = prop_state.transpose(0,1)
         if False:
             # FIXME: for now, just average all nodes to get bridge input
@@ -429,7 +238,7 @@ class GGNNEncoder(EncoderBase):
         elif True:
             # Use roots of the 2 program trees as inputs to bridge
             # print("SJKDEBUG propstate size",prop_state.size())
-            join_state = torch.stack((prop_state[nodes-1],prop_state[nodes-1],prop_state[nodes-1],prop_state[nodes-1]))
+            join_state = torch.stack((prop_state[first_extra,torch.arange(batch_size)],prop_state[first_extra,torch.arange(batch_size)],prop_state[first_extra,torch.arange(batch_size)],prop_state[first_extra,torch.arange(batch_size)]))
         join_state = (join_state,join_state)
 
         # print("SJKDEBUG:join_state",len(join_state),join_state[0].size())
@@ -467,8 +276,6 @@ class GGNNEncoder(EncoderBase):
             outs = tuple([bottle_hidden(layer, hidden[ix])
                           for ix, layer in enumerate(self.bridge)])
         else:
-            # print("SJKDEBUG:self.bridge[0],hidden.size(),self.total_hidden_dim",self.bridge[0],hidden.size(),self.total_hidden_dim,flush=True)
             outs = bottle_hidden(self.bridge[0], hidden)
-            # print("SJKDEBUG:outs.size()",outs.size())
         return outs
 
