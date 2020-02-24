@@ -234,6 +234,51 @@ class WbNoiseTransform(SwitchOutTransform):
             yield('wb_noise  {} / {} = {}'.format(
                 self._sum_draw, self._sum_toks, self._sum_draw / self._sum_toks))
 
+
+class InsertionTransformModel(TransformModel):
+    def __init__(self, data_config):
+        super().__init__(data_config)
+        self.vocab = None
+
+    def warm_up(self, vocabs):
+        # assumes shared vocab
+        self.vocab = list(vocabs['shared'].keys())
+
+    def get_transform(self, transform, group):
+        return InsertionTransform(self.data_config, self.vocab)
+
+
+class InsertionTransform(SwitchOutTransform):
+    def set_train_opts(self, data_config):
+        self.temperature = data_config['meta']['train'].get(
+            'insertion_temperature', 1.3) * -1
+
+    def _switchout(self, tokens):
+        n_tokens = len(tokens)
+        indices = np.arange(n_tokens)
+        logits = indices * self.temperature
+        logits = softmax(logits)
+        n_switchouts = np.random.choice(indices, p=logits)
+        self._sum_toks += n_tokens
+
+        switchout_indices = set(np.random.choice(indices, size=n_switchouts, replace=False))
+        out = []
+        for (i, tok) in enumerate(tokens):
+            if i in switchout_indices:
+                # first the insertion
+                self._sum_draw += 1
+                out.append(self._replace(tok))
+            # then the old token
+            out.append(tok)
+        return tuple(out)
+
+    def stats(self):
+        if self._sum_toks == 0:
+            yield('no insertion')
+        else:
+            yield('insertion  {} / {} = {}'.format(
+                self._sum_draw, self._sum_toks, self._sum_draw / self._sum_toks))
+
 class FilterTooLongTransform(SimpleTransform):
     def __init__(self, data_config):
         super().__init__(data_config)
@@ -571,6 +616,7 @@ DEFAULT_TRANSFORMS = {
     'drop': DropTransform,
     'switchout': SwitchOutTransformModel,
     'wb_noise': WbNoiseTransformModel,
+    'insertion': InsertionTransformModel,
     'lang_prefix_both': PrefixTransformModel,
     'morfessor_em': MorfessorEmTransformModel,
     'morfessor_em_taboo': MorfessorEmTransformModel,

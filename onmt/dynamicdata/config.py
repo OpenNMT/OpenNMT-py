@@ -18,6 +18,9 @@ def _inverse_groups(data_config):
         if '_inputs' not in data_config['groups'][group]:
             data_config['groups'][group]['_inputs'] = []
         data_config['groups'][group]['_inputs'].append(input)
+    for group in data_config['groups']:
+        if '_inputs' in data_config['groups'][group]:
+            data_config['groups'][group]['_inputs'].sort()
 
 def _share_inputs(data_config):
     for group in data_config['groups']:
@@ -134,6 +137,24 @@ def save_shard_config(data_config):
     with open(stored_shard_config_file, 'w') as fobj:
         yaml.safe_dump(data_config, fobj)
 
+def dict_diff(a, b):
+    keys = list(sorted(set(a.keys()).union(b.keys())))
+    a_pruned = {}
+    b_pruned = {}
+    for key in keys:
+        if a.get(key, None) == b.get(key, None):
+            # equal can be pruned
+            continue
+        if key in a and key in b and isinstance(a[key], dict) and isinstance(b[key], dict):
+            a_sub, b_sub = dict_diff(a[key],  b[key])
+            a_pruned[key] = a_sub
+            b_pruned[key] = b_sub
+        else:
+            a_pruned[key] = a.get(key, '**** MISSING ****')
+            b_pruned[key] = b.get(key, '**** MISSING ****')
+    return a_pruned, b_pruned
+
+
 def verify_shard_config(data_config):
     stored_shard_config_file = os.path.join(
         data_config['meta']['shard']['rootdir'],
@@ -141,7 +162,11 @@ def verify_shard_config(data_config):
     shard_config = sharding_only(data_config)
     with open(stored_shard_config_file, 'r') as fobj:
         stored_shard_config = yaml.safe_load(fobj)
+    for group in stored_shard_config['groups']:
+        if '_inputs' in stored_shard_config['groups'][group]:
+            stored_shard_config['groups'][group]['_inputs'].sort()
     if not shard_config == stored_shard_config:
+        old, new = dict_diff(stored_shard_config, shard_config)
         raise Exception(
             'data_config not compatible with stored shard config.\n'
-            'old {}\nnew {}\n'.format(stored_shard_config, shard_config))
+            'old {}\nnew {}\n'.format(old, new))

@@ -42,6 +42,7 @@ class GroupEpoch():
         if self.data_config['meta']['train'].get('reverse', False):
             self.sides = self.sides[::-1]
         self._find_shards()
+        logger.info('Shard group "{}" from "{}"'.format(self.group, self.groupdir))
 
     def _find_shards(self):
         for filename in os.listdir(self.groupdir):
