@@ -31,10 +31,10 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
             used to save the model
     """
 
-    tgt_field = dict(fields)["tgt"].base_field
-    train_loss = onmt.utils.loss.build_loss_compute(model, tgt_field, opt)
+    tgt_fields = dict(fields)["tgt"]
+    train_loss = onmt.utils.loss.build_loss_compute(model, tgt_fields, opt)
     valid_loss = onmt.utils.loss.build_loss_compute(
-        model, tgt_field, opt, train=False)
+        model, tgt_fields, opt, train=False)
 
     trunc_size = opt.truncated_decoder  # Badly named...
     shard_size = opt.max_generator_batches if opt.model_dtype == 'fp32' else 0

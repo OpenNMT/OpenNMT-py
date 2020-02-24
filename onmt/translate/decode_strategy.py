@@ -68,6 +68,8 @@ class DecodeStrategy(object):
         self.predictions = [[] for _ in range(batch_size)]
         self.scores = [[] for _ in range(batch_size)]
         self.attention = [[] for _ in range(batch_size)]
+        # initialize features
+        self.features = [[] for _ in range(batch_size)]
 
         self.alive_attn = None
 
@@ -83,7 +85,8 @@ class DecodeStrategy(object):
 
         self.done = False
 
-    def initialize(self, memory_bank, src_lengths, src_map=None, device=None):
+    def initialize(self, memory_bank, src_lengths, num_features,
+                   src_map=None, device=None):
         """DecodeStrategy subclasses should override :func:`initialize()`.
 
         `initialize` should be called before all actions.
@@ -91,20 +94,23 @@ class DecodeStrategy(object):
         """
         if device is None:
             device = torch.device('cpu')
+        # initialize to [ batch*beam x num_feats x 1]
         self.alive_seq = torch.full(
-            [self.batch_size * self.parallel_paths, 1], self.bos,
+            [self.batch_size * self.parallel_paths, num_features, 1], self.bos,
             dtype=torch.long, device=device)
         self.is_finished = torch.zeros(
             [self.batch_size, self.parallel_paths],
             dtype=torch.uint8, device=device)
+        self.num_features = num_features - 1  # tokens are not features
         return None, memory_bank, src_lengths, src_map
 
     def __len__(self):
-        return self.alive_seq.shape[1]
+        return self.alive_seq.shape[-1]
 
     def ensure_min_length(self, log_probs):
         if len(self) <= self.min_length:
-            log_probs[:, self.eos] = -1e20
+            for probs in log_probs:
+                probs[:, self.eos] = -1e20
 
     def ensure_max_length(self):
         # add one to account for BOS. Don't account for EOS because hitting

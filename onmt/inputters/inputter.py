@@ -582,20 +582,44 @@ def _pool(data, batch_size, batch_size_fn, batch_size_multiple,
             yield b
 
 
-class OrderedIterator(torchtext.data.Iterator):
+class OnmtBatch(torchtext.data.Batch):
+    def __init__(self, data=None, dataset=None,
+                 device=None, feat_no_time_shift=False):
+        super(OnmtBatch, self).__init__(data, dataset, device)
+        # we need to shift target features if needed
+        if not(feat_no_time_shift):
+            if hasattr(self, 'tgt') and self.tgt.size(-1) > 1:
+                # tokens: [ len x batch x 1]
+                tokens = self.tgt[:, :, 0].unsqueeze(-1)
+                # feats: [ len x batch x num_feats ]
+                feats = self.tgt[:, :, 1:]
+                # shift feats one step to the right
+                feats = torch.cat((
+                    feats[-1, :, :].unsqueeze(0),
+                    feats[:-1, :, :]
+                    ))
+                # build back target tensor
+                self.tgt = torch.cat((
+                    tokens,
+                    feats
+                    ), dim=-1)
 
+
+class OrderedIterator(torchtext.data.Iterator):
     def __init__(self,
                  dataset,
                  batch_size,
                  pool_factor=1,
                  batch_size_multiple=1,
                  yield_raw_example=False,
+                 feat_no_time_shift=False,
                  **kwargs):
         super(OrderedIterator, self).__init__(dataset, batch_size, **kwargs)
         self.batch_size_multiple = batch_size_multiple
         self.yield_raw_example = yield_raw_example
         self.dataset = dataset
         self.pool_factor = pool_factor
+        self.feat_no_time_shift = feat_no_time_shift
 
     def create_batches(self):
         if self.train:
@@ -627,7 +651,7 @@ class OrderedIterator(torchtext.data.Iterator):
         """
         Extended version of the definition in torchtext.data.Iterator.
         Added yield_raw_example behaviour to yield a torchtext.data.Example
-        instead of a torchtext.data.Batch object.
+        instead of an OnmtBatch object.
         """
         while True:
             self.init_epoch()
@@ -648,10 +672,11 @@ class OrderedIterator(torchtext.data.Iterator):
                 if self.yield_raw_example:
                     yield minibatch[0]
                 else:
-                    yield torchtext.data.Batch(
+                    yield OnmtBatch(
                         minibatch,
                         self.dataset,
-                        self.device)
+                        self.device,
+                        feat_no_time_shift=self.feat_no_time_shift)
             if not self.repeat:
                 return
 
@@ -683,6 +708,7 @@ class MultipleDatasetIterator(object):
         self.sort_key = temp_dataset.sort_key
         self.random_shuffler = RandomShuffler()
         self.pool_factor = opt.pool_factor
+        self.feat_no_time_shift = opt.feat_no_time_shift
         del temp_dataset
 
     def _iter_datasets(self):
@@ -709,9 +735,10 @@ class MultipleDatasetIterator(object):
                     self.random_shuffler,
                     self.pool_factor):
                 minibatch = sorted(minibatch, key=self.sort_key, reverse=True)
-                yield torchtext.data.Batch(minibatch,
-                                           self.iterables[0].dataset,
-                                           self.device)
+                yield OnmtBatch(minibatch,
+                                self.iterables[0].dataset,
+                                self.device,
+                                feat_no_time_shift=self.feat_no_time_shift)
 
 
 class DatasetLazyIter(object):
@@ -729,7 +756,8 @@ class DatasetLazyIter(object):
 
     def __init__(self, dataset_paths, fields, batch_size, batch_size_fn,
                  batch_size_multiple, device, is_train, pool_factor,
-                 repeat=True, num_batches_multiple=1, yield_raw_example=False):
+                 repeat=True, num_batches_multiple=1, feat_no_time_shift=False,
+                 yield_raw_example=False):
         self._paths = dataset_paths
         self.fields = fields
         self.batch_size = batch_size
@@ -741,6 +769,7 @@ class DatasetLazyIter(object):
         self.num_batches_multiple = num_batches_multiple
         self.yield_raw_example = yield_raw_example
         self.pool_factor = pool_factor
+        self.feat_no_time_shift = feat_no_time_shift
 
     def _iter_dataset(self, path):
         logger.info('Loading dataset from %s' % path)
@@ -758,7 +787,8 @@ class DatasetLazyIter(object):
             sort=False,
             sort_within_batch=True,
             repeat=False,
-            yield_raw_example=self.yield_raw_example
+            yield_raw_example=self.yield_raw_example,
+            feat_no_time_shift=self.feat_no_time_shift
         )
         for batch in cur_iter:
             self.dataset = cur_iter.dataset
@@ -853,7 +883,8 @@ def build_dataset_iter(corpus_type, fields, opt, is_train=True, multi=False):
         opt.pool_factor,
         repeat=not opt.single_pass,
         num_batches_multiple=max(opt.accum_count) * opt.world_size,
-        yield_raw_example=multi)
+        yield_raw_example=multi,
+        feat_no_time_shift=opt.feat_no_time_shift)
 
 
 def build_dataset_iter_multiple(train_shards, fields, opt):

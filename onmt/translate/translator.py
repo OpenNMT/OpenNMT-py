@@ -130,7 +130,8 @@ class Translator(object):
             report_align=False,
             report_score=True,
             logger=None,
-            seed=-1):
+            seed=-1,
+            feat_no_time_shift=False):
         self.model = model
         self.fields = fields
         tgt_field = dict(self.fields)["tgt"].base_field
@@ -186,6 +187,8 @@ class Translator(object):
 
         self.use_filter_pred = False
         self._filter_pred = None
+
+        self.feat_no_time_shift = feat_no_time_shift
 
         # for debugging
         self.beam_trace = self.dump_beam != ""
@@ -259,7 +262,8 @@ class Translator(object):
             report_align=report_align,
             report_score=report_score,
             logger=logger,
-            seed=opt.seed)
+            seed=opt.seed,
+            feat_no_time_shift=vars(opt).get("feat_no_time_shift", False))
 
     def _log(self, msg):
         if self.logger:
@@ -334,7 +338,7 @@ class Translator(object):
 
         xlation_builder = onmt.translate.TranslationBuilder(
             data, self.fields, self.n_best, self.replace_unk, tgt,
-            self.phrase_table
+            self.phrase_table, self.feat_no_time_shift
         )
 
         # Statistics
@@ -646,6 +650,7 @@ class Translator(object):
 
         results = {
             "predictions": None,
+            "features": None,
             "scores": None,
             "attention": None,
             "batch": batch,
@@ -654,15 +659,19 @@ class Translator(object):
                 enc_states, batch_size, src)}
 
         # (2) prep decode_strategy. Possibly repeat src objects.
+        num_features = batch.src[0].size(-1)
         src_map = batch.src_map if use_src_map else None
         fn_map_state, memory_bank, memory_lengths, src_map = \
-            decode_strategy.initialize(memory_bank, src_lengths, src_map)
+            decode_strategy.initialize(
+                memory_bank, src_lengths,
+                num_features, src_map)
         if fn_map_state is not None:
             self.model.decoder.map_state(fn_map_state)
 
         # (3) Begin decoding step by step:
         for step in range(decode_strategy.max_length):
-            decoder_input = decode_strategy.current_predictions.view(1, -1, 1)
+            decoder_input = decode_strategy.current_predictions\
+                                           .view(1, -1, num_features)
 
             log_probs, attn = self._decode_and_generate(
                 decoder_input,
@@ -674,6 +683,7 @@ class Translator(object):
                 step=step,
                 batch_offset=decode_strategy.batch_offset)
 
+            # Note: we may have probs over several features
             decode_strategy.advance(log_probs, attn)
             any_finished = decode_strategy.is_finished.any()
             if any_finished:
@@ -702,6 +712,7 @@ class Translator(object):
 
         results["scores"] = decode_strategy.scores
         results["predictions"] = decode_strategy.predictions
+        results["features"] = decode_strategy.features
         results["attention"] = decode_strategy.attention
         if self.report_align:
             results["alignment"] = self._align_forward(

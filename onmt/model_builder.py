@@ -13,8 +13,7 @@ from onmt.encoders import str2enc
 
 from onmt.decoders import str2dec
 
-from onmt.modules import Embeddings, VecEmbedding, CopyGenerator
-from onmt.modules.util_class import Cast
+from onmt.modules import Embeddings, VecEmbedding, Generator
 from onmt.utils.misc import use_gpu
 from onmt.utils.logging import logger
 from onmt.utils.parse import ArgumentParser
@@ -86,6 +85,35 @@ def build_decoder(opt, embeddings):
     dec_type = "ifrnn" if opt.decoder_type == "rnn" and opt.input_feed \
                else opt.decoder_type
     return str2dec[dec_type].from_opt(opt, embeddings)
+
+
+def build_generator(model_opt, fields, decoder):
+    gen_sizes = [len(field[1].vocab) for field in fields['tgt'].fields]
+    if model_opt.share_decoder_embeddings:
+        rnn_sizes = ([model_opt.rnn_size -
+                      (model_opt.feat_vec_size * (len(gen_sizes) - 1))]
+                     + [model_opt.feat_vec_size] * (len(gen_sizes) - 1))
+    else:
+        rnn_sizes = [model_opt.rnn_size] * len(gen_sizes)
+
+    if model_opt.generator_function == "sparsemax":
+        gen_func = onmt.modules.sparse_activations.LogSparsemax(dim=-1)
+    else:
+        gen_func = nn.LogSoftmax(dim=-1)
+
+    tgt_base_field = fields["tgt"].base_field
+    pad_idx = tgt_base_field.vocab.stoi[tgt_base_field.pad_token]
+    generator = Generator(rnn_sizes, gen_sizes, gen_func,
+                          shared=model_opt.share_decoder_embeddings,
+                          copy_attn=model_opt.copy_attn,
+                          pad_idx=pad_idx)
+
+    if model_opt.share_decoder_embeddings:
+        # share the weights
+        for gen, emb in zip(generator.generators, decoder.embeddings.emb_luts):
+            gen[0].weight = emb.weight
+
+    return generator
 
 
 def load_test_model(opt, model_path=None):
@@ -172,26 +200,7 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
     model = onmt.models.NMTModel(encoder, decoder)
 
     # Build Generator.
-    if not model_opt.copy_attn:
-        if model_opt.generator_function == "sparsemax":
-            gen_func = onmt.modules.sparse_activations.LogSparsemax(dim=-1)
-        else:
-            gen_func = nn.LogSoftmax(dim=-1)
-        generator = nn.Sequential(
-            nn.Linear(model_opt.dec_rnn_size,
-                      len(fields["tgt"].base_field.vocab)),
-            Cast(torch.float32),
-            gen_func
-        )
-        if model_opt.share_decoder_embeddings:
-            generator[0].weight = decoder.embeddings.word_lut.weight
-    else:
-        tgt_base_field = fields["tgt"].base_field
-        vocab_size = len(tgt_base_field.vocab)
-        pad_idx = tgt_base_field.vocab.stoi[tgt_base_field.pad_token]
-        generator = CopyGenerator(model_opt.dec_rnn_size, vocab_size, pad_idx)
-        if model_opt.share_decoder_embeddings:
-            generator.linear.weight = decoder.embeddings.word_lut.weight
+    generator = build_generator(model_opt, fields, decoder)
 
     # Load the model states from checkpoint or initialize them.
     if checkpoint is not None:

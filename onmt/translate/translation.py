@@ -23,7 +23,7 @@ class TranslationBuilder(object):
     """
 
     def __init__(self, data, fields, n_best=1, replace_unk=False,
-                 has_tgt=False, phrase_table=""):
+                 has_tgt=False, phrase_table="", feat_no_time_shift=False):
         self.data = data
         self.fields = fields
         self._has_text_src = isinstance(
@@ -32,17 +32,34 @@ class TranslationBuilder(object):
         self.replace_unk = replace_unk
         self.phrase_table = phrase_table
         self.has_tgt = has_tgt
+        self.feat_no_time_shift = feat_no_time_shift
 
-    def _build_target_tokens(self, src, src_vocab, src_raw, pred, attn):
-        tgt_field = dict(self.fields)["tgt"].base_field
+    def _build_target_tokens(self, src, src_vocab, src_raw,
+                             pred, attn, all_feats=None):
+        # feats need do be shifted back one step to the left
+        if all_feats is not None:
+            if not(self.feat_no_time_shift):
+                all_feats = [list(feat[1:]) + [feat[0]] for feat in all_feats]
+            pred_iter = zip(pred, *all_feats)
+        else:
+            pred_iter = [(item,) for item in pred]
+        tgt_fields = dict(self.fields)["tgt"]
+        tgt_field = tgt_fields.base_field
         vocab = tgt_field.vocab
+        feats_vocabs = [field.vocab for name, field in tgt_fields.fields[1:]]
         tokens = []
-        for tok in pred:
+        for tok_feats in pred_iter:
+            tok = tok_feats[0]
             if tok < len(vocab):
-                tokens.append(vocab.itos[tok])
+                token = vocab.itos[tok]
             else:
-                tokens.append(src_vocab.itos[tok - len(vocab)])
-            if tokens[-1] == tgt_field.eos_token:
+                token = src_vocab.itos[tok - len(vocab)]
+            if len(tok_feats) > 1:
+                feats = tok_feats[1:]
+                for feat, fv in zip(feats, feats_vocabs):
+                    token += u"￨" + fv.itos[feat]
+            tokens.append(token)
+            if token.split(u"￨")[0] == tgt_field.eos_token:
                 tokens = tokens[:-1]
                 break
         if self.replace_unk and attn is not None and src is not None:
@@ -63,8 +80,9 @@ class TranslationBuilder(object):
                len(translation_batch["predictions"]))
         batch_size = batch.batch_size
 
-        preds, pred_score, attn, align, gold_score, indices = list(zip(
+        preds, feats, pred_score, attn, align, gold_score, indices = list(zip(
             *sorted(zip(translation_batch["predictions"],
+                        translation_batch["features"],
                         translation_batch["scores"],
                         translation_batch["attention"],
                         translation_batch["alignment"],
@@ -96,7 +114,8 @@ class TranslationBuilder(object):
             pred_sents = [self._build_target_tokens(
                 src[:, b] if src is not None else None,
                 src_vocab, src_raw,
-                preds[b][n], attn[b][n])
+                preds[b][n], attn[b][n],
+                feats[b][n] if len(feats[0]) > 0 else None)
                 for n in range(self.n_best)]
             gold_sent = None
             if tgt is not None:

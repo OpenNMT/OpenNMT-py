@@ -91,7 +91,8 @@ class GreedySearch(DecodeStrategy):
         self.keep_topk = keep_topk
         self.topk_scores = None
 
-    def initialize(self, memory_bank, src_lengths, src_map=None, device=None):
+    def initialize(self, memory_bank, src_lengths, num_features,
+                   src_map=None, device=None):
         """Initialize for decoding."""
         fn_map_state = None
 
@@ -104,7 +105,7 @@ class GreedySearch(DecodeStrategy):
 
         self.memory_lengths = src_lengths
         super(GreedySearch, self).initialize(
-            memory_bank, src_lengths, src_map, device)
+            memory_bank, src_lengths, num_features, src_map, device)
         self.select_indices = torch.arange(
             self.batch_size, dtype=torch.long, device=device)
         self.original_batch_idx = torch.arange(
@@ -113,7 +114,7 @@ class GreedySearch(DecodeStrategy):
 
     @property
     def current_predictions(self):
-        return self.alive_seq[:, -1]
+        return self.alive_seq[:, :, -1]
 
     @property
     def batch_offset(self):
@@ -132,6 +133,17 @@ class GreedySearch(DecodeStrategy):
             attn (FloatTensor): Shaped ``(1, B, inp_seq_len)``.
         """
 
+        # we need to get the feature first
+        if len(log_probs) > 1:
+            features_id = []
+            for logits in log_probs[1:]:
+                features_id.append(logits.topk(1, dim=-1)[1])
+            features_id = torch.cat(features_id, dim=-1)
+        else:
+            features_id = None
+        # keep only log probs for tokens
+        log_probs = log_probs[0]
+
         self.ensure_min_length(log_probs)
         self.block_ngram_repeats(log_probs)
         topk_ids, self.topk_scores = sample_with_temperature(
@@ -139,7 +151,14 @@ class GreedySearch(DecodeStrategy):
 
         self.is_finished = topk_ids.eq(self.eos)
 
-        self.alive_seq = torch.cat([self.alive_seq, topk_ids], -1)
+        if features_id is not None:
+            topk_ids = torch.cat((
+                topk_ids, features_id
+                ), dim=-1)
+
+        self.alive_seq = torch.cat([
+            self.alive_seq,
+            topk_ids.unsqueeze(-1)], -1)
         if self.return_attention:
             if self.alive_attn is None:
                 self.alive_attn = attn
@@ -154,7 +173,11 @@ class GreedySearch(DecodeStrategy):
         for b in finished_batches.view(-1):
             b_orig = self.original_batch_idx[b]
             self.scores[b_orig].append(self.topk_scores[b, 0])
-            self.predictions[b_orig].append(self.alive_seq[b, 1:])
+            self.predictions[b_orig].append(self.alive_seq[b, 0, 1:])
+            # check on first item of the batch ot get num_features
+            self.features[b_orig] = [[]]
+            for i in range(self.num_features):
+                self.features[b_orig][0].append(self.alive_seq[b, 1+i, 1:])
             self.attention[b_orig].append(
                 self.alive_attn[:, b, :self.memory_lengths[b]]
                 if self.alive_attn is not None else [])
