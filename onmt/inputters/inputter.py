@@ -165,6 +165,9 @@ def get_fields(
     indices = Field(use_vocab=False, dtype=torch.long, sequential=False)
     fields["indices"] = indices
 
+    corpus_ids = Field(use_vocab=True, sequential=False)
+    fields["corpus_id"] = corpus_ids
+
     if dynamic_dict:
         src_map = Field(
             use_vocab=False, dtype=torch.float,
@@ -364,7 +367,9 @@ def _build_fv_from_multifield(multifield, counters, build_fv_args,
 def _build_fields_vocab(fields, counters, data_type, share_vocab,
                         vocab_size_multiple,
                         src_vocab_size, src_words_min_frequency,
-                        tgt_vocab_size, tgt_words_min_frequency):
+                        tgt_vocab_size, tgt_words_min_frequency,
+                        subword_prefix="▁",
+                        subword_prefix_is_joiner=False):
     build_fv_args = defaultdict(dict)
     build_fv_args["src"] = dict(
         max_size=src_vocab_size, min_freq=src_words_min_frequency)
@@ -376,6 +381,11 @@ def _build_fields_vocab(fields, counters, data_type, share_vocab,
         counters,
         build_fv_args,
         size_multiple=vocab_size_multiple if not share_vocab else 1)
+
+    if fields.get("corpus_id", False):
+        fields["corpus_id"].vocab = fields["corpus_id"].vocab_cls(
+            counters["corpus_id"])
+
     if data_type == 'text':
         src_multifield = fields["src"]
         _build_fv_from_multifield(
@@ -395,18 +405,22 @@ def _build_fields_vocab(fields, counters, data_type, share_vocab,
                 vocab_size_multiple=vocab_size_multiple)
             logger.info(" * merged vocab size: %d." % len(src_field.vocab))
 
-        build_noise_field(src_multifield.base_field)
+        build_noise_field(
+            src_multifield.base_field,
+            subword_prefix=subword_prefix,
+            is_joiner=subword_prefix_is_joiner)
     return fields
 
 
 def build_noise_field(src_field, subword=True,
-                      subword_prefix="▁", sentence_breaks=[".", "?", "!"]):
+                      subword_prefix="▁", is_joiner=False,
+                      sentence_breaks=[".", "?", "!"]):
     """In place add noise related fields i.e.:
          - word_start
          - end_of_sentence
     """
     if subword:
-        def is_word_start(x): return x.startswith(subword_prefix)
+        def is_word_start(x): return (x.startswith(subword_prefix) ^ is_joiner)
         sentence_breaks = [subword_prefix + t for t in sentence_breaks]
     else:
         def is_word_start(x): return True

@@ -315,6 +315,8 @@ class Translator(object):
         _readers, _data, _dir = inputters.Dataset.config(
             [('src', src_data), ('tgt', tgt_data)])
 
+        # corpus_id field is useless here
+        self.fields.pop('corpus_id')
         data = inputters.Dataset(
             self.fields, readers=_readers, data=_data, dirs=_dir,
             sort_key=inputters.str2sortkey[self.data_type],
