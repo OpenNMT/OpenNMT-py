@@ -8,11 +8,13 @@ def aeq(ref, *args):
 
 
 class NoiseBase(object):
-    def __init__(self, prob, pad_idx=1, device_id="cpu", **kwargs):
+    def __init__(self, prob, pad_idx=1, device_id="cpu",
+                 ids_to_noise=[], **kwargs):
         self.prob = prob
         self.pad_idx = 1
         self.skip_first = 1
         self.device_id = device_id
+        self.ids_to_noise = set([t.item() for t in ids_to_noise])
 
     def __call__(self, batch):
         return self.noise_batch(batch)
@@ -30,6 +32,10 @@ class NoiseBase(object):
         skipped = source[:self.skip_first, :, :]
         source = source[self.skip_first:]
         for i in range(source.size(1)):
+            if hasattr(batch, 'corpus_id'):
+                corpus_id = batch.corpus_id[i]
+                if corpus_id.item() not in self.ids_to_noise:
+                    continue
             tokens = source[:, i, 0]
             mask = tokens.ne(self.pad_idx)
 

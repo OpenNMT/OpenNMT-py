@@ -358,6 +358,8 @@ def train_opts(parser):
     group.add('--data_weights', '-data_weights', type=int, nargs='+',
               default=[1], help="""Weights of different corpora,
               should follow the same order as in -data_ids.""")
+    group.add('--data_to_noise', '-data_to_noise', nargs='+', default=[],
+              help="IDs of datasets on which to apply noise.")
 
     group.add('--save_model', '-save_model', default='model',
               help="Model filename (the model will be saved as "

@@ -60,10 +60,16 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
     source_noise = None
     if len(opt.src_noise) > 0:
         src_field = dict(fields)["src"].base_field
+        corpus_id_field = dict(fields).get("corpus_id", None)
+        if corpus_id_field is not None:
+            ids_to_noise = corpus_id_field.numericalize(opt.data_to_noise)
+        else:
+            ids_to_noise = None
         source_noise = onmt.modules.source_noise.MultiNoise(
             opt.src_noise,
             opt.src_noise_prob,
-            pad_idx=fields["src"].base_field.pad_token,
+            ids_to_noise=ids_to_noise,
+            pad_idx=src_field.pad_token,
             end_of_sentence_mask=src_field.end_of_sentence_mask,
             word_start_mask=src_field.word_start_mask,
             device_id=device_id
