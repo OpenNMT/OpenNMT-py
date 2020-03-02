@@ -4,11 +4,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from torch.nn.utils.rnn import pack_padded_sequence as pack
-from torch.nn.utils.rnn import pad_packed_sequence as unpack
-
 from onmt.encoders.encoder import EncoderBase
-from onmt.utils.rnn_factory import rnn_factory
+
 
 class GGNNAttrProxy(object):
     """
@@ -66,7 +63,6 @@ class GGNNPropogator(nn.Module):
         return output
 
 
-
 class GGNNEncoder(EncoderBase):
     """ A gated graph neural network configured as an encoder.
        Based on github.com/JamesChuanggg/ggnn.pytorch.git,
@@ -88,15 +84,15 @@ class GGNNEncoder(EncoderBase):
                  n_edge_types, n_node, n_steps, src_vocab):
         super(GGNNEncoder, self).__init__()
 
-        assert (state_dim >= annotation_dim,  \
-                'state_dim must be no less than annotation_dim')
+        assert (state_dim >= annotation_dim
+                ), 'state_dim must be no less than annotation_dim'
 
         self.state_dim = state_dim
         self.annotation_dim = annotation_dim
         self.n_edge_types = n_edge_types
         self.n_node = n_node
         self.n_steps = n_steps
-        self.bidir_edges = True; # FIXME: have actual input
+        self.bidir_edges = True   # FIXME: have actual input
 
         for i in range(self.n_edge_types):
             # incoming and outgoing edge embedding
@@ -109,11 +105,11 @@ class GGNNEncoder(EncoderBase):
         self.out_fcs = GGNNAttrProxy(self, "out_")
 
         # Find vocab data for tree builting
-        f = open(src_vocab,"r")
-        idx=0
-        self.COMMA=-1
-        self.DELIMITER=-1
-        self.idx2num=[]
+        f = open(src_vocab, "r")
+        idx = 0
+        self.COMMA = -1
+        self.DELIMITER = -1
+        self.idx2num = []
         for ln in f:
             ln = ln.strip('\n')
             if ln == ",":
@@ -124,10 +120,11 @@ class GGNNEncoder(EncoderBase):
                 self.idx2num.append(int(ln))
             else:
                 self.idx2num.append(-1)
-            idx+=1
+            idx += 1
 
         # Propogation Model
-        self.propogator = GGNNPropogator(self.state_dim, self.n_node, self.n_edge_types)
+        self.propogator = GGNNPropogator(self.state_dim, self.n_node,
+                                         self.n_edge_types)
 
         self._initialization()
 
@@ -156,11 +153,13 @@ class GGNNEncoder(EncoderBase):
         """See :func:`EncoderBase.forward()`"""
         self._check_args(src, lengths)
         nodes = self.n_node
-        batch_size=src.size()[1]
-        first_extra=np.zeros(batch_size,dtype=np.int32)
-        prop_state=np.zeros((batch_size,nodes,self.state_dim),dtype=np.int32)
-        A=np.zeros((batch_size,nodes,nodes*self.n_edge_types*2),dtype=np.int32)
-        npsrc = src[:,:,0].cpu().data.numpy().astype(np.int32)
+        batch_size = src.size()[1]
+        first_extra = np.zeros(batch_size, dtype=np.int32)
+        prop_state = np.zeros((batch_size, nodes, self.state_dim),
+                              dtype=np.int32)
+        A = np.zeros((batch_size, nodes, nodes*self.n_edge_types*2),
+                     dtype=np.int32)
+        npsrc = src[:, :, 0].cpu().data.numpy().astype(np.int32)
 
         # Initialize graph using formatted input sequence
         for i in range(batch_size):
@@ -176,7 +175,7 @@ class GGNNEncoder(EncoderBase):
                 if not tokens_done:
                     if token == self.DELIMITER:
                         tokens_done = True
-                        first_extra[i]=j
+                        first_extra[i] = j
                     else:
                         prop_state[i][j][token] = 1
                 elif token == self.DELIMITER:
@@ -189,62 +188,63 @@ class GGNNEncoder(EncoderBase):
                     if token == self.COMMA:
                         flags = 0
                     else:
-                        if self.idx2num[token] >= 0:
-                            prop_state[i][flags][self.idx2num[token]+self.DELIMITER] = 1
+                        num = self.idx2num[token]
+                        if num >= 0:
+                            prop_state[i][flags][num+self.DELIMITER] = 1
                         flags += 1
                 elif token == self.COMMA:
                     edge += 1
-                    assert source_node == -1
-                    assert edge <= 2*self.n_edge_types and (not self.bidir_edges or edge < self.n_edge_types)
+                    assert source_node == -1, 'Error in graph edge input'
+                    assert (edge <= 2*self.n_edge_types and
+                            (not self.bidir_edges or edge < self.n_edge_types))
                 else:
+                    num = self.idx2num[token]
                     if source_node < 0:
-                        source_node = self.idx2num[token]
+                        source_node = num
                     else:
-                        A[i][source_node][self.idx2num[token]+nodes*edge] = 1
+                        A[i][source_node][num+nodes*edge] = 1
                         if self.bidir_edges:
-                            A[i][self.idx2num[token]][nodes*(edge+self.n_edge_types) + source_node] = 1
+                            A[i][num][nodes*(edge+self.n_edge_types)
+                                      + source_node] = 1
                         source_node = -1
 
         if torch.cuda.is_available():
-            prop_state=torch.from_numpy(prop_state).float().to("cuda:0")
-            A=torch.from_numpy(A).float().to("cuda:0")
+            prop_state = torch.from_numpy(prop_state).float().to("cuda:0")
+            A = torch.from_numpy(A).float().to("cuda:0")
         else:
-            prop_state=torch.from_numpy(prop_state).float()
-            A=torch.from_numpy(A).float()
-#        for i in range(2):
-#          for j in range(nodes):
-#            print("SJKDEBUG:prop_state",i,",",j,":",list(filter(lambda x: prop_state[i][j][x] > 0, range(len(prop_state[i][j])))),flush=True)
-#            print("SJKDEBUG:A",i,",",j,":",list(filter(lambda x: A[i][j][x] > 0, range(len(A[i][j])))),flush=True)
+            prop_state = torch.from_numpy(prop_state).float()
+            A = torch.from_numpy(A).float()
+
         for i_step in range(self.n_steps):
             in_states = []
             out_states = []
             for i in range(self.n_edge_types):
-                # print("SJKDEBUG: in_fcs, prop_state",self.in_fcs[i],prop_state,flush=True)
                 in_states.append(self.in_fcs[i](prop_state))
                 out_states.append(self.out_fcs[i](prop_state))
             in_states = torch.stack(in_states).transpose(0, 1).contiguous()
-            in_states = in_states.view(-1, nodes*self.n_edge_types, self.state_dim)
+            in_states = in_states.view(-1, nodes*self.n_edge_types,
+                                       self.state_dim)
             out_states = torch.stack(out_states).transpose(0, 1).contiguous()
-            out_states = out_states.view(-1, nodes*self.n_edge_types, self.state_dim)
+            out_states = out_states.view(-1, nodes*self.n_edge_types,
+                                         self.state_dim)
 
-            prop_state = self.propogator(in_states, out_states, prop_state, A, nodes)
+            prop_state = self.propogator(in_states, out_states, prop_state,
+                                         A, nodes)
 
-        prop_state = prop_state.transpose(0,1)
+        prop_state = prop_state.transpose(0, 1)
         if False:
             # FIXME: for now, just average all nodes to get bridge input
             #    In future, may want to use start/end nodes if possible
             join_state = prop_state.mean(0)
-            join_state = torch.stack((join_state,join_state,join_state,join_state))
         elif True:
-            # Use roots of the 2 program trees as inputs to bridge
-            # print("SJKDEBUG propstate size",prop_state.size())
-            join_state = torch.stack((prop_state[first_extra,torch.arange(batch_size)],prop_state[first_extra,torch.arange(batch_size)],prop_state[first_extra,torch.arange(batch_size)],prop_state[first_extra,torch.arange(batch_size)]))
-        join_state = (join_state,join_state)
+            # Use first extra node as only source for decoder init
+            join_state = prop_state[first_extra, torch.arange(batch_size)]
+        join_state = torch.stack((join_state, join_state,
+                                  join_state, join_state))
+        join_state = (join_state, join_state)
 
-        # print("SJKDEBUG:join_state",len(join_state),join_state[0].size())
         encoder_final = self._bridge(join_state)
 
-        # print("SJKDEBUG:encoder_final,prop_state,lengths",len(encoder_final),encoder_final[0].size(),prop_state.size(),lengths,flush=True)
         return encoder_final, prop_state, lengths
 
     def _initialize_bridge(self, rnn_type,
@@ -278,4 +278,3 @@ class GGNNEncoder(EncoderBase):
         else:
             outs = bottle_hidden(self.bridge[0], hidden)
         return outs
-
