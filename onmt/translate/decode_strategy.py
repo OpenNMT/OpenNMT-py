@@ -9,7 +9,6 @@ class DecodeStrategy(object):
         bos (int): Magic integer in output vocab.
         eos (int): Magic integer in output vocab.
         batch_size (int): Current batch size.
-        device (torch.device or str): Device for memory bank (encoder).
         parallel_paths (int): Decoding strategies like beam search
             use parallel paths. Each batch is repeated ``parallel_paths``
             times in relevant state tensors.
@@ -54,7 +53,7 @@ class DecodeStrategy(object):
         done (bool): See above.
     """
 
-    def __init__(self, pad, bos, eos, batch_size, device, parallel_paths,
+    def __init__(self, pad, bos, eos, batch_size, parallel_paths,
                  min_length, block_ngram_repeat, exclusion_tokens,
                  return_attention, max_length):
 
@@ -63,26 +62,42 @@ class DecodeStrategy(object):
         self.bos = bos
         self.eos = eos
 
+        self.batch_size = batch_size
+        self.parallel_paths = parallel_paths
         # result caching
         self.predictions = [[] for _ in range(batch_size)]
         self.scores = [[] for _ in range(batch_size)]
         self.attention = [[] for _ in range(batch_size)]
 
-        self.alive_seq = torch.full(
-            [batch_size * parallel_paths, 1], self.bos,
-            dtype=torch.long, device=device)
-        self.is_finished = torch.zeros(
-            [batch_size, parallel_paths],
-            dtype=torch.uint8, device=device)
         self.alive_attn = None
 
         self.min_length = min_length
         self.max_length = max_length
+
         self.block_ngram_repeat = block_ngram_repeat
+        n_paths = batch_size * parallel_paths
+        self.forbidden_tokens = [dict() for _ in range(n_paths)]
+
         self.exclusion_tokens = exclusion_tokens
         self.return_attention = return_attention
 
         self.done = False
+
+    def initialize(self, memory_bank, src_lengths, src_map=None, device=None):
+        """DecodeStrategy subclasses should override :func:`initialize()`.
+
+        `initialize` should be called before all actions.
+        used to prepare necessary ingredients for decode.
+        """
+        if device is None:
+            device = torch.device('cpu')
+        self.alive_seq = torch.full(
+            [self.batch_size * self.parallel_paths, 1], self.bos,
+            dtype=torch.long, device=device)
+        self.is_finished = torch.zeros(
+            [self.batch_size, self.parallel_paths],
+            dtype=torch.uint8, device=device)
+        return None, memory_bank, src_lengths, src_map
 
     def __len__(self):
         return self.alive_seq.shape[1]
@@ -98,25 +113,75 @@ class DecodeStrategy(object):
             self.is_finished.fill_(1)
 
     def block_ngram_repeats(self, log_probs):
-        cur_len = len(self)
-        if self.block_ngram_repeat > 0 and cur_len > 1:
-            for path_idx in range(self.alive_seq.shape[0]):
-                # skip BOS
-                hyp = self.alive_seq[path_idx, 1:]
-                ngrams = set()
-                fail = False
-                gram = []
-                for i in range(cur_len - 1):
-                    # Last n tokens, n = block_ngram_repeat
-                    gram = (gram + [hyp[i].item()])[-self.block_ngram_repeat:]
-                    # skip the blocking if any token in gram is excluded
-                    if set(gram) & self.exclusion_tokens:
-                        continue
-                    if tuple(gram) in ngrams:
-                        fail = True
-                    ngrams.add(tuple(gram))
-                if fail:
-                    log_probs[path_idx] = -10e20
+        """
+        We prevent the beam from going in any direction that would repeat any
+        ngram of size <block_ngram_repeat> more thant once.
+
+        The way we do it: we maintain a list of all ngrams of size
+        <block_ngram_repeat> that is updated each time the beam advances, and
+        manually put any token that would lead to a repeated ngram to 0.
+
+        This improves on the previous version's complexity:
+           - previous version's complexity: batch_size * beam_size * len(self)
+           - current version's complexity: batch_size * beam_size
+
+        This improves on the previous version's accuracy;
+           - Previous version blocks the whole beam, whereas here we only
+            block specific tokens.
+           - Before the translation would fail when all beams contained
+            repeated ngrams. This is sure to never happen here.
+        """
+
+        # we don't block nothing if the user doesn't want it
+        if self.block_ngram_repeat <= 0:
+            return
+
+        # we can't block nothing beam's too short
+        if len(self) < self.block_ngram_repeat:
+            return
+
+        n = self.block_ngram_repeat - 1
+        for path_idx in range(self.alive_seq.shape[0]):
+            # we check paths one by one
+
+            current_ngram = tuple(self.alive_seq[path_idx, -n:].tolist())
+            forbidden_tokens = self.forbidden_tokens[path_idx].get(
+                current_ngram, None)
+            if forbidden_tokens is not None:
+                log_probs[path_idx, list(forbidden_tokens)] = -10e20
+
+    def maybe_update_forbidden_tokens(self):
+        """We complete and reorder the list of forbidden_tokens"""
+
+        # we don't forbid nothing if the user doesn't want it
+        if self.block_ngram_repeat <= 0:
+            return
+
+        # we can't forbid nothing if beam's too short
+        if len(self) < self.block_ngram_repeat:
+            return
+
+        n = self.block_ngram_repeat
+
+        forbidden_tokens = list()
+        for path_idx, seq in zip(self.select_indices, self.alive_seq):
+
+            # Reordering forbidden_tokens following beam selection
+            # We rebuild a dict to ensure we get the value and not the pointer
+            forbidden_tokens.append(
+                dict(self.forbidden_tokens[path_idx]))
+
+            # Grabing the newly selected tokens and associated ngram
+            current_ngram = tuple(seq[-n:].tolist())
+
+            # skip the blocking if any token in current_ngram is excluded
+            if set(current_ngram) & self.exclusion_tokens:
+                continue
+
+            forbidden_tokens[-1].setdefault(current_ngram[:-1], set())
+            forbidden_tokens[-1][current_ngram[:-1]].add(current_ngram[-1])
+
+        self.forbidden_tokens = forbidden_tokens
 
     def advance(self, log_probs, attn):
         """DecodeStrategy subclasses should override :func:`advance()`.

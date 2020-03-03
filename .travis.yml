@@ -1,7 +1,7 @@
 dist: xenial
 language: python
 python:
-  - "3.5"
+  - "3.6"
 git:
   depth: false
 addons:
@@ -13,7 +13,8 @@ addons:
       - sox
 before_install:
   # Install CPU version of PyTorch.
-  - if [[ $TRAVIS_PYTHON_VERSION == 3.5 ]]; then pip install torch==1.2.0 -f https://download.pytorch.org/whl/cpu/torch_stable.html; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == 3.6 ]]; then pip install torch==1.4.0 -f https://download.pytorch.org/whl/cpu/torch_stable.html; fi
+  - pip install --upgrade setuptools
   - pip install -r requirements.opt.txt
   - python setup.py install   
 env:

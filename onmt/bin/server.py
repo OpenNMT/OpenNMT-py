@@ -2,7 +2,10 @@
 import configargparse
 
 from flask import Flask, jsonify, request
+from waitress import serve
 from onmt.translate import TranslationServer, ServerModelError
+import logging
+from logging.handlers import RotatingFileHandler
 
 STATUS_OK = "ok"
 STATUS_ERROR = "error"
@@ -12,11 +15,21 @@ def start(config_file,
           url_root="./translator",
           host="0.0.0.0",
           port=5000,
-          debug=True):
+          debug=False):
     def prefix_route(route_function, prefix='', mask='{0}{1}'):
         def newroute(route, *args, **kwargs):
             return route_function(mask.format(prefix, route), *args, **kwargs)
         return newroute
+
+    if debug:
+        logger = logging.getLogger("main")
+        log_format = logging.Formatter(
+            "[%(asctime)s %(levelname)s] %(message)s")
+        file_handler = RotatingFileHandler(
+            "debug_requests.log",
+            maxBytes=1000000, backupCount=10)
+        file_handler.setFormatter(log_format)
+        logger.addHandler(file_handler)
 
     app = Flask(__name__)
     app.route = prefix_route(app.route, url_root)
@@ -73,20 +86,27 @@ def start(config_file,
     @app.route('/translate', methods=['POST'])
     def translate():
         inputs = request.get_json(force=True)
+        if debug:
+            logger.info(inputs)
         out = {}
         try:
-            translation, scores, n_best, times = translation_server.run(inputs)
-            assert len(translation) == len(inputs)
-            assert len(scores) == len(inputs)
+            trans, scores, n_best, _, aligns = translation_server.run(inputs)
+            assert len(trans) == len(inputs) * n_best
+            assert len(scores) == len(inputs) * n_best
+            assert len(aligns) == len(inputs) * n_best
 
-            out = [[{"src": inputs[i]['src'], "tgt": translation[i],
-                     "n_best": n_best,
-                     "pred_score": scores[i]}
-                    for i in range(len(translation))]]
+            out = [[] for _ in range(n_best)]
+            for i in range(len(trans)):
+                response = {"src": inputs[i // n_best]['src'], "tgt": trans[i],
+                            "n_best": n_best, "pred_score": scores[i]}
+                if aligns[i] is not None:
+                    response["align"] = aligns[i]
+                out[i % n_best].append(response)
         except ServerModelError as e:
             out['error'] = str(e)
             out['status'] = STATUS_ERROR
-
+        if debug:
+            logger.info(out)
         return jsonify(out)
 
     @app.route('/to_cpu/<int:model_id>', methods=['GET'])
@@ -105,8 +125,7 @@ def start(config_file,
         out['status'] = STATUS_OK
         return jsonify(out)
 
-    app.run(debug=debug, host=host, port=port, use_reloader=False,
-            threaded=True)
+    serve(app, host=host, port=port)
 
 
 def _get_parser():

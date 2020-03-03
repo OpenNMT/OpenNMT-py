@@ -51,7 +51,8 @@ class EnsembleDecoder(DecoderBase):
         super(EnsembleDecoder, self).__init__(attentional)
         self.model_decoders = model_decoders
 
-    def forward(self, tgt, memory_bank, memory_lengths=None, step=None):
+    def forward(self, tgt, memory_bank, memory_lengths=None, step=None,
+                **kwargs):
         """See :func:`onmt.decoders.decoder.DecoderBase.forward()`."""
         # Memory_lengths is a single tensor shared between all models.
         # This assumption will not hold if Translator is modified
@@ -60,7 +61,7 @@ class EnsembleDecoder(DecoderBase):
         dec_outs, attns = zip(*[
             model_decoder(
                 tgt, memory_bank[i],
-                memory_lengths=memory_lengths, step=step)
+                memory_lengths=memory_lengths, step=step, **kwargs)
             for i, model_decoder in enumerate(self.model_decoders)])
         mean_attns = self.combine_attns(attns)
         return EnsembleDecoderOutput(dec_outs), mean_attns

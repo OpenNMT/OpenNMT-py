@@ -46,6 +46,11 @@ class ArgumentParser(cfargparse.ArgumentParser):
         if model_opt.copy_attn_type is None:
             model_opt.copy_attn_type = model_opt.global_attention
 
+        if model_opt.alignment_layer is None:
+            model_opt.alignment_layer = -2
+            model_opt.lambda_align = 0.0
+            model_opt.full_context_alignment = False
+
     @classmethod
     def validate_model_opts(cls, model_opt):
         assert model_opt.model_type in ["text", "img", "audio", "vec"], \
@@ -63,6 +68,17 @@ class ArgumentParser(cfargparse.ArgumentParser):
             if model_opt.model_type != "text":
                 raise AssertionError(
                     "--share_embeddings requires --model_type text.")
+        if model_opt.lambda_align > 0.0:
+            assert model_opt.decoder_type == 'transformer', \
+                "Only transformer is supported to joint learn alignment."
+            assert model_opt.alignment_layer < model_opt.dec_layers and \
+                model_opt.alignment_layer >= -model_opt.dec_layers, \
+                "N° alignment_layer should be smaller than number of layers."
+            logger.info("Joint learn alignment at layer [{}] "
+                        "with {} heads in full_context '{}'.".format(
+                            model_opt.alignment_layer,
+                            model_opt.alignment_heads,
+                            model_opt.full_context_alignment))
 
     @classmethod
     def ckpt_model_opts(cls, ckpt_opt):
@@ -85,8 +101,7 @@ class ArgumentParser(cfargparse.ArgumentParser):
             raise AssertionError(
                   "gpuid is deprecated see world_size and gpu_ranks")
         if torch.cuda.is_available() and not opt.gpu_ranks:
-            logger.info("WARNING: You have a CUDA device, \
-                        should run with -gpu_ranks")
+            logger.warn("You have a CUDA device, should run with -gpu_ranks")
         if opt.world_size < len(opt.gpu_ranks):
             raise AssertionError(
                   "parameter counts of -gpu_ranks must be less or equal "
@@ -127,6 +142,18 @@ class ArgumentParser(cfargparse.ArgumentParser):
 
         for file in opt.train_src + opt.train_tgt:
             assert os.path.isfile(file), "Please check path of %s" % file
+
+        if len(opt.train_align) == 1 and opt.train_align[0] is None:
+            opt.train_align = [None] * len(opt.train_src)
+        else:
+            assert len(opt.train_align) == len(opt.train_src), \
+                "Please provide same number of word alignment train \
+                files as src/tgt!"
+            for file in opt.train_align:
+                assert os.path.isfile(file), "Please check path of %s" % file
+
+        assert not opt.valid_align or os.path.isfile(opt.valid_align), \
+            "Please check path of your valid alignment file!"
 
         assert not opt.valid_src or os.path.isfile(opt.valid_src), \
             "Please check path of your valid src file!"
