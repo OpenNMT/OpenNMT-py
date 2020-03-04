@@ -66,33 +66,32 @@ class GGNNPropogator(nn.Module):
 class GGNNEncoder(EncoderBase):
     """ A gated graph neural network configured as an encoder.
        Based on github.com/JamesChuanggg/ggnn.pytorch.git,
-       which is based on the paper "Gated Graph Sequence Neural Networks".
-       FIXME: Add paper to refs.bib in docs/source.
+       which is based on the paper "Gated Graph Sequence Neural Networks"
+       by Y. Li, D. Tarlow, M. Brockschmidt, and R. Zemel.
 
     Args:
        rnn_type (str):
           style of recurrent unit to use, one of [LSTM]
-       annotation_dim (int) : FIXME add description
-       state_dim (int) : FIXME
-       n_edge_types (int) : FIXME
-       n_node (int) : FIXME
-       n_steps (int): FIXME
-       src_vocab (int): FIXME add description
+       state_dim (int) : Number of state dimensions in nodes
+       n_edge_types (int) : Number of edge types
+       bidir_edges (bool): True if reverse edges should be autocreated
+       n_node (int) : Max nodes in graph
+       bridge_extra_node (bool): True indicates only 1st extra node
+          (after token listing) should be used for decoder init.
+       n_steps (int): Steps to advance graph encoder for stabilization
+       src_vocab (int): Path to source vocabulary
     """
 
-    def __init__(self, rnn_type, annotation_dim, state_dim,
-                 n_edge_types, n_node, n_steps, src_vocab):
+    def __init__(self, rnn_type, state_dim, bidir_edges,
+                 n_edge_types, n_node, bridge_extra_node, n_steps, src_vocab):
         super(GGNNEncoder, self).__init__()
 
-        assert (state_dim >= annotation_dim
-                ), 'state_dim must be no less than annotation_dim'
-
         self.state_dim = state_dim
-        self.annotation_dim = annotation_dim
         self.n_edge_types = n_edge_types
         self.n_node = n_node
         self.n_steps = n_steps
-        self.bidir_edges = True   # FIXME: have actual input
+        self.bidir_edges = bidir_edges 
+        self.bridge_extra_node = bridge_extra_node 
 
         for i in range(self.n_edge_types):
             # incoming and outgoing edge embedding
@@ -136,10 +135,11 @@ class GGNNEncoder(EncoderBase):
         """Alternate constructor."""
         return cls(
             opt.rnn_type,
-            opt.annotation_dim,
             opt.state_dim,
+            opt.bidir_edges,
             opt.n_edge_types,
             opt.n_node,
+            opt.bridge_extra_node,
             opt.n_steps,
             opt.src_vocab)
 
@@ -232,13 +232,12 @@ class GGNNEncoder(EncoderBase):
                                          A, nodes)
 
         prop_state = prop_state.transpose(0, 1)
-        if False:
-            # FIXME: for now, just average all nodes to get bridge input
-            #    In future, may want to use start/end nodes if possible
-            join_state = prop_state.mean(0)
-        elif True:
+        if self.bridge_extra_node:
             # Use first extra node as only source for decoder init
             join_state = prop_state[first_extra, torch.arange(batch_size)]
+        else:
+            # Average all nodes to get bridge input
+            join_state = prop_state.mean(0)
         join_state = torch.stack((join_state, join_state,
                                   join_state, join_state))
         join_state = (join_state, join_state)
