@@ -45,12 +45,12 @@ class GGNNPropogator(nn.Module):
             nn.LeakyReLU()
         )
 
-    def forward(self, state_in, state_out, state_cur, A, nodes):
-        A_in = A[:, :, :nodes*self.n_edge_types]
-        A_out = A[:, :, nodes*self.n_edge_types:]
+    def forward(self, state_in, state_out, state_cur, edges, nodes):
+        edges_in = edges[:, :, :nodes*self.n_edge_types]
+        edges_out = edges[:, :, nodes*self.n_edge_types:]
 
-        a_in = torch.bmm(A_in, state_in)
-        a_out = torch.bmm(A_out, state_out)
+        a_in = torch.bmm(edges_in, state_in)
+        a_out = torch.bmm(edges_out, state_out)
         a = torch.cat((a_in, a_out, state_cur), 2)
 
         r = self.reset_gate(a)
@@ -157,8 +157,8 @@ class GGNNEncoder(EncoderBase):
         first_extra = np.zeros(batch_size, dtype=np.int32)
         prop_state = np.zeros((batch_size, nodes, self.state_dim),
                               dtype=np.int32)
-        A = np.zeros((batch_size, nodes, nodes*self.n_edge_types*2),
-                     dtype=np.int32)
+        edges = np.zeros((batch_size, nodes, nodes*self.n_edge_types*2),
+                         dtype=np.int32)
         npsrc = src[:, :, 0].cpu().data.numpy().astype(np.int32)
 
         # Initialize graph using formatted input sequence
@@ -202,18 +202,18 @@ class GGNNEncoder(EncoderBase):
                     if source_node < 0:
                         source_node = num
                     else:
-                        A[i][source_node][num+nodes*edge] = 1
+                        edges[i][source_node][num+nodes*edge] = 1
                         if self.bidir_edges:
-                            A[i][num][nodes*(edge+self.n_edge_types)
-                                      + source_node] = 1
+                            edges[i][num][nodes*(edge+self.n_edge_types)
+                                          + source_node] = 1
                         source_node = -1
 
         if torch.cuda.is_available():
             prop_state = torch.from_numpy(prop_state).float().to("cuda:0")
-            A = torch.from_numpy(A).float().to("cuda:0")
+            edges = torch.from_numpy(edges).float().to("cuda:0")
         else:
             prop_state = torch.from_numpy(prop_state).float()
-            A = torch.from_numpy(A).float()
+            edges = torch.from_numpy(edges).float()
 
         for i_step in range(self.n_steps):
             in_states = []
@@ -229,7 +229,7 @@ class GGNNEncoder(EncoderBase):
                                          self.state_dim)
 
             prop_state = self.propogator(in_states, out_states, prop_state,
-                                         A, nodes)
+                                         edges, nodes)
 
         prop_state = prop_state.transpose(0, 1)
         if self.bridge_extra_node:
