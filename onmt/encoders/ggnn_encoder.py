@@ -90,8 +90,8 @@ class GGNNEncoder(EncoderBase):
         self.n_edge_types = n_edge_types
         self.n_node = n_node
         self.n_steps = n_steps
-        self.bidir_edges = bidir_edges 
-        self.bridge_extra_node = bridge_extra_node 
+        self.bidir_edges = bidir_edges
+        self.bridge_extra_node = bridge_extra_node
 
         for i in range(self.n_edge_types):
             # incoming and outgoing edge embedding

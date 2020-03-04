@@ -128,7 +128,8 @@ def model_opts(parser):
               help="Type of context gate to use. "
                    "Do not select for no context gate.")
 
-    group.add('--bridge_extra_node', '-bridge_extra_node', type=bool, default=True,
+    group.add('--bridge_extra_node', '-bridge_extra_node',
+              type=bool, default=True,
               help='Graph encoder bridges only extra node to decoder as input')
     group.add('--bidir_edges', '-bidir_edges', type=bool, default=True,
               help='Graph encoder autogenerates bidirectional edges')
