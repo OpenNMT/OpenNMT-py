@@ -30,6 +30,7 @@ setup(
         "flask",
         "waitress",
         "pyonmttok==1.*;platform_system=='Linux'",
+        "pyyaml",
     ],
     entry_points={
         "console_scripts": [
