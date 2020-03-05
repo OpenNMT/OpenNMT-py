@@ -2,7 +2,11 @@
 **Notes on versioning**
 
 
-## [Unreleased]
+## [Unreleased]## [1.0.2](https://github.com/OpenNMT/OpenNMT-py/tree/1.0.2) (2020-03-05)
+### Fixes and improvements
+* Enable CTranslate2 conversion of Transformers with relative position (db11135)
+* Adapt `-replace_unk` to use with learned alignments if they exist (7625b53)
+
 ## [1.0.1](https://github.com/OpenNMT/OpenNMT-py/tree/1.0.1) (2020-02-17)
 ### Fixes and improvements
 * Ctranslate2 conversion handled in release script (1b50e0c)
