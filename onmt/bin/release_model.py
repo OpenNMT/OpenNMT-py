@@ -17,6 +17,8 @@ def get_ctranslate2_model_spec(opt):
         return None
     import ctranslate2
     num_heads = getattr(opt, "heads", 8)
+    if opt.enc_layers == opt.dec_layers:
+        opt.layers = opt.enc_layers
     return ctranslate2.specs.TransformerSpec(
         opt.layers,
         num_heads,
@@ -34,6 +36,10 @@ def main():
                         choices=["pytorch", "ctranslate2"],
                         default="pytorch",
                         help="The format of the released model")
+    parser.add_argument("--quantization", "-q",
+                        choices=["int8", "int16"],
+                        default=None,
+                        help="Quantization type for CT2 model.")
     opt = parser.parse_args()
 
     model = torch.load(opt.model)
@@ -48,7 +54,8 @@ def main():
                              "more information on supported models.")
         import ctranslate2
         converter = ctranslate2.converters.OpenNMTPyConverter(opt.model)
-        converter.convert(opt.output, model_spec, force=True)
+        converter.convert(opt.output, model_spec, force=True,
+                          quantization=opt.quantization)
 
 
 if __name__ == "__main__":
