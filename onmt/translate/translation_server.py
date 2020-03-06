@@ -157,8 +157,9 @@ class TranslationServer(object):
         """
 
         model_id = inputs[0].get("id", 0)
+        maybe_opts = inputs[0].get("opts", None)
         if model_id in self.models and self.models[model_id] is not None:
-            return self.models[model_id].run(inputs)
+            return self.models[model_id].run(inputs, maybe_opts)
         else:
             print("Error No such model '%s'" % str(model_id))
             raise ServerModelError("No such model '%s'" % str(model_id))
@@ -353,7 +354,7 @@ class ServerModel(object):
         self.loading_lock.set()
 
     @critical
-    def run(self, inputs):
+    def run(self, inputs, maybe_opts):
         """Translate `inputs` using this model
 
         Args:
@@ -387,10 +388,13 @@ class ServerModel(object):
                 self.to_gpu()
                 timer.tick(name="to_gpu")
 
+        print(maybe_opts)
+
         texts = []
         head_spaces = []
         tail_spaces = []
         sslength = []
+        all_preprocessed = []
         for i, inp in enumerate(inputs):
             src = inp['src']
             if src.strip() == "":
@@ -406,9 +410,13 @@ class ServerModel(object):
                 if match_after is not None:
                     whitespaces_after = match_after.group(0)
                 head_spaces.append(whitespaces_before)
-                preprocessed_src = self.maybe_preprocess(src.strip())
-                tok = self.maybe_tokenize(preprocessed_src)
-                texts.append(tok)
+                return_dict = self.maybe_preprocess(src.strip())
+                print("### MAYBE ATTR", return_dict)
+                all_preprocessed.append(return_dict)
+                for seg in return_dict["src"]:
+                    tok = self.maybe_tokenize(seg)
+                    texts.append(tok)
+                # attributes.append(return_dict)
                 sslength.append(len(tok.split()))
                 tail_spaces.append(whitespaces_after)
 
@@ -452,9 +460,17 @@ class ServerModel(object):
         results = [self.maybe_detokenize_with_align(result, src)
                    for result, src in zip(results, tiled_texts)]
 
-        aligns = [align for _, align in results]
-        results = [self.maybe_postprocess(seq) for seq, _ in results]
-
+        aligns = [align for _, align in results] 
+        # print("#### ATTR BEFORE POSTPROCESS", attributes)
+        # print("### RESULTS", results)
+        rebuilt_segs, scores, aligns = self.rebuild_seg_packages(
+            all_preprocessed, results, scores, aligns)
+        print("### REBUILT SEGS", rebuilt_segs)
+        results = [self.maybe_postprocess(seg) for seg in rebuilt_segs]
+        # for ((seq, _), attr) in zip(results, attributes):
+        #     print(attr)
+        print("### RESULTS", results)
+        print("### ALIGNS", aligns)
         # build back results with empty texts
         for i in empty_indices:
             j = i * self.opt.n_best
@@ -469,6 +485,23 @@ class ServerModel(object):
 
         self.logger.info("Translation Results: %d", len(results))
         return results, scores, self.opt.n_best, timer.times, aligns
+
+    def rebuild_seg_packages(self, all_preprocessed, results, scores, aligns):
+        print("### INPUTS", all_preprocessed)
+        print("### LEN INPUTS", len(all_preprocessed))
+        print("### RESULTS", results)
+        print("### LEN RESULTS", len(results))
+        offset = 0
+        rebuilt_segs = []
+        avg_scores = []
+        merged_aligns = []
+        for some_dict in all_preprocessed:
+            some_dict["tgt"] = list(list(zip(*results))[0][offset:offset+some_dict["n_seg"]])
+            rebuilt_segs.append(some_dict)
+            avg_scores.append(sum(scores[offset:offset+some_dict["n_seg"]])/some_dict["n_seg"])
+            merged_aligns.append(aligns[offset:offset+some_dict["n_seg"]])
+            offset += some_dict["n_seg"]
+        return rebuilt_segs, avg_scores, merged_aligns
 
     def do_timeout(self):
         """Timeout function that frees GPU memory.
@@ -538,6 +571,11 @@ class ServerModel(object):
 
         if self.preprocess_opt is not None:
             return self.preprocess(sequence)
+        else:
+            sequence = {
+                "src": [sequence],
+                "n_seg": 1
+            }
         return sequence
 
     def preprocess(self, sequence):
@@ -551,9 +589,14 @@ class ServerModel(object):
         """
         if self.preprocessor is None:
             raise ValueError("No preprocessor loaded")
+        return_dict = {
+            "src": sequence,
+            "n_seg": 1
+        }
         for function in self.preprocessor:
-            sequence = function(sequence)
-        return sequence
+            return_dict = function(return_dict)
+        print("### PREPROCESS ATTR", return_dict)
+        return return_dict
 
     def maybe_tokenize(self, sequence):
         """Tokenize the sequence (or not).
@@ -666,9 +709,10 @@ class ServerModel(object):
         """Postprocess the sequence (or not)
 
         """
-
         if self.postprocess_opt is not None:
             return self.postprocess(sequence)
+        else:
+            sequence = sequence["tgt"][0]
         return sequence
 
     def postprocess(self, sequence):
