@@ -387,7 +387,6 @@ class ServerModel(object):
                 self.to_gpu()
                 timer.tick(name="to_gpu")
 
-
         texts = []
         head_spaces = []
         tail_spaces = []
@@ -408,6 +407,7 @@ class ServerModel(object):
                 if match_after is not None:
                     whitespaces_after = match_after.group(0)
                 head_spaces.append(whitespaces_before)
+                # every segment becomes a dict for flexibility purposes
                 return_dict = self.maybe_preprocess(src.strip())
                 all_preprocessed.append(return_dict)
                 for seg in return_dict["seg"]:
@@ -457,7 +457,6 @@ class ServerModel(object):
                    for result, src in zip(results, tiled_texts)]
 
         aligns = [align for _, align in results] 
-
         rebuilt_segs, scores, aligns = self.rebuild_seg_packages(
             all_preprocessed, results, scores, aligns)
         results = [self.maybe_postprocess(seg) for seg in rebuilt_segs]
@@ -478,11 +477,15 @@ class ServerModel(object):
         return results, scores, self.opt.n_best, timer.times, aligns
 
     def rebuild_seg_packages(self, all_preprocessed, results, scores, aligns):
+        """
+        Rebuild proper segment packages based on initial n_seg.
+        """
         offset = 0
         rebuilt_segs = []
         avg_scores = []
         merged_aligns = []
         for some_dict in all_preprocessed:
+            #TODO: make this more readable
             some_dict["seg"] = list(list(zip(*results))[0][offset:offset+some_dict["n_seg"]])
             rebuilt_segs.append(some_dict)
             avg_scores.append(sum(scores[offset:offset+some_dict["n_seg"]])/some_dict["n_seg"])
