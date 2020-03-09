@@ -3,40 +3,46 @@ from snownlp import SnowNLP
 import pkuseg
 
 
+def update_seg(func):
+	def wrapper(line):
+		print("IN WRAPPER")
+		line["seg"] = [func(item) for item in line["seg"]]
+		return line
+	print("OUT WRAPPER")
+	return wrapper
+
+
 # Chinese segmentation
+@update_seg
 def zh_segmentator(line):
-	line["seg"] = [" ".join(pkuseg.pkuseg().cut(item))
-	               for item in line["seg"]]
-    return line
+    return " ".join(pkuseg.pkuseg().cut(line))
 
 
 # Chinese simplify -> Chinese traditional standard
+@update_seg
 def zh_traditional_standard(line):
-	line["seg"] = [HanLP.convertToTraditionalChinese(item)
-				   for item in line["seg"]]
-    return line
+    return HanLP.convertToTraditionalChinese(line)
 
 
 # Chinese simplify -> Chinese traditional (HongKong)
+@update_seg
 def zh_traditional_hk(line):
-	line["seg"] = [HanLP.s2hk(item) for item in line["seg"]]
-    return line
+    return HanLP.s2hk(line)
 
 
 # Chinese simplify -> Chinese traditional (Taiwan)
+@update_seg
 def zh_traditional_tw(line):
-	line["seg"] = [HanLP.s2tw(item) for item in line["seg"]]
     return HanLP.s2tw(line)
 
 
 # Chinese traditional -> Chinese simplify (v1)
+@update_seg
 def zh_simplify(line):
-	line["seg"] = [HanLP.convertToSimplifiedChinese(item)
-	               for item in line["seg"]]
-    return line
+    return HanLP.convertToSimplifiedChinese(line)
 
 
 # Chinese traditional -> Chinese simplify (v2)
+@update_seg
 def zh_simplify_v2(line):
-	line["seg"] = [SnowNLP(item).han for item in line["seg"]]
-    return line
+    return SnowNLP(line).han
