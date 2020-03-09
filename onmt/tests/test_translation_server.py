@@ -120,9 +120,10 @@ class TestServerModel(unittest.TestCase):
         for elem in scores:
             self.assertIsInstance(elem, float)
         self.assertIsInstance(aligns, list)
-        for align_string in aligns:
-            if align_string is not None:
-                self.assertIsInstance(align_string, string_types)
+        for align_list in aligns:
+            for align_string in align_list:
+                if align_string is not None:
+                    self.assertIsInstance(align_string, string_types)
         self.assertEqual(len(results), len(scores))
         self.assertEqual(len(scores), len(inp) * n_best)
         self.assertEqual(len(time), 1)
