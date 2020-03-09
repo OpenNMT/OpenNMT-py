@@ -616,7 +616,7 @@ although this too is not mentioned. You can reproduce our early-stops with these
     <span class="n">df</span> <span class="o">=</span> <span class="n">load_results</span><span class="p">()</span>
     <span class="n">maxes</span> <span class="o">=</span> <span class="n">find_stops</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">stop_count</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">metric</span><span class="p">,</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">maxes</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{metric}</span><span class="s2"> maxed @ </span><span class="si">{idx}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">metric</span><span class="si">}</span><span class="s2"> maxed @ </span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
         <span class="nb">print</span><span class="p">()</span>
 </pre></div>
