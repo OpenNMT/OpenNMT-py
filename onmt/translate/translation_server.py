@@ -408,9 +408,9 @@ class ServerModel(object):
                     whitespaces_after = match_after.group(0)
                 head_spaces.append(whitespaces_before)
                 # every segment becomes a dict for flexibility purposes
-                return_dict = self.maybe_preprocess(src.strip())
-                all_preprocessed.append(return_dict)
-                for seg in return_dict["seg"]:
+                seg_dict = self.maybe_preprocess(src.strip())
+                all_preprocessed.append(seg_dict)
+                for seg in seg_dict["seg"]:
                     tok = self.maybe_tokenize(seg)
                     texts.append(tok)
                 sslength.append(len(tok.split()))
@@ -484,15 +484,14 @@ class ServerModel(object):
         rebuilt_segs = []
         avg_scores = []
         merged_aligns = []
-        for some_dict in all_preprocessed:
-            # TODO: make this more readable
-            some_dict["seg"] = list(
-                list(zip(*results))[0][offset:offset+some_dict["n_seg"]])
-            rebuilt_segs.append(some_dict)
+        for seg_dict in all_preprocessed:
+            seg_dict["seg"] = list(
+                list(zip(*results))[0][offset:offset+seg_dict["n_seg"]])
+            rebuilt_segs.append(seg_dict)
             avg_scores.append(sum(
-                scores[offset:offset+some_dict["n_seg"]])/some_dict["n_seg"])
-            merged_aligns.append(aligns[offset:offset+some_dict["n_seg"]])
-            offset += some_dict["n_seg"]
+                scores[offset:offset+seg_dict["n_seg"]])/seg_dict["n_seg"])
+            merged_aligns.append(aligns[offset:offset+seg_dict["n_seg"]])
+            offset += seg_dict["n_seg"]
         return rebuilt_segs, avg_scores, merged_aligns
 
     def do_timeout(self):
@@ -698,8 +697,7 @@ class ServerModel(object):
         if self.postprocess_opt is not None:
             return self.postprocess(sequence)
         else:
-            sequence = sequence["seg"][0]
-        return sequence
+            return sequence["seg"][0]
 
     def postprocess(self, sequence):
         """Preprocess a single sequence.
