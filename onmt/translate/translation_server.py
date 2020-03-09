@@ -413,7 +413,7 @@ class ServerModel(object):
                 return_dict = self.maybe_preprocess(src.strip())
                 print("### MAYBE ATTR", return_dict)
                 all_preprocessed.append(return_dict)
-                for seg in return_dict["src"]:
+                for seg in return_dict["seg"]:
                     tok = self.maybe_tokenize(seg)
                     texts.append(tok)
                 # attributes.append(return_dict)
@@ -496,7 +496,7 @@ class ServerModel(object):
         avg_scores = []
         merged_aligns = []
         for some_dict in all_preprocessed:
-            some_dict["tgt"] = list(list(zip(*results))[0][offset:offset+some_dict["n_seg"]])
+            some_dict["seg"] = list(list(zip(*results))[0][offset:offset+some_dict["n_seg"]])
             rebuilt_segs.append(some_dict)
             avg_scores.append(sum(scores[offset:offset+some_dict["n_seg"]])/some_dict["n_seg"])
             merged_aligns.append(aligns[offset:offset+some_dict["n_seg"]])
@@ -568,14 +568,14 @@ class ServerModel(object):
         """Preprocess the sequence (or not)
 
         """
-
+        print("### MAYBE PREPROCESS", sequence)
+        if type(sequence) is str:
+            sequence = {
+                "seg": [sequence],
+                "n_seg": 1
+            }            
         if self.preprocess_opt is not None:
             return self.preprocess(sequence)
-        else:
-            sequence = {
-                "src": [sequence],
-                "n_seg": 1
-            }
         return sequence
 
     def preprocess(self, sequence):
@@ -589,14 +589,11 @@ class ServerModel(object):
         """
         if self.preprocessor is None:
             raise ValueError("No preprocessor loaded")
-        return_dict = {
-            "src": sequence,
-            "n_seg": 1
-        }
         for function in self.preprocessor:
-            return_dict = function(return_dict)
-        print("### PREPROCESS ATTR", return_dict)
-        return return_dict
+            print("##", function, sequence)
+            sequence = function(sequence)
+        print("### PREPROCESS ATTR", sequence)
+        return sequence
 
     def maybe_tokenize(self, sequence):
         """Tokenize the sequence (or not).
@@ -712,7 +709,7 @@ class ServerModel(object):
         if self.postprocess_opt is not None:
             return self.postprocess(sequence)
         else:
-            sequence = sequence["tgt"][0]
+            sequence = sequence["seg"][0]
         return sequence
 
     def postprocess(self, sequence):
