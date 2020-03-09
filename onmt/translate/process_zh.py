@@ -5,10 +5,8 @@ import pkuseg
 
 def update_seg(func):
 	def wrapper(line):
-		print("IN WRAPPER")
 		line["seg"] = [func(item) for item in line["seg"]]
 		return line
-	print("OUT WRAPPER")
 	return wrapper
 
 
