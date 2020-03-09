@@ -157,9 +157,8 @@ class TranslationServer(object):
         """
 
         model_id = inputs[0].get("id", 0)
-        maybe_opts = inputs[0].get("opts", None)
         if model_id in self.models and self.models[model_id] is not None:
-            return self.models[model_id].run(inputs, maybe_opts)
+            return self.models[model_id].run(inputs)
         else:
             print("Error No such model '%s'" % str(model_id))
             raise ServerModelError("No such model '%s'" % str(model_id))
@@ -354,7 +353,7 @@ class ServerModel(object):
         self.loading_lock.set()
 
     @critical
-    def run(self, inputs, maybe_opts):
+    def run(self, inputs):
         """Translate `inputs` using this model
 
         Args:
@@ -388,7 +387,6 @@ class ServerModel(object):
                 self.to_gpu()
                 timer.tick(name="to_gpu")
 
-        print(maybe_opts)
 
         texts = []
         head_spaces = []
@@ -411,12 +409,10 @@ class ServerModel(object):
                     whitespaces_after = match_after.group(0)
                 head_spaces.append(whitespaces_before)
                 return_dict = self.maybe_preprocess(src.strip())
-                print("### MAYBE ATTR", return_dict)
                 all_preprocessed.append(return_dict)
                 for seg in return_dict["seg"]:
                     tok = self.maybe_tokenize(seg)
                     texts.append(tok)
-                # attributes.append(return_dict)
                 sslength.append(len(tok.split()))
                 tail_spaces.append(whitespaces_after)
 
@@ -461,16 +457,11 @@ class ServerModel(object):
                    for result, src in zip(results, tiled_texts)]
 
         aligns = [align for _, align in results] 
-        # print("#### ATTR BEFORE POSTPROCESS", attributes)
-        # print("### RESULTS", results)
+
         rebuilt_segs, scores, aligns = self.rebuild_seg_packages(
             all_preprocessed, results, scores, aligns)
-        print("### REBUILT SEGS", rebuilt_segs)
         results = [self.maybe_postprocess(seg) for seg in rebuilt_segs]
-        # for ((seq, _), attr) in zip(results, attributes):
-        #     print(attr)
-        print("### RESULTS", results)
-        print("### ALIGNS", aligns)
+        
         # build back results with empty texts
         for i in empty_indices:
             j = i * self.opt.n_best
@@ -487,10 +478,6 @@ class ServerModel(object):
         return results, scores, self.opt.n_best, timer.times, aligns
 
     def rebuild_seg_packages(self, all_preprocessed, results, scores, aligns):
-        print("### INPUTS", all_preprocessed)
-        print("### LEN INPUTS", len(all_preprocessed))
-        print("### RESULTS", results)
-        print("### LEN RESULTS", len(results))
         offset = 0
         rebuilt_segs = []
         avg_scores = []
@@ -568,7 +555,6 @@ class ServerModel(object):
         """Preprocess the sequence (or not)
 
         """
-        print("### MAYBE PREPROCESS", sequence)
         if type(sequence) is str:
             sequence = {
                 "seg": [sequence],
@@ -590,9 +576,7 @@ class ServerModel(object):
         if self.preprocessor is None:
             raise ValueError("No preprocessor loaded")
         for function in self.preprocessor:
-            print("##", function, sequence)
             sequence = function(sequence)
-        print("### PREPROCESS ATTR", sequence)
         return sequence
 
     def maybe_tokenize(self, sequence):
