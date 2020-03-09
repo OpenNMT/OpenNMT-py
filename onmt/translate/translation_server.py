@@ -456,11 +456,11 @@ class ServerModel(object):
         results = [self.maybe_detokenize_with_align(result, src)
                    for result, src in zip(results, tiled_texts)]
 
-        aligns = [align for _, align in results] 
+        aligns = [align for _, align in results]
         rebuilt_segs, scores, aligns = self.rebuild_seg_packages(
             all_preprocessed, results, scores, aligns)
         results = [self.maybe_postprocess(seg) for seg in rebuilt_segs]
-        
+
         # build back results with empty texts
         for i in empty_indices:
             j = i * self.opt.n_best
@@ -485,10 +485,12 @@ class ServerModel(object):
         avg_scores = []
         merged_aligns = []
         for some_dict in all_preprocessed:
-            #TODO: make this more readable
-            some_dict["seg"] = list(list(zip(*results))[0][offset:offset+some_dict["n_seg"]])
+            # TODO: make this more readable
+            some_dict["seg"] = list(
+                list(zip(*results))[0][offset:offset+some_dict["n_seg"]])
             rebuilt_segs.append(some_dict)
-            avg_scores.append(sum(scores[offset:offset+some_dict["n_seg"]])/some_dict["n_seg"])
+            avg_scores.append(sum(
+                scores[offset:offset+some_dict["n_seg"]])/some_dict["n_seg"])
             merged_aligns.append(aligns[offset:offset+some_dict["n_seg"]])
             offset += some_dict["n_seg"]
         return rebuilt_segs, avg_scores, merged_aligns
@@ -562,7 +564,7 @@ class ServerModel(object):
             sequence = {
                 "seg": [sequence],
                 "n_seg": 1
-            }            
+            }
         if self.preprocess_opt is not None:
             return self.preprocess(sequence)
         return sequence

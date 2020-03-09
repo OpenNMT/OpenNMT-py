@@ -4,10 +4,10 @@ import pkuseg
 
 
 def update_seg(func):
-	def wrapper(line):
-		line["seg"] = [func(item) for item in line["seg"]]
-		return line
-	return wrapper
+    def wrapper(line):
+        line["seg"] = [func(item) for item in line["seg"]]
+        return line
+    return wrapper
 
 
 # Chinese segmentation
