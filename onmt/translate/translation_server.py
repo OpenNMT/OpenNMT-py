@@ -394,27 +394,22 @@ class ServerModel(object):
         all_preprocessed = []
         for i, inp in enumerate(inputs):
             src = inp['src']
-            if src.strip() == "":
-                head_spaces.append(src)
-                texts.append("")
-                tail_spaces.append("")
-            else:
-                whitespaces_before, whitespaces_after = "", ""
-                match_before = re.search(r'^\s+', src)
-                match_after = re.search(r'\s+$', src)
-                if match_before is not None:
-                    whitespaces_before = match_before.group(0)
-                if match_after is not None:
-                    whitespaces_after = match_after.group(0)
-                head_spaces.append(whitespaces_before)
-                # every segment becomes a dict for flexibility purposes
-                seg_dict = self.maybe_preprocess(src.strip())
-                all_preprocessed.append(seg_dict)
-                for seg in seg_dict["seg"]:
-                    tok = self.maybe_tokenize(seg)
-                    texts.append(tok)
-                sslength.append(len(tok.split()))
-                tail_spaces.append(whitespaces_after)
+            whitespaces_before, whitespaces_after = "", ""
+            match_before = re.search(r'^\s+', src)
+            match_after = re.search(r'\s+$', src)
+            if match_before is not None:
+                whitespaces_before = match_before.group(0)
+            if match_after is not None:
+                whitespaces_after = match_after.group(0)
+            head_spaces.append(whitespaces_before)
+            # every segment becomes a dict for flexibility purposes
+            seg_dict = self.maybe_preprocess(src.strip())
+            all_preprocessed.append(seg_dict)
+            for seg in seg_dict["seg"]:
+                tok = self.maybe_tokenize(seg)
+                texts.append(tok)
+            sslength.append(len(tok.split()))
+            tail_spaces.append(whitespaces_after)
 
         empty_indices = [i for i, x in enumerate(texts) if x == ""]
         texts_to_translate = [x for x in texts if x != ""]
@@ -457,16 +452,17 @@ class ServerModel(object):
                    for result, src in zip(results, tiled_texts)]
 
         aligns = [align for _, align in results]
-        rebuilt_segs, scores, aligns = self.rebuild_seg_packages(
-            all_preprocessed, results, scores, aligns)
-        results = [self.maybe_postprocess(seg) for seg in rebuilt_segs]
 
         # build back results with empty texts
         for i in empty_indices:
             j = i * self.opt.n_best
-            results = results[:j] + [""] * self.opt.n_best + results[j:]
-            aligns = aligns[:j] + [[None]] * self.opt.n_best + aligns[j:]
+            results = results[:j] + [("", None)] * self.opt.n_best + results[j:]
+            aligns = aligns[:j] + [None] * self.opt.n_best + aligns[j:]
             scores = scores[:j] + [0] * self.opt.n_best + scores[j:]
+
+        rebuilt_segs, scores, aligns = self.rebuild_seg_packages(
+            all_preprocessed, results, scores, aligns)
+        results = [self.maybe_postprocess(seg) for seg in rebuilt_segs]
 
         head_spaces = [h for h in head_spaces for i in range(self.opt.n_best)]
         tail_spaces = [h for h in tail_spaces for i in range(self.opt.n_best)]
