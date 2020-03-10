@@ -465,7 +465,7 @@ class ServerModel(object):
         for i in empty_indices:
             j = i * self.opt.n_best
             results = results[:j] + [""] * self.opt.n_best + results[j:]
-            aligns = aligns[:j] + [None] * self.opt.n_best + aligns[j:]
+            aligns = aligns[:j] + [[None]] * self.opt.n_best + aligns[j:]
             scores = scores[:j] + [0] * self.opt.n_best + scores[j:]
 
         head_spaces = [h for h in head_spaces for i in range(self.opt.n_best)]
