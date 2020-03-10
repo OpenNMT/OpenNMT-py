@@ -70,6 +70,7 @@ class Timer:
 class ServerModelError(Exception):
     pass
 
+
 class CTranslate2Translator(object):
     """
     This should reproduce the onmt.translate.translator API.
@@ -99,7 +100,8 @@ class CTranslate2Translator(object):
             num_hypotheses=self.n_best
         )
         scores = [[item["score"] for item in ex] for ex in preds]
-        predictions = [[" ".join(item["tokens"]) for item in ex] for ex in preds]
+        predictions = [[" ".join(item["tokens"]) for item in ex]
+                       for ex in preds]
         return scores, predictions
 
     def to_cpu(self):
@@ -392,10 +394,9 @@ class ServerModel(object):
                     beam_size=self.opt.beam_size,
                     n_best=self.opt.n_best)
             else:
-                self.translator = build_translator(self.opt,
-                                               report_score=False,
-                                               out_file=codecs.open(
-                                                   os.devnull, "w", "utf-8"))
+                self.translator = build_translator(
+                    self.opt, report_score=False,
+                    out_file=codecs.open(os.devnull, "w", "utf-8"))
         except RuntimeError as e:
             raise ServerModelError("Runtime Error: %s" % str(e))
 
@@ -501,7 +502,7 @@ class ServerModel(object):
         scores = [score_tensor
                   for score_tensor in flatten_list(scores)]
         if type(scores[0]) == torch.Tensor:
-            scores = [x.item() for score in scores]
+            scores = [score.item() for score in scores]
 
         results = [self.maybe_detokenize_with_align(result, src)
                    for result, src in zip(results, tiled_texts)]
