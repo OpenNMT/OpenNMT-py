@@ -96,7 +96,8 @@ class TranslationBuilder(object):
             pred_sents = [self._build_target_tokens(
                 src[:, b] if src is not None else None,
                 src_vocab, src_raw,
-                preds[b][n], attn[b][n])
+                preds[b][n],
+                align[b][n] if align[b] is not None else attn[b][n])
                 for n in range(self.n_best)]
             gold_sent = None
             if tgt is not None:

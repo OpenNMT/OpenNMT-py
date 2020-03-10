@@ -445,6 +445,7 @@ class ServerModel(object):
         head_spaces = []
         tail_spaces = []
         sslength = []
+        all_preprocessed = []
         for i, inp in enumerate(inputs):
             src = inp['src']
             if src.strip() == "":
@@ -460,9 +461,12 @@ class ServerModel(object):
                 if match_after is not None:
                     whitespaces_after = match_after.group(0)
                 head_spaces.append(whitespaces_before)
-                preprocessed_src = self.maybe_preprocess(src.strip())
-                tok = self.maybe_tokenize(preprocessed_src)
-                texts.append(tok)
+                # every segment becomes a dict for flexibility purposes
+                seg_dict = self.maybe_preprocess(src.strip())
+                all_preprocessed.append(seg_dict)
+                for seg in seg_dict["seg"]:
+                    tok = self.maybe_tokenize(seg)
+                    texts.append(tok)
                 sslength.append(len(tok.split()))
                 tail_spaces.append(whitespaces_after)
 
@@ -509,13 +513,15 @@ class ServerModel(object):
                    for result, src in zip(results, tiled_texts)]
 
         aligns = [align for _, align in results]
-        results = [self.maybe_postprocess(seq) for seq, _ in results]
+        rebuilt_segs, scores, aligns = self.rebuild_seg_packages(
+            all_preprocessed, results, scores, aligns)
+        results = [self.maybe_postprocess(seg) for seg in rebuilt_segs]
 
         # build back results with empty texts
         for i in empty_indices:
             j = i * self.opt.n_best
             results = results[:j] + [""] * self.opt.n_best + results[j:]
-            aligns = aligns[:j] + [None] * self.opt.n_best + aligns[j:]
+            aligns = aligns[:j] + [[None]] * self.opt.n_best + aligns[j:]
             scores = scores[:j] + [0] * self.opt.n_best + scores[j:]
 
         head_spaces = [h for h in head_spaces for i in range(self.opt.n_best)]
@@ -526,6 +532,24 @@ class ServerModel(object):
         self.logger.info("Translation Results: %d", len(results))
 
         return results, scores, self.opt.n_best, timer.times, aligns
+
+    def rebuild_seg_packages(self, all_preprocessed, results, scores, aligns):
+        """
+        Rebuild proper segment packages based on initial n_seg.
+        """
+        offset = 0
+        rebuilt_segs = []
+        avg_scores = []
+        merged_aligns = []
+        for seg_dict in all_preprocessed:
+            seg_dict["seg"] = list(
+                list(zip(*results))[0][offset:offset+seg_dict["n_seg"]])
+            rebuilt_segs.append(seg_dict)
+            avg_scores.append(sum(
+                scores[offset:offset+seg_dict["n_seg"]])/seg_dict["n_seg"])
+            merged_aligns.append(aligns[offset:offset+seg_dict["n_seg"]])
+            offset += seg_dict["n_seg"]
+        return rebuilt_segs, avg_scores, merged_aligns
 
     def do_timeout(self):
         """Timeout function that frees GPU memory.
@@ -599,7 +623,11 @@ class ServerModel(object):
         """Preprocess the sequence (or not)
 
         """
-
+        if type(sequence) is str:
+            sequence = {
+                "seg": [sequence],
+                "n_seg": 1
+            }
         if self.preprocess_opt is not None:
             return self.preprocess(sequence)
         return sequence
@@ -730,10 +758,10 @@ class ServerModel(object):
         """Postprocess the sequence (or not)
 
         """
-
         if self.postprocess_opt is not None:
             return self.postprocess(sequence)
-        return sequence
+        else:
+            return sequence["seg"][0]
 
     def postprocess(self, sequence):
         """Preprocess a single sequence.

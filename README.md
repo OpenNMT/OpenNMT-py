@@ -50,7 +50,7 @@ pip install -r requirements.opt.txt
 Note:
 
 - some features require Python 3.5 and after (eg: Distributed multigpu, entmax)
-- we currently only support PyTorch 1.2 (should work with 1.1)
+- we currently only support PyTorch 1.4
 
 ## Features
 
