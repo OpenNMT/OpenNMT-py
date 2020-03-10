@@ -456,7 +456,8 @@ class ServerModel(object):
         # build back results with empty texts
         for i in empty_indices:
             j = i * self.opt.n_best
-            results = results[:j] + [("", None)] * self.opt.n_best + results[j:]
+            results = (results[:j] +
+                       [("", None)] * self.opt.n_best + results[j:])
             aligns = aligns[:j] + [None] * self.opt.n_best + aligns[j:]
             scores = scores[:j] + [0] * self.opt.n_best + scores[j:]
 
