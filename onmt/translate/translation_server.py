@@ -478,7 +478,8 @@ class ServerModel(object):
         self.logger.info("Translation Results: %d", len(results))
         return results, scores, self.opt.n_best, timer.times, aligns
 
-    def rebuild_seg_packages(self, all_preprocessed, results, scores, aligns, n_best):
+    def rebuild_seg_packages(self, all_preprocessed, results,
+                             scores, aligns, n_best):
         """
         Rebuild proper segment packages based on initial n_seg.
         """
@@ -487,9 +488,12 @@ class ServerModel(object):
         avg_scores = []
         merged_aligns = []
         for i, seg_dict in enumerate(all_preprocessed):
-            sub_results = results[n_best*offset:(offset+seg_dict["n_seg"])*n_best]
-            sub_scores = scores[n_best*offset:(offset+seg_dict["n_seg"])*n_best]
-            sub_aligns = aligns[n_best*offset:(offset+seg_dict["n_seg"])*n_best]
+            sub_results = results[n_best * offset:
+                                  (offset + seg_dict["n_seg"]) * n_best]
+            sub_scores = scores[n_best * offset:
+                                (offset + seg_dict["n_seg"]) * n_best]
+            sub_aligns = aligns[n_best * offset:
+                                (offset + seg_dict["n_seg"]) * n_best]
             for j in range(n_best):
                 _seg_dict = deepcopy(seg_dict)
                 _sub_segs = list(list(zip(*sub_results))[0])
