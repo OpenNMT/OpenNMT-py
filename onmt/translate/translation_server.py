@@ -13,6 +13,9 @@ import importlib
 import torch
 import onmt.opts
 
+from itertools import islice
+from copy import deepcopy
+
 from onmt.utils.logging import init_logger
 from onmt.utils.misc import set_random_seed
 from onmt.utils.misc import check_model_config
@@ -445,6 +448,7 @@ class ServerModel(object):
         tiled_texts = [t for t in texts_to_translate
                        for _ in range(self.opt.n_best)]
         results = flatten_list(predictions)
+
         scores = [score_tensor.item()
                   for score_tensor in flatten_list(scores)]
 
@@ -462,7 +466,8 @@ class ServerModel(object):
             scores = scores[:j] + [0] * self.opt.n_best + scores[j:]
 
         rebuilt_segs, scores, aligns = self.rebuild_seg_packages(
-            all_preprocessed, results, scores, aligns)
+            all_preprocessed, results, scores, aligns, self.opt.n_best)
+
         results = [self.maybe_postprocess(seg) for seg in rebuilt_segs]
 
         head_spaces = [h for h in head_spaces for i in range(self.opt.n_best)]
@@ -473,7 +478,7 @@ class ServerModel(object):
         self.logger.info("Translation Results: %d", len(results))
         return results, scores, self.opt.n_best, timer.times, aligns
 
-    def rebuild_seg_packages(self, all_preprocessed, results, scores, aligns):
+    def rebuild_seg_packages(self, all_preprocessed, results, scores, aligns, n_best):
         """
         Rebuild proper segment packages based on initial n_seg.
         """
@@ -481,14 +486,20 @@ class ServerModel(object):
         rebuilt_segs = []
         avg_scores = []
         merged_aligns = []
-        for seg_dict in all_preprocessed:
-            seg_dict["seg"] = list(
-                list(zip(*results))[0][offset:offset+seg_dict["n_seg"]])
-            rebuilt_segs.append(seg_dict)
-            avg_scores.append(sum(
-                scores[offset:offset+seg_dict["n_seg"]])/seg_dict["n_seg"])
-            merged_aligns.append(aligns[offset:offset+seg_dict["n_seg"]])
-            offset += seg_dict["n_seg"]
+        for i, seg_dict in enumerate(all_preprocessed):
+            sub_results = results[n_best*offset:(offset+seg_dict["n_seg"])*n_best]
+            sub_scores = scores[n_best*offset:(offset+seg_dict["n_seg"])*n_best]
+            sub_aligns = aligns[n_best*offset:(offset+seg_dict["n_seg"])*n_best]
+            for j in range(n_best):
+                _seg_dict = deepcopy(seg_dict)
+                _sub_segs = list(list(zip(*sub_results))[0])
+                _seg_dict["seg"] = list(islice(_sub_segs, j, None, n_best))
+                rebuilt_segs.append(_seg_dict)
+                sub_sub_scores = list(islice(sub_scores, j, None, n_best))
+                avg_scores.append(sum(sub_sub_scores)/_seg_dict["n_seg"])
+                sub_sub_aligns = list(islice(sub_aligns, j, None, n_best))
+                merged_aligns.append(sub_sub_aligns)
+            offset += _seg_dict["n_seg"]
         return rebuilt_segs, avg_scores, merged_aligns
 
     def do_timeout(self):
