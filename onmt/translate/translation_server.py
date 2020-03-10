@@ -13,6 +13,9 @@ import importlib
 import torch
 import onmt.opts
 
+from itertools import islice
+from copy import deepcopy
+
 from onmt.utils.logging import init_logger
 from onmt.utils.misc import set_random_seed
 from onmt.utils.misc import check_model_config
@@ -394,27 +397,22 @@ class ServerModel(object):
         all_preprocessed = []
         for i, inp in enumerate(inputs):
             src = inp['src']
-            if src.strip() == "":
-                head_spaces.append(src)
-                texts.append("")
-                tail_spaces.append("")
-            else:
-                whitespaces_before, whitespaces_after = "", ""
-                match_before = re.search(r'^\s+', src)
-                match_after = re.search(r'\s+$', src)
-                if match_before is not None:
-                    whitespaces_before = match_before.group(0)
-                if match_after is not None:
-                    whitespaces_after = match_after.group(0)
-                head_spaces.append(whitespaces_before)
-                # every segment becomes a dict for flexibility purposes
-                seg_dict = self.maybe_preprocess(src.strip())
-                all_preprocessed.append(seg_dict)
-                for seg in seg_dict["seg"]:
-                    tok = self.maybe_tokenize(seg)
-                    texts.append(tok)
-                sslength.append(len(tok.split()))
-                tail_spaces.append(whitespaces_after)
+            whitespaces_before, whitespaces_after = "", ""
+            match_before = re.search(r'^\s+', src)
+            match_after = re.search(r'\s+$', src)
+            if match_before is not None:
+                whitespaces_before = match_before.group(0)
+            if match_after is not None:
+                whitespaces_after = match_after.group(0)
+            head_spaces.append(whitespaces_before)
+            # every segment becomes a dict for flexibility purposes
+            seg_dict = self.maybe_preprocess(src.strip())
+            all_preprocessed.append(seg_dict)
+            for seg in seg_dict["seg"]:
+                tok = self.maybe_tokenize(seg)
+                texts.append(tok)
+            sslength.append(len(tok.split()))
+            tail_spaces.append(whitespaces_after)
 
         empty_indices = [i for i, x in enumerate(texts) if x == ""]
         texts_to_translate = [x for x in texts if x != ""]
@@ -450,6 +448,7 @@ class ServerModel(object):
         tiled_texts = [t for t in texts_to_translate
                        for _ in range(self.opt.n_best)]
         results = flatten_list(predictions)
+
         scores = [score_tensor.item()
                   for score_tensor in flatten_list(scores)]
 
@@ -457,16 +456,19 @@ class ServerModel(object):
                    for result, src in zip(results, tiled_texts)]
 
         aligns = [align for _, align in results]
-        rebuilt_segs, scores, aligns = self.rebuild_seg_packages(
-            all_preprocessed, results, scores, aligns)
-        results = [self.maybe_postprocess(seg) for seg in rebuilt_segs]
 
         # build back results with empty texts
         for i in empty_indices:
             j = i * self.opt.n_best
-            results = results[:j] + [""] * self.opt.n_best + results[j:]
-            aligns = aligns[:j] + [[None]] * self.opt.n_best + aligns[j:]
+            results = (results[:j] +
+                       [("", None)] * self.opt.n_best + results[j:])
+            aligns = aligns[:j] + [None] * self.opt.n_best + aligns[j:]
             scores = scores[:j] + [0] * self.opt.n_best + scores[j:]
+
+        rebuilt_segs, scores, aligns = self.rebuild_seg_packages(
+            all_preprocessed, results, scores, aligns, self.opt.n_best)
+
+        results = [self.maybe_postprocess(seg) for seg in rebuilt_segs]
 
         head_spaces = [h for h in head_spaces for i in range(self.opt.n_best)]
         tail_spaces = [h for h in tail_spaces for i in range(self.opt.n_best)]
@@ -476,7 +478,8 @@ class ServerModel(object):
         self.logger.info("Translation Results: %d", len(results))
         return results, scores, self.opt.n_best, timer.times, aligns
 
-    def rebuild_seg_packages(self, all_preprocessed, results, scores, aligns):
+    def rebuild_seg_packages(self, all_preprocessed, results,
+                             scores, aligns, n_best):
         """
         Rebuild proper segment packages based on initial n_seg.
         """
@@ -484,14 +487,23 @@ class ServerModel(object):
         rebuilt_segs = []
         avg_scores = []
         merged_aligns = []
-        for seg_dict in all_preprocessed:
-            seg_dict["seg"] = list(
-                list(zip(*results))[0][offset:offset+seg_dict["n_seg"]])
-            rebuilt_segs.append(seg_dict)
-            avg_scores.append(sum(
-                scores[offset:offset+seg_dict["n_seg"]])/seg_dict["n_seg"])
-            merged_aligns.append(aligns[offset:offset+seg_dict["n_seg"]])
-            offset += seg_dict["n_seg"]
+        for i, seg_dict in enumerate(all_preprocessed):
+            sub_results = results[n_best * offset:
+                                  (offset + seg_dict["n_seg"]) * n_best]
+            sub_scores = scores[n_best * offset:
+                                (offset + seg_dict["n_seg"]) * n_best]
+            sub_aligns = aligns[n_best * offset:
+                                (offset + seg_dict["n_seg"]) * n_best]
+            for j in range(n_best):
+                _seg_dict = deepcopy(seg_dict)
+                _sub_segs = list(list(zip(*sub_results))[0])
+                _seg_dict["seg"] = list(islice(_sub_segs, j, None, n_best))
+                rebuilt_segs.append(_seg_dict)
+                sub_sub_scores = list(islice(sub_scores, j, None, n_best))
+                avg_scores.append(sum(sub_sub_scores)/_seg_dict["n_seg"])
+                sub_sub_aligns = list(islice(sub_aligns, j, None, n_best))
+                merged_aligns.append(sub_sub_aligns)
+            offset += _seg_dict["n_seg"]
         return rebuilt_segs, avg_scores, merged_aligns
 
     def do_timeout(self):
