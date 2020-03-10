@@ -257,7 +257,8 @@ class ServerModel(object):
         self.timeout = timeout
         self.on_timeout = on_timeout
 
-        self.ct2_model = os.path.join(model_root, ct2_model)
+        self.ct2_model = os.path.join(model_root, ct2_model) \
+                         if ct2_model is not None else None
 
         self.unload_timer = None
         self.user_opt = opt
