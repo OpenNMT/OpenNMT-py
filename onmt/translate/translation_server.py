@@ -503,10 +503,9 @@ class ServerModel(object):
                        for _ in range(self.opt.n_best)]
         results = flatten_list(predictions)
 
-        scores = [score_tensor
+        def maybe_item(x): return x.item() if type(x) is torch.Tensor else x
+        scores = [maybe_item(score_tensor)
                   for score_tensor in flatten_list(scores)]
-        if type(scores[0]) == torch.Tensor:
-            scores = [score.item() for score in scores]
 
         results = [self.maybe_detokenize_with_align(result, src)
                    for result, src in zip(results, tiled_texts)]
