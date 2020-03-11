@@ -82,8 +82,6 @@ class CTranslate2Translator(object):
     def __init__(self, model_path, device, device_index,
                  batch_size, beam_size, n_best):
         import ctranslate2
-        import time
-        beg = time.time()
         self.translator = ctranslate2.Translator(
             model_path,
             device=device,
@@ -91,8 +89,6 @@ class CTranslate2Translator(object):
             inter_threads=1,
             intra_threads=1,
             compute_type="default")
-        duration = time.time() - beg
-        print("########## LOADING TIME", duration)
         self.batch_size = batch_size
         self.beam_size = beam_size
         self.n_best = n_best
@@ -391,9 +387,6 @@ class ServerModel(object):
 
         try:
             if self.ct2_model is not None:
-                print("Load CT2 model")
-                print(self.ct2_model)
-                print(os.path.exists(self.ct2_model))
                 self.translator = CTranslate2Translator(
                     self.ct2_model,
                     device="cuda",
