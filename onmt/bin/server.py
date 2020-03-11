@@ -103,6 +103,11 @@ def start(config_file,
                     response["align"] = aligns[i]
                 out[i % n_best].append(response)
         except ServerModelError as e:
+            model_id = inputs[0].get("id")
+            if debug:
+                logger.warning("Unload model #{} "
+                               "because of an error".format(model_id))
+            translation_server.models[model_id].unload()
             out['error'] = str(e)
             out['status'] = STATUS_ERROR
         if debug:
