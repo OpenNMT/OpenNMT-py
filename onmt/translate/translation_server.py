@@ -79,7 +79,8 @@ class CTranslate2Translator(object):
     This should reproduce the onmt.translate.translator API.
     """
 
-    def __init__(self, model_path, device, device_index, beam_size, n_best):
+    def __init__(self, model_path, device, device_index,
+                 batch_size, beam_size, n_best):
         import ctranslate2
         import time
         beg = time.time()
@@ -92,6 +93,7 @@ class CTranslate2Translator(object):
             compute_type="default")
         duration = time.time() - beg
         print("########## LOADING TIME", duration)
+        self.batch_size = batch_size
         self.beam_size = beam_size
         self.n_best = n_best
 
@@ -99,6 +101,7 @@ class CTranslate2Translator(object):
         batch = [item.split(" ") for item in texts_to_translate]
         preds = self.translator.translate_batch(
             batch,
+            max_batch_size=self.batch_size,
             beam_size=self.beam_size,
             num_hypotheses=self.n_best
         )
@@ -395,6 +398,7 @@ class ServerModel(object):
                     self.ct2_model,
                     device="cuda",
                     device_index=self.opt.gpu,
+                    batch_size=self.opt.batch_size,
                     beam_size=self.opt.beam_size,
                     n_best=self.opt.n_best)
             else:
