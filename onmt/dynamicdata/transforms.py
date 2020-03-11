@@ -533,11 +533,15 @@ class SentencepieceTransform(SimpleTransform):
 
     def __getstate__(self):
         return {'data_config': self.data_config,
-                'model_path': self.model_path}
+                'model_path': self.model_path,
+                'n_samples': self.n_samples,
+                'theta': self.theta}
 
     def __setstate__(self, d):
         self.data_config = d['data_config']
         self.model_path = d['model_path']
+        self.n_samples = d['n_samples']
+        self.theta = d['theta']
         self.warm_up()
 
 class SampleCache(object):
