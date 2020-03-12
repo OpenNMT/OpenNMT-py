@@ -53,7 +53,7 @@ class TranslationBuilder(object):
                     if self.phrase_table != "":
                         with open(self.phrase_table, "r") as f:
                             for line in f:
-                                if line.startswith(src_raw[max_index.item()]):
+                                if line.startswith(src_raw[max_index.item()]+"|||"):
                                     tokens[i] = line.split('|||')[1].strip()
         return tokens
 
