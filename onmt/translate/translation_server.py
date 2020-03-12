@@ -89,11 +89,15 @@ class CTranslate2Translator(object):
             inter_threads=1,
             intra_threads=1,
             compute_type="default")
-        if preload:
-            self.translator.unload_model(to_cpu=True)
         self.batch_size = batch_size
         self.beam_size = beam_size
         self.n_best = n_best
+        if preload:
+            # perform a first request to initialize stuff
+            dummy_translation = self.translate(["a"])
+            print("#####", dummy_translation)
+            time.sleep(1)
+            self.translator.unload_model(to_cpu=True)
 
     def translate(self, texts_to_translate, batch_size=8):
         batch = [item.split(" ") for item in texts_to_translate]
