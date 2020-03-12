@@ -337,6 +337,7 @@ class ServerModel(object):
 
         if load:
             self.load(preload=True)
+            self.stop_unload_timer()
 
     def parse_opt(self, opt):
         """Parse the option set passed by the user using `onmt.opts`
