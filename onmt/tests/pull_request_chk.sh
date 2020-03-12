@@ -240,16 +240,6 @@ ${PYTHON} train.py -data /tmp/q -rnn_size 2 -batch_size 10 \
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 
-# NMT Gated graph neural network (depends on preprocess from above run)
-echo -n "[+] Doing NMT {gated graph neural network} test..."
-${PYTHON} train.py -data /tmp/q -encoder_type ggnn -rnn_size 2 -batch_size 10 \
-		-word_vec_size 5 -report_every 5        \
-		-rnn_size 10 -train_steps 10 -copy_attn       >> ${LOG_FILE} 2>&1
-# Expect that simple ggnn setup we use will fail due to missing src_vocab
-[ "$?" -eq 1 ] && grep -q "encoders.ggnn_encoder" ${LOG_FILE} && \
-                  grep -q "FileNotFoundError" ${LOG_FILE} || error_exit
-echo "Succeeded" | tee -a ${LOG_FILE}
-
 
 echo -n "[+] Doing im2text {preprocess w/sharding + train} test..."
 head /tmp/im2text/src-val.txt > /tmp/im2text/src-val-head.txt
@@ -290,10 +280,10 @@ echo "Succeeded" | tee -a ${LOG_FILE}
 
 
 echo -n "[+] Doing create vocabulary {preprocess + create_vocabulary} test..."
-rm -f /tmp/src-train.txt
-rm -f /tmp/tgt-train.txt
-rm -f /tmp/src-val.txt
-rm -f /tmp/tgt-val.txt
+rm /tmp/src-train.txt
+rm /tmp/tgt-train.txt
+rm /tmp/src-val.txt
+rm /tmp/tgt-val.txt
 head ${DATA_DIR}/src-train.txt > /tmp/src-train.txt
 head ${DATA_DIR}/tgt-train.txt > /tmp/tgt-train.txt
 head ${DATA_DIR}/src-val.txt > /tmp/src-val.txt
@@ -317,10 +307,10 @@ echo "Succeeded" | tee -a ${LOG_FILE}
 
 
 echo -n "[+] Doing embedding to torch {preprocess + embeddings_to_torch} test..."
-rm -f /tmp/src-train.txt
-rm -f /tmp/tgt-train.txt
-rm -f /tmp/src-val.txt
-rm -f /tmp/tgt-val.txt
+rm /tmp/src-train.txt
+rm /tmp/tgt-train.txt
+rm /tmp/src-val.txt
+rm /tmp/tgt-val.txt
 head ${DATA_DIR}/src-train.txt > /tmp/src-train.txt
 head ${DATA_DIR}/tgt-train.txt > /tmp/tgt-train.txt
 head ${DATA_DIR}/src-val.txt > /tmp/src-val.txt
