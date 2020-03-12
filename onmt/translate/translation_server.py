@@ -80,7 +80,7 @@ class CTranslate2Translator(object):
     """
 
     def __init__(self, model_path, device, device_index,
-                 batch_size, beam_size, n_best):
+                 batch_size, beam_size, n_best, preload=False):
         import ctranslate2
         self.translator = ctranslate2.Translator(
             model_path,
@@ -89,6 +89,8 @@ class CTranslate2Translator(object):
             inter_threads=1,
             intra_threads=1,
             compute_type="default")
+        if preload:
+            self.translator.unload_model(to_cpu=True)
         self.batch_size = batch_size
         self.beam_size = beam_size
         self.n_best = n_best
@@ -334,7 +336,7 @@ class ServerModel(object):
                 self.postprocessor.append(function)
 
         if load:
-            self.load()
+            self.load(preload=True)
 
     def parse_opt(self, opt):
         """Parse the option set passed by the user using `onmt.opts`
@@ -378,7 +380,7 @@ class ServerModel(object):
     def loaded(self):
         return hasattr(self, 'translator')
 
-    def load(self):
+    def load(self, preload=False):
         self.loading_lock.clear()
 
         timer = Timer()
@@ -393,7 +395,8 @@ class ServerModel(object):
                     device_index=self.opt.gpu,
                     batch_size=self.opt.batch_size,
                     beam_size=self.opt.beam_size,
-                    n_best=self.opt.n_best)
+                    n_best=self.opt.n_best,
+                    preload=preload)
             else:
                 self.translator = build_translator(
                     self.opt, report_score=False,
