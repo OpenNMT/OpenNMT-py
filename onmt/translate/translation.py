@@ -30,13 +30,19 @@ class TranslationBuilder(object):
             dict(self.fields)["src"], TextMultiField)
         self.n_best = n_best
         self.replace_unk = replace_unk
-        self.phrase_table = phrase_table
+        self.phrase_table_dict = {}
+        if phrase_table !="" and os.path.exists(phrase_table):
+            with fd as open(phrase_table):
+                for line in fd:
+                    phrase_src, phrase_trg = line.rstrip("\n").split("|||")
+                    self.phrase_table_dict[phrase_src] = phrase_trg
         self.has_tgt = has_tgt
 
     def _build_target_tokens(self, src, src_vocab, src_raw, pred, attn):
         tgt_field = dict(self.fields)["tgt"].base_field
         vocab = tgt_field.vocab
         tokens = []
+
         for tok in pred:
             if tok < len(vocab):
                 tokens.append(vocab.itos[tok])
@@ -50,11 +56,10 @@ class TranslationBuilder(object):
                 if tokens[i] == tgt_field.unk_token:
                     _, max_index = attn[i][:len(src_raw)].max(0)
                     tokens[i] = src_raw[max_index.item()]
-                    if self.phrase_table != "":
-                        with open(self.phrase_table, "r") as f:
-                            for line in f:
-                                if line.startswith(src_raw[max_index.item()]+"|||"):
-                                    tokens[i] = line.split('|||')[1].strip()
+                    if self.phrase_table_dict:
+                        src_tok = src_raw[max_index.item()]
+                        if src_tok in self.phrase_table_dict:
+                            tokens[i] = self.phrase_table_dict[src_tok]
         return tokens
 
     def from_batch(self, translation_batch):
