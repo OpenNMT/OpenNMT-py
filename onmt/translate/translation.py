@@ -1,6 +1,7 @@
 """ Translation main class """
 from __future__ import unicode_literals, print_function
 
+import os
 import torch
 from onmt.inputters.text_dataset import TextMultiField
 from onmt.utils.alignment import build_align_pharaoh
@@ -32,8 +33,8 @@ class TranslationBuilder(object):
         self.replace_unk = replace_unk
         self.phrase_table_dict = {}
         if phrase_table !="" and os.path.exists(phrase_table):
-            with fd as open(phrase_table):
-                for line in fd:
+            with open(phrase_table) as phrase_table_fd:
+                for line in phrase_table_fd:
                     phrase_src, phrase_trg = line.rstrip("\n").split("|||")
                     self.phrase_table_dict[phrase_src] = phrase_trg
         self.has_tgt = has_tgt
