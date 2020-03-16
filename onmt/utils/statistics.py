@@ -17,12 +17,15 @@ class Statistics(object):
     * elapsed time
     """
 
-    def __init__(self, loss=0, n_words=0, n_correct=0):
+    def __init__(self, loss=0, cosine_loss=0, n_words=0,
+                 n_correct=0, num_ex=0):
         self.loss = loss
         self.n_words = n_words
         self.n_correct = n_correct
         self.n_src_words = 0
         self.start_time = time.time()
+        self.cosine_loss = cosine_loss
+        self.num_ex = num_ex
 
     @staticmethod
     def all_gather_stats(stat, max_size=4096):
@@ -81,6 +84,8 @@ class Statistics(object):
         self.loss += stat.loss
         self.n_words += stat.n_words
         self.n_correct += stat.n_correct
+        self.cosine_loss += stat.cosine_loss
+        self.num_ex += stat.num_ex
 
         if update_n_src_words:
             self.n_src_words += stat.n_src_words
@@ -96,6 +101,10 @@ class Statistics(object):
     def ppl(self):
         """ compute perplexity """
         return math.exp(min(self.loss / self.n_words, 100))
+
+    def cos(self):
+        """ normalize cosine distance per example"""
+        return self.cosine_loss / self.num_ex
 
     def elapsed_time(self):
         """ compute elapsed time """
@@ -113,8 +122,12 @@ class Statistics(object):
         step_fmt = "%2d" % step
         if num_steps > 0:
             step_fmt = "%s/%5d" % (step_fmt, num_steps)
+        if self.cosine_loss != 0:
+            cos_log = "cos: %4.2f; " % (self.cos())
+        else:
+            cos_log = ""
         logger.info(
-            ("Step %s; acc: %6.2f; ppl: %5.2f; xent: %4.2f; " +
+            ("Step %s; acc: %6.2f; ppl: %5.2f; xent: %4.2f; " + cos_log +
              "lr: %7.5f; %3.0f/%3.0f tok/s; %6.0f sec")
             % (step_fmt,
                self.accuracy(),

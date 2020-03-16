@@ -120,6 +120,10 @@ class ArgumentParser(cfargparse.ArgumentParser):
         assert len(opt.attention_dropout) == len(opt.dropout_steps), \
             "Number of attention_dropout values must match accum_steps values"
 
+        assert not(opt.max_generator_batches > 0 and opt.lambda_cosine != 0), \
+            "-lambda_cosine loss is not implemented " \
+            "for max_generator_batches > 0."
+
     @classmethod
     def validate_translate_opts(cls, opt):
         if opt.beam_size != 1 and opt.random_sampling_topk != 1:
