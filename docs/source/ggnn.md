@@ -47,31 +47,31 @@ python translate.py -model $data_path/final-model_step_10000.pt -src $data_path/
 The GGNN implementation leverages the sequence processing and vocabulary
 interface of OpenNMT. Each graph is provided on an input line, much like
 a sentence is provided on an input line. A graph nearal network input line
-includes 'sentence tokens', 'feature values', and 'edges' separated by
-'<EOT>' (end of tokens) tokens. Below is example of the input for a pair
+includes `sentence tokens`, `feature values`, and `edges` separated by
+`<EOT>` (end of tokens) tokens. Below is example of the input for a pair
 of algebraic equations structured as a graph:
 
-'''
+```
 Sentence tokens       Feature values           Edges
 ---------------       ------------------       -------------------------------------------------------
 - - - 0 a a b b <EOT> 0 1 2 3 4 4 2 3 12 <EOT> 0 2 1 3 2 4 , 0 6 1 7 2 5 , 0 4 , 0 5 , , , , 8 0 , 8 1
-'''
+```
 
-The equations being represented are '((a - a) - b)' and '(0 - b)', the 
-'sentence tokens' of which are provided before the first '<EOT>'. After
-the first '<EOT>', the 'features values' are provided. These are extra
+The equations being represented are `((a - a) - b)` and `(0 - b)`, the 
+`sentence tokens` of which are provided before the first `<EOT>`. After
+the first `<EOT>`, the `features values` are provided. These are extra
 flags with information on each node in the graph. In this case, the 8
 sentence tokens have feature flags ranging from 0 to 4; the 9th feature
 flag defines a 9th node in the graph which does not have sentence token
 information, just feature data. Nodes with any non-number flag (such as
-'-' or '.') will not have a feature added. Multiple groups of features
-can be provided by using the ',' delimiter between the first and second
-'<EOT>' tokens. After the second '<EOT>' token, edge information is provided.
-Edge data is given as node pairs, hence '<EOT> 0 2 1 3' indicates that there
+`-` or `.`) will not have a feature added. Multiple groups of features
+can be provided by using the `,` delimiter between the first and second
+'<EOT>' tokens. After the second `<EOT>` token, edge information is provided.
+Edge data is given as node pairs, hence `<EOT> 0 2 1 3` indicates that there
 are edges from node 0 to node 2 and from node 1 to node 3. The GGNN supports
 multiple edge types (which result mathematically in multiple weight matrices
-for the model) and the edge types are separated by ',' tokens after the
-second '<EOT>' token.
+for the model) and the edge types are separated by `,` tokens after the
+second `<EOT>` token.
 
 Note that the source vocabulary file needs to include the '<EOT>' token,
 the ',' token, and all of the numbers used for feature flags and node
