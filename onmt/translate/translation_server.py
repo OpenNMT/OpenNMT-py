@@ -657,7 +657,8 @@ class ServerModel(object):
         if self.opt.report_align:
             # output contain alignment
             sequence, align = sequence.split(' ||| ')
-            align = self.maybe_convert_align(src, sequence, align)
+            if align != '':
+                align = self.maybe_convert_align(src, sequence, align)
         sequence = self.maybe_detokenize(sequence)
         return (sequence, align)
 

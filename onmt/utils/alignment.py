@@ -41,8 +41,9 @@ def extract_alignment(align_matrix, tgt_mask, src_lens, n_best):
         * B: denote flattened batch as B = batch_size * n_best.
 
     Returns:
-        alignments (List[List[FloatTensor]]): ``(batch_size, n_best,)``,
-         containing valid alignment matrix for each translation.
+        alignments (List[List[FloatTensor|None]]): ``(batch_size, n_best,)``,
+         containing valid alignment matrix (or None if blank prediction)
+         for each translation.
     """
     batch_size_n_best = align_matrix.size(0)
     assert batch_size_n_best % n_best == 0
@@ -54,24 +55,31 @@ def extract_alignment(align_matrix, tgt_mask, src_lens, n_best):
             zip(align_matrix, tgt_mask, src_lens)):
         valid_tgt = ~tgt_mask_b
         valid_tgt_len = valid_tgt.sum()
-        # get valid alignment (sub-matrix from full paded aligment matrix)
-        am_valid_tgt = am_b.masked_select(valid_tgt.unsqueeze(-1)) \
-                           .view(valid_tgt_len, -1)
-        valid_alignment = am_valid_tgt[:, :src_len]  # only keep valid src
+        if valid_tgt_len == 0:
+            # No alignment if not exist valid tgt token
+            valid_alignment = None
+        else:
+            # get valid alignment (sub-matrix from full paded aligment matrix)
+            am_valid_tgt = am_b.masked_select(valid_tgt.unsqueeze(-1)) \
+                               .view(valid_tgt_len, -1)
+            valid_alignment = am_valid_tgt[:, :src_len]  # only keep valid src
         alignments[i // n_best].append(valid_alignment)
 
     return alignments
 
 
 def build_align_pharaoh(valid_alignment):
-    """Convert valid alignment matrix to i-j Pharaoh format.(0 indexed)"""
+    """Convert valid alignment matrix to i-j (from 0) Pharaoh format pairs,
+    or empty list if it's None.
+    """
     align_pairs = []
-    tgt_align_src_id = valid_alignment.argmax(dim=-1)
+    if isinstance(valid_alignment, torch.Tensor):
+        tgt_align_src_id = valid_alignment.argmax(dim=-1)
 
-    for tgt_id, src_id in enumerate(tgt_align_src_id.tolist()):
-        align_pairs.append(str(src_id) + "-" + str(tgt_id))
-    align_pairs.sort(key=lambda x: int(x.split('-')[-1]))  # sort by tgt_id
-    align_pairs.sort(key=lambda x: int(x.split('-')[0]))  # sort by src_id
+        for tgt_id, src_id in enumerate(tgt_align_src_id.tolist()):
+            align_pairs.append(str(src_id) + "-" + str(tgt_id))
+        align_pairs.sort(key=lambda x: int(x.split('-')[-1]))  # sort by tgt_id
+        align_pairs.sort(key=lambda x: int(x.split('-')[0]))  # sort by src_id
     return align_pairs
 
 
