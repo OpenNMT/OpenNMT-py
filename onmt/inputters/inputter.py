@@ -824,7 +824,9 @@ def build_dataset_iter(corpus_type, fields, opt, is_train=True, multi=False):
     """
     dataset_glob = opt.data + '.' + corpus_type + '.[0-9]*.pt'
     dataset_paths = list(sorted(
-        glob.glob(dataset_glob)))
+        glob.glob(dataset_glob),
+        key=lambda p: int(p.split(".")[-2])))
+
     if not dataset_paths:
         if is_train:
             raise ValueError('Training data %s not found' % dataset_glob)
