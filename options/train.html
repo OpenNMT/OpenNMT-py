@@ -232,6 +232,7 @@
                 <span class="p">[</span><span class="o">--</span><span class="n">loss_scale</span> <span class="n">LOSS_SCALE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">apex_opt_level</span> <span class="p">{</span><span class="n">O0</span><span class="p">,</span><span class="n">O1</span><span class="p">,</span><span class="n">O2</span><span class="p">,</span><span class="n">O3</span><span class="p">}]</span>
                 <span class="o">--</span><span class="n">data</span> <span class="n">DATA</span> <span class="p">[</span><span class="o">--</span><span class="n">data_ids</span> <span class="n">DATA_IDS</span> <span class="p">[</span><span class="n">DATA_IDS</span> <span class="o">...</span><span class="p">]]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">data_weights</span> <span class="n">DATA_WEIGHTS</span> <span class="p">[</span><span class="n">DATA_WEIGHTS</span> <span class="o">...</span><span class="p">]]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">data_to_noise</span> <span class="n">DATA_TO_NOISE</span> <span class="p">[</span><span class="n">DATA_TO_NOISE</span> <span class="o">...</span><span class="p">]]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">save_model</span> <span class="n">SAVE_MODEL</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">save_checkpoint_steps</span> <span class="n">SAVE_CHECKPOINT_STEPS</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">keep_checkpoint</span> <span class="n">KEEP_CHECKPOINT</span><span class="p">]</span>
@@ -268,6 +269,8 @@
                 <span class="p">[</span><span class="o">--</span><span class="n">label_smoothing</span> <span class="n">LABEL_SMOOTHING</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">average_decay</span> <span class="n">AVERAGE_DECAY</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">average_every</span> <span class="n">AVERAGE_EVERY</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">src_noise</span> <span class="p">{</span><span class="n">sen_shuffling</span><span class="p">,</span><span class="n">infilling</span><span class="p">,</span><span class="n">mask</span><span class="p">}</span> <span class="p">[{</span><span class="n">sen_shuffling</span><span class="p">,</span><span class="n">infilling</span><span class="p">,</span><span class="n">mask</span><span class="p">}</span> <span class="o">...</span><span class="p">]]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">src_noise_prob</span> <span class="n">SRC_NOISE_PROB</span> <span class="p">[</span><span class="n">SRC_NOISE_PROB</span> <span class="o">...</span><span class="p">]]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">learning_rate</span> <span class="n">LEARNING_RATE</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">learning_rate_decay</span> <span class="n">LEARNING_RATE_DECAY</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">start_decay_steps</span> <span class="n">START_DECAY_STEPS</span><span class="p">]</span>
@@ -538,6 +541,10 @@
 </dl>
 <p>Default: [1]</p>
 </dd>
+<dt><kbd>--data_to_noise, -data_to_noise</kbd></dt>
+<dd><p>IDs of datasets on which to apply noise.</p>
+<p>Default: []</p>
+</dd>
 <dt><kbd>--save_model, -save_model</kbd></dt>
 <dd><p>Model filename (the model will be saved as &lt;save_model&gt;_N.pt where N is the number of steps</p>
 <p>Default: “model”</p>
@@ -739,6 +746,14 @@ Inspired by torchtext’s pool mechanism.</p>
 <dt><kbd>--average_every, -average_every</kbd></dt>
 <dd><p>Step for moving average. Default is every update, if -average_decay is set.</p>
 <p>Default: 1</p>
+</dd>
+<dt><kbd>--src_noise, -src_noise</kbd></dt>
+<dd><p>Possible choices: sen_shuffling, infilling, mask</p>
+<p>Default: []</p>
+</dd>
+<dt><kbd>--src_noise_prob, -src_noise_prob</kbd></dt>
+<dd><p>Probabilities of src_noise functions</p>
+<p>Default: []</p>
 </dd>
 </dl>
 </div>

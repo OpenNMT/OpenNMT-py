@@ -110,6 +110,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#Random">Random</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Logging">Logging</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Speech">Speech</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Noise">Noise</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="train.html">Train</a></li>
@@ -219,6 +220,8 @@
                      <span class="p">[</span><span class="o">--</span><span class="n">sample_rate</span> <span class="n">SAMPLE_RATE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">window_size</span> <span class="n">WINDOW_SIZE</span><span class="p">]</span>
                      <span class="p">[</span><span class="o">--</span><span class="n">window_stride</span> <span class="n">WINDOW_STRIDE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">window</span> <span class="n">WINDOW</span><span class="p">]</span>
                      <span class="p">[</span><span class="o">--</span><span class="n">image_channel_size</span> <span class="p">{</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">}]</span>
+                     <span class="p">[</span><span class="o">--</span><span class="n">subword_prefix</span> <span class="n">SUBWORD_PREFIX</span><span class="p">]</span>
+                     <span class="p">[</span><span class="o">--</span><span class="n">subword_prefix_is_joiner</span><span class="p">]</span>
 </pre></div>
 </div>
 <div class="section" id="Named Arguments">
@@ -410,6 +413,19 @@
 <dd><p>Possible choices: 3, 1</p>
 <p>Using grayscale image can training model faster and smaller</p>
 <p>Default: 3</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="Noise">
+<h2>Noise<a class="headerlink" href="#Noise" title="Permalink to this headline">¶</a></h2>
+<dl class="option-list">
+<dt><kbd>--subword_prefix, -subword_prefix</kbd></dt>
+<dd><p>subword prefix to build wordstart mask</p>
+<p>Default: “▁”</p>
+</dd>
+<dt><kbd>--subword_prefix_is_joiner, -subword_prefix_is_joiner</kbd></dt>
+<dd><p>mask will need to be inverted if prefix is joiner</p>
+<p>Default: False</p>
 </dd>
 </dl>
 </div>

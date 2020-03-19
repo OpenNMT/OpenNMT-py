@@ -285,7 +285,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">readers</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">dirs</span><span class="p">,</span> <span class="n">sort_key</span><span class="p">,</span>
-                 <span class="n">filter_pred</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+                 <span class="n">filter_pred</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">corpus_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sort_key</span> <span class="o">=</span> <span class="n">sort_key</span>
         <span class="n">can_copy</span> <span class="o">=</span> <span class="s1">&#39;src_map&#39;</span> <span class="ow">in</span> <span class="n">fields</span> <span class="ow">and</span> <span class="s1">&#39;alignment&#39;</span> <span class="ow">in</span> <span class="n">fields</span>
 
@@ -296,6 +296,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">src_vocabs</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">examples</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">ex_dict</span> <span class="ow">in</span> <span class="n">starmap</span><span class="p">(</span><span class="n">_join_dicts</span><span class="p">,</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">read_iters</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">corpus_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">ex_dict</span><span class="p">[</span><span class="s2">&quot;corpus_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">corpus_id</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ex_dict</span><span class="p">[</span><span class="s2">&quot;corpus_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;train&quot;</span>
             <span class="k">if</span> <span class="n">can_copy</span><span class="p">:</span>
                 <span class="n">src_field</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">]</span>
                 <span class="n">tgt_field</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span>
