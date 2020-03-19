@@ -2,6 +2,8 @@
 from __future__ import print_function
 
 import configargparse
+import onmt
+
 from onmt.models.sru import CheckSRU
 
 
@@ -333,6 +335,15 @@ def preprocess_opts(parser):
               help="Using grayscale image can training "
                    "model faster and smaller")
 
+    # Options for experimental source noising (BART style)
+    group = parser.add_argument_group('Noise')
+    group.add('--subword_prefix', '-subword_prefix',
+              type=str, default="▁",
+              help="subword prefix to build wordstart mask")
+    group.add('--subword_prefix_is_joiner', '-subword_prefix_is_joiner',
+              action='store_true',
+              help="mask will need to be inverted if prefix is joiner")
+
 
 def train_opts(parser):
     """ Training and saving options """
@@ -347,6 +358,8 @@ def train_opts(parser):
     group.add('--data_weights', '-data_weights', type=int, nargs='+',
               default=[1], help="""Weights of different corpora,
               should follow the same order as in -data_ids.""")
+    group.add('--data_to_noise', '-data_to_noise', nargs='+', default=[],
+              help="IDs of datasets on which to apply noise.")
 
     group.add('--save_model', '-save_model', default='model',
               help="Model filename (the model will be saved as "
@@ -520,6 +533,12 @@ def train_opts(parser):
               help="Step for moving average. "
                    "Default is every update, "
                    "if -average_decay is set.")
+    group.add("--src_noise", "-src_noise", type=str, nargs='+',
+              default=[],
+              choices=onmt.modules.source_noise.MultiNoise.NOISES.keys())
+    group.add("--src_noise_prob", "-src_noise_prob", type=float, nargs='+',
+              default=[],
+              help="Probabilities of src_noise functions")
 
     # learning rate
     group = parser.add_argument_group('Optimization- Rate')

@@ -57,6 +57,24 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
         opt.early_stopping, scorers=onmt.utils.scorers_from_opts(opt)) \
         if opt.early_stopping > 0 else None
 
+    source_noise = None
+    if len(opt.src_noise) > 0:
+        src_field = dict(fields)["src"].base_field
+        corpus_id_field = dict(fields).get("corpus_id", None)
+        if corpus_id_field is not None:
+            ids_to_noise = corpus_id_field.numericalize(opt.data_to_noise)
+        else:
+            ids_to_noise = None
+        source_noise = onmt.modules.source_noise.MultiNoise(
+            opt.src_noise,
+            opt.src_noise_prob,
+            ids_to_noise=ids_to_noise,
+            pad_idx=src_field.pad_token,
+            end_of_sentence_mask=src_field.end_of_sentence_mask,
+            word_start_mask=src_field.word_start_mask,
+            device_id=device_id
+        )
+
     report_manager = onmt.utils.build_report_manager(opt, gpu_rank)
     trainer = onmt.Trainer(model, train_loss, valid_loss, optim, trunc_size,
                            shard_size, norm_method,
@@ -70,7 +88,8 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
                            model_dtype=opt.model_dtype,
                            earlystopper=earlystopper,
                            dropout=dropout,
-                           dropout_steps=dropout_steps)
+                           dropout_steps=dropout_steps,
+                           source_noise=source_noise)
     return trainer
 
 
@@ -107,7 +126,8 @@ class Trainer(object):
                  n_gpu=1, gpu_rank=1, gpu_verbose_level=0,
                  report_manager=None, with_align=False, model_saver=None,
                  average_decay=0, average_every=1, model_dtype='fp32',
-                 earlystopper=None, dropout=[0.3], dropout_steps=[0]):
+                 earlystopper=None, dropout=[0.3], dropout_steps=[0],
+                 source_noise=None):
         # Basic attributes.
         self.model = model
         self.train_loss = train_loss
@@ -132,6 +152,7 @@ class Trainer(object):
         self.earlystopper = earlystopper
         self.dropout = dropout
         self.dropout_steps = dropout_steps
+        self.source_noise = source_noise
 
         for i in range(len(self.accum_count_l)):
             assert self.accum_count_l[i] > 0
@@ -345,6 +366,8 @@ class Trainer(object):
             else:
                 trunc_size = target_size
 
+            batch = self.maybe_noise_source(batch)
+
             src, src_lengths = batch.src if isinstance(batch.src, tuple) \
                 else (batch.src, None)
             if src_lengths is not None:
@@ -462,3 +485,8 @@ class Trainer(object):
             return self.report_manager.report_step(
                 learning_rate, step, train_stats=train_stats,
                 valid_stats=valid_stats)
+
+    def maybe_noise_source(self, batch):
+        if self.source_noise is not None:
+            return self.source_noise(batch)
+        return batch

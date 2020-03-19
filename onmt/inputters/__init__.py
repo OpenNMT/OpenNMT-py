@@ -13,7 +13,6 @@ from onmt.inputters.audio_dataset import audio_sort_key, AudioDataReader
 from onmt.inputters.vec_dataset import vec_sort_key, VecDataReader
 from onmt.inputters.datareader_base import DataReaderBase
 
-
 str2reader = {
     "text": TextDataReader, "img": ImageDataReader, "audio": AudioDataReader,
     "vec": VecDataReader}
