@@ -40,6 +40,35 @@ and auxiliary tasks (e.g. autoencoder).
 Current OpenNMT-py dataloader
 -----------------------------
 
+The current dataloader in OpenNMT-py is divided into two parts: preprocessing and training.
+During preprocessing, data is divided into shards that fit into memory.
+For each shard, a torchtext Dataset is created, hacked a bit, and saved to disk as a pickle.
+During training, these shards are loaded, numericalized, divided into minibatches, and padded to the same length,
+after which they are ready to be used.
+
+A large amount of work must be done externally prior to running the preprocessing
+
+    1. Cleaning and normalization.
+    2. Pretokenization and subword segmentation.
+    3. Oversampling data to achieve the desired mix (recently a new feature was introduced which allows a constant oversampling rate to be specified during preprocessing).
+    4. Shuffling the data.
+
+The current dataloader is to some extent an abuse of the torchtext library.
+This is partly due to bad design choices in torchtext, which make correct usage difficult and unintuitive.
+E.g. torchtext doesn't support non-toy-sized datasets that don't fit in memory at once,
+necessitating users of the library to write their own sharding solutions.
+
+Pickling Dataset objects is not an elegant solution, and doesn't accomplish very much.
+When written to disk, the data is tokenized, but still in symbolic (non-numericalized) form.
+There is some speed benefit over the use of plain text files,
+as the binary format is faster to read (no need to scan for newlines), and the cost of tokenization is paid in advance.
+
+Unfortunately there are many downsides.
+Every variation needs a separate preprocessing run, which takes up a lot of disk space.
+The problem is particulary severe for researchers doing experiments on different kinds of preprocessing, e.g. subword segmentation.
+In one of my experiments I had over a terabyte of redundant oversampled variants of the same data with different preprocessing.
+A constant mixing for corpora was recently introduced, but before that oversampling had to be done in preprocessing.
+
 Proposed alternative
 --------------------
 
