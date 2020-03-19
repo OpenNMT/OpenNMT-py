@@ -76,7 +76,8 @@ class ServerModelError(Exception):
 
 class CTranslate2Translator(object):
     """
-    This should reproduce the onmt.translate.translator API.
+    This class wraps the ctranslate2.Translator object to
+    reproduce the onmt.translate.translator API.
     """
 
     def __init__(self, model_path, device, device_index,
@@ -93,9 +94,10 @@ class CTranslate2Translator(object):
         self.beam_size = beam_size
         self.n_best = n_best
         if preload:
-            # perform a first request to initialize stuff
+            # perform a first request to initialize everything
             dummy_translation = self.translate(["a"])
-            print("#####", dummy_translation)
+            print("Performed a dummy translation to initialize the model",
+                  dummy_translation)
             time.sleep(1)
             self.translator.unload_model(to_cpu=True)
 
@@ -585,7 +587,6 @@ class ServerModel(object):
     @critical
     def unload(self):
         self.logger.info("Unloading model %d" % self.model_id)
-        # TODO: adapt this for CT2
         del self.translator
         if self.opt.cuda:
             torch.cuda.empty_cache()
