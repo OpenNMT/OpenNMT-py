@@ -3,7 +3,7 @@ import itertools
 import os
 import yaml
 
-import jsonschema
+#import jsonschema
 
 #def validate_schema(data_config):
 #    # FIXME: use package resources

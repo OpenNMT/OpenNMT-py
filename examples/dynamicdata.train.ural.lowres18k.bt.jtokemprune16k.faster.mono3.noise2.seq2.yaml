@@ -1,0 +1,179 @@
+meta:
+    shard:
+        rootdir: generated/sharded/ural.lowres18k.bt
+        share_vocab: True
+        shard_size: 200000
+        initial_shards: 50
+        compress: False
+        pretokenize: False
+    train:
+        name: jtokemprune16k.faster.mono3.noise2.seq
+        vocab_path: models/jtokemprune16k.faster.multiling.ural.dynamicdata.vocab
+        segmentation_model: models/jtokemprune16k.faster.multiling.ural.text
+        max_len: 300
+        peturb_order_max_dist: 3
+        drop_temperature: 2
+        mixing_weight_schedule: [160000]
+
+groups:
+    enfi:
+        type: para
+        weight: [89, 60]
+        transforms: [morfessor_em, lang_prefix_both, filter_too_long]
+        meta:
+            src_lang: en
+            tgt_lang: fi
+    enet:
+        type: para
+        n_shards: 1
+        weight: [0, 20]
+        transforms: [morfessor_em, lang_prefix_both, filter_too_long]
+        meta:
+            src_lang: en
+            tgt_lang: et
+    enet_bt:
+        type: para
+        n_shards: 6
+        weight: [0, 20]
+        transforms: [morfessor_em, lang_prefix_both, filter_too_long]
+        meta:
+            src_lang: en
+            tgt_lang: et
+            extra_prefix: <BT>
+    mono_en:
+        type: mono
+        weight: [5, 0]
+        transforms: [duplicate_mono, peturb_order, morfessor_em, drop, lang_prefix_both, filter_too_long]
+        meta:
+            src_lang: en
+            tgt_lang: en
+    mono_fi:
+        type: mono
+        weight: [3, 0]
+        transforms: [duplicate_mono, peturb_order, morfessor_em, drop, lang_prefix_both, filter_too_long]
+        meta:
+            src_lang: fi
+            tgt_lang: fi
+    mono_et:
+        type: mono
+        weight: [0, 10]
+        transforms: [duplicate_mono, peturb_order, morfessor_em, drop, lang_prefix_both, filter_too_long]
+        meta:
+            src_lang: et
+            tgt_lang: et
+    dev_enfi:
+        type: para
+        split: valid
+        weight: [1, 0]
+        n_shards: 1
+        transforms: [morfessor_em, lang_prefix_both]
+        meta:
+            src_lang: en
+            tgt_lang: fi
+    dev_enet:
+        type: para
+        split: valid
+        weight: [0, 1]
+        n_shards: 1
+        transforms: [morfessor_em, lang_prefix_both]
+        meta:
+            src_lang: en
+            tgt_lang: et
+
+inputs:
+    ep_enfi:
+        src: generated/en-fi/ep.lmcleaned.en-fi.src.gz
+        tgt: generated/en-fi/ep.lmcleaned.en-fi.trg.gz
+        group: enfi
+        size: 1826
+    opensubs0_enfi:
+        src: generated/en-fi/opensubs0.lmcleaned.en-fi.src.gz
+        tgt: generated/en-fi/opensubs0.lmcleaned.en-fi.trg.gz
+        group: enfi
+        size: 4189
+    opensubs1_enfi:
+        src: generated/en-fi/opensubs1.lmcleaned.en-fi.src.gz
+        tgt: generated/en-fi/opensubs1.lmcleaned.en-fi.trg.gz
+        group: enfi
+        size: 4189
+    opensubs2_enfi:
+        src: generated/en-fi/opensubs2.lmcleaned.en-fi.src.gz
+        tgt: generated/en-fi/opensubs2.lmcleaned.en-fi.trg.gz
+        group: enfi
+        size: 4189
+    opensubs3_enfi:
+        src: generated/en-fi/opensubs3.lmcleaned.en-fi.src.gz
+        tgt: generated/en-fi/opensubs3.lmcleaned.en-fi.trg.gz
+        group: enfi
+        size: 4189
+    paracrawl_enfi:
+        src: generated/en-fi/paracrawl.lmcleaned.en-fi.src.gz
+        tgt: generated/en-fi/paracrawl.lmcleaned.en-fi.trg.gz
+        group: enfi
+        size: 432
+    rapid2016_enfi:
+        src: generated/en-fi/rapid2016.lmcleaned.en-fi.src.gz
+        tgt: generated/en-fi/rapid2016.lmcleaned.en-fi.trg.gz
+        group: enfi
+        size: 389
+
+    lowres_enet:
+        src: generated/en-et/lowres18k.src.gz
+        tgt: generated/en-et/lowres18k.trg.gz
+        group: enet
+        size: 18000
+    enet_bt:
+        src: generated/bt.en-et/bt.lmcleaned.out.en
+        tgt: generated/bt.en-et/bt.lmcleaned.inp.et
+        group: enet_bt
+        size: 1000
+
+# only using newest two
+    news2017_en:
+        mono: generated/en/news.2017.lmcleaned.en.gz
+        group: mono_en
+        size: 26473
+    news2018_en:
+        mono: generated/en/news.2018.lmcleaned.en.gz
+        group: mono_en
+        size: 17788
+
+# only using newest two
+    news2017_fi:
+        mono: generated/fi/news.2017.lmcleaned.fi.gz
+        group: mono_fi
+        size: 3442
+    news2018_fi:
+        mono: generated/fi/news.2018.lmcleaned.fi.gz
+        group: mono_fi
+        size: 2854
+
+    news2014_et:
+        mono: generated/et/news.2014.lmcleaned.et.gz
+        group: mono_et
+        size: 377
+    news2015_et:
+        mono: generated/et/news.2015.lmcleaned.et.gz
+        group: mono_et
+        size: 945
+    news2016_et:
+        mono: generated/et/news.2016.lmcleaned.et.gz
+        group: mono_et
+        size: 749
+    news2017_et:
+        mono: generated/et/news.2017.lmcleaned.et.gz
+        group: mono_et
+        size: 801
+    news2018_et:
+        mono: generated/et/news.2018.lmcleaned.et.gz
+        group: mono_et
+        size: 766
+
+    dev_enfi:
+        src: generated/en-fi/newsdev2015.truecased.en-fi.src
+        tgt: generated/en-fi/newsdev2015.truecased.en-fi.trg
+        group: dev_enfi
+    dev_enet:
+        src: generated/en-et/newsdev2018.truecased.en-et.src
+        tgt: generated/en-et/newsdev2018.truecased.en-et.trg
+        group: dev_enet
