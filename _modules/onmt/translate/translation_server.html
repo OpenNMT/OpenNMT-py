@@ -456,7 +456,8 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">log_file</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">init_logger</span><span class="p">(</span><span class="n">log_file</span><span class="o">=</span><span class="n">log_file</span><span class="p">,</span>
-                                  <span class="n">log_file_level</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">log_file_level</span><span class="p">)</span>
+                                  <span class="n">log_file_level</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">log_file_level</span><span class="p">,</span>
+                                  <span class="n">rotate</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">loading_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Event</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">loading_lock</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
