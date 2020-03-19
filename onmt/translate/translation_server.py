@@ -74,6 +74,53 @@ class ServerModelError(Exception):
     pass
 
 
+class CTranslate2Translator(object):
+    """
+    This class wraps the ctranslate2.Translator object to
+    reproduce the onmt.translate.translator API.
+    """
+
+    def __init__(self, model_path, device, device_index,
+                 batch_size, beam_size, n_best, preload=False):
+        import ctranslate2
+        self.translator = ctranslate2.Translator(
+            model_path,
+            device=device,
+            device_index=device_index,
+            inter_threads=1,
+            intra_threads=1,
+            compute_type="default")
+        self.batch_size = batch_size
+        self.beam_size = beam_size
+        self.n_best = n_best
+        if preload:
+            # perform a first request to initialize everything
+            dummy_translation = self.translate(["a"])
+            print("Performed a dummy translation to initialize the model",
+                  dummy_translation)
+            time.sleep(1)
+            self.translator.unload_model(to_cpu=True)
+
+    def translate(self, texts_to_translate, batch_size=8):
+        batch = [item.split(" ") for item in texts_to_translate]
+        preds = self.translator.translate_batch(
+            batch,
+            max_batch_size=self.batch_size,
+            beam_size=self.beam_size,
+            num_hypotheses=self.n_best
+        )
+        scores = [[item["score"] for item in ex] for ex in preds]
+        predictions = [[" ".join(item["tokens"]) for item in ex]
+                       for ex in preds]
+        return scores, predictions
+
+    def to_cpu(self):
+        self.translator.unload_model(to_cpu=True)
+
+    def to_gpu(self):
+        self.translator.load_model()
+
+
 class TranslationServer(object):
     def __init__(self):
         self.models = {}
@@ -101,7 +148,8 @@ class TranslationServer(object):
                       'tokenizer_opt': conf.get('tokenizer', None),
                       'postprocess_opt': conf.get('postprocess', None),
                       'on_timeout': conf.get('on_timeout', None),
-                      'model_root': conf.get('model_root', self.models_root)
+                      'model_root': conf.get('model_root', self.models_root),
+                      'ct2_model': conf.get('ct2_model', None)
                       }
             kwargs = {k: v for (k, v) in kwargs.items() if v is not None}
             model_id = conf.get("id", None)
@@ -208,7 +256,7 @@ class ServerModel(object):
 
     def __init__(self, opt, model_id, preprocess_opt=None, tokenizer_opt=None,
                  postprocess_opt=None, load=False, timeout=-1,
-                 on_timeout="to_cpu", model_root="./"):
+                 on_timeout="to_cpu", model_root="./", ct2_model=None):
         self.model_root = model_root
         self.opt = self.parse_opt(opt)
 
@@ -218,6 +266,9 @@ class ServerModel(object):
         self.postprocess_opt = postprocess_opt
         self.timeout = timeout
         self.on_timeout = on_timeout
+
+        self.ct2_model = os.path.join(model_root, ct2_model) \
+            if ct2_model is not None else None
 
         self.unload_timer = None
         self.user_opt = opt
@@ -291,7 +342,8 @@ class ServerModel(object):
                 self.postprocessor.append(function)
 
         if load:
-            self.load()
+            self.load(preload=True)
+            self.stop_unload_timer()
 
     def parse_opt(self, opt):
         """Parse the option set passed by the user using `onmt.opts`
@@ -335,7 +387,7 @@ class ServerModel(object):
     def loaded(self):
         return hasattr(self, 'translator')
 
-    def load(self):
+    def load(self, preload=False):
         self.loading_lock.clear()
 
         timer = Timer()
@@ -343,10 +395,19 @@ class ServerModel(object):
         timer.start()
 
         try:
-            self.translator = build_translator(self.opt,
-                                               report_score=False,
-                                               out_file=codecs.open(
-                                                   os.devnull, "w", "utf-8"))
+            if self.ct2_model is not None:
+                self.translator = CTranslate2Translator(
+                    self.ct2_model,
+                    device="cuda",
+                    device_index=self.opt.gpu,
+                    batch_size=self.opt.batch_size,
+                    beam_size=self.opt.beam_size,
+                    n_best=self.opt.n_best,
+                    preload=preload)
+            else:
+                self.translator = build_translator(
+                    self.opt, report_score=False,
+                    out_file=codecs.open(os.devnull, "w", "utf-8"))
         except RuntimeError as e:
             raise ServerModelError("Runtime Error: %s" % str(e))
 
@@ -449,7 +510,8 @@ class ServerModel(object):
                        for _ in range(self.opt.n_best)]
         results = flatten_list(predictions)
 
-        scores = [score_tensor.item()
+        def maybe_item(x): return x.item() if type(x) is torch.Tensor else x
+        scores = [maybe_item(score_tensor)
                   for score_tensor in flatten_list(scores)]
 
         results = [self.maybe_detokenize_with_align(result, src)
@@ -476,6 +538,7 @@ class ServerModel(object):
                    for items in zip(head_spaces, results, tail_spaces)]
 
         self.logger.info("Translation Results: %d", len(results))
+
         return results, scores, self.opt.n_best, timer.times, aligns
 
     def rebuild_seg_packages(self, all_preprocessed, results,
@@ -558,14 +621,20 @@ class ServerModel(object):
     @critical
     def to_cpu(self):
         """Move the model to CPU and clear CUDA cache."""
-        self.translator.model.cpu()
-        if self.opt.cuda:
-            torch.cuda.empty_cache()
+        if type(self.translator) == CTranslate2Translator:
+            self.translator.to_cpu()
+        else:
+            self.translator.model.cpu()
+            if self.opt.cuda:
+                torch.cuda.empty_cache()
 
     def to_gpu(self):
         """Move the model to GPU."""
-        torch.cuda.set_device(self.opt.gpu)
-        self.translator.model.cuda()
+        if type(self.translator) == CTranslate2Translator:
+            self.translator.to_gpu()
+        else:
+            torch.cuda.set_device(self.opt.gpu)
+            self.translator.model.cuda()
 
     def maybe_preprocess(self, sequence):
         """Preprocess the sequence (or not)
