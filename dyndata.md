@@ -72,11 +72,27 @@ A constant mixing for corpora was recently introduced, but before that oversampl
 Proposed alternative
 --------------------
 
-![Preprocessing and training steps](dyndata.png)
+### Concepts
+
+**Input corpora**. Multiple input corpora can be used. They can be kept separated: there is no need to concatenate them into mixed files in preprocessing.
+
+**Tasks** (Note that these are called "groups" in the current implementation).
+
+**Transforms**
 
 ### Usage
 
+    0. Offline preprocessing: e.g. cleaning, pretokenization.
+    1. Sharding.
+    2. Train segmentation model, determine vocabulary.
+    3. Setting up transforms.
+    4. Training.
+
 ### Under the hood
+
+### Example
+
+![Preprocessing and training steps](dyndata.png)
 
 Potential improvements
 ----------------------
