@@ -251,6 +251,53 @@
     <span class="k">pass</span></div>
 
 
+<span class="k">class</span> <span class="nc">CTranslate2Translator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class wraps the ctranslate2.Translator object to</span>
+<span class="sd">    reproduce the onmt.translate.translator API.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_path</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">device_index</span><span class="p">,</span>
+                 <span class="n">batch_size</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="n">n_best</span><span class="p">,</span> <span class="n">preload</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="kn">import</span> <span class="nn">ctranslate2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">translator</span> <span class="o">=</span> <span class="n">ctranslate2</span><span class="o">.</span><span class="n">Translator</span><span class="p">(</span>
+            <span class="n">model_path</span><span class="p">,</span>
+            <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+            <span class="n">device_index</span><span class="o">=</span><span class="n">device_index</span><span class="p">,</span>
+            <span class="n">inter_threads</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">intra_threads</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">compute_type</span><span class="o">=</span><span class="s2">&quot;default&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span> <span class="o">=</span> <span class="n">beam_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_best</span> <span class="o">=</span> <span class="n">n_best</span>
+        <span class="k">if</span> <span class="n">preload</span><span class="p">:</span>
+            <span class="c1"># perform a first request to initialize everything</span>
+            <span class="n">dummy_translation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">([</span><span class="s2">&quot;a&quot;</span><span class="p">])</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Performed a dummy translation to initialize the model&quot;</span><span class="p">,</span>
+                  <span class="n">dummy_translation</span><span class="p">)</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">unload_model</span><span class="p">(</span><span class="n">to_cpu</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">translate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">texts_to_translate</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">8</span><span class="p">):</span>
+        <span class="n">batch</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">texts_to_translate</span><span class="p">]</span>
+        <span class="n">preds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">translate_batch</span><span class="p">(</span>
+            <span class="n">batch</span><span class="p">,</span>
+            <span class="n">max_batch_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span>
+            <span class="n">beam_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span><span class="p">,</span>
+            <span class="n">num_hypotheses</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_best</span>
+        <span class="p">)</span>
+        <span class="n">scores</span> <span class="o">=</span> <span class="p">[[</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;score&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">ex</span><span class="p">]</span> <span class="k">for</span> <span class="n">ex</span> <span class="ow">in</span> <span class="n">preds</span><span class="p">]</span>
+        <span class="n">predictions</span> <span class="o">=</span> <span class="p">[[</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;tokens&quot;</span><span class="p">])</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">ex</span><span class="p">]</span>
+                       <span class="k">for</span> <span class="n">ex</span> <span class="ow">in</span> <span class="n">preds</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">scores</span><span class="p">,</span> <span class="n">predictions</span>
+
+    <span class="k">def</span> <span class="nf">to_cpu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">unload_model</span><span class="p">(</span><span class="n">to_cpu</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">to_gpu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">load_model</span><span class="p">()</span>
+
+
 <div class="viewcode-block" id="TranslationServer"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.TranslationServer">[docs]</a><span class="k">class</span> <span class="nc">TranslationServer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">models</span> <span class="o">=</span> <span class="p">{}</span>
@@ -278,7 +325,8 @@
                       <span class="s1">&#39;tokenizer_opt&#39;</span><span class="p">:</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;tokenizer&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
                       <span class="s1">&#39;postprocess_opt&#39;</span><span class="p">:</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;postprocess&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
                       <span class="s1">&#39;on_timeout&#39;</span><span class="p">:</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;on_timeout&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
-                      <span class="s1">&#39;model_root&#39;</span><span class="p">:</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;model_root&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">models_root</span><span class="p">)</span>
+                      <span class="s1">&#39;model_root&#39;</span><span class="p">:</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;model_root&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">models_root</span><span class="p">),</span>
+                      <span class="s1">&#39;ct2_model&#39;</span><span class="p">:</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ct2_model&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
                       <span class="p">}</span>
             <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">}</span>
             <span class="n">model_id</span> <span class="o">=</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
@@ -385,7 +433,7 @@
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">model_id</span><span class="p">,</span> <span class="n">preprocess_opt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tokenizer_opt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">postprocess_opt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">load</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
-                 <span class="n">on_timeout</span><span class="o">=</span><span class="s2">&quot;to_cpu&quot;</span><span class="p">,</span> <span class="n">model_root</span><span class="o">=</span><span class="s2">&quot;./&quot;</span><span class="p">):</span>
+                 <span class="n">on_timeout</span><span class="o">=</span><span class="s2">&quot;to_cpu&quot;</span><span class="p">,</span> <span class="n">model_root</span><span class="o">=</span><span class="s2">&quot;./&quot;</span><span class="p">,</span> <span class="n">ct2_model</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model_root</span> <span class="o">=</span> <span class="n">model_root</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">opt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_opt</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
 
@@ -395,6 +443,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">postprocess_opt</span> <span class="o">=</span> <span class="n">postprocess_opt</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">on_timeout</span> <span class="o">=</span> <span class="n">on_timeout</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">ct2_model</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">model_root</span><span class="p">,</span> <span class="n">ct2_model</span><span class="p">)</span> \
+            <span class="k">if</span> <span class="n">ct2_model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">unload_timer</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">user_opt</span> <span class="o">=</span> <span class="n">opt</span>
@@ -468,7 +519,8 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">postprocessor</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">function</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">load</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">preload</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stop_unload_timer</span><span class="p">()</span>
 
 <div class="viewcode-block" id="ServerModel.parse_opt"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.parse_opt">[docs]</a>    <span class="k">def</span> <span class="nf">parse_opt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">opt</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Parse the option set passed by the user using `onmt.opts`</span>
@@ -512,7 +564,7 @@
     <span class="k">def</span> <span class="nf">loaded</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;translator&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">preload</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">loading_lock</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
 
         <span class="n">timer</span> <span class="o">=</span> <span class="n">Timer</span><span class="p">()</span>
@@ -520,10 +572,19 @@
         <span class="n">timer</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">translator</span> <span class="o">=</span> <span class="n">build_translator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="p">,</span>
-                                               <span class="n">report_score</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                                               <span class="n">out_file</span><span class="o">=</span><span class="n">codecs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span>
-                                                   <span class="n">os</span><span class="o">.</span><span class="n">devnull</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ct2_model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">translator</span> <span class="o">=</span> <span class="n">CTranslate2Translator</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">ct2_model</span><span class="p">,</span>
+                    <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cuda&quot;</span><span class="p">,</span>
+                    <span class="n">device_index</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">gpu</span><span class="p">,</span>
+                    <span class="n">batch_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span>
+                    <span class="n">beam_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">beam_size</span><span class="p">,</span>
+                    <span class="n">n_best</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">n_best</span><span class="p">,</span>
+                    <span class="n">preload</span><span class="o">=</span><span class="n">preload</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">translator</span> <span class="o">=</span> <span class="n">build_translator</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="p">,</span> <span class="n">report_score</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                    <span class="n">out_file</span><span class="o">=</span><span class="n">codecs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">devnull</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
         <span class="k">except</span> <span class="ne">RuntimeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">ServerModelError</span><span class="p">(</span><span class="s2">&quot;Runtime Error: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
 
@@ -626,7 +687,8 @@
                        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">n_best</span><span class="p">)]</span>
         <span class="n">results</span> <span class="o">=</span> <span class="n">flatten_list</span><span class="p">(</span><span class="n">predictions</span><span class="p">)</span>
 
-        <span class="n">scores</span> <span class="o">=</span> <span class="p">[</span><span class="n">score_tensor</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="k">def</span> <span class="nf">maybe_item</span><span class="p">(</span><span class="n">x</span><span class="p">):</span> <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="ow">is</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="k">else</span> <span class="n">x</span>
+        <span class="n">scores</span> <span class="o">=</span> <span class="p">[</span><span class="n">maybe_item</span><span class="p">(</span><span class="n">score_tensor</span><span class="p">)</span>
                   <span class="k">for</span> <span class="n">score_tensor</span> <span class="ow">in</span> <span class="n">flatten_list</span><span class="p">(</span><span class="n">scores</span><span class="p">)]</span>
 
         <span class="n">results</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">maybe_detokenize_with_align</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">src</span><span class="p">)</span>
@@ -653,6 +715,7 @@
                    <span class="k">for</span> <span class="n">items</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">head_spaces</span><span class="p">,</span> <span class="n">results</span><span class="p">,</span> <span class="n">tail_spaces</span><span class="p">)]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Translation Results: </span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">))</span>
+
         <span class="k">return</span> <span class="n">results</span><span class="p">,</span> <span class="n">scores</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">n_best</span><span class="p">,</span> <span class="n">timer</span><span class="o">.</span><span class="n">times</span><span class="p">,</span> <span class="n">aligns</span>
 
 <div class="viewcode-block" id="ServerModel.rebuild_seg_packages"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.rebuild_seg_packages">[docs]</a>    <span class="k">def</span> <span class="nf">rebuild_seg_packages</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">all_preprocessed</span><span class="p">,</span> <span class="n">results</span><span class="p">,</span>
@@ -735,14 +798,20 @@
     <span class="nd">@critical</span>
     <span class="k">def</span> <span class="nf">to_cpu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Move the model to CPU and clear CUDA cache.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">cuda</span><span class="p">:</span>
-            <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">empty_cache</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="p">)</span> <span class="o">==</span> <span class="n">CTranslate2Translator</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">to_cpu</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">cuda</span><span class="p">:</span>
+                <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">empty_cache</span><span class="p">()</span>
 
 <div class="viewcode-block" id="ServerModel.to_gpu"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.to_gpu">[docs]</a>    <span class="k">def</span> <span class="nf">to_gpu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Move the model to GPU.&quot;&quot;&quot;</span>
-        <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">set_device</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">gpu</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span></div>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="p">)</span> <span class="o">==</span> <span class="n">CTranslate2Translator</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">to_gpu</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">set_device</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">gpu</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="ServerModel.maybe_preprocess"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.maybe_preprocess">[docs]</a>    <span class="k">def</span> <span class="nf">maybe_preprocess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Preprocess the sequence (or not)</span>
