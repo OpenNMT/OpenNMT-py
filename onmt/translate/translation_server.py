@@ -279,7 +279,8 @@ class ServerModel(object):
         else:
             log_file = None
         self.logger = init_logger(log_file=log_file,
-                                  log_file_level=self.opt.log_file_level)
+                                  log_file_level=self.opt.log_file_level,
+                                  rotate=True)
 
         self.loading_lock = threading.Event()
         self.loading_lock.set()
