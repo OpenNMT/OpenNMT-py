@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+## [1.1.1](https://github.com/OpenNMT/OpenNMT-py/tree/1.1.1) (2020-03-20)
+### Fixes and improvements
+* Fix backcompatibility when no 'corpus_id' field (c313c28)
+
 ## [1.1.0](https://github.com/OpenNMT/OpenNMT-py/tree/1.1.0) (2020-03-19)
 ### New features
 * Support CTranslate2 models in REST server (91d5d57)
