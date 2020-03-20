@@ -7,7 +7,7 @@ meta:
         compress: False
         pretokenize: False
     train:
-        name: jtokemprune16k.faster.mono3.noise2.seq
+        name: jtokemprune16k.faster.mono3.noise3.seq
         vocab_path: models/jtokemprune16k.faster.multiling.ural.dynamicdata.vocab
         segmentation_model: models/jtokemprune16k.faster.multiling.ural.text
         max_len: 300
@@ -54,10 +54,26 @@ groups:
         meta:
             src_lang: fi
             tgt_lang: fi
+    mono_fi_taboo:
+        type: mono
+        weight: [3, 0]
+        transforms: [morfessor_em_taboo, filter_too_long]
+        share_inputs: mono_fi
+        meta:
+            src_lang: fi
+            tgt_lang: fi
     mono_et:
         type: mono
         weight: [0, 10]
         transforms: [duplicate_mono, peturb_order, morfessor_em, drop, lang_prefix_both, filter_too_long]
+        meta:
+            src_lang: et
+            tgt_lang: et
+    mono_et_taboo:
+        type: mono
+        weight: [0, 10]
+        transforms: [morfessor_em_taboo, filter_too_long]
+        share_inputs: mono_et
         meta:
             src_lang: et
             tgt_lang: et

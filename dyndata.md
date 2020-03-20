@@ -90,6 +90,7 @@ A task consists of a particular type of data that should all be treated in the s
 
 A task can use data from multiple input corpora, in which case they are mixed together during sharding,
 in such a way that each shard contains the same mix of input corpora.
+This avoids situations where shards are imbalanced, leading to a long time training on a single corpus.
 Examples from different tasks are mixed together during training, using a time-varying task-mix schedule.
 
 Tasks are either parallel or monolingual.
@@ -107,19 +108,69 @@ make arbitrary changes to the sequence of tokens (including changing its length)
 duplicate monolingual data into a source and target side,
 or even filter out examples.
 
+### Config files
+
+The data and the transforms that should be applied to it are defined in separate dataloader configs, rather than as command line options.
+Command line options with the same flexibility would become very complex, and thus difficult to read and modify.
+
+An example sharding config can be found in `examples/dynamicdata.shard.ural.lowres18k.bt.yaml`.
+An example training config can be found in `examples/dynamicdata.train.ural.lowres18k.bt.jtokemprune16k.faster.mono3.noise2.seq2.yaml`.
+
+Note that the sharding config is a subset of the train config.
+The common parts need to match exactly.
+If only one training run is made, the training config can be used directly as the sharding config (the extra values are ignored).
+If the same sharding is used in many training runs, the separation of configs is necessary.
+
+#### Some details about the configs
+
+`meta.shard.pretokenize` and `meta.shard.predetokenize`: whether to run pyonmttok (or undo tokenization, for SentencePiece) when sharding. 
+This flexibility allows easily using either raw untokenized corpora and corpora that have been pretokenized because some offline preprocessing step needs it.
+
+`meta.train.name` determines where the transforms are saved. It is possible to use the same transforms with different mixing weights by making another training conf using the same name parameter. Ususally it should be unique, though.
+
+`meta.train.mixing_weight_schedule` determines after which number of minibatches the mixing weights should be adjusted. The `groups.*.weight` parameters should be of length one longer than this.
+
+`meta.train.*` global parameters for the transforms, e.g. setting the amount of noise.
+
+`groups.*.meta.src_lang` and `groups.*.meta.trg_lang` are used by the `lang_prefix_both` transform to produce (target) language tokens. `groups.*.meta.extra_prefix` can be used to mark synthetic data, such as in the back-translation group `enet_bt` in the example.
+
+`groups.*.n_shards` allows overriding the number of shards for a single task. Useful if a task is low-resource.
+
+`groups.*.share_inputs` allows a task to use the same inputs as another task, without the need to shard the data twice. This makes it possible to apply e.g. two different autoencoder tasks to the same monolingual data. In the example `mono_fi_taboo` has `share_inputs: mono_fi`. No inputs should be assigned directly to a task that uses `share_inputs`. 
+
 ### Usage
 
-    0. Offline preprocessing: e.g. cleaning, pretokenization.
-    1. Sharding.
-    2. Train segmentation model, determine vocabulary.
-    3. Setting up transforms.
-    4. Training.
-
-### Under the hood
+    0. **Offline preprocessing:** e.g. cleaning, pretokenization.
+       This is an optional step. For computational reasons, anything non-stochastic that is not varied between experiments can be done offline in advance.
+    1. **Sharding.** `preprocess_dynamicdata.py` uses the sharding config. The input corpora for each task are read, mixed together and divided into shards, in such a way that each shard gets the same mix of input corpora. The shards are plain text files. At the same time, a word vocabulary is computed.
+    2. **Train segmentation model, determine vocabulary.** The segmentation model is trained in the same way as previously. The word vocabulary computed in the previous step can be used. It is important to determine all subwords that the segmentation model might use, in order to determine the NMT model vocabulary.
+    3. **Setting up transforms.** The torchtext Field objects are created. Transforms are warmed up, e.g. precomputing a cache of segmentation alternatives for the most common words. This is currently important for translation speed (although saving the transforms in the model checkpoint file would solve this better).
+    4. **Training.** `train_dynamicdata.py` uses the training conf.
 
 ### Example
 
 ![Preprocessing and training steps](dyndata.png)
+![Example transforms](transforms.png)
+
+### Under the hood
+
+#### How the mixing works
+
+During sharding vs during training. During sharding: corpora within each task are divided evenly into the shards. This is a constant mix without oversampling.
+During training: tasks are mixed according to the task-mix weight schedule. A single minibatch can contain examples from many different tasks.
+
+Note that the task-mix weight schedule currently counts data minibatches, not parameter updates.
+This is relevant when using gradient accumulation or multi-GPU training.
+E.g. with gradient accumulated over 4 minibatches, to change mixing distribution after 40k parameter updates the training conf mixing weight schedule needs to be set to [160000].
+
+### Heavy processing in the data loader
+
+Some transforms, such as subword segmentation, may involve heavy computation.
+To ensure that the GPU is kept at maximum capacity,
+we move the dataloader to a separate process and use a torch.multiprocessing queue to communicate the minibatches to the trainer process. This setup is already implemented in OpenNMT-py for multi-GPU training.
+
+(Note: our cluster is configured with the GPU compute mode set to "Exclusive Process", which means that only one process can access the GPU. Multi-threading would work, but not multi-process. To ensure that only the trainer process accesses the GPU, the current implementation transfers minibatches as CPU tensors, which are sent to the GPU by the trainer. This is less efficient than sending them in the data loader, after which the inter-process communication is very light.)
+
 
 Potential improvements
 ----------------------
