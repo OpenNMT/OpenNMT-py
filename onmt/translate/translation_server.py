@@ -399,8 +399,8 @@ class ServerModel(object):
             if self.ct2_model is not None:
                 self.translator = CTranslate2Translator(
                     self.ct2_model,
-                    device="cuda",
-                    device_index=self.opt.gpu,
+                    device="cuda" if self.opt.cuda else "cpu",
+                    device_index=self.opt.gpu if self.opt.cuda else 0,
                     batch_size=self.opt.batch_size,
                     beam_size=self.opt.beam_size,
                     n_best=self.opt.n_best,
