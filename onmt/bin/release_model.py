@@ -9,7 +9,6 @@ def get_ctranslate2_model_spec(opt):
     is_ct2_compatible = (
         opt.encoder_type == "transformer"
         and opt.decoder_type == "transformer"
-        and opt.enc_layers == opt.dec_layers
         and getattr(opt, "self_attn_type", "scaled-dot") == "scaled-dot"
         and ((opt.position_encoding and not with_relative_position)
              or (with_relative_position and not opt.position_encoding)))
@@ -17,10 +16,8 @@ def get_ctranslate2_model_spec(opt):
         return None
     import ctranslate2
     num_heads = getattr(opt, "heads", 8)
-    if opt.enc_layers == opt.dec_layers:
-        opt.layers = opt.enc_layers
     return ctranslate2.specs.TransformerSpec(
-        opt.layers,
+        (opt.enc_layers, opt.dec_layers),
         num_heads,
         with_relative_position=with_relative_position)
 
