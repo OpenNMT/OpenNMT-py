@@ -74,11 +74,38 @@ Proposed alternative
 
 ### Concepts
 
-**Input corpora**. Multiple input corpora can be used. They can be kept separated: there is no need to concatenate them into mixed files in preprocessing.
+**Input corpora**.
+Multiple input corpora can be used.
+During offline preprocessing, the corpora can be kept separated: there is no need to concatenate them into mixed files.
+As the transform processing pipeline is very powerful, the input corpora can stay as (or close to) raw text.
+In particular any variant processing steps that you want to experiment with should not be necessary to pre-apply offline.
 
 **Tasks** (Note that these are called "groups" in the current implementation).
+A task consists of a particular type of data that should all be treated in the same way.
+
+  - In multilingual training, different language pairs are separate tasks.
+  - To treat back-translated synthetic data differently from natural data (e.g. weight it differenly or prepend a special token),
+    the two are made into separate tasks.
+  - Adding an autoencoder auxiliary task requires a processing pipeline that is different from the main task.
+
+A task can use data from multiple input corpora, in which case they are mixed together during sharding,
+in such a way that each shard contains the same mix of input corpora.
+Examples from different tasks are mixed together during training, using a time-varying task-mix schedule.
+
+Tasks are either parallel or monolingual.
+This determines the type of the input corpora, either a separate file for source and target or a single file.
+After the processing pipeline is finished, examples from both types of task consist of a source and target side.
+More task types could be defined, e.g. for multimodal NMT.
+
+Tasks belong to either the training or the validation split.
+Processing for the validation data is controllable in the same way as for training.
 
 **Transforms**
+The processing pipeline consists of a series of transforms.
+The transforms can modify the data in powerful ways:
+make arbitrary changes to the sequence of tokens (including changing its length),
+duplicate monolingual data into a source and target side,
+or even filter out examples.
 
 ### Usage
 
