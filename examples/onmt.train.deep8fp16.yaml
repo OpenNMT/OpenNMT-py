@@ -1,0 +1,36 @@
+data_config: examples/dynamicdata.train.ural.lowres18k.bt.jtokemprune16k.faster.mono3.noise3.seq2.yaml
+save_mode: foo
+
+train_steps: 100000
+save_checkpoint_steps: 4000
+valid_steps: 4000
+gpu_ranks: 0
+
+encoder_type: transformer
+decoder_type: transformer
+enc_layers: 8
+dec_layers: 8
+rnn_size: 1024
+word_vec_size: 1024
+transformer_ff: 4096
+heads: 16
+position_encoding: True
+
+share_decoder_embeddings: True
+batch_type: tokens
+normalization: tokens
+accum_count: 4
+optim: adam
+adam_beta2: 0.997
+decay_method: noam
+warmup_steps: 16000
+learning_rate: 2
+max_grad_norm: 0
+param_init: 0
+param_init_glorot: True
+dropout: 0.1
+label_smoothing: 0.1
+max_generator_batches: 32
+batch_size: 9200
+seed: 1024
+model_dtype: fp16

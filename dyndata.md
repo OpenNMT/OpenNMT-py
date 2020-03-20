@@ -140,17 +140,54 @@ This flexibility allows easily using either raw untokenized corpora and corpora 
 
 ### Usage
 
-    0. **Offline preprocessing:** e.g. cleaning, pretokenization.
-       This is an optional step. For computational reasons, anything non-stochastic that is not varied between experiments can be done offline in advance.
-    1. **Sharding.** `preprocess_dynamicdata.py` uses the sharding config. The input corpora for each task are read, mixed together and divided into shards, in such a way that each shard gets the same mix of input corpora. The shards are plain text files. At the same time, a word vocabulary is computed.
-    2. **Train segmentation model, determine vocabulary.** The segmentation model is trained in the same way as previously. The word vocabulary computed in the previous step can be used. It is important to determine all subwords that the segmentation model might use, in order to determine the NMT model vocabulary.
-    3. **Setting up transforms.** The torchtext Field objects are created. Transforms are warmed up, e.g. precomputing a cache of segmentation alternatives for the most common words. This is currently important for translation speed (although saving the transforms in the model checkpoint file would solve this better).
-    4. **Training.** `train_dynamicdata.py` uses the training conf.
+0. **Offline preprocessing:** e.g. cleaning, pretokenization.
+   This is an optional step. For computational reasons, anything non-stochastic that is not varied between experiments can be done offline in advance.
+1. **Sharding.** `onmt_preprocess_dynamicdata shard` uses the sharding config. The input corpora for each task are read, mixed together and divided into shards, in such a way that each shard gets the same mix of input corpora. The shards are plain text files. At the same time, a word vocabulary is computed.
+2. **Train segmentation model, determine vocabulary.** The segmentation model is trained in the same way as previously. The word vocabulary computed in the previous step can be used. It is important to determine all subwords that the segmentation model might use, in order to determine the NMT model vocabulary.
+3. **Setting up transforms.** `onmt_preprocess_dynamicdata vocab` The torchtext Field objects are created. Transforms are warmed up, e.g. precomputing a cache of segmentation alternatives for the most common words. This is currently important for translation speed (although saving the transforms in the model checkpoint file would solve this better).
+4. **Training.** `onmt_train_dynamicdata` uses the training conf.
+   During training, the shard ids of each task are shuffled and put into a queue.
+   When the queue runs out, it is transparently refilled and reshuffled.
+   Thus each task has its own infinite iterator and a separate epoch counter.
+   The next shard is loaded from disk, and the examples are shuffled.
+   Examples from the different tasks are mixed according to the current task-mix distribution.
+   A "bucket" of examples is drawn in this way.
+   A new torchtext Dataset is created from this bucket.
+   The examples are turned into numbers (indices into the vocabulary), divided into minibatches, and padded to the same length.
+   After this they are ready to be sent to the trainer process.
 
 ### Example
 
 ![Preprocessing and training steps](dyndata.png)
 ![Example transforms](transforms.png)
+
+### Available transforms
+
+- `duplicate_mono`: Takes in monolingual data, duplicates it into a source and target side.
+- `peturb_order`: (better name: reorder / slightly shuffle. Note typo: missing 'r') Slightly reorder the **source** side.
+  The maximum distance a token can move determined by the parameter `peturb_order_max_dist`.
+- `drop`: (better name: delete). Random token deletion on the **source** side.
+  Strength controlled by the `drop_temperature` parameter (negated exponent: bigger numbers cause less drops).
+- `switchout`: Apply SwitchOut to both source and target sides.
+  Strength controlled by the `switchout_temperature` parameter.
+- `wb_noise`: Add or remove word boundaries on both source and target sides.
+  Strength controlled by the `wb_noise_temperature` parameter.
+- `insertion`: Random token insertion on both source and target sides.
+  Strength controlled by the `insertion_temperature` parameter.
+- `lang_prefix_both`: Add both a source and target language token, determined from the task metadata,
+  plus optionally a third marker if the `groups.*.meta.extra_prefix` parameter is set.
+  E.g. "<FROM_en> <TO_fi> <BT>".
+- `morfessor_em`: Apply Morfessor EM+Prune segmentation to both source and target sides. Input should be pretokenized to separate punctuation from words.
+  The parameter `seg_n_samples` controls the length of the n-best list for sampling. To turn off subword regularization, set to 1. `seg_theta` controls the temperature of the sampling.
+- `morfessor_em_taboo`: Apply taboo segmentation using Morfessor EM+Prune. Takes in monolingual data, outputs the same data in two segmentation versions that don't share (multi-character) subwords, as source and target.
+- `morfessor_em_taboo_peturbed`: A special variant of taboo segmentation for use together with reordering. Takes in a source and a target, which must contain the same tokens (but may be in different order).
+- `sentencepiece`: Apply SentencePiece segmentation to both source and target sides.
+  Input should **not** be pretokenized. If it is, shard with `predetokenize`.
+  Same parameters as `morfessor_em`.
+- `filter_too_long`: Filters out too long examples. This must be redone after segmentation, which may increase the length of the sequence substantially. Parameter `max_len` controls the maximum length.
+
+More transforms can easily be added as needed.
+
 
 ### Under the hood
 
@@ -163,7 +200,7 @@ Note that the task-mix weight schedule currently counts data minibatches, not pa
 This is relevant when using gradient accumulation or multi-GPU training.
 E.g. with gradient accumulated over 4 minibatches, to change mixing distribution after 40k parameter updates the training conf mixing weight schedule needs to be set to [160000].
 
-### Heavy processing in the data loader
+#### Heavy processing in the data loader
 
 Some transforms, such as subword segmentation, may involve heavy computation.
 To ensure that the GPU is kept at maximum capacity,
@@ -171,9 +208,86 @@ we move the dataloader to a separate process and use a torch.multiprocessing que
 
 (Note: our cluster is configured with the GPU compute mode set to "Exclusive Process", which means that only one process can access the GPU. Multi-threading would work, but not multi-process. To ensure that only the trainer process accesses the GPU, the current implementation transfers minibatches as CPU tensors, which are sent to the GPU by the trainer. This is less efficient than sending them in the data loader, after which the inter-process communication is very light.)
 
+#### The subword vocabulary
 
-Potential improvements
-----------------------
+The subword vocabulary must be specified explicitly.
+It can not be determined from a segmented corpus,
+because if the segmentation is stochastic it is not guaranteed that all subwords occur in a single epoch.
+Also, the data is only segmented when needed, but the vocabulary must be fixed at start of training.
+
+Transforms are able to add their own special tokens to the vocabulary,
+e.g. target language token or back-translation marker.
+
+
+Potential improvements / 2do
+----------------------------
+
+There are multiple ways in which this prototype could be improved.
+
+### Usability
+
+1. Suboptimal naming, e.g. s/group/task, naming of transforms.
+1. More uniform interface for different segmentation methods.
+
+    - BPE is currently pre-applied offline. BPE is deterministic, and thus not well suited for this work.
+    - SentencePiece does not support pretokenized input. This requires carefulness with the `pretokenize` or `predetokenize` parameters (Not even checked currently), and resharding.
+
+1. Templating, e.g. jinja2, for applying the same schedule to different data sets.
+
+    - Alternatively could have split data and transforms into separate confs, but decided to avoid splitting it up too much
+
+1. Cleaner structure of sharded directory.
+1. Ability to reuse already sharded corpora, without resorting to symlink-hacks.
+
+    - Usually preferable to shard everything once and then turn off certain tasks by setting their weight to zero,
+      but this is not always possible e.g. when adding back-translation later in the project.
+
+1. Automatically determine input corpus sizes.
+
+    - The corpus size is used for the balanced mixing of corpora within a task.
+    - It could also be used to ensure shards of even size, but this is not yet implemented.
+
+1. Some parameters are currently not possible to override in train conf.
+
+    - Length of n-best list for sampling (prepopulated during vocabulary construction).
+    - Should at least warn if attempting to change the value (now just silently ignored).
+
+1. Communicate the gradient update count from trainer back to data producer, so that it can be used to control mix schedule.
+1. Saving transforms in the model checkpoint file
+
+    - Currently the original saved transforms must be available when translating (the model is not self-sufficient).
+
+1. Making the conf for the reverse model (for back-translation) requires more changes than just setting the reverse flag
+
+    - Source and target languages must be flipped to get the right tags.
+
+### New features
+
+1. Automatic adjustment of task-mix schedule.
+
+    - Computing the loss separately for each task (task-specific validation sets)
+    - Adjusting the task-mix distribution as a function of the task losses.
+
+1. Per-task parameters for transforms (currently global)
+
+    - E.g. different amount of noise for different tasks.
+
+1. More flexibility, e.g. non-shared vocabulary, factored representation (onmt calls them features)
+1. Translate-time target is not currently supported (OpenNMT wants to read src and tgt separately)
+
+    - Make a hacky thing that buffers the joint data and exposes it via two objects with a read method.
+
+### Tighter integration
+
+1. Staying closer to current OpenNMT.
+    - Using torchtext preprocessing function to apply the transforms. Downside: each field is preprocessed separately, so they cannot interact in any way. In particular this solution cannot split one field into many, which is required for taboo segmentation. However, elegance and maintainability should perhaps be considered more important than flexibility here.
+1. torchtext could be extended to support sharding or a streaming interface
+1. torch.utils.data.DataLoader
+
+    - Supports loading data in a separate process.
+    - It is not used by OpenNMT. Also a bit unclear how it interfaces with torchtext.
+
+
 
 References
 ----------
