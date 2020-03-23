@@ -52,7 +52,7 @@ class TaskEpoch():
             m = RE_SHARD.match(filename)
             if not m:
                 continue
-            index, suffix, ext = m.tasks()
+            index, suffix, ext = m.groups()
             self.indices.add(index)
             path = os.path.join(self.taskdir, filename)
             self.files[(suffix, index)] = path
