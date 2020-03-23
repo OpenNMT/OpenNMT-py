@@ -80,8 +80,9 @@ During offline preprocessing, the corpora can be kept separated: there is no nee
 As the transform processing pipeline is very powerful, the input corpora can stay as (or close to) raw text.
 In particular any variant processing steps that you want to experiment with should not be necessary to pre-apply offline.
 
-**Tasks** (Note that these are called "groups" in the current implementation).
+**Tasks**
 A task consists of a particular type of data that should all be treated in the same way.
+(Note that these were called "groups" in the original implementation. Old terminology may remain in some places).
 
   - In multilingual training, different language pairs are separate tasks.
   - To treat back-translated synthetic data differently from natural data (e.g. weight it differenly or prepend a special token),
@@ -128,15 +129,15 @@ This flexibility allows easily using either raw untokenized corpora and corpora 
 
 `meta.train.name` determines where the transforms are saved. It is possible to use the same transforms with different mixing weights by making another training conf using the same name parameter. Ususally it should be unique, though.
 
-`meta.train.mixing_weight_schedule` determines after which number of minibatches the mixing weights should be adjusted. The `groups.*.weight` parameters should be of length one longer than this.
+`meta.train.mixing_weight_schedule` determines after which number of minibatches the mixing weights should be adjusted. The `tasks.*.weight` parameters should be of length one longer than this.
 
 `meta.train.*` global parameters for the transforms, e.g. setting the amount of noise.
 
-`groups.*.meta.src_lang` and `groups.*.meta.trg_lang` are used by the `lang_prefix_both` transform to produce (target) language tokens. `groups.*.meta.extra_prefix` can be used to mark synthetic data, such as in the back-translation group `enet_bt` in the example.
+`tasks.*.meta.src_lang` and `tasks.*.meta.trg_lang` are used by the `lang_prefix_both` transform to produce (target) language tokens. `tasks.*.meta.extra_prefix` can be used to mark synthetic data, such as in the back-translation task `enet_bt` in the example.
 
-`groups.*.n_shards` allows overriding the number of shards for a single task. Useful if a task is low-resource.
+`tasks.*.n_shards` allows overriding the number of shards for a single task. Useful if a task is low-resource.
 
-`groups.*.share_inputs` allows a task to use the same inputs as another task, without the need to shard the data twice. This makes it possible to apply e.g. two different autoencoder tasks to the same monolingual data. In the example `mono_fi_taboo` has `share_inputs: mono_fi`. No inputs should be assigned directly to a task that uses `share_inputs`. 
+`tasks.*.share_inputs` allows a task to use the same inputs as another task, without the need to shard the data twice. This makes it possible to apply e.g. two different autoencoder tasks to the same monolingual data. In the example `mono_fi_taboo` has `share_inputs: mono_fi`. No inputs should be assigned directly to a task that uses `share_inputs`. 
 
 ### Usage
 
@@ -164,9 +165,9 @@ This flexibility allows easily using either raw untokenized corpora and corpora 
 ### Available transforms
 
 - `duplicate_mono`: Takes in monolingual data, duplicates it into a source and target side.
-- `peturb_order`: (better name: reorder / slightly shuffle. Note typo: missing 'r') Slightly reorder the **source** side.
-  The maximum distance a token can move determined by the parameter `peturb_order_max_dist`.
-- `drop`: (better name: delete). Random token deletion on the **source** side.
+- `reorder`: (could also be called: slightly shuffle) Slightly reorder the **source** side.
+  The maximum distance a token can move determined by the parameter `reorder_max_dist`.
+- `drop`: (could also be called: delete). Random token deletion on the **source** side.
   Strength controlled by the `drop_temperature` parameter (negated exponent: bigger numbers cause less drops).
 - `switchout`: Apply SwitchOut to both source and target sides.
   Strength controlled by the `switchout_temperature` parameter.
@@ -175,12 +176,12 @@ This flexibility allows easily using either raw untokenized corpora and corpora 
 - `insertion`: Random token insertion on both source and target sides.
   Strength controlled by the `insertion_temperature` parameter.
 - `lang_prefix_both`: Add both a source and target language token, determined from the task metadata,
-  plus optionally a third marker if the `groups.*.meta.extra_prefix` parameter is set.
+  plus optionally a third marker if the `tasks.*.meta.extra_prefix` parameter is set.
   E.g. "<FROM_en> <TO_fi> <BT>".
 - `morfessor_em`: Apply Morfessor EM+Prune segmentation to both source and target sides. Input should be pretokenized to separate punctuation from words.
   The parameter `seg_n_samples` controls the length of the n-best list for sampling. To turn off subword regularization, set to 1. `seg_theta` controls the temperature of the sampling.
 - `morfessor_em_taboo`: Apply taboo segmentation using Morfessor EM+Prune. Takes in monolingual data, outputs the same data in two segmentation versions that don't share (multi-character) subwords, as source and target.
-- `morfessor_em_taboo_peturbed`: A special variant of taboo segmentation for use together with reordering. Takes in a source and a target, which must contain the same tokens (but may be in different order).
+- `morfessor_em_taboo_reordered`: A special variant of taboo segmentation for use together with reordering. Takes in a source and a target, which must contain the same tokens (but may be in different order).
 - `sentencepiece`: Apply SentencePiece segmentation to both source and target sides.
   Input should **not** be pretokenized. If it is, shard with `predetokenize`.
   Same parameters as `morfessor_em`.
@@ -226,7 +227,6 @@ There are multiple ways in which this prototype could be improved.
 
 ### Usability
 
-1. Suboptimal naming, e.g. s/group/task, naming of transforms.
 1. More uniform interface for different segmentation methods.
 
     - BPE is currently pre-applied offline. BPE is deterministic, and thus not well suited for this work.

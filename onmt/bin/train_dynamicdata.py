@@ -99,15 +99,15 @@ def batch_producer(queues, semaphore, opt, data_loader_step):
     data_config, transforms, dataset_adaptor = build_data_loader(opt)
     logger.info('Transforms:')
     logger.info(pformat(transforms))
-    mixer, group_epochs = build_mixer(data_config, transforms, is_train=True, bucket_size=opt.bucket_size)
+    mixer, task_epochs = build_mixer(data_config, transforms, is_train=True, bucket_size=opt.bucket_size)
     report_every = max(opt.queue_size, opt.report_every)
     def mb_callback(i):
         if i % report_every == 0:
             logger.info('mb %s epochs %s',
-                  i, {key: ge.epoch for key, ge in group_epochs.items()})
-            for group in transforms:
-                logger.info('* transform stats ({})'.format(group))
-                for transform in transforms[group]:
+                  i, {key: ge.epoch for key, ge in task_epochs.items()})
+            for task in transforms:
+                logger.info('* transform stats ({})'.format(task))
+                for transform in transforms[task]:
                     for line in transform.stats():
                         logger.info('\t{}'.format(line))
     train_iter = build_dataset_adaptor_iter(
@@ -135,8 +135,8 @@ def run(opt, device_id, error_queue, batch_queue, semaphore):
     try:
         if device_id == 0:
             data_config, transforms, dataset_adaptor = build_data_loader(opt)
-            valid_mixer, valid_group_epochs = build_mixer(data_config, transforms,
-                                                        is_train=False, bucket_size=opt.bucket_size)
+            valid_mixer, valid_task_epochs = build_mixer(data_config, transforms,
+                                                         is_train=False, bucket_size=opt.bucket_size)
             valid_iter = build_dataset_adaptor_iter(valid_mixer, dataset_adaptor, opt,
                                                     mb_callback=None, data_loader_step=0, is_train=False)
             valid_iter = list(valid_iter)

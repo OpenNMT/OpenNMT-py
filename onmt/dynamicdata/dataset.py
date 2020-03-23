@@ -3,7 +3,7 @@ from onmt.inputters import str2sortkey
 from onmt.inputters.inputter import max_tok_len, OrderedIterator
 
 class DatasetAdaptor():
-    """ creates torchtext Datasets from GroupMixer buckets """
+    """ creates torchtext Datasets from TaskMixer buckets """
     def __init__(self, fields, has_tgt=True):
         self.fields = fields
         self.has_tgt = has_tgt

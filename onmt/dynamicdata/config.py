@@ -12,76 +12,75 @@ import yaml
 #        schema = yaml.safe_load(fobj)
 #    jsonschema.validate(data, schema)
 
-def _inverse_groups(data_config):
+def _inverse_tasks(data_config):
     for input in data_config['inputs']:
-        group = data_config['inputs'][input]['group']
-        if '_inputs' not in data_config['groups'][group]:
-            data_config['groups'][group]['_inputs'] = []
-        data_config['groups'][group]['_inputs'].append(input)
-    for group in data_config['groups']:
-        if '_inputs' in data_config['groups'][group]:
-            data_config['groups'][group]['_inputs'].sort()
+        task = data_config['inputs'][input]['task']
+        if '_inputs' not in data_config['tasks'][task]:
+            data_config['tasks'][task]['_inputs'] = []
+        data_config['tasks'][task]['_inputs'].append(input)
+    for task in data_config['tasks']:
+        if '_inputs' in data_config['tasks'][task]:
+            data_config['tasks'][task]['_inputs'].sort()
 
 def _share_inputs(data_config):
-    for group in data_config['groups']:
-        if 'share_inputs' in data_config['groups'][group]:
-            share_from = data_config['groups'][group]['share_inputs']
-            inputs = data_config['groups'][share_from]['_inputs']
-            data_config['groups'][group]['_inputs'] = inputs
+    for task in data_config['tasks']:
+        if 'share_inputs' in data_config['tasks'][task]:
+            share_from = data_config['tasks'][task]['share_inputs']
+            inputs = data_config['tasks'][share_from]['_inputs']
+            data_config['tasks'][task]['_inputs'] = inputs
 
 def _remove_shared_inputs(shard_config):
     to_remove = []
-    for group in shard_config['groups']:
-        if 'share_inputs' in shard_config['groups'][group]:
-            to_remove.append(group)
-    for group in to_remove:
-        del shard_config['groups'][group]
+    for task in shard_config['tasks']:
+        if 'share_inputs' in shard_config['tasks'][task]:
+            to_remove.append(task)
+    for task in to_remove:
+        del shard_config['tasks'][task]
 
 def _normalize_sizes(data_config):
-    size_per_group = collections.Counter()
-    corpora_per_group = collections.Counter()
+    size_per_task = collections.Counter()
+    corpora_per_task = collections.Counter()
     for input in data_config['inputs']:
-        group = data_config['inputs'][input]['group']
+        task = data_config['inputs'][input]['task']
         if 'size' not in data_config['inputs'][input]:
             continue
         size = data_config['inputs'][input]['size']
-        size_per_group[group] += size
-        corpora_per_group[group] += 1
+        size_per_task[task] += size
+        corpora_per_task[task] += 1
     for input in data_config['inputs']:
-        group = data_config['inputs'][input]['group']
+        task = data_config['inputs'][input]['task']
         if 'size' not in data_config['inputs'][input]:
-            if corpora_per_group[group] == 0:
+            if corpora_per_task[task] == 0:
                 # no sizes set
                 data_config['inputs'][input]['size'] = 1
             else:
-                # 
                 data_config['inputs'][input]['size'] = int(
-                    100 / corpora_per_group[group])
+                    100 / corpora_per_task[task])
         else:
             size = data_config['inputs'][input]['size']
             data_config['inputs'][input]['size'] = int(
-                100 * size / size_per_group[group])
+                100 * size / size_per_task[task])
 
 def _all_transforms(data_config):
     all_transforms = set()
-    for group in data_config['groups']:
-        all_transforms.update(data_config['groups'][group].get('transforms', []))
+    for task in data_config['tasks']:
+        all_transforms.update(data_config['tasks'][task].get('transforms', []))
     data_config['_transforms'] = list(sorted(all_transforms))
 
-def _group_defaults(data_config):
-    for group in data_config['groups']:
-        if 'split' not in data_config['groups'][group]:
-            data_config['groups'][group]['split'] = 'train'
-        if 'weight' not in data_config['groups'][group]:
-            data_config['groups'][group]['weight'] = 1
+def _task_defaults(data_config):
+    for task in data_config['tasks']:
+        if 'split' not in data_config['tasks'][task]:
+            data_config['tasks'][task]['split'] = 'train'
+        if 'weight' not in data_config['tasks'][task]:
+            data_config['tasks'][task]['weight'] = 1
 
 def read_data_config(data_config_file):
     with open(data_config_file, 'r') as fobj:
         data_config = yaml.safe_load(fobj)
-    _inverse_groups(data_config)
+    _inverse_tasks(data_config)
     _normalize_sizes(data_config)
     _all_transforms(data_config)
-    _group_defaults(data_config)
+    _task_defaults(data_config)
     #validate_schema(data_config)
     return data_config
 
@@ -112,9 +111,9 @@ def sharding_only(data_config):
     """ retains only config used in sharding step """
     rules = ((('meta', 'shard'), 'keep'),
              (('meta', 'train'), 'drop'),
-             (('groups', None, 'transforms'), 'drop'),
-             (('groups', None, 'weight'), 'drop'),
-             (('groups', None, 'meta'), 'drop'),
+             (('tasks', None, 'transforms'), 'drop'),
+             (('tasks', None, 'weight'), 'drop'),
+             (('tasks', None, 'meta'), 'drop'),
              (('inputs',), 'keep'),
              (('_transforms',), 'drop'),
             )
@@ -162,9 +161,9 @@ def verify_shard_config(data_config):
     shard_config = sharding_only(data_config)
     with open(stored_shard_config_file, 'r') as fobj:
         stored_shard_config = yaml.safe_load(fobj)
-    for group in stored_shard_config['groups']:
-        if '_inputs' in stored_shard_config['groups'][group]:
-            stored_shard_config['groups'][group]['_inputs'].sort()
+    for task in stored_shard_config['tasks']:
+        if '_inputs' in stored_shard_config['tasks'][task]:
+            stored_shard_config['tasks'][task]['_inputs'].sort()
     if not shard_config == stored_shard_config:
         old, new = dict_diff(stored_shard_config, shard_config)
         raise Exception(

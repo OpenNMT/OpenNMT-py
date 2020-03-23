@@ -90,32 +90,32 @@ class DataSharder():
         self._last_shard = None
 
     def __call__(self):
-        for group in self.data_config['groups']:
-            for input in self.data_config['groups'][group]['_inputs']:
+        for task in self.data_config['tasks']:
+            for input in self.data_config['tasks'][task]['_inputs']:
                 check_exist(self.data_config['inputs'][input])
         os.makedirs(
             self.data_config['meta']['shard']['rootdir'],
             exist_ok=True)
-        for group in self.data_config['groups']:
-            self.shard_group(group)
+        for task in self.data_config['tasks']:
+            self.shard_task(task)
 
-    def shard_group(self, group):
-        groupdir = os.path.join(self.data_config['meta']['shard']['rootdir'],
-                                group)
-        os.makedirs(groupdir, exist_ok=True)
-        group_type = self.data_config['groups'][group]['type']
-        if group_type == 'para':
+    def shard_task(self, task):
+        taskdir = os.path.join(self.data_config['meta']['shard']['rootdir'],
+                                task)
+        os.makedirs(taskdir, exist_ok=True)
+        task_type = self.data_config['tasks'][task]['type']
+        if task_type == 'para':
             shard_cls = ParaShard
             reader_func = para_reader
-        elif group_type == 'mono':
+        elif task_type == 'mono':
             shard_cls = MonoShard
             reader_func = mono_reader
         else:
-            raise Exception('Unrecognized group type "{}"'.format(group_type))
+            raise Exception('Unrecognized task type "{}"'.format(task_type))
         # create shards that are transparently reopened when filled
-        n_shards = self.data_config['groups'][group].get('n_shards', self.initial_shards)
+        n_shards = self.data_config['tasks'][task].get('n_shards', self.initial_shards)
         self._open_shards = [
-            shard_cls(self, group, groupdir, self.compress)
+            shard_cls(self, task, taskdir, self.compress)
             for _ in range(n_shards)]
         self._last_shard = -1
 
@@ -123,7 +123,7 @@ class DataSharder():
         # readers are repeated based on size to balance shards
         streams = []
         weights = []
-        for input in self.data_config['groups'][group]['_inputs']:
+        for input in self.data_config['tasks'][task]['_inputs']:
             streams.append(reader_func(self.data_config['inputs'][input]))
             weights.append(self.data_config['inputs'][input]['size'])
         stream = weighted_roundrobin(streams, weights)
@@ -140,16 +140,16 @@ class DataSharder():
             for tpl, shard in zip(bucket, itertools.cycle(self._open_shards)):
                 if self.vocab_counter:
                     # word count, if desired
-                    self.vocab_counter.add(group, tpl)
+                    self.vocab_counter.add(task, tpl)
                 shard.write(tpl)
         for shard in self._open_shards:
             shard.close()
 
 class Shard():
-    def __init__(self, sharder, group, groupdir, compress=False):
+    def __init__(self, sharder, task, taskdir, compress=False):
         self.sharder = sharder
-        self.group = group
-        self.groupdir = groupdir
+        self.task = task
+        self.taskdir = taskdir
         self.compress = compress
         self.fobjs = None
         self.index = None
@@ -166,7 +166,7 @@ class Shard():
         # TODO: check for valid suffix
         ext = '.gz' if self.compress else ''
         path = os.path.join(
-            self.groupdir,
+            self.taskdir,
             '{index}.{suffix}{ext}'.format(
                 index=self.index,
                 suffix=suffix,

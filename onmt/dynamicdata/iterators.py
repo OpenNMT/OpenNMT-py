@@ -15,43 +15,43 @@ def infinite_iterator(iterator_factory):
     while True:
         yield from iterator_factory()
 
-class GroupEpoch():
-    def __init__(self, data_config, group):
+class TaskEpoch():
+    def __init__(self, data_config, task):
         self.data_config = data_config
-        self.group = group
+        self.task = task
         self.indices = set()
         self.files = collections.defaultdict(list)
         self.compressed = False
         self.epoch = 0
-        # share_inputs causes this group to use another one's data
-        data_group = self.data_config['groups'][group].get('share_inputs', group)
-        self.groupdir = os.path.join(
+        # share_inputs causes this task to use another one's data
+        data_task = self.data_config['tasks'][task].get('share_inputs', task)
+        self.taskdir = os.path.join(
             self.data_config['meta']['shard']['rootdir'],
-            data_group)
-        self.group_type = self.data_config['groups'][group]['type']
-        if self.group_type == 'para':
+            data_task)
+        self.task_type = self.data_config['tasks'][task]['type']
+        if self.task_type == 'para':
             self.sides = ('src', 'tgt')
-        elif self.group_type == 'mono':
+        elif self.task_type == 'mono':
             self.sides = ('mono',)
         else:
-            raise Exception('Unrecognized group type "{}"'.format(
-                self.group_type))
+            raise Exception('Unrecognized task type "{}"'.format(
+                self.task_type))
         # reverse causes roles of src and tgt data to be reversed
         # useful for backtranslation
         # (note that meta src_lang and trg_lang are not modified)
         if self.data_config['meta']['train'].get('reverse', False):
             self.sides = self.sides[::-1]
         self._find_shards()
-        logger.info('Shard group "{}" from "{}"'.format(self.group, self.groupdir))
+        logger.info('Shard task "{}" from "{}"'.format(self.task, self.taskdir))
 
     def _find_shards(self):
-        for filename in os.listdir(self.groupdir):
+        for filename in os.listdir(self.taskdir):
             m = RE_SHARD.match(filename)
             if not m:
                 continue
-            index, suffix, ext = m.groups()
+            index, suffix, ext = m.tasks()
             self.indices.add(index)
-            path = os.path.join(self.groupdir, filename)
+            path = os.path.join(self.taskdir, filename)
             self.files[(suffix, index)] = path
             if ext == '.gz':
                 self.compressed = True
@@ -61,7 +61,7 @@ class GroupEpoch():
             for index in self.indices:
                 if not (side, index) in self.files:
                     raise Exception('Missing shard: {} {}, {}'.format(
-                        self.group, side, index))
+                        self.task, side, index))
 
     def yield_epoch(self):
         self.epoch += 1
@@ -77,8 +77,8 @@ def debug(stream, prefix='debug'):
         yield item
 
 class ShardIterator():
-    def __init__(self, group, files, transforms):
-        self.group = group
+    def __init__(self, task, files, transforms):
+        self.task = task
         self.files = files
         self.transforms = transforms
 
@@ -93,7 +93,7 @@ class ShardIterator():
     def transform(self, stream, is_train):
         for tpl in stream:
             for transform in self.transforms:
-                tpl = transform.apply(tpl, self.group, is_train)
+                tpl = transform.apply(tpl, self.task, is_train)
             if tpl is None:
                 # the last transform can filter by returning None
                 if not is_train:
@@ -135,24 +135,24 @@ class TranslateShardIterator(ShardIterator):
         for bstr in stream:
             yield bstr.decode("utf-8")
 
-def yield_infinite(group_epoch, group, transforms, is_train):
-    for tpl in infinite_iterator(group_epoch.yield_epoch):
-        si = TrainShardIterator(group, tpl, transforms)
+def yield_infinite(task_epoch, task, transforms, is_train):
+    for tpl in infinite_iterator(task_epoch.yield_epoch):
+        si = TrainShardIterator(task, tpl, transforms)
         yield from si(is_train=is_train)
 
-def yield_once(group_epoch, group, transforms, is_train):
-    for tpl in group_epoch.yield_epoch():
-        si = TrainShardIterator(group, tpl, transforms)
+def yield_once(task_epoch, task, transforms, is_train):
+    for tpl in task_epoch.yield_epoch():
+        si = TrainShardIterator(task, tpl, transforms)
         yield from si(is_train=is_train)
 
-def yield_translate(files, group, transforms):
+def yield_translate(files, task, transforms):
     for tpl in files:
-        si = TranslateShardIterator(group, tpl, transforms)
+        si = TranslateShardIterator(task, tpl, transforms)
         yield from si(is_train=False)
 
 class TransformReader():
-    def __init__(self, group, transforms):
-        self.group = group
+    def __init__(self, task, transforms):
+        self.task = task
         self.transforms = transforms
 
     def read(self, src_file, side, _dir=None):
@@ -162,7 +162,7 @@ class TransformReader():
             # two objects having a read method
             raise Exception("dynamicdata doesn't support tgt")
         files = [(src_file,)]
-        stream = yield_translate(files, self.group, self.transforms)
+        stream = yield_translate(files, self.task, self.transforms)
         for (src, idx) in stream:
             yield {'src': src, 'indices': idx}
 
@@ -173,11 +173,11 @@ class MixingWeightSchedule():
             data_config['meta']['train'].get('mixing_weight_schedule', []))
         self.schedule_steps.append(None)
         self.mixing_weights = {
-            key: self._list(data_config['groups'][key]['weight'], len(self.schedule_steps))
+            key: self._list(data_config['tasks'][key]['weight'], len(self.schedule_steps))
             for key in keys}
         for key in keys:
             if len(self.mixing_weights[key]) != len(self.schedule_steps):
-                raise Exception('group "{}" has {} mixing weights, expecting {}'.format(
+                raise Exception('task "{}" has {} mixing weights, expecting {}'.format(
                     key, len(self.mixing_weights[key]), len(self.schedule_steps)))
         self.next_threshold = 0
 
@@ -210,11 +210,11 @@ class MixingWeightSchedule():
             sums.append(sum(tpl))
         return max(sums)
 
-class GroupMixer():
-    def __init__(self, data_config, group_streams, bucket_size=2048):
+class TaskMixer():
+    def __init__(self, data_config, task_streams, bucket_size=2048):
         self.data_config = data_config
-        self.group_streams = group_streams
-        self.keys = sorted(self.group_streams.keys())
+        self.task_streams = task_streams
+        self.keys = sorted(self.task_streams.keys())
 
         self.schedule = MixingWeightSchedule(data_config, self.keys)
         self.current_weights = None
@@ -253,24 +253,24 @@ class GroupMixer():
             self.current_weights = new_weights
             logger.info('*** mb %s set weights to %s', i, list(zip(self.keys, self.current_weights)))
         self.mixed = weighted_roundrobin(
-            [self.group_streams[key] for key in self.keys],
+            [self.task_streams[key] for key in self.keys],
             self.current_weights)
 
 
 def build_mixer(data_config, transforms, is_train=True, bucket_size=1):
     split = 'train' if is_train else 'valid'
-    group_epochs = {}
-    group_streams = {}
-    for group in data_config['groups']:
-        if data_config['groups'][group]['split'] != split:
+    task_epochs = {}
+    task_streams = {}
+    for task in data_config['tasks']:
+        if data_config['tasks'][task]['split'] != split:
             continue
-        group_epoch = GroupEpoch(data_config, group)
+        task_epoch = TaskEpoch(data_config, task)
         if is_train:
-            stream = yield_infinite(group_epoch, group, transforms[group], is_train=is_train)
+            stream = yield_infinite(task_epoch, task, transforms[task], is_train=is_train)
         else:
             # yield validation data only once
-            stream = yield_once(group_epoch, group, transforms[group], is_train=is_train)
-        group_epochs[group] = group_epoch
-        group_streams[group] = stream
-    mixer = GroupMixer(data_config, group_streams, bucket_size=bucket_size)
-    return mixer, group_epochs 
+            stream = yield_once(task_epoch, task, transforms[task], is_train=is_train)
+        task_epochs[task] = task_epoch
+        task_streams[task] = stream
+    mixer = TaskMixer(data_config, task_streams, bucket_size=bucket_size)
+    return mixer, task_epochs

@@ -19,14 +19,14 @@ WARM_UP = 50000
 
 class TransformModel():
     """ A model from which individual Transforms
-    can be instantiated for each group """
+    can be instantiated for each task """
     def __init__(self, data_config):
         self.data_config = data_config
 
     def warm_up(self, vocabs):
         pass
 
-    def get_transform(self, transform, group):
+    def get_transform(self, transform, task):
         raise NotImplementedError()
 
 class Transform():
@@ -45,7 +45,7 @@ class Transform():
         """ returns special tokens added by this transform """
         return set()
 
-    def apply(self, tpl, group, is_train=True):
+    def apply(self, tpl, task, is_train=True):
         return tpl
 
     def stats(self):
@@ -59,33 +59,33 @@ class SimpleTransform(Transform):
     def __init__(self, data_config):
         pass
 
-    def get_transform(self, transform, group):
+    def get_transform(self, transform, task):
         return self
 
 class DuplicateMonoTransform(SimpleTransform):
-    def apply(self, tpl, group, is_train=True):
+    def apply(self, tpl, task, is_train=True):
         src = tuple(tpl[0])
         return src, src
 
-class PeturbOrderTransform(SimpleTransform):
+class ReorderTransform(SimpleTransform):
     def __init__(self, data_config):
         super().__init__(data_config)
 
     def set_train_opts(self, data_config):
         self.max_dist = data_config['meta']['train'].get(
-            'peturb_order_max_dist', 3)
+            'reorder_max_dist', 3)
 
-    def _peturb(self, tokens):
+    def _perturb(self, tokens):
         indices = [(i + random.uniform(0, self.max_dist), token)
                    for (i, token) in enumerate(tokens)]
         indices.sort()
         return tuple(token for (i, token) in indices)
 
-    def apply(self, tpl, group, is_train=True):
+    def apply(self, tpl, task, is_train=True):
         if not is_train:
             return tpl
         src, tgt = tpl
-        src = self._peturb(src)
+        src = self._perturb(src)
         return src, tgt
 
     def __repr__(self):
@@ -100,7 +100,7 @@ class DropTransform(SimpleTransform):
 
     def set_train_opts(self, data_config):
         self.temperature = data_config['meta']['train'].get(
-            'drop_temperature', 1.3) * -1
+            'drop_temperature', 2.0) * -1
 
     def _drop(self, tokens):
         n_tokens = len(tokens)
@@ -115,7 +115,7 @@ class DropTransform(SimpleTransform):
         tokens = [tok for (i, tok) in enumerate(tokens) if i not in drop_indices]
         return tokens
 
-    def apply(self, tpl, group, is_train=True):
+    def apply(self, tpl, task, is_train=True):
         if not is_train:
             return tpl
         src, tgt = tpl
@@ -142,7 +142,7 @@ class SwitchOutTransformModel(TransformModel):
         # assumes shared vocab
         self.vocab = list(vocabs['shared'].keys())
 
-    def get_transform(self, transform, group):
+    def get_transform(self, transform, task):
         return SwitchOutTransform(self.data_config, self.vocab)
 
 
@@ -155,7 +155,7 @@ class SwitchOutTransform(Transform):
 
     def set_train_opts(self, data_config):
         self.temperature = data_config['meta']['train'].get(
-            'switchout_temperature', 1.3) * -1
+            'switchout_temperature', 2.0) * -1
 
     def _replace(self, token):
         return random.choice(self.vocab)
@@ -178,7 +178,7 @@ class SwitchOutTransform(Transform):
                 out.append(tok)
         return tuple(out)
 
-    def apply(self, tpl, group, is_train=True):
+    def apply(self, tpl, task, is_train=True):
         if not is_train:
             return tpl
         src, tgt = tpl
@@ -205,14 +205,14 @@ class WbNoiseTransformModel(TransformModel):
         # assumes shared vocab
         self.vocab = set(vocabs['shared'].keys())
 
-    def get_transform(self, transform, group):
+    def get_transform(self, transform, task):
         return WbNoiseTransform(self.data_config, self.vocab)
 
 
 class WbNoiseTransform(SwitchOutTransform):
     def set_train_opts(self, data_config):
         self.temperature = data_config['meta']['train'].get(
-            'wb_noise_temperature', 1.3) * -1
+            'wb_noise_temperature', 2.0) * -1
 
     def _replace(self, token):
         if token[0] == UNDER:
@@ -244,14 +244,14 @@ class InsertionTransformModel(TransformModel):
         # assumes shared vocab
         self.vocab = list(vocabs['shared'].keys())
 
-    def get_transform(self, transform, group):
+    def get_transform(self, transform, task):
         return InsertionTransform(self.data_config, self.vocab)
 
 
 class InsertionTransform(SwitchOutTransform):
     def set_train_opts(self, data_config):
         self.temperature = data_config['meta']['train'].get(
-            'insertion_temperature', 1.3) * -1
+            'insertion_temperature', 2.0) * -1
 
     def _switchout(self, tokens):
         n_tokens = len(tokens)
@@ -288,7 +288,7 @@ class FilterTooLongTransform(SimpleTransform):
     def set_train_opts(self, data_config):
         self.max_len = data_config['meta']['train']['max_len']
 
-    def apply(self, tpl, group, is_train=True):
+    def apply(self, tpl, task, is_train=True):
         if not is_train:
             return tpl
         if any(len(side) > self.max_len for side in tpl):
@@ -312,14 +312,14 @@ class PrefixTransformModel(TransformModel):
     def __init__(self, data_config):
         super().__init__(data_config)
 
-    def get_transform(self, transform, group):
+    def get_transform(self, transform, task):
         # FIXME can NOT override in set_train_opts
-        src_lang = self.data_config['groups'][group]['meta']['src_lang']
-        tgt_lang = self.data_config['groups'][group]['meta']['tgt_lang']
+        src_lang = self.data_config['tasks'][task]['meta']['src_lang']
+        tgt_lang = self.data_config['tasks'][task]['meta']['tgt_lang']
         prefix = ('<FROM_{}>'.format(src_lang),
                   '<TO_{}>'.format(tgt_lang))
         try:
-            extra_prefix = self.data_config['groups'][group]['meta']['extra_prefix']
+            extra_prefix = self.data_config['tasks'][task]['meta']['extra_prefix']
             prefix = prefix + (extra_prefix,)
         except KeyError:
             pass
@@ -332,7 +332,7 @@ class PrefixTransform(Transform):
     def get_specials(self):
         return set(self.prefix)
 
-    def apply(self, tpl, group, is_train=True):
+    def apply(self, tpl, task, is_train=True):
         # src is required, tgt is optional
         src, tail = tpl[0], tpl[1:]
         src = self.prefix + tuple(src)
@@ -364,11 +364,11 @@ def load_word_counts(data_config):
     return vocab.load(path)
 
 class MorfessorEmStdTransform(Transform):
-    def __init__(self, data_config, seg_model, group):
+    def __init__(self, data_config, seg_model, task):
         super().__init__(data_config)
         self.data_config = data_config
         self.seg_model = seg_model
-        self.group = group
+        self.task = task
         # can NOT override in set_train_opts
         self.n_samples = data_config['meta']['train'].get(
             'seg_n_samples', 5)
@@ -389,7 +389,7 @@ class MorfessorEmStdTransform(Transform):
         for w, c in counts.most_common(WARM_UP):
             self._cache._populate_cache(w)
 
-    def apply(self, tpl, group, is_train=True):
+    def apply(self, tpl, task, is_train=True):
         out = []
         for tokens in tpl:
             morphs = []
@@ -409,12 +409,12 @@ class MorfessorEmStdTransform(Transform):
 
 
 class MorfessorEmTabooTransform(Transform):
-    def __init__(self, data_config, seg_model, group):
+    def __init__(self, data_config, seg_model, task):
         super().__init__(data_config)
         self.data_config = data_config
         self.seg_model = seg_model
-        self.group = group
-        self.lang = self.data_config['groups'][group]['meta']['src_lang']
+        self.task = task
+        self.lang = self.data_config['tasks'][task]['meta']['src_lang']
         self.prefix = ('<TABOO_AE_{}>'.format(self.lang),)
         # can NOT override in set_train_opts
         self.n_samples = data_config['meta']['train'].get(
@@ -439,7 +439,7 @@ class MorfessorEmTabooTransform(Transform):
     def get_specials(self):
         return set(self.prefix)
 
-    def apply(self, tpl, group, is_train=True):
+    def apply(self, tpl, task, is_train=True):
         # src -> xs, ys
         src, = tpl
         xs, ys = zip(*[self._cache.segment(token) for token in src])
@@ -460,9 +460,9 @@ class MorfessorEmTabooTransform(Transform):
         except AttributeError:
             return '{}[{}]'.format(self.__class__.__name__, 'old')
 
-class MorfessorEmTabooPeturbedTransform(MorfessorEmTabooTransform):
-    """ taboo segmentation, after peturbing src """
-    def apply(self, tpl, group, is_train=True):
+class MorfessorEmTabooReorderedTransform(MorfessorEmTabooTransform):
+    """ taboo segmentation, after reordering src """
+    def apply(self, tpl, task, is_train=True):
         # src -> xs, ys
         src, tgt = tpl
         all_morphs = sorted(set(src).union(tgt))
@@ -485,7 +485,7 @@ class MorfessorEmTransformModel():
     transform_classes = {
         'morfessor_em': MorfessorEmStdTransform,
         'morfessor_em_taboo': MorfessorEmTabooTransform,
-        'morfessor_em_taboo_peturbed': MorfessorEmTabooPeturbedTransform,
+        'morfessor_em_taboo_reordered': MorfessorEmTabooReorderedTransform,
     }
 
     def __init__(self, data_config):
@@ -500,12 +500,12 @@ class MorfessorEmTransformModel():
             use_em=True,
             em_substr=expected)
 
-    def get_transform(self, transform, group):
+    def get_transform(self, transform, task):
         try:
             transform_cls = self.transform_classes[transform]
         except KeyError:
             raise Exception('Unknown transform {}'.format(transform))
-        return transform_cls(self.data_config, self.seg_model, group)
+        return transform_cls(self.data_config, self.seg_model, task)
 
 class SentencepieceTransform(SimpleTransform):
     def __init__(self, data_config):
@@ -524,7 +524,7 @@ class SentencepieceTransform(SimpleTransform):
         self.seg_model = spm.SentencePieceProcessor()
         self.seg_model.Load(self.model_path)
 
-    def apply(self, tpl, group, is_train=True):
+    def apply(self, tpl, task, is_train=True):
         out = []
         for tokens in tpl:
             out.append(tuple(self.seg_model.SampleEncodeAsPieces(
@@ -621,7 +621,7 @@ class TabooSampleCache(SampleCache):
 
 DEFAULT_TRANSFORMS = {
     'duplicate_mono': DuplicateMonoTransform,
-    'peturb_order': PeturbOrderTransform,
+    'reorder': ReorderTransform,
     'drop': DropTransform,
     'switchout': SwitchOutTransformModel,
     'wb_noise': WbNoiseTransformModel,
@@ -629,7 +629,7 @@ DEFAULT_TRANSFORMS = {
     'lang_prefix_both': PrefixTransformModel,
     'morfessor_em': MorfessorEmTransformModel,
     'morfessor_em_taboo': MorfessorEmTransformModel,
-    'morfessor_em_taboo_peturbed': MorfessorEmTransformModel,
+    'morfessor_em_taboo_reordered': MorfessorEmTransformModel,
     'sentencepiece': SentencepieceTransform,
     'filter_too_long': FilterTooLongTransform,
 }
@@ -647,23 +647,23 @@ def make_transform_models(data_config, vocabs, custom_transforms=None):
 
 def make_transforms(transform_models, data_config, vocabs):
     transforms = {}
-    for group in data_config['groups']:
-        keys = data_config['groups'][group]['transforms']
-        transforms[group] = [transform_models[key].get_transform(key, group)
+    for task in data_config['tasks']:
+        keys = data_config['tasks'][task]['transforms']
+        transforms[task] = [transform_models[key].get_transform(key, task)
                              for key in keys]
-        for transform in transforms[group]:
+        for transform in transforms[task]:
             transform.warm_up(vocabs)
     return transforms
 
 def get_specials(transforms):
     # assumes shared vocabulary
     all_specials = set()
-    for group_transforms in transforms.values():
-        for transform in group_transforms:
+    for task_transforms in transforms.values():
+        for transform in task_transforms:
             all_specials.update(transform.get_specials())
     return all_specials
 
 def set_train_opts(data_config, transforms):
-    for group_transforms in transforms.values():
-        for transform in group_transforms:
+    for task_transforms in transforms.values():
+        for transform in task_transforms:
             transform.set_train_opts(data_config)

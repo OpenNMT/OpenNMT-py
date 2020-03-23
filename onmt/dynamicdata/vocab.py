@@ -40,7 +40,7 @@ class Vocabulary():
     def __init__(self, data_config):
         self.data_config = data_config
 
-    def add(self, group, tpl):
+    def add(self, task, tpl):
         raise NotImplementedError()
 
     def save_all(self, segmentation='words'):
@@ -82,13 +82,13 @@ class Vocabulary():
         return counter
 
 class SimpleSharedVocabulary(Vocabulary):
-    """ Uses a single counter for all groups and sides.
+    """ Uses a single counter for all tasks and sides.
     Assumes space-based tokenization, no factors. """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.tokens = {'shared': SortedCounter()}
 
-    def add(self, group, tpl):
+    def add(self, task, tpl):
         for line in tpl:
             self.tokens['shared'].update(line.split())
 
