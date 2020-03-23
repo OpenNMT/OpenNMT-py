@@ -512,6 +512,11 @@ class SentencepieceTransform(SimpleTransform):
         super().__init__(data_config)
         self.data_config = data_config
         self.model_path = self.data_config['meta']['train']['segmentation_model']
+        # can NOT override in set_train_opts
+        self.n_samples = data_config['meta']['train'].get(
+            'seg_n_samples', -1)
+        self.theta = data_config['meta']['train'].get(
+            'seg_theta', 0.5)
 
     def warm_up(self, vocabs=None):
         # load the segmentation model
@@ -523,16 +528,20 @@ class SentencepieceTransform(SimpleTransform):
         out = []
         for tokens in tpl:
             out.append(tuple(self.seg_model.SampleEncodeAsPieces(
-                ' '.join(tokens), -1, 0.5)))
+                ' '.join(tokens), self.n_samples, self.theta)))
         return tuple(out)
 
     def __getstate__(self):
         return {'data_config': self.data_config,
-                'model_path': self.model_path}
+                'model_path': self.model_path,
+                'n_samples': self.n_samples,
+                'theta': self.theta}
 
     def __setstate__(self, d):
         self.data_config = d['data_config']
         self.model_path = d['model_path']
+        self.n_samples = d['n_samples']
+        self.theta = d['theta']
         self.warm_up()
 
 class SampleCache(object):
