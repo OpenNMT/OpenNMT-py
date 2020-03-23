@@ -234,19 +234,19 @@ class Translator(object):
             logger (logging.Logger or NoneType): See :func:`__init__()`.
         """
 
-        if opt.transform_group is None:
+        if opt.transforms_from_task is None:
             assert opt.data_config is None
             src_reader = inputters.str2reader[opt.data_type].from_opt(opt)
-            transform_group = None
+            transforms_from_task = None
         else:
             assert opt.data_config is not None
-            transform_group = opt.transform_group
+            transforms_from_task = opt.transforms_from_task
             data_config = read_data_config(opt.data_config)
             verify_shard_config(data_config)
             transform_models, transforms = load_transforms(data_config)
             set_train_opts(data_config, transforms)
             #fields = load_fields(data_config)  # using fields from model
-            src_reader = TransformReader(transform_group, transforms[transform_group])
+            src_reader = TransformReader(transforms_from_task, transforms[transforms_from_task])
         tgt_reader = inputters.str2reader["text"].from_opt(opt)
         return cls(
             model,
