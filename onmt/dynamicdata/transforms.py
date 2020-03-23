@@ -17,6 +17,7 @@ from .utils import UNDER
 
 WARM_UP = 50000
 
+
 class TransformModel():
     """ A model from which individual Transforms
     can be instantiated for each task """
@@ -28,6 +29,7 @@ class TransformModel():
 
     def get_transform(self, transform, task):
         raise NotImplementedError()
+
 
 class Transform():
     """ A preprocessing step, reapplied separately
@@ -54,6 +56,7 @@ class Transform():
     def __repr__(self):
         return self.__class__.__name__
 
+
 class SimpleTransform(Transform):
     """ A Transform that is its own TransformModel """
     def __init__(self, data_config):
@@ -62,10 +65,12 @@ class SimpleTransform(Transform):
     def get_transform(self, transform, task):
         return self
 
+
 class DuplicateMonoTransform(SimpleTransform):
     def apply(self, tpl, task, is_train=True):
         src = tuple(tpl[0])
         return src, src
+
 
 class ReorderTransform(SimpleTransform):
     def __init__(self, data_config):
@@ -111,8 +116,11 @@ class DropTransform(SimpleTransform):
         self._sum_draw += n_drops
         self._sum_toks += n_tokens
 
-        drop_indices = set(np.random.choice(indices, size=n_drops, replace=False))
-        tokens = [tok for (i, tok) in enumerate(tokens) if i not in drop_indices]
+        drop_indices = set(np.random.choice(indices,
+                                            size=n_drops,
+                                            replace=False))
+        tokens = [tok for (i, tok) in enumerate(tokens)
+                  if i not in drop_indices]
         return tokens
 
     def apply(self, tpl, task, is_train=True):
@@ -127,7 +135,9 @@ class DropTransform(SimpleTransform):
             yield('no tokens dropped')
         else:
             yield('tokens dropped {} / {} = {}'.format(
-                self._sum_draw, self._sum_toks, self._sum_draw / self._sum_toks))
+                self._sum_draw,
+                self._sum_toks,
+                self._sum_draw / self._sum_toks))
 
     def __repr__(self):
         return '{}({})'.format(self.__class__.__name__, self.temperature)
@@ -169,7 +179,9 @@ class SwitchOutTransform(Transform):
         self._sum_draw += n_switchouts
         self._sum_toks += n_tokens
 
-        switchout_indices = set(np.random.choice(indices, size=n_switchouts, replace=False))
+        switchout_indices = set(np.random.choice(indices,
+                                                 size=n_switchouts,
+                                                 replace=False))
         out = []
         for (i, tok) in enumerate(tokens):
             if i in switchout_indices:
@@ -191,10 +203,13 @@ class SwitchOutTransform(Transform):
             yield('no tokens switched out')
         else:
             yield('switchout  {} / {} = {}'.format(
-                self._sum_draw, self._sum_toks, self._sum_draw / self._sum_toks))
+                self._sum_draw,
+                self._sum_toks,
+                self._sum_draw / self._sum_toks))
 
     def __repr__(self):
         return '{}({})'.format(self.__class__.__name__, self.temperature)
+
 
 class WbNoiseTransformModel(TransformModel):
     def __init__(self, data_config):
@@ -232,7 +247,9 @@ class WbNoiseTransform(SwitchOutTransform):
             yield('no wb_noise')
         else:
             yield('wb_noise  {} / {} = {}'.format(
-                self._sum_draw, self._sum_toks, self._sum_draw / self._sum_toks))
+                self._sum_draw,
+                self._sum_toks,
+                self._sum_draw / self._sum_toks))
 
 
 class InsertionTransformModel(TransformModel):
@@ -261,7 +278,9 @@ class InsertionTransform(SwitchOutTransform):
         n_switchouts = np.random.choice(indices, p=logits)
         self._sum_toks += n_tokens
 
-        switchout_indices = set(np.random.choice(indices, size=n_switchouts, replace=False))
+        switchout_indices = set(np.random.choice(indices,
+                                                 size=n_switchouts,
+                                                 replace=False))
         out = []
         for (i, tok) in enumerate(tokens):
             if i in switchout_indices:
@@ -277,7 +296,10 @@ class InsertionTransform(SwitchOutTransform):
             yield('no insertion')
         else:
             yield('insertion  {} / {} = {}'.format(
-                self._sum_draw, self._sum_toks, self._sum_draw / self._sum_toks))
+                self._sum_draw,
+                self._sum_toks,
+                self._sum_draw / self._sum_toks))
+
 
 class FilterTooLongTransform(SimpleTransform):
     def __init__(self, data_config):
@@ -308,6 +330,7 @@ class FilterTooLongTransform(SimpleTransform):
     def __repr__(self):
         return '{}({})'.format(self.__class__.__name__, self.max_len)
 
+
 class PrefixTransformModel(TransformModel):
     def __init__(self, data_config):
         super().__init__(data_config)
@@ -319,11 +342,13 @@ class PrefixTransformModel(TransformModel):
         prefix = ('<FROM_{}>'.format(src_lang),
                   '<TO_{}>'.format(tgt_lang))
         try:
-            extra_prefix = self.data_config['tasks'][task]['meta']['extra_prefix']
+            extra_prefix = \
+                self.data_config['tasks'][task]['meta']['extra_prefix']
             prefix = prefix + (extra_prefix,)
         except KeyError:
             pass
         return PrefixTransform(prefix)
+
 
 class PrefixTransform(Transform):
     def __init__(self, prefix):
@@ -352,16 +377,19 @@ def mix_half(xs, ys):
     out_b = [y if i in chosen else x for (i, (x, y)) in enumerate(zip(xs, ys))]
     return out_a, out_b
 
+
 def flatten(deep):
     out = []
     for token in deep:
         out.extend(token)
     return tuple(out)
 
+
 def load_word_counts(data_config):
     vocab = Vocabulary(data_config)
     path = vocab.path('shared', segmentation='words')
     return vocab.load(path)
+
 
 class MorfessorEmStdTransform(Transform):
     def __init__(self, data_config, seg_model, task):
@@ -399,11 +427,14 @@ class MorfessorEmStdTransform(Transform):
         return tuple(out)
 
     def stats(self):
-        yield('hits {} vs misses {}'.format(self._cache.hits, self._cache.misses))
+        yield('hits {} vs misses {}'.format(self._cache.hits,
+                                            self._cache.misses))
 
     def __repr__(self):
         try:
-            return '{}({}, {})'.format(self.__class__.__name__, self.n_samples, self.theta)
+            return '{}({}, {})'.format(self.__class__.__name__,
+                                       self.n_samples,
+                                       self.theta)
         except AttributeError:
             return '{}[{}]'.format(self.__class__.__name__, 'old')
 
@@ -452,13 +483,17 @@ class MorfessorEmTabooTransform(Transform):
         return src, tgt
 
     def stats(self):
-        yield('hits {} vs misses {}'.format(self._cache.hits, self._cache.misses))
+        yield('hits {} vs misses {}'.format(self._cache.hits,
+                                            self._cache.misses))
 
     def __repr__(self):
         try:
-            return '{}({}, {})'.format(self.__class__.__name__, self.n_samples, self.theta)
+            return '{}({}, {})'.format(self.__class__.__name__,
+                                       self.n_samples,
+                                       self.theta)
         except AttributeError:
             return '{}[{}]'.format(self.__class__.__name__, 'old')
+
 
 class MorfessorEmTabooReorderedTransform(MorfessorEmTabooTransform):
     """ taboo segmentation, after reordering src """
@@ -470,8 +505,12 @@ class MorfessorEmTabooReorderedTransform(MorfessorEmTabooTransform):
         # mix sides (per type)
         src_segs, tgt_segs = mix_half(xs, ys)
         # apply side-specific segmentation maps
-        src_map = {morph: src_seg for morph, src_seg in zip(all_morphs, src_segs)}
-        tgt_map = {morph: tgt_seg for morph, tgt_seg in zip(all_morphs, tgt_segs)}
+        src_map = {morph: src_seg
+                   for morph, src_seg
+                   in zip(all_morphs, src_segs)}
+        tgt_map = {morph: tgt_seg
+                   for morph, tgt_seg
+                   in zip(all_morphs, tgt_segs)}
         src = [src_map[token] for token in src]
         tgt = [tgt_map[token] for token in tgt]
         src = flatten(src)
@@ -507,11 +546,13 @@ class MorfessorEmTransformModel():
             raise Exception('Unknown transform {}'.format(transform))
         return transform_cls(self.data_config, self.seg_model, task)
 
+
 class SentencepieceTransform(SimpleTransform):
     def __init__(self, data_config):
         super().__init__(data_config)
         self.data_config = data_config
-        self.model_path = self.data_config['meta']['train']['segmentation_model']
+        self.model_path = \
+            self.data_config['meta']['train']['segmentation_model']
         # can NOT override in set_train_opts
         self.n_samples = data_config['meta']['train'].get(
             'seg_n_samples', -1)
@@ -544,6 +585,7 @@ class SentencepieceTransform(SimpleTransform):
         self.theta = d['theta']
         self.warm_up()
 
+
 class SampleCache(object):
     def __init__(self, model, n_samples=5,
                  addcount=0, theta=0.5, maxlen=30):
@@ -563,12 +605,11 @@ class SampleCache(object):
         else:
             self.hits += 1
         analyses, distr = self.cache[compound]
-        #for a, d in zip(analyses, distr):
-        #    print(a, d)
         if len(analyses) == 1:
             return analyses[0]
         _, sample = morfessor.utils.categorical(analyses, distr)
         return sample
+
 
 class StdSampleCache(SampleCache):
     def _populate_cache(self, compound):
@@ -588,6 +629,7 @@ class StdSampleCache(SampleCache):
             distr = [x / divisor for x in distr]
         self.cache[compound] = (analyses, distr)
 
+
 class TabooSampleCache(SampleCache):
     def _populate_cache(self, compound):
         samples = []
@@ -604,7 +646,6 @@ class TabooSampleCache(SampleCache):
             taboo = [morph for morph in first if len(morph) > 1]
             second, second_logp = self.model.sample_segment(
                 compound, theta=self.theta, maxlen=self.maxlen, taboo=taboo)
-            #print('first', first_logp, 'second', second_logp)
             logp = first_logp + second_logp
             samples.append((first, second))
             logps.append(logp)
@@ -634,6 +675,7 @@ DEFAULT_TRANSFORMS = {
     'filter_too_long': FilterTooLongTransform,
 }
 
+
 def make_transform_models(data_config, vocabs, custom_transforms=None):
     transform_model_classes = dict(DEFAULT_TRANSFORMS)
     if custom_transforms is not None:
@@ -645,15 +687,17 @@ def make_transform_models(data_config, vocabs, custom_transforms=None):
         transform_models[key] = transform_model
     return transform_models
 
+
 def make_transforms(transform_models, data_config, vocabs):
     transforms = {}
     for task in data_config['tasks']:
         keys = data_config['tasks'][task]['transforms']
         transforms[task] = [transform_models[key].get_transform(key, task)
-                             for key in keys]
+                            for key in keys]
         for transform in transforms[task]:
             transform.warm_up(vocabs)
     return transforms
+
 
 def get_specials(transforms):
     # assumes shared vocabulary
@@ -662,6 +706,7 @@ def get_specials(transforms):
         for transform in task_transforms:
             all_specials.update(transform.get_specials())
     return all_specials
+
 
 def set_train_opts(data_config, transforms):
     for task_transforms in transforms.values():

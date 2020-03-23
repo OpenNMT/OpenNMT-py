@@ -3,14 +3,15 @@ import itertools
 import os
 import yaml
 
-#import jsonschema
+# import jsonschema
 
-#def validate_schema(data_config):
-#    # FIXME: use package resources
-#    schema_path = 'data_config.schema.yaml'
-#    with open(schema_path, 'r') as fobj:
-#        schema = yaml.safe_load(fobj)
-#    jsonschema.validate(data, schema)
+# def validate_schema(data_config):
+#     # FIXME: use package resources
+#     schema_path = 'data_config.schema.yaml'
+#     with open(schema_path, 'r') as fobj:
+#         schema = yaml.safe_load(fobj)
+#     jsonschema.validate(data, schema)
+
 
 def _inverse_tasks(data_config):
     for input in data_config['inputs']:
@@ -22,12 +23,14 @@ def _inverse_tasks(data_config):
         if '_inputs' in data_config['tasks'][task]:
             data_config['tasks'][task]['_inputs'].sort()
 
+
 def _share_inputs(data_config):
     for task in data_config['tasks']:
         if 'share_inputs' in data_config['tasks'][task]:
             share_from = data_config['tasks'][task]['share_inputs']
             inputs = data_config['tasks'][share_from]['_inputs']
             data_config['tasks'][task]['_inputs'] = inputs
+
 
 def _remove_shared_inputs(shard_config):
     to_remove = []
@@ -36,6 +39,7 @@ def _remove_shared_inputs(shard_config):
             to_remove.append(task)
     for task in to_remove:
         del shard_config['tasks'][task]
+
 
 def _normalize_sizes(data_config):
     size_per_task = collections.Counter()
@@ -61,11 +65,13 @@ def _normalize_sizes(data_config):
             data_config['inputs'][input]['size'] = int(
                 100 * size / size_per_task[task])
 
+
 def _all_transforms(data_config):
     all_transforms = set()
     for task in data_config['tasks']:
         all_transforms.update(data_config['tasks'][task].get('transforms', []))
     data_config['_transforms'] = list(sorted(all_transforms))
+
 
 def _task_defaults(data_config):
     for task in data_config['tasks']:
@@ -74,6 +80,7 @@ def _task_defaults(data_config):
         if 'weight' not in data_config['tasks'][task]:
             data_config['tasks'][task]['weight'] = 1
 
+
 def read_data_config(data_config_file):
     with open(data_config_file, 'r') as fobj:
         data_config = yaml.safe_load(fobj)
@@ -81,15 +88,18 @@ def read_data_config(data_config_file):
     _normalize_sizes(data_config)
     _all_transforms(data_config)
     _task_defaults(data_config)
-    #validate_schema(data_config)
+    # validate_schema(data_config)
     return data_config
+
 
 def _filter_config(config, sub_config, path, rules):
     decision = 'continue'
     current = path[-1]
     for rule in rules:
         rule_path, rule_decision = rule
-        if all(b is None or a == b for (a, b) in itertools.zip_longest(path, rule_path)):
+        if all(b is None or a == b
+               for (a, b)
+               in itertools.zip_longest(path, rule_path)):
             decision = rule_decision
             break
     if decision == 'keep':
@@ -107,9 +117,11 @@ def _filter_config(config, sub_config, path, rules):
             # default keep
             sub_config[current] = config[current]
 
+
 def sharding_only(data_config):
     """ retains only config used in sharding step """
-    rules = ((('meta', 'shard'), 'keep'),
+    rules = (
+             (('meta', 'shard'), 'keep'),
              (('meta', 'train'), 'drop'),
              (('tasks', None, 'transforms'), 'drop'),
              (('tasks', None, 'weight'), 'drop'),
@@ -123,18 +135,22 @@ def sharding_only(data_config):
     _remove_shared_inputs(sub_config)
     return sub_config
 
+
 def save_shard_config(data_config):
     stored_shard_config_file = os.path.join(
         data_config['meta']['shard']['rootdir'],
         'stored_shard_config.yaml')
     if os.path.exists(stored_shard_config_file):
-        raise Exception('stored shard config "{}"'
-            ' already exists, not overwriting'.format(stored_shard_config_file))
+        raise Exception(
+            'stored shard config "{}"'
+            ' already exists, not overwriting'.format(
+            stored_shard_config_file))
     os.makedirs(
         data_config['meta']['shard']['rootdir'],
         exist_ok=True)
     with open(stored_shard_config_file, 'w') as fobj:
         yaml.safe_dump(data_config, fobj)
+
 
 def dict_diff(a, b):
     keys = list(sorted(set(a.keys()).union(b.keys())))
@@ -144,7 +160,10 @@ def dict_diff(a, b):
         if a.get(key, None) == b.get(key, None):
             # equal can be pruned
             continue
-        if key in a and key in b and isinstance(a[key], dict) and isinstance(b[key], dict):
+        if (key in a
+                and key in b
+                and isinstance(a[key], dict)
+                and isinstance(b[key], dict)):
             a_sub, b_sub = dict_diff(a[key],  b[key])
             a_pruned[key] = a_sub
             b_pruned[key] = b_sub

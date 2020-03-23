@@ -2,15 +2,19 @@ import itertools
 
 UNDER = '▁'
 
+
 def safe_zip(*iterables):
     iters = [iter(x) for x in iterables]
     sentinel = object()
-    for (j, tpl) in enumerate(itertools.zip_longest(*iterables, fillvalue=sentinel)):
+    for (j, tpl) in enumerate(itertools.zip_longest(*iterables,
+                                                    fillvalue=sentinel)):
         for (i, val) in enumerate(tpl):
             if val is sentinel:
-                raise ValueError('Column {} was too short. '
+                raise ValueError(
+                    'Column {} was too short. '
                     'Row {} (and later) missing.'.format(i, j))
         yield tpl
+
 
 def roundrobin(*iterables):
     "roundrobin('ABC', 'D', 'EF') --> A D E B F C"
@@ -25,6 +29,7 @@ def roundrobin(*iterables):
             # Remove the iterator we just exhausted from the cycle.
             num_active -= 1
             nexts = itertools.cycle(itertools.islice(nexts, num_active))
+
 
 def weighted_roundrobin(streams, weights):
     repeated = []

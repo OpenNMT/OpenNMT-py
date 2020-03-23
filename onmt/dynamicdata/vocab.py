@@ -6,6 +6,7 @@ import torch
 import torchtext
 import onmt.inputters
 
+
 class SortedCounter(collections.Counter):
     """A Counter, with most_common replaced with a version
     that sorts results by count and key, rather than just count.
@@ -81,6 +82,7 @@ class Vocabulary():
                 counter[w] += int(c)
         return counter
 
+
 class SimpleSharedVocabulary(Vocabulary):
     """ Uses a single counter for all tasks and sides.
     Assumes space-based tokenization, no factors. """
@@ -92,10 +94,16 @@ class SimpleSharedVocabulary(Vocabulary):
         for line in tpl:
             self.tokens['shared'].update(line.split())
 
+
 def no_tokenize(pretokenized):
     return pretokenized
 
-def _build_field_vocab(field, counter, size_multiple=1, specials=None, **kwargs):
+
+def _build_field_vocab(field,
+                       counter,
+                       size_multiple=1,
+                       specials=None,
+                       **kwargs):
     # this is basically copy-pasted from torchtext via onmt.
     all_specials = [
         field.unk_token, field.pad_token, field.init_token, field.eos_token
@@ -103,10 +111,13 @@ def _build_field_vocab(field, counter, size_multiple=1, specials=None, **kwargs)
     if specials is not None:
         all_specials.extend(list(specials))
     filtered_specials = [tok for tok in all_specials if tok is not None]
-    field.vocab = field.vocab_cls(counter, specials=filtered_specials, **kwargs)
+    field.vocab = field.vocab_cls(counter,
+                                  specials=filtered_specials,
+                                  **kwargs)
     if size_multiple > 1:
         onmt.inputters.inputter._pad_vocab_to_multiple(
             field.vocab, size_multiple)
+
 
 def load_vocabulary(data_config):
     tokencounter = Vocabulary(data_config)
@@ -117,6 +128,7 @@ def load_vocabulary(data_config):
     else:
         raise NotImplementedError()
     return counters
+
 
 def prepare_fields(data_config, counters, specials):
     # TODO: support for features
@@ -130,11 +142,14 @@ def prepare_fields(data_config, counters, specials):
     src_base_field.tokenize = no_tokenize
     tgt_base_field.tokenize = no_tokenize
     if data_config['meta']['shard']['share_vocab']:
-        _build_field_vocab(tgt_base_field, counters['shared'], specials=specials)
+        _build_field_vocab(tgt_base_field,
+                           counters['shared'],
+                           specials=specials)
         src_base_field.vocab = tgt_base_field.vocab
     else:
         raise NotImplementedError()
     return fields
+
 
 def save_fields(data_config, fields):
     segmentation = data_config['meta']['train']['name']
@@ -151,6 +166,7 @@ def save_fields(data_config, fields):
     with open(path, 'wb') as fobj:
         torch.save(fields, fobj)
 
+
 def load_fields(data_config):
     segmentation = data_config['meta']['train']['name']
     path = os.path.join(
@@ -160,6 +176,7 @@ def load_fields(data_config):
     with open(path, 'rb') as fobj:
         fields = torch.load(fobj)
     return fields
+
 
 def save_transforms(data_config, transform_models, transforms):
     segmentation = data_config['meta']['train']['name']
@@ -172,6 +189,7 @@ def save_transforms(data_config, transform_models, transforms):
     with open(path, 'wb') as fobj:
         torch.save(transform_models, fobj)
         torch.save(transforms, fobj)
+
 
 def load_transforms(data_config):
     segmentation = data_config['meta']['train']['name']

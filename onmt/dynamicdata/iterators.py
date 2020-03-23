@@ -11,9 +11,11 @@ from onmt.utils.logging import logger
 
 RE_SHARD = re.compile(r'([0-9]*)\.([a-z]*)(\.gz)?')
 
+
 def infinite_iterator(iterator_factory):
     while True:
         yield from iterator_factory()
+
 
 class TaskEpoch():
     def __init__(self, data_config, task):
@@ -42,7 +44,8 @@ class TaskEpoch():
         if self.data_config['meta']['train'].get('reverse', False):
             self.sides = self.sides[::-1]
         self._find_shards()
-        logger.info('Shard task "{}" from "{}"'.format(self.task, self.taskdir))
+        logger.info('Shard task "{}" from "{}"'.format(self.task,
+                                                       self.taskdir))
 
     def _find_shards(self):
         for filename in os.listdir(self.taskdir):
@@ -67,14 +70,17 @@ class TaskEpoch():
         self.epoch += 1
         all_shards = []
         for index in self.indices:
-            all_shards.append([self.files[(side, index)] for side in self.sides])
+            all_shards.append([self.files[(side, index)]
+                               for side in self.sides])
         random.shuffle(all_shards)
         yield from all_shards
+
 
 def debug(stream, prefix='debug'):
     for item in stream:
         print('{}: {}'.format(prefix, item))
         yield item
+
 
 class ShardIterator():
     def __init__(self, task, files, transforms):
@@ -105,6 +111,7 @@ class ShardIterator():
         for i, tpl in enumerate(stream):
             yield tpl + (i,)
 
+
 class TrainShardIterator(ShardIterator):
     def __call__(self, is_train=True):
         fobjs = [open(path, 'r') for path in self.files]
@@ -114,11 +121,12 @@ class TrainShardIterator(ShardIterator):
             random.shuffle(transposed)
         for fobj in fobjs:
             fobj.close()
-        #transposed = debug(transposed, 'transposed')
+        # transposed = debug(transposed, 'transposed')
         transformed = self.transform(transposed, is_train)
-        #transformed = debug(transformed, 'transformed')
+        # transformed = debug(transformed, 'transformed')
         indexed = self.add_index(transformed)
         yield from indexed
+
 
 class TranslateShardIterator(ShardIterator):
     def __call__(self, is_train=False):
@@ -127,7 +135,7 @@ class TranslateShardIterator(ShardIterator):
         tokenized = [self.tokenize(stream) for stream in decoded]
         transposed = self.transpose(tokenized)
         transformed = self.transform(transposed, is_train)
-        #transformed = debug(transformed, 'transformed')
+        # transformed = debug(transformed, 'transformed')
         indexed = self.add_index(transformed)
         yield from indexed
 
@@ -135,20 +143,24 @@ class TranslateShardIterator(ShardIterator):
         for bstr in stream:
             yield bstr.decode("utf-8")
 
+
 def yield_infinite(task_epoch, task, transforms, is_train):
     for tpl in infinite_iterator(task_epoch.yield_epoch):
         si = TrainShardIterator(task, tpl, transforms)
         yield from si(is_train=is_train)
+
 
 def yield_once(task_epoch, task, transforms, is_train):
     for tpl in task_epoch.yield_epoch():
         si = TrainShardIterator(task, tpl, transforms)
         yield from si(is_train=is_train)
 
+
 def yield_translate(files, task, transforms):
     for tpl in files:
         si = TranslateShardIterator(task, tpl, transforms)
         yield from si(is_train=False)
+
 
 class TransformReader():
     def __init__(self, task, transforms):
@@ -166,6 +178,7 @@ class TransformReader():
         for (src, idx) in stream:
             yield {'src': src, 'indices': idx}
 
+
 class MixingWeightSchedule():
     def __init__(self, data_config, keys):
         self.keys = keys
@@ -173,12 +186,15 @@ class MixingWeightSchedule():
             data_config['meta']['train'].get('mixing_weight_schedule', []))
         self.schedule_steps.append(None)
         self.mixing_weights = {
-            key: self._list(data_config['tasks'][key]['weight'], len(self.schedule_steps))
+            key: self._list(data_config['tasks'][key]['weight'],
+                            len(self.schedule_steps))
             for key in keys}
         for key in keys:
             if len(self.mixing_weights[key]) != len(self.schedule_steps):
-                raise Exception('task "{}" has {} mixing weights, expecting {}'.format(
-                    key, len(self.mixing_weights[key]), len(self.schedule_steps)))
+                raise Exception('task "{}" has {} mixing weights,'
+                                'expecting {}'.format(
+                                key, len(self.mixing_weights[key]),
+                                len(self.schedule_steps)))
         self.next_threshold = 0
 
     def _list(self, val, repeat=None):
@@ -209,6 +225,7 @@ class MixingWeightSchedule():
         for tpl in zip(*self.mixing_weights.values()):
             sums.append(sum(tpl))
         return max(sums)
+
 
 class TaskMixer():
     def __init__(self, data_config, task_streams, bucket_size=2048):
@@ -251,7 +268,8 @@ class TaskMixer():
         new_weights = self.schedule(i)
         if new_weights is not None:
             self.current_weights = new_weights
-            logger.info('*** mb %s set weights to %s', i, list(zip(self.keys, self.current_weights)))
+            logger.info('*** mb %s set weights to %s',
+                        i, list(zip(self.keys, self.current_weights)))
         self.mixed = weighted_roundrobin(
             [self.task_streams[key] for key in self.keys],
             self.current_weights)
@@ -266,10 +284,16 @@ def build_mixer(data_config, transforms, is_train=True, bucket_size=1):
             continue
         task_epoch = TaskEpoch(data_config, task)
         if is_train:
-            stream = yield_infinite(task_epoch, task, transforms[task], is_train=is_train)
+            stream = yield_infinite(task_epoch,
+                                    task,
+                                    transforms[task],
+                                    is_train=is_train)
         else:
             # yield validation data only once
-            stream = yield_once(task_epoch, task, transforms[task], is_train=is_train)
+            stream = yield_once(task_epoch,
+                                task,
+                                transforms[task],
+                                is_train=is_train)
         task_epochs[task] = task_epoch
         task_streams[task] = stream
     mixer = TaskMixer(data_config, task_streams, bucket_size=bucket_size)

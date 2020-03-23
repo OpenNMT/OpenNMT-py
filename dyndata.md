@@ -261,6 +261,8 @@ There are multiple ways in which this prototype could be improved.
 
     - Source and target languages must be flipped to get the right tags.
 
+1. Better tools for debugging pipelines of transforms.
+
 ### New features
 
 1. Automatic adjustment of task-mix schedule.

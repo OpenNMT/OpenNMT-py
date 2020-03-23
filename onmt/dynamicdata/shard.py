@@ -7,11 +7,13 @@ import random
 from .vocab import SimpleSharedVocabulary
 from .utils import *
 
+
 def open_for_reading(path):
     if path.endswith('.gz'):
         return gzip.open(path, 'tr')
     else:
         return open(path, 'r')
+
 
 def para_reader(input):
     with open_for_reading(input['src']) as src_fobj:
@@ -29,10 +31,12 @@ def para_reader(input):
                         input['tgt'], input['src']))
                 yield src, tgt
 
+
 def mono_reader(input):
     with open_for_reading(input['mono']) as fobj:
         for line in fobj:
             yield (line,)
+
 
 def check_exist(input):
     if 'mono' in input:
@@ -52,6 +56,7 @@ def pretokenize(stream, tokenizer):
             out.append(' '.join(tokens) + '\n')
         yield tuple(out)
 
+
 def predetokenize(stream):
     for tpl in stream:
         out = []
@@ -61,6 +66,7 @@ def predetokenize(stream):
             side = side.replace(UNDER, ' ')
             out.append(side)
         yield tuple(out)
+
 
 class DataSharder():
     def __init__(self, data_config,
@@ -101,7 +107,7 @@ class DataSharder():
 
     def shard_task(self, task):
         taskdir = os.path.join(self.data_config['meta']['shard']['rootdir'],
-                                task)
+                               task)
         os.makedirs(taskdir, exist_ok=True)
         task_type = self.data_config['tasks'][task]['type']
         if task_type == 'para':
@@ -113,7 +119,8 @@ class DataSharder():
         else:
             raise Exception('Unrecognized task type "{}"'.format(task_type))
         # create shards that are transparently reopened when filled
-        n_shards = self.data_config['tasks'][task].get('n_shards', self.initial_shards)
+        n_shards = self.data_config['tasks'][task].get('n_shards',
+                                                       self.initial_shards)
         self._open_shards = [
             shard_cls(self, task, taskdir, self.compress)
             for _ in range(n_shards)]
@@ -144,6 +151,7 @@ class DataSharder():
                 shard.write(tpl)
         for shard in self._open_shards:
             shard.close()
+
 
 class Shard():
     def __init__(self, sharder, task, taskdir, compress=False):
@@ -187,12 +195,14 @@ class Shard():
             for fobj in self.fobjs:
                 fobj.close()
 
+
 class MonoShard(Shard):
     def _open(self):
         self.fobjs = [self._open_single('mono')]
 
     def _write_helper(self, tpl):
         self.fobjs[0].write(tpl[0])
+
 
 class ParaShard(Shard):
     def _open(self):

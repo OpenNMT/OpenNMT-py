@@ -2,6 +2,7 @@ import torchtext
 from onmt.inputters import str2sortkey
 from onmt.inputters.inputter import max_tok_len, OrderedIterator
 
+
 class DatasetAdaptor():
     """ creates torchtext Datasets from TaskMixer buckets """
     def __init__(self, fields, has_tgt=True):
@@ -12,9 +13,9 @@ class DatasetAdaptor():
     def _select_fields(self):
         self.field_list = []
         for col in ('src', 'tgt', 'indices'):
-            #try:
-            #    field = self.fields[col].base_field
-            #except AttributeError:
+            # try:
+            #     field = self.fields[col].base_field
+            # except AttributeError:
             field = self.fields[col]
             self.field_list.append((col, field))
 
@@ -24,7 +25,8 @@ class DatasetAdaptor():
             if not self.has_tgt:
                 src, indices = tpl
                 tpl = (src, (), indices)
-            examples.append(torchtext.data.Example.fromlist(tpl, self.field_list))
+            examples.append(torchtext.data.Example.fromlist(
+                tpl, self.field_list))
         return examples
 
     def __call__(self, bucket):
@@ -33,14 +35,20 @@ class DatasetAdaptor():
             examples, self.field_list)
         return dataset
 
-def build_dataset_adaptor_iter(mixer, dataset_adaptor, opt, mb_callback, data_loader_step,
+
+def build_dataset_adaptor_iter(mixer,
+                               dataset_adaptor,
+                               opt,
+                               mb_callback,
+                               data_loader_step,
                                is_train=True):
     batch_size = opt.batch_size
     batch_size_fn = max_tok_len \
         if opt.batch_type == "tokens" else None
     batch_size_multiple = 8 if opt.model_dtype == "fp16" else 1
-    # data loader cannot access the gpu when CUDA Compute Mode is set to Exclusive_Process
-    # otherwise results in "CUDA error: all CUDA-capable devices are busy or unavailable"
+    # data loader cannot access the gpu when CUDA Compute Mode is set to
+    # Exclusive_Process. Otherwise results in
+    # "CUDA error: all CUDA-capable devices are busy or unavailable"
     #device = "cuda" if opt.gpu_ranks else "cpu"
     device = 'cpu'
     sort_key = str2sortkey[opt.data_type]
