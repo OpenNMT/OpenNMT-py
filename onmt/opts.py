@@ -615,9 +615,9 @@ def translate_opts(parser):
     group.add('--data_config', '-data_config',
               help='Path to data config yaml file. '
                    'Turns on dynamic data loader.')
-    group.add('--transform_group',
+    group.add('--transforms_from_task',
               help='Apply the same transforms as for the specified '
-                   'training data group.')
+                   'training task.')
     group.add('--data_type', '-data_type', default="text",
               help="Type of the source input. Options: [text|img].")
 
