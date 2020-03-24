@@ -1,186 +1,315 @@
-# OpenNMT-py: Open-Source Neural Machine Translation
+Dataloader with dynamicly sampled noise and task-mix scheduling
+===============================================================
 
-[![Build Status](https://travis-ci.org/OpenNMT/OpenNMT-py.svg?branch=master)](https://travis-ci.org/OpenNMT/OpenNMT-py)
-[![Run on FH](https://img.shields.io/badge/Run%20on-FloydHub-blue.svg)](https://floydhub.com/run?template=https://github.com/OpenNMT/OpenNMT-py)
+We contribute a replacement for the OpenNMT-py dataloader,
+with two new features: dynamicly sampled noise and task-mix scheduling.
+The implementation is intended as a prototype to start a discussion
+and hopefully to inform the design of a set of changes to the OpenNMT-py dataloader.
+The code functions, but is not polished enough to be merged to master outright.
 
-This is a [Pytorch](https://github.com/pytorch/pytorch)
-port of [OpenNMT](https://github.com/OpenNMT/OpenNMT),
-an open-source (MIT) neural machine translation system. It is designed to be research friendly to try out new ideas in translation, summary, image-to-text, morphology, and many other domains. Some companies have proven the code to be production ready.
+Why do we need sampling?
+------------------------
 
-We love contributions. Please consult the Issues page for any [Contributions Welcome](https://github.com/OpenNMT/OpenNMT-py/issues?q=is%3Aissue+is%3Aopen+label%3A%22contributions+welcome%22) tagged post. 
+The power of noise as a regularizer has been put to use in many methods advancing deep learning,
+such as dropout (Srivastava et al., 2014), label smoothing (Szegedy et al., 2015), and SwitchOut (Wang et al., 2018).
+Those three can be applied without changes to the dataloader.
+However, recently methods resulting in much larger changes to the sequence,
+such as subword regularization (Kudo, 2018), have been proposed.
+In subword regularization, the way in which words are segmented into subwords is resampled each time the word occurs.
+E.g. "unreasonable" might be segmented into "un + reasonable" once and "unreason + able" the next time, and "un + reason + able" a third time.
+When converted into numeric indices into the vocabulary, these representations are very different.
 
-<center style="padding: 40px"><img width="70%" src="http://opennmt.github.io/simple-attn.png" /></center>
+In our recent paper (Grönroos et al., 2020a) seek to improve Neural Machine Translation (NMT)
+into morphologically rich low-resource languages.
+We use a very small amount of parallel data (10000 sentence pairs is enough),
+but still reach a reasonable translation quality by making good use of
+abundant monolingual data, and parallel data in a related high-resource language pair.
 
-Before raising an issue, make sure you read the requirements and the documentation examples.
+Our method relies on two new features that we implement into OpenNMT-py:
 
-Unless there is a bug, please use the [Forum](http://forum.opennmt.net) or [Gitter](https://gitter.im/OpenNMT/OpenNMT-py) to ask questions.
+  1. For subword regularization and the denoising sequence autoencoder, 
+     we need the ability to sample slightly different versions each time an example is used in training.
+  2. For scheduled multi-task learning we need the ability to adjust the task mix during training.
+
+The task-mix scheduling is important in multilingual settings when different language pairs have different amounts of data,
+but can also be useful when mixing other types of data, such as
+different domains (oversampling the in-domain data),
+natural vs synthetic (e.g. back-translated) data,
+and auxiliary tasks (e.g. autoencoder).
+
+Current OpenNMT-py dataloader
+-----------------------------
+
+The current dataloader in OpenNMT-py is divided into two parts: preprocessing and training.
+During preprocessing, data is divided into shards that fit into memory.
+For each shard, a torchtext Dataset is created, hacked a bit, and saved to disk as a pickle.
+During training, these shards are loaded, numericalized, divided into minibatches, and padded to the same length,
+after which they are ready to be used.
+
+A large amount of work must be done externally prior to running the preprocessing
+
+    1. Cleaning and normalization.
+    2. Pretokenization and subword segmentation.
+    3. Oversampling data to achieve the desired mix (recently a new feature was introduced which allows a constant oversampling rate to be specified during preprocessing).
+    4. Shuffling the data.
+
+The current dataloader is to some extent an abuse of the torchtext library.
+This is partly due to bad design choices in torchtext, which make correct usage difficult and unintuitive.
+E.g. torchtext doesn't support non-toy-sized datasets that don't fit in memory at once,
+necessitating users of the library to write their own sharding solutions.
+
+Pickling Dataset objects is not an elegant solution, and doesn't accomplish very much.
+When written to disk, the data is tokenized, but still in symbolic (non-numericalized) form.
+There is some speed benefit over the use of plain text files,
+as the binary format is faster to read (no need to scan for newlines), and the cost of tokenization is paid in advance.
+
+Unfortunately there are many downsides.
+Every variation needs a separate preprocessing run, which takes up a lot of disk space.
+The problem is particulary severe for researchers doing experiments on different kinds of preprocessing, e.g. subword segmentation.
+In one of my experiments I had over a terabyte of redundant oversampled variants of the same data with different preprocessing.
+A constant mixing for corpora was recently introduced, but before that oversampling had to be done in preprocessing.
+
+Proposed alternative
+--------------------
+
+### Concepts
+
+**Input corpora**.
+Multiple input corpora can be used.
+During offline preprocessing, the corpora can be kept separated: there is no need to concatenate them into mixed files.
+As the transform processing pipeline is very powerful, the input corpora can stay as (or close to) raw text.
+In particular any variant processing steps that you want to experiment with should not be necessary to pre-apply offline.
+
+**Tasks**
+A task consists of a particular type of data that should all be treated in the same way.
+(Note that these were called "groups" in the original implementation. Old terminology may remain in some places).
+
+  - In multilingual training, different language pairs are separate tasks.
+  - To treat back-translated synthetic data differently from natural data (e.g. weight it differenly or prepend a special token),
+    the two are made into separate tasks.
+  - Adding an autoencoder auxiliary task requires a processing pipeline that is different from the main task.
+
+A task can use data from multiple input corpora, in which case they are mixed together during sharding,
+in such a way that each shard contains the same mix of input corpora.
+This avoids situations where shards are imbalanced, leading to a long time training on a single corpus.
+Examples from different tasks are mixed together during training, using a time-varying task-mix schedule.
+
+Tasks are either parallel or monolingual.
+This determines the type of the input corpora, either a separate file for source and target or a single file.
+After the processing pipeline is finished, examples from both types of task consist of a source and target side.
+More task types could be defined, e.g. for multimodal NMT.
+
+Tasks belong to either the training or the validation split.
+Processing for the validation data is controllable in the same way as for training.
+
+**Transforms**
+The processing pipeline consists of a series of transforms.
+The transforms can modify the data in powerful ways:
+make arbitrary changes to the sequence of tokens (including changing its length),
+duplicate monolingual data into a source and target side,
+or even filter out examples.
+
+### Config files
+
+The data and the transforms that should be applied to it are defined in separate dataloader configs, rather than as command line options.
+Command line options with the same flexibility would become very complex, and thus difficult to read and modify.
+
+An example sharding config can be found in `examples/dynamicdata.shard.ural.lowres18k.bt.yaml`.
+An example training config can be found in `examples/dynamicdata.train.ural.lowres18k.bt.jtokemprune16k.faster.mono3.noise2.seq2.yaml`.
+
+Note that the sharding config is a subset of the train config.
+The common parts need to match exactly.
+If only one training run is made, the training config can be used directly as the sharding config (the extra values are ignored).
+If the same sharding is used in many training runs, the separation of configs is necessary.
+
+#### Some details about the configs
+
+`meta.shard.pretokenize` and `meta.shard.predetokenize`: whether to run pyonmttok (or undo tokenization, for SentencePiece) when sharding. 
+This flexibility allows easily using either raw untokenized corpora and corpora that have been pretokenized because some offline preprocessing step needs it.
+
+`meta.train.name` determines where the transforms are saved. It is possible to use the same transforms with different mixing weights by making another training conf using the same name parameter. Ususally it should be unique, though.
+
+`meta.train.mixing_weight_schedule` determines after which number of minibatches the mixing weights should be adjusted. The `tasks.*.weight` parameters should be of length one longer than this.
+
+`meta.train.*` global parameters for the transforms, e.g. setting the amount of noise.
+
+`tasks.*.meta.src_lang` and `tasks.*.meta.trg_lang` are used by the `lang_prefix_both` transform to produce (target) language tokens. `tasks.*.meta.extra_prefix` can be used to mark synthetic data, such as in the back-translation task `enet_bt` in the example.
+
+`tasks.*.n_shards` allows overriding the number of shards for a single task. Useful if a task is low-resource.
+
+`tasks.*.share_inputs` allows a task to use the same inputs as another task, without the need to shard the data twice. This makes it possible to apply e.g. two different autoencoder tasks to the same monolingual data. In the example `mono_fi_taboo` has `share_inputs: mono_fi`. No inputs should be assigned directly to a task that uses `share_inputs`. 
+
+### Usage
+
+0. **Offline preprocessing:** e.g. cleaning, pretokenization.
+   This is an optional step. For computational reasons, anything non-stochastic that is not varied between experiments can be done offline in advance.
+1. **Sharding.** `onmt_preprocess_dynamicdata shard` uses the sharding config. The input corpora for each task are read, mixed together and divided into shards, in such a way that each shard gets the same mix of input corpora. The shards are plain text files. At the same time, a word vocabulary is computed.
+2. **Train segmentation model, determine vocabulary.** The segmentation model is trained in the same way as previously. The word vocabulary computed in the previous step can be used. It is important to determine all subwords that the segmentation model might use, in order to determine the NMT model vocabulary.
+3. **Setting up transforms.** `onmt_preprocess_dynamicdata vocab` The torchtext Field objects are created. Transforms are warmed up, e.g. precomputing a cache of segmentation alternatives for the most common words. This is currently important for translation speed (although saving the transforms in the model checkpoint file would solve this better).
+4. **Training.** `onmt_train_dynamicdata` uses the training conf.
+   During training, the shard ids of each task are shuffled and put into a queue.
+   When the queue runs out, it is transparently refilled and reshuffled.
+   Thus each task has its own infinite iterator and a separate epoch counter.
+   The next shard is loaded from disk, and the examples are shuffled.
+   Examples from the different tasks are mixed according to the current task-mix distribution.
+   A "bucket" of examples is drawn in this way.
+   A new torchtext Dataset is created from this bucket.
+   The examples are turned into numbers (indices into the vocabulary), divided into minibatches, and padded to the same length.
+   After this they are ready to be sent to the trainer process.
+
+### Example
+
+![Preprocessing and training steps](dyndata.png)
+![Example transforms](transforms.png)
+
+### Available transforms
+
+- `duplicate_mono`: Takes in monolingual data, duplicates it into a source and target side.
+- `reorder`: (could also be called: slightly shuffle) Slightly reorder the **source** side.
+  The maximum distance a token can move determined by the parameter `reorder_max_dist`.
+- `drop`: (could also be called: delete). Random token deletion on the **source** side.
+  Strength controlled by the `drop_temperature` parameter (negated exponent: bigger numbers cause less drops).
+- `switchout`: Apply SwitchOut to both source and target sides.
+  Strength controlled by the `switchout_temperature` parameter.
+- `wb_noise`: Add or remove word boundaries on both source and target sides.
+  Strength controlled by the `wb_noise_temperature` parameter.
+- `insertion`: Random token insertion on both source and target sides.
+  Strength controlled by the `insertion_temperature` parameter.
+- `lang_prefix_both`: Add both a source and target language token, determined from the task metadata,
+  plus optionally a third marker if the `tasks.*.meta.extra_prefix` parameter is set.
+  E.g. "<FROM_en> <TO_fi> <BT>".
+- `morfessor_em`: Apply Morfessor EM+Prune segmentation to both source and target sides. Input should be pretokenized to separate punctuation from words.
+  The parameter `seg_n_samples` controls the length of the n-best list for sampling. To turn off subword regularization, set to 1. `seg_theta` controls the temperature of the sampling.
+- `morfessor_em_taboo`: Apply taboo segmentation using Morfessor EM+Prune. Takes in monolingual data, outputs the same data in two segmentation versions that don't share (multi-character) subwords, as source and target.
+- `morfessor_em_taboo_reordered`: A special variant of taboo segmentation for use together with reordering. Takes in a source and a target, which must contain the same tokens (but may be in different order).
+- `sentencepiece`: Apply SentencePiece segmentation to both source and target sides.
+  Input should **not** be pretokenized. If it is, shard with `predetokenize`.
+  Same parameters as `morfessor_em`.
+- `filter_too_long`: Filters out too long examples. This must be redone after segmentation, which may increase the length of the sequence substantially. Parameter `max_len` controls the maximum length.
+
+More transforms can easily be added as needed.
 
 
-Table of Contents
-=================
-  * [Full Documentation](http://opennmt.net/OpenNMT-py/)
-  * [Requirements](#requirements)
-  * [Features](#features)
-  * [Quickstart](#quickstart)
-  * [Run on FloydHub](#run-on-floydhub)
-  * [Acknowledgements](#acknowledgements)
-  * [Citation](#citation)
+### Under the hood
 
-## Requirements
+#### How the mixing works
 
-Install `OpenNMT-py` from `pip`:
-```bash
-pip install OpenNMT-py
-```
+During sharding vs during training. During sharding: corpora within each task are divided evenly into the shards. This is a constant mix without oversampling.
+During training: tasks are mixed according to the task-mix weight schedule. A single minibatch can contain examples from many different tasks.
 
-or from the sources:
-```bash
-git clone https://github.com/OpenNMT/OpenNMT-py.git
-cd OpenNMT-py
-python setup.py install
-```
+Note that the task-mix weight schedule currently counts data minibatches, not parameter updates.
+This is relevant when using gradient accumulation or multi-GPU training.
+E.g. with gradient accumulated over 4 minibatches, to change mixing distribution after 40k parameter updates the training conf mixing weight schedule needs to be set to [160000].
 
-Note: If you have MemoryError in the install try to use `pip` with `--no-cache-dir`.
+#### Heavy processing in the data loader
 
-*(Optionnal)* some advanced features (e.g. working audio, image or pretrained models) requires extra packages, you can install it with:
-```bash
-pip install -r requirements.opt.txt
-```
+Some transforms, such as subword segmentation, may involve heavy computation.
+To ensure that the GPU is kept at maximum capacity,
+we move the dataloader to a separate process and use a torch.multiprocessing queue to communicate the minibatches to the trainer process. This setup is already implemented in OpenNMT-py for multi-GPU training.
 
-Note:
+(Note: our cluster is configured with the GPU compute mode set to "Exclusive Process", which means that only one process can access the GPU. Multi-threading would work, but not multi-process. To ensure that only the trainer process accesses the GPU, the current implementation transfers minibatches as CPU tensors, which are sent to the GPU by the trainer. This is less efficient than sending them in the data loader, after which the inter-process communication is very light.)
 
-- some features require Python 3.5 and after (eg: Distributed multigpu, entmax)
-- we currently only support PyTorch 1.2 (should work with 1.1)
+#### The subword vocabulary
 
-## Features
+The subword vocabulary must be specified explicitly.
+It can not be determined from a segmented corpus,
+because if the segmentation is stochastic it is not guaranteed that all subwords occur in a single epoch.
+Also, the data is only segmented when needed, but the vocabulary must be fixed at start of training.
 
-- [Seq2Seq models (encoder-decoder) with multiple RNN cells (lstm/gru) and attention (dotprod/mlp) types](http://opennmt.net/OpenNMT-py/options/train.html#model-encoder-decoder)
-- [Transformer models](http://opennmt.net/OpenNMT-py/FAQ.html#how-do-i-use-the-transformer-model)
-- [Copy and Coverage Attention](http://opennmt.net/OpenNMT-py/options/train.html#model-attention)
-- [Pretrained Embeddings](http://opennmt.net/OpenNMT-py/FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove)
-- [Source word features](http://opennmt.net/OpenNMT-py/options/train.html#model-embeddings)
-- [Image-to-text processing](http://opennmt.net/OpenNMT-py/im2text.html)
-- [Speech-to-text processing](http://opennmt.net/OpenNMT-py/speech2text.html)
-- [TensorBoard logging](http://opennmt.net/OpenNMT-py/options/train.html#logging)
-- [Multi-GPU training](http://opennmt.net/OpenNMT-py/FAQ.html##do-you-support-multi-gpu)
-- [Data preprocessing](http://opennmt.net/OpenNMT-py/options/preprocess.html)
-- [Inference (translation) with batching and beam search](http://opennmt.net/OpenNMT-py/options/translate.html)
-- Inference time loss functions.
-- [Conv2Conv convolution model]
-- SRU "RNNs faster than CNN" paper
-- Mixed-precision training with [APEX](https://github.com/NVIDIA/apex), optimized on [Tensor Cores](https://developer.nvidia.com/tensor-cores)
-
-## Quickstart
-
-[Full Documentation](http://opennmt.net/OpenNMT-py/)
+Transforms are able to add their own special tokens to the vocabulary,
+e.g. target language token or back-translation marker.
 
 
-### Step 1: Preprocess the data
+Potential improvements / 2do
+----------------------------
 
-```bash
-onmt_preprocess -train_src data/src-train.txt -train_tgt data/tgt-train.txt -valid_src data/src-val.txt -valid_tgt data/tgt-val.txt -save_data data/demo
-```
+There are multiple ways in which this prototype could be improved.
 
-We will be working with some example data in `data/` folder.
+### Usability
 
-The data consists of parallel source (`src`) and target (`tgt`) data containing one sentence per line with tokens separated by a space:
+1. More uniform interface for different segmentation methods.
 
-* `src-train.txt`
-* `tgt-train.txt`
-* `src-val.txt`
-* `tgt-val.txt`
+    - BPE is currently pre-applied offline. BPE is deterministic, and thus not well suited for this work.
+    - SentencePiece does not support pretokenized input. This requires carefulness with the `pretokenize` or `predetokenize` parameters (Not even checked currently), and resharding.
 
-Validation files are required and used to evaluate the convergence of the training. It usually contains no more than 5000 sentences.
+1. Templating, e.g. jinja2, for applying the same schedule to different data sets.
+
+    - Alternatively could have split data and transforms into separate confs, but decided to avoid splitting it up too much
+
+1. Cleaner structure of sharded directory.
+1. Ability to reuse already sharded corpora, without resorting to symlink-hacks.
+
+    - Usually preferable to shard everything once and then turn off certain tasks by setting their weight to zero,
+      but this is not always possible e.g. when adding back-translation later in the project.
+
+1. Automatically determine input corpus sizes.
+
+    - The corpus size is used for the balanced mixing of corpora within a task.
+    - It could also be used to ensure shards of even size, but this is not yet implemented.
+
+1. Some parameters are currently not possible to override in train conf.
+
+    - Length of n-best list for sampling (prepopulated during vocabulary construction).
+    - Should at least warn if attempting to change the value (now just silently ignored).
+
+1. Communicate the gradient update count from trainer back to data producer, so that it can be used to control mix schedule.
+1. Saving transforms in the model checkpoint file
+
+    - Currently the original saved transforms must be available when translating (the model is not self-sufficient).
+
+1. Making the conf for the reverse model (for back-translation) requires more changes than just setting the reverse flag
+
+    - Source and target languages must be flipped to get the right tags.
+
+1. Better tools for debugging pipelines of transforms.
+
+### New features
+
+1. Automatic adjustment of task-mix schedule.
+
+    - Computing the loss separately for each task (task-specific validation sets)
+    - Adjusting the task-mix distribution as a function of the task losses.
+
+1. Per-task parameters for transforms (currently global)
+
+    - E.g. different amount of noise for different tasks.
+
+1. More flexibility, e.g. non-shared vocabulary, factored representation (onmt calls them features)
+1. Translate-time target is not currently supported (OpenNMT wants to read src and tgt separately)
+
+    - Make a hacky thing that buffers the joint data and exposes it via two objects with a read method.
+
+### Tighter integration
+
+1. Staying closer to current OpenNMT.
+    - Using torchtext preprocessing function to apply the transforms. Downside: each field is preprocessed separately, so they cannot interact in any way. In particular this solution cannot split one field into many, which is required for taboo segmentation. However, elegance and maintainability should perhaps be considered more important than flexibility here.
+1. torchtext could be extended to support sharding or a streaming interface
+1. torch.utils.data.DataLoader
+
+    - Supports loading data in a separate process.
+    - It is not used by OpenNMT. Also a bit unclear how it interfaces with torchtext.
 
 
-After running the preprocessing, the following files are generated:
 
-* `demo.train.pt`: serialized PyTorch file containing training data
-* `demo.valid.pt`: serialized PyTorch file containing validation data
-* `demo.vocab.pt`: serialized PyTorch file containing vocabulary data
+References
+----------
 
+Grönroos SA, Virpioja S, Kurimo M (2020a)
+    Transfer learning and subword sampling for asymmetric-resource one-to-many neural translation. In review.
 
-Internally the system never touches the words themselves, but uses these indices.
+Grönroos SA, Virpioja S, Kurimo M (2020b)
+    Morfessor EM+Prune: Improved subword segmentation with expectation maximization and pruning.
+    In: Proceedings of the 12th Language Resources and Evaluation Conference, ELRA, Marseilles, France, to appear
+    [arXiv: 2003.03131](https://arxiv.org/abs/2003.03131)
 
-### Step 2: Train the model
+Kudo T (2018)
+     Subword regularization: Improving neural network translation models with multiple subword candidates. [arXiv: 1804.10959](http://arxiv.org/abs/1804.10959)
 
-```bash
-onmt_train -data data/demo -save_model demo-model
-```
+Srivastava N, Hinton G, Krizhevsky A, Sutskever I, Salakhutdinov R (2014)
+    [Dropout: a simple way to prevent neural networks from overfitting.](https://dl.acm.org/doi/abs/10.5555/2627435.2670313) The Journal of Machine Learning Research 15(1):1929–1958
 
-The main train command is quite simple. Minimally it takes a data file
-and a save file.  This will run the default model, which consists of a
-2-layer LSTM with 500 hidden units on both the encoder/decoder.
-If you want to train on GPU, you need to set, as an example:
-CUDA_VISIBLE_DEVICES=1,3
-`-world_size 2 -gpu_ranks 0 1` to use (say) GPU 1 and 3 on this node only.
-To know more about distributed training on single or multi nodes, read the FAQ section.
+Szegedy C, Vanhoucke V, Ioffe S, Shlens J, Wojna Z (2015)
+    Rethinking the inception architecture for computer vision. [arXiv: 1512.00567](http://arxiv.org/abs/1512.00567)
 
-### Step 3: Translate
-
-```bash
-onmt_translate -model demo-model_acc_XX.XX_ppl_XXX.XX_eX.pt -src data/src-test.txt -output pred.txt -replace_unk -verbose
-```
-
-Now you have a model which you can use to predict on new data. We do this by running beam search. This will output predictions into `pred.txt`.
-
-!!! note "Note"
-    The predictions are going to be quite terrible, as the demo dataset is small. Try running on some larger datasets! For example you can download millions of parallel sentences for [translation](http://www.statmt.org/wmt16/translation-task.html) or [summarization](https://github.com/harvardnlp/sent-summary).
-
-## Alternative: Run on FloydHub
-
-[![Run on FloydHub](https://static.floydhub.com/button/button.svg)](https://floydhub.com/run?template=https://github.com/OpenNMT/OpenNMT-py)
-
-Click this button to open a Workspace on [FloydHub](https://www.floydhub.com/?utm_medium=readme&utm_source=opennmt-py&utm_campaign=jul_2018) for training/testing your code.
-
-
-## Pretrained embeddings (e.g. GloVe)
-
-Please see the FAQ: [How to use GloVe pre-trained embeddings in OpenNMT-py](http://opennmt.net/OpenNMT-py/FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove)
-
-## Pretrained Models
-
-The following pretrained models can be downloaded and used with translate.py.
-
-http://opennmt.net/Models-py/
-
-## Acknowledgements
-
-OpenNMT-py is run as a collaborative open-source project.
-The original code was written by [Adam Lerer](http://github.com/adamlerer) (NYC) to reproduce OpenNMT-Lua using Pytorch.
-
-Major contributors are:
-[Sasha Rush](https://github.com/srush) (Cambridge, MA)
-[Vincent Nguyen](https://github.com/vince62s) (Ubiqus)
-[Ben Peters](http://github.com/bpopeters) (Lisbon)
-[Sebastian Gehrmann](https://github.com/sebastianGehrmann) (Harvard NLP)
-[Yuntian Deng](https://github.com/da03) (Harvard NLP)
-[Guillaume Klein](https://github.com/guillaumekln) (Systran)
-[Paul Tardy](https://github.com/pltrdy) (Ubiqus / Lium)
-[François Hernandez](https://github.com/francoishernandez) (Ubiqus)
-[Jianyu Zhan](http://github.com/jianyuzhan) (Shanghai)
-[Dylan Flaute](http://github.com/flauted (University of Dayton)
-and more !
-
-OpentNMT-py belongs to the OpenNMT project along with OpenNMT-Lua and OpenNMT-tf.
-
-## Citation
-
-[OpenNMT: Neural Machine Translation Toolkit](https://arxiv.org/pdf/1805.11462)
-
-[OpenNMT technical report](https://doi.org/10.18653/v1/P17-4012)
-
-```
-@inproceedings{opennmt,
-  author    = {Guillaume Klein and
-               Yoon Kim and
-               Yuntian Deng and
-               Jean Senellart and
-               Alexander M. Rush},
-  title     = {Open{NMT}: Open-Source Toolkit for Neural Machine Translation},
-  booktitle = {Proc. ACL},
-  year      = {2017},
-  url       = {https://doi.org/10.18653/v1/P17-4012},
-  doi       = {10.18653/v1/P17-4012}
-}
-```
+Wang X, Pham H, Dai Z, Neubig G (2018)
+    SwitchOut: an efficient data augmentation algorithm for neural machine translation. [arXiv: 1808.07512](https://arxiv.org/abs/1808.07512)
