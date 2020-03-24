@@ -645,6 +645,8 @@ def translate_opts(parser):
               help="Report alignment for each translation.")
     group.add('--report_time', '-report_time', action='store_true',
               help="Report some translation time metrics")
+    group.add('--dump_input_encoding', '-dump_input_encoding', action='store_true',
+              help="Dump sentence encodings to a file")
 
     # Options most relevant to summarization.
     group.add('--dynamic_dict', '-dynamic_dict', action='store_true',

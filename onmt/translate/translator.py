@@ -38,7 +38,8 @@ def build_translator(opt, report_score=True, logger=None, out_file=None):
         out_file=out_file,
         report_align=opt.report_align,
         report_score=report_score,
-        logger=logger
+        logger=logger,
+        dump_input_encoding=opt.dump_input_encoding
     )
     return translator
 
@@ -98,6 +99,7 @@ class Translator(object):
             scoring/reranking object.
         out_file (TextIO or codecs.StreamReaderWriter): Output file.
         report_score (bool) : Whether to report scores
+        dump_input_encoding (bool): Whether to dump the sentence encoddings to a file
         logger (logging.Logger or NoneType): Logger.
     """
 
@@ -130,7 +132,8 @@ class Translator(object):
             report_align=False,
             report_score=True,
             logger=None,
-            seed=-1):
+            seed=-1,
+            dump_input_encoding=False):
         self.model = model
         self.fields = fields
         tgt_field = dict(self.fields)["tgt"].base_field
@@ -197,6 +200,7 @@ class Translator(object):
                 "scores": [],
                 "log_probs": []}
 
+        self.dump_input_encoding = dump_input_encoding
         set_random_seed(seed, self._use_cuda)
 
     @classmethod
@@ -210,7 +214,8 @@ class Translator(object):
             out_file=None,
             report_align=False,
             report_score=True,
-            logger=None):
+            logger=None,
+            dump_input_encoding=False):
         """Alternate constructor.
 
         Args:
@@ -259,7 +264,8 @@ class Translator(object):
             report_align=report_align,
             report_score=report_score,
             logger=logger,
-            seed=opt.seed)
+            seed=opt.seed,
+            dump_input_encoding=opt.dump_input_encoding)
 
     def _log(self, msg):
         if self.logger:
@@ -354,6 +360,11 @@ class Translator(object):
             batch_data = self.translate_batch(
                 batch, data.src_vocabs, attn_debug
             )
+            if self.dump_input_encoding:
+                for sent_emb in batch_data:
+                    self.out_file.write(' '.join([str(val.item()) for val in sent_emb]) + "\n")
+                    self.out_file.flush()
+                continue
             translations = xlation_builder.from_batch(batch_data)
 
             for trans in translations:
@@ -645,6 +656,14 @@ class Translator(object):
 
         # (1) Run the encoder on the src.
         src, enc_states, memory_bank, src_lengths = self._run_encoder(batch)
+        if self.dump_input_encoding:
+            condensed_last_hidden_output = enc_states[0]
+            rnn_obj = self.model.encoder._modules["rnn"]
+            num_directions = 2 if rnn_obj.bidirectional is True else 1
+            hidden_state_tensor = condensed_last_hidden_output.view(rnn_obj.num_layers, num_directions, batch_size, rnn_obj.hidden_size)
+            last_hidden_output = hidden_state_tensor[rnn_obj.num_layers-1]
+            last_hidden_output = last_hidden_output.view(batch_size, num_directions*rnn_obj.hidden_size)
+            return last_hidden_output
         self.model.decoder.init_state(src, memory_bank, enc_states)
 
         results = {
