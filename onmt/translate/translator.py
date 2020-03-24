@@ -99,7 +99,7 @@ class Translator(object):
             scoring/reranking object.
         out_file (TextIO or codecs.StreamReaderWriter): Output file.
         report_score (bool) : Whether to report scores
-        dump_input_encoding (bool): Whether to dump the sentence encoddings to a file
+        dump_input_encoding (bool): Whether to dump sentence encoddings
         logger (logging.Logger or NoneType): Logger.
     """
 
@@ -362,7 +362,8 @@ class Translator(object):
             )
             if self.dump_input_encoding:
                 for sent_emb in batch_data:
-                    self.out_file.write(' '.join([str(val.item()) for val in sent_emb]) + "\n")
+                    self.out_file.write(' '.join([str(val.item()) for val
+                                        in sent_emb]) + "\n")
                     self.out_file.flush()
                 continue
             translations = xlation_builder.from_batch(batch_data)
@@ -657,13 +658,15 @@ class Translator(object):
         # (1) Run the encoder on the src.
         src, enc_states, memory_bank, src_lengths = self._run_encoder(batch)
         if self.dump_input_encoding:
-            condensed_last_hidden_output = enc_states[0]
             rnn_obj = self.model.encoder._modules["rnn"]
             num_directions = 2 if rnn_obj.bidirectional is True else 1
-            hidden_state_tensor = condensed_last_hidden_output.view(rnn_obj.num_layers, num_directions, batch_size, rnn_obj.hidden_size)
-            last_hidden_output = hidden_state_tensor[rnn_obj.num_layers-1]
-            last_hidden_output = last_hidden_output.view(batch_size, num_directions*rnn_obj.hidden_size)
-            return last_hidden_output
+            hidden_state = enc_states[0].view(
+                rnn_obj.num_layers, num_directions, batch_size,
+                rnn_obj.hidden_size)
+            last_hidden = hidden_state[rnn_obj.num_layers-1]
+            last_hidden = last_hidden.view(
+                batch_size, num_directions*rnn_obj.hidden_size)
+            return last_hidden
         self.model.decoder.init_state(src, memory_bank, enc_states)
 
         results = {
