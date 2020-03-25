@@ -163,9 +163,8 @@ def yield_translate(files, task, transforms):
 
 
 def yield_debug(files, task, transforms, is_train):
-    for tpl in zip(files):
-        si = TrainShardIterator(task, tpl, transforms)
-        yield from si(is_train=is_train)
+    si = TrainShardIterator(task, files, transforms)
+    yield from si(is_train=is_train)
 
 
 class TransformReader():

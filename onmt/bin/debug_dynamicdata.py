@@ -20,21 +20,31 @@ def _get_parser():
 
     parser.add('-config', '--config', required=False,
                is_config_file_arg=True, help='config file path')
-    group.add('--data_config', '-data_config',
+    parser.add('--data_config', '-data_config',
               help='Path to data config yaml file. '
                    'Turns on dynamic data loader.')
-    group.add('--transforms_from_task',
+    parser.add('--transforms_from_task',
               help='Apply the same transforms as for the specified '
                    'training task.')
-    group.add('--data_type', '-data_type', default="text",
+    parser.add('--data_type', '-data_type', default="text",
               help="Type of the source input. Options: [text|img].")
-    group.add('--src', '-src', default=None, help="Source input file")
-    group.add('--tgt', '-tgt', default=None, help="Target input file")
-    group.add('--mono', '-mono', default=None, help="Monolingual input file")
-    group.add('--src_output', '-src_output', help="Source output file")
-    group.add('--tgt_output', '-tgt_output', help="Target output file")
-    group.add('--is_valid', '-is_valid',
+    parser.add('--src', '-src', default=None, help="Source input file")
+    parser.add('--tgt', '-tgt', default=None, help="Target input file")
+    parser.add('--mono', '-mono', default=None, help="Monolingual input file")
+    parser.add('--src_output', '-src_output', required=True, help="Source output file")
+    parser.add('--tgt_output', '-tgt_output', required=True, help="Target output file")
+    parser.add('--is_valid', '-is_valid',
               help="Preprocess in validation mode (instead of train)")
+
+    group = parser.add_argument_group('Logging')
+    group.add('--verbose', '-verbose', action="store_true",
+              help='Print scores and predictions for each sentence')
+    group.add('--log_file', '-log_file', type=str, default="",
+              help="Output logs to a file under this path.")
+    group.add('--log_file_level', '-log_file_level', type=str,
+              action=opts.StoreLoggingLevelAction,
+              choices=opts.StoreLoggingLevelAction.CHOICES,
+              default="0")
 
     return parser
 
@@ -43,7 +53,7 @@ def process(opt):
     logger = init_logger(opt.log_file)
     assert opt.data_config is not None
     if opt.mono is not None:
-        assert all(x is None) for x in (opt.src, opt.tgt)
+        assert all(x is None for x in (opt.src, opt.tgt))
         files = [opt.mono]
     else:
         files = [opt.src, opt.tgt]
@@ -55,8 +65,12 @@ def process(opt):
     set_train_opts(data_config, transforms)
     fields = load_fields(data_config)
     task_transforms = transforms[transforms_from_task]
-    for tpl in yield_debug(files, transforms_from_task, task_transforms, is_train=not opt.is_valid):
-        print(tpl)
+    with open(opt.src_output, 'w') as src_out, \
+         open(opt.tgt_output, 'w') as tgt_out:
+        for tpl in yield_debug(files, transforms_from_task, task_transforms, is_train=not opt.is_valid):
+            src, tgt, idx = tpl
+            print(' '.join(src), file=src_out)
+            print(' '.join(tgt), file=tgt_out)
 
 
 def main():
