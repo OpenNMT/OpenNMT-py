@@ -586,6 +586,39 @@ class SentencepieceTransform(SimpleTransform):
         self.warm_up()
 
 
+class DeterministicSegmentationTransform(SimpleTransform):
+    def __init__(self, data_config):
+        super().__init__(data_config)
+        self.data_config = data_config
+        self.mapping = None
+        self.mapping_path = \
+            self.data_config['meta']['train']['segmentation_model']
+        n_samples = data_config['meta']['train'].get(
+            'seg_n_samples', 1)
+        if n_samples != 1:
+            raise Exception(
+                'DeterministicSegmentationTransform requires seg_n_samples=1,'
+                ' not {}'.format(n_samples))
+
+    def warm_up(self, vocabs=None):
+        # load the word to segmentation mapping
+        # format: "<word> <tab> <morph1> <space> ... <morphN>"
+        self.mapping = {}
+        with open(self.mapping_path, 'r') as lines:
+            for line in lines:
+                word, seg = line.strip().split(None, 1)
+                seg = tuple(seg.split(' '))
+                self.mapping[word] = seg
+
+    def apply(self, tpl, task, is_train=True):
+        out = []
+        for tokens in tpl:
+            for token in tokens:
+                # intentionally die if token not in mapping
+                out.append(self.mapping[token])
+        return tuple(out)
+
+
 class SampleCache(object):
     def __init__(self, model, n_samples=5,
                  addcount=0, theta=0.5, maxlen=30):
@@ -672,6 +705,7 @@ DEFAULT_TRANSFORMS = {
     'morfessor_em_taboo': MorfessorEmTransformModel,
     'morfessor_em_taboo_reordered': MorfessorEmTransformModel,
     'sentencepiece': SentencepieceTransform,
+    'deterministic_segmentation': DeterministicSegmentationTransform,
     'filter_too_long': FilterTooLongTransform,
 }
 
