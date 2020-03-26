@@ -613,9 +613,11 @@ class DeterministicSegmentationTransform(SimpleTransform):
     def apply(self, tpl, task, is_train=True):
         out = []
         for tokens in tpl:
+            mapped = []
             for token in tokens:
                 # intentionally die if token not in mapping
-                out.append(self.mapping[token])
+                mapped.extend(self.mapping[token])
+            out.append(tuple(mapped))
         return tuple(out)
 
 
