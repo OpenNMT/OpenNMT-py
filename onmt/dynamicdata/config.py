@@ -84,9 +84,19 @@ def _task_defaults(data_config):
 def read_data_config(data_config_file):
     with open(data_config_file, 'r') as fobj:
         data_config = yaml.safe_load(fobj)
+    return process_config(data_config)
+
+
+def data_config_from_string(string):
+    data_config = yaml.safe_load(string)
+    return process_config(data_config)
+
+
+def process_config(data_config, template=False):
     _inverse_tasks(data_config)
-    _normalize_sizes(data_config)
-    _all_transforms(data_config)
+    if not template:
+        _normalize_sizes(data_config)
+        _all_transforms(data_config)
     _task_defaults(data_config)
     # validate_schema(data_config)
     return data_config
@@ -133,6 +143,20 @@ def sharding_only(data_config):
     for key in data_config:
         _filter_config(data_config, sub_config, [key], rules)
     _remove_shared_inputs(sub_config)
+    return sub_config
+
+
+def remove_generated(data_config):
+    """ removes generated keys from config """
+    rules = (
+             (('meta',), 'keep'),
+             (('inputs',), 'keep'),
+             (('tasks', None, '_inputs',), 'drop'),
+             (('_transforms',), 'drop'),
+            )
+    sub_config = {}
+    for key in data_config:
+        _filter_config(data_config, sub_config, [key], rules)
     return sub_config
 
 
@@ -183,6 +207,12 @@ def verify_shard_config(data_config):
     for task in stored_shard_config['tasks']:
         if '_inputs' in stored_shard_config['tasks'][task]:
             stored_shard_config['tasks'][task]['_inputs'].sort()
+    for inp in stored_shard_config['inputs']:
+        if 'size' in stored_shard_config['inputs'][inp]:
+            del stored_shard_config['inputs'][inp]['size']
+    for inp in shard_config['inputs']:
+        if 'size' in shard_config['inputs'][inp]:
+            del shard_config['inputs'][inp]['size']
     if not shard_config == stored_shard_config:
         old, new = dict_diff(stored_shard_config, shard_config)
         raise Exception(
