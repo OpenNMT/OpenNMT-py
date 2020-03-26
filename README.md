@@ -1,15 +1,17 @@
 ### Usage summary
 
+```
 # 0. Offline preprocessing
 # 1. Sharding
-`onmt_preprocess_dynamicdata shard $dataconfig`
+onmt_preprocess_dynamicdata shard $dataconfig
 # 2. Training segmentation model
 # 3. Setting up transforms
-`onmt_preprocess_dynamicdata vocab $dataconfig`
+onmt_preprocess_dynamicdata vocab $dataconfig
 # 4. Training translation system
-`onmt_train_dynamicdata --config $cliconfig --data_config $dataconfig`
+onmt_train_dynamicdata --config $cliconfig --data_config $dataconfig
 # 5. Translating
-`onmt_translate --config $cliconfig --data_config $dataconfig --transforms_from_task $task`
+onmt_translate --config $cliconfig --data_config $dataconfig --transforms_from_task $task
+```
 
 
 Dataloader with dynamicly sampled noise and task-mix scheduling
