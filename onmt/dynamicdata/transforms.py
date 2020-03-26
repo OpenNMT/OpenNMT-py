@@ -560,7 +560,8 @@ class SentencepieceTransform(SimpleTransform):
         self.theta = data_config['meta']['train'].get(
             'seg_theta', 0.5)
         if data_config['meta']['shard'].get('pretokenize', False):
-            raise Exception('SentencepieceTransform should not be used with "pretokenize"')
+            raise Exception(
+                'SentencepieceTransform should not be used with "pretokenize"')
         if not data_config['meta']['shard'].get('predetokenize', False):
             logger.warn(
                 'SentencepieceTransform used without "predetokenize". '
@@ -631,14 +632,14 @@ class DeterministicSegmentationTransform(SimpleTransform):
 class SampleCache(object):
     def __init__(self, model, n_samples=5,
                  addcount=0, theta=0.5, maxlen=30):
-            self.model = model
-            self.n_samples = n_samples
-            self.addcount = addcount
-            self.theta = theta
-            self.maxlen = maxlen
-            self.cache = {}
-            self.hits = 0
-            self.misses = 0
+        self.model = model
+        self.n_samples = n_samples
+        self.addcount = addcount
+        self.theta = theta
+        self.maxlen = maxlen
+        self.cache = {}
+        self.hits = 0
+        self.misses = 0
 
     def segment(self, compound):
         if compound not in self.cache:
