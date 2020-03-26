@@ -29,7 +29,7 @@ class TaskEpoch():
         data_task = self.data_config['tasks'][task].get('share_inputs', task)
         self.taskdir = os.path.join(
             self.data_config['meta']['shard']['rootdir'],
-            data_task)
+            'shards', data_task)
         self.task_type = self.data_config['tasks'][task]['type']
         if self.task_type == 'para':
             self.sides = ('src', 'tgt')

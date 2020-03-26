@@ -47,7 +47,7 @@ class Vocabulary():
     def save_all(self, segmentation='words'):
         vocabdir = os.path.join(
             self.data_config['meta']['shard']['rootdir'],
-            segmentation)
+            'transforms', segmentation)
         os.makedirs(vocabdir, exist_ok=True)
         for key in self.tokens:
             path = os.path.join(vocabdir, '{}.vocab'.format(key))
@@ -64,7 +64,7 @@ class Vocabulary():
             segmentation = self.data_config['meta']['train']['name']
         path = os.path.join(
             self.data_config['meta']['shard']['rootdir'],
-            segmentation,
+            'transforms', segmentation,
             '{}.vocab'.format(key))
         return path
 
@@ -155,12 +155,10 @@ def save_fields(data_config, fields):
     segmentation = data_config['meta']['train']['name']
     vocabdir = os.path.join(
         data_config['meta']['shard']['rootdir'],
-        segmentation)
+        'transforms', segmentation)
     os.makedirs(vocabdir, exist_ok=True)
     path = os.path.join(
-        data_config['meta']['shard']['rootdir'],
-        segmentation,
-        'fields.pt')
+        vocabdir, 'fields.pt')
     if os.path.exists(path):
         raise Exception('Refusing to clobber existing {}'.format(path))
     with open(path, 'wb') as fobj:
@@ -171,7 +169,7 @@ def load_fields(data_config):
     segmentation = data_config['meta']['train']['name']
     path = os.path.join(
         data_config['meta']['shard']['rootdir'],
-        segmentation,
+        'transforms', segmentation,
         'fields.pt')
     with open(path, 'rb') as fobj:
         fields = torch.load(fobj)
@@ -182,7 +180,7 @@ def save_transforms(data_config, transform_models, transforms):
     segmentation = data_config['meta']['train']['name']
     path = os.path.join(
         data_config['meta']['shard']['rootdir'],
-        segmentation,
+        'transforms', segmentation,
         'transforms.pt')
     if os.path.exists(path):
         raise Exception('Refusing to clobber existing {}'.format(path))
@@ -195,7 +193,7 @@ def load_transforms(data_config):
     segmentation = data_config['meta']['train']['name']
     path = os.path.join(
         data_config['meta']['shard']['rootdir'],
-        segmentation,
+        'transforms', segmentation,
         'transforms.pt')
     with open(path, 'rb') as fobj:
         transform_models = torch.load(fobj)

@@ -107,7 +107,7 @@ class DataSharder():
 
     def shard_task(self, task):
         taskdir = os.path.join(self.data_config['meta']['shard']['rootdir'],
-                               task)
+                               'shards', task)
         os.makedirs(taskdir, exist_ok=True)
         task_type = self.data_config['tasks'][task]['type']
         if task_type == 'para':
