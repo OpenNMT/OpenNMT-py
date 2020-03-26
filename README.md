@@ -1,3 +1,17 @@
+### Usage summary
+
+# 0. Offline preprocessing
+# 1. Sharding
+`onmt_preprocess_dynamicdata shard $dataconfig`
+# 2. Training segmentation model
+# 3. Setting up transforms
+`onmt_preprocess_dynamicdata vocab $dataconfig`
+# 4. Training translation system
+`onmt_train_dynamicdata --config $cliconfig --data_config $dataconfig`
+# 5. Translating
+`onmt_translate --config $cliconfig --data_config $dataconfig --transforms_from_task $task`
+
+
 Dataloader with dynamicly sampled noise and task-mix scheduling
 ===============================================================
 
@@ -111,23 +125,23 @@ or even filter out examples.
 
 ### Config files
 
-The data and the transforms that should be applied to it are defined in separate dataloader configs, rather than as command line options.
+The data and the transforms that should be applied to it are defined in separate dataloader configs (yaml format), rather than as command line options.
 Command line options with the same flexibility would become very complex, and thus difficult to read and modify.
 
-An example sharding config can be found in `examples/dynamicdata.shard.ural.lowres18k.bt.yaml`.
-An example training config can be found in `examples/dynamicdata.train.ural.lowres18k.bt.jtokemprune16k.faster.mono3.noise2.seq2.yaml`.
+An example sharding data config can be found in `examples/dynamicdata.shard.ural.lowres18k.bt.yaml`.
+An example training data config can be found in `examples/dynamicdata.train.ural.lowres18k.bt.jtokemprune16k.faster.mono3.noise2.seq2.yaml`.
 
-Note that the sharding config is a subset of the train config.
+Note that the sharding data config is a subset of the train data config.
 The common parts need to match exactly.
-If only one training run is made, the training config can be used directly as the sharding config (the extra values are ignored).
-If the same sharding is used in many training runs, the separation of configs is necessary.
+If only one training run is made, the training data config can be used directly as the sharding data config (the extra values are ignored).
+If the same sharding is used in many training runs, the separation of data configs is necessary.
 
 #### Some details about the configs
 
 `meta.shard.pretokenize` and `meta.shard.predetokenize`: whether to run pyonmttok (or undo tokenization, for SentencePiece) when sharding. 
 This flexibility allows easily using either raw untokenized corpora and corpora that have been pretokenized because some offline preprocessing step needs it.
 
-`meta.train.name` determines where the transforms are saved. It is possible to use the same transforms with different mixing weights by making another training conf using the same name parameter. Ususally it should be unique, though.
+`meta.train.name` determines where the transforms are saved. It is possible to use the same transforms with different mixing weights by making another training data config using the same name parameter. Ususally it should be unique, though.
 
 `meta.train.mixing_weight_schedule` determines after which number of minibatches the mixing weights should be adjusted. The `tasks.*.weight` parameters should be of length one longer than this.
 
@@ -143,19 +157,30 @@ This flexibility allows easily using either raw untokenized corpora and corpora 
 
 0. **Offline preprocessing:** e.g. cleaning, pretokenization.
    This is an optional step. For computational reasons, anything non-stochastic that is not varied between experiments can be done offline in advance.
-1. **Sharding.** `onmt_preprocess_dynamicdata shard` uses the sharding config. The input corpora for each task are read, mixed together and divided into shards, in such a way that each shard gets the same mix of input corpora. The shards are plain text files. At the same time, a word vocabulary is computed.
-2. **Train segmentation model, determine vocabulary.** The segmentation model is trained in the same way as previously. The word vocabulary computed in the previous step can be used. It is important to determine all subwords that the segmentation model might use, in order to determine the NMT model vocabulary.
-3. **Setting up transforms.** `onmt_preprocess_dynamicdata vocab` The torchtext Field objects are created. Transforms are warmed up, e.g. precomputing a cache of segmentation alternatives for the most common words. This is currently important for translation speed (although saving the transforms in the model checkpoint file would solve this better).
-4. **Training.** `onmt_train_dynamicdata` uses the training conf.
+1. **Sharding.** `onmt_preprocess_dynamicdata shard $dataconfig` uses the sharding data config. The input corpora for each task are read, mixed together and divided into shards, in such a way that each shard gets the same mix of input corpora. The shards are plain text files. At the same time, a word vocabulary is computed.
+2. **Training segmentation model, determining vocabulary.** The segmentation model is trained in the same way as previously. The word vocabulary computed in the previous step can be used. It is important to determine all subwords that the segmentation model might use, in order to determine the NMT model vocabulary.
+3. **Setting up transforms.** `onmt_preprocess_dynamicdata vocab $dataconfig` uses the training data config. The torchtext Field objects are created. Transforms are warmed up, e.g. precomputing a cache of segmentation alternatives for the most common words. This is currently important for translation speed (although saving the transforms in the model checkpoint file would solve this better).
+4. **Training.** `onmt_train_dynamicdata --config $cliconfig --data_config $dataconfig` uses the training data config.
    During training, the shard ids of each task are shuffled and put into a queue.
    When the queue runs out, it is transparently refilled and reshuffled.
    Thus each task has its own infinite iterator and a separate epoch counter.
    The next shard is loaded from disk, and the examples are shuffled.
+   The transforms are applied to the examples in the shard.
    Examples from the different tasks are mixed according to the current task-mix distribution.
    A "bucket" of examples is drawn in this way.
    A new torchtext Dataset is created from this bucket.
    The examples are turned into numbers (indices into the vocabulary), divided into minibatches, and padded to the same length.
    After this they are ready to be sent to the trainer process.
+5. **Translating.** `onmt_translate --config $cliconfig --data_config $dataconfig --transforms_from_task $task` uses the training data config.
+   In addition, the training task from which the preprocessing steps should be taken must be specified.
+
+New command line options:
+
+  - `--data_config` specifies the path to the training data config.
+  - The data config replaces the old data-specifying options `--train_src` etc, which should not be used.
+  - `--bucket_size` determines the size of data included in a torchtext Dataset object. May be adjusted to optimize memory consumption.
+  - `--transforms_from_task` at translate time, determines from which training task the preprocessing steps should be taken.
+
 
 ### Example
 
@@ -199,7 +224,7 @@ During training: tasks are mixed according to the task-mix weight schedule. A si
 
 Note that the task-mix weight schedule currently counts data minibatches, not parameter updates.
 This is relevant when using gradient accumulation or multi-GPU training.
-E.g. with gradient accumulated over 4 minibatches, to change mixing distribution after 40k parameter updates the training conf mixing weight schedule needs to be set to [160000].
+E.g. with gradient accumulated over 4 minibatches, to change mixing distribution after 40k parameter updates the mixing weight schedule in the training data config needs to be set to [160000].
 
 #### Heavy processing in the data loader
 
@@ -247,7 +272,7 @@ There are multiple ways in which this prototype could be improved.
     - The corpus size is used for the balanced mixing of corpora within a task.
     - It could also be used to ensure shards of even size, but this is not yet implemented.
 
-1. Some parameters are currently not possible to override in train conf.
+1. Some parameters are currently not possible to override in train data config.
 
     - Length of n-best list for sampling (prepopulated during vocabulary construction).
     - Should at least warn if attempting to change the value (now just silently ignored).
@@ -257,7 +282,7 @@ There are multiple ways in which this prototype could be improved.
 
     - Currently the original saved transforms must be available when translating (the model is not self-sufficient).
 
-1. Making the conf for the reverse model (for back-translation) requires more changes than just setting the reverse flag
+1. Making the data config for the reverse model (for back-translation) requires more changes than just setting the reverse flag
 
     - Source and target languages must be flipped to get the right tags.
 
