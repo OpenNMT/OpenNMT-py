@@ -12,6 +12,7 @@ import torchtext
 
 from scipy.special import softmax
 
+from onmt.utils.logging import logger
 from .vocab import Vocabulary
 from .utils import UNDER
 
@@ -558,6 +559,12 @@ class SentencepieceTransform(SimpleTransform):
             'seg_n_samples', -1)
         self.theta = data_config['meta']['train'].get(
             'seg_theta', 0.5)
+        if data_config['meta']['shard'].get('pretokenize', False):
+            raise Exception('SentencepieceTransform should not be used with "pretokenize"')
+        if not data_config['meta']['shard'].get('predetokenize', False):
+            logger.warn(
+                'SentencepieceTransform used without "predetokenize". '
+                'Make sure that the input is not tokenized.')
 
     def warm_up(self, vocabs=None):
         # load the segmentation model
