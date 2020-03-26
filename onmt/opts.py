@@ -128,6 +128,8 @@ def model_opts(parser):
               help="Type of context gate to use. "
                    "Do not select for no context gate.")
 
+    # The following options (bridge_extra_node to src_vocab) are used 
+    # for training with --encoder_type ggnn (Gated Graph Neural Network).
     group.add('--bridge_extra_node', '-bridge_extra_node',
               type=bool, default=True,
               help='Graph encoder bridges only extra node to decoder as input')
@@ -141,6 +143,8 @@ def model_opts(parser):
               help='Number of nodes in the graph encoder')
     group.add('--n_steps', '-n_steps', type=int, default=2,
               help='Number of steps to advance graph encoder')
+    # The ggnn uses src_vocab during training because the graph is built
+    # using edge information which requires parsing the input sequence.
     group.add('--src_vocab', '-src_vocab', default="",
               help="Path to an existing source vocabulary. Format: "
                    "one word per line.")
