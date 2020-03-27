@@ -839,7 +839,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">preprocessor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No preprocessor loaded&quot;</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">function</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">preprocessor</span><span class="p">:</span>
-            <span class="n">sequence</span> <span class="o">=</span> <span class="n">function</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span>
+            <span class="n">sequence</span> <span class="o">=</span> <span class="n">function</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">sequence</span></div>
 
 <div class="viewcode-block" id="ServerModel.maybe_tokenize"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.maybe_tokenize">[docs]</a>    <span class="k">def</span> <span class="nf">maybe_tokenize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">):</span>
@@ -971,7 +971,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">postprocessor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No postprocessor loaded&quot;</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">function</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">postprocessor</span><span class="p">:</span>
-            <span class="n">sequence</span> <span class="o">=</span> <span class="n">function</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span>
+            <span class="n">sequence</span> <span class="o">=</span> <span class="n">function</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">sequence</span></div></div>
 
 
