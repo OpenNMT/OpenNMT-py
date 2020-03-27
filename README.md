@@ -155,6 +155,16 @@ This flexibility allows easily using either raw untokenized corpora and corpora 
 
 `tasks.*.share_inputs` allows a task to use the same inputs as another task, without the need to shard the data twice. This makes it possible to apply e.g. two different autoencoder tasks to the same monolingual data. In the example `mono_fi_taboo` has `share_inputs: mono_fi`. No inputs should be assigned directly to a task that uses `share_inputs`. 
 
+#### Generating configs from templates
+
+There is a `jinja2` based templating tool for generating training data configs.
+This is useful e.g. for applying the same task mix schedule to different data sets.
+(Alternatively could have split data and transforms into separate confs, but decided to avoid splitting it up too much.)
+
+`onmt/bin/template_dynamicdata.py --shard_config_file $sharddataconf --template_file $template --out_file $traindataconf family:ural src:en hrl:fi lrl:et`
+
+The `key:value` pairs are template variables to fill in. In the template the variables are marked `{{key}}`.
+
 ### Usage
 
 0. **Offline preprocessing:** e.g. cleaning, pretokenization.
@@ -182,7 +192,6 @@ New command line options:
   - The data config replaces the old data-specifying options `--train_src` etc, which should not be used.
   - `--bucket_size` determines the size of data included in a torchtext Dataset object. May be adjusted to optimize memory consumption.
   - `--transforms_from_task` at translate time, determines from which training task the preprocessing steps should be taken.
-
 
 ### Example
 
@@ -212,6 +221,9 @@ New command line options:
 - `sentencepiece`: Apply SentencePiece segmentation to both source and target sides.
   Input should **not** be pretokenized. If it is, shard with `predetokenize`.
   Same parameters as `morfessor_em`.
+- `deterministic_segmentation`: Apply any deterministic segmentation (e.g. BPE). The `segmentation_model` parameter should point to a file containing a mapping from words to their subword segmentations, in the format `<word> <tab> <morph1> <space> ... <morphN>`.
+It is important to note that the word list must be complete: any missing word will cause a crash. This is intentional.
+Note that deterministic segmentation is incompatible with subword regularization.
 - `filter_too_long`: Filters out too long examples. This must be redone after segmentation, which may increase the length of the sequence substantially. Parameter `max_len` controls the maximum length.
 
 More transforms can easily be added as needed.
@@ -246,6 +258,10 @@ Also, the data is only segmented when needed, but the vocabulary must be fixed a
 Transforms are able to add their own special tokens to the vocabulary,
 e.g. target language token or back-translation marker.
 
+#### Debugging
+
+`onmt/bin/debug_dynamicdata.py --data_config $dataconfig --transforms_from_task $task --src $src_in --tgt $tgt_in --src_output $src_out --tgt_output $tgt_out` runs the transforms of a particular task on a sample of data, writing the processed output to files. If the task is monolingual, use `--mono $mono_in` (there are still two outputs). To use the tool, you must first run `onmt_preprocess_dynamicdata vocab`.
+
 
 Potential improvements / 2do
 ----------------------------
@@ -254,14 +270,12 @@ There are multiple ways in which this prototype could be improved.
 
 ### Usability
 
-1. More uniform interface for different segmentation methods.
+1. Even more uniform interface for different segmentation methods.
 
-    - BPE is currently pre-applied offline. BPE is deterministic, and thus not well suited for this work.
-    - SentencePiece does not support pretokenized input. This requires carefulness with the `pretokenize` or `predetokenize` parameters (Not even checked currently), and resharding.
-
-1. Templating, e.g. jinja2, for applying the same schedule to different data sets.
-
-    - Alternatively could have split data and transforms into separate confs, but decided to avoid splitting it up too much
+    - Switching segmentation model should be as easy as changing the transform and the segmentation model.
+    - Currently other parameters need to be adjusted, or preliminary steps taken.
+    - SentencePiece does not support pretokenized input. This requires carefulness with the `pretokenize` (must **not** be set) or `predetokenize` parameters (should be set, if input is tokenized), and resharding.
+    - BPE requires segmenting the word vocabulary in advance to produce a segmentation mapping.
 
 1. Cleaner structure of sharded directory.
 1. Ability to reuse already sharded corpora, without resorting to symlink-hacks.
