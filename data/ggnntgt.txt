@@ -1,0 +1,10 @@
+Double Distribright right Noop
+Flipright left right left right Noop
+left right Assocright left right right Distribleft
+Distribright left Distribleft right Distribleft
+Distribright left left Double
+left right Noop
+right Flipleft
+left left right right Noop right Assocright
+Assocright right right left Flipright
+left Flipright left left Flipleft
