@@ -46,6 +46,7 @@
 ./_sources/Summarization.md.txt
 ./_sources/examples.rst.txt
 ./_sources/extended.md.txt
+./_sources/ggnn.md.txt
 ./_sources/im2text.md.txt
 ./_sources/index.rst.txt
 ./_sources/main.md.txt
@@ -120,6 +121,7 @@
 ./examples.html
 ./extended.html
 ./genindex.html
+./ggnn.html
 ./im2text.html
 ./index.html
 ./main.html

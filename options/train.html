@@ -207,7 +207,7 @@
                 <span class="p">[</span><span class="o">--</span><span class="n">feat_vec_exponent</span> <span class="n">FEAT_VEC_EXPONENT</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">model_type</span> <span class="p">{</span><span class="n">text</span><span class="p">,</span><span class="n">img</span><span class="p">,</span><span class="n">audio</span><span class="p">,</span><span class="n">vec</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">model_dtype</span> <span class="p">{</span><span class="n">fp32</span><span class="p">,</span><span class="n">fp16</span><span class="p">}]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">encoder_type</span> <span class="p">{</span><span class="n">rnn</span><span class="p">,</span><span class="n">brnn</span><span class="p">,</span><span class="n">mean</span><span class="p">,</span><span class="n">transformer</span><span class="p">,</span><span class="n">cnn</span><span class="p">}]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">encoder_type</span> <span class="p">{</span><span class="n">rnn</span><span class="p">,</span><span class="n">brnn</span><span class="p">,</span><span class="n">ggnn</span><span class="p">,</span><span class="n">mean</span><span class="p">,</span><span class="n">transformer</span><span class="p">,</span><span class="n">cnn</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">decoder_type</span> <span class="p">{</span><span class="n">rnn</span><span class="p">,</span><span class="n">transformer</span><span class="p">,</span><span class="n">cnn</span><span class="p">}]</span> <span class="p">[</span><span class="o">--</span><span class="n">layers</span> <span class="n">LAYERS</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">enc_layers</span> <span class="n">ENC_LAYERS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">dec_layers</span> <span class="n">DEC_LAYERS</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">rnn_size</span> <span class="n">RNN_SIZE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">enc_rnn_size</span> <span class="n">ENC_RNN_SIZE</span><span class="p">]</span>
@@ -217,6 +217,10 @@
                 <span class="p">[</span><span class="o">--</span><span class="n">input_feed</span> <span class="n">INPUT_FEED</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">bridge</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">rnn_type</span> <span class="p">{</span><span class="n">LSTM</span><span class="p">,</span><span class="n">GRU</span><span class="p">,</span><span class="n">SRU</span><span class="p">}]</span> <span class="p">[</span><span class="o">--</span><span class="n">brnn</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">context_gate</span> <span class="p">{</span><span class="n">source</span><span class="p">,</span><span class="n">target</span><span class="p">,</span><span class="n">both</span><span class="p">}]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">bridge_extra_node</span> <span class="n">BRIDGE_EXTRA_NODE</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">bidir_edges</span> <span class="n">BIDIR_EDGES</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">state_dim</span> <span class="n">STATE_DIM</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">n_edge_types</span> <span class="n">N_EDGE_TYPES</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">n_node</span> <span class="n">N_NODE</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">n_steps</span> <span class="n">N_STEPS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">src_vocab</span> <span class="n">SRC_VOCAB</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">global_attention</span> <span class="p">{</span><span class="n">dot</span><span class="p">,</span><span class="n">general</span><span class="p">,</span><span class="n">mlp</span><span class="p">,</span><span class="n">none</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">global_attention_function</span> <span class="p">{</span><span class="n">softmax</span><span class="p">,</span><span class="n">sparsemax</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">self_attn_type</span> <span class="n">SELF_ATTN_TYPE</span><span class="p">]</span>
@@ -357,8 +361,8 @@
 <p>Default: “fp32”</p>
 </dd>
 <dt><kbd>--encoder_type, -encoder_type</kbd></dt>
-<dd><p>Possible choices: rnn, brnn, mean, transformer, cnn</p>
-<p>Type of encoder layer to use. Non-RNN layers are experimental. Options are [rnn|brnn|mean|transformer|cnn].</p>
+<dd><p>Possible choices: rnn, brnn, ggnn, mean, transformer, cnn</p>
+<p>Type of encoder layer to use. Non-RNN layers are experimental. Options are [rnn|brnn|ggnn|mean|transformer|cnn].</p>
 <p>Default: “rnn”</p>
 </dd>
 <dt><kbd>--decoder_type, -decoder_type</kbd></dt>
@@ -417,6 +421,34 @@
 <dt><kbd>--context_gate, -context_gate</kbd></dt>
 <dd><p>Possible choices: source, target, both</p>
 <p>Type of context gate to use. Do not select for no context gate.</p>
+</dd>
+<dt><kbd>--bridge_extra_node, -bridge_extra_node</kbd></dt>
+<dd><p>Graph encoder bridges only extra node to decoder as input</p>
+<p>Default: True</p>
+</dd>
+<dt><kbd>--bidir_edges, -bidir_edges</kbd></dt>
+<dd><p>Graph encoder autogenerates bidirectional edges</p>
+<p>Default: True</p>
+</dd>
+<dt><kbd>--state_dim, -state_dim</kbd></dt>
+<dd><p>Number of state dimensions in the graph encoder</p>
+<p>Default: 512</p>
+</dd>
+<dt><kbd>--n_edge_types, -n_edge_types</kbd></dt>
+<dd><p>Number of edge types in the graph encoder</p>
+<p>Default: 2</p>
+</dd>
+<dt><kbd>--n_node, -n_node</kbd></dt>
+<dd><p>Number of nodes in the graph encoder</p>
+<p>Default: 2</p>
+</dd>
+<dt><kbd>--n_steps, -n_steps</kbd></dt>
+<dd><p>Number of steps to advance graph encoder</p>
+<p>Default: 2</p>
+</dd>
+<dt><kbd>--src_vocab, -src_vocab</kbd></dt>
+<dd><p>Path to an existing source vocabulary. Format: one word per line.</p>
+<p>Default: “”</p>
 </dd>
 </dl>
 </div>
