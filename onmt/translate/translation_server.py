@@ -662,7 +662,7 @@ class ServerModel(object):
         if self.preprocessor is None:
             raise ValueError("No preprocessor loaded")
         for function in self.preprocessor:
-            sequence = function(sequence)
+            sequence = function(sequence, self)
         return sequence
 
     def maybe_tokenize(self, sequence):
@@ -794,7 +794,7 @@ class ServerModel(object):
         if self.postprocessor is None:
             raise ValueError("No postprocessor loaded")
         for function in self.postprocessor:
-            sequence = function(sequence)
+            sequence = function(sequence, self)
         return sequence
 
 
