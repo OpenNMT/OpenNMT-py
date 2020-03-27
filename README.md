@@ -155,6 +155,9 @@ This flexibility allows easily using either raw untokenized corpora and corpora 
 
 `tasks.*.share_inputs` allows a task to use the same inputs as another task, without the need to shard the data twice. This makes it possible to apply e.g. two different autoencoder tasks to the same monolingual data. In the example `mono_fi_taboo` has `share_inputs: mono_fi`. No inputs should be assigned directly to a task that uses `share_inputs`. 
 
+`inputs.*.size` Omit or set to `auto` to automatically determine input corpus sizes. Can also be manually set.
+The corpus size is used for the balanced mixing of corpora within a task, and to ensure shards of even size.
+
 #### Generating configs from templates
 
 There is an optional `jinja2` based templating tool for generating training data configs.
@@ -277,16 +280,10 @@ There are multiple ways in which this prototype could be improved.
     - SentencePiece does not support pretokenized input. This requires carefulness with the `pretokenize` (must **not** be set) or `predetokenize` parameters (should be set, if input is tokenized), and resharding.
     - BPE requires segmenting the word vocabulary in advance to produce a segmentation mapping.
 
-1. Cleaner structure of sharded directory.
 1. Ability to reuse already sharded corpora, without resorting to symlink-hacks.
 
     - Usually preferable to shard everything once and then turn off certain tasks by setting their weight to zero,
       but this is not always possible e.g. when adding back-translation later in the project.
-
-1. Automatically determine input corpus sizes.
-
-    - The corpus size is used for the balanced mixing of corpora within a task.
-    - It could also be used to ensure shards of even size, but this is not yet implemented.
 
 1. Some parameters are currently not possible to override in train data config.
 
@@ -302,7 +299,7 @@ There are multiple ways in which this prototype could be improved.
 
     - Source and target languages must be flipped to get the right tags.
 
-1. Better tools for debugging pipelines of transforms.
+1. Config processing is a bit hairy. This can lead to difficult `Exception: data_config not compatible with stored shard config` bugs.
 
 ### New features
 
