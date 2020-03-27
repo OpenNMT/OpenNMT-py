@@ -1,4 +1,5 @@
 import itertools
+import subprocess
 
 UNDER = '▁'
 
@@ -37,3 +38,13 @@ def weighted_roundrobin(streams, weights):
         for _ in range(weight):
             repeated.append(stream)
     yield from roundrobin(*repeated)
+
+
+def external_linecount(file_path):
+    if file_path.endswith('.gz'):
+        ext_lc = subprocess.check_output(
+            ['zcat {} | wc -l'.format(file_path)], shell=True).split()[0]
+    else:
+        ext_lc = subprocess.check_output(['wc', '-l', file_path]).split()[0]
+    ext_lc = int(ext_lc.decode('utf-8'))
+    return ext_lc

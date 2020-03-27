@@ -3,6 +3,8 @@ import itertools
 import os
 import yaml
 
+from .utils import external_linecount
+
 # import jsonschema
 
 # def validate_schema(data_config):
@@ -41,29 +43,28 @@ def _remove_shared_inputs(shard_config):
         del shard_config['tasks'][task]
 
 
-def _normalize_sizes(data_config):
+def _an_input(d, name):
+    candidates = ('src', 'mono')
+    for candidate in candidates:
+        if candidate in d:
+            return d[candidate]
+    raise Exception('Could not find an input for "{}"'.format(name))
+
+def normalize_sizes(data_config):
     size_per_task = collections.Counter()
-    corpora_per_task = collections.Counter()
     for input in data_config['inputs']:
         task = data_config['inputs'][input]['task']
-        if 'size' not in data_config['inputs'][input]:
-            continue
-        size = data_config['inputs'][input]['size']
+        size = data_config['inputs'][input].get('size', 'auto')
+        if size == 'auto':
+            an_input = _an_input(data_config['inputs'][input], input)
+            size = external_linecount(an_input)
+            data_config['inputs'][input]['size'] = size
         size_per_task[task] += size
-        corpora_per_task[task] += 1
     for input in data_config['inputs']:
         task = data_config['inputs'][input]['task']
-        if 'size' not in data_config['inputs'][input]:
-            if corpora_per_task[task] == 0:
-                # no sizes set
-                data_config['inputs'][input]['size'] = 1
-            else:
-                data_config['inputs'][input]['size'] = int(
-                    100 / corpora_per_task[task])
-        else:
-            size = data_config['inputs'][input]['size']
-            data_config['inputs'][input]['size'] = int(
-                100 * size / size_per_task[task])
+        size = data_config['inputs'][input]['size']
+        data_config['inputs'][input]['size'] = int(
+            100 * size / size_per_task[task])
 
 
 def _all_transforms(data_config):
@@ -95,7 +96,6 @@ def data_config_from_string(string):
 def process_config(data_config, template=False):
     _inverse_tasks(data_config)
     if not template:
-        _normalize_sizes(data_config)
         _all_transforms(data_config)
     _task_defaults(data_config)
     # validate_schema(data_config)

@@ -61,89 +61,89 @@ inputs:
         src: generated/en-fi/ep.lmcleaned.en-fi.src.gz
         tgt: generated/en-fi/ep.lmcleaned.en-fi.trg.gz
         task: enfi
-        size: 1826
+        size: auto
     opensubs0_enfi:
         src: generated/en-fi/opensubs0.lmcleaned.en-fi.src.gz
         tgt: generated/en-fi/opensubs0.lmcleaned.en-fi.trg.gz
         task: enfi
-        size: 4189
+        size: auto
     opensubs1_enfi:
         src: generated/en-fi/opensubs1.lmcleaned.en-fi.src.gz
         tgt: generated/en-fi/opensubs1.lmcleaned.en-fi.trg.gz
         task: enfi
-        size: 4189
+        size: auto
     opensubs2_enfi:
         src: generated/en-fi/opensubs2.lmcleaned.en-fi.src.gz
         tgt: generated/en-fi/opensubs2.lmcleaned.en-fi.trg.gz
         task: enfi
-        size: 4189
+        size: auto
     opensubs3_enfi:
         src: generated/en-fi/opensubs3.lmcleaned.en-fi.src.gz
         tgt: generated/en-fi/opensubs3.lmcleaned.en-fi.trg.gz
         task: enfi
-        size: 4189
+        size: auto
     paracrawl_enfi:
         src: generated/en-fi/paracrawl.lmcleaned.en-fi.src.gz
         tgt: generated/en-fi/paracrawl.lmcleaned.en-fi.trg.gz
         task: enfi
-        size: 432
+        size: auto
     rapid2016_enfi:
         src: generated/en-fi/rapid2016.lmcleaned.en-fi.src.gz
         tgt: generated/en-fi/rapid2016.lmcleaned.en-fi.trg.gz
         task: enfi
-        size: 389
+        size: auto
 
     lowres_enet:
         src: generated/en-et/lowres18k.src.gz
         tgt: generated/en-et/lowres18k.trg.gz
         task: enet
-        size: 18000
+        size: auto
     enet_bt:
         src: generated/bt.en-et/bt.lmcleaned.out.en
         tgt: generated/bt.en-et/bt.lmcleaned.inp.et
         task: enet_bt
-        size: 1000
+        size: auto
 
 # only using newest two
     news2017_en:
         mono: generated/en/news.2017.lmcleaned.en.gz
         task: mono_en
-        size: 26473
+        size: auto
     news2018_en:
         mono: generated/en/news.2018.lmcleaned.en.gz
         task: mono_en
-        size: 17788
+        size: auto
 
 # only using newest two
     news2017_fi:
         mono: generated/fi/news.2017.lmcleaned.fi.gz
         task: mono_fi
-        size: 3442
+        size: auto
     news2018_fi:
         mono: generated/fi/news.2018.lmcleaned.fi.gz
         task: mono_fi
-        size: 2854
+        size: auto
 
     news2014_et:
         mono: generated/et/news.2014.lmcleaned.et.gz
         task: mono_et
-        size: 377
+        size: auto
     news2015_et:
         mono: generated/et/news.2015.lmcleaned.et.gz
         task: mono_et
-        size: 945
+        size: auto
     news2016_et:
         mono: generated/et/news.2016.lmcleaned.et.gz
         task: mono_et
-        size: 749
+        size: auto
     news2017_et:
         mono: generated/et/news.2017.lmcleaned.et.gz
         task: mono_et
-        size: 801
+        size: auto
     news2018_et:
         mono: generated/et/news.2018.lmcleaned.et.gz
         task: mono_et
-        size: 766
+        size: auto
 
     dev_enfi:
         src: generated/en-fi/newsdev2015.truecased.en-fi.src

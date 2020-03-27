@@ -4,7 +4,7 @@ import collections
 import random
 import torchtext
 
-from onmt.dynamicdata.config import read_data_config, sharding_only, save_shard_config, verify_shard_config
+from onmt.dynamicdata.config import read_data_config, sharding_only, save_shard_config, verify_shard_config, normalize_sizes
 from onmt.dynamicdata.shard import SimpleSharedVocabulary, DataSharder
 from onmt.dynamicdata.transforms import make_transform_models, make_transforms, get_specials, set_train_opts
 from onmt.dynamicdata.vocab import load_vocabulary, prepare_fields, save_fields, load_fields, save_transforms, load_transforms
@@ -12,6 +12,7 @@ from onmt.dynamicdata.vocab import load_vocabulary, prepare_fields, save_fields,
 def shard_main(config_file):
     data_config = read_data_config(config_file)
     data_config = sharding_only(data_config)
+    normalize_sizes(data_config)
     save_shard_config(data_config)
     if data_config['meta']['shard']['share_vocab']:
         vocab = SimpleSharedVocabulary(data_config)
