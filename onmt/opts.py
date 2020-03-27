@@ -128,7 +128,7 @@ def model_opts(parser):
               help="Type of context gate to use. "
                    "Do not select for no context gate.")
 
-    # The following options (bridge_extra_node to src_vocab) are used 
+    # The following options (bridge_extra_node to src_vocab) are used
     # for training with --encoder_type ggnn (Gated Graph Neural Network).
     group.add('--bridge_extra_node', '-bridge_extra_node',
               type=bool, default=True,
