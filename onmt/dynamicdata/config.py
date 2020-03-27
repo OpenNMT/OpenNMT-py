@@ -50,6 +50,7 @@ def _an_input(d, name):
             return d[candidate]
     raise Exception('Could not find an input for "{}"'.format(name))
 
+
 def normalize_sizes(data_config):
     size_per_task = collections.Counter()
     for input in data_config['inputs']:
@@ -63,8 +64,10 @@ def normalize_sizes(data_config):
     for input in data_config['inputs']:
         task = data_config['inputs'][input]['task']
         size = data_config['inputs'][input]['size']
+
         data_config['inputs'][input]['size'] = int(
             100 * size / size_per_task[task])
+        data_config['tasks'][task]['_size'] = size_per_task[task]
 
 
 def _all_transforms(data_config):
@@ -207,6 +210,8 @@ def verify_shard_config(data_config):
     for task in stored_shard_config['tasks']:
         if '_inputs' in stored_shard_config['tasks'][task]:
             stored_shard_config['tasks'][task]['_inputs'].sort()
+        if '_size' in stored_shard_config['tasks'][task]:
+            del stored_shard_config['tasks'][task]['_size']
     for inp in stored_shard_config['inputs']:
         if 'size' in stored_shard_config['inputs'][inp]:
             del stored_shard_config['inputs'][inp]['size']

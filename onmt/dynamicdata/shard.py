@@ -1,12 +1,14 @@
 import collections
 import gzip
 import itertools
+import math
 import os
 import random
 
 from .vocab import SimpleSharedVocabulary
 from .utils import *
 
+from onmt.utils.logging import logger
 
 def open_for_reading(path):
     if path.endswith('.gz'):
@@ -68,14 +70,30 @@ def predetokenize(stream):
         yield tuple(out)
 
 
+def adjust_shard_size(total, max_shard_size, max_initial_shards):
+    one_bucket = max_shard_size * max_initial_shards
+    initial_shards = max_initial_shards
+    shard_size = max_shard_size
+    if total < one_bucket:
+        # small data: reduce number of shards
+        initial_shards = int(math.ceil(total / max_shard_size))
+    else:
+        # large data: balance shard size
+        buckets = int(math.ceil(total / one_bucket))
+        shard_size = int(math.ceil(total / (buckets * initial_shards)))
+    initial_shards = min(initial_shards, max_initial_shards)
+    shard_size = min(shard_size, max_shard_size)
+    return initial_shards, shard_size
+
+
 class DataSharder():
     def __init__(self, data_config,
-                 max_shard_size, initial_shards,
+                 max_shard_size, max_initial_shards,
                  compress=True, vocab_counter=None,
                  pre=None):
         self.data_config = data_config
         self.max_shard_size = max_shard_size
-        self.initial_shards = initial_shards
+        self.max_initial_shards = max_initial_shards
         self.compress = compress
         self.vocab_counter = vocab_counter
         if pre == 'tokenize':
@@ -118,11 +136,23 @@ class DataSharder():
             reader_func = mono_reader
         else:
             raise Exception('Unrecognized task type "{}"'.format(task_type))
+        # make balanced shards
+        total = self.data_config['tasks'][task]['_size']
+        initial_shards, shard_size = adjust_shard_size(
+            total, self.max_shard_size, self.max_initial_shards)
+        logger.info('Task {task}: total {total},'
+                    ' initial_shards {initial_shards},'
+                    ' shard_size {shard_size},'
+                    ' product {prod}'.format(task=task,
+                                             total=total,
+                                             initial_shards=initial_shards,
+                                             shard_size=shard_size,
+                                             prod=initial_shards*shard_size))
         # create shards that are transparently reopened when filled
         n_shards = self.data_config['tasks'][task].get('n_shards',
-                                                       self.initial_shards)
+                                                       initial_shards)
         self._open_shards = [
-            shard_cls(self, task, taskdir, self.compress)
+            shard_cls(self, task, taskdir, shard_size, self.compress)
             for _ in range(n_shards)]
         self._last_shard = -1
 
@@ -138,7 +168,7 @@ class DataSharder():
             stream = self.tokenize(stream)
         while True:
             # read a bucket
-            bucket = list(itertools.islice(stream, self.initial_shards * 100))
+            bucket = list(itertools.islice(stream, initial_shards * 100))
             if len(bucket) == 0:
                 break
             # permute
@@ -154,10 +184,11 @@ class DataSharder():
 
 
 class Shard():
-    def __init__(self, sharder, task, taskdir, compress=False):
+    def __init__(self, sharder, task, taskdir, max_shard_size, compress=False):
         self.sharder = sharder
         self.task = task
         self.taskdir = taskdir
+        self.max_shard_size = max_shard_size
         self.compress = compress
         self.fobjs = None
         self.index = None
@@ -185,7 +216,7 @@ class Shard():
             return open(path, 'w')
 
     def write(self, tpl):
-        if self.fobjs is None or self.count == self.sharder.max_shard_size:
+        if self.fobjs is None or self.count == self.max_shard_size:
             self._reset()
         self._write_helper(tpl)
         self.count += 1

@@ -157,7 +157,7 @@ This flexibility allows easily using either raw untokenized corpora and corpora 
 
 #### Generating configs from templates
 
-There is a `jinja2` based templating tool for generating training data configs.
+There is an optional `jinja2` based templating tool for generating training data configs.
 This is useful e.g. for applying the same task mix schedule to different data sets.
 (Alternatively could have split data and transforms into separate confs, but decided to avoid splitting it up too much.)
 
