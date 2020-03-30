@@ -614,7 +614,10 @@ class DeterministicSegmentationTransform(SimpleTransform):
         self.mapping = {}
         with open(self.mapping_path, 'r') as lines:
             for line in lines:
-                word, seg = line.strip().split(None, 1)
+                line = line.strip()
+                if len(line) == 0:
+                    continue
+                word, seg = line.split(None, 1)
                 seg = tuple(seg.split(' '))
                 self.mapping[word] = seg
 
