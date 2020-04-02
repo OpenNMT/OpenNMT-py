@@ -189,6 +189,13 @@ def get_fields(
     return fields
 
 
+def patch_fields(opt, fields):
+    dvocab = torch.load(opt.data + '.vocab.pt')
+    maybe_cid_field = dvocab.get('corpus_id', None)
+    if maybe_cid_field is not None:
+        fields.update({'corpus_id': maybe_cid_field})
+
+
 def load_old_vocab(vocab, data_type="text", dynamic_dict=False):
     """Update a legacy vocab/field format.
 

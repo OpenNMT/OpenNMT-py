@@ -11,7 +11,7 @@ from onmt.utils.misc import set_random_seed
 from onmt.utils.logging import init_logger, logger
 from onmt.train_single import main as single_main
 from onmt.utils.parse import ArgumentParser
-from onmt.inputters.inputter import build_dataset_iter, \
+from onmt.inputters.inputter import build_dataset_iter, patch_fields, \
     load_old_vocab, old_style_vocab, build_dataset_iter_multiple
 
 from itertools import cycle
@@ -41,6 +41,9 @@ def train(opt):
             vocab, opt.model_type, dynamic_dict=opt.copy_attn)
     else:
         fields = vocab
+
+    # patch for fields that may be missing in old data/model
+    patch_fields(opt, fields)
 
     if len(opt.data_ids) > 1:
         train_shards = []
