@@ -1,5 +1,5 @@
 data_config: examples/dynamicdata.train.ural.lowres18k.bt.jtokemprune16k.faster.mono3.noise3.seq2.yaml
-save_mode: foo
+save_model: foo
 
 train_steps: 100000
 save_checkpoint_steps: 4000

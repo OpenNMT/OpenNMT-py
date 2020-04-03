@@ -3,7 +3,6 @@ import functools
 import gzip
 import itertools
 import math
-import morfessor
 import numpy as np
 import onmt.inputters
 import os
@@ -532,6 +531,7 @@ class MorfessorEmTransformModel():
         self.data_config = data_config
 
     def warm_up(self, vocabs):
+        import morfessor
         # load the segmentation model
         io = morfessor.MorfessorIO()
         expected = io.read_expected_file(
@@ -632,6 +632,7 @@ class DeterministicSegmentationTransform(SimpleTransform):
 class SampleCache(object):
     def __init__(self, model, n_samples=5,
                  addcount=0, theta=0.5, maxlen=30):
+        import morfessor
         self.model = model
         self.n_samples = n_samples
         self.addcount = addcount
@@ -640,6 +641,7 @@ class SampleCache(object):
         self.cache = {}
         self.hits = 0
         self.misses = 0
+        self._categorical = morfessor.utils.categorical
 
     def segment(self, compound):
         if compound not in self.cache:
@@ -650,7 +652,7 @@ class SampleCache(object):
         analyses, distr = self.cache[compound]
         if len(analyses) == 1:
             return analyses[0]
-        _, sample = morfessor.utils.categorical(analyses, distr)
+        _, sample = self._categorical(analyses, distr)
         return sample
 
 
