@@ -145,6 +145,8 @@ This flexibility allows easily using either raw untokenized corpora and corpora 
 
 `meta.train.name` determines where the transforms are saved. It is possible to use the same transforms with different mixing weights by making another training data config using the same name parameter. Ususally it should be unique, though.
 
+`meta.train.vocab_path` points to a file containing the **subword** vocabulary, in the format `<integer_count> <tab> <subword>`.
+
 `meta.train.mixing_weight_schedule` determines after which number of minibatches the mixing weights should be adjusted. The `tasks.*.weight` parameters should be of length one longer than this.
 
 `meta.train.*` global parameters for the transforms, e.g. setting the amount of noise.
