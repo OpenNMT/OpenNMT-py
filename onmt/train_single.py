@@ -4,7 +4,7 @@ import os
 
 import torch
 
-from onmt.inputters.inputter import build_dataset_iter, \
+from onmt.inputters.inputter import build_dataset_iter, patch_fields, \
     load_old_vocab, old_style_vocab, build_dataset_iter_multiple
 from onmt.model_builder import build_model
 from onmt.utils.optimizers import Optimizer
@@ -68,6 +68,9 @@ def main(opt, device_id, batch_queue=None, semaphore=None):
             vocab, opt.model_type, dynamic_dict=opt.copy_attn)
     else:
         fields = vocab
+
+    # patch for fields that may be missing in old data/model
+    patch_fields(opt, fields)
 
     # Report src and tgt vocab sizes, including for features
     for side in ['src', 'tgt']:
