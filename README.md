@@ -174,6 +174,7 @@ The `key:value` pairs are template variables to fill in. In the template the var
    This is an optional step. For computational reasons, anything non-stochastic that is not varied between experiments can be done offline in advance.
 1. **Sharding.** `onmt_preprocess_dynamicdata shard $dataconfig` uses the sharding data config. The input corpora for each task are read, mixed together and divided into shards, in such a way that each shard gets the same mix of input corpora. The shards are plain text files. At the same time, a word vocabulary is computed.
 2. **Training segmentation model, determining vocabulary.** The segmentation model is trained in the same way as previously. The word vocabulary computed in the previous step can be used. It is important to determine all subwords that the segmentation model might use, in order to determine the NMT model vocabulary.
+The word vocabulary produced in the sharding step should **not** be used directly as the `vocab_path` (unless you suddenly decide to do word-level translation).
 3. **Setting up transforms.** `onmt_preprocess_dynamicdata vocab $dataconfig` uses the training data config. The torchtext Field objects are created. Transforms are warmed up, e.g. precomputing a cache of segmentation alternatives for the most common words. This is currently important for translation speed (although saving the transforms in the model checkpoint file would solve this better).
 4. **Training.** `onmt_train_dynamicdata --config $cliconfig --data_config $dataconfig` uses the training data config.
    During training, the shard ids of each task are shuffled and put into a queue.
@@ -224,7 +225,7 @@ New command line options:
 - `sentencepiece`: Apply SentencePiece segmentation to both source and target sides.
   Input should **not** be pretokenized. If it is, shard with `predetokenize`.
   Same parameters as `morfessor_em`.
-- `deterministic_segmentation`: Apply any deterministic segmentation (e.g. BPE). The `segmentation_model` parameter should point to a file containing a mapping from words to their subword segmentations, in the format `<word> <tab> <morph1> <space> ... <morphN>`.
+- `deterministic_segmentation`: Apply any deterministic segmentation (e.g. BPE). The `segmentation_model` parameter should point to a file containing a mapping from words to their subword segmentations, in the format `<word> <tab> <subword1> <space> ... <subwordN>`.
 It is important to note that the word list must be complete: any missing word will cause a crash. This is intentional.
 Note that deterministic segmentation is incompatible with subword regularization.
 - `filter_too_long`: Filters out too long examples. This must be redone after segmentation, which may increase the length of the sequence substantially. Parameter `max_len` controls the maximum length.
@@ -258,6 +259,9 @@ It can not be determined from a segmented corpus,
 because if the segmentation is stochastic it is not guaranteed that all subwords occur in a single epoch.
 Also, the data is only segmented when needed, but the vocabulary must be fixed at start of training.
 
+The format is `<integer_count> <tab> <subword>`.
+There is a script `tools/spm_to_vocab.py` that converts SentencePiece vocabularies to this format.
+
 Transforms are able to add their own special tokens to the vocabulary,
 e.g. target language token or back-translation marker.
 
@@ -278,6 +282,7 @@ There are multiple ways in which this prototype could be improved.
     - Switching segmentation model should be as easy as changing the transform and the segmentation model.
     - Currently other parameters need to be adjusted, or preliminary steps taken.
     - SentencePiece does not support pretokenized input. This requires carefulness with the `pretokenize` (must **not** be set) or `predetokenize` parameters (should be set, if input is tokenized), and resharding.
+    - SentencePiece vocabulary format is not directly supported. You need to run the subword vocabulary output by SentencePiece through the script `tools/spm_to_vocab.py`.
     - BPE requires segmenting the word vocabulary in advance to produce a segmentation mapping.
 
 1. Ability to reuse already sharded corpora, without resorting to symlink-hacks.
