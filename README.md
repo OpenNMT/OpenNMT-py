@@ -145,7 +145,10 @@ This flexibility allows easily using either raw untokenized corpora and corpora 
 
 `meta.train.name` determines where the transforms are saved. It is possible to use the same transforms with different mixing weights by making another training data config using the same name parameter. Ususally it should be unique, though.
 
-`meta.train.vocab_path` points to a file containing the **subword** vocabulary, in the format `<integer_count> <tab> <subword>`.
+`meta.train.segmentation_model` points to the trained segmentation model (the format depends on which segmentation transform is used).
+
+`meta.train.vocab_path` points to a file containing the **subword** vocabulary, in the format `<integer_count> <tab> <subword>`. Floats can be given instead of ints, in which case they are rounded and 1 is added to avoid zeros. This conversion works for float expected counts (e.g. **Morfessor EM+Prune models** can be loaded directly). The conversion is not suitable for probabilities (all counts will be 1). Probabilities should be scaled before loading.
+This means that for Morfessor EM+Prune, `meta.train.segmentation_model` and `meta.train.vocab_path` can be the same, but for e.g. SentencePiece the latter needs to be generated (see section on subword vocabulary).
 
 `meta.train.mixing_weight_schedule` determines after which number of minibatches the mixing weights should be adjusted. The `tasks.*.weight` parameters should be of length one longer than this.
 
@@ -263,6 +266,7 @@ Also, the data is only segmented when needed, but the vocabulary must be fixed a
 
 The format is `<integer_count> <tab> <subword>`.
 There is a script `tools/spm_to_vocab.py` that converts SentencePiece vocabularies to this format.
+Morfessor EM+Prune text-format models are in a close enough format (floats instead of ints) and can be used directly as the subword vocabulary.
 
 Transforms are able to add their own special tokens to the vocabulary,
 e.g. target language token or back-translation marker.

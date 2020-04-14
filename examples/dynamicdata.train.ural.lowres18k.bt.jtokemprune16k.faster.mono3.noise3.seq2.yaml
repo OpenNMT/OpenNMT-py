@@ -8,7 +8,7 @@ meta:
         pretokenize: False
     train:
         name: jtokemprune16k.faster.mono3.noise3.seq
-        vocab_path: models/jtokemprune16k.faster.multiling.ural.dynamicdata.vocab
+        vocab_path: models/jtokemprune16k.faster.multiling.ural.text
         segmentation_model: models/jtokemprune16k.faster.multiling.ural.text
         max_len: 300
         reorder_max_dist: 3

@@ -72,6 +72,7 @@ class Vocabulary():
         counter = SortedCounter()
         with open(path, 'r') as fobj:
             seen_noncomment = False
+            is_float = False
             for line in fobj:
                 if line[0] == '#' and not seen_noncomment:
                     # skip comments in beginning of file
@@ -79,7 +80,15 @@ class Vocabulary():
                 else:
                     seen_noncomment = True
                 c, w = line.rstrip('\n').split(None, 1)
-                counter[w] += int(c)
+                if is_float:
+                    c = int(float(c)) + 1
+                else:
+                    try:
+                        c = int(c)
+                    except ValueError:
+                        is_float = True
+                        c = int(float(c)) + 1
+                counter[w] += c
         return counter
 
 
