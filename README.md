@@ -263,13 +263,27 @@ The subword vocabulary must be specified explicitly.
 It can not be determined from a segmented corpus,
 because if the segmentation is stochastic it is not guaranteed that all subwords occur in a single epoch.
 Also, the data is only segmented when needed, but the vocabulary must be fixed at start of training.
-
 The format is `<integer_count> <tab> <subword>`.
-There is a script `tools/spm_to_vocab.py` that converts SentencePiece vocabularies to this format.
-Morfessor EM+Prune text-format models are in a close enough format (floats instead of ints) and can be used directly as the subword vocabulary.
 
 Transforms are able to add their own special tokens to the vocabulary,
 e.g. target language token or back-translation marker.
+
+##### Using Morfessor EM+Prune
+
+[Morfessor EM+Prune](https://github.com/Waino/morfessor-emprune) text-format models are in a close enough format (floats instead of ints) and can be used directly as the subword vocabulary.
+
+A note on pretokenization and boundary markers:
+Morfessor EM+Prune requires pretokenized input with *word* boundary markers (marks where the whitespace should go), rather than the *morph* boundary markers (marks word-internal boundaries) used by previous Morfessors.
+Make sure that the word boundary markers are present in the corpus / word count lists used for Morfessor EM+Prune training, and also in the input to Morfessor EM+Prune during segmentation.
+One way to achieve this is to shard with `pretokenize=True` and use the resulting word vocabulary counts for training.
+Alternatively to pretokenize earlier in your pipeline, use e.g. the pyonmttok library with `spacer_annotate=True` and `joiner_annotate=False`.
+These procedures will insert '▁' (unicode lower one eight block \u2581) as word boundary markers.
+Also remember to adjust your detokenization post-processing script appropriately.
+
+##### Using SentencePiece
+
+There is a script `tools/spm_to_vocab.py` that converts SentencePiece vocabularies to the required subword vocabulary format.
+Note that SentencePiece does *not* support pretokenized input.
 
 #### Debugging
 
@@ -337,6 +351,14 @@ There are multiple ways in which this prototype could be improved.
 
     - Supports loading data in a separate process.
     - It is not used by OpenNMT. Also a bit unclear how it interfaces with torchtext.
+
+### Performance
+
+1. Currently the multiprocessing queue is set up so that only one process (the trainer) communicates with the GPU.
+   The dataloader process delivers minibatches as CPU tensors via the multiprocessing queue.
+   This is a workaround for the fact that our computing cluster was configured with the GPU compute mode set to `Exclusive_Process`,
+   which limits access to a single process per card.
+   The downside is limited performance: if the data is already on the GPU, inter-process communication is very fast.
 
 
 
