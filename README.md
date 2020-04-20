@@ -270,7 +270,9 @@ e.g. target language token or back-translation marker.
 
 ##### Using Morfessor EM+Prune
 
-[Morfessor EM+Prune](https://github.com/Waino/morfessor-emprune) text-format models are in a close enough format (floats instead of ints) and can be used directly as the subword vocabulary.
+It is recommended that [Morfessor EM+Prune](https://github.com/Waino/morfessor-emprune) is trained without frequency dampening (token-based training) by setting `--dampening none`. The default is to ignore frequency (type-based training), which doesn't appear to be optimal for NMT. You should also use `--prune-criterion autotune` (this is the default) and specify a vocabulary size with `--num-morph-types $vocab`.
+
+Morfessor EM+Prune text-format models are in a close enough format (floats instead of ints) and can be used directly as the subword vocabulary in the data loader.
 
 A note on pretokenization and boundary markers:
 Morfessor EM+Prune requires pretokenized input with *word* boundary markers (marks where the whitespace should go), rather than the *morph* boundary markers (marks word-internal boundaries) used by previous Morfessors.
@@ -279,6 +281,9 @@ One way to achieve this is to shard with `pretokenize=True` and use the resultin
 Alternatively to pretokenize earlier in your pipeline, use e.g. the pyonmttok library with `spacer_annotate=True` and `joiner_annotate=False`.
 These procedures will insert '▁' (unicode lower one eight block \u2581) as word boundary markers.
 Also remember to adjust your detokenization post-processing script appropriately.
+
+Note that the translation input should be in exactly the same form as the training shards.
+This means that you need to *pretokenize your testset* before translating it.
 
 ##### Using SentencePiece
 
@@ -304,6 +309,7 @@ There are multiple ways in which this prototype could be improved.
     - SentencePiece does not support pretokenized input. This requires carefulness with the `pretokenize` (must **not** be set) or `predetokenize` parameters (should be set, if input is tokenized), and resharding.
     - SentencePiece vocabulary format is not directly supported. You need to run the subword vocabulary output by SentencePiece through the script `tools/spm_to_vocab.py`.
     - BPE requires segmenting the word vocabulary in advance to produce a segmentation mapping.
+    - EM+Prune requires pretokenizing the test set as a preprocessing step. This should be changed so that it is automatically performed if `pretokenize` is set.
 
 1. Ability to reuse already sharded corpora, without resorting to symlink-hacks.
 
