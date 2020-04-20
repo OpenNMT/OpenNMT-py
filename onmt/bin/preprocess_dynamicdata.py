@@ -29,8 +29,9 @@ def shard_main(config_file):
     predetokenize = data_config['meta']['shard'].get('predetokenize', False)
     if pretokenize and predetokenize:
         raise Exception('Cannot both pretokenize and predetokenize')
-    pre = 'tokenize' if pretokenize else None
-    pre = 'detokenize' if predetokenize else None
+    pre = None
+    pre = 'tokenize' if pretokenize else pre
+    pre = 'detokenize' if predetokenize else pre
     data_sharder = DataSharder(
         data_config,
         max_shard_size=max_shard_size,
