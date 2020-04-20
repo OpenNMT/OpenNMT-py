@@ -367,6 +367,7 @@ References
 
 Grönroos SA, Virpioja S, Kurimo M (2020a)
     Transfer learning and subword sampling for asymmetric-resource one-to-many neural translation. In review.
+    [arXiv: 2004.04002](https://arxiv.org/abs/2004.04002)
 
 Grönroos SA, Virpioja S, Kurimo M (2020b)
     Morfessor EM+Prune: Improved subword segmentation with expectation maximization and pruning.
