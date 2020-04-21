@@ -45,6 +45,8 @@ def sequence_mask(lengths, max_len=None):
     """
     Creates a boolean mask from sequence lengths.
     """
+    if lengths is None:
+        return None
     batch_size = lengths.numel()
     max_len = max_len or lengths.max()
     return (torch.arange(0, max_len, device=lengths.device)
