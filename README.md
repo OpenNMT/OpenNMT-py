@@ -34,6 +34,7 @@ such as subword regularization (Kudo, 2018), have been proposed.
 In subword regularization, the way in which words are segmented into subwords is resampled each time the word occurs.
 E.g. "unreasonable" might be segmented into "un + reasonable" once and "unreason + able" the next time, and "un + reason + able" a third time.
 When converted into numeric indices into the vocabulary, these representations are very different.
+BART (Lewis et al. 2019) applies a denoising sequence autoencoder for pretraining, with application to multiple downstream NLP tasks including machine translation.
 
 In our recent paper (Grönroos et al., 2020a) seek to improve Neural Machine Translation (NMT)
 into morphologically rich low-resource languages.
@@ -391,3 +392,6 @@ Szegedy C, Vanhoucke V, Ioffe S, Shlens J, Wojna Z (2015)
 
 Wang X, Pham H, Dai Z, Neubig G (2018)
     SwitchOut: an efficient data augmentation algorithm for neural machine translation. [arXiv: 1808.07512](https://arxiv.org/abs/1808.07512)
+
+Lewis, M, et al. (2019)
+    BART: Denoising sequence-to-sequence pre-training for natural language generation, translation, and comprehension. [arXiv:1910.13461](https://arxiv.org/abs/1910.13461)
