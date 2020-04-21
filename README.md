@@ -384,6 +384,9 @@ Grönroos SA, Virpioja S, Kurimo M (2020b)
 Kudo T (2018)
      Subword regularization: Improving neural network translation models with multiple subword candidates. [arXiv: 1804.10959](http://arxiv.org/abs/1804.10959)
 
+Lewis, M, et al. (2019)
+    BART: Denoising sequence-to-sequence pre-training for natural language generation, translation, and comprehension. [arXiv:1910.13461](https://arxiv.org/abs/1910.13461)
+
 Srivastava N, Hinton G, Krizhevsky A, Sutskever I, Salakhutdinov R (2014)
     [Dropout: a simple way to prevent neural networks from overfitting.](https://dl.acm.org/doi/abs/10.5555/2627435.2670313) The Journal of Machine Learning Research 15(1):1929–1958
 
@@ -392,6 +395,3 @@ Szegedy C, Vanhoucke V, Ioffe S, Shlens J, Wojna Z (2015)
 
 Wang X, Pham H, Dai Z, Neubig G (2018)
     SwitchOut: an efficient data augmentation algorithm for neural machine translation. [arXiv: 1808.07512](https://arxiv.org/abs/1808.07512)
-
-Lewis, M, et al. (2019)
-    BART: Denoising sequence-to-sequence pre-training for natural language generation, translation, and comprehension. [arXiv:1910.13461](https://arxiv.org/abs/1910.13461)
