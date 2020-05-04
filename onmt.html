@@ -84,19 +84,10 @@
             
               <p class="caption"><span class="caption-text">Getting Started</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="main.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="FAQ.html">FAQ</a></li>
-<li class="toctree-l1"><a class="reference internal" href="CONTRIBUTING.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ref.html">References</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="Library.html">Library</a></li>
-<li class="toctree-l1"><a class="reference internal" href="extended.html">Translation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Summarization.html">Summarization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="im2text.html">Image to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="speech2text.html">Speech to Text</a></li>
 <li class="toctree-l1"><a class="reference internal" href="vid2text.html">Video to Text</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Scripts</span></p>
@@ -187,9 +178,9 @@
 <h1>Framework<a class="headerlink" href="#framework" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="model">
 <h2>Model<a class="headerlink" href="#model" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
+<dl class="py class">
 <dt id="onmt.models.NMTModel">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.models.</code><code class="sig-name descname">NMTModel</code><span class="sig-paren">(</span><em class="sig-param">encoder</em>, <em class="sig-param">decoder</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/models/model.html#NMTModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.models.NMTModel" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.models.</code><code class="sig-name descname">NMTModel</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">encoder</span></em>, <em class="sig-param"><span class="n">decoder</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/models/model.html#NMTModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.models.NMTModel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.module.Module</span></code></p>
 <p>Core trainable object in OpenNMT. Implements a trainable interface
 for a simple, generic encoder + decoder model.</p>
@@ -201,9 +192,9 @@ for a simple, generic encoder + decoder model.</p>
 </ul>
 </dd>
 </dl>
-<dl class="method">
+<dl class="py method">
 <dt id="onmt.models.NMTModel.forward">
-<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">src</em>, <em class="sig-param">tgt</em>, <em class="sig-param">lengths</em>, <em class="sig-param">bptt=False</em>, <em class="sig-param">with_align=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/models/model.html#NMTModel.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.models.NMTModel.forward" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">src</span></em>, <em class="sig-param"><span class="n">tgt</span></em>, <em class="sig-param"><span class="n">lengths</span></em>, <em class="sig-param"><span class="n">bptt</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">with_align</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/models/model.html#NMTModel.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.models.NMTModel.forward" title="Permalink to this definition">¶</a></dt>
 <dd><p>Forward propagate a <cite>src</cite> and <cite>tgt</cite> pair for training.
 Possible initialized with a beginning decoder state.</p>
 <dl class="field-list simple">
@@ -240,9 +231,9 @@ Only valid for transformer decoder.</p></li>
 </div>
 <div class="section" id="trainer">
 <h2>Trainer<a class="headerlink" href="#trainer" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
+<dl class="py class">
 <dt id="onmt.Trainer">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.</code><code class="sig-name descname">Trainer</code><span class="sig-paren">(</span><em class="sig-param">model, train_loss, valid_loss, optim, trunc_size=0, shard_size=32, norm_method='sents', accum_count=[1], accum_steps=[0], n_gpu=1, gpu_rank=1, gpu_verbose_level=0, report_manager=None, with_align=False, model_saver=None, average_decay=0, average_every=1, model_dtype='fp32', earlystopper=None, dropout=[0.3], dropout_steps=[0], source_noise=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.</code><code class="sig-name descname">Trainer</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em>, <em class="sig-param"><span class="n">train_loss</span></em>, <em class="sig-param"><span class="n">valid_loss</span></em>, <em class="sig-param"><span class="n">optim</span></em>, <em class="sig-param"><span class="n">trunc_size</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">shard_size</span><span class="o">=</span><span class="default_value">32</span></em>, <em class="sig-param"><span class="n">norm_method</span><span class="o">=</span><span class="default_value">'sents'</span></em>, <em class="sig-param"><span class="n">accum_count</span><span class="o">=</span><span class="default_value">[1]</span></em>, <em class="sig-param"><span class="n">accum_steps</span><span class="o">=</span><span class="default_value">[0]</span></em>, <em class="sig-param"><span class="n">n_gpu</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">gpu_rank</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">gpu_verbose_level</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">report_manager</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">with_align</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">model_saver</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">average_decay</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">average_every</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">model_dtype</span><span class="o">=</span><span class="default_value">'fp32'</span></em>, <em class="sig-param"><span class="n">earlystopper</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">dropout</span><span class="o">=</span><span class="default_value">[0.3]</span></em>, <em class="sig-param"><span class="n">dropout_steps</span><span class="o">=</span><span class="default_value">[0]</span></em>, <em class="sig-param"><span class="n">source_noise</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Class that controls the training process.</p>
 <dl class="field-list simple">
@@ -266,9 +257,9 @@ Thus nothing will be saved if this parameter is None</p></li>
 </ul>
 </dd>
 </dl>
-<dl class="method">
+<dl class="py method">
 <dt id="onmt.Trainer.train">
-<code class="sig-name descname">train</code><span class="sig-paren">(</span><em class="sig-param">train_iter</em>, <em class="sig-param">train_steps</em>, <em class="sig-param">save_checkpoint_steps=5000</em>, <em class="sig-param">valid_iter=None</em>, <em class="sig-param">valid_steps=10000</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer.train"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer.train" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">train</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">train_iter</span></em>, <em class="sig-param"><span class="n">train_steps</span></em>, <em class="sig-param"><span class="n">save_checkpoint_steps</span><span class="o">=</span><span class="default_value">5000</span></em>, <em class="sig-param"><span class="n">valid_iter</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">valid_steps</span><span class="o">=</span><span class="default_value">10000</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer.train"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer.train" title="Permalink to this definition">¶</a></dt>
 <dd><p>The main training loop by iterating over <cite>train_iter</cite> and possibly
 running validation on <cite>valid_iter</cite>.</p>
 <dl class="field-list simple">
@@ -288,9 +279,9 @@ iterations.</p></li>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="onmt.Trainer.validate">
-<code class="sig-name descname">validate</code><span class="sig-paren">(</span><em class="sig-param">valid_iter</em>, <em class="sig-param">moving_average=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer.validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer.validate" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">validate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">valid_iter</span></em>, <em class="sig-param"><span class="n">moving_average</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer.validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer.validate" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="simple">
 <dt>Validate model.</dt><dd><p>valid_iter: validate data iterator</p>
 </dd>
@@ -307,9 +298,9 @@ iterations.</p></li>
 
 </dd></dl>
 
-<dl class="class">
+<dl class="py class">
 <dt id="onmt.utils.Statistics">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.utils.</code><code class="sig-name descname">Statistics</code><span class="sig-paren">(</span><em class="sig-param">loss=0</em>, <em class="sig-param">n_words=0</em>, <em class="sig-param">n_correct=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/statistics.html#Statistics"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.Statistics" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.utils.</code><code class="sig-name descname">Statistics</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">loss</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">n_words</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">n_correct</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/statistics.html#Statistics"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.Statistics" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Accumulator for loss statistics.
 Currently calculates:</p>
@@ -318,15 +309,15 @@ Currently calculates:</p>
 <li><p>perplexity</p></li>
 <li><p>elapsed time</p></li>
 </ul>
-<dl class="method">
+<dl class="py method">
 <dt id="onmt.utils.Statistics.accuracy">
 <code class="sig-name descname">accuracy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/statistics.html#Statistics.accuracy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.Statistics.accuracy" title="Permalink to this definition">¶</a></dt>
 <dd><p>compute accuracy</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="onmt.utils.Statistics.all_gather_stats">
-<em class="property">static </em><code class="sig-name descname">all_gather_stats</code><span class="sig-paren">(</span><em class="sig-param">stat</em>, <em class="sig-param">max_size=4096</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/statistics.html#Statistics.all_gather_stats"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.Statistics.all_gather_stats" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="sig-name descname">all_gather_stats</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">stat</span></em>, <em class="sig-param"><span class="n">max_size</span><span class="o">=</span><span class="default_value">4096</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/statistics.html#Statistics.all_gather_stats"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.Statistics.all_gather_stats" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gather a <cite>Statistics</cite> object accross multiple process/nodes</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -342,9 +333,9 @@ accross all processes/nodes</p></li>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="onmt.utils.Statistics.all_gather_stats_list">
-<em class="property">static </em><code class="sig-name descname">all_gather_stats_list</code><span class="sig-paren">(</span><em class="sig-param">stat_list</em>, <em class="sig-param">max_size=4096</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/statistics.html#Statistics.all_gather_stats_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.Statistics.all_gather_stats_list" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="sig-name descname">all_gather_stats_list</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">stat_list</span></em>, <em class="sig-param"><span class="n">max_size</span><span class="o">=</span><span class="default_value">4096</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/statistics.html#Statistics.all_gather_stats_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.Statistics.all_gather_stats_list" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gather a <cite>Statistics</cite> list accross all processes/nodes</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -363,21 +354,21 @@ gather accross all processes/nodes</p></li>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="onmt.utils.Statistics.elapsed_time">
 <code class="sig-name descname">elapsed_time</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/statistics.html#Statistics.elapsed_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.Statistics.elapsed_time" title="Permalink to this definition">¶</a></dt>
 <dd><p>compute elapsed time</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="onmt.utils.Statistics.log_tensorboard">
-<code class="sig-name descname">log_tensorboard</code><span class="sig-paren">(</span><em class="sig-param">prefix</em>, <em class="sig-param">writer</em>, <em class="sig-param">learning_rate</em>, <em class="sig-param">step</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/statistics.html#Statistics.log_tensorboard"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.Statistics.log_tensorboard" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">log_tensorboard</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">prefix</span></em>, <em class="sig-param"><span class="n">writer</span></em>, <em class="sig-param"><span class="n">learning_rate</span></em>, <em class="sig-param"><span class="n">step</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/statistics.html#Statistics.log_tensorboard"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.Statistics.log_tensorboard" title="Permalink to this definition">¶</a></dt>
 <dd><p>display statistics to tensorboard</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="onmt.utils.Statistics.output">
-<code class="sig-name descname">output</code><span class="sig-paren">(</span><em class="sig-param">step</em>, <em class="sig-param">num_steps</em>, <em class="sig-param">learning_rate</em>, <em class="sig-param">start</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/statistics.html#Statistics.output"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.Statistics.output" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">output</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">step</span></em>, <em class="sig-param"><span class="n">num_steps</span></em>, <em class="sig-param"><span class="n">learning_rate</span></em>, <em class="sig-param"><span class="n">start</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/statistics.html#Statistics.output"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.Statistics.output" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write out statistics to stdout.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -390,15 +381,15 @@ gather accross all processes/nodes</p></li>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="onmt.utils.Statistics.ppl">
 <code class="sig-name descname">ppl</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/statistics.html#Statistics.ppl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.Statistics.ppl" title="Permalink to this definition">¶</a></dt>
 <dd><p>compute perplexity</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="onmt.utils.Statistics.update">
-<code class="sig-name descname">update</code><span class="sig-paren">(</span><em class="sig-param">stat</em>, <em class="sig-param">update_n_src_words=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/statistics.html#Statistics.update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.Statistics.update" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">update</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">stat</span></em>, <em class="sig-param"><span class="n">update_n_src_words</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/statistics.html#Statistics.update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.Statistics.update" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update statistics by suming values with another <cite>Statistics</cite> object</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -411,7 +402,7 @@ or not</p></li>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="onmt.utils.Statistics.xent">
 <code class="sig-name descname">xent</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/statistics.html#Statistics.xent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.Statistics.xent" title="Permalink to this definition">¶</a></dt>
 <dd><p>compute cross entropy</p>
@@ -422,9 +413,9 @@ or not</p></li>
 </div>
 <div class="section" id="loss">
 <h2>Loss<a class="headerlink" href="#loss" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
+<dl class="py class">
 <dt id="onmt.utils.loss.LossComputeBase">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.utils.loss.</code><code class="sig-name descname">LossComputeBase</code><span class="sig-paren">(</span><em class="sig-param">criterion</em>, <em class="sig-param">generator</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/loss.html#LossComputeBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.loss.LossComputeBase" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.utils.loss.</code><code class="sig-name descname">LossComputeBase</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">criterion</span></em>, <em class="sig-param"><span class="n">generator</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/loss.html#LossComputeBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.loss.LossComputeBase" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.module.Module</span></code></p>
 <p>Class for managing efficient loss computation. Handles
 sharding next step predictions and accumulating multiple
@@ -447,25 +438,25 @@ distribution over the target vocabulary.</p></li>
 </div>
 <div class="section" id="optimizer">
 <h2>Optimizer<a class="headerlink" href="#optimizer" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
+<dl class="py class">
 <dt id="onmt.utils.Optimizer">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.utils.</code><code class="sig-name descname">Optimizer</code><span class="sig-paren">(</span><em class="sig-param">optimizer</em>, <em class="sig-param">learning_rate</em>, <em class="sig-param">learning_rate_decay_fn=None</em>, <em class="sig-param">max_grad_norm=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/optimizers.html#Optimizer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.Optimizer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.utils.</code><code class="sig-name descname">Optimizer</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">optimizer</span></em>, <em class="sig-param"><span class="n">learning_rate</span></em>, <em class="sig-param"><span class="n">learning_rate_decay_fn</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">max_grad_norm</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/optimizers.html#Optimizer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.Optimizer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Controller class for optimization. Mostly a thin
 wrapper for <cite>optim</cite>, but also useful for implementing
 rate scheduling beyond what is currently available.
 Also implements necessary methods for training RNNs such
 as grad manipulations.</p>
-<dl class="method">
+<dl class="py method">
 <dt id="onmt.utils.Optimizer.backward">
-<code class="sig-name descname">backward</code><span class="sig-paren">(</span><em class="sig-param">loss</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/optimizers.html#Optimizer.backward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.Optimizer.backward" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">backward</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">loss</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/optimizers.html#Optimizer.backward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.Optimizer.backward" title="Permalink to this definition">¶</a></dt>
 <dd><p>Wrapper for backward pass. Some optimizer requires ownership of the
 backward pass.</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="onmt.utils.Optimizer.from_opt">
-<em class="property">classmethod </em><code class="sig-name descname">from_opt</code><span class="sig-paren">(</span><em class="sig-param">model</em>, <em class="sig-param">opt</em>, <em class="sig-param">checkpoint=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/optimizers.html#Optimizer.from_opt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.Optimizer.from_opt" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><code class="sig-name descname">from_opt</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em>, <em class="sig-param"><span class="n">opt</span></em>, <em class="sig-param"><span class="n">checkpoint</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/optimizers.html#Optimizer.from_opt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.Optimizer.from_opt" title="Permalink to this definition">¶</a></dt>
 <dd><p>Builds the optimizer from options.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -482,13 +473,13 @@ backward pass.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="onmt.utils.Optimizer.learning_rate">
 <code class="sig-name descname">learning_rate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/optimizers.html#Optimizer.learning_rate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.Optimizer.learning_rate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the current learning rate.</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="onmt.utils.Optimizer.step">
 <code class="sig-name descname">step</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/optimizers.html#Optimizer.step"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.Optimizer.step" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update the model parameters based on current gradients.</p>
@@ -496,13 +487,13 @@ backward pass.</p>
 rate.</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="onmt.utils.Optimizer.training_step">
 <em class="property">property </em><code class="sig-name descname">training_step</code><a class="headerlink" href="#onmt.utils.Optimizer.training_step" title="Permalink to this definition">¶</a></dt>
 <dd><p>The current training step.</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="onmt.utils.Optimizer.zero_grad">
 <code class="sig-name descname">zero_grad</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/optimizers.html#Optimizer.zero_grad"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.Optimizer.zero_grad" title="Permalink to this definition">¶</a></dt>
 <dd><p>Zero the gradients of optimized parameters.</p>
