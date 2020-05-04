@@ -716,11 +716,14 @@ class MultipleDatasetIterator(object):
                  opt):
         self.index = -1
         self.iterables = []
-        for shard in train_shards:
-            self.iterables.append(
-                build_dataset_iter(shard, fields, opt, multi=True))
+        self.weights = []
+        for shard, weight in zip(train_shards, opt.data_weights):
+            if weight > 0:
+                self.iterables.append(
+                    build_dataset_iter(shard, fields, opt, multi=True))
+                self.weights.append(weight)
         self.init_iterators = True
-        self.weights = opt.data_weights
+        # self.weights = opt.data_weights
         self.batch_size = opt.batch_size
         self.batch_size_fn = max_tok_len \
             if opt.batch_type == "tokens" else None
