@@ -1,3 +1,7 @@
+./CONTRIBUTING.html
+./FAQ.html
+./Library.html
+./Summarization.html
 ./_modules/index.html
 ./_modules/onmt/decoders/cnn_decoder.html
 ./_modules/onmt/decoders/decoder.html
@@ -36,8 +40,16 @@
 ./_modules/onmt/utils/loss.html
 ./_modules/onmt/utils/optimizers.html
 ./_modules/onmt/utils/statistics.html
+./_sources/CONTRIBUTING.md.txt
+./_sources/FAQ.md.txt
+./_sources/Library.md.txt
+./_sources/Summarization.md.txt
 ./_sources/examples.rst.txt
+./_sources/extended.md.txt
+./_sources/ggnn.md.txt
+./_sources/im2text.md.txt
 ./_sources/index.rst.txt
+./_sources/main.md.txt
 ./_sources/modules.rst.txt
 ./_sources/onmt.inputters.rst.txt
 ./_sources/onmt.modules.rst.txt
@@ -48,7 +60,9 @@
 ./_sources/options/server.rst.txt
 ./_sources/options/train.rst.txt
 ./_sources/options/translate.rst.txt
+./_sources/quickstart.md.txt
 ./_sources/ref.rst.txt
+./_sources/speech2text.md.txt
 ./_sources/vid2text.rst.txt
 ./_static/basic.css
 ./_static/css/badge_only.css
@@ -105,8 +119,12 @@
 ./_static/underscore-1.3.1.js
 ./_static/underscore.js
 ./examples.html
+./extended.html
 ./genindex.html
+./ggnn.html
+./im2text.html
 ./index.html
+./main.html
 ./modules.html
 ./objects.inv
 ./onmt.html
@@ -118,7 +136,9 @@
 ./options/server.html
 ./options/train.html
 ./options/translate.html
+./quickstart.html
 ./ref.html
 ./search.html
 ./searchindex.js
+./speech2text.html
 ./vid2text.html

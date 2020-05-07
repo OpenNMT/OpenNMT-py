@@ -22,6 +22,7 @@ Contents
       im2text.md
       speech2text.md
       vid2text.rst
+      ggnn.md
 
 
 .. toctree::
