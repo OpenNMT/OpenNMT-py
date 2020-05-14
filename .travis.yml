@@ -26,7 +26,7 @@ jobs:
   include:
     - name: "Flake8 Lint Check"
       env: LINT_CHECK
-      install: pip install flake8 pep8-naming==0.7.0
+      install: pip install flake8==3.7.* pep8-naming==0.7.0
       script: flake8
     - name: "Build Docs"
       install:

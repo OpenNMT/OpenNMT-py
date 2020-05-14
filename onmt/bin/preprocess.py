@@ -265,10 +265,17 @@ def preprocess(opt):
 
     src_nfeats = 0
     tgt_nfeats = 0
-    for src, tgt in zip(opt.train_src, opt.train_tgt):
-        src_nfeats += count_features(src) if opt.data_type == 'text' \
-            else 0
-        tgt_nfeats += count_features(tgt)  # tgt always text so far
+    src_nfeats = count_features(opt.train_src[0]) if opt.data_type == 'text' \
+        else 0
+    tgt_nfeats = count_features(opt.train_tgt[0])  # tgt always text so far
+    if len(opt.train_src) > 1 and opt.data_type == 'text':
+        for src, tgt in zip(opt.train_src[1:], opt.train_tgt[1:]):
+            assert src_nfeats == count_features(src),\
+                "%s seems to mismatch features of "\
+                "the other source datasets" % src
+            assert tgt_nfeats == count_features(tgt),\
+                "%s seems to mismatch features of "\
+                "the other target datasets" % tgt
     logger.info(" * number of source features: %d." % src_nfeats)
     logger.info(" * number of target features: %d." % tgt_nfeats)
 
