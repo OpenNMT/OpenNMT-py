@@ -116,8 +116,8 @@ class TransformerDecoderLayer(nn.Module):
         Args:
             inputs (FloatTensor): ``(batch_size, T, model_dim)``
             memory_bank (FloatTensor): ``(batch_size, src_len, model_dim)``
-            src_pad_mask (LongTensor): ``(batch_size, 1, src_len)``
-            tgt_pad_mask (LongTensor): ``(batch_size, 1, T)``
+            src_pad_mask (bool): ``(batch_size, 1, src_len)``
+            tgt_pad_mask (bool): ``(batch_size, 1, T)``
             layer_cache (dict or None): cached layer info when stepwise decode
             step (int or None): stepwise decoding counter
             future (bool): If set True, do not apply future_mask.
@@ -196,7 +196,7 @@ class TransformerDecoder(DecoderBase):
 
 
     Args:
-        num_layers (int): number of encoder layers.
+        num_layers (int): number of decoder layers.
         d_model (int): size of the model
         heads (int): number of heads
         d_ff (int): size of the inner FF layer
