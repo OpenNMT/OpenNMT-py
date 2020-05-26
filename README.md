@@ -349,6 +349,8 @@ There are multiple ways in which this prototype could be improved.
 
     - Make a hacky thing that buffers the joint data and exposes it via two objects with a read method.
 
+1. Support for BPE-Dropout (Provilkov 2019). This would enable sampling dynamic segmentations for applying subword regularization with BPE.
+
 ### Tighter integration
 
 1. Staying closer to current OpenNMT.
@@ -386,6 +388,9 @@ Kudo T (2018)
 
 Lewis, M, et al. (2019)
     BART: Denoising sequence-to-sequence pre-training for natural language generation, translation, and comprehension. [arXiv:1910.13461](https://arxiv.org/abs/1910.13461)
+
+Provilkov, I., et al. (2019)
+    BPE-Dropout: Simple and Effective Subword Regularization. [arXiv:1910.13267](https://arxiv.org/abs/1910.13267)
 
 Srivastava N, Hinton G, Krizhevsky A, Sutskever I, Salakhutdinov R (2014)
     [Dropout: a simple way to prevent neural networks from overfitting.](https://dl.acm.org/doi/abs/10.5555/2627435.2670313) The Journal of Machine Learning Research 15(1):1929–1958
