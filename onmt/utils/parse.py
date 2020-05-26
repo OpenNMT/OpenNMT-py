@@ -124,6 +124,8 @@ class ArgumentParser(cfargparse.ArgumentParser):
     def validate_translate_opts(cls, opt):
         if opt.beam_size != 1 and opt.random_sampling_topk != 1:
             raise ValueError('Can either do beam search OR random sampling.')
+        if opt.tgt_prefix and opt.tgt is None:
+            raise ValueError('Prefix should be feed by -tgt if -tgt_prefix.')
 
     @classmethod
     def validate_preprocess_args(cls, opt):
