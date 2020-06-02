@@ -294,8 +294,8 @@
 <span class="sd">        Args:</span>
 <span class="sd">            inputs (FloatTensor): ``(batch_size, T, model_dim)``</span>
 <span class="sd">            memory_bank (FloatTensor): ``(batch_size, src_len, model_dim)``</span>
-<span class="sd">            src_pad_mask (LongTensor): ``(batch_size, 1, src_len)``</span>
-<span class="sd">            tgt_pad_mask (LongTensor): ``(batch_size, 1, T)``</span>
+<span class="sd">            src_pad_mask (bool): ``(batch_size, 1, src_len)``</span>
+<span class="sd">            tgt_pad_mask (bool): ``(batch_size, 1, T)``</span>
 <span class="sd">            layer_cache (dict or None): cached layer info when stepwise decode</span>
 <span class="sd">            step (int or None): stepwise decoding counter</span>
 <span class="sd">            future (bool): If set True, do not apply future_mask.</span>
@@ -374,7 +374,7 @@
 
 
 <span class="sd">    Args:</span>
-<span class="sd">        num_layers (int): number of encoder layers.</span>
+<span class="sd">        num_layers (int): number of decoder layers.</span>
 <span class="sd">        d_model (int): size of the model</span>
 <span class="sd">        heads (int): number of heads</span>
 <span class="sd">        d_ff (int): size of the inner FF layer</span>
