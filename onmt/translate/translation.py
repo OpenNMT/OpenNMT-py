@@ -32,7 +32,7 @@ class TranslationBuilder(object):
         self.n_best = n_best
         self.replace_unk = replace_unk
         self.phrase_table_dict = {}
-        if phrase_table !="" and os.path.exists(phrase_table):
+        if phrase_table != "" and os.path.exists(phrase_table):
             with open(phrase_table) as phrase_table_fd:
                 for line in phrase_table_fd:
                     phrase_src, phrase_trg = line.rstrip("\n").split("|||")
