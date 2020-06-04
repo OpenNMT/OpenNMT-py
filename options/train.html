@@ -253,6 +253,7 @@
                 <span class="p">[</span><span class="o">--</span><span class="n">pre_word_vecs_enc</span> <span class="n">PRE_WORD_VECS_ENC</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">pre_word_vecs_dec</span> <span class="n">PRE_WORD_VECS_DEC</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">fix_word_vecs_enc</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">fix_word_vecs_dec</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">batch_size</span> <span class="n">BATCH_SIZE</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">batch_size_multiple</span> <span class="n">BATCH_SIZE_MULTIPLE</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">batch_type</span> <span class="p">{</span><span class="n">sents</span><span class="p">,</span><span class="n">tokens</span><span class="p">}]</span> <span class="p">[</span><span class="o">--</span><span class="n">pool_factor</span> <span class="n">POOL_FACTOR</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">normalization</span> <span class="p">{</span><span class="n">sents</span><span class="p">,</span><span class="n">tokens</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">accum_count</span> <span class="n">ACCUM_COUNT</span> <span class="p">[</span><span class="n">ACCUM_COUNT</span> <span class="o">...</span><span class="p">]]</span>
@@ -670,6 +671,9 @@
 <dt><kbd>--batch_size, -batch_size</kbd></dt>
 <dd><p>Maximum batch size for training</p>
 <p>Default: 64</p>
+</dd>
+<dt><kbd>--batch_size_multiple, -batch_size_multiple</kbd></dt>
+<dd><p>Batch size multiple for token batches.</p>
 </dd>
 <dt><kbd>--batch_type, -batch_type</kbd></dt>
 <dd><p>Possible choices: sents, tokens</p>
