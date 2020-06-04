@@ -223,7 +223,7 @@ each translation.</p></li>
 <h2>Translator Class<a class="headerlink" href="#translator-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.translate.Translator">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.translate.</code><code class="sig-name descname">Translator</code><span class="sig-paren">(</span><em class="sig-param">model</em>, <em class="sig-param">fields</em>, <em class="sig-param">src_reader</em>, <em class="sig-param">tgt_reader</em>, <em class="sig-param">gpu=-1</em>, <em class="sig-param">n_best=1</em>, <em class="sig-param">min_length=0</em>, <em class="sig-param">max_length=100</em>, <em class="sig-param">ratio=0.0</em>, <em class="sig-param">beam_size=30</em>, <em class="sig-param">random_sampling_topk=1</em>, <em class="sig-param">random_sampling_temp=1</em>, <em class="sig-param">stepwise_penalty=None</em>, <em class="sig-param">dump_beam=False</em>, <em class="sig-param">block_ngram_repeat=0</em>, <em class="sig-param">ignore_when_blocking=frozenset({})</em>, <em class="sig-param">replace_unk=False</em>, <em class="sig-param">phrase_table=''</em>, <em class="sig-param">data_type='text'</em>, <em class="sig-param">verbose=False</em>, <em class="sig-param">report_time=False</em>, <em class="sig-param">copy_attn=False</em>, <em class="sig-param">global_scorer=None</em>, <em class="sig-param">out_file=None</em>, <em class="sig-param">report_align=False</em>, <em class="sig-param">report_score=True</em>, <em class="sig-param">logger=None</em>, <em class="sig-param">seed=-1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.translate.</code><code class="sig-name descname">Translator</code><span class="sig-paren">(</span><em class="sig-param">model</em>, <em class="sig-param">fields</em>, <em class="sig-param">src_reader</em>, <em class="sig-param">tgt_reader</em>, <em class="sig-param">gpu=-1</em>, <em class="sig-param">n_best=1</em>, <em class="sig-param">min_length=0</em>, <em class="sig-param">max_length=100</em>, <em class="sig-param">ratio=0.0</em>, <em class="sig-param">beam_size=30</em>, <em class="sig-param">random_sampling_topk=1</em>, <em class="sig-param">random_sampling_temp=1</em>, <em class="sig-param">stepwise_penalty=None</em>, <em class="sig-param">dump_beam=False</em>, <em class="sig-param">block_ngram_repeat=0</em>, <em class="sig-param">ignore_when_blocking=frozenset({})</em>, <em class="sig-param">replace_unk=False</em>, <em class="sig-param">tgt_prefix=False</em>, <em class="sig-param">phrase_table=''</em>, <em class="sig-param">data_type='text'</em>, <em class="sig-param">verbose=False</em>, <em class="sig-param">report_time=False</em>, <em class="sig-param">copy_attn=False</em>, <em class="sig-param">global_scorer=None</em>, <em class="sig-param">out_file=None</em>, <em class="sig-param">report_align=False</em>, <em class="sig-param">report_score=True</em>, <em class="sig-param">logger=None</em>, <em class="sig-param">seed=-1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Translate a batch of sentences with a saved model.</p>
 <dl class="field-list simple">
@@ -253,6 +253,7 @@ or not.</p></li>
 <li><p><strong>ignore_when_blocking</strong> (<em>set</em><em> or </em><em>frozenset</em>) – See
 <code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.translate.decode_strategy.DecodeStrategy</span></code>.</p></li>
 <li><p><strong>replace_unk</strong> (<em>bool</em>) – Replace unknown token.</p></li>
+<li><p><strong>tgt_prefix</strong> (<em>bool</em>) – Force the predictions begin with provided -tgt.</p></li>
 <li><p><strong>data_type</strong> (<em>str</em>) – Source data type.</p></li>
 <li><p><strong>verbose</strong> (<em>bool</em>) – Print/log every translation.</p></li>
 <li><p><strong>report_time</strong> (<em>bool</em>) – Print/log total time/frequency.</p></li>
@@ -403,6 +404,9 @@ This sequence grows in the <code class="docutils literal notranslate"><span clas
 <li><p><strong>alive_attn</strong> (<em>FloatTensor</em><em> or </em><em>NoneType</em>) – If tensor, shape is
 <code class="docutils literal notranslate"><span class="pre">(step,</span> <span class="pre">B</span> <span class="pre">x</span> <span class="pre">parallel_paths,</span> <span class="pre">inp_seq_len)</span></code>, where <code class="docutils literal notranslate"><span class="pre">inp_seq_len</span></code>
 is the (max) length of the input sequence.</p></li>
+<li><p><strong>target_prefix</strong> (<em>LongTensor</em><em> or </em><em>NoneType</em>) – If tensor, shape is
+<code class="docutils literal notranslate"><span class="pre">(B</span> <span class="pre">x</span> <span class="pre">parallel_paths,</span> <span class="pre">prefix_seq_len)</span></code>, where <code class="docutils literal notranslate"><span class="pre">prefix_seq_len</span></code>
+is the (max) length of the pre-fixed prediction.</p></li>
 <li><p><strong>min_length</strong> (<em>int</em>) – See above.</p></li>
 <li><p><strong>max_length</strong> (<em>int</em>) – See above.</p></li>
 <li><p><strong>block_ngram_repeat</strong> (<em>int</em>) – See above.</p></li>
@@ -452,7 +456,7 @@ manually put any token that would lead to a repeated ngram to 0.</p>
 
 <dl class="method">
 <dt id="onmt.translate.DecodeStrategy.initialize">
-<code class="sig-name descname">initialize</code><span class="sig-paren">(</span><em class="sig-param">memory_bank</em>, <em class="sig-param">src_lengths</em>, <em class="sig-param">src_map=None</em>, <em class="sig-param">device=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/decode_strategy.html#DecodeStrategy.initialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.DecodeStrategy.initialize" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">initialize</code><span class="sig-paren">(</span><em class="sig-param">memory_bank</em>, <em class="sig-param">src_lengths</em>, <em class="sig-param">src_map=None</em>, <em class="sig-param">device=None</em>, <em class="sig-param">target_prefix=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/decode_strategy.html#DecodeStrategy.initialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.DecodeStrategy.initialize" title="Permalink to this definition">¶</a></dt>
 <dd><p>DecodeStrategy subclasses should override <a class="reference internal" href="#onmt.translate.DecodeStrategy.initialize" title="onmt.translate.DecodeStrategy.initialize"><code class="xref py py-func docutils literal notranslate"><span class="pre">initialize()</span></code></a>.</p>
 <p><cite>initialize</cite> should be called before all actions.
 used to prepare necessary ingredients for decode.</p>
@@ -462,6 +466,29 @@ used to prepare necessary ingredients for decode.</p>
 <dt id="onmt.translate.DecodeStrategy.maybe_update_forbidden_tokens">
 <code class="sig-name descname">maybe_update_forbidden_tokens</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/decode_strategy.html#DecodeStrategy.maybe_update_forbidden_tokens"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.DecodeStrategy.maybe_update_forbidden_tokens" title="Permalink to this definition">¶</a></dt>
 <dd><p>We complete and reorder the list of forbidden_tokens</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.translate.DecodeStrategy.maybe_update_target_prefix">
+<code class="sig-name descname">maybe_update_target_prefix</code><span class="sig-paren">(</span><em class="sig-param">select_index</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/decode_strategy.html#DecodeStrategy.maybe_update_target_prefix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.DecodeStrategy.maybe_update_target_prefix" title="Permalink to this definition">¶</a></dt>
+<dd><p>We update / reorder <cite>target_prefix</cite> for alive path.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.translate.DecodeStrategy.target_prefixing">
+<code class="sig-name descname">target_prefixing</code><span class="sig-paren">(</span><em class="sig-param">log_probs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/decode_strategy.html#DecodeStrategy.target_prefixing"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.DecodeStrategy.target_prefixing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fix the first part of predictions with <cite>self.target_prefix</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>log_probs</strong> (<em>FloatTensor</em>) – logits of size <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">vocab_size)</span></code>.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>modified logits in <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">vocab_size)</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>log_probs (FloatTensor)</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
@@ -539,7 +566,7 @@ and, when appropriate, <code class="docutils literal notranslate"><span class="p
 
 <dl class="method">
 <dt id="onmt.translate.BeamSearch.initialize">
-<code class="sig-name descname">initialize</code><span class="sig-paren">(</span><em class="sig-param">memory_bank</em>, <em class="sig-param">src_lengths</em>, <em class="sig-param">src_map=None</em>, <em class="sig-param">device=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam_search.html#BeamSearch.initialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.BeamSearch.initialize" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">initialize</code><span class="sig-paren">(</span><em class="sig-param">memory_bank</em>, <em class="sig-param">src_lengths</em>, <em class="sig-param">src_map=None</em>, <em class="sig-param">device=None</em>, <em class="sig-param">target_prefix=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam_search.html#BeamSearch.initialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.BeamSearch.initialize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize for decoding.
 Repeat src objects <cite>beam_size</cite> times.</p>
 </dd></dl>
@@ -639,7 +666,7 @@ to 1.)</p></li>
 
 <dl class="method">
 <dt id="onmt.translate.GreedySearch.initialize">
-<code class="sig-name descname">initialize</code><span class="sig-paren">(</span><em class="sig-param">memory_bank</em>, <em class="sig-param">src_lengths</em>, <em class="sig-param">src_map=None</em>, <em class="sig-param">device=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/greedy_search.html#GreedySearch.initialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.GreedySearch.initialize" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">initialize</code><span class="sig-paren">(</span><em class="sig-param">memory_bank</em>, <em class="sig-param">src_lengths</em>, <em class="sig-param">src_map=None</em>, <em class="sig-param">device=None</em>, <em class="sig-param">target_prefix=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/greedy_search.html#GreedySearch.initialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.GreedySearch.initialize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize for decoding.</p>
 </dd></dl>
 

@@ -269,7 +269,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">keep_topk</span> <span class="o">=</span> <span class="n">keep_topk</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">topk_scores</span> <span class="o">=</span> <span class="kc">None</span>
 
-<div class="viewcode-block" id="GreedySearch.initialize"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.greedy_search.GreedySearch.initialize">[docs]</a>    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">,</span> <span class="n">src_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="GreedySearch.initialize"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.greedy_search.GreedySearch.initialize">[docs]</a>    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">,</span> <span class="n">src_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                   <span class="n">target_prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize for decoding.&quot;&quot;&quot;</span>
         <span class="n">fn_map_state</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -282,7 +283,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">memory_lengths</span> <span class="o">=</span> <span class="n">src_lengths</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">GreedySearch</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span>
-            <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">,</span> <span class="n">src_map</span><span class="p">,</span> <span class="n">device</span><span class="p">)</span>
+            <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">,</span> <span class="n">src_map</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">target_prefix</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">select_indices</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">original_batch_idx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span>
@@ -296,6 +297,18 @@
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">batch_offset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">select_indices</span>
+
+    <span class="k">def</span> <span class="nf">_pick</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log_probs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Function used to pick next tokens.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            log_probs (FloatTensor): ``(batch_size, vocab_size)``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># maybe fix some prediction at this step by modifying log_probs</span>
+        <span class="n">log_probs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_prefixing</span><span class="p">(</span><span class="n">log_probs</span><span class="p">)</span>
+        <span class="n">topk_ids</span><span class="p">,</span> <span class="n">topk_scores</span> <span class="o">=</span> <span class="n">sample_with_temperature</span><span class="p">(</span>
+            <span class="n">log_probs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampling_temp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">keep_topk</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">topk_ids</span><span class="p">,</span> <span class="n">topk_scores</span>
 
 <div class="viewcode-block" id="GreedySearch.advance"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.greedy_search.GreedySearch.advance">[docs]</a>    <span class="k">def</span> <span class="nf">advance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log_probs</span><span class="p">,</span> <span class="n">attn</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Select next tokens randomly from the top k possible next tokens.</span>
@@ -312,8 +325,8 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">ensure_min_length</span><span class="p">(</span><span class="n">log_probs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">block_ngram_repeats</span><span class="p">(</span><span class="n">log_probs</span><span class="p">)</span>
-        <span class="n">topk_ids</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">topk_scores</span> <span class="o">=</span> <span class="n">sample_with_temperature</span><span class="p">(</span>
-            <span class="n">log_probs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampling_temp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">keep_topk</span><span class="p">)</span>
+
+        <span class="n">topk_ids</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">topk_scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pick</span><span class="p">(</span><span class="n">log_probs</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span> <span class="o">=</span> <span class="n">topk_ids</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">eos</span><span class="p">)</span>
 
@@ -344,7 +357,8 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">alive_attn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">alive_attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">alive_attn</span><span class="p">[:,</span> <span class="n">is_alive</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">select_indices</span> <span class="o">=</span> <span class="n">is_alive</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">original_batch_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">original_batch_idx</span><span class="p">[</span><span class="n">is_alive</span><span class="p">]</span></div></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">original_batch_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">original_batch_idx</span><span class="p">[</span><span class="n">is_alive</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maybe_update_target_prefix</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">select_indices</span><span class="p">)</span></div></div>
 </pre></div>
 
            </div>

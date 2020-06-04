@@ -223,6 +223,9 @@
 <span class="sd">        alive_attn (FloatTensor or NoneType): If tensor, shape is</span>
 <span class="sd">            ``(step, B x parallel_paths, inp_seq_len)``, where ``inp_seq_len``</span>
 <span class="sd">            is the (max) length of the input sequence.</span>
+<span class="sd">        target_prefix (LongTensor or NoneType): If tensor, shape is</span>
+<span class="sd">            ``(B x parallel_paths, prefix_seq_len)``, where ``prefix_seq_len``</span>
+<span class="sd">            is the (max) length of the pre-fixed prediction.</span>
 <span class="sd">        min_length (int): See above.</span>
 <span class="sd">        max_length (int): See above.</span>
 <span class="sd">        block_ngram_repeat (int): See above.</span>
@@ -261,7 +264,8 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">done</span> <span class="o">=</span> <span class="kc">False</span>
 
-<div class="viewcode-block" id="DecodeStrategy.initialize"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.DecodeStrategy.initialize">[docs]</a>    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">,</span> <span class="n">src_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="DecodeStrategy.initialize"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.DecodeStrategy.initialize">[docs]</a>    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">,</span> <span class="n">src_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                   <span class="n">target_prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;DecodeStrategy subclasses should override :func:`initialize()`.</span>
 
 <span class="sd">        `initialize` should be called before all actions.</span>
@@ -275,6 +279,17 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
             <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parallel_paths</span><span class="p">],</span>
             <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">target_prefix</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">seq_len</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">n_feats</span> <span class="o">=</span> <span class="n">target_prefix</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+            <span class="k">assert</span> <span class="n">batch_size</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">parallel_paths</span><span class="p">,</span>\
+                <span class="s2">&quot;forced target_prefix should&#39;ve extend to same number of path!&quot;</span>
+            <span class="n">target_prefix_words</span> <span class="o">=</span> <span class="n">target_prefix</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">target_prefix</span> <span class="o">=</span> <span class="n">target_prefix_words</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:]</span>  <span class="c1"># remove bos</span>
+            <span class="c1"># fix length constraint</span>
+            <span class="n">prefix_non_pad</span> <span class="o">=</span> <span class="n">target_prefix</span><span class="o">.</span><span class="n">ne</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pad</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">max_length</span> <span class="o">+=</span> <span class="nb">max</span><span class="p">(</span><span class="n">prefix_non_pad</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">min_length</span> <span class="o">+=</span> <span class="nb">min</span><span class="p">(</span><span class="n">prefix_non_pad</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_prefix</span> <span class="o">=</span> <span class="n">target_prefix</span>  <span class="c1"># NOTE: forced prefix words</span>
         <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">,</span> <span class="n">src_map</span></div>
 
     <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -360,6 +375,45 @@
             <span class="n">forbidden_tokens</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">current_ngram</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">current_ngram</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">forbidden_tokens</span> <span class="o">=</span> <span class="n">forbidden_tokens</span></div>
+
+<div class="viewcode-block" id="DecodeStrategy.target_prefixing"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.DecodeStrategy.target_prefixing">[docs]</a>    <span class="k">def</span> <span class="nf">target_prefixing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log_probs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Fix the first part of predictions with `self.target_prefix`.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            log_probs (FloatTensor): logits of size ``(B, vocab_size)``.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            log_probs (FloatTensor): modified logits in ``(B, vocab_size)``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_B</span><span class="p">,</span> <span class="n">vocab_size</span> <span class="o">=</span> <span class="n">log_probs</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+        <span class="n">step</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_prefix</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span>
+                <span class="n">step</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_prefix</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)):</span>
+            <span class="n">pick_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_prefix</span><span class="p">[:,</span> <span class="n">step</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>  <span class="c1"># (B)</span>
+            <span class="n">pick_coo</span> <span class="o">=</span> <span class="p">[[</span><span class="n">path_i</span><span class="p">,</span> <span class="n">pick</span><span class="p">]</span> <span class="k">for</span> <span class="n">path_i</span><span class="p">,</span> <span class="n">pick</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pick_idx</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">pick</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">eos</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pad</span><span class="p">]]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pick_coo</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">pick_coo</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">pick_coo</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_prefix</span><span class="p">)</span>
+                <span class="n">pick_fill_value</span> <span class="o">=</span> <span class="mi">10000</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span>
+                    <span class="p">[</span><span class="n">pick_coo</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">log_probs</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+                <span class="c1"># pickups: Tensor where specified index were set to 1, others 0</span>
+                <span class="n">pickups</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sparse_coo_tensor</span><span class="p">(</span>
+                    <span class="n">pick_coo</span><span class="o">.</span><span class="n">t</span><span class="p">(),</span> <span class="n">pick_fill_value</span><span class="p">,</span>
+                    <span class="n">size</span><span class="o">=</span><span class="n">log_probs</span><span class="o">.</span><span class="n">size</span><span class="p">(),</span> <span class="n">device</span><span class="o">=</span><span class="n">log_probs</span><span class="o">.</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">to_dense</span><span class="p">()</span>
+                <span class="c1"># Adding pickups to log_probs making probabilities of</span>
+                <span class="c1"># specified index close to 1</span>
+                <span class="n">log_probs</span> <span class="o">+=</span> <span class="n">pickups</span>
+        <span class="k">return</span> <span class="n">log_probs</span></div>
+
+<div class="viewcode-block" id="DecodeStrategy.maybe_update_target_prefix"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.DecodeStrategy.maybe_update_target_prefix">[docs]</a>    <span class="k">def</span> <span class="nf">maybe_update_target_prefix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">select_index</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;We update / reorder `target_prefix` for alive path.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_prefix</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="c1"># prediction step have surpass length of given target_prefix,</span>
+        <span class="c1"># no need to further change this attr</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_prefix</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_prefix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_prefix</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">select_index</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="DecodeStrategy.advance"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.DecodeStrategy.advance">[docs]</a>    <span class="k">def</span> <span class="nf">advance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log_probs</span><span class="p">,</span> <span class="n">attn</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;DecodeStrategy subclasses should override :func:`advance()`.</span>
