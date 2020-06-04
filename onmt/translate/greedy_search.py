@@ -91,7 +91,8 @@ class GreedySearch(DecodeStrategy):
         self.keep_topk = keep_topk
         self.topk_scores = None
 
-    def initialize(self, memory_bank, src_lengths, src_map=None, device=None):
+    def initialize(self, memory_bank, src_lengths, src_map=None, device=None,
+                   target_prefix=None):
         """Initialize for decoding."""
         fn_map_state = None
 
@@ -104,7 +105,7 @@ class GreedySearch(DecodeStrategy):
 
         self.memory_lengths = src_lengths
         super(GreedySearch, self).initialize(
-            memory_bank, src_lengths, src_map, device)
+            memory_bank, src_lengths, src_map, device, target_prefix)
         self.select_indices = torch.arange(
             self.batch_size, dtype=torch.long, device=device)
         self.original_batch_idx = torch.arange(
@@ -118,6 +119,18 @@ class GreedySearch(DecodeStrategy):
     @property
     def batch_offset(self):
         return self.select_indices
+
+    def _pick(self, log_probs):
+        """Function used to pick next tokens.
+
+        Args:
+            log_probs (FloatTensor): ``(batch_size, vocab_size)``.
+        """
+        # maybe fix some prediction at this step by modifying log_probs
+        log_probs = self.target_prefixing(log_probs)
+        topk_ids, topk_scores = sample_with_temperature(
+            log_probs, self.sampling_temp, self.keep_topk)
+        return topk_ids, topk_scores
 
     def advance(self, log_probs, attn):
         """Select next tokens randomly from the top k possible next tokens.
@@ -134,8 +147,8 @@ class GreedySearch(DecodeStrategy):
 
         self.ensure_min_length(log_probs)
         self.block_ngram_repeats(log_probs)
-        topk_ids, self.topk_scores = sample_with_temperature(
-            log_probs, self.sampling_temp, self.keep_topk)
+
+        topk_ids, self.topk_scores = self._pick(log_probs)
 
         self.is_finished = topk_ids.eq(self.eos)
 
@@ -167,3 +180,4 @@ class GreedySearch(DecodeStrategy):
             self.alive_attn = self.alive_attn[:, is_alive]
         self.select_indices = is_alive.nonzero().view(-1)
         self.original_batch_idx = self.original_batch_idx[is_alive]
+        self.maybe_update_target_prefix(self.select_indices)
