@@ -455,7 +455,6 @@ class ServerModel(object):
         texts = []
         head_spaces = []
         tail_spaces = []
-        sslength = []
         all_preprocessed = []
         for i, inp in enumerate(inputs):
             src = inp['src']
@@ -473,7 +472,6 @@ class ServerModel(object):
             for seg in seg_dict["seg"]:
                 tok = self.maybe_tokenize(seg)
                 texts.append(tok)
-            sslength.append(len(tok.split()))
             tail_spaces.append(whitespaces_after)
 
         empty_indices = [i for i, x in enumerate(texts) if x == ""]
@@ -518,13 +516,12 @@ class ServerModel(object):
         results = [self.maybe_detokenize_with_align(result, src)
                    for result, src in zip(results, tiled_texts)]
 
-        aligns = [align for _, align in results]
+        results, aligns = (list(tuple_item) for tuple_item in zip(*results))
 
         # build back results with empty texts
         for i in empty_indices:
             j = i * self.opt.n_best
-            results = (results[:j] +
-                       [("", None)] * self.opt.n_best + results[j:])
+            results = results[:j] + [""] * self.opt.n_best + results[j:]
             aligns = aligns[:j] + [None] * self.opt.n_best + aligns[j:]
             scores = scores[:j] + [0] * self.opt.n_best + scores[j:]
 
@@ -552,22 +549,20 @@ class ServerModel(object):
         avg_scores = []
         merged_aligns = []
         for i, seg_dict in enumerate(all_preprocessed):
-            sub_results = results[n_best * offset:
-                                  (offset + seg_dict["n_seg"]) * n_best]
-            sub_scores = scores[n_best * offset:
-                                (offset + seg_dict["n_seg"]) * n_best]
-            sub_aligns = aligns[n_best * offset:
-                                (offset + seg_dict["n_seg"]) * n_best]
+            n_seg = seg_dict["n_seg"]
+            sub_results = results[n_best * offset: (offset + n_seg) * n_best]
+            sub_scores = scores[n_best * offset: (offset + n_seg) * n_best]
+            sub_aligns = aligns[n_best * offset: (offset + n_seg) * n_best]
             for j in range(n_best):
                 _seg_dict = deepcopy(seg_dict)
-                _sub_segs = list(list(zip(*sub_results))[0])
-                _seg_dict["seg"] = list(islice(_sub_segs, j, None, n_best))
+                _seg_dict["seg"] = list(islice(sub_results, j, None, n_best))
                 rebuilt_segs.append(_seg_dict)
                 sub_sub_scores = list(islice(sub_scores, j, None, n_best))
-                avg_scores.append(sum(sub_sub_scores)/_seg_dict["n_seg"])
+                avg_score = sum(sub_sub_scores)/n_seg if n_seg != 0 else 0
+                avg_scores.append(avg_score)
                 sub_sub_aligns = list(islice(sub_aligns, j, None, n_best))
                 merged_aligns.append(sub_sub_aligns)
-            offset += _seg_dict["n_seg"]
+            offset += n_seg
         return rebuilt_segs, avg_scores, merged_aligns
 
     def do_timeout(self):
