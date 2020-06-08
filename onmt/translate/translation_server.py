@@ -508,7 +508,8 @@ class ServerModel(object):
         results = [self.maybe_detokenize_with_align(result, src)
                    for result, src in zip(results, tiled_texts)]
 
-        results, aligns = (list(tuple_item) for tuple_item in zip(*results))
+        aligns = [align for _, align in results]
+        results = [tokens for tokens, _ in results]
 
         # build back results with empty texts
         for i in empty_indices:
