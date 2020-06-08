@@ -101,7 +101,7 @@ class CTranslate2Translator(object):
             time.sleep(1)
             self.translator.unload_model(to_cpu=True)
 
-    def translate(self, texts_to_translate, batch_size=8):
+    def translate(self, texts_to_translate, batch_size=8, **kwargs):
         batch = [item.split(" ") for item in texts_to_translate]
         preds = self.translator.translate_batch(
             batch,
@@ -450,13 +450,23 @@ class ServerModel(object):
             # every segment becomes a dict for flexibility purposes
             seg_dict = self.maybe_preprocess(inp)
             all_preprocessed.append(seg_dict)
-            for seg in seg_dict["seg"]:
+            for seg, ref in zip(seg_dict["seg"], seg_dict["ref"]):
                 tok = self.maybe_tokenize(seg)
-                texts.append(tok)
+                if ref is not None:
+                    ref = self.maybe_tokenize(ref, side='tgt')
+                texts.append((tok, ref))
             tail_spaces.append(whitespaces_after)
 
-        empty_indices = [i for i, x in enumerate(texts) if x == ""]
-        texts_to_translate = [x for x in texts if x != ""]
+        empty_indices = []
+        texts_to_translate, texts_ref = [], []
+        for i, (tok, ref_tok) in enumerate(texts):
+            if tok == "":
+                empty_indices.append(i)
+            else:
+                texts_to_translate.append(tok)
+                texts_ref.append(ref_tok)
+        if any([item is None for item in texts_ref]):
+            texts_ref = None
 
         scores = []
         predictions = []
@@ -464,6 +474,7 @@ class ServerModel(object):
             try:
                 scores, predictions = self.translator.translate(
                     texts_to_translate,
+                    tgt=texts_ref,
                     batch_size=len(texts_to_translate)
                     if self.opt.batch_size == 0
                     else self.opt.batch_size)
@@ -621,6 +632,7 @@ class ServerModel(object):
             sequence = deepcopy(sequence)
             sequence["seg"] = [sequence["src"].strip()]
             sequence.pop("src")
+            sequence["ref"] = [sequence.get('ref', None)]
             sequence["n_seg"] = 1
         if self.preprocess_opt is not None:
             return self.preprocess(sequence)
