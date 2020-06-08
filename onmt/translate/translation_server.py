@@ -455,7 +455,6 @@ class ServerModel(object):
         texts = []
         head_spaces = []
         tail_spaces = []
-        sslength = []
         all_preprocessed = []
         for i, inp in enumerate(inputs):
             src = inp['src']
@@ -468,12 +467,11 @@ class ServerModel(object):
                 whitespaces_after = match_after.group(0)
             head_spaces.append(whitespaces_before)
             # every segment becomes a dict for flexibility purposes
-            seg_dict = self.maybe_preprocess(src.strip())
+            seg_dict = self.maybe_preprocess(inp)
             all_preprocessed.append(seg_dict)
             for seg in seg_dict["seg"]:
                 tok = self.maybe_tokenize(seg)
                 texts.append(tok)
-            sslength.append(len(tok.split()))
             tail_spaces.append(whitespaces_after)
 
         empty_indices = [i for i, x in enumerate(texts) if x == ""]
@@ -641,11 +639,11 @@ class ServerModel(object):
         """Preprocess the sequence (or not)
 
         """
-        if type(sequence) is str:
-            sequence = {
-                "seg": [sequence],
-                "n_seg": 1
-            }
+        if sequence.get("src", None) is not None:
+            sequence = deepcopy(sequence)
+            sequence["seg"] = [sequence["src"].strip()]
+            sequence.pop("src")
+            sequence["n_seg"] = 1
         if self.preprocess_opt is not None:
             return self.preprocess(sequence)
         return sequence
