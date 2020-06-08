@@ -262,7 +262,7 @@ class ServerModel(object):
 
         self.model_id = model_id
         self.preprocess_opt = preprocess_opt
-        self.tokenizer_opt = tokenizer_opt
+        self.tokenizers_opt = tokenizer_opt
         self.postprocess_opt = postprocess_opt
         self.timeout = timeout
         self.on_timeout = on_timeout
@@ -272,7 +272,7 @@ class ServerModel(object):
 
         self.unload_timer = None
         self.user_opt = opt
-        self.tokenizer = None
+        self.tokenizers = None
 
         if len(self.opt.log_file) > 0:
             log_file = os.path.join(model_root, self.opt.log_file)
@@ -296,43 +296,24 @@ class ServerModel(object):
                 function = get_function_by_path(function_path)
                 self.preprocessor.append(function)
 
-        if self.tokenizer_opt is not None:
-            self.logger.info("Loading tokenizer")
-
-            if "type" not in self.tokenizer_opt:
-                raise ValueError(
-                    "Missing mandatory tokenizer option 'type'")
-
-            if self.tokenizer_opt['type'] == 'sentencepiece':
-                if "model" not in self.tokenizer_opt:
-                    raise ValueError(
-                        "Missing mandatory tokenizer option 'model'")
-                import sentencepiece as spm
-                sp = spm.SentencePieceProcessor()
-                model_path = os.path.join(self.model_root,
-                                          self.tokenizer_opt['model'])
-                sp.Load(model_path)
-                self.tokenizer = sp
-            elif self.tokenizer_opt['type'] == 'pyonmttok':
-                if "params" not in self.tokenizer_opt:
-                    raise ValueError(
-                        "Missing mandatory tokenizer option 'params'")
-                import pyonmttok
-                if self.tokenizer_opt["mode"] is not None:
-                    mode = self.tokenizer_opt["mode"]
-                else:
-                    mode = None
-                # load can be called multiple times: modify copy
-                tokenizer_params = dict(self.tokenizer_opt["params"])
-                for key, value in self.tokenizer_opt["params"].items():
-                    if key.endswith("path"):
-                        tokenizer_params[key] = os.path.join(
-                            self.model_root, value)
-                tokenizer = pyonmttok.Tokenizer(mode,
-                                                **tokenizer_params)
-                self.tokenizer = tokenizer
+        if self.tokenizers_opt is not None:
+            if "src" in self.tokenizers_opt and "tgt" in self.tokenizers_opt:
+                self.logger.info("Loading src & tgt tokenizer")
+                self.tokenizers = {
+                    'src': self.build_tokenizer(tokenizer_opt['src']),
+                    'tgt': self.build_tokenizer(tokenizer_opt['tgt'])
+                }
             else:
-                raise ValueError("Invalid value for tokenizer type")
+                self.logger.info("Loading tokenizer")
+                self.tokenizers_opt = {
+                    'src': tokenizer_opt,
+                    'tgt': tokenizer_opt
+                }
+                tokenizer = self.build_tokenizer(tokenizer_opt)
+                self.tokenizers = {
+                    'src': tokenizer,
+                    'tgt': tokenizer
+                }
 
         if self.postprocess_opt is not None:
             self.logger.info("Loading postprocessor")
@@ -610,8 +591,8 @@ class ServerModel(object):
              "loaded": self.loaded,
              "timeout": self.timeout,
              }
-        if self.tokenizer_opt is not None:
-            d["tokenizer"] = self.tokenizer_opt
+        if self.tokenizers_opt is not None:
+            d["tokenizer"] = self.tokenizers_opt
         return d
 
     @critical
@@ -660,17 +641,53 @@ class ServerModel(object):
             sequence = function(sequence, self)
         return sequence
 
-    def maybe_tokenize(self, sequence):
+    def build_tokenizer(self, tokenizer_opt):
+        """Build tokenizer described by `tokenizer_opt`."""
+        if "type" not in tokenizer_opt:
+            raise ValueError(
+                "Missing mandatory tokenizer option 'type'")
+
+        if tokenizer_opt['type'] == 'sentencepiece':
+            if "model" not in tokenizer_opt:
+                raise ValueError(
+                    "Missing mandatory tokenizer option 'model'")
+            import sentencepiece as spm
+            tokenizer = spm.SentencePieceProcessor()
+            model_path = os.path.join(self.model_root,
+                                      tokenizer_opt['model'])
+            tokenizer.Load(model_path)
+        elif tokenizer_opt['type'] == 'pyonmttok':
+            if "params" not in tokenizer_opt:
+                raise ValueError(
+                    "Missing mandatory tokenizer option 'params'")
+            import pyonmttok
+            if tokenizer_opt["mode"] is not None:
+                mode = tokenizer_opt["mode"]
+            else:
+                mode = None
+            # load can be called multiple times: modify copy
+            tokenizer_params = dict(tokenizer_opt["params"])
+            for key, value in tokenizer_opt["params"].items():
+                if key.endswith("path"):
+                    tokenizer_params[key] = os.path.join(
+                        self.model_root, value)
+            tokenizer = pyonmttok.Tokenizer(mode,
+                                            **tokenizer_params)
+        else:
+            raise ValueError("Invalid value for tokenizer type")
+        return tokenizer
+
+    def maybe_tokenize(self, sequence, side='src'):
         """Tokenize the sequence (or not).
 
         Same args/returns as `tokenize`
         """
 
-        if self.tokenizer_opt is not None:
-            return self.tokenize(sequence)
+        if self.tokenizers_opt is not None:
+            return self.tokenize(sequence, side)
         return sequence
 
-    def tokenize(self, sequence):
+    def tokenize(self, sequence, side='src'):
         """Tokenize a single sequence.
 
         Args:
@@ -680,33 +697,34 @@ class ServerModel(object):
             tok (str): The tokenized sequence.
         """
 
-        if self.tokenizer is None:
+        if self.tokenizers is None:
             raise ValueError("No tokenizer loaded")
 
-        if self.tokenizer_opt["type"] == "sentencepiece":
-            tok = self.tokenizer.EncodeAsPieces(sequence)
+        if self.tokenizers_opt[side]["type"] == "sentencepiece":
+            tok = self.tokenizers[side].EncodeAsPieces(sequence)
             tok = " ".join(tok)
-        elif self.tokenizer_opt["type"] == "pyonmttok":
-            tok, _ = self.tokenizer.tokenize(sequence)
+        elif self.tokenizers_opt[side]["type"] == "pyonmttok":
+            tok, _ = self.tokenizers[side].tokenize(sequence)
             tok = " ".join(tok)
         return tok
 
-    @property
-    def tokenizer_marker(self):
+    def tokenizer_marker(self, side='src'):
+        """Return marker used in `side` tokenizer."""
         marker = None
-        tokenizer_type = self.tokenizer_opt.get('type', None)
-        if tokenizer_type == "pyonmttok":
-            params = self.tokenizer_opt.get('params', None)
-            if params is not None:
-                if params.get("joiner_annotate", None) is not None:
-                    marker = 'joiner'
-                elif params.get("spacer_annotate", None) is not None:
-                    marker = 'spacer'
-        elif tokenizer_type == "sentencepiece":
-            marker = 'spacer'
+        if self.tokenizers_opt is not None:
+            tokenizer_type = self.tokenizers_opt[side].get('type', None)
+            if tokenizer_type == "pyonmttok":
+                params = self.tokenizers_opt[side].get('params', None)
+                if params is not None:
+                    if params.get("joiner_annotate", None) is not None:
+                        marker = 'joiner'
+                    elif params.get("spacer_annotate", None) is not None:
+                        marker = 'spacer'
+            elif tokenizer_type == "sentencepiece":
+                marker = 'spacer'
         return marker
 
-    def maybe_detokenize_with_align(self, sequence, src):
+    def maybe_detokenize_with_align(self, sequence, src, side='tgt'):
         """De-tokenize (or not) the sequence (with alignment).
 
         Args:
@@ -724,32 +742,32 @@ class ServerModel(object):
             sequence, align = sequence.split(' ||| ')
             if align != '':
                 align = self.maybe_convert_align(src, sequence, align)
-        sequence = self.maybe_detokenize(sequence)
+        sequence = self.maybe_detokenize(sequence, side)
         return (sequence, align)
 
-    def maybe_detokenize(self, sequence):
+    def maybe_detokenize(self, sequence, side='tgt'):
         """De-tokenize the sequence (or not)
 
         Same args/returns as :func:`tokenize()`
         """
 
-        if self.tokenizer_opt is not None and ''.join(sequence.split()) != '':
-            return self.detokenize(sequence)
+        if self.tokenizers_opt is not None and ''.join(sequence.split()) != '':
+            return self.detokenize(sequence, side)
         return sequence
 
-    def detokenize(self, sequence):
+    def detokenize(self, sequence, side='tgt'):
         """Detokenize a single sequence
 
         Same args/returns as :func:`tokenize()`
         """
 
-        if self.tokenizer is None:
+        if self.tokenizers is None:
             raise ValueError("No tokenizer loaded")
 
-        if self.tokenizer_opt["type"] == "sentencepiece":
-            detok = self.tokenizer.DecodePieces(sequence.split())
-        elif self.tokenizer_opt["type"] == "pyonmttok":
-            detok = self.tokenizer.detokenize(sequence.split())
+        if self.tokenizers_opt[side]["type"] == "sentencepiece":
+            detok = self.tokenizers[side].DecodePieces(sequence.split())
+        elif self.tokenizers_opt[side]["type"] == "pyonmttok":
+            detok = self.tokenizers[side].detokenize(sequence.split())
 
         return detok
 
@@ -764,8 +782,14 @@ class ServerModel(object):
         Returns:
             align (str): The alignment correspand to detokenized src/tgt.
         """
-        if self.tokenizer_marker is not None and ''.join(tgt.split()) != '':
-            return to_word_align(src, tgt, align, mode=self.tokenizer_marker)
+        if self.tokenizers_opt is not None:
+            src_marker = self.tokenizer_marker(side='src')
+            tgt_marker = self.tokenizer_marker(side='tgt')
+            if src_marker is None or tgt_marker is None:
+                raise ValueError("To get decoded alignment, joiner/spacer "
+                                 "should be used in both side's tokenizer.")
+            elif ''.join(tgt.split()) != '':
+                align = to_word_align(src, tgt, align, src_marker, tgt_marker)
         return align
 
     def maybe_postprocess(self, sequence):
