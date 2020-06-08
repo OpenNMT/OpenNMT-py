@@ -99,7 +99,7 @@ def start(config_file,
             for i in range(len(trans)):
                 response = {"src": inputs[i // n_best]['src'], "tgt": trans[i],
                             "n_best": n_best, "pred_score": scores[i]}
-                if aligns[i][0] is not None:
+                if len(aligns[i]) > 0 and aligns[i][0] is not None:
                     response["align"] = aligns[i]
                 out[i % n_best].append(response)
         except ServerModelError as e:

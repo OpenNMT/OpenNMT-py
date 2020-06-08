@@ -83,31 +83,35 @@ def build_align_pharaoh(valid_alignment):
     return align_pairs
 
 
-def to_word_align(src, tgt, subword_align, mode):
+def to_word_align(src, tgt, subword_align, m_src='joiner', m_tgt='joiner'):
     """Convert subword alignment to word alignment.
 
     Args:
         src (string): tokenized sentence in source language.
         tgt (string): tokenized sentence in target language.
         subword_align (string): align_pharaoh correspond to src-tgt.
-        mode (string): tokenization mode used by src and tgt,
-            choose from ["joiner", "spacer"].
+        m_src (string): tokenization mode used in src,
+            can be ["joiner", "spacer"].
+        m_tgt (string): tokenization mode used in tgt,
+            can be ["joiner", "spacer"].
 
     Returns:
         word_align (string): converted alignments correspand to
             detokenized src-tgt.
     """
+    assert m_src in ["joiner", "spacer"], "Invalid value for argument m_src!"
+    assert m_tgt in ["joiner", "spacer"], "Invalid value for argument m_tgt!"
+
     src, tgt = src.strip().split(), tgt.strip().split()
     subword_align = {(int(a), int(b)) for a, b in (x.split("-")
                      for x in subword_align.split())}
-    if mode == 'joiner':
-        src_map = subword_map_by_joiner(src, marker='￭')
-        tgt_map = subword_map_by_joiner(tgt, marker='￭')
-    elif mode == 'spacer':
-        src_map = subword_map_by_spacer(src, marker='▁')
-        tgt_map = subword_map_by_spacer(tgt, marker='▁')
-    else:
-        raise ValueError("Invalid value for argument mode!")
+
+    src_map = (subword_map_by_spacer(src, marker='▁') if m_src == 'spacer'
+               else subword_map_by_joiner(src, marker='￭'))
+
+    tgt_map = (subword_map_by_spacer(src, marker='▁') if m_tgt == 'spacer'
+               else subword_map_by_joiner(src, marker='￭'))
+
     word_align = list({"{}-{}".format(src_map[a], tgt_map[b])
                        for a, b in subword_align})
     word_align.sort(key=lambda x: int(x.split('-')[-1]))  # sort by tgt_id

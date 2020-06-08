@@ -314,6 +314,9 @@ class Translator(object):
         if batch_size is None:
             raise ValueError("batch_size must be set")
 
+        if self.tgt_prefix and tgt is None:
+            raise ValueError('Prefix should be feed to tgt if -tgt_prefix.')
+
         src_data = {"reader": self.src_reader, "data": src, "dir": src_dir}
         tgt_data = {"reader": self.tgt_reader, "data": tgt, "dir": None}
         _readers, _data, _dir = inputters.Dataset.config(
