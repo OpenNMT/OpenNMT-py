@@ -213,8 +213,14 @@ it must contain the model and tokenizer file</p></li>
 </dd>
 </dl>
 <dl class="method">
+<dt id="onmt.translate.translation_server.ServerModel.build_tokenizer">
+<code class="sig-name descname">build_tokenizer</code><span class="sig-paren">(</span><em class="sig-param">tokenizer_opt</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel.build_tokenizer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel.build_tokenizer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build tokenizer described by <cite>tokenizer_opt</cite>.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="onmt.translate.translation_server.ServerModel.detokenize">
-<code class="sig-name descname">detokenize</code><span class="sig-paren">(</span><em class="sig-param">sequence</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel.detokenize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel.detokenize" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">detokenize</code><span class="sig-paren">(</span><em class="sig-param">sequence</em>, <em class="sig-param">side='tgt'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel.detokenize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel.detokenize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Detokenize a single sequence</p>
 <p>Same args/returns as <a class="reference internal" href="#onmt.translate.translation_server.ServerModel.tokenize" title="onmt.translate.translation_server.ServerModel.tokenize"><code class="xref py py-func docutils literal notranslate"><span class="pre">tokenize()</span></code></a></p>
 </dd></dl>
@@ -250,14 +256,14 @@ attr`self.on_timemout` value</p>
 
 <dl class="method">
 <dt id="onmt.translate.translation_server.ServerModel.maybe_detokenize">
-<code class="sig-name descname">maybe_detokenize</code><span class="sig-paren">(</span><em class="sig-param">sequence</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel.maybe_detokenize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel.maybe_detokenize" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">maybe_detokenize</code><span class="sig-paren">(</span><em class="sig-param">sequence</em>, <em class="sig-param">side='tgt'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel.maybe_detokenize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel.maybe_detokenize" title="Permalink to this definition">¶</a></dt>
 <dd><p>De-tokenize the sequence (or not)</p>
 <p>Same args/returns as <a class="reference internal" href="#onmt.translate.translation_server.ServerModel.tokenize" title="onmt.translate.translation_server.ServerModel.tokenize"><code class="xref py py-func docutils literal notranslate"><span class="pre">tokenize()</span></code></a></p>
 </dd></dl>
 
 <dl class="method">
 <dt id="onmt.translate.translation_server.ServerModel.maybe_detokenize_with_align">
-<code class="sig-name descname">maybe_detokenize_with_align</code><span class="sig-paren">(</span><em class="sig-param">sequence</em>, <em class="sig-param">src</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel.maybe_detokenize_with_align"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel.maybe_detokenize_with_align" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">maybe_detokenize_with_align</code><span class="sig-paren">(</span><em class="sig-param">sequence</em>, <em class="sig-param">src</em>, <em class="sig-param">side='tgt'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel.maybe_detokenize_with_align"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel.maybe_detokenize_with_align" title="Permalink to this definition">¶</a></dt>
 <dd><p>De-tokenize (or not) the sequence (with alignment).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -292,7 +298,7 @@ align (str): The alignment correspand to detokenized src/tgt</p>
 
 <dl class="method">
 <dt id="onmt.translate.translation_server.ServerModel.maybe_tokenize">
-<code class="sig-name descname">maybe_tokenize</code><span class="sig-paren">(</span><em class="sig-param">sequence</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel.maybe_tokenize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel.maybe_tokenize" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">maybe_tokenize</code><span class="sig-paren">(</span><em class="sig-param">sequence</em>, <em class="sig-param">side='src'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel.maybe_tokenize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel.maybe_tokenize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tokenize the sequence (or not).</p>
 <p>Same args/returns as <cite>tokenize</cite></p>
 </dd></dl>
@@ -362,7 +368,7 @@ align (str): The alignment correspand to detokenized src/tgt</p>
 
 <dl class="method">
 <dt id="onmt.translate.translation_server.ServerModel.tokenize">
-<code class="sig-name descname">tokenize</code><span class="sig-paren">(</span><em class="sig-param">sequence</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel.tokenize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel.tokenize" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">tokenize</code><span class="sig-paren">(</span><em class="sig-param">sequence</em>, <em class="sig-param">side='src'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel.tokenize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel.tokenize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tokenize a single sequence.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -375,6 +381,12 @@ align (str): The alignment correspand to detokenized src/tgt</p>
 <dd class="field-odd"><p>tok (str)</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.translate.translation_server.ServerModel.tokenizer_marker">
+<code class="sig-name descname">tokenizer_marker</code><span class="sig-paren">(</span><em class="sig-param">side='src'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel.tokenizer_marker"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel.tokenizer_marker" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return marker used in <cite>side</cite> tokenizer.</p>
 </dd></dl>
 
 </dd></dl>
