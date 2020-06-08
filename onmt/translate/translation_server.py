@@ -448,7 +448,7 @@ class ServerModel(object):
                 whitespaces_after = match_after.group(0)
             head_spaces.append(whitespaces_before)
             # every segment becomes a dict for flexibility purposes
-            seg_dict = self.maybe_preprocess(src.strip())
+            seg_dict = self.maybe_preprocess(inp)
             all_preprocessed.append(seg_dict)
             for seg in seg_dict["seg"]:
                 tok = self.maybe_tokenize(seg)
@@ -617,11 +617,11 @@ class ServerModel(object):
         """Preprocess the sequence (or not)
 
         """
-        if type(sequence) is str:
-            sequence = {
-                "seg": [sequence],
-                "n_seg": 1
-            }
+        if sequence.get("src", None) is not None:
+            sequence = deepcopy(sequence)
+            sequence["seg"] = [sequence["src"].strip()]
+            sequence.pop("src")
+            sequence["n_seg"] = 1
         if self.preprocess_opt is not None:
             return self.preprocess(sequence)
         return sequence
