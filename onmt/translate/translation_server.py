@@ -80,8 +80,8 @@ class CTranslate2Translator(object):
     reproduce the onmt.translate.translator API.
     """
 
-    def __init__(self, model_path, device, device_index,
-                 batch_size, beam_size, n_best, preload=False):
+    def __init__(self, model_path, device, device_index, batch_size,
+                 beam_size, n_best, target_prefix=False, preload=False):
         import ctranslate2
         self.translator = ctranslate2.Translator(
             model_path,
@@ -93,6 +93,7 @@ class CTranslate2Translator(object):
         self.batch_size = batch_size
         self.beam_size = beam_size
         self.n_best = n_best
+        self.target_prefix = target_prefix
         if preload:
             # perform a first request to initialize everything
             dummy_translation = self.translate(["a"])
@@ -101,10 +102,13 @@ class CTranslate2Translator(object):
             time.sleep(1)
             self.translator.unload_model(to_cpu=True)
 
-    def translate(self, texts_to_translate, batch_size=8, **kwargs):
+    def translate(self, texts_to_translate, batch_size=8, tgt=None):
         batch = [item.split(" ") for item in texts_to_translate]
+        if tgt is not None:
+            tgt = [item.split(" ") for item in tgt]
         preds = self.translator.translate_batch(
             batch,
+            target_prefix=tgt if self.target_prefix else None,
             max_batch_size=self.batch_size,
             beam_size=self.beam_size,
             num_hypotheses=self.n_best
@@ -385,6 +389,7 @@ class ServerModel(object):
                     batch_size=self.opt.batch_size,
                     beam_size=self.opt.beam_size,
                     n_best=self.opt.n_best,
+                    target_prefix=self.opt.tgt_prefix,
                     preload=preload)
             else:
                 self.translator = build_translator(
