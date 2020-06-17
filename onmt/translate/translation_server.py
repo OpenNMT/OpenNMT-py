@@ -151,6 +151,7 @@ class TranslationServer(object):
                       'preprocess_opt': conf.get('preprocess', None),
                       'tokenizer_opt': conf.get('tokenizer', None),
                       'postprocess_opt': conf.get('postprocess', None),
+                      'custom_opt': conf.get('custom_opt', None),
                       'on_timeout': conf.get('on_timeout', None),
                       'model_root': conf.get('model_root', self.models_root),
                       'ct2_model': conf.get('ct2_model', None)
@@ -245,10 +246,10 @@ class ServerModel(object):
         opt (dict): Options for the Translator
         model_id (int): Model ID
         preprocess_opt (list): Options for preprocess processus or None
-                               (extend for CJK)
         tokenizer_opt (dict): Options for the tokenizer or None
         postprocess_opt (list): Options for postprocess processus or None
-                                (extend for CJK)
+        custom_opt (dict): Custom options, can be used within preprocess or
+            postprocess, default None
         load (bool): whether to load the model during :func:`__init__()`
         timeout (int): Seconds before running :func:`do_timeout()`
             Negative values means no timeout
@@ -259,10 +260,11 @@ class ServerModel(object):
     """
 
     def __init__(self, opt, model_id, preprocess_opt=None, tokenizer_opt=None,
-                 postprocess_opt=None, load=False, timeout=-1,
+                 postprocess_opt=None, custom_opt=None, load=False, timeout=-1,
                  on_timeout="to_cpu", model_root="./", ct2_model=None):
         self.model_root = model_root
         self.opt = self.parse_opt(opt)
+        self.custom_opt = custom_opt
 
         self.model_id = model_id
         self.preprocess_opt = preprocess_opt
