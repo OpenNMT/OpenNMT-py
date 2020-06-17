@@ -329,6 +329,7 @@
                       <span class="s1">&#39;preprocess_opt&#39;</span><span class="p">:</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;preprocess&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
                       <span class="s1">&#39;tokenizer_opt&#39;</span><span class="p">:</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;tokenizer&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
                       <span class="s1">&#39;postprocess_opt&#39;</span><span class="p">:</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;postprocess&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+                      <span class="s1">&#39;custom_opt&#39;</span><span class="p">:</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;custom_opt&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
                       <span class="s1">&#39;on_timeout&#39;</span><span class="p">:</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;on_timeout&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
                       <span class="s1">&#39;model_root&#39;</span><span class="p">:</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;model_root&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">models_root</span><span class="p">),</span>
                       <span class="s1">&#39;ct2_model&#39;</span><span class="p">:</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ct2_model&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
@@ -423,10 +424,10 @@
 <span class="sd">        opt (dict): Options for the Translator</span>
 <span class="sd">        model_id (int): Model ID</span>
 <span class="sd">        preprocess_opt (list): Options for preprocess processus or None</span>
-<span class="sd">                               (extend for CJK)</span>
 <span class="sd">        tokenizer_opt (dict): Options for the tokenizer or None</span>
 <span class="sd">        postprocess_opt (list): Options for postprocess processus or None</span>
-<span class="sd">                                (extend for CJK)</span>
+<span class="sd">        custom_opt (dict): Custom options, can be used within preprocess or</span>
+<span class="sd">            postprocess, default None</span>
 <span class="sd">        load (bool): whether to load the model during :func:`__init__()`</span>
 <span class="sd">        timeout (int): Seconds before running :func:`do_timeout()`</span>
 <span class="sd">            Negative values means no timeout</span>
@@ -437,10 +438,11 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">model_id</span><span class="p">,</span> <span class="n">preprocess_opt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tokenizer_opt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">postprocess_opt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">load</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+                 <span class="n">postprocess_opt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_opt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">load</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
                  <span class="n">on_timeout</span><span class="o">=</span><span class="s2">&quot;to_cpu&quot;</span><span class="p">,</span> <span class="n">model_root</span><span class="o">=</span><span class="s2">&quot;./&quot;</span><span class="p">,</span> <span class="n">ct2_model</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model_root</span> <span class="o">=</span> <span class="n">model_root</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">opt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_opt</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">custom_opt</span> <span class="o">=</span> <span class="n">custom_opt</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">model_id</span> <span class="o">=</span> <span class="n">model_id</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">preprocess_opt</span> <span class="o">=</span> <span class="n">preprocess_opt</span>
