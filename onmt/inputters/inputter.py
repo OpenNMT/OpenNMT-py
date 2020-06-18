@@ -605,7 +605,7 @@ def batch_iter(data, batch_size, batch_size_fn=None, batch_size_multiple=1):
                 if overflowed == len(minibatch):
                     logger.warning(
                         "The batch will be filled until we reach %d,"
-                        "its size may go over %d tokens" % (batch_size_multiple, batch_size)
+                        "its size may exceed %d tokens" % (batch_size_multiple, batch_size)
                         )
                 else:
                     yield minibatch[:-overflowed]
