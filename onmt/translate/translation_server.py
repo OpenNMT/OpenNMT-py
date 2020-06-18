@@ -13,7 +13,7 @@ import importlib
 import torch
 import onmt.opts
 
-from itertools import islice
+from itertools import islice, zip_longest
 from copy import deepcopy
 
 from onmt.utils.logging import init_logger
@@ -457,7 +457,7 @@ class ServerModel(object):
             # every segment becomes a dict for flexibility purposes
             seg_dict = self.maybe_preprocess(inp)
             all_preprocessed.append(seg_dict)
-            for seg, ref in zip(seg_dict["seg"], seg_dict["ref"]):
+            for seg, ref in zip_longest(seg_dict["seg"], seg_dict["ref"]):
                 tok = self.maybe_tokenize(seg)
                 if ref is not None:
                     ref = self.maybe_tokenize(ref, side='tgt')
@@ -477,6 +477,7 @@ class ServerModel(object):
 
         scores = []
         predictions = []
+
         if len(texts_to_translate) > 0:
             try:
                 scores, predictions = self.translator.translate(
