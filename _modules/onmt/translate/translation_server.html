@@ -191,7 +191,7 @@
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">onmt.opts</span>
 
-<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">islice</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">islice</span><span class="p">,</span> <span class="n">zip_longest</span>
 <span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
 
 <span class="kn">from</span> <span class="nn">onmt.utils.logging</span> <span class="kn">import</span> <span class="n">init_logger</span>
@@ -635,7 +635,7 @@
             <span class="c1"># every segment becomes a dict for flexibility purposes</span>
             <span class="n">seg_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maybe_preprocess</span><span class="p">(</span><span class="n">inp</span><span class="p">)</span>
             <span class="n">all_preprocessed</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">seg_dict</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">seg</span><span class="p">,</span> <span class="n">ref</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">seg_dict</span><span class="p">[</span><span class="s2">&quot;seg&quot;</span><span class="p">],</span> <span class="n">seg_dict</span><span class="p">[</span><span class="s2">&quot;ref&quot;</span><span class="p">]):</span>
+            <span class="k">for</span> <span class="n">seg</span><span class="p">,</span> <span class="n">ref</span> <span class="ow">in</span> <span class="n">zip_longest</span><span class="p">(</span><span class="n">seg_dict</span><span class="p">[</span><span class="s2">&quot;seg&quot;</span><span class="p">],</span> <span class="n">seg_dict</span><span class="p">[</span><span class="s2">&quot;ref&quot;</span><span class="p">]):</span>
                 <span class="n">tok</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maybe_tokenize</span><span class="p">(</span><span class="n">seg</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">ref</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maybe_tokenize</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">&#39;tgt&#39;</span><span class="p">)</span>
@@ -655,6 +655,7 @@
 
         <span class="n">scores</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">predictions</span> <span class="o">=</span> <span class="p">[]</span>
+
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">texts_to_translate</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">scores</span><span class="p">,</span> <span class="n">predictions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span>
