@@ -705,6 +705,24 @@ class OrderedIterator(torchtext.data.Iterator):
             if not self.repeat:
                 return
 
+class Tracker(object):
+    def __init__(self, _dict=None):
+        if _dict is not None:
+            self.last_path = _dict['last_path']
+            self.counter = Counter(_dict['counter'])
+        else:
+            self.last_path = {}
+            self.counter = defaultdict(Counter)
+
+    def update(self, dataset, path):
+        self.last_path[dataset] = path
+        self.counter[dataset].update([path])
+
+    def get_last_path(self, dataset):
+        return self.last_path.get(dataset, None)
+
+    def get_count(self, dataset):
+        return self.counter.get(dataset, None)
 
 class MultipleDatasetIterator(object):
     """
@@ -715,14 +733,22 @@ class MultipleDatasetIterator(object):
                  train_shards,
                  fields,
                  device,
-                 opt):
+                 opt,
+                 data_tracker=None):
         self.index = -1
         self.iterables = []
         self.weights = []
+
+        if data_tracker is None:
+            self.tracker = Tracker()
+        else:
+            self.tracker = data_tracker
         for shard, weight in zip(train_shards, opt.data_weights):
             if weight > 0:
                 self.iterables.append(
-                    build_dataset_iter(shard, fields, opt, multi=True))
+                    build_dataset_iter(
+                        shard, fields, opt, multi=True,
+                        tracker=self.tracker))
                 self.weights.append(weight)
         self.init_iterators = True
         # self.weights = opt.data_weights
@@ -785,8 +811,17 @@ class DatasetLazyIter(object):
 
     def __init__(self, dataset_paths, fields, batch_size, batch_size_fn,
                  batch_size_multiple, device, is_train, pool_factor,
-                 repeat=True, num_batches_multiple=1, yield_raw_example=False):
+                 repeat=True, num_batches_multiple=1, yield_raw_example=False,
+                 tracker=None, corpus_type=None):
         self._paths = dataset_paths
+        # reorder _paths based on tracker if exists
+        if tracker is not None and corpus_type is not None:
+            next_shard = tracker.get_last_path(corpus_type)
+            print("//// next_shard", next_shard)
+            if next_shard is not None:
+                index = self._paths.index(next_shard)
+                self._paths = self._paths[index+1:] + self._paths[:index+1]
+                print("reordered paths", self._paths)
         self.fields = fields
         self.batch_size = batch_size
         self.batch_size_fn = batch_size_fn
@@ -797,6 +832,8 @@ class DatasetLazyIter(object):
         self.num_batches_multiple = num_batches_multiple
         self.yield_raw_example = yield_raw_example
         self.pool_factor = pool_factor
+        self.tracker = tracker
+        self.corpus_type = corpus_type
 
     def _iter_dataset(self, path):
         logger.info('Loading dataset from %s' % path)
@@ -834,6 +871,8 @@ class DatasetLazyIter(object):
             # Cycle through the shards indefinitely.
             paths = cycle(paths)
         for path in paths:
+            if self.tracker is not None and self.corpus_type is not None:
+                self.tracker.update(self.corpus_type, path)
             for batch in self._iter_dataset(path):
                 yield batch
                 num_batches += 1
@@ -872,7 +911,8 @@ def max_tok_len(new, count, sofar):
     return max(src_elements, tgt_elements)
 
 
-def build_dataset_iter(corpus_type, fields, opt, is_train=True, multi=False):
+def build_dataset_iter(corpus_type, fields, opt, is_train=True,
+                       multi=False, tracker=None):
     """
     This returns user-defined train/validate data iterator for the trainer
     to iterate over. We implement simple ordered iterator strategy here,
@@ -911,9 +951,12 @@ def build_dataset_iter(corpus_type, fields, opt, is_train=True, multi=False):
         opt.pool_factor,
         repeat=not opt.single_pass,
         num_batches_multiple=max(opt.accum_count) * opt.world_size,
-        yield_raw_example=multi)
+        yield_raw_example=multi,
+        tracker=tracker,
+        corpus_type=corpus_type)
 
 
-def build_dataset_iter_multiple(train_shards, fields, opt):
+def build_dataset_iter_multiple(train_shards, fields, opt, data_tracker=None):
     return MultipleDatasetIterator(
-        train_shards, fields, "cuda" if opt.gpu_ranks else "cpu", opt)
+        train_shards, fields, "cuda" if opt.gpu_ranks else "cpu",
+        opt, data_tracker=data_tracker)

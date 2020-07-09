@@ -7,13 +7,14 @@ from onmt.utils.logging import logger
 from copy import deepcopy
 
 
-def build_model_saver(model_opt, opt, model, fields, optim):
+def build_model_saver(model_opt, opt, model, fields, optim, data_tracker=None):
     model_saver = ModelSaver(opt.save_model,
                              model,
                              model_opt,
                              fields,
                              optim,
-                             opt.keep_checkpoint)
+                             opt.keep_checkpoint,
+                             data_tracker=data_tracker)
     return model_saver
 
 
@@ -26,7 +27,7 @@ class ModelSaverBase(object):
     """
 
     def __init__(self, base_path, model, model_opt, fields, optim,
-                 keep_checkpoint=-1):
+                 keep_checkpoint=-1, data_tracker=None):
         self.base_path = base_path
         self.model = model
         self.model_opt = model_opt
@@ -36,6 +37,7 @@ class ModelSaverBase(object):
         self.keep_checkpoint = keep_checkpoint
         if keep_checkpoint > 0:
             self.checkpoint_queue = deque([], maxlen=keep_checkpoint)
+        self.data_tracker = data_tracker
 
     def save(self, step, moving_average=None):
         """Main entry point for model saver
@@ -124,6 +126,12 @@ class ModelSaver(ModelSaverBase):
             'opt': self.model_opt,
             'optim': self.optim.state_dict(),
         }
+
+        if self.data_tracker is not None:
+            checkpoint['data_tracker'] = {
+                'last_path': self.data_tracker.last_path,
+                'counter': dict(self.data_tracker.counter)
+            }
 
         logger.info("Saving checkpoint %s_step_%d.pt" % (self.base_path, step))
         checkpoint_path = '%s_step_%d.pt' % (self.base_path, step)

@@ -12,7 +12,7 @@ from onmt.utils.logging import init_logger, logger
 from onmt.train_single import main as single_main
 from onmt.utils.parse import ArgumentParser
 from onmt.inputters.inputter import build_dataset_iter, patch_fields, \
-    load_old_vocab, old_style_vocab, build_dataset_iter_multiple
+    load_old_vocab, old_style_vocab, build_dataset_iter_multiple, Tracker
 
 from itertools import cycle
 
@@ -31,8 +31,10 @@ def train(opt):
                                 map_location=lambda storage, loc: storage)
         logger.info('Loading vocab from checkpoint at %s.' % opt.train_from)
         vocab = checkpoint['vocab']
+        data_tracker = Tracker(_dict=checkpoint.get('data_tracker', None))
     else:
         vocab = torch.load(opt.data + '.vocab.pt')
+        data_tracker = Tracker()
 
     # check for code where vocab is saved instead of fields
     # (in the future this will be done in a smarter way)
@@ -50,7 +52,8 @@ def train(opt):
         for train_id in opt.data_ids:
             shard_base = "train_" + train_id
             train_shards.append(shard_base)
-        train_iter = build_dataset_iter_multiple(train_shards, fields, opt)
+        train_iter = build_dataset_iter_multiple(
+            train_shards, fields, opt, data_tracker)
     else:
         if opt.data_ids[0] is not None:
             shard_base = "train_" + opt.data_ids[0]
@@ -67,18 +70,22 @@ def train(opt):
         # Create a thread to listen for errors in the child processes.
         error_queue = mp.SimpleQueue()
         error_handler = ErrorHandler(error_queue)
+        tracker_queue = mp.Queue(maxsize=1)
+
         # Train with multiprocessing.
         procs = []
         for device_id in range(nb_gpu):
             q = mp.Queue(opt.queue_size)
             queues += [q]
             procs.append(mp.Process(target=run, args=(
-                opt, device_id, error_queue, q, semaphore), daemon=True))
+                opt, device_id, error_queue,
+                q, semaphore, tracker_queue,), daemon=True))
             procs[device_id].start()
             logger.info(" Starting process pid: %d  " % procs[device_id].pid)
             error_handler.add_child(procs[device_id].pid)
         producer = mp.Process(target=batch_producer,
-                              args=(train_iter, queues, semaphore, opt,),
+                              args=(train_iter, queues, semaphore, opt,
+                                    tracker_queue,),
                               daemon=True)
         producer.start()
         error_handler.add_child(producer.pid)
@@ -93,10 +100,9 @@ def train(opt):
         single_main(opt, -1)
 
 
-def batch_producer(generator_to_serve, queues, semaphore, opt):
+def batch_producer(generator_to_serve, queues, semaphore, opt, tracker_queue):
     init_logger(opt.log_file)
     set_random_seed(opt.seed, False)
-    # generator_to_serve = iter(generator_to_serve)
 
     def pred(x):
         """
@@ -107,11 +113,14 @@ def batch_producer(generator_to_serve, queues, semaphore, opt):
             if x[0] % opt.world_size == rank:
                 return True
 
-    generator_to_serve = filter(
+    _generator_to_serve = filter(
         pred, enumerate(generator_to_serve))
 
     def next_batch(device_id):
-        new_batch = next(generator_to_serve)
+        new_batch = next(_generator_to_serve)
+        if not(tracker_queue.empty()):
+            tracker_queue.get(block=False)  # empty the queue
+        tracker_queue.put(generator_to_serve.tracker)
         semaphore.acquire()
         return new_batch[1]
 
@@ -141,14 +150,15 @@ def batch_producer(generator_to_serve, queues, semaphore, opt):
         b = next_batch(device_id)
 
 
-def run(opt, device_id, error_queue, batch_queue, semaphore):
+def run(opt, device_id, error_queue, batch_queue, semaphore, tracker_queue):
     """ run process """
     try:
         gpu_rank = onmt.utils.distributed.multi_init(opt, device_id)
         if gpu_rank != opt.gpu_ranks[device_id]:
             raise AssertionError("An error occurred in \
                   Distributed initialization")
-        single_main(opt, device_id, batch_queue, semaphore)
+        single_main(opt, device_id, batch_queue, semaphore,
+                    tracker_queue)
     except KeyboardInterrupt:
         pass  # killed by parent, do nothing
     except Exception:

@@ -39,7 +39,8 @@ def configure_process(opt, device_id):
     set_random_seed(opt.seed, device_id >= 0)
 
 
-def main(opt, device_id, batch_queue=None, semaphore=None):
+def main(opt, device_id, batch_queue=None,
+         semaphore=None, tracker_queue=None):
     # NOTE: It's important that ``opt`` has been validated and updated
     # at this point.
     configure_process(opt, device_id)
@@ -94,8 +95,12 @@ def main(opt, device_id, batch_queue=None, semaphore=None):
     # Build optimizer.
     optim = Optimizer.from_opt(model, opt, checkpoint=checkpoint)
 
+    data_tracker = tracker_queue.get()
+
     # Build model saver
-    model_saver = build_model_saver(model_opt, opt, model, fields, optim)
+    model_saver = build_model_saver(
+        model_opt, opt, model, fields, optim,
+        data_tracker=data_tracker)
 
     trainer = build_trainer(
         opt, device_id, model, fields, optim, model_saver=model_saver)
