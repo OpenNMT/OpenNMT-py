@@ -5,7 +5,7 @@ import os
 import torch
 
 from onmt.inputters.inputter import build_dataset_iter, patch_fields, \
-    load_old_vocab, old_style_vocab, build_dataset_iter_multiple
+    load_old_vocab, old_style_vocab, build_dataset_iter_multiple, Tracker
 from onmt.model_builder import build_model
 from onmt.utils.optimizers import Optimizer
 from onmt.utils.misc import set_random_seed
@@ -57,10 +57,13 @@ def main(opt, device_id, batch_queue=None,
         ArgumentParser.validate_model_opts(model_opt)
         logger.info('Loading vocab from checkpoint at %s.' % opt.train_from)
         vocab = checkpoint['vocab']
+        data_tracker = Tracker(_dict=checkpoint.get('data_tracker', None))
+        print("!!! LOADED data_tracker", data_tracker.__dict__)
     else:
         checkpoint = None
         model_opt = opt
         vocab = torch.load(opt.data + '.vocab.pt')
+        data_tracker = Tracker()
 
     # check for code where vocab is saved instead of fields
     # (in the future this will be done in a smarter way)
@@ -95,7 +98,8 @@ def main(opt, device_id, batch_queue=None,
     # Build optimizer.
     optim = Optimizer.from_opt(model, opt, checkpoint=checkpoint)
 
-    data_tracker = tracker_queue.get()
+    if tracker_queue is not None:
+        data_tracker = tracker_queue.get()
 
     # Build model saver
     model_saver = build_model_saver(
@@ -111,13 +115,15 @@ def main(opt, device_id, batch_queue=None,
             for train_id in opt.data_ids:
                 shard_base = "train_" + train_id
                 train_shards.append(shard_base)
-            train_iter = build_dataset_iter_multiple(train_shards, fields, opt)
+            train_iter = build_dataset_iter_multiple(
+                train_shards, fields, opt, data_tracker)
         else:
             if opt.data_ids[0] is not None:
                 shard_base = "train_" + opt.data_ids[0]
             else:
                 shard_base = "train"
-            train_iter = build_dataset_iter(shard_base, fields, opt)
+            train_iter = build_dataset_iter(
+                shard_base, fields, opt, data_tracker)
 
     else:
         assert semaphore is not None, \

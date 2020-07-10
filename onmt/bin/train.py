@@ -59,7 +59,8 @@ def train(opt):
             shard_base = "train_" + opt.data_ids[0]
         else:
             shard_base = "train"
-        train_iter = build_dataset_iter(shard_base, fields, opt)
+        train_iter = build_dataset_iter(
+            shard_base, fields, opt, data_tracker)
 
     nb_gpu = len(opt.gpu_ranks)
 
