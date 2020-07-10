@@ -53,14 +53,16 @@ def train(opt):
             shard_base = "train_" + train_id
             train_shards.append(shard_base)
         train_iter = build_dataset_iter_multiple(
-            train_shards, fields, opt, data_tracker)
+            train_shards, fields, opt,
+            data_tracker=data_tracker)
     else:
         if opt.data_ids[0] is not None:
             shard_base = "train_" + opt.data_ids[0]
         else:
             shard_base = "train"
         train_iter = build_dataset_iter(
-            shard_base, fields, opt, data_tracker)
+            shard_base, fields, opt,
+            data_tracker=data_tracker)
 
     nb_gpu = len(opt.gpu_ranks)
 
@@ -121,7 +123,7 @@ def batch_producer(generator_to_serve, queues, semaphore, opt, tracker_queue):
         new_batch = next(_generator_to_serve)
         if not(tracker_queue.empty()):
             tracker_queue.get(block=False)  # empty the queue
-        tracker_queue.put(generator_to_serve.tracker)
+        tracker_queue.put(generator_to_serve.data_tracker)
         semaphore.acquire()
         return new_batch[1]
 

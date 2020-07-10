@@ -58,7 +58,6 @@ def main(opt, device_id, batch_queue=None,
         logger.info('Loading vocab from checkpoint at %s.' % opt.train_from)
         vocab = checkpoint['vocab']
         data_tracker = Tracker(_dict=checkpoint.get('data_tracker', None))
-        print("!!! LOADED data_tracker", data_tracker.__dict__)
     else:
         checkpoint = None
         model_opt = opt
@@ -116,14 +115,16 @@ def main(opt, device_id, batch_queue=None,
                 shard_base = "train_" + train_id
                 train_shards.append(shard_base)
             train_iter = build_dataset_iter_multiple(
-                train_shards, fields, opt, data_tracker)
+                train_shards, fields, opt,
+                data_tracker=data_tracker)
         else:
             if opt.data_ids[0] is not None:
                 shard_base = "train_" + opt.data_ids[0]
             else:
                 shard_base = "train"
             train_iter = build_dataset_iter(
-                shard_base, fields, opt, data_tracker)
+                shard_base, fields, opt,
+                data_tracker=data_tracker)
 
     else:
         assert semaphore is not None, \

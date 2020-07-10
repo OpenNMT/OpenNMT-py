@@ -713,7 +713,10 @@ class Tracker(object):
     def __init__(self, _dict=None):
         if _dict is not None:
             self.last_path = _dict['last_path']
-            self.counter = Counter(_dict['counter'])
+            if _dict['counter'] != {}:
+                self.counter = Counter(_dict['counter'])
+            else:
+                self.counter = defaultdict(Counter)
         else:
             self.last_path = {}
             self.counter = defaultdict(Counter)
