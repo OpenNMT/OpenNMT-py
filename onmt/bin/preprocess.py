@@ -87,7 +87,8 @@ def process_one_shard(corpus_params, params):
                                 (sub_n == 'tgt' and
                                  tgt_vocab is not None)
                     if (hasattr(sub_f, 'sequential')
-                            and sub_f.sequential and not has_vocab):
+                            and sub_f.sequential and not has_vocab
+                            and not (sub_n == 'src' and opt.data_type == 'vec')):
                         val = fd
                         sub_sub_counter[sub_n].update(val)
     if maybe_id:
