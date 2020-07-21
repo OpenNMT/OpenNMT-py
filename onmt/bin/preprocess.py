@@ -71,7 +71,7 @@ def process_one_shard(corpus_params, params):
             sub_sub_counter['corpus_id'].update(
                 ["train" if maybe_id is None else maybe_id])
             for name, field in fields.items():
-                if ((opt.data_type == "audio") and (name == "src")):
+                if (opt.data_type in ["audio", "vec"]) and name == "src":
                     continue
                 try:
                     f_iter = iter(field)
