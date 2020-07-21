@@ -71,7 +71,7 @@ def process_one_shard(corpus_params, params):
             sub_sub_counter['corpus_id'].update(
                 ["train" if maybe_id is None else maybe_id])
             for name, field in fields.items():
-                if ((opt.data_type == "audio") and (name == "src")):
+                if (opt.data_type  in ["audio", "vec"]) and name == "src":
                     continue
                 try:
                     f_iter = iter(field)
@@ -87,8 +87,7 @@ def process_one_shard(corpus_params, params):
                                 (sub_n == 'tgt' and
                                  tgt_vocab is not None)
                     if (hasattr(sub_f, 'sequential')
-                            and sub_f.sequential and not has_vocab
-                            and not (sub_n == 'src' and opt.data_type == 'vec')):
+                            and sub_f.sequential and not has_vocab):
                         val = fd
                         sub_sub_counter[sub_n].update(val)
     if maybe_id:
