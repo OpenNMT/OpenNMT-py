@@ -483,7 +483,9 @@ class Trainer(object):
         """
         if self.report_manager is not None:
             return self.report_manager.report_step(
-                learning_rate, step, train_stats=train_stats,
+                learning_rate,
+                None if self.earlystopper is None else self.earlystopper.current_tolerance,
+                step, train_stats=train_stats,
                 valid_stats=valid_stats)
 
     def maybe_noise_source(self, batch):
