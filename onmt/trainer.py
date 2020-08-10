@@ -320,8 +320,7 @@ class Trainer(object):
             for avg, param in zip(self.moving_average,
                                   valid_model.parameters()):
                 model_params_data.append(param.data)
-                param.data = avg.data.half() if self.optim._fp16 == "legacy" \
-                    else avg.data
+                param.data = avg.data
 
         # Set model in validating mode.
         valid_model.eval()
@@ -334,12 +333,13 @@ class Trainer(object):
                                    else (batch.src, None)
                 tgt = batch.tgt
 
-                # F-prop through the model.
-                outputs, attns = valid_model(src, tgt, src_lengths,
-                                             with_align=self.with_align)
+                with torch.cuda.amp.autocast(enabled=self.optim.fp16):
+                    # F-prop through the model.
+                    outputs, attns = valid_model(src, tgt, src_lengths,
+                                                 with_align=self.with_align)
 
-                # Compute loss.
-                _, batch_stats = self.valid_loss(batch, outputs, attns)
+                    # Compute loss.
+                    _, batch_stats = self.valid_loss(batch, outputs, attns)
 
                 # Update statistics.
                 stats.update(batch_stats)
@@ -384,12 +384,13 @@ class Trainer(object):
                 if self.accum_count == 1:
                     self.optim.zero_grad()
 
-                outputs, attns = self.model(src, tgt, src_lengths, bptt=bptt,
-                                            with_align=self.with_align)
-                bptt = True
+                with torch.cuda.amp.autocast(enabled=self.optim.fp16):
+                    outputs, attns = self.model(
+                        src, tgt, src_lengths, bptt=bptt,
+                        with_align=self.with_align)
+                    bptt = True
 
-                # 3. Compute loss.
-                try:
+                    # 3. Compute loss.
                     loss, batch_stats = self.train_loss(
                         batch,
                         outputs,
@@ -399,6 +400,7 @@ class Trainer(object):
                         trunc_start=j,
                         trunc_size=trunc_size)
 
+                try:
                     if loss is not None:
                         self.optim.backward(loss)
 

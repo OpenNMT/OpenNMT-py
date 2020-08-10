@@ -8,7 +8,6 @@ from copy import copy
 from math import sqrt
 import types
 import importlib
-from onmt.utils.misc import fn_args
 
 
 def build_torch_optimizer(model, opt):
@@ -77,34 +76,15 @@ def build_torch_optimizer(model, opt):
                  lr=opt.learning_rate,
                  betas=betas,
                  eps=1e-8)])
-    elif opt.optim == 'fusedadam':
-        # we use here a FusedAdam() copy of an old Apex repo
-        optimizer = FusedAdam(
-            params,
-            lr=opt.learning_rate,
-            betas=betas)
+    # elif opt.optim == 'fusedadam':
+    #     # we use here a FusedAdam() copy of an old Apex repo
+    #     optimizer = FusedAdam(
+    #         params,
+    #         lr=opt.learning_rate,
+    #         betas=betas)
     else:
         raise ValueError('Invalid optimizer type: ' + opt.optim)
 
-    if opt.model_dtype == 'fp16':
-        import apex
-        if opt.optim != 'fusedadam':
-            # In this case use the new AMP API from apex
-            loss_scale = "dynamic" if opt.loss_scale == 0 else opt.loss_scale
-            model, optimizer = apex.amp.initialize(
-                [model, model.generator],
-                optimizer,
-                opt_level=opt.apex_opt_level,
-                loss_scale=loss_scale,
-                keep_batchnorm_fp32=None)
-        else:
-            # In this case use the old FusedAdam with FP16_optimizer wrapper
-            static_loss_scale = opt.loss_scale
-            dynamic_loss_scale = opt.loss_scale == 0
-            optimizer = apex.contrib.optimizers.FP16_Optimizer(
-                optimizer,
-                static_loss_scale=static_loss_scale,
-                dynamic_loss_scale=dynamic_loss_scale)
     return optimizer
 
 
@@ -234,7 +214,8 @@ class Optimizer(object):
         self._max_grad_norm = max_grad_norm or 0
         self._training_step = 1
         self._decay_step = 1
-        self._fp16 = None
+        # self._fp16 = None
+        self._scaler = None
 
     @classmethod
     def from_opt(cls, model, opt, checkpoint=None):
@@ -285,10 +266,8 @@ class Optimizer(object):
             learning_rate_decay_fn=make_learning_rate_decay_fn(optim_opt),
             max_grad_norm=optim_opt.max_grad_norm)
         if opt.model_dtype == "fp16":
-            if opt.optim == "fusedadam":
-                optimizer._fp16 = "legacy"
-            else:
-                optimizer._fp16 = "amp"
+            from torch.cuda.amp import GradScaler
+            optimizer._scaler = GradScaler()
         if optim_state_dict:
             optimizer.load_state_dict(optim_state_dict)
         return optimizer
@@ -297,6 +276,10 @@ class Optimizer(object):
     def training_step(self):
         """The current training step."""
         return self._training_step
+
+    @property
+    def fp16(self):
+        return self._scaler is not None
 
     def learning_rate(self):
         """Returns the current learning rate."""
@@ -327,15 +310,8 @@ class Optimizer(object):
     def backward(self, loss):
         """Wrapper for backward pass. Some optimizer requires ownership of the
         backward pass."""
-        if self._fp16 == "amp":
-            import apex
-            with apex.amp.scale_loss(loss, self._optimizer) as scaled_loss:
-                scaled_loss.backward()
-        elif self._fp16 == "legacy":
-            kwargs = {}
-            if "update_master_grads" in fn_args(self._optimizer.backward):
-                kwargs["update_master_grads"] = True
-            self._optimizer.backward(loss, **kwargs)
+        if self.fp16:
+            self._scaler.scale(loss).backward()
         else:
             loss.backward()
 
@@ -346,18 +322,23 @@ class Optimizer(object):
         rate.
         """
         learning_rate = self.learning_rate()
-        if self._fp16 == "legacy":
-            if hasattr(self._optimizer, "update_master_grads"):
-                self._optimizer.update_master_grads()
-            if hasattr(self._optimizer, "clip_master_grads") and \
-               self._max_grad_norm > 0:
-                self._optimizer.clip_master_grads(self._max_grad_norm)
+
+        if self.fp16:
+            self._scaler.unscale_(self._optimizer)
 
         for group in self._optimizer.param_groups:
             group['lr'] = learning_rate
-            if self._fp16 is None and self._max_grad_norm > 0:
+            if self._max_grad_norm > 0:
                 clip_grad_norm_(group['params'], self._max_grad_norm)
-        self._optimizer.step()
+
+        if self.fp16:
+            # unscaled optimizer's gradients (already done therefore skip),
+            # skips optimizer.step() if gradients contain infs/NaNs.
+            self._scaler.step(self._optimizer)
+            # Updates the scale for next iteration.
+            self._scaler.update()
+        else:
+            self._optimizer.step()
         self._decay_step += 1
         self._training_step += 1
 
