@@ -320,7 +320,8 @@ class Trainer(object):
             for avg, param in zip(self.moving_average,
                                   valid_model.parameters()):
                 model_params_data.append(param.data)
-                param.data = avg.data
+                param.data = avg.data.half() if self.optim._fp16 == "legacy" \
+                    else avg.data
 
         # Set model in validating mode.
         valid_model.eval()
@@ -333,7 +334,7 @@ class Trainer(object):
                                    else (batch.src, None)
                 tgt = batch.tgt
 
-                with torch.cuda.amp.autocast(enabled=self.optim.fp16):
+                with torch.cuda.amp.autocast(enabled=self.optim.amp):
                     # F-prop through the model.
                     outputs, attns = valid_model(src, tgt, src_lengths,
                                                  with_align=self.with_align)
@@ -384,7 +385,7 @@ class Trainer(object):
                 if self.accum_count == 1:
                     self.optim.zero_grad()
 
-                with torch.cuda.amp.autocast(enabled=self.optim.fp16):
+                with torch.cuda.amp.autocast(enabled=self.optim.amp):
                     outputs, attns = self.model(
                         src, tgt, src_lengths, bptt=bptt,
                         with_align=self.with_align)
