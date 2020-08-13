@@ -123,7 +123,8 @@ class TestCopyGeneratorLoss(unittest.TestCase):
             loss = CopyGeneratorLoss(**init_case)
             scores, align, target = self.dummy_inputs(params, init_case)
             res = loss(scores, align, target)
-            should_be_ignored = (target == init_case["ignore_index"]).nonzero()
+            should_be_ignored = (target == init_case["ignore_index"]).nonzero(
+                as_tuple=False)
             assert len(should_be_ignored) > 0  # otherwise not testing anything
             self.assertTrue(res[should_be_ignored].allclose(torch.tensor(0.0)))
 
