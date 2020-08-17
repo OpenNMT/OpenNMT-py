@@ -1,5 +1,5 @@
 cffi
-torchvision==0.4.0
+torchvision
 joblib
 librosa
 numba==0.43.0

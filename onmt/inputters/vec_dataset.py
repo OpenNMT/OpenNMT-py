@@ -102,7 +102,7 @@ class VecSeqField(Field):
         nfeats = minibatch[0].size(1)
         feat_dim = minibatch[0].size(2)
         feats = torch.full((len(minibatch), max_len, nfeats, feat_dim),
-                           self.pad_token)
+                           self.pad_token, dtype=self.dtype)
         for i, (feat, len_) in enumerate(zip(minibatch, lengths)):
             feats[i, 0:len_, :, :] = feat
         if self.include_lengths:

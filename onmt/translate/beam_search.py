@@ -209,7 +209,7 @@ class BeamSearch(DecodeStrategy):
         torch.mul(self.topk_scores, length_penalty, out=self.topk_log_probs)
 
         # Resolve beam origin and map to batch index flat representation.
-        torch.div(self.topk_ids, vocab_size, out=self._batch_index)
+        self._batch_index = self.topk_ids // vocab_size
         self._batch_index += self._beam_offset[:_B].unsqueeze(1)
         self.select_indices = self._batch_index.view(_B * self.beam_size)
         self.topk_ids.fmod_(vocab_size)  # resolve true word ids
@@ -269,7 +269,7 @@ class BeamSearch(DecodeStrategy):
         non_finished_batch = []
         for i in range(self.is_finished.size(0)):  # Batch level
             b = self._batch_offset[i]
-            finished_hyp = self.is_finished[i].nonzero().view(-1)
+            finished_hyp = self.is_finished[i].nonzero(as_tuple=False).view(-1)
             # Store finished hypotheses for this batch.
             for j in finished_hyp:  # Beam level: finished beam j in batch i
                 if self.ratio > 0:
