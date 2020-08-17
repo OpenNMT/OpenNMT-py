@@ -172,7 +172,8 @@ class AudioSeqField(Field):
         lengths = [x.size(1) for x in minibatch]
         max_len = max(lengths)
         nfft = minibatch[0].size(0)
-        sounds = torch.full((len(minibatch), 1, nfft, max_len), self.pad_token)
+        sounds = torch.full((len(minibatch), 1, nfft, max_len),
+                            self.pad_token, dtype=self.dtype)
         for i, (spect, len_) in enumerate(zip(minibatch, lengths)):
             sounds[i, :, :, 0:len_] = spect
         if self.include_lengths:
