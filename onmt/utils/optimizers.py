@@ -83,21 +83,8 @@ def build_torch_optimizer(model, opt):
             params,
             lr=opt.learning_rate,
             betas=betas)
-    else:
-        raise ValueError('Invalid optimizer type: ' + opt.optim)
-
-    if opt.model_dtype == 'fp16':
-        import apex
-        if opt.optim != 'fusedadam':
-            # In this case use the new AMP API from apex
-            loss_scale = "dynamic" if opt.loss_scale == 0 else opt.loss_scale
-            model, optimizer = apex.amp.initialize(
-                [model, model.generator],
-                optimizer,
-                opt_level=opt.apex_opt_level,
-                loss_scale=loss_scale,
-                keep_batchnorm_fp32=None)
-        else:
+        if opt.model_dtype == 'fp16':
+            import apex
             # In this case use the old FusedAdam with FP16_optimizer wrapper
             static_loss_scale = opt.loss_scale
             dynamic_loss_scale = opt.loss_scale == 0
@@ -105,6 +92,9 @@ def build_torch_optimizer(model, opt):
                 optimizer,
                 static_loss_scale=static_loss_scale,
                 dynamic_loss_scale=dynamic_loss_scale)
+    else:
+        raise ValueError('Invalid optimizer type: ' + opt.optim)
+
     return optimizer
 
 
@@ -235,6 +225,7 @@ class Optimizer(object):
         self._training_step = 1
         self._decay_step = 1
         self._fp16 = None
+        self._scaler = None
 
     @classmethod
     def from_opt(cls, model, opt, checkpoint=None):
@@ -289,6 +280,8 @@ class Optimizer(object):
                 optimizer._fp16 = "legacy"
             else:
                 optimizer._fp16 = "amp"
+                from torch.cuda.amp import GradScaler
+                optimizer._scaler = GradScaler()
         if optim_state_dict:
             optimizer.load_state_dict(optim_state_dict)
         return optimizer
@@ -297,6 +290,11 @@ class Optimizer(object):
     def training_step(self):
         """The current training step."""
         return self._training_step
+
+    @property
+    def amp(self):
+        """True if use torch amp mix precision training."""
+        return self._fp16 == "amp"
 
     def learning_rate(self):
         """Returns the current learning rate."""
@@ -327,10 +325,8 @@ class Optimizer(object):
     def backward(self, loss):
         """Wrapper for backward pass. Some optimizer requires ownership of the
         backward pass."""
-        if self._fp16 == "amp":
-            import apex
-            with apex.amp.scale_loss(loss, self._optimizer) as scaled_loss:
-                scaled_loss.backward()
+        if self.amp:
+            self._scaler.scale(loss).backward()
         elif self._fp16 == "legacy":
             kwargs = {}
             if "update_master_grads" in fn_args(self._optimizer.backward):
@@ -346,7 +342,10 @@ class Optimizer(object):
         rate.
         """
         learning_rate = self.learning_rate()
-        if self._fp16 == "legacy":
+
+        if self.amp:
+            self._scaler.unscale_(self._optimizer)
+        elif self._fp16 == "legacy":
             if hasattr(self._optimizer, "update_master_grads"):
                 self._optimizer.update_master_grads()
             if hasattr(self._optimizer, "clip_master_grads") and \
@@ -355,9 +354,17 @@ class Optimizer(object):
 
         for group in self._optimizer.param_groups:
             group['lr'] = learning_rate
-            if self._fp16 is None and self._max_grad_norm > 0:
+            if self._max_grad_norm > 0 and self._fp16 != "legacy":
                 clip_grad_norm_(group['params'], self._max_grad_norm)
-        self._optimizer.step()
+
+        if self.amp:
+            # unscaled optimizer's gradients (already done therefore skip),
+            # skips optimizer.step() if gradients contain infs/NaNs.
+            self._scaler.step(self._optimizer)
+            # Updates the scale for next iteration.
+            self._scaler.update()
+        else:
+            self._optimizer.step()
         self._decay_step += 1
         self._training_step += 1
 
