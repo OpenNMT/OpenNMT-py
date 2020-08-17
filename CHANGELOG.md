@@ -4,6 +4,19 @@
 
 ## [Unreleased]
 
+## [1.2.0](https://github.com/OpenNMT/OpenNMT-py/tree/1.2.0) (2020-08-17)
+### Fixes and improvements
+* Support pytorch 1.6 (e813f4d, eaaae6a)
+* Support official torch 1.6 AMP for mixed precision training (2ac1ed0)
+* Flag to override batch_size_multiple in FP16 mode, useful in some memory constrained setups (23e5018)
+* Pass a dict and allow custom options in preprocess/postprocess functions of REST server (41f0c02, 8ec54d2)
+* Allow different tokenization for source and target in REST server (bb2d045, 4659170)
+* Various bug fixes
+
+### New features
+* Gated Graph Sequence Neural Networks encoder (11e8d0), thanks @SteveKommrusch
+* Decoding with a target prefix (95aeefb, 0e143ff, 91ab592), thanks @Zenglinxiao
+
 ## [1.1.1](https://github.com/OpenNMT/OpenNMT-py/tree/1.1.1) (2020-03-20)
 ### Fixes and improvements
 * Fix backcompatibility when no 'corpus_id' field (c313c28)
