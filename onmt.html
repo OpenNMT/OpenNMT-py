@@ -458,6 +458,12 @@ rate scheduling beyond what is currently available.
 Also implements necessary methods for training RNNs such
 as grad manipulations.</p>
 <dl class="method">
+<dt id="onmt.utils.Optimizer.amp">
+<em class="property">property </em><code class="sig-name descname">amp</code><a class="headerlink" href="#onmt.utils.Optimizer.amp" title="Permalink to this definition">¶</a></dt>
+<dd><p>True if use torch amp mix precision training.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="onmt.utils.Optimizer.backward">
 <code class="sig-name descname">backward</code><span class="sig-paren">(</span><em class="sig-param">loss</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/optimizers.html#Optimizer.backward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.Optimizer.backward" title="Permalink to this definition">¶</a></dt>
 <dd><p>Wrapper for backward pass. Some optimizer requires ownership of the

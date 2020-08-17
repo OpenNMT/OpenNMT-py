@@ -261,21 +261,8 @@
             <span class="n">params</span><span class="p">,</span>
             <span class="n">lr</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span>
             <span class="n">betas</span><span class="o">=</span><span class="n">betas</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid optimizer type: &#39;</span> <span class="o">+</span> <span class="n">opt</span><span class="o">.</span><span class="n">optim</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">model_dtype</span> <span class="o">==</span> <span class="s1">&#39;fp16&#39;</span><span class="p">:</span>
-        <span class="kn">import</span> <span class="nn">apex</span>
-        <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">optim</span> <span class="o">!=</span> <span class="s1">&#39;fusedadam&#39;</span><span class="p">:</span>
-            <span class="c1"># In this case use the new AMP API from apex</span>
-            <span class="n">loss_scale</span> <span class="o">=</span> <span class="s2">&quot;dynamic&quot;</span> <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">loss_scale</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">opt</span><span class="o">.</span><span class="n">loss_scale</span>
-            <span class="n">model</span><span class="p">,</span> <span class="n">optimizer</span> <span class="o">=</span> <span class="n">apex</span><span class="o">.</span><span class="n">amp</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span>
-                <span class="p">[</span><span class="n">model</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">generator</span><span class="p">],</span>
-                <span class="n">optimizer</span><span class="p">,</span>
-                <span class="n">opt_level</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">apex_opt_level</span><span class="p">,</span>
-                <span class="n">loss_scale</span><span class="o">=</span><span class="n">loss_scale</span><span class="p">,</span>
-                <span class="n">keep_batchnorm_fp32</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">model_dtype</span> <span class="o">==</span> <span class="s1">&#39;fp16&#39;</span><span class="p">:</span>
+            <span class="kn">import</span> <span class="nn">apex</span>
             <span class="c1"># In this case use the old FusedAdam with FP16_optimizer wrapper</span>
             <span class="n">static_loss_scale</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">loss_scale</span>
             <span class="n">dynamic_loss_scale</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">loss_scale</span> <span class="o">==</span> <span class="mi">0</span>
@@ -283,6 +270,9 @@
                 <span class="n">optimizer</span><span class="p">,</span>
                 <span class="n">static_loss_scale</span><span class="o">=</span><span class="n">static_loss_scale</span><span class="p">,</span>
                 <span class="n">dynamic_loss_scale</span><span class="o">=</span><span class="n">dynamic_loss_scale</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid optimizer type: &#39;</span> <span class="o">+</span> <span class="n">opt</span><span class="o">.</span><span class="n">optim</span><span class="p">)</span>
+
     <span class="k">return</span> <span class="n">optimizer</span>
 
 
@@ -413,6 +403,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_training_step</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_decay_step</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_fp16</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scaler</span> <span class="o">=</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="Optimizer.from_opt"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.Optimizer.from_opt">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_opt</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">checkpoint</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -467,6 +458,8 @@
                 <span class="n">optimizer</span><span class="o">.</span><span class="n">_fp16</span> <span class="o">=</span> <span class="s2">&quot;legacy&quot;</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">optimizer</span><span class="o">.</span><span class="n">_fp16</span> <span class="o">=</span> <span class="s2">&quot;amp&quot;</span>
+                <span class="kn">from</span> <span class="nn">torch.cuda.amp</span> <span class="kn">import</span> <span class="n">GradScaler</span>
+                <span class="n">optimizer</span><span class="o">.</span><span class="n">_scaler</span> <span class="o">=</span> <span class="n">GradScaler</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">optim_state_dict</span><span class="p">:</span>
             <span class="n">optimizer</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">optim_state_dict</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">optimizer</span></div>
@@ -475,6 +468,11 @@
     <span class="k">def</span> <span class="nf">training_step</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;The current training step.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_training_step</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">amp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;True if use torch amp mix precision training.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fp16</span> <span class="o">==</span> <span class="s2">&quot;amp&quot;</span>
 
 <div class="viewcode-block" id="Optimizer.learning_rate"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.Optimizer.learning_rate">[docs]</a>    <span class="k">def</span> <span class="nf">learning_rate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the current learning rate.&quot;&quot;&quot;</span>
@@ -505,10 +503,8 @@
 <div class="viewcode-block" id="Optimizer.backward"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.Optimizer.backward">[docs]</a>    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loss</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Wrapper for backward pass. Some optimizer requires ownership of the</span>
 <span class="sd">        backward pass.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fp16</span> <span class="o">==</span> <span class="s2">&quot;amp&quot;</span><span class="p">:</span>
-            <span class="kn">import</span> <span class="nn">apex</span>
-            <span class="k">with</span> <span class="n">apex</span><span class="o">.</span><span class="n">amp</span><span class="o">.</span><span class="n">scale_loss</span><span class="p">(</span><span class="n">loss</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span><span class="p">)</span> <span class="k">as</span> <span class="n">scaled_loss</span><span class="p">:</span>
-                <span class="n">scaled_loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">amp</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_scaler</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fp16</span> <span class="o">==</span> <span class="s2">&quot;legacy&quot;</span><span class="p">:</span>
             <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="k">if</span> <span class="s2">&quot;update_master_grads&quot;</span> <span class="ow">in</span> <span class="n">fn_args</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span><span class="o">.</span><span class="n">backward</span><span class="p">):</span>
@@ -524,7 +520,10 @@
 <span class="sd">        rate.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">learning_rate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">()</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fp16</span> <span class="o">==</span> <span class="s2">&quot;legacy&quot;</span><span class="p">:</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">amp</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_scaler</span><span class="o">.</span><span class="n">unscale_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fp16</span> <span class="o">==</span> <span class="s2">&quot;legacy&quot;</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span><span class="p">,</span> <span class="s2">&quot;update_master_grads&quot;</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span><span class="o">.</span><span class="n">update_master_grads</span><span class="p">()</span>
             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span><span class="p">,</span> <span class="s2">&quot;clip_master_grads&quot;</span><span class="p">)</span> <span class="ow">and</span> \
@@ -533,9 +532,17 @@
 
         <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span><span class="o">.</span><span class="n">param_groups</span><span class="p">:</span>
             <span class="n">group</span><span class="p">[</span><span class="s1">&#39;lr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">learning_rate</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fp16</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_grad_norm</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_grad_norm</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fp16</span> <span class="o">!=</span> <span class="s2">&quot;legacy&quot;</span><span class="p">:</span>
                 <span class="n">clip_grad_norm_</span><span class="p">(</span><span class="n">group</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_grad_norm</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">amp</span><span class="p">:</span>
+            <span class="c1"># unscaled optimizer&#39;s gradients (already done therefore skip),</span>
+            <span class="c1"># skips optimizer.step() if gradients contain infs/NaNs.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_scaler</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span><span class="p">)</span>
+            <span class="c1"># Updates the scale for next iteration.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_scaler</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_decay_step</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_training_step</span> <span class="o">+=</span> <span class="mi">1</span></div></div>
 
