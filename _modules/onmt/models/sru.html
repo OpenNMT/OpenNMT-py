@@ -795,7 +795,7 @@
         <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rnn_lst</span><span class="p">:</span>
             <span class="n">l</span><span class="o">.</span><span class="n">set_bias</span><span class="p">(</span><span class="n">bias_val</span><span class="p">)</span>
 
-<div class="viewcode-block" id="SRU.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.models.sru.SRU.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">c0</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">return_hidden</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">c0</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">return_hidden</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="k">assert</span> <span class="nb">input</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">3</span>  <span class="c1"># (len, batch, n_in)</span>
         <span class="n">dir_</span> <span class="o">=</span> <span class="mi">2</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bidirectional</span> <span class="k">else</span> <span class="mi">1</span>
         <span class="k">if</span> <span class="n">c0</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -826,7 +826,7 @@
         <span class="k">if</span> <span class="n">return_hidden</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">prevx</span><span class="p">,</span> <span class="n">fh</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">prevx</span></div></div>
+            <span class="k">return</span> <span class="n">prevx</span></div>
 </pre></div>
 
            </div>
