@@ -61,9 +61,8 @@ class TestBeamSearch(unittest.TestCase):
                     # (but it's still the best score, thus we have
                     # [BLOCKED_SCORE, -inf, -inf, -inf, -inf]
                     expected_scores = torch.tensor(
-                        [0] + [-float('inf')] * (beam_sz - 1))\
-                        .repeat(batch_sz, 1)
-                    expected_scores[:, 0] = self.BLOCKED_SCORE
+                        [self.BLOCKED_SCORE] + [-float('inf')] * (beam_sz - 1)
+                    ).repeat(batch_sz, 1)
                     self.assertTrue(beam.topk_log_probs.equal(expected_scores))
                 else:
                     # repetitions keeps maximizing score
@@ -71,11 +70,9 @@ class TestBeamSearch(unittest.TestCase):
                     # other indexes are -inf so repeating=>BLOCKED_SCORE
                     # which is higher
                     expected_scores = torch.tensor(
-                        [0] + [-float('inf')] * (beam_sz - 1))\
-                        .repeat(batch_sz, 1)
-                    expected_scores[:, :] = self.BLOCKED_SCORE
-                    expected_scores = torch.tensor(
-                        self.BLOCKED_SCORE).repeat(batch_sz, beam_sz)
+                        [self.BLOCKED_SCORE] + [-float('inf')] * (beam_sz - 1)
+                    ).repeat(batch_sz, 1)
+                    self.assertTrue(beam.topk_log_probs.equal(expected_scores))
 
     def test_advance_with_some_repeats_gets_blocked(self):
         # beam 0 and beam >=2 will repeat (beam >= 2 repeat dummy scores)
@@ -137,7 +134,8 @@ class TestBeamSearch(unittest.TestCase):
 
                     expected = torch.full([batch_sz, beam_sz], float("-inf"))
                     expected[:, 0] = no_repeat_score
-                    expected[:, 1:] = self.BLOCKED_SCORE
+                    expected[:, 1:3] = self.BLOCKED_SCORE
+                    expected[:, 3:] = float("-inf")
                     self.assertTrue(
                         beam.topk_log_probs.equal(expected))
 
