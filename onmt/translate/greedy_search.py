@@ -163,7 +163,7 @@ class GreedySearch(DecodeStrategy):
     def update_finished(self):
         """Finalize scores and predictions."""
         # shape: (sum(~ self.is_finished), 1)
-        finished_batches = self.is_finished.view(-1).nonzero()
+        finished_batches = self.is_finished.view(-1).nonzero(as_tuple=False)
         for b in finished_batches.view(-1):
             b_orig = self.original_batch_idx[b]
             self.scores[b_orig].append(self.topk_scores[b, 0])
@@ -178,6 +178,6 @@ class GreedySearch(DecodeStrategy):
         self.alive_seq = self.alive_seq[is_alive]
         if self.alive_attn is not None:
             self.alive_attn = self.alive_attn[:, is_alive]
-        self.select_indices = is_alive.nonzero().view(-1)
+        self.select_indices = is_alive.nonzero(as_tuple=False).view(-1)
         self.original_batch_idx = self.original_batch_idx[is_alive]
         self.maybe_update_target_prefix(self.select_indices)

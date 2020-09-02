@@ -5,7 +5,7 @@ import os
 import torch
 
 from onmt.inputters.inputter import build_dataset_iter, patch_fields, \
-    load_old_vocab, old_style_vocab, build_dataset_iter_multiple
+    load_old_vocab, old_style_vocab, build_dataset_iter_multiple, IterOnDevice
 from onmt.model_builder import build_model
 from onmt.utils.optimizers import Optimizer
 from onmt.utils.misc import set_random_seed
@@ -113,7 +113,7 @@ def main(opt, device_id, batch_queue=None, semaphore=None):
             else:
                 shard_base = "train"
             train_iter = build_dataset_iter(shard_base, fields, opt)
-
+        train_iter = IterOnDevice(train_iter, device_id)
     else:
         assert semaphore is not None, \
             "Using batch_queue requires semaphore as well"
@@ -122,12 +122,16 @@ def main(opt, device_id, batch_queue=None, semaphore=None):
             while True:
                 batch = batch_queue.get()
                 semaphore.release()
+                # Move batch to specified device
+                IterOnDevice.batch_to_device(batch, device_id)
                 yield batch
 
         train_iter = _train_iter()
 
     valid_iter = build_dataset_iter(
         "valid", fields, opt, is_train=False)
+    if valid_iter is not None:
+        valid_iter = IterOnDevice(valid_iter, device_id)
 
     if len(opt.gpu_ranks):
         logger.info('Starting training on GPU: %s' % opt.gpu_ranks)

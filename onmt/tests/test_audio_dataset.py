@@ -48,7 +48,7 @@ class TestAudioField(unittest.TestCase):
         lengths[params["full_length_seq"]] = max_len
         nfeats = params["nfeats"]
         fake_input = torch.full(
-            (bs, 1, nfeats, max_len), init_case["pad_index"])
+            (bs, 1, nfeats, max_len), float(init_case["pad_index"]))
         for b in range(bs):
             fake_input[b, :, :, :lengths[b]] = torch.randn(
                 (1, nfeats, lengths[b]))
