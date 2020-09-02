@@ -177,6 +177,7 @@
             
   <h1>Source code for onmt.translate.decode_strategy</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
 
 
 <div class="viewcode-block" id="DecodeStrategy"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.DecodeStrategy">[docs]</a><span class="k">class</span> <span class="nc">DecodeStrategy</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -362,7 +363,7 @@
             <span class="c1"># Reordering forbidden_tokens following beam selection</span>
             <span class="c1"># We rebuild a dict to ensure we get the value and not the pointer</span>
             <span class="n">forbidden_tokens</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">forbidden_tokens</span><span class="p">[</span><span class="n">path_idx</span><span class="p">]))</span>
+                <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">forbidden_tokens</span><span class="p">[</span><span class="n">path_idx</span><span class="p">]))</span>
 
             <span class="c1"># Grabing the newly selected tokens and associated ngram</span>
             <span class="n">current_ngram</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">seq</span><span class="p">[</span><span class="o">-</span><span class="n">n</span><span class="p">:]</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
