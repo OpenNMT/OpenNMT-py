@@ -204,7 +204,7 @@ class Trainer(object):
             self.moving_average = copy_params
         else:
             average_decay = max(self.average_decay,
-                                1 - (step + 1)/(step + 10))
+                                1 - (step + 1) / (step + 10))
             for (i, avg), cpt in zip(enumerate(self.moving_average),
                                      self.model.parameters()):
                 self.moving_average[i] = \
@@ -295,8 +295,8 @@ class Trainer(object):
                         break
 
             if (self.model_saver is not None
-                and (save_checkpoint_steps != 0
-                     and step % save_checkpoint_steps == 0)):
+                    and (save_checkpoint_steps != 0
+                         and step % save_checkpoint_steps == 0)):
                 self.model_saver.save(step, moving_average=self.moving_average)
 
             if train_steps > 0 and step >= train_steps:
@@ -331,7 +331,7 @@ class Trainer(object):
 
             for batch in valid_iter:
                 src, src_lengths = batch.src if isinstance(batch.src, tuple) \
-                                   else (batch.src, None)
+                    else (batch.src, None)
                 tgt = batch.tgt
 
                 with torch.cuda.amp.autocast(enabled=self.optim.amp):
@@ -377,7 +377,7 @@ class Trainer(object):
             tgt_outer = batch.tgt
 
             bptt = False
-            for j in range(0, target_size-1, trunc_size):
+            for j in range(0, target_size - 1, trunc_size):
                 # 1. Create truncated target.
                 tgt = tgt_outer[j: j + trunc_size]
 
@@ -475,7 +475,12 @@ class Trainer(object):
         """
         if self.report_manager is not None:
             return self.report_manager.report_training(
-                step, num_steps, learning_rate, report_stats,
+                step,
+                num_steps,
+                learning_rate,
+                None if self.earlystopper is None
+                else self.earlystopper.current_tolerance,
+                report_stats,
                 multigpu=self.n_gpu > 1)
 
     def _report_step(self, learning_rate, step, train_stats=None,
@@ -486,7 +491,10 @@ class Trainer(object):
         """
         if self.report_manager is not None:
             return self.report_manager.report_step(
-                learning_rate, step, train_stats=train_stats,
+                learning_rate,
+                None if self.earlystopper is None
+                else self.earlystopper.current_tolerance,
+                step, train_stats=train_stats,
                 valid_stats=valid_stats)
 
     def maybe_noise_source(self, batch):
