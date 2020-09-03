@@ -37,7 +37,7 @@ class ModelSaverBase(object):
         if keep_checkpoint > 0:
             self.checkpoint_queue = deque([], maxlen=keep_checkpoint)
 
-    def save(self, step, moving_average=None):
+    def save(self, step, moving_average=None, best_step=None):
         """Main entry point for model saver
 
         It wraps the `_save` method with checks and apply `keep_checkpoint`
@@ -63,9 +63,13 @@ class ModelSaverBase(object):
                 param.data = param_data
 
         if self.keep_checkpoint > 0:
+            best_checkpoint = '%s_step_%d.pt' % (self.base_path, step)
+            if best_step is not None:
+                best_checkpoint = '%s_step_%d.pt' % (self.base_path, best_step)
             if len(self.checkpoint_queue) == self.checkpoint_queue.maxlen:
                 todel = self.checkpoint_queue.popleft()
-                self._rm_checkpoint(todel)
+                if todel != best_checkpoint:
+                    self._rm_checkpoint(todel)
             self.checkpoint_queue.append(chkpt_name)
 
     def _save(self, step):
