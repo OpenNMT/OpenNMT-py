@@ -69,10 +69,11 @@ class ModelSaverBase(object):
             if is_best:
                 if best_step is None:
                     best_checkpoint = '%s_step_%d.pt' % (self.base_path, step)
+                    self._update_best_config(step, validation_ppl)
                 else:
                     best_checkpoint = '%s_step_%d.pt' \
                                         % (self.base_path, best_step)
-                self._update_best_config(step, validation_ppl)
+                    self._update_best_config(best_step, validation_ppl)
             else:
                 best_checkpoint = '%s_step_%d.pt' % (self.base_path, best_step)
             if len(self.checkpoint_queue) == self.checkpoint_queue.maxlen:
