@@ -9,6 +9,7 @@ import configargparse
 import torch
 import torch.nn as nn
 from torch.autograd import Function
+from torch.cuda.amp import custom_fwd, custom_bwd
 from collections import namedtuple
 
 
@@ -392,6 +393,7 @@ class SRU_Compute(Function):
         if SRU_FWD_FUNC is None:
             load_sru_mod()
 
+    @custom_fwd
     def forward(self, u, x, bias, init=None, mask_h=None):
         bidir = 2 if self.bidirectional else 1
         length = x.size(0) if x.dim() == 3 else 1
@@ -437,6 +439,7 @@ class SRU_Compute(Function):
             last_hidden = c[-1]
         return h, last_hidden
 
+    @custom_bwd
     def backward(self, grad_h, grad_last):
         if self.bidirectional:
             grad_last = torch.cat((grad_last[0], grad_last[1]), 1)

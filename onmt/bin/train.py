@@ -17,6 +17,10 @@ from onmt.inputters.inputter import build_dataset_iter, patch_fields, \
 from itertools import cycle
 
 
+# Fix CPU tensor sharing strategy
+torch.multiprocessing.set_sharing_strategy('file_system')
+
+
 def train(opt):
     ArgumentParser.validate_train_opts(opt)
     ArgumentParser.update_model_opts(opt)
@@ -119,22 +123,6 @@ def batch_producer(generator_to_serve, queues, semaphore, opt):
 
     for device_id, q in cycle(enumerate(queues)):
         b.dataset = None
-        if isinstance(b.src, tuple):
-            b.src = tuple([_.to(torch.device(device_id))
-                           for _ in b.src])
-        else:
-            b.src = b.src.to(torch.device(device_id))
-        b.tgt = b.tgt.to(torch.device(device_id))
-        b.indices = b.indices.to(torch.device(device_id))
-        b.alignment = b.alignment.to(torch.device(device_id)) \
-            if hasattr(b, 'alignment') else None
-        b.src_map = b.src_map.to(torch.device(device_id)) \
-            if hasattr(b, 'src_map') else None
-        b.align = b.align.to(torch.device(device_id)) \
-            if hasattr(b, 'align') else None
-        b.corpus_id = b.corpus_id.to(torch.device(device_id)) \
-            if hasattr(b, 'corpus_id') else None
-
         # hack to dodge unpicklable `dict_keys`
         b.fields = list(b.fields)
         q.put(b)

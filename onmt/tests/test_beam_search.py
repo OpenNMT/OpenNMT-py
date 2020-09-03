@@ -61,9 +61,8 @@ class TestBeamSearch(unittest.TestCase):
                     # (but it's still the best score, thus we have
                     # [BLOCKED_SCORE, -inf, -inf, -inf, -inf]
                     expected_scores = torch.tensor(
-                        [0] + [-float('inf')] * (beam_sz - 1))\
-                        .repeat(batch_sz, 1)
-                    expected_scores[:, 0] = self.BLOCKED_SCORE
+                        [self.BLOCKED_SCORE] + [-float('inf')] * (beam_sz - 1)
+                    ).repeat(batch_sz, 1)
                     self.assertTrue(beam.topk_log_probs.equal(expected_scores))
                 else:
                     # repetitions keeps maximizing score
@@ -71,11 +70,9 @@ class TestBeamSearch(unittest.TestCase):
                     # other indexes are -inf so repeating=>BLOCKED_SCORE
                     # which is higher
                     expected_scores = torch.tensor(
-                        [0] + [-float('inf')] * (beam_sz - 1))\
-                        .repeat(batch_sz, 1)
-                    expected_scores[:, :] = self.BLOCKED_SCORE
-                    expected_scores = torch.tensor(
-                        self.BLOCKED_SCORE).repeat(batch_sz, beam_sz)
+                        [self.BLOCKED_SCORE] + [-float('inf')] * (beam_sz - 1)
+                    ).repeat(batch_sz, 1)
+                    self.assertTrue(beam.topk_log_probs.equal(expected_scores))
 
     def test_advance_with_some_repeats_gets_blocked(self):
         # beam 0 and beam >=2 will repeat (beam >= 2 repeat dummy scores)
@@ -137,7 +134,8 @@ class TestBeamSearch(unittest.TestCase):
 
                     expected = torch.full([batch_sz, beam_sz], float("-inf"))
                     expected[:, 0] = no_repeat_score
-                    expected[:, 1:] = self.BLOCKED_SCORE
+                    expected[:, 1:3] = self.BLOCKED_SCORE
+                    expected[:, 3:] = float("-inf")
                     self.assertTrue(
                         beam.topk_log_probs.equal(expected))
 
@@ -446,7 +444,7 @@ class TestBeamSearchAgainstReferenceCase(unittest.TestCase):
         expected_beam_scores, unreduced_preds = new_scores\
             .view(self.BATCH_SZ, self.BEAM_SZ * self.N_WORDS)\
             .topk(self.BEAM_SZ, -1)
-        expected_bptr_1 = unreduced_preds / self.N_WORDS
+        expected_bptr_1 = unreduced_preds // self.N_WORDS
         # [5, 3, 2, 6, 0], so beam 2 predicts EOS!
         expected_preds_1 = unreduced_preds - expected_bptr_1 * self.N_WORDS
         self.assertTrue(beam.topk_log_probs.allclose(expected_beam_scores))
@@ -480,7 +478,7 @@ class TestBeamSearchAgainstReferenceCase(unittest.TestCase):
         expected_beam_scores, unreduced_preds = new_scores\
             .view(self.BATCH_SZ, self.BEAM_SZ * self.N_WORDS)\
             .topk(self.BEAM_SZ, -1)
-        expected_bptr_2 = unreduced_preds / self.N_WORDS
+        expected_bptr_2 = unreduced_preds // self.N_WORDS
         # [2, 5, 3, 6, 0] repeat self.BATCH_SZ, so beam 0 predicts EOS!
         expected_preds_2 = unreduced_preds - expected_bptr_2 * self.N_WORDS
         # [-2.4879, -3.8910, -4.1010, -4.2010, -4.4010] repeat self.BATCH_SZ
@@ -518,7 +516,7 @@ class TestBeamSearchAgainstReferenceCase(unittest.TestCase):
         expected_beam_scores, unreduced_preds = new_scores\
             .view(self.BATCH_SZ, self.BEAM_SZ * self.N_WORDS)\
             .topk(self.BEAM_SZ, -1)
-        expected_bptr_3 = unreduced_preds / self.N_WORDS
+        expected_bptr_3 = unreduced_preds // self.N_WORDS
         # [5, 2, 6, 1, 0] repeat self.BATCH_SZ, so beam 1 predicts EOS!
         expected_preds_3 = unreduced_preds - expected_bptr_3 * self.N_WORDS
         self.assertTrue(beam.topk_log_probs.allclose(

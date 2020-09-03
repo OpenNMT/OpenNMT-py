@@ -11,7 +11,7 @@ setup(
     description='A python implementation of OpenNMT',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    version='1.1.1',
+    version='1.2.0',
     packages=find_packages(),
     project_urls={
         "Documentation": "http://opennmt.net/OpenNMT-py/",
@@ -22,7 +22,7 @@ setup(
     install_requires=[
         "six",
         "tqdm",
-        "torch>=1.4.0",
+        "torch>=1.6.0",
         "torchtext==0.4.0",
         "future",
         "configargparse",

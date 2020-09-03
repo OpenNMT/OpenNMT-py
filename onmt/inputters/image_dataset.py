@@ -75,7 +75,8 @@ class ImageDataReader(DataReaderBase):
                 img = transforms.ToTensor()(
                     Image.fromarray(cv2.imread(img_path, 0)))
             else:
-                img = transforms.ToTensor()(Image.open(img_path))
+                img = Image.open(img_path).convert('RGB')
+                img = transforms.ToTensor()(img)
             if self.truncate and self.truncate != (0, 0):
                 if not (img.size(1) <= self.truncate[0]
                         and img.size(2) <= self.truncate[1]):
