@@ -273,7 +273,17 @@ class Trainer(object):
                 self.optim.learning_rate(),
                 report_stats)
 
-            if valid_iter is not None and step % valid_steps == 0:
+            save_at_current_step = self.model_saver is not None \
+                and (save_checkpoint_steps != 0 and
+                     step % save_checkpoint_steps == 0)
+            validate_at_current_step = (
+                valid_iter is not None and step % valid_steps == 0
+            )
+            is_final_step = step == train_steps
+
+            # Force validation in any of the above cases
+            if (save_at_current_step or validate_at_current_step
+                    or is_final_step):
                 if self.gpu_verbose_level > 0:
                     logger.info('GpuRank %d: validate step %d'
                                 % (self.gpu_rank, step))
@@ -288,18 +298,19 @@ class Trainer(object):
                                 % (self.gpu_rank, step))
                 self._report_step(self.optim.learning_rate(),
                                   step, valid_stats=valid_stats)
-                # Run patience mechanism
-                if self.earlystopper is not None:
-                    self.earlystopper(valid_stats, step)
-                    # If the patience has reached the limit, stop training
-                    if self.earlystopper.has_stopped():
-                        early_stopped = True
-                        break
 
-            if (self.model_saver is not None
-                    and (save_checkpoint_steps != 0
-                         and step % save_checkpoint_steps == 0)):
-                self.model_saver.save(step, moving_average=self.moving_average)
+                if validate_at_current_step:
+                    # Run patience mechanism
+                    if self.earlystopper is not None:
+                        self.earlystopper(valid_stats, step)
+                        # If the patience has reached the limit, stop training
+                        if self.earlystopper.has_stopped():
+                            early_stopped = True
+                            break
+                if save_at_current_step:
+                    self.model_saver.save(step,
+                                          moving_average=self.moving_average,
+                                          validation_ppl=valid_stats.ppl())
 
             if train_steps > 0 and step >= train_steps:
                 break
@@ -308,8 +319,10 @@ class Trainer(object):
             best_step = None
             if early_stopped:
                 best_step = self.earlystopper.current_step_best
+
             self.model_saver.save(step, moving_average=self.moving_average,
-                                  best_step=best_step)
+                                  best_step=best_step,
+                                  validation_ppl=valid_stats.ppl())
         return total_stats
 
     def validate(self, valid_iter, moving_average=None):

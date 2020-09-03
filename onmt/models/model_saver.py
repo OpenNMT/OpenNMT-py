@@ -37,7 +37,8 @@ class ModelSaverBase(object):
         if keep_checkpoint > 0:
             self.checkpoint_queue = deque([], maxlen=keep_checkpoint)
 
-    def save(self, step, moving_average=None, best_step=None):
+    def save(self, step, moving_average=None, best_step=None,
+             validation_ppl=None):
         """Main entry point for model saver
 
         It wraps the `_save` method with checks and apply `keep_checkpoint`
@@ -63,8 +64,16 @@ class ModelSaverBase(object):
                 param.data = param_data
 
         if self.keep_checkpoint > 0:
-            best_checkpoint = None
-            if best_step is not None:
+            best_step, is_best = self._get_best_checkpoint(best_step,
+                                                           validation_ppl)
+            if is_best:
+                if best_step is None:
+                    best_checkpoint = '%s_step_%d.pt' % (self.base_path, step)
+                else:
+                    best_checkpoint = '%s_step_%d.pt' \
+                                        % (self.base_path, best_step)
+                self._update_best_config(step, validation_ppl)
+            else:
                 best_checkpoint = '%s_step_%d.pt' % (self.base_path, best_step)
             if len(self.checkpoint_queue) == self.checkpoint_queue.maxlen:
                 todel = self.checkpoint_queue.popleft()
@@ -137,3 +146,26 @@ class ModelSaver(ModelSaverBase):
     def _rm_checkpoint(self, name):
         if os.path.exists(name):
             os.remove(name)
+
+    def _get_best_checkpoint(self, best_step, validation_ppl):
+        import json
+        is_best = False
+        best_ckpt_config_file = self.base_path + 'best_ckpt_config.json'
+        if os.path.exists(best_ckpt_config_file):
+            with open(best_ckpt_config_file, 'r') as best_config:
+                best_ckpt_dict = json.load(best_config)
+            if validation_ppl < best_ckpt_dict['validation_ppl']:
+                is_best = True
+            else:
+                best_step = best_ckpt_dict['step']
+        else:
+            is_best = True
+
+        return best_step, is_best
+
+    def _update_best_config(self, step, validation_ppl):
+        import json
+        best_ckpt_config_file = self.base_path + 'best_ckpt_config.json'
+        with open(best_ckpt_config_file, 'w') as best_config:
+            best_ckpt_dict = {'step': step, 'validation_ppl': validation_ppl}
+            json.dump(best_ckpt_dict, best_config)
