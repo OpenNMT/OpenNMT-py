@@ -19,8 +19,9 @@ To get started, we provide a toy graph-to-sequence example. We assume that the w
 ```
 cd ..
 git clone https://github.com/SteveKommrusch/OpenNMT-py-ggnn-example
-source OpenNMT-py-ggnn-example/env.sh
-cd OpenNMT-py
+cd OpenNMT-py-ggnn-example
+source env.sh
+cd ../OpenNMT-py
 ```
 
 
