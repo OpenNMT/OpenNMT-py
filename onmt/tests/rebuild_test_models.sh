@@ -11,7 +11,7 @@ $my_python train.py -data data/data -save_model tmp -world_size 1 -gpu_ranks 0 -
 #-truncated_decoder 5 
 #-label_smoothing 0.1
 
-mv tmp*e10.pt onmt/tests/test_model.pt
+mv tmp*10000.pt onmt/tests/test_model.pt
 rm tmp*.pt
 fi
 #
@@ -24,7 +24,7 @@ $my_python preprocess.py -train_src data/src-train.txt -train_tgt data/tgt-train
 $my_python train.py -data data/data -save_model /tmp/tmp -world_size 1 -gpu_ranks 0 -rnn_size 256 -word_vec_size 256 -layers 2 -train_steps 10000 -optim adam  -learning_rate 0.001 -encoder_type cnn -decoder_type cnn
 
 
-mv /tmp/tmp*e10.pt onmt/tests/test_model.pt
+mv /tmp/tmp*10000.pt onmt/tests/test_model.pt
 
 rm /tmp/tmp*.pt
 fi
@@ -37,7 +37,7 @@ $my_python preprocess.py -train_src data/morph/src.train -train_tgt data/morph/t
 $my_python train.py -data data/morph/data -save_model tmp -world_size 1 -gpu_ranks 0 -rnn_size 400 -word_vec_size 100 -layers 1 -train_steps 8000 -optim adam  -learning_rate 0.001
 
 
-mv tmp*e8.pt onmt/tests/test_model2.pt
+mv tmp*8000.pt onmt/tests/test_model2.pt
 
 rm tmp*.pt
 fi
@@ -53,7 +53,7 @@ $my_python train.py -data data/data -save_model /tmp/tmp -batch_type tokens -bat
  -max_grad_norm 0 -optim adam -decay_method noam -learning_rate 2 -label_smoothing 0.1 \
  -position_encoding -param_init 0 -warmup_steps 100 -param_init_glorot -adam_beta2 0.998
 #
-mv /tmp/tmp*e10.pt onmt/tests/test_model.pt
+mv /tmp/tmp*10000.pt onmt/tests/test_model.pt
 rm /tmp/tmp*.pt
 fi
 #

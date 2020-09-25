@@ -5,7 +5,6 @@ import six
 import argparse
 import torch
 from onmt.utils.logging import init_logger, logger
-from onmt.inputters.inputter import _old_style_vocab
 
 
 def get_vocabs(dict_path):
@@ -13,13 +12,10 @@ def get_vocabs(dict_path):
 
     vocs = []
     for side in ['src', 'tgt']:
-        if _old_style_vocab(fields):
-            vocab = next((v for n, v in fields if n == side), None)
-        else:
-            try:
-                vocab = fields[side].base_field.vocab
-            except AttributeError:
-                vocab = fields[side].vocab
+        try:
+            vocab = fields[side].base_field.vocab
+        except AttributeError:
+            vocab = fields[side].vocab
         vocs.append(vocab)
     enc_vocab, dec_vocab = vocs
 

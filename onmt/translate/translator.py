@@ -9,6 +9,7 @@ from itertools import count, zip_longest
 
 import torch
 
+from onmt.constants import DefaultTokens
 import onmt.model_builder
 import onmt.inputters as inputters
 import onmt.decoders.ensemble
@@ -231,7 +232,7 @@ class Translator(object):
             report_score (bool) : See :func:`__init__()`.
             logger (logging.Logger or NoneType): See :func:`__init__()`.
         """
-
+        # TODO: maybe add dynamic part
         src_reader = inputters.str2reader[opt.data_type].from_opt(opt)
         tgt_reader = inputters.str2reader["text"].from_opt(opt)
         return cls(
@@ -286,7 +287,6 @@ class Translator(object):
             self,
             src,
             tgt=None,
-            src_dir=None,
             batch_size=None,
             batch_type="sents",
             attn_debug=False,
@@ -297,8 +297,6 @@ class Translator(object):
         Args:
             src: See :func:`self.src_reader.read()`.
             tgt: See :func:`self.tgt_reader.read()`.
-            src_dir: See :func:`self.src_reader.read()` (only relevant
-                for certain types of data).
             batch_size (int): size of examples per mini-batch
             attn_debug (bool): enables the attention logging
             align_debug (bool): enables the word alignment logging
@@ -317,16 +315,13 @@ class Translator(object):
         if self.tgt_prefix and tgt is None:
             raise ValueError('Prefix should be feed to tgt if -tgt_prefix.')
 
-        src_data = {"reader": self.src_reader, "data": src, "dir": src_dir}
-        tgt_data = {"reader": self.tgt_reader, "data": tgt, "dir": None}
-        _readers, _data, _dir = inputters.Dataset.config(
+        src_data = {"reader": self.src_reader, "data": src}
+        tgt_data = {"reader": self.tgt_reader, "data": tgt}
+        _readers, _data = inputters.Dataset.config(
             [('src', src_data), ('tgt', tgt_data)])
 
-        # corpus_id field is useless here
-        if self.fields.get("corpus_id", None) is not None:
-            self.fields.pop('corpus_id')
         data = inputters.Dataset(
-            self.fields, readers=_readers, data=_data, dirs=_dir,
+            self.fields, readers=_readers, data=_data,
             sort_key=inputters.str2sortkey[self.data_type],
             filter_pred=self._filter_pred
         )
@@ -378,9 +373,10 @@ class Translator(object):
                                       in trans.word_aligns[:self.n_best]]
                     n_best_preds_align = [" ".join(align) for align
                                           in align_pharaohs]
-                    n_best_preds = [pred + " ||| " + align
-                                    for pred, align in zip(
-                                        n_best_preds, n_best_preds_align)]
+                    n_best_preds = [
+                        pred + DefaultTokens.ALIGNMENT_SEPARATOR + align
+                        for pred, align in zip(
+                            n_best_preds, n_best_preds_align)]
                 all_predictions += [n_best_preds]
                 self.out_file.write('\n'.join(n_best_preds) + '\n')
                 self.out_file.flush()
@@ -395,7 +391,7 @@ class Translator(object):
 
                 if attn_debug:
                     preds = trans.pred_sents[0]
-                    preds.append('</s>')
+                    preds.append(DefaultTokens.EOS)
                     attns = trans.attns[0].tolist()
                     if self.data_type == 'text':
                         srcs = trans.src_raw

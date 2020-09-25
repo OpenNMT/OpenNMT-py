@@ -40,6 +40,6 @@ class DataReaderBase(object):
             "Could not create reader. Be sure to install "
             "the following dependencies: " + ", ".join(missing_deps))
 
-    def read(self, data, side, src_dir):
+    def read(self, data, side):
         """Read data from file system and yield as dicts."""
         raise NotImplementedError()

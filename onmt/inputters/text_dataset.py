@@ -5,11 +5,12 @@ import six
 import torch
 from torchtext.data import Field, RawField
 
+from onmt.constants import DefaultTokens
 from onmt.inputters.datareader_base import DataReaderBase
 
 
 class TextDataReader(DataReaderBase):
-    def read(self, sequences, side, _dir=None):
+    def read(self, sequences, side):
         """Read text data from disk.
 
         Args:
@@ -17,16 +18,12 @@ class TextDataReader(DataReaderBase):
                 path to text file or iterable of the actual text data.
             side (str): Prefix used in return dict. Usually
                 ``"src"`` or ``"tgt"``.
-            _dir (NoneType): Leave as ``None``. This parameter exists to
-                conform with the :func:`DataReaderBase.read()` signature.
 
         Yields:
             dictionaries whose keys are the names of fields and whose
             values are more or less the result of tokenizing with those
             fields.
         """
-        assert _dir is None or _dir == "", \
-            "Cannot use _dir with TextDataReader."
         if isinstance(sequences, str):
             sequences = DataReaderBase._read_file(sequences)
         for i, seq in enumerate(sequences):
@@ -170,9 +167,9 @@ def text_fields(**kwargs):
     n_feats = kwargs["n_feats"]
     include_lengths = kwargs["include_lengths"]
     base_name = kwargs["base_name"]
-    pad = kwargs.get("pad", "<blank>")
-    bos = kwargs.get("bos", "<s>")
-    eos = kwargs.get("eos", "</s>")
+    pad = kwargs.get("pad", DefaultTokens.PAD)
+    bos = kwargs.get("bos", DefaultTokens.BOS)
+    eos = kwargs.get("eos", DefaultTokens.EOS)
     truncate = kwargs.get("truncate", None)
     fields_ = []
     feat_delim = u"￨" if n_feats > 0 else None

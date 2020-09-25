@@ -26,7 +26,7 @@ Loss
 
 
 Optimizer
------
+---------
 
 .. autoclass:: onmt.utils.Optimizer
     :members:

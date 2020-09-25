@@ -8,6 +8,10 @@ from copy import deepcopy
 
 
 def build_model_saver(model_opt, opt, model, fields, optim):
+    # _check_save_model_path
+    save_model_path = os.path.abspath(opt.save_model)
+    os.makedirs(os.path.dirname(save_model_path), exist_ok=True)
+
     model_saver = ModelSaver(opt.save_model,
                              model,
                              model_opt,
@@ -15,6 +19,16 @@ def build_model_saver(model_opt, opt, model, fields, optim):
                              optim,
                              opt.keep_checkpoint)
     return model_saver
+
+
+def load_checkpoint(ckpt_path):
+    """Load checkpoint from `ckpt_path` if any else return `None`."""
+    checkpoint = None
+    if ckpt_path:
+        logger.info('Loading checkpoint from %s' % ckpt_path)
+        checkpoint = torch.load(ckpt_path,
+                                map_location=lambda storage, loc: storage)
+    return checkpoint
 
 
 class ModelSaverBase(object):
@@ -68,11 +82,12 @@ class ModelSaverBase(object):
                 self._rm_checkpoint(todel)
             self.checkpoint_queue.append(chkpt_name)
 
-    def _save(self, step):
+    def _save(self, step, model):
         """Save a resumable checkpoint.
 
         Args:
             step (int): step number
+            model (nn.Module): torch model to save
 
         Returns:
             (object, str):

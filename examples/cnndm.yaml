@@ -1,0 +1,53 @@
+## Where the vocab(s) will be written
+save_data: cnndm/run/example
+# Prevent overwriting existing files in the folder
+overwrite: False
+
+# filter long examples
+src_seq_length: 10000
+tgt_seq_length: 10000
+src_seq_length_trunc: 400
+tgt_seq_length_trunc: 100
+
+# common vocabulary for source and target
+share_vocab: True
+
+# Corpus opts:
+data:
+    cnndm:
+        path_src: cnndm/train.txt.src
+        path_tgt: cnndm/train.txt.tgt.tagged
+        transforms: []
+        weight: 1
+    valid:
+        path_src: cnndm/val.txt.src
+        path_tgt: cnndm/val.txt.tgt.tagged
+        transforms: []
+
+src_vocab_size: 50000
+tgt_vocab_size: 50000
+
+src_vocab: cnndm/run/example.vocab.src
+tgt_vocab: cnndm/run/example.vocab.tgt
+
+save_model: cnndm/run/model
+copy_attn: true
+global_attention: mlp
+word_vec_size: 128
+rnn_size: 512
+layers: 1
+encoder_type: brnn
+train_steps: 200000
+max_grad_norm: 2
+dropout: 0
+batch_size: 16
+valid_batch_size: 16
+optim: adagrad
+learning_rate: 0.15
+adagrad_accumulator_init: 0.1
+reuse_copy_attn: true
+copy_loss_by_seqlength: true
+bridge: true
+seed: 777
+world_size: 2
+gpu_ranks: [0, 1]

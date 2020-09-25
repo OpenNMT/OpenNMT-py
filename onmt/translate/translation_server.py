@@ -16,6 +16,7 @@ import onmt.opts
 from itertools import islice, zip_longest
 from copy import deepcopy
 
+from onmt.constants import DefaultTokens
 from onmt.utils.logging import init_logger
 from onmt.utils.misc import set_random_seed
 from onmt.utils.misc import check_model_config
@@ -760,7 +761,7 @@ class ServerModel(object):
         align = None
         if self.opt.report_align:
             # output contain alignment
-            sequence, align = sequence.split(' ||| ')
+            sequence, align = sequence.split(DefaultTokens.ALIGNMENT_SEPARATOR)
             if align != '':
                 align = self.maybe_convert_align(src, sequence, align)
         sequence = self.maybe_detokenize(sequence, side)

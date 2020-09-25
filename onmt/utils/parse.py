@@ -1,13 +1,138 @@
 import configargparse as cfargparse
 import os
-
 import torch
 
 import onmt.opts as opts
 from onmt.utils.logging import logger
+from onmt.constants import CorpusName
+from onmt.transforms import AVAILABLE_TRANSFORMS
 
 
-class ArgumentParser(cfargparse.ArgumentParser):
+class DataOptsCheckerMixin(object):
+    """Checker with methods for validate data related options."""
+
+    @staticmethod
+    def _validate_file(file_path, info):
+        """Check `file_path` is valid or raise `IOError`."""
+        if not os.path.isfile(file_path):
+            raise IOError(f"Please check path of your {info} file!")
+
+    @classmethod
+    def _validate_data(cls, opt):
+        """Parse corpora specified in data field of YAML file."""
+        import yaml
+        default_transforms = opt.transforms
+        if len(default_transforms) != 0:
+            logger.info(f"Default transforms: {default_transforms}.")
+        corpora = yaml.safe_load(opt.data)
+
+        for cname, corpus in corpora.items():
+            # Check Transforms
+            _transforms = corpus.get('transforms', None)
+            if _transforms is None:
+                logger.info(f"Missing transforms field for {cname} data, "
+                            f"set to default: {default_transforms}.")
+                corpus['transforms'] = default_transforms
+            # Check path
+            path_src = corpus.get('path_src', None)
+            path_tgt = corpus.get('path_tgt', None)
+            if path_src is None or path_tgt is None:
+                raise ValueError(f'Corpus {cname} path are required')
+            else:
+                cls._validate_file(path_src, info=f'{cname}/path_src')
+                cls._validate_file(path_tgt, info=f'{cname}/path_tgt')
+            path_align = corpus.get('path_align', None)
+            if path_align is None:
+                if hasattr(opt, 'lambda_align') and opt.lambda_align > 0.0:
+                    raise ValueError(f'Corpus {cname} alignment file path are '
+                                     'required when lambda_align > 0.0')
+                corpus['path_align'] = None
+            else:
+                cls._validate_file(path_align, info=f'{cname}/path_align')
+            # Check prefix: will be used when use prefix transform
+            src_prefix = corpus.get('src_prefix', None)
+            tgt_prefix = corpus.get('tgt_prefix', None)
+            if src_prefix is None or tgt_prefix is None:
+                if 'prefix' in corpus['transforms']:
+                    raise ValueError(f'Corpus {cname} prefix are required.')
+            # Check weight
+            weight = corpus.get('weight', None)
+            if weight is None:
+                if cname != CorpusName.VALID:
+                    logger.warning(f"Corpus {cname}'s weight should be given."
+                                   " We default it to 1 for you.")
+                corpus['weight'] = 1
+        logger.info(f"Parsed {len(corpora)} corpora from -data.")
+        opt.data = corpora
+
+    @classmethod
+    def _validate_transforms_opts(cls, opt):
+        """Check options used by transforms."""
+        for name, transform_cls in AVAILABLE_TRANSFORMS.items():
+            if name in opt._all_transform:
+                transform_cls._validate_options(opt)
+
+    @classmethod
+    def _get_all_transform(cls, opt):
+        """Should only called after `_validate_data`."""
+        all_transforms = set(opt.transforms)
+        for cname, corpus in opt.data.items():
+            _transforms = set(corpus['transforms'])
+            if len(_transforms) != 0:
+                all_transforms.update(_transforms)
+        if hasattr(opt, 'lambda_align') and opt.lambda_align > 0.0:
+            if not all_transforms.isdisjoint(
+                    {'sentencepiece', 'bpe', 'onmt_tokenize'}):
+                raise ValueError('lambda_align is not compatible with'
+                                 ' on-the-fly tokenization.')
+            if not all_transforms.isdisjoint(
+                    {'tokendrop', 'prefix', 'bart'}):
+                raise ValueError('lambda_align is not compatible yet with'
+                                 ' potentiel token deletion/addition.')
+        opt._all_transform = all_transforms
+
+    @classmethod
+    def _validate_vocab_opts(cls, opt, build_vocab_only=False):
+        """Check options relate to vocab."""
+        if opt.src_vocab:
+            cls._validate_file(opt.src_vocab, info='src vocab')
+        if opt.tgt_vocab:
+            cls._validate_file(opt.tgt_vocab, info='tgt vocab')
+
+        if not build_vocab_only:
+            if opt.dump_fields or opt.dump_transforms:
+                assert opt.save_data, "-save_data should be set if set \
+                    -dump_fields or -dump_transforms."
+            # Check embeddings stuff
+            if opt.both_embeddings is not None:
+                assert (opt.src_embeddings is None
+                        and opt.tgt_embeddings is None), \
+                    "You don't need -src_embeddings or -tgt_embeddings \
+                    if -both_embeddings is set."
+
+            if any([opt.both_embeddings is not None,
+                    opt.src_embeddings is not None,
+                    opt.tgt_embeddings is not None]):
+                assert opt.embeddings_type is not None, \
+                    "You need to specify an -embedding_type!"
+                assert opt.save_data, "-save_data should be set if use \
+                    pretrained embeddings."
+
+    @classmethod
+    def validate_prepare_opts(cls, opt, build_vocab_only=False):
+        """Validate all options relate to prepare (data/transform/vocab)."""
+        if opt.n_sample != 0:
+            assert opt.save_data, "-save_data should be set if \
+                     want save samples."
+        cls._validate_data(opt)
+        cls._get_all_transform(opt)
+        cls._validate_transforms_opts(opt)
+        cls._validate_vocab_opts(opt, build_vocab_only=build_vocab_only)
+
+
+class ArgumentParser(cfargparse.ArgumentParser, DataOptsCheckerMixin):
+    """OpenNMT option parser powered with option check methods."""
+
     def __init__(
             self,
             config_file_parser_class=cfargparse.YAMLConfigFileParser,
@@ -53,13 +178,12 @@ class ArgumentParser(cfargparse.ArgumentParser):
 
     @classmethod
     def validate_model_opts(cls, model_opt):
-        assert model_opt.model_type in ["text", "img", "audio", "vec"], \
+        assert model_opt.model_type in ["text"], \
             "Unsupported model type %s" % model_opt.model_type
 
-        # this check is here because audio allows the encoder and decoder to
-        # be different sizes, but other model types do not yet
+        # encoder and decoder should be same sizes
         same_size = model_opt.enc_rnn_size == model_opt.dec_rnn_size
-        assert model_opt.model_type == 'audio' or same_size, \
+        assert same_size, \
             "The encoder and decoder rnns must be the same size for now"
 
         assert model_opt.rnn_type != "SRU" or model_opt.gpu_ranks, \
@@ -111,8 +235,6 @@ class ArgumentParser(cfargparse.ArgumentParser):
             raise AssertionError(
                   "-gpu_ranks should have master(=0) rank "
                   "unless -world_size is greater than len(gpu_ranks).")
-        assert len(opt.data_ids) == len(opt.data_weights), \
-            "Please check -data_ids and -data_weights options!"
 
         assert len(opt.dropout) == len(opt.dropout_steps), \
             "Number of dropout values must match accum_steps values"
@@ -120,47 +242,10 @@ class ArgumentParser(cfargparse.ArgumentParser):
         assert len(opt.attention_dropout) == len(opt.dropout_steps), \
             "Number of attention_dropout values must match accum_steps values"
 
+        assert len(opt.accum_count) == len(opt.accum_steps), \
+            'Number of accum_count values must match number of accum_steps'
+
     @classmethod
     def validate_translate_opts(cls, opt):
         if opt.beam_size != 1 and opt.random_sampling_topk != 1:
             raise ValueError('Can either do beam search OR random sampling.')
-
-    @classmethod
-    def validate_preprocess_args(cls, opt):
-        assert opt.max_shard_size == 0, \
-            "-max_shard_size is deprecated. Please use \
-            -shard_size (number of examples) instead."
-        assert opt.shuffle == 0, \
-            "-shuffle is not implemented. Please shuffle \
-            your data before pre-processing."
-
-        assert len(opt.train_src) == len(opt.train_tgt), \
-            "Please provide same number of src and tgt train files!"
-
-        assert len(opt.train_src) == len(opt.train_ids), \
-            "Please provide proper -train_ids for your data!"
-
-        for file in opt.train_src + opt.train_tgt:
-            assert os.path.isfile(file), "Please check path of %s" % file
-
-        if len(opt.train_align) == 1 and opt.train_align[0] is None:
-            opt.train_align = [None] * len(opt.train_src)
-        else:
-            assert len(opt.train_align) == len(opt.train_src), \
-                "Please provide same number of word alignment train \
-                files as src/tgt!"
-            for file in opt.train_align:
-                assert os.path.isfile(file), "Please check path of %s" % file
-
-        assert not opt.valid_align or os.path.isfile(opt.valid_align), \
-            "Please check path of your valid alignment file!"
-
-        assert not opt.valid_src or os.path.isfile(opt.valid_src), \
-            "Please check path of your valid src file!"
-        assert not opt.valid_tgt or os.path.isfile(opt.valid_tgt), \
-            "Please check path of your valid tgt file!"
-
-        assert not opt.src_vocab or os.path.isfile(opt.src_vocab), \
-            "Please check path of your src vocab!"
-        assert not opt.tgt_vocab or os.path.isfile(opt.tgt_vocab), \
-            "Please check path of your tgt vocab!"

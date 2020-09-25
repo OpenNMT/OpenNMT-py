@@ -54,3 +54,24 @@ class NMTModel(nn.Module):
     def update_dropout(self, dropout):
         self.encoder.update_dropout(dropout)
         self.decoder.update_dropout(dropout)
+
+    def count_parameters(self, log=print):
+        """Count number of parameters in model (& print with `log` callback).
+
+        Returns:
+            (int, int):
+            * encoder side parameter count
+            * decoder side parameter count
+        """
+
+        enc, dec = 0, 0
+        for name, param in self.named_parameters():
+            if 'encoder' in name:
+                enc += param.nelement()
+            else:
+                dec += param.nelement()
+        if callable(log):
+            log('encoder: {}'.format(enc))
+            log('decoder: {}'.format(dec))
+            log('* number of parameters: {}'.format(enc + dec))
+        return enc, dec

@@ -1,0 +1,102 @@
+# Meta opts:
+## IO
+save_data: generated/dynamic.ex0
+overwrite: False
+
+### vocab:
+src_vocab: data/vocab-train.src
+tgt_vocab: data/vocab-train.tgt
+src_vocab_size: 32000
+tgt_vocab_size: 32000
+vocab_size_multiple: 8
+src_words_min_frequency: 10
+tgt_words_min_frequency: 10
+share_vocab: True
+
+### Transform related opts:
+#### Subword
+src_subword_model: examples/subword.spm.model
+tgt_subword_model: examples/subword.spm.model
+src_subword_nbest: 1
+tgt_subword_nbest: 1
+src_subword_alpha: 0.0
+tgt_subword_alpha: 0.0
+src_subword_type: sentencepiece
+tgt_subword_type: sentencepiece
+src_onmttok_kwargs: "{'mode': 'aggressive', 'spacer_annotate': True}"
+tgt_onmttok_kwargs: "{'mode': 'aggressive', 'spacer_annotate': True}"
+#### Sampling
+switchout_temperature: 1.0
+tokendrop_temperature: 1.0
+tokenmask_temperature: 1.0
+#### Filter
+src_seq_length: 300
+tgt_seq_length: 300
+#### BART
+permute_sent_ratio: 0.0
+rotate_ratio: 0.0
+insert_ratio: 0.0
+random_ratio: 0.0
+mask_ratio: 0.0
+mask_length: subword
+poisson_lambda: 3.0
+replace_length: 1
+
+# Corpus opts:
+data:
+    corpus_1:
+        path_src: data/src-train.txt
+        path_tgt: data/tgt-train.txt
+        transforms: [tokenmask, tokendrop, onmt_tokenize, filtertoolong]
+    valid:
+        path_src: data/src-val.txt
+        path_tgt: data/tgt-val.txt
+        transforms: [onmt_tokenize]
+
+# Model configuration
+save_model: foo
+keep_checkpoint: 50
+save_checkpoint_steps: 4000
+average_decay: 0.0001
+seed: 2345
+report_every: 100
+train_steps: 100000
+valid_steps: 4000
+
+queue_size: 10000
+bucket_size: 32768
+world_size: 2
+gpu_ranks: [0, 1]
+batch_type: "tokens"
+batch_size: 4096
+valid_batch_size: 8
+batch_size_multiple: 1
+max_generator_batches: 0
+accum_count: [3]
+accum_steps: [0]
+
+model_dtype: "fp16"
+optim: "fusedadam"
+learning_rate: 2
+warmup_steps: 6000
+decay_method: "noam"
+adam_beta2: 0.998
+max_grad_norm: 0
+label_smoothing: 0.1
+param_init: 0
+param_init_glorot: true
+normalization: "tokens"
+
+encoder_type: transformer
+decoder_type: transformer
+enc_layers: 6
+dec_layers: 6
+heads: 8
+rnn_size: 512
+word_vec_size: 512
+transformer_ff: 2048
+dropout_steps: [0]
+dropout: [0.1]
+attention_dropout: [0.1]
+share_decoder_embeddings: true
+share_embeddings: true

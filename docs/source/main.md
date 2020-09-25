@@ -1,12 +1,11 @@
 # Overview
 
 
-This portal provides a detailed documentation of the OpenNMT toolkit. It describes how to use the PyTorch project and how it works.
+This portal provides a detailed documentation of the OpenNMT-py toolkit. It describes how to use the PyTorch project and how it works.
 
 
 
 ## Installation
-Install from `pip`:
 Install `OpenNMT-py` from `pip`:
 ```bash
 pip install OpenNMT-py
@@ -19,19 +18,18 @@ cd OpenNMT-py
 python setup.py install
 ```
 
-*(Optionnal)* some advanced features (e.g. working audio, image or pretrained models) requires extra packages, you can install it with:
+*(Optional)* some advanced features (e.g. working pretrained models or specific transforms) requires extra packages, you can install it with:
 ```bash
 pip install -r requirements.opt.txt
 ```
 
-And you are ready to go! Take a look at the [quickstart](quickstart) to familiarize yourself with the main training workflow.
+And you are ready to go!
 
-Alternatively you can use Docker to install with `nvidia-docker`. The main Dockerfile is included
-in the root directory.
+Take a look at the [quickstart](quickstart) to familiarize yourself with the main training workflow.
 
 ## Citation
 
-When using OpenNMT for research please cite our
+When using OpenNMT-py for research please cite our
 [OpenNMT technical report](https://doi.org/10.18653/v1/P17-4012)
 
 ```
@@ -53,6 +51,6 @@ When using OpenNMT for research please cite our
 
 You can find additional help or tutorials in the following resources:
 
-* [Gitter channel](https://gitter.im/OpenNMT/openmt-py)
-
 * [Forum](http://forum.opennmt.net/)
+
+* [Gitter channel](https://gitter.im/OpenNMT/openmt-py)

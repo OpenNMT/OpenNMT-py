@@ -4,7 +4,6 @@ import torch
 
 import onmt
 import onmt.model_builder
-import onmt.inputters as inputters
 import onmt.opts
 
 from onmt.utils.misc import use_gpu
@@ -43,11 +42,7 @@ def main():
                             map_location=lambda storage, loc: storage)
     model_opt = checkpoint['opt']
 
-    vocab = checkpoint['vocab']
-    if inputters.old_style_vocab(vocab):
-        fields = onmt.inputters.load_old_vocab(vocab)
-    else:
-        fields = vocab
+    fields = checkpoint['vocab']
     src_dict = fields['src'].base_field.vocab  # assumes src is text
     tgt_dict = fields['tgt'].base_field.vocab
 

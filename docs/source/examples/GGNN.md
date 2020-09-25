@@ -4,11 +4,11 @@ Graph-to-sequence networks allow information represtable as a graph (such as an 
 
 The training option `-encoder_type ggnn` implements a GGNN (Gated Graph Neural Network) based on github.com/JamesChuanggg/ggnn.pytorch.git which is based on the paper "Gated Graph Sequence Neural Networks" by Y. Li, D. Tarlow, M. Brockschmidt, and R. Zemel.
 
-The ggnn encoder is used for program equivalence proof generation in the paper <a href="https://arxiv.org/abs/2002.06799">Equivalence of Dataflow Graphs via Rewrite Rules Using a Graph-to-Sequence Neural Model</a>. That paper shows the benefit of the graph-to-sequence model over a sequence-to-sequence model for this problem which can be well represented with graphical input. The integration of the ggnn network into the <a href="https://github.com/OpenNMT/OpenNMT-py/">OpenNMT-py</a> system supports attention on the nodes as well as a copy mechanism.
+The ggnn encoder is used for program equivalence proof generation in the paper [Equivalence of Dataflow Graphs via Rewrite Rules Using a Graph-to-Sequence Neural Model](https://arxiv.org/abs/2002.06799). That paper shows the benefit of the graph-to-sequence model over a sequence-to-sequence model for this problem which can be well represented with graphical input. The integration of the ggnn network into the OpenNMT-py system supports attention on the nodes as well as a copy mechanism.
 
 ### Dependencies
 
-* There are no additional dependencies beyond the rnn-to-rnn sequeence2sequence requirements.
+* There are no additional dependencies beyond the rnn-to-rnn sequence2sequence requirements.
 
 ### Quick Start
 
@@ -24,22 +24,72 @@ cd OpenNMT-py
 ```
 
 
-1) Preprocess the data.
+The YAML configuration for this example is the following:
 
-```
-python preprocess.py -train_src $data_path/src-train.txt -train_tgt $data_path/tgt-train.txt -valid_src $data_path/src-val.txt -valid_tgt $data_path/tgt-val.txt -src_seq_length 1000 -tgt_seq_length 30 -src_vocab $data_path/srcvocab.txt -tgt_vocab $data_path/tgtvocab.txt -dynamic_dict -save_data $data_path/final 2>&1 > $data_path/preprocess.out
+```yaml
+# ggnn_example.yaml
+## Where the necessary objects will be written
+save_data: <path_to>/OpenNMT-py-ggnn-example/run/example
+
+# Filter long examples
+src_seq_length: 1000
+tgt_seq_length: 30
+
+# Data definition
+data:
+    cnndm:
+        path_src: <path_to>/OpenNMT-py-ggnn-example/src-train.txt
+        path_tgt: <path_to>/OpenNMT-py-ggnn-example/tgt-train.txt
+        transforms: [filtertoolong]
+        weight: 1
+    valid:
+        path_src: <path_to>/OpenNMT-py-ggnn-example/src-val.txt
+        path_tgt: <path_to>/OpenNMT-py-ggnn-example/tgt-val.txt
+
+src_vocab: <path_to>/OpenNMT-py-ggnn-example/srcvocab.txt
+tgt_vocab: <path_to>/OpenNMT-py-ggnn-example/tgtvocab.txt
+
+save_model: <path_to>/OpenNMT-py-ggnn-example/run/model
+
+# Model options
+train_steps: 10000
+save_checkpoint_steps: 5000
+encoder_type: ggnn
+layers: 2
+decoder_type: rnn
+rnn_size: 256
+learning_rate: 0.1
+start_decay_steps: 5000
+learning_rate_decay: 0.8
+global_attention: general
+batch_size: 32
+word_vec_size: 256
+bridge: true
+gpu_ranks: 0
+n_edge_types: 9
+state_dim: 256
+n_steps: 10
+n_node: 64
 ```
 
 2) Train the model.
 
+You can simply run the following command:
+
 ```
-python train.py -data $data_path/final -encoder_type ggnn -layers 2 -decoder_type rnn -rnn_size 256 -learning_rate 0.1 -start_decay_steps 5000 -learning_rate_decay 0.8 -global_attention general -batch_size 32 -word_vec_size 256 -bridge -train_steps 10000 -gpu_ranks 0 -save_checkpoint_steps 5000 -save_model $data_path/final-model -src_vocab $data_path/srcvocab.txt -n_edge_types 9 -state_dim 256 -n_steps 10 -n_node 64 > $data_path/train.final.out
+python train.py -config ggnn_example.yaml
 ```
 
 3) Translate the graph of 2 equivalent linear algebra expressions into the axiom list which proves them equivalent.
 
 ```
-python translate.py -model $data_path/final-model_step_10000.pt -src $data_path/src-test.txt -beam_size 5 -n_best 5 -gpu 0 -output $data_path/pred-test_beam5.txt -dynamic_dict 2>&1 > $data_path/translate5.out
+python translate.py \
+    -model <path_to>/OpenNMT-py-ggnn-example/run/model_step_10000.pt \
+    -src <path_to>/OpenNMT-py-ggnn-example$data_path/src-test.txt \
+    -beam_size 5 -n_best 5 \
+    -gpu 0 \
+    -output <path_to>/OpenNMT-py-ggnn-example/pred-test_beam5.txt \
+    2>&1 > <path_to>/OpenNMT-py-ggnn-example/translate5.out
 ```
 
 ### Graph data format
@@ -91,4 +141,4 @@ identifiers in the edge list.
 
 ### Acknowledgement
 
-This gated graph neural network is leveraged from github.com/JamesChuanggg/ggnn.pytorch.git which is based on the paper "Gated Graph Sequence Neural Networks" by Y. Li, D. Tarlow, M. Brockschmidt, and R. Zemel.
+This gated graph neural network is leveraged from https://github.com/JamesChuanggg/ggnn.pytorch.git which is based on the paper [Gated Graph Sequence Neural Networks](https://arxiv.org/abs/1511.05493) by Y. Li, D. Tarlow, M. Brockschmidt, and R. Zemel.
