@@ -1,6 +1,6 @@
 # Summarization
 
-Note: The process and results below are presented in our paper `Bottom-Up Abstractive Summarization`. Please consider citing it if you follow these instructions. 
+Note: The process and results below are presented in the paper `Bottom-Up Abstractive Summarization`. Please consider citing it if you follow these instructions.
 
 ```
 @inproceedings{gehrmann2018bottom,
@@ -25,49 +25,50 @@ An example article-title pair from Gigaword should look like this:
 *australian current account deficit narrows sharply*
 
 
-### Preprocessing the data
+### Preparing the data and vocab
 
-Since we are using copy-attention [1] in the model, we need to preprocess the dataset such that source and target are aligned and use the same dictionary. This is achieved by using the options `dynamic_dict` and `share_vocab`.
-We additionally turn off truncation of the source to ensure that inputs longer than 50 words are not truncated.
 For CNN-DM we follow See et al. [2] and additionally truncate the source length at 400 tokens and the target at 100. We also note that in CNN-DM, we found models to work better if the target surrounds sentences with tags such that a sentence looks like `<t> w1 w2 w3 . </t>`. If you use this formatting, you can remove the tags after the inference step with the commands `sed -i 's/ <\/t>//g' FILE.txt` and `sed -i 's/<t> //g' FILE.txt`.
 
-**Command used**:
+**YAML Configuration**:
 
-(1) CNN-DM
+```yaml
+# cnndm.yaml
 
-```bash
-onmt_preprocess -train_src data/cnndm/train.txt.src \
-                -train_tgt data/cnndm/train.txt.tgt.tagged \
-                -valid_src data/cnndm/val.txt.src \
-                -valid_tgt data/cnndm/val.txt.tgt.tagged \
-                -save_data data/cnndm/CNNDM \
-                -src_seq_length 10000 \
-                -tgt_seq_length 10000 \
-                -src_seq_length_trunc 400 \
-                -tgt_seq_length_trunc 100 \
-                -dynamic_dict \
-                -share_vocab \
-                -shard_size 100000
+## Where the vocab(s) will be written
+save_data: cnndm/run/example
+# Prevent overwriting existing files in the folder
+overwrite: False
+
+# truncate examples
+src_seq_length_trunc: 400
+tgt_seq_length_trunc: 100
+
+# common vocabulary for source and target
+share_vocab: True
+
+# Corpus opts:
+data:
+    cnndm:
+        path_src: cnndm/train.txt.src
+        path_tgt: cnndm/train.txt.tgt.tagged
+    valid:
+        path_src: cnndm/val.txt.src
+        path_tgt: cnndm/val.txt.tgt.tagged
+...
 ```
 
-(2) Gigaword
-
+Let's compute the vocab over the full dataset (`-n_sample -1`):
 ```bash
-onmt_preprocess -train_src data/giga/train.article.txt \
-                -train_tgt data/giga/train.title.txt \
-                -valid_src data/giga/valid.article.txt \
-                -valid_tgt data/giga/valid.title.txt \
-                -save_data data/giga/GIGA \
-                -src_seq_length 10000 \
-                -dynamic_dict \
-                -share_vocab \
-                -shard_size 100000
+onmt_build_vocab -config cnndm.yaml -n_sample -1
 ```
 
+This command will have written source and target vocabulary to `cnndm/run/example.vocab.src` and `cnndm/run/example.vocab.tgt`. These two files should be the same, as `share_vocab` is set.
 
 ### Training
 
-The training procedure described in this section for the most part follows parameter choices and implementation similar to that of See et al. [2]. We describe notable options in the following list:
+The training procedure described in this section for the most part follows parameter choices and implementation similar to that of See et al. [2].
+
+Most significant options are:
 
 - `copy_attn`: This is the most important option, since it allows the model to copy words from the source.
 - `global_attention mlp`: This makes the model use the  attention mechanism introduced by Bahdanau et al. [3] instead of that by Luong et al. [4] (`global_attention dot`).
@@ -78,85 +79,120 @@ The training procedure described in this section for the most part follows param
 -  `optim adagrad`: Adagrad outperforms SGD when coupled with the following option.
 -  `adagrad_accumulator_init 0.1`: PyTorch does not initialize the accumulator in adagrad with any values. To match the optimization algorithm with the Tensorflow version, this option needs to be added.
 
+Note: Since we are using copy-attention [1] in the model, additional fields will be computed so that source and target are aligned and use the same dictionary. Previously achieved with the `-dynamic_dict` preprocessing flag in the legacy version, this is now automatically handled when `-copy_attn` is enabled.
 
 We are using using a 128-dimensional word-embedding, and 512-dimensional 1 layer LSTM. On the encoder side, we use a bidirectional LSTM (`brnn`), which means that the 512 dimensions are split into 256 dimensions per direction.
 
 We additionally set the maximum norm of the gradient to 2, and renormalize if the gradient norm exceeds this value and do not use any dropout.
 
-**commands used**:
+**Configurations**:
 
 (1) CNN-DM
 
-```bash
-onmt_train -save_model models/cnndm \
-           -data data/cnndm/CNNDM \
-           -copy_attn \
-           -global_attention mlp \
-           -word_vec_size 128 \
-           -rnn_size 512 \
-           -layers 1 \
-           -encoder_type brnn \
-           -train_steps 200000 \
-           -max_grad_norm 2 \
-           -dropout 0. \
-           -batch_size 16 \
-           -valid_batch_size 16 \
-           -optim adagrad \
-           -learning_rate 0.15 \
-           -adagrad_accumulator_init 0.1 \
-           -reuse_copy_attn \
-           -copy_loss_by_seqlength \
-           -bridge \
-           -seed 777 \
-           -world_size 2 \
-           -gpu_ranks 0 1
+The basic RNN configuration is defined by these parameters:
+
+```yaml
+# maximum vocab size
+src_vocab_size: 50000
+tgt_vocab_size: 50000
+
+src_vocab: cnndm/run/example.vocab.src
+tgt_vocab: cnndm/run/example.vocab.tgt
+
+save_model: cnndm/run/model
+copy_attn: true
+global_attention: mlp
+word_vec_size: 128
+rnn_size: 512
+layers: 1
+encoder_type: brnn
+train_steps: 200000
+max_grad_norm: 2
+dropout: 0
+batch_size: 16
+valid_batch_size: 16
+optim: adagrad
+learning_rate: 0.15
+adagrad_accumulator_init: 0.1
+reuse_copy_attn: true
+copy_loss_by_seqlength: true
+bridge: true
+seed: 777
+world_size: 2
+gpu_ranks: [0, 1]
 ```
 
 (2) CNN-DM Transformer
 
-The following script trains the transformer model on CNN-DM
+Transformer configuration is the following:
 
-```bash
-onmt_train -data data/cnndm/CNNDM \
-           -save_model models/cnndm \
-           -layers 4 \
-           -rnn_size 512 \
-           -word_vec_size 512 \
-           -max_grad_norm 0 \
-           -optim adam \
-           -encoder_type transformer \
-           -decoder_type transformer \
-           -position_encoding \
-           -dropout 0\.2 \
-           -param_init 0 \
-           -warmup_steps 8000 \
-           -learning_rate 2 \
-           -decay_method noam \
-           -label_smoothing 0.1 \
-           -adam_beta2 0.998 \
-           -batch_size 4096 \
-           -batch_type tokens \
-           -normalization tokens \
-           -max_generator_batches 2 \
-           -train_steps 200000 \
-           -accum_count 4 \
-           -share_embeddings \
-           -copy_attn \
-           -param_init_glorot \
-           -world_size 2 \
-           -gpu_ranks 0 1
+```yaml
+src_vocab_size: 50000
+tgt_vocab_size: 50000
+
+src_vocab: cnndm/run/example.vocab.src
+tgt_vocab: cnndm/run/example.vocab.tgt
+
+save_model: cnndm/run/model_transformer
+layers: 4
+rnn_size: 512
+word_vec_size: 512
+max_grad_norm: 0
+optim: adam
+encoder_type: transformer
+decoder_type: transformer
+position_encoding: true
+dropout: 0.2
+attention_dropout: 0.2
+param_init: 0
+warmup_steps: 8000
+learning_rate: 2
+decay_method: noam
+label_smoothing: 0.1
+adam_beta2: 0.998
+batch_size: 4096
+batch_type: tokens
+normalization: tokens
+train_steps: 200000
+accum_count: 4
+share_embeddings: true
+copy_attn: true
+param_init_glorot: true
+world_size: 2
+gpu_ranks: [0, 1]
 ```
 
 (3) Gigaword
 
-Gigaword can be trained equivalently. As a baseline, we show a model trained with the following command:
+Gigaword can be trained equivalently. You just need to adapt the `data` part of the YAML configuration. 
 
-```
-onmt_train -data data/giga/GIGA \
-           -save_model models/giga \
-           -copy_attn \
-           -reuse_copy_attn \
-           -train_steps 200000
+```yaml
+# gigaword.yaml
+
+## Where the vocab(s) will be written
+save_data: gigaword/run/example
+# Prevent overwriting existing files in the folder
+overwrite: False
+
+# prevent filtering of long examples
+src_seq_length: 10000
+tgt_seq_length: 10000
+
+# common vocabulary for source and target
+share_vocab: True
+
+# Corpus opts:
+data:
+    cnndm:
+        path_src: gigaword/train.article.txt
+        path_tgt: gigaword/train.title.txt
+        transforms: [filtertoolong]
+        weight: 1
+    valid:
+        path_src: gigaword/valid.article.txt
+        path_tgt: gigaword/valid.title.txt
+        transforms: [filtertoolong]
+...
 ```
 
 
@@ -172,7 +208,7 @@ During inference, we use beam-search with a beam-size of 10. We also added speci
 - `block_ngram_repeat 3`: Prevent the model from repeating trigrams.
 - `ignore_when_blocking "." "</t>" "<t>"`: Allow the model to repeat trigrams with the sentence boundary tokens.
 
-**commands used**:
+**Commands used**:
 
 (1) CNN-DM
 
@@ -180,8 +216,8 @@ During inference, we use beam-search with a beam-size of 10. We also added speci
 onmt_translate -gpu X \
                -batch_size 20 \
                -beam_size 10 \
-               -model models/cnndm... \
-               -src data/cnndm/test.txt.src \
+               -model cnndm/run/... \
+               -src cnndm/test.txt.src \
                -output testout/cnndm.out \
                -min_length 35 \
                -verbose \
@@ -196,12 +232,11 @@ onmt_translate -gpu X \
 ```
 
 
-
 ### Evaluation
 
 #### CNN-DM
 
-To evaluate the ROUGE scores on CNN-DM, we extended the pyrouge wrapper with additional evaluations such as the amount of repeated n-grams (typically found in models with copy attention), found [here](https://github.com/sebastianGehrmann/rouge-baselines). The repository includes a sub-repo called pyrouge. Make sure to clone the code with the `git clone --recurse-submodules https://github.com/sebastianGehrmann/rouge-baselines` command to check this out as well and follow the installation instructions on the pyrouge repository before calling this script.
+To evaluate the ROUGE scores on CNN-DM, we extended the `pyrouge` wrapper with additional evaluations such as the amount of repeated n-grams (typically found in models with copy attention), found [here](https://github.com/sebastianGehrmann/rouge-baselines). The repository includes a sub-repo called pyrouge. Make sure to clone the code with the `git clone --recurse-submodules https://github.com/sebastianGehrmann/rouge-baselines` command to check this out as well and follow the installation instructions on the pyrouge repository before calling this script.
 The installation instructions can be found [here](https://github.com/falcondai/pyrouge/tree/9cdbfbda8b8d96e7c2646ffd048743ddcf417ed9#installation). Note that on MacOS, we found that the pointer to your perl installation in line 1 of `pyrouge/RELEASE-1.5.5/ROUGE-1.5.5.pl` might be different from the one you have installed. A simple fix is to change this line to `#!/usr/local/bin/perl -w` if it fails.
 
 It can be run with the following command:
@@ -216,7 +251,7 @@ The `sent_tag_verbatim` option strips `<t>` and `</t>` tags around sentences - w
 
 For evaluation of large test sets such as Gigaword, we use the a parallel python wrapper around ROUGE, found [here](https://github.com/pltrdy/files2rouge).
 
-**command used**:
+**Command used**:
 `files2rouge giga.out test.title.txt --verbose`
 
 ### Scores and Models

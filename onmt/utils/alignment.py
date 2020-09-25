@@ -2,6 +2,7 @@
 
 import torch
 from itertools import accumulate
+from onmt.constants import SubwordMarker
 
 
 def make_batch_align_matrix(index_tensor, size=None, normalize=False):
@@ -106,11 +107,11 @@ def to_word_align(src, tgt, subword_align, m_src='joiner', m_tgt='joiner'):
     subword_align = {(int(a), int(b)) for a, b in (x.split("-")
                      for x in subword_align.split())}
 
-    src_map = (subword_map_by_spacer(src, marker='▁') if m_src == 'spacer'
-               else subword_map_by_joiner(src, marker='￭'))
+    src_map = (subword_map_by_spacer(src) if m_src == 'spacer'
+               else subword_map_by_joiner(src))
 
-    tgt_map = (subword_map_by_spacer(src, marker='▁') if m_tgt == 'spacer'
-               else subword_map_by_joiner(src, marker='￭'))
+    tgt_map = (subword_map_by_spacer(src) if m_tgt == 'spacer'
+               else subword_map_by_joiner(src))
 
     word_align = list({"{}-{}".format(src_map[a], tgt_map[b])
                        for a, b in subword_align})
@@ -119,7 +120,7 @@ def to_word_align(src, tgt, subword_align, m_src='joiner', m_tgt='joiner'):
     return " ".join(word_align)
 
 
-def subword_map_by_joiner(subwords, marker='￭'):
+def subword_map_by_joiner(subwords, marker=SubwordMarker.JOINER):
     """Return word id for each subword token (annotate by joiner)."""
     flags = [0] * len(subwords)
     for i, tok in enumerate(subwords):
@@ -135,7 +136,7 @@ def subword_map_by_joiner(subwords, marker='￭'):
     return word_group
 
 
-def subword_map_by_spacer(subwords, marker='▁'):
+def subword_map_by_spacer(subwords, marker=SubwordMarker.SPACER):
     """Return word id for each subword token (annotate by spacer)."""
     word_group = list(accumulate([int(marker in x) for x in subwords]))
     if word_group[0] == 1:  # when dummy prefix is set

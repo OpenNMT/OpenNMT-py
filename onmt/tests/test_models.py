@@ -1,6 +1,5 @@
 import copy
 import unittest
-import math
 
 import torch
 
@@ -9,13 +8,11 @@ import onmt.inputters
 import onmt.opts
 from onmt.model_builder import build_embeddings, \
     build_encoder, build_decoder
-from onmt.encoders.image_encoder import ImageEncoder
-from onmt.encoders.audio_encoder import AudioEncoder
 from onmt.utils.parse import ArgumentParser
 
 parser = ArgumentParser(description='train.py')
 onmt.opts.model_opts(parser)
-onmt.opts.train_opts(parser)
+onmt.opts._add_train_general_opts(parser)
 
 # -data option is required, but not used in this test, so dummy.
 opt = parser.parse_known_args(['-data', 'dummy'])[0]
@@ -37,22 +34,6 @@ class TestModel(unittest.TestCase):
         test_src = torch.ones(source_l, bsize, 1).long()
         test_tgt = torch.ones(source_l, bsize, 1).long()
         test_length = torch.ones(bsize).fill_(source_l).long()
-        return test_src, test_tgt, test_length
-
-    def get_batch_image(self, tgt_l=3, bsize=1, h=15, w=17):
-        # batch x c x h x w
-        test_src = torch.ones(bsize, 3, h, w).float()
-        test_tgt = torch.ones(tgt_l, bsize, 1).long()
-        test_length = None
-        return test_src, test_tgt, test_length
-
-    def get_batch_audio(self, tgt_l=7, bsize=3, sample_rate=5500,
-                        window_size=0.03, t=37):
-        # batch x 1 x nfft x t
-        nfft = int(math.floor((sample_rate * window_size) / 2) + 1)
-        test_src = torch.ones(bsize, 1, nfft, t).float()
-        test_tgt = torch.ones(tgt_l, bsize, 1).long()
-        test_length = torch.ones(bsize).long().fill_(tgt_l)
         return test_src, test_tgt, test_length
 
     def embeddings_forward(self, opt, source_l=3, bsize=1):
@@ -136,78 +117,6 @@ class TestModel(unittest.TestCase):
                                                          bsize=bsize)
         outputs, attn = model(test_src, test_tgt, test_length)
         outputsize = torch.zeros(source_l - 1, bsize, opt.dec_rnn_size)
-        # Make sure that output has the correct size and type
-        self.assertEqual(outputs.size(), outputsize.size())
-        self.assertEqual(type(outputs), torch.Tensor)
-
-    def imagemodel_forward(self, opt, tgt_l=2, bsize=1, h=15, w=17):
-        """
-        Creates an image-to-text nmtmodel with a custom opt function.
-        Forwards a testbatch and checks output size.
-
-        Args:
-            opt: Namespace with options
-            source_l: length of input sequence
-            bsize: batchsize
-        """
-        if opt.encoder_type == 'transformer' or opt.encoder_type == 'cnn':
-            return
-
-        word_field = self.get_field()
-
-        enc = ImageEncoder(
-            opt.enc_layers, opt.brnn, opt.enc_rnn_size,
-            opt.dropout)
-
-        embeddings = build_embeddings(opt, word_field, for_encoder=False)
-        dec = build_decoder(opt, embeddings)
-
-        model = onmt.models.model.NMTModel(enc, dec)
-
-        test_src, test_tgt, test_length = self.get_batch_image(
-            h=h, w=w,
-            bsize=bsize,
-            tgt_l=tgt_l)
-        outputs, attn = model(test_src, test_tgt, test_length)
-        outputsize = torch.zeros(tgt_l - 1, bsize, opt.dec_rnn_size)
-        # Make sure that output has the correct size and type
-        self.assertEqual(outputs.size(), outputsize.size())
-        self.assertEqual(type(outputs), torch.Tensor)
-
-    def audiomodel_forward(self, opt, tgt_l=7, bsize=3, t=37):
-        """
-        Creates a speech-to-text nmtmodel with a custom opt function.
-        Forwards a testbatch and checks output size.
-
-        Args:
-            opt: Namespace with options
-            source_l: length of input sequence
-            bsize: batchsize
-        """
-        if opt.encoder_type == 'transformer' or opt.encoder_type == 'cnn':
-            return
-        if opt.rnn_type == 'SRU':
-            return
-
-        word_field = self.get_field()
-
-        enc = AudioEncoder(opt.rnn_type, opt.enc_layers, opt.dec_layers,
-                           opt.brnn, opt.enc_rnn_size, opt.dec_rnn_size,
-                           opt.audio_enc_pooling, opt.dropout,
-                           opt.sample_rate, opt.window_size)
-
-        embeddings = build_embeddings(opt, word_field, for_encoder=False)
-        dec = build_decoder(opt, embeddings)
-
-        model = onmt.models.model.NMTModel(enc, dec)
-
-        test_src, test_tgt, test_length = self.get_batch_audio(
-            bsize=bsize,
-            sample_rate=opt.sample_rate,
-            window_size=opt.window_size,
-            t=t, tgt_l=tgt_l)
-        outputs, attn = model(test_src, test_tgt, test_length)
-        outputsize = torch.zeros(tgt_l - 1, bsize, opt.dec_rnn_size)
         # Make sure that output has the correct size and type
         self.assertEqual(outputs.size(), outputsize.size())
         self.assertEqual(type(outputs), torch.Tensor)
@@ -305,20 +214,3 @@ if onmt.models.sru.check_sru_requirement():
 
 for p in tests_nmtmodel:
     _add_test(p, 'nmtmodel_forward')
-
-for p in tests_nmtmodel:
-    _add_test(p, 'imagemodel_forward')
-
-for p in tests_nmtmodel:
-    p.append(('sample_rate', 5500))
-    p.append(('window_size', 0.03))
-    # when reasonable, set audio_enc_pooling to 2
-    for arg, val in p:
-        if arg == "layers" and int(val) > 2:
-            # Need lengths >= audio_enc_pooling**n_layers.
-            # That condition is unrealistic for large n_layers,
-            # so leave audio_enc_pooling at 1.
-            break
-    else:
-        p.append(('audio_enc_pooling', '2'))
-    _add_test(p, 'audiomodel_forward')

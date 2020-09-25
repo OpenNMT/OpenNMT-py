@@ -1,0 +1,6 @@
+# Corpus opts:
+data:
+    corpus_align:
+        path_src: data/src-val.txt
+        path_tgt: data/tgt-val.txt
+        path_align: data/val.src-tgt.talp

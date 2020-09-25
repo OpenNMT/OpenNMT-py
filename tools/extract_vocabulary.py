@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 import argparse
 import sys
-import os
 
 
 def read_files_batch(file_list):
@@ -39,7 +38,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-file_type', default='text',
                         choices=['text', 'field'], required=True,
-                        help="""Options for vocabulary creation.
+                        help="""Options for vocabulary extraction.
                                The default is 'text' where the user passes
                                a corpus or a list of corpora files for which
                                they want to create a vocabulary from.
@@ -77,11 +76,6 @@ def main():
             raise ValueError("If using -file_type='field', specifies "
                              "'src' or 'tgt' argument for -side.")
         import torch
-        try:
-            from onmt.inputters.inputter import _old_style_vocab
-        except ImportError:
-            sys.path.insert(1, os.path.join(sys.path[0], '..'))
-            from onmt.inputters.inputter import _old_style_vocab
 
         print("Reading input file...")
         if not len(opt.file) == 1:
@@ -89,13 +83,11 @@ def main():
                              "argument for -file.")
         vocabs = torch.load(opt.file[0])
         voc = dict(vocabs)[opt.side]
-        if _old_style_vocab(voc):
-            word_list = voc.itos
-        else:
-            try:
-                word_list = voc[0][1].base_field.vocab.itos
-            except AttributeError:
-                word_list = voc[0][1].vocab.itos
+
+        try:
+            word_list = voc[0][1].base_field.vocab.itos
+        except AttributeError:
+            word_list = voc[0][1].vocab.itos
 
         print("Writing vocabulary file...")
         with open(opt.out_file, "wb") as f:

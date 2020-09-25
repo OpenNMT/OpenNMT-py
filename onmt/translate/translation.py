@@ -3,6 +3,7 @@ from __future__ import unicode_literals, print_function
 
 import os
 import torch
+from onmt.constants import DefaultTokens
 from onmt.inputters.text_dataset import TextMultiField
 from onmt.utils.alignment import build_align_pharaoh
 
@@ -35,7 +36,8 @@ class TranslationBuilder(object):
         if phrase_table != "" and os.path.exists(phrase_table):
             with open(phrase_table) as phrase_table_fd:
                 for line in phrase_table_fd:
-                    phrase_src, phrase_trg = line.rstrip("\n").split("|||")
+                    phrase_src, phrase_trg = line.rstrip("\n").split(
+                        DefaultTokens.PHRASE_TABLE_SEPARATOR)
                     self.phrase_table_dict[phrase_src] = phrase_trg
         self.has_tgt = has_tgt
 

@@ -1,0 +1,8 @@
+# Corpus opts:
+data:
+    corpus_1:
+        path_src: data/src-train.txt
+        path_tgt: data/tgt-train.txt
+    valid:
+        path_src: data/src-val.txt
+        path_tgt: data/tgt-val.txt

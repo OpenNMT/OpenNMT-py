@@ -3,8 +3,17 @@
 import torch
 import random
 import inspect
+import numpy as np
 from itertools import islice, repeat
 import os
+
+
+def check_path(path, exist_ok=False, log=print):
+    if os.path.exists(path):
+        if exist_ok:
+            log(f"path {path} exists, may overwrite...")
+        else:
+            raise IOError(f"path {path} exists, stop.")
 
 
 def split_corpus(path, shard_size, default=None):
@@ -93,6 +102,8 @@ def set_random_seed(seed, is_cuda):
         # some cudnn methods can be random even after fixing the seed
         # unless you tell it to be deterministic
         torch.backends.cudnn.deterministic = True
+        # This one is needed for various tranfroms
+        np.random.seed(seed)
 
     if is_cuda and seed > 0:
         # These ensure same initialization in multi gpu mode

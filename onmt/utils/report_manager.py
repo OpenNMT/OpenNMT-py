@@ -9,7 +9,7 @@ from onmt.utils.logging import logger
 
 
 def build_report_manager(opt, gpu_rank):
-    if opt.tensorboard and gpu_rank == 0:
+    if opt.tensorboard and gpu_rank <= 0:
         from torch.utils.tensorboard import SummaryWriter
         tensorboard_log_dir = opt.tensorboard_log_dir
 

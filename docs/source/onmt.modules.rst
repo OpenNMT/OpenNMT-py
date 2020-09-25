@@ -95,21 +95,6 @@ Architecture: SRU
     :members:
 
 
-Alternative Encoders
---------------------
-
-onmt\.modules\.AudioEncoder
-
-.. autoclass:: onmt.encoders.AudioEncoder
-    :members:
-
-
-onmt\.modules\.ImageEncoder
-
-.. autoclass:: onmt.encoders.ImageEncoder
-    :members:
-
-
 Copy Attention
 --------------
 

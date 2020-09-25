@@ -26,7 +26,7 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
         fields (dict): dict of fields
         optim (:obj:`onmt.utils.Optimizer`): optimizer used during training
         data_type (str): string describing the type of data
-            e.g. "text", "img", "audio"
+            e.g. "text"
         model_saver(:obj:`onmt.models.ModelSaverBase`): the utility object
             used to save the model
     """
@@ -49,31 +49,13 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
     if device_id >= 0:
         gpu_rank = opt.gpu_ranks[device_id]
     else:
-        gpu_rank = 0
+        gpu_rank = -1
         n_gpu = 0
     gpu_verbose_level = opt.gpu_verbose_level
 
     earlystopper = onmt.utils.EarlyStopping(
         opt.early_stopping, scorers=onmt.utils.scorers_from_opts(opt)) \
         if opt.early_stopping > 0 else None
-
-    source_noise = None
-    if len(opt.src_noise) > 0:
-        src_field = dict(fields)["src"].base_field
-        corpus_id_field = dict(fields).get("corpus_id", None)
-        if corpus_id_field is not None:
-            ids_to_noise = corpus_id_field.numericalize(opt.data_to_noise)
-        else:
-            ids_to_noise = None
-        source_noise = onmt.modules.source_noise.MultiNoise(
-            opt.src_noise,
-            opt.src_noise_prob,
-            ids_to_noise=ids_to_noise,
-            pad_idx=src_field.pad_token,
-            end_of_sentence_mask=src_field.end_of_sentence_mask,
-            word_start_mask=src_field.word_start_mask,
-            device_id=device_id
-        )
 
     report_manager = onmt.utils.build_report_manager(opt, gpu_rank)
     trainer = onmt.Trainer(model, train_loss, valid_loss, optim, trunc_size,
@@ -82,14 +64,13 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
                            n_gpu, gpu_rank,
                            gpu_verbose_level, report_manager,
                            with_align=True if opt.lambda_align > 0 else False,
-                           model_saver=model_saver if gpu_rank == 0 else None,
+                           model_saver=model_saver if gpu_rank <= 0 else None,
                            average_decay=average_decay,
                            average_every=average_every,
                            model_dtype=opt.model_dtype,
                            earlystopper=earlystopper,
                            dropout=dropout,
-                           dropout_steps=dropout_steps,
-                           source_noise=source_noise)
+                           dropout_steps=dropout_steps)
     return trainer
 
 
@@ -108,7 +89,7 @@ class Trainer(object):
                the optimizer responsible for update
             trunc_size(int): length of truncated back propagation through time
             shard_size(int): compute loss in shards of this size for efficiency
-            data_type(string): type of the source input: [text|img|audio]
+            data_type(string): type of the source input: [text]
             norm_method(string): normalization methods: [sents|tokens]
             accum_count(list): accumulate gradients this many times.
             accum_steps(list): steps for accum gradients changes.
@@ -126,8 +107,7 @@ class Trainer(object):
                  n_gpu=1, gpu_rank=1, gpu_verbose_level=0,
                  report_manager=None, with_align=False, model_saver=None,
                  average_decay=0, average_every=1, model_dtype='fp32',
-                 earlystopper=None, dropout=[0.3], dropout_steps=[0],
-                 source_noise=None):
+                 earlystopper=None, dropout=[0.3], dropout_steps=[0]):
         # Basic attributes.
         self.model = model
         self.train_loss = train_loss
@@ -152,7 +132,6 @@ class Trainer(object):
         self.earlystopper = earlystopper
         self.dropout = dropout
         self.dropout_steps = dropout_steps
-        self.source_noise = source_noise
 
         for i in range(len(self.accum_count_l)):
             assert self.accum_count_l[i] > 0
@@ -367,8 +346,6 @@ class Trainer(object):
             else:
                 trunc_size = target_size
 
-            batch = self.maybe_noise_source(batch)
-
             src, src_lengths = batch.src if isinstance(batch.src, tuple) \
                 else (batch.src, None)
             if src_lengths is not None:
@@ -496,8 +473,3 @@ class Trainer(object):
                 else self.earlystopper.current_tolerance,
                 step, train_stats=train_stats,
                 valid_stats=valid_stats)
-
-    def maybe_noise_source(self, batch):
-        if self.source_noise is not None:
-            return self.source_noise(batch)
-        return batch

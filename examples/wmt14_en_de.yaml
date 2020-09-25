@@ -1,0 +1,108 @@
+# wmt14_en_de.yaml
+save_data: data/wmt/run/example
+
+# Corpus opts:
+data:
+    commoncrawl:
+        path_src: data/wmt/commoncrawl.de-en.en
+        path_tgt: data/wmt/commoncrawl.de-en.de
+        transforms: [sentencepiece, filtertoolong]
+        weight: 23
+    europarl:
+        path_src: data/wmt/europarl-v7.de-en.en
+        path_tgt: data/wmt/europarl-v7.de-en.de
+        transforms: [sentencepiece, filtertoolong]
+        weight: 19
+    news_commentary:
+        path_src: data/wmt/news-commentary-v11.de-en.en
+        path_tgt: data/wmt/news-commentary-v11.de-en.de
+        transforms: [sentencepiece, filtertoolong]
+        weight: 3
+    valid:
+        path_src: data/wmt/valid.en
+        path_tgt: data/wmt/valid.de
+        transforms: [sentencepiece]
+
+### Transform related opts:
+#### Subword
+src_subword_model: data/wmt/wmtende.model
+tgt_subword_model: data/wmt/wmtende.model
+# src_subword_type: sentencepiece
+# tgt_subword_type: sentencepiece
+# onmttok_kwargs: "{'mode': 'none', 'spacer_annotate': True}"
+
+subword_nbest: 1
+subword_alpha: 0.0
+#### Filter
+src_seq_length: 150
+tgt_seq_length: 150
+
+# silently ignore empty lines in the data
+skip_empty_level: silent
+
+
+# # Vocab opts
+# ### vocab:
+src_vocab: data/wmt/run/example.vocab.src
+tgt_vocab: data/wmt/run/example.vocab.tgt
+src_vocab_size: 32000
+tgt_vocab_size: 32000
+vocab_size_multiple: 8
+src_words_min_frequency: 1
+tgt_words_min_frequency: 1
+share_vocab: True
+
+# # Model training parameters
+
+# General opts
+save_model: data/wmt/run/model
+keep_checkpoint: 50
+save_checkpoint_steps: 5000
+average_decay: 0.0005
+seed: 1234
+report_every: 100
+train_steps: 100000
+valid_steps: 5000
+
+# Batching
+queue_size: 1024
+bucket_size: 32768
+pool_factor: 8192
+world_size: 2
+gpu_ranks: [0, 1]
+batch_type: "tokens"
+batch_size: 4096
+valid_batch_size: 16
+batch_size_multiple: 1
+max_generator_batches: 0
+accum_count: [3]
+accum_steps: [0]
+
+# Optimization
+model_dtype: "fp32"
+optim: "adam"
+learning_rate: 2
+warmup_steps: 6000
+decay_method: "noam"
+adam_beta2: 0.998
+max_grad_norm: 0
+label_smoothing: 0.1
+param_init: 0
+param_init_glorot: true
+normalization: "tokens"
+
+# Model
+encoder_type: transformer
+decoder_type: transformer
+enc_layers: 6
+dec_layers: 6
+heads: 8
+rnn_size: 512
+word_vec_size: 512
+transformer_ff: 2048
+dropout_steps: [0]
+dropout: [0.1]
+attention_dropout: [0.1]
+share_decoder_embeddings: true
+share_embeddings: true
+position_encoding: true
