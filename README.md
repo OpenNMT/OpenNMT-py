@@ -2,7 +2,7 @@
 
 ----
 
-## /!\ This is the legacy branch of OpenNMT-py
+## :warning: This is the legacy branch of OpenNMT-py
 
 It will no longer be actively developed by the core team. You may still use it if you require some of the features that are not (yet) implemented in **OpenNMT-py 2.0**.
 
