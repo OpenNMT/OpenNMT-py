@@ -1,5 +1,15 @@
 # OpenNMT-py: Open-Source Neural Machine Translation
 
+----
+
+## /!\ This is the legacy branch of OpenNMT-py
+
+It will no longer be actively developed by the core team. You may still use it if you require some of the features that are not (yet) implemented in **OpenNMT-py 2.0**.
+
+We also may still fix some bugs (maintenance mode) and accept some PRs.
+
+----
+
 [![Build Status](https://travis-ci.org/OpenNMT/OpenNMT-py.svg?branch=master)](https://travis-ci.org/OpenNMT/OpenNMT-py)
 [![Run on FH](https://img.shields.io/badge/Run%20on-FloydHub-blue.svg)](https://floydhub.com/run?template=https://github.com/OpenNMT/OpenNMT-py)
 
@@ -10,7 +20,6 @@ an open-source (MIT) neural machine translation system. It is designed to be res
 We love contributions. Please consult the Issues page for any [Contributions Welcome](https://github.com/OpenNMT/OpenNMT-py/issues?q=is%3Aissue+is%3Aopen+label%3A%22contributions+welcome%22) tagged post. 
 
 <center style="padding: 40px"><img width="70%" src="http://opennmt.github.io/simple-attn.png" /></center>
-
 Before raising an issue, make sure you read the requirements and the documentation examples.
 
 Unless there is a bug, please use the [Forum](http://forum.opennmt.net) or [Gitter](https://gitter.im/OpenNMT/OpenNMT-py) to ask questions.
