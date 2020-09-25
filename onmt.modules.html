@@ -87,23 +87,31 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="main.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="FAQ.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="CONTRIBUTING.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ref.html">References</a></li>
 </ul>
+<p class="caption"><span class="caption-text">FAQ</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-do-i-use-the-transformer-model">How do I use the Transformer model?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
+</ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="Library.html">Library</a></li>
-<li class="toctree-l1"><a class="reference internal" href="extended.html">Translation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Summarization.html">Summarization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="im2text.html">Image to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="speech2text.html">Speech to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="vid2text.html">Video to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ggnn.html">Gated Graph Sequence Neural Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/Library.html">Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/Translation.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/GGNN.html">Gated Graph Sequence Neural Networks</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Scripts</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="options/preprocess.html">Preprocess</a></li>
+<li class="toctree-l1"><a class="reference internal" href="options/build_vocab.html">Build Vocab</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/train.html">Train</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/translate.html">Translate</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/server.html">Server</a></li>
@@ -119,7 +127,6 @@
 <li class="toctree-l2"><a class="reference internal" href="#architecture-transformer">Architecture: Transformer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#architecture-conv2conv">Architecture: Conv2Conv</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#architecture-sru">Architecture: SRU</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#alternative-encoders">Alternative Encoders</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#copy-attention">Copy Attention</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#structured-attention">Structured Attention</a></li>
 </ul>
@@ -127,6 +134,13 @@
 <li class="toctree-l1"><a class="reference internal" href="onmt.translation.html">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="onmt.translate.translation_server.html">Server</a></li>
 <li class="toctree-l1"><a class="reference internal" href="onmt.inputters.html">Data Loaders</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Legacy</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="legacy/FAQ.html">FAQ (Legacy version)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="legacy/im2text.html">Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="legacy/speech2text.html">Speech to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="legacy/vid2text.html">Video to Text</a></li>
 </ul>
 
             
@@ -1129,82 +1143,6 @@ which is the combination of base emb and top output of encode</p></li>
 </ul>
 </dd>
 </dl>
-</dd></dl>
-
-</div>
-<div class="section" id="alternative-encoders">
-<h2>Alternative Encoders<a class="headerlink" href="#alternative-encoders" title="Permalink to this headline">¶</a></h2>
-<p>onmt.modules.AudioEncoder</p>
-<dl class="class">
-<dt id="onmt.encoders.AudioEncoder">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.encoders.</code><code class="sig-name descname">AudioEncoder</code><span class="sig-paren">(</span><em class="sig-param">rnn_type</em>, <em class="sig-param">enc_layers</em>, <em class="sig-param">dec_layers</em>, <em class="sig-param">brnn</em>, <em class="sig-param">enc_rnn_size</em>, <em class="sig-param">dec_rnn_size</em>, <em class="sig-param">enc_pooling</em>, <em class="sig-param">dropout</em>, <em class="sig-param">sample_rate</em>, <em class="sig-param">window_size</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/encoders/audio_encoder.html#AudioEncoder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.encoders.AudioEncoder" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.encoders.encoder.EncoderBase</span></code></p>
-<p>A simple encoder CNN -&gt; RNN for audio input.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>rnn_type</strong> (<em>str</em>) – Type of RNN (e.g. GRU, LSTM, etc).</p></li>
-<li><p><strong>enc_layers</strong> (<em>int</em>) – Number of encoder layers.</p></li>
-<li><p><strong>dec_layers</strong> (<em>int</em>) – Number of decoder layers.</p></li>
-<li><p><strong>brnn</strong> (<em>bool</em>) – Bidirectional encoder.</p></li>
-<li><p><strong>enc_rnn_size</strong> (<em>int</em>) – Size of hidden states of the rnn.</p></li>
-<li><p><strong>dec_rnn_size</strong> (<em>int</em>) – Size of the decoder hidden states.</p></li>
-<li><p><strong>enc_pooling</strong> (<em>str</em>) – A comma separated list either of length 1
-or of length <code class="docutils literal notranslate"><span class="pre">enc_layers</span></code> specifying the pooling amount.</p></li>
-<li><p><strong>dropout</strong> (<em>float</em>) – dropout probablity.</p></li>
-<li><p><strong>sample_rate</strong> (<em>float</em>) – input spec</p></li>
-<li><p><strong>window_size</strong> (<em>int</em>) – input spec</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="method">
-<dt id="onmt.encoders.AudioEncoder.forward">
-<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">src</em>, <em class="sig-param">lengths=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/encoders/audio_encoder.html#AudioEncoder.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.encoders.AudioEncoder.forward" title="Permalink to this definition">¶</a></dt>
-<dd><p>See <code class="xref py py-func docutils literal notranslate"><span class="pre">onmt.encoders.encoder.EncoderBase.forward()</span></code></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="onmt.encoders.AudioEncoder.from_opt">
-<em class="property">classmethod </em><code class="sig-name descname">from_opt</code><span class="sig-paren">(</span><em class="sig-param">opt</em>, <em class="sig-param">embeddings=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/encoders/audio_encoder.html#AudioEncoder.from_opt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.encoders.AudioEncoder.from_opt" title="Permalink to this definition">¶</a></dt>
-<dd><p>Alternate constructor.</p>
-</dd></dl>
-
-</dd></dl>
-
-<p>onmt.modules.ImageEncoder</p>
-<dl class="class">
-<dt id="onmt.encoders.ImageEncoder">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.encoders.</code><code class="sig-name descname">ImageEncoder</code><span class="sig-paren">(</span><em class="sig-param">num_layers</em>, <em class="sig-param">bidirectional</em>, <em class="sig-param">rnn_size</em>, <em class="sig-param">dropout</em>, <em class="sig-param">image_chanel_size=3</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/encoders/image_encoder.html#ImageEncoder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.encoders.ImageEncoder" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.encoders.encoder.EncoderBase</span></code></p>
-<p>A simple encoder CNN -&gt; RNN for image src.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>num_layers</strong> (<em>int</em>) – number of encoder layers.</p></li>
-<li><p><strong>bidirectional</strong> (<em>bool</em>) – bidirectional encoder.</p></li>
-<li><p><strong>rnn_size</strong> (<em>int</em>) – size of hidden states of the rnn.</p></li>
-<li><p><strong>dropout</strong> (<em>float</em>) – dropout probablity.</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="method">
-<dt id="onmt.encoders.ImageEncoder.forward">
-<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">src</em>, <em class="sig-param">lengths=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/encoders/image_encoder.html#ImageEncoder.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.encoders.ImageEncoder.forward" title="Permalink to this definition">¶</a></dt>
-<dd><p>See <code class="xref py py-func docutils literal notranslate"><span class="pre">onmt.encoders.encoder.EncoderBase.forward()</span></code></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="onmt.encoders.ImageEncoder.from_opt">
-<em class="property">classmethod </em><code class="sig-name descname">from_opt</code><span class="sig-paren">(</span><em class="sig-param">opt</em>, <em class="sig-param">embeddings=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/encoders/image_encoder.html#ImageEncoder.from_opt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.encoders.ImageEncoder.from_opt" title="Permalink to this definition">¶</a></dt>
-<dd><p>Alternate constructor.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="onmt.encoders.ImageEncoder.load_pretrained_vectors">
-<code class="sig-name descname">load_pretrained_vectors</code><span class="sig-paren">(</span><em class="sig-param">opt</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/encoders/image_encoder.html#ImageEncoder.load_pretrained_vectors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.encoders.ImageEncoder.load_pretrained_vectors" title="Permalink to this definition">¶</a></dt>
-<dd><p>Pass in needed options only when modify function definition.</p>
-</dd></dl>
-
 </dd></dl>
 
 </div>

@@ -1,6 +1,15 @@
 Video to Text
 =============
 
+---------
+
+**WARNING**: This example is based on the
+`legacy version of OpenNMT-py <https://github.com/OpenNMT/OpenNMT-py/tree/legacy>`_
+!
+
+---------
+
+
 Recurrent
 ---------
 

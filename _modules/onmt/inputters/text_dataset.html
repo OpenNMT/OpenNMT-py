@@ -85,23 +85,31 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../main.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../CONTRIBUTING.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../ref.html">References</a></li>
 </ul>
+<p class="caption"><span class="caption-text">FAQ</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-do-i-use-the-transformer-model">How do I use the Transformer model?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
+</ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../Library.html">Library</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../extended.html">Translation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../Summarization.html">Summarization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../im2text.html">Image to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../speech2text.html">Speech to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../vid2text.html">Video to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../ggnn.html">Gated Graph Sequence Neural Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/Library.html">Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/Translation.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/GGNN.html">Gated Graph Sequence Neural Networks</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Scripts</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../options/preprocess.html">Preprocess</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/build_vocab.html">Build Vocab</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../options/train.html">Train</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../options/translate.html">Translate</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../options/server.html">Server</a></li>
@@ -113,6 +121,13 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../onmt.translation.html">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../onmt.translate.translation_server.html">Server</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../onmt.inputters.html">Data Loaders</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Legacy</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../legacy/FAQ.html">FAQ (Legacy version)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../legacy/im2text.html">Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../legacy/speech2text.html">Speech to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../legacy/vid2text.html">Video to Text</a></li>
 </ul>
 
             
@@ -183,11 +198,12 @@
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">from</span> <span class="nn">torchtext.data</span> <span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">RawField</span>
 
+<span class="kn">from</span> <span class="nn">onmt.constants</span> <span class="kn">import</span> <span class="n">DefaultTokens</span>
 <span class="kn">from</span> <span class="nn">onmt.inputters.datareader_base</span> <span class="kn">import</span> <span class="n">DataReaderBase</span>
 
 
 <div class="viewcode-block" id="TextDataReader"><a class="viewcode-back" href="../../../onmt.inputters.html#onmt.inputters.TextDataReader">[docs]</a><span class="k">class</span> <span class="nc">TextDataReader</span><span class="p">(</span><span class="n">DataReaderBase</span><span class="p">):</span>
-<div class="viewcode-block" id="TextDataReader.read"><a class="viewcode-back" href="../../../onmt.inputters.html#onmt.inputters.TextDataReader.read">[docs]</a>    <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequences</span><span class="p">,</span> <span class="n">side</span><span class="p">,</span> <span class="n">_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="TextDataReader.read"><a class="viewcode-back" href="../../../onmt.inputters.html#onmt.inputters.TextDataReader.read">[docs]</a>    <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequences</span><span class="p">,</span> <span class="n">side</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Read text data from disk.</span>
 
 <span class="sd">        Args:</span>
@@ -195,16 +211,12 @@
 <span class="sd">                path to text file or iterable of the actual text data.</span>
 <span class="sd">            side (str): Prefix used in return dict. Usually</span>
 <span class="sd">                ``&quot;src&quot;`` or ``&quot;tgt&quot;``.</span>
-<span class="sd">            _dir (NoneType): Leave as ``None``. This parameter exists to</span>
-<span class="sd">                conform with the :func:`DataReaderBase.read()` signature.</span>
 
 <span class="sd">        Yields:</span>
 <span class="sd">            dictionaries whose keys are the names of fields and whose</span>
 <span class="sd">            values are more or less the result of tokenizing with those</span>
 <span class="sd">            fields.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">assert</span> <span class="n">_dir</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">_dir</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> \
-            <span class="s2">&quot;Cannot use _dir with TextDataReader.&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sequences</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="n">sequences</span> <span class="o">=</span> <span class="n">DataReaderBase</span><span class="o">.</span><span class="n">_read_file</span><span class="p">(</span><span class="n">sequences</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">seq</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sequences</span><span class="p">):</span>
@@ -348,9 +360,9 @@
     <span class="n">n_feats</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;n_feats&quot;</span><span class="p">]</span>
     <span class="n">include_lengths</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;include_lengths&quot;</span><span class="p">]</span>
     <span class="n">base_name</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;base_name&quot;</span><span class="p">]</span>
-    <span class="n">pad</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pad&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;blank&gt;&quot;</span><span class="p">)</span>
-    <span class="n">bos</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;bos&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;s&gt;&quot;</span><span class="p">)</span>
-    <span class="n">eos</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;eos&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;/s&gt;&quot;</span><span class="p">)</span>
+    <span class="n">pad</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pad&quot;</span><span class="p">,</span> <span class="n">DefaultTokens</span><span class="o">.</span><span class="n">PAD</span><span class="p">)</span>
+    <span class="n">bos</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;bos&quot;</span><span class="p">,</span> <span class="n">DefaultTokens</span><span class="o">.</span><span class="n">BOS</span><span class="p">)</span>
+    <span class="n">eos</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;eos&quot;</span><span class="p">,</span> <span class="n">DefaultTokens</span><span class="o">.</span><span class="n">EOS</span><span class="p">)</span>
     <span class="n">truncate</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;truncate&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
     <span class="n">fields_</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">feat_delim</span> <span class="o">=</span> <span class="sa">u</span><span class="s2">&quot;￨&quot;</span> <span class="k">if</span> <span class="n">n_feats</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span>

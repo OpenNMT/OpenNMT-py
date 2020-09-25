@@ -17,28 +17,28 @@
   
 
   
-  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
   
     
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/language_data.js"></script>
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
         <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
-    <script type="text/javascript" src="_static/js/theme.js"></script>
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
 
     
 
   
-  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="_static/theme_overrides.css" type="text/css" />
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Preprocess" href="options/preprocess.html" />
-    <link rel="prev" title="Video to Text" href="vid2text.html" /> 
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Build Vocab" href="../options/build_vocab.html" />
+    <link rel="prev" title="Summarization" href="Summarization.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -52,7 +52,7 @@
           
 
           
-            <a href="index.html" class="icon icon-home"> OpenNMT-py
+            <a href="../index.html" class="icon icon-home"> OpenNMT-py
           
 
           
@@ -65,7 +65,7 @@
 
           
 <div role="search">
-  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
@@ -84,20 +84,28 @@
             
               <p class="caption"><span class="caption-text">Getting Started</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="main.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="FAQ.html">FAQ</a></li>
-<li class="toctree-l1"><a class="reference internal" href="CONTRIBUTING.html">Contributors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ref.html">References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../main.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../CONTRIBUTING.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ref.html">References</a></li>
+</ul>
+<p class="caption"><span class="caption-text">FAQ</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-do-i-use-the-transformer-model">How do I use the Transformer model?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="Library.html">Library</a></li>
-<li class="toctree-l1"><a class="reference internal" href="extended.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Translation.html">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Summarization.html">Summarization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="im2text.html">Image to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="speech2text.html">Speech to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="vid2text.html">Video to Text</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Gated Graph Sequence Neural Networks</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#dependencies">Dependencies</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#quick-start">Quick Start</a></li>
@@ -109,18 +117,25 @@
 </ul>
 <p class="caption"><span class="caption-text">Scripts</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="options/preprocess.html">Preprocess</a></li>
-<li class="toctree-l1"><a class="reference internal" href="options/train.html">Train</a></li>
-<li class="toctree-l1"><a class="reference internal" href="options/translate.html">Translate</a></li>
-<li class="toctree-l1"><a class="reference internal" href="options/server.html">Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../options/build_vocab.html">Build Vocab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../options/train.html">Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../options/translate.html">Translate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../options/server.html">Server</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="onmt.html">Framework</a></li>
-<li class="toctree-l1"><a class="reference internal" href="onmt.modules.html">Modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="onmt.translation.html">Translation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="onmt.translate.translation_server.html">Server</a></li>
-<li class="toctree-l1"><a class="reference internal" href="onmt.inputters.html">Data Loaders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../onmt.html">Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../onmt.modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../onmt.translation.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../onmt.translate.translation_server.html">Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../onmt.inputters.html">Data Loaders</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Legacy</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../legacy/FAQ.html">FAQ (Legacy version)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../legacy/im2text.html">Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../legacy/speech2text.html">Speech to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../legacy/vid2text.html">Video to Text</a></li>
 </ul>
 
             
@@ -135,7 +150,7 @@
       <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html">OpenNMT-py</a>
+          <a href="../index.html">OpenNMT-py</a>
         
       </nav>
 
@@ -164,7 +179,7 @@
 
   <ul class="wy-breadcrumbs">
     
-      <li><a href="index.html">Docs</a> &raquo;</li>
+      <li><a href="../index.html">Docs</a> &raquo;</li>
         
       <li>Gated Graph Sequence Neural Networks</li>
     
@@ -172,7 +187,7 @@
       <li class="wy-breadcrumbs-aside">
         
             
-            <a href="_sources/ggnn.md.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/examples/GGNN.md.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -189,11 +204,11 @@
 <h1>Gated Graph Sequence Neural Networks<a class="headerlink" href="#gated-graph-sequence-neural-networks" title="Permalink to this headline">¶</a></h1>
 <p>Graph-to-sequence networks allow information represtable as a graph (such as an annotated NLP sentence or computer code structure as an AST) to be connected to a sequence generator to produce output which can benefit from the graph structure of the input.</p>
 <p>The training option <code class="docutils literal notranslate"><span class="pre">-encoder_type</span> <span class="pre">ggnn</span></code> implements a GGNN (Gated Graph Neural Network) based on github.com/JamesChuanggg/ggnn.pytorch.git which is based on the paper “Gated Graph Sequence Neural Networks” by Y. Li, D. Tarlow, M. Brockschmidt, and R. Zemel.</p>
-<p>The ggnn encoder is used for program equivalence proof generation in the paper <a href="https://arxiv.org/abs/2002.06799">Equivalence of Dataflow Graphs via Rewrite Rules Using a Graph-to-Sequence Neural Model</a>. That paper shows the benefit of the graph-to-sequence model over a sequence-to-sequence model for this problem which can be well represented with graphical input. The integration of the ggnn network into the <a href="https://github.com/OpenNMT/OpenNMT-py/">OpenNMT-py</a> system supports attention on the nodes as well as a copy mechanism.</p>
+<p>The ggnn encoder is used for program equivalence proof generation in the paper <a class="reference external" href="https://arxiv.org/abs/2002.06799">Equivalence of Dataflow Graphs via Rewrite Rules Using a Graph-to-Sequence Neural Model</a>. That paper shows the benefit of the graph-to-sequence model over a sequence-to-sequence model for this problem which can be well represented with graphical input. The integration of the ggnn network into the OpenNMT-py system supports attention on the nodes as well as a copy mechanism.</p>
 <div class="section" id="dependencies">
 <h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li><p>There are no additional dependencies beyond the rnn-to-rnn sequeence2sequence requirements.</p></li>
+<li><p>There are no additional dependencies beyond the rnn-to-rnn sequence2sequence requirements.</p></li>
 </ul>
 </div>
 <div class="section" id="quick-start">
@@ -208,22 +223,69 @@
 <span class="n">cd</span> <span class="n">OpenNMT</span><span class="o">-</span><span class="n">py</span>
 </pre></div>
 </div>
-<ol class="simple">
-<li><p>Preprocess the data.</p></li>
-</ol>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>python preprocess.py -train_src $data_path/src-train.txt -train_tgt $data_path/tgt-train.txt -valid_src $data_path/src-val.txt -valid_tgt $data_path/tgt-val.txt -src_seq_length 1000 -tgt_seq_length 30 -src_vocab $data_path/srcvocab.txt -tgt_vocab $data_path/tgtvocab.txt -dynamic_dict -save_data $data_path/final 2&gt;&amp;1 &gt; $data_path/preprocess.out
+<p>The YAML configuration for this example is the following:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># ggnn_example.yaml</span>
+<span class="c1">## Where the necessary objects will be written</span>
+<span class="nt">save_data</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">&lt;path_to&gt;/OpenNMT-py-ggnn-example/run/example</span>
+
+<span class="c1"># Filter long examples</span>
+<span class="nt">src_seq_length</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1000</span>
+<span class="nt">tgt_seq_length</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">30</span>
+
+<span class="c1"># Data definition</span>
+<span class="nt">data</span><span class="p">:</span>
+    <span class="nt">cnndm</span><span class="p">:</span>
+        <span class="nt">path_src</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">&lt;path_to&gt;/OpenNMT-py-ggnn-example/src-train.txt</span>
+        <span class="nt">path_tgt</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">&lt;path_to&gt;/OpenNMT-py-ggnn-example/tgt-train.txt</span>
+        <span class="nt">transforms</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">filtertoolong</span><span class="p p-Indicator">]</span>
+        <span class="nt">weight</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
+    <span class="nt">valid</span><span class="p">:</span>
+        <span class="nt">path_src</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">&lt;path_to&gt;/OpenNMT-py-ggnn-example/src-val.txt</span>
+        <span class="nt">path_tgt</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">&lt;path_to&gt;/OpenNMT-py-ggnn-example/tgt-val.txt</span>
+
+<span class="nt">src_vocab</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">&lt;path_to&gt;/OpenNMT-py-ggnn-example/srcvocab.txt</span>
+<span class="nt">tgt_vocab</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">&lt;path_to&gt;/OpenNMT-py-ggnn-example/tgtvocab.txt</span>
+
+<span class="nt">save_model</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">&lt;path_to&gt;/OpenNMT-py-ggnn-example/run/model</span>
+
+<span class="c1"># Model options</span>
+<span class="nt">train_steps</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">10000</span>
+<span class="nt">save_checkpoint_steps</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">5000</span>
+<span class="nt">encoder_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">ggnn</span>
+<span class="nt">layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">2</span>
+<span class="nt">decoder_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">rnn</span>
+<span class="nt">rnn_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">256</span>
+<span class="nt">learning_rate</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0.1</span>
+<span class="nt">start_decay_steps</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">5000</span>
+<span class="nt">learning_rate_decay</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0.8</span>
+<span class="nt">global_attention</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">general</span>
+<span class="nt">batch_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">32</span>
+<span class="nt">word_vec_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">256</span>
+<span class="nt">bridge</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="nt">gpu_ranks</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
+<span class="nt">n_edge_types</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">9</span>
+<span class="nt">state_dim</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">256</span>
+<span class="nt">n_steps</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">10</span>
+<span class="nt">n_node</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">64</span>
 </pre></div>
 </div>
 <ol class="simple">
 <li><p>Train the model.</p></li>
 </ol>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>python train.py -data $data_path/final -encoder_type ggnn -layers 2 -decoder_type rnn -rnn_size 256 -learning_rate 0.1 -start_decay_steps 5000 -learning_rate_decay 0.8 -global_attention general -batch_size 32 -word_vec_size 256 -bridge -train_steps 10000 -gpu_ranks 0 -save_checkpoint_steps 5000 -save_model $data_path/final-model -src_vocab $data_path/srcvocab.txt -n_edge_types 9 -state_dim 256 -n_steps 10 -n_node 64 &gt; $data_path/train.final.out
+<p>You can simply run the following command:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">train</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">config</span> <span class="n">ggnn_example</span><span class="o">.</span><span class="n">yaml</span>
 </pre></div>
 </div>
 <ol class="simple">
 <li><p>Translate the graph of 2 equivalent linear algebra expressions into the axiom list which proves them equivalent.</p></li>
 </ol>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>python translate.py -model $data_path/final-model_step_10000.pt -src $data_path/src-test.txt -beam_size 5 -n_best 5 -gpu 0 -output $data_path/pred-test_beam5.txt -dynamic_dict 2&gt;&amp;1 &gt; $data_path/translate5.out
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>python translate.py \
+    -model &lt;path_to&gt;/OpenNMT-py-ggnn-example/run/model_step_10000.pt \
+    -src &lt;path_to&gt;/OpenNMT-py-ggnn-example$data_path/src-test.txt \
+    -beam_size 5 -n_best 5 \
+    -gpu 0 \
+    -output &lt;path_to&gt;/OpenNMT-py-ggnn-example/pred-test_beam5.txt \
+    2&gt;&amp;1 &gt; &lt;path_to&gt;/OpenNMT-py-ggnn-example/translate5.out
 </pre></div>
 </div>
 </div>
@@ -274,7 +336,7 @@ identifiers in the edge list.</p>
 </div>
 <div class="section" id="acknowledgement">
 <h2>Acknowledgement<a class="headerlink" href="#acknowledgement" title="Permalink to this headline">¶</a></h2>
-<p>This gated graph neural network is leveraged from github.com/JamesChuanggg/ggnn.pytorch.git which is based on the paper “Gated Graph Sequence Neural Networks” by Y. Li, D. Tarlow, M. Brockschmidt, and R. Zemel.</p>
+<p>This gated graph neural network is leveraged from https://github.com/JamesChuanggg/ggnn.pytorch.git which is based on the paper <a class="reference external" href="https://arxiv.org/abs/1511.05493">Gated Graph Sequence Neural Networks</a> by Y. Li, D. Tarlow, M. Brockschmidt, and R. Zemel.</p>
 </div>
 </div>
 
@@ -286,10 +348,10 @@ identifiers in the edge list.</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="options/preprocess.html" class="btn btn-neutral float-right" title="Preprocess" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="../options/build_vocab.html" class="btn btn-neutral float-right" title="Build Vocab" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="vid2text.html" class="btn btn-neutral float-left" title="Video to Text" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="Summarization.html" class="btn btn-neutral float-left" title="Summarization" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

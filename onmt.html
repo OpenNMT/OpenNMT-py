@@ -86,23 +86,31 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="main.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="FAQ.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="CONTRIBUTING.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ref.html">References</a></li>
 </ul>
+<p class="caption"><span class="caption-text">FAQ</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-do-i-use-the-transformer-model">How do I use the Transformer model?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
+</ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="Library.html">Library</a></li>
-<li class="toctree-l1"><a class="reference internal" href="extended.html">Translation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Summarization.html">Summarization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="im2text.html">Image to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="speech2text.html">Speech to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="vid2text.html">Video to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ggnn.html">Gated Graph Sequence Neural Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/Library.html">Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/Translation.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/GGNN.html">Gated Graph Sequence Neural Networks</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Scripts</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="options/preprocess.html">Preprocess</a></li>
+<li class="toctree-l1"><a class="reference internal" href="options/build_vocab.html">Build Vocab</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/train.html">Train</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/translate.html">Translate</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/server.html">Server</a></li>
@@ -120,6 +128,13 @@
 <li class="toctree-l1"><a class="reference internal" href="onmt.translation.html">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="onmt.translate.translation_server.html">Server</a></li>
 <li class="toctree-l1"><a class="reference internal" href="onmt.inputters.html">Data Loaders</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Legacy</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="legacy/FAQ.html">FAQ (Legacy version)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="legacy/im2text.html">Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="legacy/speech2text.html">Speech to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="legacy/vid2text.html">Video to Text</a></li>
 </ul>
 
             
@@ -203,6 +218,24 @@ for a simple, generic encoder + decoder model.</p>
 </dd>
 </dl>
 <dl class="method">
+<dt id="onmt.models.NMTModel.count_parameters">
+<code class="sig-name descname">count_parameters</code><span class="sig-paren">(</span><em class="sig-param">log=&lt;built-in function print&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/models/model.html#NMTModel.count_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.models.NMTModel.count_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Count number of parameters in model (&amp; print with <cite>log</cite> callback).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p>encoder side parameter count</p></li>
+<li><p>decoder side parameter count</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>(int, int)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
 <dt id="onmt.models.NMTModel.forward">
 <code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">src</em>, <em class="sig-param">tgt</em>, <em class="sig-param">lengths</em>, <em class="sig-param">bptt=False</em>, <em class="sig-param">with_align=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/models/model.html#NMTModel.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.models.NMTModel.forward" title="Permalink to this definition">¶</a></dt>
 <dd><p>Forward propagate a <cite>src</cite> and <cite>tgt</cite> pair for training.
@@ -243,7 +276,7 @@ Only valid for transformer decoder.</p></li>
 <h2>Trainer<a class="headerlink" href="#trainer" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.Trainer">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.</code><code class="sig-name descname">Trainer</code><span class="sig-paren">(</span><em class="sig-param">model, train_loss, valid_loss, optim, trunc_size=0, shard_size=32, norm_method='sents', accum_count=[1], accum_steps=[0], n_gpu=1, gpu_rank=1, gpu_verbose_level=0, report_manager=None, with_align=False, model_saver=None, average_decay=0, average_every=1, model_dtype='fp32', earlystopper=None, dropout=[0.3], dropout_steps=[0], source_noise=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.</code><code class="sig-name descname">Trainer</code><span class="sig-paren">(</span><em class="sig-param">model, train_loss, valid_loss, optim, trunc_size=0, shard_size=32, norm_method='sents', accum_count=[1], accum_steps=[0], n_gpu=1, gpu_rank=1, gpu_verbose_level=0, report_manager=None, with_align=False, model_saver=None, average_decay=0, average_every=1, model_dtype='fp32', earlystopper=None, dropout=[0.3], dropout_steps=[0]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Class that controls the training process.</p>
 <dl class="field-list simple">
@@ -256,7 +289,7 @@ to train</p></li>
 <li><p><strong>optim</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.utils.optimizers.Optimizer</span></code>) – the optimizer responsible for update</p></li>
 <li><p><strong>trunc_size</strong> (<em>int</em>) – length of truncated back propagation through time</p></li>
 <li><p><strong>shard_size</strong> (<em>int</em>) – compute loss in shards of this size for efficiency</p></li>
-<li><p><strong>data_type</strong> (<em>string</em>) – type of the source input: [text|img|audio]</p></li>
+<li><p><strong>data_type</strong> (<em>string</em>) – type of the source input: [text]</p></li>
 <li><p><strong>norm_method</strong> (<em>string</em>) – normalization methods: [sents|tokens]</p></li>
 <li><p><strong>accum_count</strong> (<em>list</em>) – accumulate gradients this many times.</p></li>
 <li><p><strong>accum_steps</strong> (<em>list</em>) – steps for accum gradients changes.</p></li>

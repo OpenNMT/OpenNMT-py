@@ -85,23 +85,31 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../main.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../CONTRIBUTING.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../ref.html">References</a></li>
 </ul>
+<p class="caption"><span class="caption-text">FAQ</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-do-i-use-the-transformer-model">How do I use the Transformer model?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
+</ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../Library.html">Library</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../extended.html">Translation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../Summarization.html">Summarization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../im2text.html">Image to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../speech2text.html">Speech to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../vid2text.html">Video to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../ggnn.html">Gated Graph Sequence Neural Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/Library.html">Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/Translation.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/GGNN.html">Gated Graph Sequence Neural Networks</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Scripts</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../options/preprocess.html">Preprocess</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../options/build_vocab.html">Build Vocab</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../options/train.html">Train</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../options/translate.html">Translate</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../options/server.html">Server</a></li>
@@ -113,6 +121,13 @@
 <li class="toctree-l1"><a class="reference internal" href="../../onmt.translation.html">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../onmt.translate.translation_server.html">Server</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../onmt.inputters.html">Data Loaders</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Legacy</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../legacy/FAQ.html">FAQ (Legacy version)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../legacy/im2text.html">Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../legacy/speech2text.html">Speech to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../legacy/vid2text.html">Video to Text</a></li>
 </ul>
 
             
@@ -204,7 +219,7 @@
 <span class="sd">        fields (dict): dict of fields</span>
 <span class="sd">        optim (:obj:`onmt.utils.Optimizer`): optimizer used during training</span>
 <span class="sd">        data_type (str): string describing the type of data</span>
-<span class="sd">            e.g. &quot;text&quot;, &quot;img&quot;, &quot;audio&quot;</span>
+<span class="sd">            e.g. &quot;text&quot;</span>
 <span class="sd">        model_saver(:obj:`onmt.models.ModelSaverBase`): the utility object</span>
 <span class="sd">            used to save the model</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -227,31 +242,13 @@
     <span class="k">if</span> <span class="n">device_id</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">gpu_rank</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">gpu_ranks</span><span class="p">[</span><span class="n">device_id</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">gpu_rank</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">gpu_rank</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
         <span class="n">n_gpu</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">gpu_verbose_level</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">gpu_verbose_level</span>
 
     <span class="n">earlystopper</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">EarlyStopping</span><span class="p">(</span>
         <span class="n">opt</span><span class="o">.</span><span class="n">early_stopping</span><span class="p">,</span> <span class="n">scorers</span><span class="o">=</span><span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">scorers_from_opts</span><span class="p">(</span><span class="n">opt</span><span class="p">))</span> \
         <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">early_stopping</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span>
-
-    <span class="n">source_noise</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">src_noise</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">src_field</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">fields</span><span class="p">)[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">base_field</span>
-        <span class="n">corpus_id_field</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;corpus_id&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">corpus_id_field</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">ids_to_noise</span> <span class="o">=</span> <span class="n">corpus_id_field</span><span class="o">.</span><span class="n">numericalize</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">data_to_noise</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">ids_to_noise</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="n">source_noise</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">source_noise</span><span class="o">.</span><span class="n">MultiNoise</span><span class="p">(</span>
-            <span class="n">opt</span><span class="o">.</span><span class="n">src_noise</span><span class="p">,</span>
-            <span class="n">opt</span><span class="o">.</span><span class="n">src_noise_prob</span><span class="p">,</span>
-            <span class="n">ids_to_noise</span><span class="o">=</span><span class="n">ids_to_noise</span><span class="p">,</span>
-            <span class="n">pad_idx</span><span class="o">=</span><span class="n">src_field</span><span class="o">.</span><span class="n">pad_token</span><span class="p">,</span>
-            <span class="n">end_of_sentence_mask</span><span class="o">=</span><span class="n">src_field</span><span class="o">.</span><span class="n">end_of_sentence_mask</span><span class="p">,</span>
-            <span class="n">word_start_mask</span><span class="o">=</span><span class="n">src_field</span><span class="o">.</span><span class="n">word_start_mask</span><span class="p">,</span>
-            <span class="n">device_id</span><span class="o">=</span><span class="n">device_id</span>
-        <span class="p">)</span>
 
     <span class="n">report_manager</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">build_report_manager</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">gpu_rank</span><span class="p">)</span>
     <span class="n">trainer</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">Trainer</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">train_loss</span><span class="p">,</span> <span class="n">valid_loss</span><span class="p">,</span> <span class="n">optim</span><span class="p">,</span> <span class="n">trunc_size</span><span class="p">,</span>
@@ -260,14 +257,13 @@
                            <span class="n">n_gpu</span><span class="p">,</span> <span class="n">gpu_rank</span><span class="p">,</span>
                            <span class="n">gpu_verbose_level</span><span class="p">,</span> <span class="n">report_manager</span><span class="p">,</span>
                            <span class="n">with_align</span><span class="o">=</span><span class="kc">True</span> <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">lambda_align</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">False</span><span class="p">,</span>
-                           <span class="n">model_saver</span><span class="o">=</span><span class="n">model_saver</span> <span class="k">if</span> <span class="n">gpu_rank</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                           <span class="n">model_saver</span><span class="o">=</span><span class="n">model_saver</span> <span class="k">if</span> <span class="n">gpu_rank</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
                            <span class="n">average_decay</span><span class="o">=</span><span class="n">average_decay</span><span class="p">,</span>
                            <span class="n">average_every</span><span class="o">=</span><span class="n">average_every</span><span class="p">,</span>
                            <span class="n">model_dtype</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">model_dtype</span><span class="p">,</span>
                            <span class="n">earlystopper</span><span class="o">=</span><span class="n">earlystopper</span><span class="p">,</span>
                            <span class="n">dropout</span><span class="o">=</span><span class="n">dropout</span><span class="p">,</span>
-                           <span class="n">dropout_steps</span><span class="o">=</span><span class="n">dropout_steps</span><span class="p">,</span>
-                           <span class="n">source_noise</span><span class="o">=</span><span class="n">source_noise</span><span class="p">)</span>
+                           <span class="n">dropout_steps</span><span class="o">=</span><span class="n">dropout_steps</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">trainer</span>
 
 
@@ -286,7 +282,7 @@
 <span class="sd">               the optimizer responsible for update</span>
 <span class="sd">            trunc_size(int): length of truncated back propagation through time</span>
 <span class="sd">            shard_size(int): compute loss in shards of this size for efficiency</span>
-<span class="sd">            data_type(string): type of the source input: [text|img|audio]</span>
+<span class="sd">            data_type(string): type of the source input: [text]</span>
 <span class="sd">            norm_method(string): normalization methods: [sents|tokens]</span>
 <span class="sd">            accum_count(list): accumulate gradients this many times.</span>
 <span class="sd">            accum_steps(list): steps for accum gradients changes.</span>
@@ -304,8 +300,7 @@
                  <span class="n">n_gpu</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">gpu_rank</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">gpu_verbose_level</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                  <span class="n">report_manager</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">with_align</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">model_saver</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">average_decay</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">average_every</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">model_dtype</span><span class="o">=</span><span class="s1">&#39;fp32&#39;</span><span class="p">,</span>
-                 <span class="n">earlystopper</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="p">[</span><span class="mf">0.3</span><span class="p">],</span> <span class="n">dropout_steps</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-                 <span class="n">source_noise</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+                 <span class="n">earlystopper</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="p">[</span><span class="mf">0.3</span><span class="p">],</span> <span class="n">dropout_steps</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
         <span class="c1"># Basic attributes.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">train_loss</span> <span class="o">=</span> <span class="n">train_loss</span>
@@ -330,7 +325,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">earlystopper</span> <span class="o">=</span> <span class="n">earlystopper</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span> <span class="o">=</span> <span class="n">dropout</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dropout_steps</span> <span class="o">=</span> <span class="n">dropout_steps</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">source_noise</span> <span class="o">=</span> <span class="n">source_noise</span>
 
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accum_count_l</span><span class="p">)):</span>
             <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">accum_count_l</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span>
@@ -545,8 +539,6 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">trunc_size</span> <span class="o">=</span> <span class="n">target_size</span>
 
-            <span class="n">batch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maybe_noise_source</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
-
             <span class="n">src</span><span class="p">,</span> <span class="n">src_lengths</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">src</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">src</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> \
                 <span class="k">else</span> <span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">src</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">src_lengths</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -673,12 +665,7 @@
                 <span class="kc">None</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">earlystopper</span> <span class="ow">is</span> <span class="kc">None</span>
                 <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">earlystopper</span><span class="o">.</span><span class="n">current_tolerance</span><span class="p">,</span>
                 <span class="n">step</span><span class="p">,</span> <span class="n">train_stats</span><span class="o">=</span><span class="n">train_stats</span><span class="p">,</span>
-                <span class="n">valid_stats</span><span class="o">=</span><span class="n">valid_stats</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">maybe_noise_source</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_noise</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_noise</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">batch</span></div>
+                <span class="n">valid_stats</span><span class="o">=</span><span class="n">valid_stats</span><span class="p">)</span></div>
 </pre></div>
 
            </div>

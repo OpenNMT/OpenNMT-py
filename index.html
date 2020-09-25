@@ -85,23 +85,31 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="main.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="FAQ.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="CONTRIBUTING.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ref.html">References</a></li>
 </ul>
+<p class="caption"><span class="caption-text">FAQ</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-do-i-use-the-transformer-model">How do I use the Transformer model?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
+</ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="Library.html">Library</a></li>
-<li class="toctree-l1"><a class="reference internal" href="extended.html">Translation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Summarization.html">Summarization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="im2text.html">Image to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="speech2text.html">Speech to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="vid2text.html">Video to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ggnn.html">Gated Graph Sequence Neural Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/Library.html">Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/Translation.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/GGNN.html">Gated Graph Sequence Neural Networks</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Scripts</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="options/preprocess.html">Preprocess</a></li>
+<li class="toctree-l1"><a class="reference internal" href="options/build_vocab.html">Build Vocab</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/train.html">Train</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/translate.html">Translate</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/server.html">Server</a></li>
@@ -113,6 +121,13 @@
 <li class="toctree-l1"><a class="reference internal" href="onmt.translation.html">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="onmt.translate.translation_server.html">Server</a></li>
 <li class="toctree-l1"><a class="reference internal" href="onmt.inputters.html">Data Loaders</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Legacy</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="legacy/FAQ.html">FAQ (Legacy version)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="legacy/im2text.html">Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="legacy/speech2text.html">Speech to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="legacy/vid2text.html">Video to Text</a></li>
 </ul>
 
             
@@ -189,18 +204,10 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="quickstart.html#step-1-preprocess-the-data">Step 1: Preprocess the data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#step-0-install-opennmt-py">Step 0: Install OpenNMT-py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#step-1-prepare-the-data">Step 1: Prepare the data</a></li>
 <li class="toctree-l2"><a class="reference internal" href="quickstart.html#step-2-train-the-model">Step 2: Train the model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="quickstart.html#step-3-translate">Step 3: Translate</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="FAQ.html">FAQ</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
-<li class="toctree-l2"><a class="reference internal" href="FAQ.html#how-do-i-use-the-transformer-model">How do I use the Transformer model?</a></li>
-<li class="toctree-l2"><a class="reference internal" href="FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
-<li class="toctree-l2"><a class="reference internal" href="FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
-<li class="toctree-l2"><a class="reference internal" href="FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
-<li class="toctree-l2"><a class="reference internal" href="FAQ.html#can-i-get-word-alignment-while-translating">Can I get word alignment while translating?</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="CONTRIBUTING.html">Contributors</a><ul>
@@ -211,43 +218,76 @@
 </ul>
 </div>
 <div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">FAQ</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html">How do I use Pretrained embeddings (e.g. GloVe)?</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="FAQ.html#example">Example</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-do-i-use-the-transformer-model">How do I use the Transformer model?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="FAQ.html#id1">Example</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="FAQ.html#id2">Example</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="FAQ.html#general-purpose">General purpose</a></li>
+<li class="toctree-l2"><a class="reference internal" href="FAQ.html#tokenization">Tokenization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="FAQ.html#bart-style-noise">BART-style noise</a></li>
+<li class="toctree-l2"><a class="reference internal" href="FAQ.html#switchout-and-sampling">SwitchOut and sampling</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="FAQ.html#raw-alignments-from-averaging-transformer-attention-heads">Raw alignments from averaging Transformer attention heads</a></li>
+<li class="toctree-l2"><a class="reference internal" href="FAQ.html#supervised-learning-on-a-specific-head">Supervised learning on a specific head</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="Library.html">Library</a></li>
-<li class="toctree-l1"><a class="reference internal" href="extended.html">Translation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Summarization.html">Summarization</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="Summarization.html#preprocessing-the-data">Preprocessing the data</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Summarization.html#training">Training</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Summarization.html#inference">Inference</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Summarization.html#evaluation">Evaluation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Summarization.html#scores-and-models">Scores and Models</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Summarization.html#references">References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/Library.html">Library</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="examples/Library.html#import-a-few-modules-and-functions-that-will-be-necessary">Import a few modules and functions that will be necessary</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/Library.html#enable-logging">Enable logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/Library.html#set-random-seed">Set random seed</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/Library.html#retrieve-data">Retrieve data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/Library.html#prepare-data-and-vocab">Prepare data and vocab</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/Library.html#build-fields">Build fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/Library.html#prepare-for-training-model-and-optimizer-creation">Prepare for training: model and optimizer creation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/Library.html#create-the-training-and-validation-data-iterators">Create the training and validation data iterators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/Library.html#training">Training</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/Library.html#translate">Translate</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="im2text.html">Image to Text</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="im2text.html#dependencies">Dependencies</a></li>
-<li class="toctree-l2"><a class="reference internal" href="im2text.html#quick-start">Quick Start</a></li>
-<li class="toctree-l2"><a class="reference internal" href="im2text.html#options">Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/Translation.html">Translation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="examples/Translation.html#step-0-download-the-data-and-prepare-the-subwords-model">Step 0: Download the data and prepare the subwords model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/Translation.html#step-1-build-the-vocabulary">Step 1. Build the vocabulary.</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/Translation.html#step-2-train-the-model">Step 2: Train the model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/Translation.html#step-3-translate-and-evaluate">Step 3: Translate and evaluate</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="speech2text.html">Speech to Text</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="speech2text.html#dependencies">Dependencies</a></li>
-<li class="toctree-l2"><a class="reference internal" href="speech2text.html#quick-start">Quick Start</a></li>
-<li class="toctree-l2"><a class="reference internal" href="speech2text.html#options">Options</a></li>
-<li class="toctree-l2"><a class="reference internal" href="speech2text.html#acknowledgement">Acknowledgement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/Summarization.html">Summarization</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="examples/Summarization.html#preparing-the-data-and-vocab">Preparing the data and vocab</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/Summarization.html#training">Training</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/Summarization.html#inference">Inference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/Summarization.html#evaluation">Evaluation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/Summarization.html#scores-and-models">Scores and Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/Summarization.html#references">References</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="vid2text.html">Video to Text</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="vid2text.html#recurrent">Recurrent</a></li>
-<li class="toctree-l2"><a class="reference internal" href="vid2text.html#transformer">Transformer</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="ggnn.html">Gated Graph Sequence Neural Networks</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="ggnn.html#dependencies">Dependencies</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ggnn.html#quick-start">Quick Start</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ggnn.html#graph-data-format">Graph data format</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ggnn.html#options">Options</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ggnn.html#acknowledgement">Acknowledgement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/GGNN.html">Gated Graph Sequence Neural Networks</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="examples/GGNN.html#dependencies">Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/GGNN.html#quick-start">Quick Start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/GGNN.html#graph-data-format">Graph data format</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/GGNN.html#options">Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/GGNN.html#acknowledgement">Acknowledgement</a></li>
 </ul>
 </li>
 </ul>
@@ -255,19 +295,33 @@
 <div class="toctree-wrapper compound">
 <p class="caption"><span class="caption-text">Scripts</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="options/preprocess.html">Preprocess</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="options/preprocess.html#Named Arguments">Named Arguments</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/preprocess.html#Data">Data</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/preprocess.html#Vocab">Vocab</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/preprocess.html#Pruning">Pruning</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/preprocess.html#Random">Random</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/preprocess.html#Logging">Logging</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/preprocess.html#Speech">Speech</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/preprocess.html#Noise">Noise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="options/build_vocab.html">Build Vocab</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Configuration">Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Data">Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Vocab">Vocab</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/Filter">Transform/Filter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/BART">Transform/BART</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/SwitchOut">Transform/SwitchOut</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/Token_Drop">Transform/Token_Drop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/Token_Mask">Transform/Token_Mask</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/Subword/Common">Transform/Subword/Common</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/Subword/ONMTTOK">Transform/Subword/ONMTTOK</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Reproducibility">Reproducibility</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="options/train.html">Train</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="options/train.html#Named Arguments">Named Arguments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#Configuration">Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#Data">Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#Vocab">Vocab</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#Pruning">Pruning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#Embeddings">Embeddings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/Filter">Transform/Filter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/BART">Transform/BART</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/SwitchOut">Transform/SwitchOut</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/Token_Drop">Transform/Token_Drop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/Token_Mask">Transform/Token_Mask</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/Subword/Common">Transform/Subword/Common</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/Subword/ONMTTOK">Transform/Subword/ONMTTOK</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/train.html#Model-Embeddings">Model-Embeddings</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/train.html#Model-Embedding Features">Model-Embedding Features</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/train.html#Model- Encoder-Decoder">Model- Encoder-Decoder</a></li>
@@ -275,22 +329,24 @@
 <li class="toctree-l2"><a class="reference internal" href="options/train.html#Model - Alignement">Model - Alignement</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/train.html#Generator">Generator</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/train.html#General">General</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#Reproducibility">Reproducibility</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/train.html#Initialization">Initialization</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/train.html#Optimization- Type">Optimization- Type</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/train.html#Optimization- Rate">Optimization- Rate</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/train.html#Logging">Logging</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/train.html#Speech">Speech</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#Dynamic data">Dynamic data</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="options/translate.html">Translate</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="options/translate.html#Named Arguments">Named Arguments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/translate.html#Configuration">Configuration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/translate.html#Model">Model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/translate.html#Data">Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/translate.html#Decoding tricks">Decoding tricks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/translate.html#Random Sampling">Random Sampling</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/translate.html#Beam">Beam</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/translate.html#Reproducibility">Reproducibility</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/translate.html#Beam Search">Beam Search</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/translate.html#Logging">Logging</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/translate.html#Efficiency">Efficiency</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/translate.html#Speech">Speech</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="options/server.html">Server</a><ul>
@@ -317,7 +373,6 @@
 <li class="toctree-l2"><a class="reference internal" href="onmt.modules.html#architecture-transformer">Architecture: Transformer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="onmt.modules.html#architecture-conv2conv">Architecture: Conv2Conv</a></li>
 <li class="toctree-l2"><a class="reference internal" href="onmt.modules.html#architecture-sru">Architecture: SRU</a></li>
-<li class="toctree-l2"><a class="reference internal" href="onmt.modules.html#alternative-encoders">Alternative Encoders</a></li>
 <li class="toctree-l2"><a class="reference internal" href="onmt.modules.html#copy-attention">Copy Attention</a></li>
 <li class="toctree-l2"><a class="reference internal" href="onmt.modules.html#structured-attention">Structured Attention</a></li>
 </ul>
@@ -337,6 +392,38 @@
 <li class="toctree-l1"><a class="reference internal" href="onmt.inputters.html">Data Loaders</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="onmt.inputters.html#data-readers">Data Readers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="onmt.inputters.html#dataset">Dataset</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Legacy</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="legacy/FAQ.html">FAQ (Legacy version)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="legacy/FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="legacy/FAQ.html#how-do-i-use-the-transformer-model">How do I use the Transformer model?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="legacy/FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="legacy/FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="legacy/FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="legacy/FAQ.html#can-i-get-word-alignment-while-translating">Can I get word alignment while translating?</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="legacy/im2text.html">Image to Text</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="legacy/im2text.html#dependencies">Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="legacy/im2text.html#quick-start">Quick Start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="legacy/im2text.html#options">Options</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="legacy/speech2text.html">Speech to Text</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="legacy/speech2text.html#dependencies">Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="legacy/speech2text.html#quick-start">Quick Start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="legacy/speech2text.html#options">Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="legacy/speech2text.html#acknowledgement">Acknowledgement</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="legacy/vid2text.html">Video to Text</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="legacy/vid2text.html#recurrent">Recurrent</a></li>
+<li class="toctree-l2"><a class="reference internal" href="legacy/vid2text.html#transformer">Transformer</a></li>
 </ul>
 </li>
 </ul>

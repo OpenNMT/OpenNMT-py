@@ -86,23 +86,31 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="main.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="FAQ.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="CONTRIBUTING.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ref.html">References</a></li>
 </ul>
+<p class="caption"><span class="caption-text">FAQ</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-do-i-use-the-transformer-model">How do I use the Transformer model?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
+</ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="Library.html">Library</a></li>
-<li class="toctree-l1"><a class="reference internal" href="extended.html">Translation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Summarization.html">Summarization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="im2text.html">Image to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="speech2text.html">Speech to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="vid2text.html">Video to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ggnn.html">Gated Graph Sequence Neural Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/Library.html">Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/Translation.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/GGNN.html">Gated Graph Sequence Neural Networks</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Scripts</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="options/preprocess.html">Preprocess</a></li>
+<li class="toctree-l1"><a class="reference internal" href="options/build_vocab.html">Build Vocab</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/train.html">Train</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/translate.html">Translate</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/server.html">Server</a></li>
@@ -114,6 +122,13 @@
 <li class="toctree-l1"><a class="reference internal" href="onmt.translation.html">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="onmt.translate.translation_server.html">Server</a></li>
 <li class="toctree-l1"><a class="reference internal" href="onmt.inputters.html">Data Loaders</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Legacy</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="legacy/FAQ.html">FAQ (Legacy version)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="legacy/im2text.html">Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="legacy/speech2text.html">Speech to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="legacy/vid2text.html">Video to Text</a></li>
 </ul>
 
             
@@ -216,19 +231,15 @@
         <li><a href="onmt.translation.html#onmt.translate.GreedySearch.advance">(onmt.translate.GreedySearch method)</a>
 </li>
       </ul></li>
-      <li><a href="onmt.html#onmt.utils.Statistics.all_gather_stats">all_gather_stats() (onmt.utils.Statistics static method)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="onmt.html#onmt.utils.Statistics.all_gather_stats">all_gather_stats() (onmt.utils.Statistics static method)</a>
+</li>
       <li><a href="onmt.html#onmt.utils.Statistics.all_gather_stats_list">all_gather_stats_list() (onmt.utils.Statistics static method)</a>
 </li>
       <li><a href="onmt.html#onmt.utils.Optimizer.amp">amp() (onmt.utils.Optimizer property)</a>
 </li>
       <li><a href="onmt.modules.html#onmt.modules.ConvMultiStepAttention.apply_mask">apply_mask() (onmt.modules.ConvMultiStepAttention method)</a>
-</li>
-      <li><a href="onmt.inputters.html#onmt.inputters.AudioDataReader">AudioDataReader (class in onmt.inputters)</a>
-</li>
-      <li><a href="onmt.modules.html#onmt.encoders.AudioEncoder">AudioEncoder (class in onmt.encoders)</a>
 </li>
       <li><a href="onmt.modules.html#onmt.modules.AverageAttention">AverageAttention (class in onmt.modules)</a>
 </li>
@@ -266,6 +277,8 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="onmt.html#onmt.models.NMTModel.count_parameters">count_parameters() (onmt.models.NMTModel method)</a>
+</li>
       <li><a href="onmt.translation.html#onmt.translate.penalties.PenaltyBuilder.coverage_none">coverage_none() (onmt.translate.penalties.PenaltyBuilder method)</a>
 </li>
       <li><a href="onmt.translation.html#onmt.translate.penalties.PenaltyBuilder.coverage_summary">coverage_summary() (onmt.translate.penalties.PenaltyBuilder method)</a>
@@ -325,13 +338,9 @@
 </li>
         <li><a href="onmt.modules.html#onmt.decoders.TransformerDecoder.forward">(onmt.decoders.TransformerDecoder method)</a>
 </li>
-        <li><a href="onmt.modules.html#onmt.encoders.AudioEncoder.forward">(onmt.encoders.AudioEncoder method)</a>
-</li>
         <li><a href="onmt.modules.html#onmt.encoders.CNNEncoder.forward">(onmt.encoders.CNNEncoder method)</a>
 </li>
         <li><a href="onmt.modules.html#onmt.encoders.EncoderBase.forward">(onmt.encoders.EncoderBase method)</a>
-</li>
-        <li><a href="onmt.modules.html#onmt.encoders.ImageEncoder.forward">(onmt.encoders.ImageEncoder method)</a>
 </li>
         <li><a href="onmt.modules.html#onmt.encoders.MeanEncoder.forward">(onmt.encoders.MeanEncoder method)</a>
 </li>
@@ -369,11 +378,7 @@
 </li>
         <li><a href="onmt.modules.html#onmt.decoders.TransformerDecoder.from_opt">(onmt.decoders.TransformerDecoder class method)</a>
 </li>
-        <li><a href="onmt.modules.html#onmt.encoders.AudioEncoder.from_opt">(onmt.encoders.AudioEncoder class method)</a>
-</li>
         <li><a href="onmt.modules.html#onmt.encoders.CNNEncoder.from_opt">(onmt.encoders.CNNEncoder class method)</a>
-</li>
-        <li><a href="onmt.modules.html#onmt.encoders.ImageEncoder.from_opt">(onmt.encoders.ImageEncoder class method)</a>
 </li>
         <li><a href="onmt.modules.html#onmt.encoders.MeanEncoder.from_opt">(onmt.encoders.MeanEncoder class method)</a>
 </li>
@@ -381,11 +386,7 @@
 </li>
         <li><a href="onmt.modules.html#onmt.encoders.TransformerEncoder.from_opt">(onmt.encoders.TransformerEncoder class method)</a>
 </li>
-        <li><a href="onmt.inputters.html#onmt.inputters.AudioDataReader.from_opt">(onmt.inputters.AudioDataReader class method)</a>
-</li>
         <li><a href="onmt.inputters.html#onmt.inputters.DataReaderBase.from_opt">(onmt.inputters.DataReaderBase class method)</a>
-</li>
-        <li><a href="onmt.inputters.html#onmt.inputters.ImageDataReader.from_opt">(onmt.inputters.ImageDataReader class method)</a>
 </li>
         <li><a href="onmt.translation.html#onmt.translate.Translator.from_opt">(onmt.translate.Translator class method)</a>
 </li>
@@ -412,10 +413,6 @@
 <h2 id="I">I</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="onmt.inputters.html#onmt.inputters.ImageDataReader">ImageDataReader (class in onmt.inputters)</a>
-</li>
-      <li><a href="onmt.modules.html#onmt.encoders.ImageEncoder">ImageEncoder (class in onmt.encoders)</a>
-</li>
       <li><a href="onmt.modules.html#onmt.decoders.CNNDecoder.init_state">init_state() (onmt.decoders.CNNDecoder method)</a>
 
       <ul>
@@ -456,12 +453,8 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="onmt.translate.translation_server.html#onmt.translate.translation_server.TranslationServer.load_model">load_model() (onmt.translate.translation_server.TranslationServer method)</a>
 </li>
-      <li><a href="onmt.modules.html#onmt.encoders.ImageEncoder.load_pretrained_vectors">load_pretrained_vectors() (onmt.encoders.ImageEncoder method)</a>
-
-      <ul>
-        <li><a href="onmt.modules.html#onmt.modules.Embeddings.load_pretrained_vectors">(onmt.modules.Embeddings method)</a>
+      <li><a href="onmt.modules.html#onmt.modules.Embeddings.load_pretrained_vectors">load_pretrained_vectors() (onmt.modules.Embeddings method)</a>
 </li>
-      </ul></li>
       <li><a href="onmt.translation.html#onmt.translate.Translation.log">log() (onmt.translate.Translation method)</a>
 </li>
       <li><a href="onmt.html#onmt.utils.Statistics.log_tensorboard">log_tensorboard() (onmt.utils.Statistics method)</a>
@@ -550,20 +543,16 @@
 <h2 id="R">R</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="onmt.inputters.html#onmt.inputters.AudioDataReader.read">read() (onmt.inputters.AudioDataReader method)</a>
+      <li><a href="onmt.inputters.html#onmt.inputters.DataReaderBase.read">read() (onmt.inputters.DataReaderBase method)</a>
 
       <ul>
-        <li><a href="onmt.inputters.html#onmt.inputters.DataReaderBase.read">(onmt.inputters.DataReaderBase method)</a>
-</li>
-        <li><a href="onmt.inputters.html#onmt.inputters.ImageDataReader.read">(onmt.inputters.ImageDataReader method)</a>
-</li>
         <li><a href="onmt.inputters.html#onmt.inputters.TextDataReader.read">(onmt.inputters.TextDataReader method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.rebuild_seg_packages">rebuild_seg_packages() (onmt.translate.translation_server.ServerModel method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="onmt.modules.html#onmt.decoders.decoder.RNNDecoderBase">RNNDecoderBase (class in onmt.decoders.decoder)</a>
 </li>
       <li><a href="onmt.modules.html#onmt.encoders.RNNEncoder">RNNEncoder (class in onmt.encoders)</a>

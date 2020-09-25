@@ -5,7 +5,7 @@ OpenNMT-py is a community developed project and we love developer contributions.
 ## Guidelines
 Before sending a PR, please do this checklist first:
 
-- Please run `tools/pull_request_chk.sh` and fix any errors. When adding new functionality, also add tests to this script. Included checks:
+- Please run `onmt/tests/pull_request_chk.sh` and fix any errors. When adding new functionality, also add tests to this script. Included checks:
     1. flake8 check for coding style;
     2. unittest;
     3. continuous integration tests listed in `.travis.yml`.
@@ -20,10 +20,12 @@ This makes it easy to include your contributions in the Sphinx documentation. An
 to autodoc your contributions in the API ``.rst`` files in the `docs/source` folder! If you do, check that
 your additions look right.
 
+**How to build the docs locally?**
 ```bash
 cd docs
 # install some dependencies if necessary:
 # recommonmark, sphinx_rtd_theme, sphinxcontrib-bibtex
+pip install requirements.txt
 make html
 firefox build/html/main.html  # or your browser of choice
 ```

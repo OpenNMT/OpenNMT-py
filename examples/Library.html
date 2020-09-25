@@ -1,0 +1,721 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Library &mdash; OpenNMT-py  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Translation" href="Translation.html" />
+    <link rel="prev" title="How do I use Pretrained embeddings (e.g. GloVe)?" href="../FAQ.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> OpenNMT-py
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../main.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../CONTRIBUTING.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ref.html">References</a></li>
+</ul>
+<p class="caption"><span class="caption-text">FAQ</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-do-i-use-the-transformer-model">How do I use the Transformer model?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Library</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#import-a-few-modules-and-functions-that-will-be-necessary">Import a few modules and functions that will be necessary</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#enable-logging">Enable logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#set-random-seed">Set random seed</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#retrieve-data">Retrieve data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#prepare-data-and-vocab">Prepare data and vocab</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#build-fields">Build fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#prepare-for-training-model-and-optimizer-creation">Prepare for training: model and optimizer creation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#create-the-training-and-validation-data-iterators">Create the training and validation data iterators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#training">Training</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#translate">Translate</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Translation.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GGNN.html">Gated Graph Sequence Neural Networks</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Scripts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../options/build_vocab.html">Build Vocab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../options/train.html">Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../options/translate.html">Translate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../options/server.html">Server</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../onmt.html">Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../onmt.modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../onmt.translation.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../onmt.translate.translation_server.html">Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../onmt.inputters.html">Data Loaders</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Legacy</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../legacy/FAQ.html">FAQ (Legacy version)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../legacy/im2text.html">Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../legacy/speech2text.html">Speech to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../legacy/vid2text.html">Video to Text</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">OpenNMT-py</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li>Library</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/examples/Library.md.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="library">
+<h1>Library<a class="headerlink" href="#library" title="Permalink to this headline">¶</a></h1>
+<p>The example notebook (available <a class="reference external" href="https://github.com/OpenNMT/OpenNMT-py/blob/master/docs/source/examples/Library.ipynb">here</a>) should be able to run as a standalone execution, provided <code class="docutils literal notranslate"><span class="pre">onmt</span></code> is in the path (installed via <code class="docutils literal notranslate"><span class="pre">pip</span></code> for instance).</p>
+<p>Some parts may not be 100% ‘library-friendly’ but it’s mostly workable.</p>
+<div class="section" id="import-a-few-modules-and-functions-that-will-be-necessary">
+<h2>Import a few modules and functions that will be necessary<a class="headerlink" href="#import-a-few-modules-and-functions-that-will-be-necessary" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">yaml</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">Namespace</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span><span class="p">,</span> <span class="n">Counter</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">onmt</span>
+<span class="kn">from</span> <span class="nn">onmt.inputters.inputter</span> <span class="kn">import</span> <span class="n">_load_vocab</span><span class="p">,</span> <span class="n">_build_fields_vocab</span><span class="p">,</span> <span class="n">get_fields</span><span class="p">,</span> <span class="n">IterOnDevice</span>
+<span class="kn">from</span> <span class="nn">onmt.inputters.corpus</span> <span class="kn">import</span> <span class="n">ParallelCorpus</span>
+<span class="kn">from</span> <span class="nn">onmt.inputters.dynamic_iterator</span> <span class="kn">import</span> <span class="n">DynamicDatasetIter</span>
+<span class="kn">from</span> <span class="nn">onmt.translate</span> <span class="kn">import</span> <span class="n">GNMTGlobalScorer</span><span class="p">,</span> <span class="n">Translator</span><span class="p">,</span> <span class="n">TranslationBuilder</span>
+<span class="kn">from</span> <span class="nn">onmt.utils.misc</span> <span class="kn">import</span> <span class="n">set_random_seed</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="enable-logging">
+<h2>Enable logging<a class="headerlink" href="#enable-logging" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># enable logging</span>
+<span class="kn">from</span> <span class="nn">onmt.utils.logging</span> <span class="kn">import</span> <span class="n">init_logger</span><span class="p">,</span> <span class="n">logger</span>
+<span class="n">init_logger</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">RootLogger</span> <span class="n">root</span> <span class="p">(</span><span class="n">INFO</span><span class="p">)</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="set-random-seed">
+<h2>Set random seed<a class="headerlink" href="#set-random-seed" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">is_cuda</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span>
+<span class="n">set_random_seed</span><span class="p">(</span><span class="mi">1111</span><span class="p">,</span> <span class="n">is_cuda</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="retrieve-data">
+<h2>Retrieve data<a class="headerlink" href="#retrieve-data" title="Permalink to this headline">¶</a></h2>
+<p>To make a proper example, we will need some data, as well as some vocabulary(ies).</p>
+<p>Let’s take the same data as in the <a class="reference external" href="https://opennmt.net/OpenNMT-py/quickstart.html">quickstart</a>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>!wget https://s3.amazonaws.com/opennmt-trainingdata/toy-ende.tar.gz
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>--2020-09-25 15:28:05--  https://s3.amazonaws.com/opennmt-trainingdata/toy-ende.tar.gz
+Resolving s3.amazonaws.com (s3.amazonaws.com)... 52.217.18.38
+Connecting to s3.amazonaws.com (s3.amazonaws.com)|52.217.18.38|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 1662081 (1,6M) [application/x-gzip]
+Saving to: ‘toy-ende.tar.gz.5’
+
+toy-ende.tar.gz.5   100%[===================&gt;]   1,58M  2,33MB/s    in 0,7s    
+
+2020-09-25 15:28:07 (2,33 MB/s) - ‘toy-ende.tar.gz.5’ saved [1662081/1662081]
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>!tar xf toy-ende.tar.gz
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ls</span> <span class="n">toy</span><span class="o">-</span><span class="n">ende</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>config.yaml  src-test.txt   src-val.txt   tgt-train.txt
+[0m[01;34mrun[0m/         src-train.txt  tgt-test.txt  tgt-val.txt
+</pre></div>
+</div>
+</div>
+<div class="section" id="prepare-data-and-vocab">
+<h2>Prepare data and vocab<a class="headerlink" href="#prepare-data-and-vocab" title="Permalink to this headline">¶</a></h2>
+<p>As for any use case of OpenNMT-py 2.0, we can start by creating a simple YAML configuration with our datasets. This is the easiest way to build the proper <code class="docutils literal notranslate"><span class="pre">opts</span></code> <code class="docutils literal notranslate"><span class="pre">Namespace</span></code> that will be used to create the vocabulary(ies).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">yaml_config</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">## Where the vocab(s) will be written</span>
+<span class="s2">save_data: toy-ende/run/example</span>
+<span class="s2"># Corpus opts:</span>
+<span class="s2">data:</span>
+<span class="s2">    corpus:</span>
+<span class="s2">        path_src: toy-ende/src-train.txt</span>
+<span class="s2">        path_tgt: toy-ende/tgt-train.txt</span>
+<span class="s2">        transforms: []</span>
+<span class="s2">        weight: 1</span>
+<span class="s2">    valid:</span>
+<span class="s2">        path_src: toy-ende/src-val.txt</span>
+<span class="s2">        path_tgt: toy-ende/tgt-val.txt</span>
+<span class="s2">        transforms: []</span>
+<span class="s2">&quot;&quot;&quot;</span>
+<span class="n">config</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">yaml_config</span><span class="p">)</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;toy-ende/config.yaml&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">yaml_config</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">onmt.utils.parse</span> <span class="kn">import</span> <span class="n">ArgumentParser</span>
+<span class="n">parser</span> <span class="o">=</span> <span class="n">DynamicArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;build_vocab.py&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">onmt.opts</span> <span class="kn">import</span> <span class="n">dynamic_prepare_opts</span>
+<span class="n">dynamic_prepare_opts</span><span class="p">(</span><span class="n">parser</span><span class="p">,</span> <span class="n">build_vocab_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">base_args</span> <span class="o">=</span> <span class="p">([</span><span class="s2">&quot;-config&quot;</span><span class="p">,</span> <span class="s2">&quot;toy-ende/config.yaml&quot;</span><span class="p">,</span> <span class="s2">&quot;-n_sample&quot;</span><span class="p">,</span> <span class="s2">&quot;10000&quot;</span><span class="p">])</span>
+<span class="n">opts</span><span class="p">,</span> <span class="n">unknown</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_known_args</span><span class="p">(</span><span class="n">base_args</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">opts</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Namespace</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="s1">&#39;toy-ende/config.yaml&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s2">&quot;{&#39;corpus&#39;: {&#39;path_src&#39;: &#39;toy-ende/src-train.txt&#39;, &#39;path_tgt&#39;: &#39;toy-ende/tgt-train.txt&#39;, &#39;transforms&#39;: [], &#39;weight&#39;: 1}, &#39;valid&#39;: {&#39;path_src&#39;: &#39;toy-ende/src-val.txt&#39;, &#39;path_tgt&#39;: &#39;toy-ende/tgt-val.txt&#39;, &#39;transforms&#39;: []}}&quot;</span><span class="p">,</span> <span class="n">insert_ratio</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">mask_length</span><span class="o">=</span><span class="s1">&#39;subword&#39;</span><span class="p">,</span> <span class="n">mask_ratio</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">n_sample</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> <span class="n">onmttok_kwargs</span><span class="o">=</span><span class="s2">&quot;{&#39;mode&#39;: &#39;none&#39;}&quot;</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">permute_sent_ratio</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">poisson_lambda</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">random_ratio</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">replace_length</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">rotate_ratio</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">save_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">save_data</span><span class="o">=</span><span class="s1">&#39;toy-ende/run/example&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">share_vocab</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">skip_empty_level</span><span class="o">=</span><span class="s1">&#39;warning&#39;</span><span class="p">,</span> <span class="n">src_seq_length</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">src_subword_model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">src_subword_type</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">src_vocab</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">subword_alpha</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">subword_nbest</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">switchout_temperature</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">tgt_seq_length</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">tgt_subword_model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tgt_subword_type</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">tgt_vocab</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tokendrop_temperature</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">tokenmask_temperature</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">transforms</span><span class="o">=</span><span class="p">[])</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">onmt.bin.build_vocab</span> <span class="kn">import</span> <span class="n">build_vocab_main</span>
+<span class="n">build_vocab_main</span><span class="p">(</span><span class="n">opts</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">28</span><span class="p">:</span><span class="mi">08</span><span class="p">,</span><span class="mi">068</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Parsed</span> <span class="mi">2</span> <span class="n">corpora</span> <span class="kn">from</span> <span class="o">-</span><span class="n">data</span><span class="o">.</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">28</span><span class="p">:</span><span class="mi">08</span><span class="p">,</span><span class="mi">069</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Counter</span> <span class="n">vocab</span> <span class="kn">from</span> <span class="mi">10000</span> <span class="n">samples</span><span class="o">.</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">28</span><span class="p">:</span><span class="mi">08</span><span class="p">,</span><span class="mi">070</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Save</span> <span class="mi">10000</span> <span class="n">transformed</span> <span class="n">example</span><span class="o">/</span><span class="n">corpus</span><span class="o">.</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">28</span><span class="p">:</span><span class="mi">08</span><span class="p">,</span><span class="mi">070</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">corpus</span><span class="s1">&#39;s transforms: TransformPipe()</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">28</span><span class="p">:</span><span class="mi">08</span><span class="p">,</span><span class="mi">101</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Loading</span> <span class="n">ParallelCorpus</span><span class="p">(</span><span class="n">toy</span><span class="o">-</span><span class="n">ende</span><span class="o">/</span><span class="n">src</span><span class="o">-</span><span class="n">train</span><span class="o">.</span><span class="n">txt</span><span class="p">,</span> <span class="n">toy</span><span class="o">-</span><span class="n">ende</span><span class="o">/</span><span class="n">tgt</span><span class="o">-</span><span class="n">train</span><span class="o">.</span><span class="n">txt</span><span class="p">,</span> <span class="n">align</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span><span class="o">...</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">28</span><span class="p">:</span><span class="mi">08</span><span class="p">,</span><span class="mi">320</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Just</span> <span class="n">finished</span> <span class="n">the</span> <span class="n">first</span> <span class="n">loop</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">28</span><span class="p">:</span><span class="mi">08</span><span class="p">,</span><span class="mi">320</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Counters</span> <span class="n">src</span><span class="p">:</span><span class="mi">24995</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">28</span><span class="p">:</span><span class="mi">08</span><span class="p">,</span><span class="mi">321</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Counters</span> <span class="n">tgt</span><span class="p">:</span><span class="mi">35816</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ls</span> <span class="n">toy</span><span class="o">-</span><span class="n">ende</span><span class="o">/</span><span class="n">run</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>example.vocab.src  example.vocab.tgt  [0m[01;34msample[0m/
+</pre></div>
+</div>
+<p>We just created our source and target vocabularies, respectively <code class="docutils literal notranslate"><span class="pre">toy-ende/run/example.vocab.src</span></code> and <code class="docutils literal notranslate"><span class="pre">toy-ende/run/example.vocab.tgt</span></code>.</p>
+</div>
+<div class="section" id="build-fields">
+<h2>Build fields<a class="headerlink" href="#build-fields" title="Permalink to this headline">¶</a></h2>
+<p>We can build the fields from the text files that were just created.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">src_vocab_path</span> <span class="o">=</span> <span class="s2">&quot;toy-ende/run/example.vocab.src&quot;</span>
+<span class="n">tgt_vocab_path</span> <span class="o">=</span> <span class="s2">&quot;toy-ende/run/example.vocab.tgt&quot;</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># initialize the frequency counter</span>
+<span class="n">counters</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="n">Counter</span><span class="p">)</span>
+<span class="c1"># load source vocab</span>
+<span class="n">_src_vocab</span><span class="p">,</span> <span class="n">_src_vocab_size</span> <span class="o">=</span> <span class="n">_load_vocab</span><span class="p">(</span>
+    <span class="n">src_vocab_path</span><span class="p">,</span>
+    <span class="s1">&#39;src&#39;</span><span class="p">,</span>
+    <span class="n">counters</span><span class="p">)</span>
+<span class="c1"># load target vocab</span>
+<span class="n">_tgt_vocab</span><span class="p">,</span> <span class="n">_tgt_vocab_size</span> <span class="o">=</span> <span class="n">_load_vocab</span><span class="p">(</span>
+    <span class="n">tgt_vocab_path</span><span class="p">,</span>
+    <span class="s1">&#39;tgt&#39;</span><span class="p">,</span>
+    <span class="n">counters</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">28</span><span class="p">:</span><span class="mi">08</span><span class="p">,</span><span class="mi">495</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Loading</span> <span class="n">src</span> <span class="n">vocabulary</span> <span class="kn">from</span> <span class="nn">toy</span><span class="o">-</span><span class="n">ende</span><span class="o">/</span><span class="n">run</span><span class="o">/</span><span class="n">example</span><span class="o">.</span><span class="n">vocab</span><span class="o">.</span><span class="n">src</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">28</span><span class="p">:</span><span class="mi">08</span><span class="p">,</span><span class="mi">554</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Loaded</span> <span class="n">src</span> <span class="n">vocab</span> <span class="n">has</span> <span class="mi">24995</span> <span class="n">tokens</span><span class="o">.</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">28</span><span class="p">:</span><span class="mi">08</span><span class="p">,</span><span class="mi">562</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Loading</span> <span class="n">tgt</span> <span class="n">vocabulary</span> <span class="kn">from</span> <span class="nn">toy</span><span class="o">-</span><span class="n">ende</span><span class="o">/</span><span class="n">run</span><span class="o">/</span><span class="n">example</span><span class="o">.</span><span class="n">vocab</span><span class="o">.</span><span class="n">tgt</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">28</span><span class="p">:</span><span class="mi">08</span><span class="p">,</span><span class="mi">617</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Loaded</span> <span class="n">tgt</span> <span class="n">vocab</span> <span class="n">has</span> <span class="mi">35816</span> <span class="n">tokens</span><span class="o">.</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># initialize fields</span>
+<span class="n">src_nfeats</span><span class="p">,</span> <span class="n">tgt_nfeats</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span> <span class="c1"># do not support word features for now</span>
+<span class="n">fields</span> <span class="o">=</span> <span class="n">get_fields</span><span class="p">(</span>
+    <span class="s1">&#39;text&#39;</span><span class="p">,</span> <span class="n">src_nfeats</span><span class="p">,</span> <span class="n">tgt_nfeats</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fields</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s1">&#39;src&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">onmt</span><span class="o">.</span><span class="n">inputters</span><span class="o">.</span><span class="n">text_dataset</span><span class="o">.</span><span class="n">TextMultiField</span> <span class="n">at</span> <span class="mh">0x7fca93802c50</span><span class="o">&gt;</span><span class="p">,</span>
+ <span class="s1">&#39;tgt&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">onmt</span><span class="o">.</span><span class="n">inputters</span><span class="o">.</span><span class="n">text_dataset</span><span class="o">.</span><span class="n">TextMultiField</span> <span class="n">at</span> <span class="mh">0x7fca93802f60</span><span class="o">&gt;</span><span class="p">,</span>
+ <span class="s1">&#39;indices&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">torchtext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">field</span><span class="o">.</span><span class="n">Field</span> <span class="n">at</span> <span class="mh">0x7fca93802940</span><span class="o">&gt;</span><span class="p">}</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># build fields vocab</span>
+<span class="n">share_vocab</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="n">vocab_size_multiple</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">src_vocab_size</span> <span class="o">=</span> <span class="mi">30000</span>
+<span class="n">tgt_vocab_size</span> <span class="o">=</span> <span class="mi">30000</span>
+<span class="n">src_words_min_frequency</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">tgt_words_min_frequency</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">vocab_fields</span> <span class="o">=</span> <span class="n">_build_fields_vocab</span><span class="p">(</span>
+    <span class="n">fields</span><span class="p">,</span> <span class="n">counters</span><span class="p">,</span> <span class="s1">&#39;text&#39;</span><span class="p">,</span> <span class="n">share_vocab</span><span class="p">,</span>
+    <span class="n">vocab_size_multiple</span><span class="p">,</span>
+    <span class="n">src_vocab_size</span><span class="p">,</span> <span class="n">src_words_min_frequency</span><span class="p">,</span>
+    <span class="n">tgt_vocab_size</span><span class="p">,</span> <span class="n">tgt_words_min_frequency</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">28</span><span class="p">:</span><span class="mi">08</span><span class="p">,</span><span class="mi">699</span> <span class="n">INFO</span><span class="p">]</span>  <span class="o">*</span> <span class="n">tgt</span> <span class="n">vocab</span> <span class="n">size</span><span class="p">:</span> <span class="mf">30004.</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">28</span><span class="p">:</span><span class="mi">08</span><span class="p">,</span><span class="mi">749</span> <span class="n">INFO</span><span class="p">]</span>  <span class="o">*</span> <span class="n">src</span> <span class="n">vocab</span> <span class="n">size</span><span class="p">:</span> <span class="mf">24997.</span>
+</pre></div>
+</div>
+<p>An alternative way of creating these fields is to run <code class="docutils literal notranslate"><span class="pre">onmt_train</span></code> without actually training, to just output the necessary files.</p>
+</div>
+<div class="section" id="prepare-for-training-model-and-optimizer-creation">
+<h2>Prepare for training: model and optimizer creation<a class="headerlink" href="#prepare-for-training-model-and-optimizer-creation" title="Permalink to this headline">¶</a></h2>
+<p>Let’s get a few fields/vocab related variables to simplify the model creation a bit:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">src_text_field</span> <span class="o">=</span> <span class="n">vocab_fields</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">base_field</span>
+<span class="n">src_vocab</span> <span class="o">=</span> <span class="n">src_text_field</span><span class="o">.</span><span class="n">vocab</span>
+<span class="n">src_padding</span> <span class="o">=</span> <span class="n">src_vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">src_text_field</span><span class="o">.</span><span class="n">pad_token</span><span class="p">]</span>
+
+<span class="n">tgt_text_field</span> <span class="o">=</span> <span class="n">vocab_fields</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">base_field</span>
+<span class="n">tgt_vocab</span> <span class="o">=</span> <span class="n">tgt_text_field</span><span class="o">.</span><span class="n">vocab</span>
+<span class="n">tgt_padding</span> <span class="o">=</span> <span class="n">tgt_vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">tgt_text_field</span><span class="o">.</span><span class="n">pad_token</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Next we specify the core model itself. Here we will build a small model with an encoder and an attention based input feeding decoder. Both models will be RNNs and the encoder will be bidirectional</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">emb_size</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">rnn_size</span> <span class="o">=</span> <span class="mi">500</span>
+<span class="c1"># Specify the core model.</span>
+
+<span class="n">encoder_embeddings</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">Embeddings</span><span class="p">(</span><span class="n">emb_size</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">src_vocab</span><span class="p">),</span>
+                                             <span class="n">word_padding_idx</span><span class="o">=</span><span class="n">src_padding</span><span class="p">)</span>
+
+<span class="n">encoder</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">encoders</span><span class="o">.</span><span class="n">RNNEncoder</span><span class="p">(</span><span class="n">hidden_size</span><span class="o">=</span><span class="n">rnn_size</span><span class="p">,</span> <span class="n">num_layers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                                   <span class="n">rnn_type</span><span class="o">=</span><span class="s2">&quot;LSTM&quot;</span><span class="p">,</span> <span class="n">bidirectional</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                   <span class="n">embeddings</span><span class="o">=</span><span class="n">encoder_embeddings</span><span class="p">)</span>
+
+<span class="n">decoder_embeddings</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">Embeddings</span><span class="p">(</span><span class="n">emb_size</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">tgt_vocab</span><span class="p">),</span>
+                                             <span class="n">word_padding_idx</span><span class="o">=</span><span class="n">tgt_padding</span><span class="p">)</span>
+<span class="n">decoder</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">decoders</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">InputFeedRNNDecoder</span><span class="p">(</span>
+    <span class="n">hidden_size</span><span class="o">=</span><span class="n">rnn_size</span><span class="p">,</span> <span class="n">num_layers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">bidirectional_encoder</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> 
+    <span class="n">rnn_type</span><span class="o">=</span><span class="s2">&quot;LSTM&quot;</span><span class="p">,</span> <span class="n">embeddings</span><span class="o">=</span><span class="n">decoder_embeddings</span><span class="p">)</span>
+
+<span class="n">device</span> <span class="o">=</span> <span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">NMTModel</span><span class="p">(</span><span class="n">encoder</span><span class="p">,</span> <span class="n">decoder</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+<span class="c1"># Specify the tgt word generator and loss computation module</span>
+<span class="n">model</span><span class="o">.</span><span class="n">generator</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+    <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">rnn_size</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">tgt_vocab</span><span class="p">)),</span>
+    <span class="n">nn</span><span class="o">.</span><span class="n">LogSoftmax</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+<span class="n">loss</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">loss</span><span class="o">.</span><span class="n">NMTLossCompute</span><span class="p">(</span>
+    <span class="n">criterion</span><span class="o">=</span><span class="n">nn</span><span class="o">.</span><span class="n">NLLLoss</span><span class="p">(</span><span class="n">ignore_index</span><span class="o">=</span><span class="n">tgt_padding</span><span class="p">,</span> <span class="n">reduction</span><span class="o">=</span><span class="s2">&quot;sum&quot;</span><span class="p">),</span>
+    <span class="n">generator</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">generator</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now we set up the optimizer. This could be a core torch optim class, or our wrapper which handles learning rate updates and gradient normalization automatically.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">lr</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">torch_optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">SGD</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">)</span>
+<span class="n">optim</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Optimizer</span><span class="p">(</span>
+    <span class="n">torch_optimizer</span><span class="p">,</span> <span class="n">learning_rate</span><span class="o">=</span><span class="n">lr</span><span class="p">,</span> <span class="n">max_grad_norm</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="create-the-training-and-validation-data-iterators">
+<h2>Create the training and validation data iterators<a class="headerlink" href="#create-the-training-and-validation-data-iterators" title="Permalink to this headline">¶</a></h2>
+<p>Now we need to create the dynamic dataset iterator.</p>
+<p>This is not very ‘library-friendly’ for now because of the way the <code class="docutils literal notranslate"><span class="pre">DynamicDatasetIter</span></code> constructor is defined. It may evolve in the future.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">src_train</span> <span class="o">=</span> <span class="s2">&quot;toy-ende/src-train.txt&quot;</span>
+<span class="n">tgt_train</span> <span class="o">=</span> <span class="s2">&quot;toy-ende/tgt-train.txt&quot;</span>
+<span class="n">src_val</span> <span class="o">=</span> <span class="s2">&quot;toy-ende/src-val.txt&quot;</span>
+<span class="n">tgt_val</span> <span class="o">=</span> <span class="s2">&quot;toy-ende/tgt-val.txt&quot;</span>
+
+<span class="c1"># build the ParallelCorpus</span>
+<span class="n">corpus</span> <span class="o">=</span> <span class="n">ParallelCorpus</span><span class="p">(</span><span class="s2">&quot;corpus&quot;</span><span class="p">,</span> <span class="n">src_train</span><span class="p">,</span> <span class="n">tgt_train</span><span class="p">)</span>
+<span class="n">valid</span> <span class="o">=</span> <span class="n">ParallelCorpus</span><span class="p">(</span><span class="s2">&quot;valid&quot;</span><span class="p">,</span> <span class="n">src_val</span><span class="p">,</span> <span class="n">tgt_val</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># build the training iterator</span>
+<span class="n">train_iter</span> <span class="o">=</span> <span class="n">DynamicDatasetIter</span><span class="p">(</span>
+    <span class="n">corpora</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;corpus&quot;</span><span class="p">:</span> <span class="n">corpus</span><span class="p">},</span>
+    <span class="n">corpora_info</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;corpus&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}},</span>
+    <span class="n">transforms</span><span class="o">=</span><span class="p">{},</span>
+    <span class="n">fields</span><span class="o">=</span><span class="n">vocab_fields</span><span class="p">,</span>
+    <span class="n">is_train</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">batch_type</span><span class="o">=</span><span class="s2">&quot;tokens&quot;</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="mi">4096</span><span class="p">,</span>
+    <span class="n">batch_size_multiple</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">data_type</span><span class="o">=</span><span class="s2">&quot;text&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># make sure the iteration happens on GPU 0 (-1 for CPU, N for GPU N)</span>
+<span class="n">train_iter</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">IterOnDevice</span><span class="p">(</span><span class="n">train_iter</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># build the validation iterator</span>
+<span class="n">valid_iter</span> <span class="o">=</span> <span class="n">DynamicDatasetIter</span><span class="p">(</span>
+    <span class="n">corpora</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;valid&quot;</span><span class="p">:</span> <span class="n">valid</span><span class="p">},</span>
+    <span class="n">corpora_info</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;valid&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}},</span>
+    <span class="n">transforms</span><span class="o">=</span><span class="p">{},</span>
+    <span class="n">fields</span><span class="o">=</span><span class="n">vocab_fields</span><span class="p">,</span>
+    <span class="n">is_train</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">batch_type</span><span class="o">=</span><span class="s2">&quot;sents&quot;</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+    <span class="n">batch_size_multiple</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">data_type</span><span class="o">=</span><span class="s2">&quot;text&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">valid_iter</span> <span class="o">=</span> <span class="n">IterOnDevice</span><span class="p">(</span><span class="n">valid_iter</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="training">
+<h2>Training<a class="headerlink" href="#training" title="Permalink to this headline">¶</a></h2>
+<p>Finally we train.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">report_manager</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">ReportMgr</span><span class="p">(</span>
+    <span class="n">report_every</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">start_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tensorboard_writer</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+<span class="n">trainer</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">Trainer</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+                       <span class="n">train_loss</span><span class="o">=</span><span class="n">loss</span><span class="p">,</span>
+                       <span class="n">valid_loss</span><span class="o">=</span><span class="n">loss</span><span class="p">,</span>
+                       <span class="n">optim</span><span class="o">=</span><span class="n">optim</span><span class="p">,</span>
+                       <span class="n">report_manager</span><span class="o">=</span><span class="n">report_manager</span><span class="p">,</span>
+                       <span class="n">dropout</span><span class="o">=</span><span class="p">[</span><span class="mf">0.1</span><span class="p">])</span>
+
+<span class="n">trainer</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">train_iter</span><span class="o">=</span><span class="n">train_iter</span><span class="p">,</span>
+              <span class="n">train_steps</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+              <span class="n">valid_iter</span><span class="o">=</span><span class="n">valid_iter</span><span class="p">,</span>
+              <span class="n">valid_steps</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">28</span><span class="p">:</span><span class="mi">15</span><span class="p">,</span><span class="mi">184</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Start</span> <span class="n">training</span> <span class="n">loop</span> <span class="ow">and</span> <span class="n">validate</span> <span class="n">every</span> <span class="mi">500</span> <span class="n">steps</span><span class="o">...</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">28</span><span class="p">:</span><span class="mi">15</span><span class="p">,</span><span class="mi">185</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">corpus</span><span class="s1">&#39;s transforms: TransformPipe()</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">28</span><span class="p">:</span><span class="mi">15</span><span class="p">,</span><span class="mi">187</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Loading</span> <span class="n">ParallelCorpus</span><span class="p">(</span><span class="n">toy</span><span class="o">-</span><span class="n">ende</span><span class="o">/</span><span class="n">src</span><span class="o">-</span><span class="n">train</span><span class="o">.</span><span class="n">txt</span><span class="p">,</span> <span class="n">toy</span><span class="o">-</span><span class="n">ende</span><span class="o">/</span><span class="n">tgt</span><span class="o">-</span><span class="n">train</span><span class="o">.</span><span class="n">txt</span><span class="p">,</span> <span class="n">align</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span><span class="o">...</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">28</span><span class="p">:</span><span class="mi">21</span><span class="p">,</span><span class="mi">140</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Step</span> <span class="mi">50</span><span class="o">/</span> <span class="mi">1000</span><span class="p">;</span> <span class="n">acc</span><span class="p">:</span>   <span class="mf">7.52</span><span class="p">;</span> <span class="n">ppl</span><span class="p">:</span> <span class="mf">8832.29</span><span class="p">;</span> <span class="n">xent</span><span class="p">:</span> <span class="mf">9.09</span><span class="p">;</span> <span class="n">lr</span><span class="p">:</span> <span class="mf">1.00000</span><span class="p">;</span> <span class="mi">18916</span><span class="o">/</span><span class="mi">18871</span> <span class="n">tok</span><span class="o">/</span><span class="n">s</span><span class="p">;</span>      <span class="mi">6</span> <span class="n">sec</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">28</span><span class="p">:</span><span class="mi">24</span><span class="p">,</span><span class="mi">869</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Loading</span> <span class="n">ParallelCorpus</span><span class="p">(</span><span class="n">toy</span><span class="o">-</span><span class="n">ende</span><span class="o">/</span><span class="n">src</span><span class="o">-</span><span class="n">train</span><span class="o">.</span><span class="n">txt</span><span class="p">,</span> <span class="n">toy</span><span class="o">-</span><span class="n">ende</span><span class="o">/</span><span class="n">tgt</span><span class="o">-</span><span class="n">train</span><span class="o">.</span><span class="n">txt</span><span class="p">,</span> <span class="n">align</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span><span class="o">...</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">28</span><span class="p">:</span><span class="mi">27</span><span class="p">,</span><span class="mi">121</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Step</span> <span class="mi">100</span><span class="o">/</span> <span class="mi">1000</span><span class="p">;</span> <span class="n">acc</span><span class="p">:</span>   <span class="mf">9.34</span><span class="p">;</span> <span class="n">ppl</span><span class="p">:</span> <span class="mf">1840.06</span><span class="p">;</span> <span class="n">xent</span><span class="p">:</span> <span class="mf">7.52</span><span class="p">;</span> <span class="n">lr</span><span class="p">:</span> <span class="mf">1.00000</span><span class="p">;</span> <span class="mi">18911</span><span class="o">/</span><span class="mi">18785</span> <span class="n">tok</span><span class="o">/</span><span class="n">s</span><span class="p">;</span>     <span class="mi">12</span> <span class="n">sec</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">28</span><span class="p">:</span><span class="mi">33</span><span class="p">,</span><span class="mi">048</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Step</span> <span class="mi">150</span><span class="o">/</span> <span class="mi">1000</span><span class="p">;</span> <span class="n">acc</span><span class="p">:</span>  <span class="mf">10.35</span><span class="p">;</span> <span class="n">ppl</span><span class="p">:</span> <span class="mf">1419.18</span><span class="p">;</span> <span class="n">xent</span><span class="p">:</span> <span class="mf">7.26</span><span class="p">;</span> <span class="n">lr</span><span class="p">:</span> <span class="mf">1.00000</span><span class="p">;</span> <span class="mi">19062</span><span class="o">/</span><span class="mi">19017</span> <span class="n">tok</span><span class="o">/</span><span class="n">s</span><span class="p">;</span>     <span class="mi">18</span> <span class="n">sec</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">28</span><span class="p">:</span><span class="mi">37</span><span class="p">,</span><span class="mi">019</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Loading</span> <span class="n">ParallelCorpus</span><span class="p">(</span><span class="n">toy</span><span class="o">-</span><span class="n">ende</span><span class="o">/</span><span class="n">src</span><span class="o">-</span><span class="n">train</span><span class="o">.</span><span class="n">txt</span><span class="p">,</span> <span class="n">toy</span><span class="o">-</span><span class="n">ende</span><span class="o">/</span><span class="n">tgt</span><span class="o">-</span><span class="n">train</span><span class="o">.</span><span class="n">txt</span><span class="p">,</span> <span class="n">align</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span><span class="o">...</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">28</span><span class="p">:</span><span class="mi">39</span><span class="p">,</span><span class="mi">022</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Step</span> <span class="mi">200</span><span class="o">/</span> <span class="mi">1000</span><span class="p">;</span> <span class="n">acc</span><span class="p">:</span>  <span class="mf">11.14</span><span class="p">;</span> <span class="n">ppl</span><span class="p">:</span> <span class="mf">1127.44</span><span class="p">;</span> <span class="n">xent</span><span class="p">:</span> <span class="mf">7.03</span><span class="p">;</span> <span class="n">lr</span><span class="p">:</span> <span class="mf">1.00000</span><span class="p">;</span> <span class="mi">19084</span><span class="o">/</span><span class="mi">18911</span> <span class="n">tok</span><span class="o">/</span><span class="n">s</span><span class="p">;</span>     <span class="mi">24</span> <span class="n">sec</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">28</span><span class="p">:</span><span class="mi">45</span><span class="p">,</span><span class="mi">073</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Step</span> <span class="mi">250</span><span class="o">/</span> <span class="mi">1000</span><span class="p">;</span> <span class="n">acc</span><span class="p">:</span>  <span class="mf">12.46</span><span class="p">;</span> <span class="n">ppl</span><span class="p">:</span> <span class="mf">912.13</span><span class="p">;</span> <span class="n">xent</span><span class="p">:</span> <span class="mf">6.82</span><span class="p">;</span> <span class="n">lr</span><span class="p">:</span> <span class="mf">1.00000</span><span class="p">;</span> <span class="mi">18575</span><span class="o">/</span><span class="mi">18570</span> <span class="n">tok</span><span class="o">/</span><span class="n">s</span><span class="p">;</span>     <span class="mi">30</span> <span class="n">sec</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">28</span><span class="p">:</span><span class="mi">49</span><span class="p">,</span><span class="mi">301</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Loading</span> <span class="n">ParallelCorpus</span><span class="p">(</span><span class="n">toy</span><span class="o">-</span><span class="n">ende</span><span class="o">/</span><span class="n">src</span><span class="o">-</span><span class="n">train</span><span class="o">.</span><span class="n">txt</span><span class="p">,</span> <span class="n">toy</span><span class="o">-</span><span class="n">ende</span><span class="o">/</span><span class="n">tgt</span><span class="o">-</span><span class="n">train</span><span class="o">.</span><span class="n">txt</span><span class="p">,</span> <span class="n">align</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span><span class="o">...</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">28</span><span class="p">:</span><span class="mi">51</span><span class="p">,</span><span class="mi">151</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Step</span> <span class="mi">300</span><span class="o">/</span> <span class="mi">1000</span><span class="p">;</span> <span class="n">acc</span><span class="p">:</span>  <span class="mf">13.04</span><span class="p">;</span> <span class="n">ppl</span><span class="p">:</span> <span class="mf">779.50</span><span class="p">;</span> <span class="n">xent</span><span class="p">:</span> <span class="mf">6.66</span><span class="p">;</span> <span class="n">lr</span><span class="p">:</span> <span class="mf">1.00000</span><span class="p">;</span> <span class="mi">18394</span><span class="o">/</span><span class="mi">18307</span> <span class="n">tok</span><span class="o">/</span><span class="n">s</span><span class="p">;</span>     <span class="mi">36</span> <span class="n">sec</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">28</span><span class="p">:</span><span class="mi">57</span><span class="p">,</span><span class="mi">316</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Step</span> <span class="mi">350</span><span class="o">/</span> <span class="mi">1000</span><span class="p">;</span> <span class="n">acc</span><span class="p">:</span>  <span class="mf">14.04</span><span class="p">;</span> <span class="n">ppl</span><span class="p">:</span> <span class="mf">685.48</span><span class="p">;</span> <span class="n">xent</span><span class="p">:</span> <span class="mf">6.53</span><span class="p">;</span> <span class="n">lr</span><span class="p">:</span> <span class="mf">1.00000</span><span class="p">;</span> <span class="mi">18339</span><span class="o">/</span><span class="mi">18173</span> <span class="n">tok</span><span class="o">/</span><span class="n">s</span><span class="p">;</span>     <span class="mi">42</span> <span class="n">sec</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">29</span><span class="p">:</span><span class="mi">02</span><span class="p">,</span><span class="mi">117</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Loading</span> <span class="n">ParallelCorpus</span><span class="p">(</span><span class="n">toy</span><span class="o">-</span><span class="n">ende</span><span class="o">/</span><span class="n">src</span><span class="o">-</span><span class="n">train</span><span class="o">.</span><span class="n">txt</span><span class="p">,</span> <span class="n">toy</span><span class="o">-</span><span class="n">ende</span><span class="o">/</span><span class="n">tgt</span><span class="o">-</span><span class="n">train</span><span class="o">.</span><span class="n">txt</span><span class="p">,</span> <span class="n">align</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span><span class="o">...</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">29</span><span class="p">:</span><span class="mi">03</span><span class="p">,</span><span class="mi">576</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Step</span> <span class="mi">400</span><span class="o">/</span> <span class="mi">1000</span><span class="p">;</span> <span class="n">acc</span><span class="p">:</span>  <span class="mf">14.99</span><span class="p">;</span> <span class="n">ppl</span><span class="p">:</span> <span class="mf">590.20</span><span class="p">;</span> <span class="n">xent</span><span class="p">:</span> <span class="mf">6.38</span><span class="p">;</span> <span class="n">lr</span><span class="p">:</span> <span class="mf">1.00000</span><span class="p">;</span> <span class="mi">18090</span><span class="o">/</span><span class="mi">18029</span> <span class="n">tok</span><span class="o">/</span><span class="n">s</span><span class="p">;</span>     <span class="mi">48</span> <span class="n">sec</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">29</span><span class="p">:</span><span class="mi">09</span><span class="p">,</span><span class="mi">546</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Step</span> <span class="mi">450</span><span class="o">/</span> <span class="mi">1000</span><span class="p">;</span> <span class="n">acc</span><span class="p">:</span>  <span class="mf">16.00</span><span class="p">;</span> <span class="n">ppl</span><span class="p">:</span> <span class="mf">524.51</span><span class="p">;</span> <span class="n">xent</span><span class="p">:</span> <span class="mf">6.26</span><span class="p">;</span> <span class="n">lr</span><span class="p">:</span> <span class="mf">1.00000</span><span class="p">;</span> <span class="mi">18726</span><span class="o">/</span><span class="mi">18536</span> <span class="n">tok</span><span class="o">/</span><span class="n">s</span><span class="p">;</span>     <span class="mi">54</span> <span class="n">sec</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">29</span><span class="p">:</span><span class="mi">14</span><span class="p">,</span><span class="mi">585</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Loading</span> <span class="n">ParallelCorpus</span><span class="p">(</span><span class="n">toy</span><span class="o">-</span><span class="n">ende</span><span class="o">/</span><span class="n">src</span><span class="o">-</span><span class="n">train</span><span class="o">.</span><span class="n">txt</span><span class="p">,</span> <span class="n">toy</span><span class="o">-</span><span class="n">ende</span><span class="o">/</span><span class="n">tgt</span><span class="o">-</span><span class="n">train</span><span class="o">.</span><span class="n">txt</span><span class="p">,</span> <span class="n">align</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span><span class="o">...</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">29</span><span class="p">:</span><span class="mi">15</span><span class="p">,</span><span class="mi">596</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Step</span> <span class="mi">500</span><span class="o">/</span> <span class="mi">1000</span><span class="p">;</span> <span class="n">acc</span><span class="p">:</span>  <span class="mf">16.78</span><span class="p">;</span> <span class="n">ppl</span><span class="p">:</span> <span class="mf">453.38</span><span class="p">;</span> <span class="n">xent</span><span class="p">:</span> <span class="mf">6.12</span><span class="p">;</span> <span class="n">lr</span><span class="p">:</span> <span class="mf">1.00000</span><span class="p">;</span> <span class="mi">17877</span><span class="o">/</span><span class="mi">17980</span> <span class="n">tok</span><span class="o">/</span><span class="n">s</span><span class="p">;</span>     <span class="mi">60</span> <span class="n">sec</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">29</span><span class="p">:</span><span class="mi">15</span><span class="p">,</span><span class="mi">597</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">valid</span><span class="s1">&#39;s transforms: TransformPipe()</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">29</span><span class="p">:</span><span class="mi">15</span><span class="p">,</span><span class="mi">599</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Loading</span> <span class="n">ParallelCorpus</span><span class="p">(</span><span class="n">toy</span><span class="o">-</span><span class="n">ende</span><span class="o">/</span><span class="n">src</span><span class="o">-</span><span class="n">val</span><span class="o">.</span><span class="n">txt</span><span class="p">,</span> <span class="n">toy</span><span class="o">-</span><span class="n">ende</span><span class="o">/</span><span class="n">tgt</span><span class="o">-</span><span class="n">val</span><span class="o">.</span><span class="n">txt</span><span class="p">,</span> <span class="n">align</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span><span class="o">...</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">29</span><span class="p">:</span><span class="mi">24</span><span class="p">,</span><span class="mi">528</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Validation</span> <span class="n">perplexity</span><span class="p">:</span> <span class="mf">295.1</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">29</span><span class="p">:</span><span class="mi">24</span><span class="p">,</span><span class="mi">529</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Validation</span> <span class="n">accuracy</span><span class="p">:</span> <span class="mf">17.6533</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">29</span><span class="p">:</span><span class="mi">30</span><span class="p">,</span><span class="mi">592</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Step</span> <span class="mi">550</span><span class="o">/</span> <span class="mi">1000</span><span class="p">;</span> <span class="n">acc</span><span class="p">:</span>  <span class="mf">17.47</span><span class="p">;</span> <span class="n">ppl</span><span class="p">:</span> <span class="mf">421.26</span><span class="p">;</span> <span class="n">xent</span><span class="p">:</span> <span class="mf">6.04</span><span class="p">;</span> <span class="n">lr</span><span class="p">:</span> <span class="mf">1.00000</span><span class="p">;</span> <span class="mi">7726</span><span class="o">/</span><span class="mi">7610</span> <span class="n">tok</span><span class="o">/</span><span class="n">s</span><span class="p">;</span>     <span class="mi">75</span> <span class="n">sec</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">29</span><span class="p">:</span><span class="mi">36</span><span class="p">,</span><span class="mi">055</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Loading</span> <span class="n">ParallelCorpus</span><span class="p">(</span><span class="n">toy</span><span class="o">-</span><span class="n">ende</span><span class="o">/</span><span class="n">src</span><span class="o">-</span><span class="n">train</span><span class="o">.</span><span class="n">txt</span><span class="p">,</span> <span class="n">toy</span><span class="o">-</span><span class="n">ende</span><span class="o">/</span><span class="n">tgt</span><span class="o">-</span><span class="n">train</span><span class="o">.</span><span class="n">txt</span><span class="p">,</span> <span class="n">align</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span><span class="o">...</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">29</span><span class="p">:</span><span class="mi">36</span><span class="p">,</span><span class="mi">695</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Step</span> <span class="mi">600</span><span class="o">/</span> <span class="mi">1000</span><span class="p">;</span> <span class="n">acc</span><span class="p">:</span>  <span class="mf">18.95</span><span class="p">;</span> <span class="n">ppl</span><span class="p">:</span> <span class="mf">354.44</span><span class="p">;</span> <span class="n">xent</span><span class="p">:</span> <span class="mf">5.87</span><span class="p">;</span> <span class="n">lr</span><span class="p">:</span> <span class="mf">1.00000</span><span class="p">;</span> <span class="mi">17470</span><span class="o">/</span><span class="mi">17598</span> <span class="n">tok</span><span class="o">/</span><span class="n">s</span><span class="p">;</span>     <span class="mi">82</span> <span class="n">sec</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">29</span><span class="p">:</span><span class="mi">42</span><span class="p">,</span><span class="mi">794</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Step</span> <span class="mi">650</span><span class="o">/</span> <span class="mi">1000</span><span class="p">;</span> <span class="n">acc</span><span class="p">:</span>  <span class="mf">19.60</span><span class="p">;</span> <span class="n">ppl</span><span class="p">:</span> <span class="mf">328.47</span><span class="p">;</span> <span class="n">xent</span><span class="p">:</span> <span class="mf">5.79</span><span class="p">;</span> <span class="n">lr</span><span class="p">:</span> <span class="mf">1.00000</span><span class="p">;</span> <span class="mi">18994</span><span class="o">/</span><span class="mi">18793</span> <span class="n">tok</span><span class="o">/</span><span class="n">s</span><span class="p">;</span>     <span class="mi">88</span> <span class="n">sec</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">29</span><span class="p">:</span><span class="mi">48</span><span class="p">,</span><span class="mi">635</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Loading</span> <span class="n">ParallelCorpus</span><span class="p">(</span><span class="n">toy</span><span class="o">-</span><span class="n">ende</span><span class="o">/</span><span class="n">src</span><span class="o">-</span><span class="n">train</span><span class="o">.</span><span class="n">txt</span><span class="p">,</span> <span class="n">toy</span><span class="o">-</span><span class="n">ende</span><span class="o">/</span><span class="n">tgt</span><span class="o">-</span><span class="n">train</span><span class="o">.</span><span class="n">txt</span><span class="p">,</span> <span class="n">align</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span><span class="o">...</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">29</span><span class="p">:</span><span class="mi">48</span><span class="p">,</span><span class="mi">924</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Step</span> <span class="mi">700</span><span class="o">/</span> <span class="mi">1000</span><span class="p">;</span> <span class="n">acc</span><span class="p">:</span>  <span class="mf">20.57</span><span class="p">;</span> <span class="n">ppl</span><span class="p">:</span> <span class="mf">285.48</span><span class="p">;</span> <span class="n">xent</span><span class="p">:</span> <span class="mf">5.65</span><span class="p">;</span> <span class="n">lr</span><span class="p">:</span> <span class="mf">1.00000</span><span class="p">;</span> <span class="mi">17856</span><span class="o">/</span><span class="mi">17788</span> <span class="n">tok</span><span class="o">/</span><span class="n">s</span><span class="p">;</span>     <span class="mi">94</span> <span class="n">sec</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">29</span><span class="p">:</span><span class="mi">54</span><span class="p">,</span><span class="mi">898</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Step</span> <span class="mi">750</span><span class="o">/</span> <span class="mi">1000</span><span class="p">;</span> <span class="n">acc</span><span class="p">:</span>  <span class="mf">21.97</span><span class="p">;</span> <span class="n">ppl</span><span class="p">:</span> <span class="mf">249.06</span><span class="p">;</span> <span class="n">xent</span><span class="p">:</span> <span class="mf">5.52</span><span class="p">;</span> <span class="n">lr</span><span class="p">:</span> <span class="mf">1.00000</span><span class="p">;</span> <span class="mi">19030</span><span class="o">/</span><span class="mi">18924</span> <span class="n">tok</span><span class="o">/</span><span class="n">s</span><span class="p">;</span>    <span class="mi">100</span> <span class="n">sec</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">30</span><span class="p">:</span><span class="mi">01</span><span class="p">,</span><span class="mi">233</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Step</span> <span class="mi">800</span><span class="o">/</span> <span class="mi">1000</span><span class="p">;</span> <span class="n">acc</span><span class="p">:</span>  <span class="mf">22.66</span><span class="p">;</span> <span class="n">ppl</span><span class="p">:</span> <span class="mf">228.54</span><span class="p">;</span> <span class="n">xent</span><span class="p">:</span> <span class="mf">5.43</span><span class="p">;</span> <span class="n">lr</span><span class="p">:</span> <span class="mf">1.00000</span><span class="p">;</span> <span class="mi">17571</span><span class="o">/</span><span class="mi">17471</span> <span class="n">tok</span><span class="o">/</span><span class="n">s</span><span class="p">;</span>    <span class="mi">106</span> <span class="n">sec</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">30</span><span class="p">:</span><span class="mi">01</span><span class="p">,</span><span class="mi">357</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Loading</span> <span class="n">ParallelCorpus</span><span class="p">(</span><span class="n">toy</span><span class="o">-</span><span class="n">ende</span><span class="o">/</span><span class="n">src</span><span class="o">-</span><span class="n">train</span><span class="o">.</span><span class="n">txt</span><span class="p">,</span> <span class="n">toy</span><span class="o">-</span><span class="n">ende</span><span class="o">/</span><span class="n">tgt</span><span class="o">-</span><span class="n">train</span><span class="o">.</span><span class="n">txt</span><span class="p">,</span> <span class="n">align</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span><span class="o">...</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">30</span><span class="p">:</span><span class="mi">07</span><span class="p">,</span><span class="mi">345</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Step</span> <span class="mi">850</span><span class="o">/</span> <span class="mi">1000</span><span class="p">;</span> <span class="n">acc</span><span class="p">:</span>  <span class="mf">24.32</span><span class="p">;</span> <span class="n">ppl</span><span class="p">:</span> <span class="mf">193.65</span><span class="p">;</span> <span class="n">xent</span><span class="p">:</span> <span class="mf">5.27</span><span class="p">;</span> <span class="n">lr</span><span class="p">:</span> <span class="mf">1.00000</span><span class="p">;</span> <span class="mi">18344</span><span class="o">/</span><span class="mi">18313</span> <span class="n">tok</span><span class="o">/</span><span class="n">s</span><span class="p">;</span>    <span class="mi">112</span> <span class="n">sec</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">30</span><span class="p">:</span><span class="mi">11</span><span class="p">,</span><span class="mi">363</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Loading</span> <span class="n">ParallelCorpus</span><span class="p">(</span><span class="n">toy</span><span class="o">-</span><span class="n">ende</span><span class="o">/</span><span class="n">src</span><span class="o">-</span><span class="n">train</span><span class="o">.</span><span class="n">txt</span><span class="p">,</span> <span class="n">toy</span><span class="o">-</span><span class="n">ende</span><span class="o">/</span><span class="n">tgt</span><span class="o">-</span><span class="n">train</span><span class="o">.</span><span class="n">txt</span><span class="p">,</span> <span class="n">align</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span><span class="o">...</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">30</span><span class="p">:</span><span class="mi">13</span><span class="p">,</span><span class="mi">487</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Step</span> <span class="mi">900</span><span class="o">/</span> <span class="mi">1000</span><span class="p">;</span> <span class="n">acc</span><span class="p">:</span>  <span class="mf">24.93</span><span class="p">;</span> <span class="n">ppl</span><span class="p">:</span> <span class="mf">177.65</span><span class="p">;</span> <span class="n">xent</span><span class="p">:</span> <span class="mf">5.18</span><span class="p">;</span> <span class="n">lr</span><span class="p">:</span> <span class="mf">1.00000</span><span class="p">;</span> <span class="mi">18293</span><span class="o">/</span><span class="mi">18105</span> <span class="n">tok</span><span class="o">/</span><span class="n">s</span><span class="p">;</span>    <span class="mi">118</span> <span class="n">sec</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">30</span><span class="p">:</span><span class="mi">19</span><span class="p">,</span><span class="mi">670</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Step</span> <span class="mi">950</span><span class="o">/</span> <span class="mi">1000</span><span class="p">;</span> <span class="n">acc</span><span class="p">:</span>  <span class="mf">26.33</span><span class="p">;</span> <span class="n">ppl</span><span class="p">:</span> <span class="mf">157.10</span><span class="p">;</span> <span class="n">xent</span><span class="p">:</span> <span class="mf">5.06</span><span class="p">;</span> <span class="n">lr</span><span class="p">:</span> <span class="mf">1.00000</span><span class="p">;</span> <span class="mi">17791</span><span class="o">/</span><span class="mi">17746</span> <span class="n">tok</span><span class="o">/</span><span class="n">s</span><span class="p">;</span>    <span class="mi">124</span> <span class="n">sec</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">30</span><span class="p">:</span><span class="mi">24</span><span class="p">,</span><span class="mi">072</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Loading</span> <span class="n">ParallelCorpus</span><span class="p">(</span><span class="n">toy</span><span class="o">-</span><span class="n">ende</span><span class="o">/</span><span class="n">src</span><span class="o">-</span><span class="n">train</span><span class="o">.</span><span class="n">txt</span><span class="p">,</span> <span class="n">toy</span><span class="o">-</span><span class="n">ende</span><span class="o">/</span><span class="n">tgt</span><span class="o">-</span><span class="n">train</span><span class="o">.</span><span class="n">txt</span><span class="p">,</span> <span class="n">align</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span><span class="o">...</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">30</span><span class="p">:</span><span class="mi">25</span><span class="p">,</span><span class="mi">820</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Step</span> <span class="mi">1000</span><span class="o">/</span> <span class="mi">1000</span><span class="p">;</span> <span class="n">acc</span><span class="p">:</span>  <span class="mf">27.47</span><span class="p">;</span> <span class="n">ppl</span><span class="p">:</span> <span class="mf">137.64</span><span class="p">;</span> <span class="n">xent</span><span class="p">:</span> <span class="mf">4.92</span><span class="p">;</span> <span class="n">lr</span><span class="p">:</span> <span class="mf">1.00000</span><span class="p">;</span> <span class="mi">17942</span><span class="o">/</span><span class="mi">17962</span> <span class="n">tok</span><span class="o">/</span><span class="n">s</span><span class="p">;</span>    <span class="mi">131</span> <span class="n">sec</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">30</span><span class="p">:</span><span class="mi">25</span><span class="p">,</span><span class="mi">822</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Loading</span> <span class="n">ParallelCorpus</span><span class="p">(</span><span class="n">toy</span><span class="o">-</span><span class="n">ende</span><span class="o">/</span><span class="n">src</span><span class="o">-</span><span class="n">val</span><span class="o">.</span><span class="n">txt</span><span class="p">,</span> <span class="n">toy</span><span class="o">-</span><span class="n">ende</span><span class="o">/</span><span class="n">tgt</span><span class="o">-</span><span class="n">val</span><span class="o">.</span><span class="n">txt</span><span class="p">,</span> <span class="n">align</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span><span class="o">...</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">30</span><span class="p">:</span><span class="mi">34</span><span class="p">,</span><span class="mi">665</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Validation</span> <span class="n">perplexity</span><span class="p">:</span> <span class="mf">241.801</span>
+<span class="p">[</span><span class="mi">2020</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">25</span> <span class="mi">15</span><span class="p">:</span><span class="mi">30</span><span class="p">:</span><span class="mi">34</span><span class="p">,</span><span class="mi">666</span> <span class="n">INFO</span><span class="p">]</span> <span class="n">Validation</span> <span class="n">accuracy</span><span class="p">:</span> <span class="mf">20.2837</span>
+
+<span class="o">&lt;</span><span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">statistics</span><span class="o">.</span><span class="n">Statistics</span> <span class="n">at</span> <span class="mh">0x7fca934e8e80</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="translate">
+<h2>Translate<a class="headerlink" href="#translate" title="Permalink to this headline">¶</a></h2>
+<p>For translation, we can build a “traditional” (as opposed to dynamic) dataset for now.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">src_data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;reader&quot;</span><span class="p">:</span> <span class="n">onmt</span><span class="o">.</span><span class="n">inputters</span><span class="o">.</span><span class="n">str2reader</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">](),</span> <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="n">src_val</span><span class="p">}</span>
+<span class="n">tgt_data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;reader&quot;</span><span class="p">:</span> <span class="n">onmt</span><span class="o">.</span><span class="n">inputters</span><span class="o">.</span><span class="n">str2reader</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">](),</span> <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="n">tgt_val</span><span class="p">}</span>
+<span class="n">_readers</span><span class="p">,</span> <span class="n">_data</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">inputters</span><span class="o">.</span><span class="n">Dataset</span><span class="o">.</span><span class="n">config</span><span class="p">(</span>
+    <span class="p">[(</span><span class="s1">&#39;src&#39;</span><span class="p">,</span> <span class="n">src_data</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;tgt&#39;</span><span class="p">,</span> <span class="n">tgt_data</span><span class="p">)])</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">inputters</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span>
+    <span class="n">vocab_fields</span><span class="p">,</span> <span class="n">readers</span><span class="o">=</span><span class="n">_readers</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">_data</span><span class="p">,</span>
+    <span class="n">sort_key</span><span class="o">=</span><span class="n">onmt</span><span class="o">.</span><span class="n">inputters</span><span class="o">.</span><span class="n">str2sortkey</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">data_iter</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">inputters</span><span class="o">.</span><span class="n">OrderedIterator</span><span class="p">(</span>
+            <span class="n">dataset</span><span class="o">=</span><span class="n">dataset</span><span class="p">,</span>
+            <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cuda&quot;</span><span class="p">,</span>
+            <span class="n">batch_size</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+            <span class="n">train</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">sort</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">sort_within_batch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">shuffle</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">src_reader</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">inputters</span><span class="o">.</span><span class="n">str2reader</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">]</span>
+<span class="n">tgt_reader</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">inputters</span><span class="o">.</span><span class="n">str2reader</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">]</span>
+<span class="n">scorer</span> <span class="o">=</span> <span class="n">GNMTGlobalScorer</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> 
+                          <span class="n">beta</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> 
+                          <span class="n">length_penalty</span><span class="o">=</span><span class="s2">&quot;avg&quot;</span><span class="p">,</span> 
+                          <span class="n">coverage_penalty</span><span class="o">=</span><span class="s2">&quot;none&quot;</span><span class="p">)</span>
+<span class="n">gpu</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="o">-</span><span class="mi">1</span>
+<span class="n">translator</span> <span class="o">=</span> <span class="n">Translator</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> 
+                        <span class="n">fields</span><span class="o">=</span><span class="n">vocab_fields</span><span class="p">,</span> 
+                        <span class="n">src_reader</span><span class="o">=</span><span class="n">src_reader</span><span class="p">,</span> 
+                        <span class="n">tgt_reader</span><span class="o">=</span><span class="n">tgt_reader</span><span class="p">,</span> 
+                        <span class="n">global_scorer</span><span class="o">=</span><span class="n">scorer</span><span class="p">,</span>
+                        <span class="n">gpu</span><span class="o">=</span><span class="n">gpu</span><span class="p">)</span>
+<span class="n">builder</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">translate</span><span class="o">.</span><span class="n">TranslationBuilder</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">dataset</span><span class="p">,</span> 
+                                            <span class="n">fields</span><span class="o">=</span><span class="n">vocab_fields</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Note</strong>: translations will be very poor, because of the very low quantity of data, the absence of proper tokenization, and the brevity of the training.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">data_iter</span><span class="p">:</span>
+    <span class="n">trans_batch</span> <span class="o">=</span> <span class="n">translator</span><span class="o">.</span><span class="n">translate_batch</span><span class="p">(</span>
+        <span class="n">batch</span><span class="o">=</span><span class="n">batch</span><span class="p">,</span> <span class="n">src_vocabs</span><span class="o">=</span><span class="p">[</span><span class="n">src_vocab</span><span class="p">],</span>
+        <span class="n">attn_debug</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">translations</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="n">from_batch</span><span class="p">(</span><span class="n">trans_batch</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">trans</span> <span class="ow">in</span> <span class="n">translations</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">trans</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+    <span class="k">break</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SENT</span> <span class="mi">0</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Parliament&#39;</span><span class="p">,</span> <span class="s1">&#39;Does&#39;</span><span class="p">,</span> <span class="s1">&#39;Not&#39;</span><span class="p">,</span> <span class="s1">&#39;Support&#39;</span><span class="p">,</span> <span class="s1">&#39;Amendment&#39;</span><span class="p">,</span> <span class="s1">&#39;Freeing&#39;</span><span class="p">,</span> <span class="s1">&#39;Tymoshenko&#39;</span><span class="p">]</span>
+<span class="n">PRED</span> <span class="mi">0</span><span class="p">:</span> <span class="n">Parlament</span> <span class="n">das</span> <span class="n">Parlament</span> <span class="n">über</span> <span class="n">die</span> <span class="n">Europäische</span> <span class="n">Parlament</span> <span class="p">,</span> <span class="n">die</span> <span class="n">sich</span> <span class="ow">in</span> <span class="n">der</span> <span class="n">Lage</span> <span class="ow">in</span> <span class="n">der</span> <span class="n">Lage</span> <span class="n">ist</span> <span class="p">,</span> <span class="n">die</span> <span class="n">es</span> <span class="ow">in</span> <span class="n">der</span> <span class="n">Lage</span> <span class="n">sind</span> <span class="o">.</span>
+<span class="n">PRED</span> <span class="n">SCORE</span><span class="p">:</span> <span class="o">-</span><span class="mf">1.5935</span>
+
+
+<span class="n">SENT</span> <span class="mi">0</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Today&#39;</span><span class="p">,</span> <span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="s1">&#39;the&#39;</span><span class="p">,</span> <span class="s1">&#39;Ukraine&#39;</span><span class="p">,</span> <span class="s1">&#39;parliament&#39;</span><span class="p">,</span> <span class="s1">&#39;dismissed&#39;</span><span class="p">,</span> <span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="s1">&#39;within&#39;</span><span class="p">,</span> <span class="s1">&#39;the&#39;</span><span class="p">,</span> <span class="s1">&#39;Code&#39;</span><span class="p">,</span> <span class="s1">&#39;of&#39;</span><span class="p">,</span> <span class="s1">&#39;Criminal&#39;</span><span class="p">,</span> <span class="s1">&#39;Procedure&#39;</span><span class="p">,</span> <span class="s1">&#39;amendment&#39;</span><span class="p">,</span> <span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="s1">&#39;the&#39;</span><span class="p">,</span> <span class="s1">&#39;motion&#39;</span><span class="p">,</span> <span class="s1">&#39;to&#39;</span><span class="p">,</span> <span class="s1">&#39;revoke&#39;</span><span class="p">,</span> <span class="s1">&#39;an&#39;</span><span class="p">,</span> <span class="s1">&#39;article&#39;</span><span class="p">,</span> <span class="s1">&#39;based&#39;</span><span class="p">,</span> <span class="s1">&#39;on&#39;</span><span class="p">,</span> <span class="s1">&#39;which&#39;</span><span class="p">,</span> <span class="s1">&#39;the&#39;</span><span class="p">,</span> <span class="s1">&#39;opposition&#39;</span><span class="p">,</span> <span class="s1">&#39;leader&#39;</span><span class="p">,</span> <span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="s1">&#39;Yulia&#39;</span><span class="p">,</span> <span class="s1">&#39;Tymoshenko&#39;</span><span class="p">,</span> <span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="s1">&#39;was&#39;</span><span class="p">,</span> <span class="s1">&#39;sentenced&#39;</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">]</span>
+<span class="n">PRED</span> <span class="mi">0</span><span class="p">:</span> <span class="n">In</span> <span class="n">der</span> <span class="n">Nähe</span> <span class="n">des</span> <span class="n">Hotels</span> <span class="p">,</span> <span class="n">die</span> <span class="ow">in</span> <span class="n">der</span> <span class="n">Lage</span> <span class="p">,</span> <span class="n">die</span> <span class="n">sich</span> <span class="ow">in</span> <span class="n">der</span> <span class="n">Lage</span> <span class="n">ist</span> <span class="p">,</span> <span class="ow">in</span> <span class="n">der</span> <span class="n">Lage</span> <span class="p">,</span> <span class="n">die</span> <span class="ow">in</span> <span class="n">der</span> <span class="n">Lage</span> <span class="p">,</span> <span class="n">die</span> <span class="ow">in</span> <span class="n">der</span> <span class="n">Lage</span> <span class="n">ist</span> <span class="o">.</span>
+<span class="n">PRED</span> <span class="n">SCORE</span><span class="p">:</span> <span class="o">-</span><span class="mf">1.7173</span>
+
+
+<span class="n">SENT</span> <span class="mi">0</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;The&#39;</span><span class="p">,</span> <span class="s1">&#39;amendment&#39;</span><span class="p">,</span> <span class="s1">&#39;that&#39;</span><span class="p">,</span> <span class="s1">&#39;would&#39;</span><span class="p">,</span> <span class="s1">&#39;lead&#39;</span><span class="p">,</span> <span class="s1">&#39;to&#39;</span><span class="p">,</span> <span class="s1">&#39;freeing&#39;</span><span class="p">,</span> <span class="s1">&#39;the&#39;</span><span class="p">,</span> <span class="s1">&#39;imprisoned&#39;</span><span class="p">,</span> <span class="s1">&#39;former&#39;</span><span class="p">,</span> <span class="s1">&#39;Prime&#39;</span><span class="p">,</span> <span class="s1">&#39;Minister&#39;</span><span class="p">,</span> <span class="s1">&#39;was&#39;</span><span class="p">,</span> <span class="s1">&#39;revoked&#39;</span><span class="p">,</span> <span class="s1">&#39;during&#39;</span><span class="p">,</span> <span class="s1">&#39;second&#39;</span><span class="p">,</span> <span class="s1">&#39;reading&#39;</span><span class="p">,</span> <span class="s1">&#39;of&#39;</span><span class="p">,</span> <span class="s1">&#39;the&#39;</span><span class="p">,</span> <span class="s1">&#39;proposal&#39;</span><span class="p">,</span> <span class="s1">&#39;for&#39;</span><span class="p">,</span> <span class="s1">&#39;mitigation&#39;</span><span class="p">,</span> <span class="s1">&#39;of&#39;</span><span class="p">,</span> <span class="s1">&#39;sentences&#39;</span><span class="p">,</span> <span class="s1">&#39;for&#39;</span><span class="p">,</span> <span class="s1">&#39;economic&#39;</span><span class="p">,</span> <span class="s1">&#39;offences&#39;</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">]</span>
+<span class="n">PRED</span> <span class="mi">0</span><span class="p">:</span> <span class="n">Die</span> <span class="n">Tatsache</span> <span class="p">,</span> <span class="n">die</span> <span class="n">sich</span> <span class="ow">in</span> <span class="n">der</span> <span class="n">Lage</span> <span class="ow">in</span> <span class="n">der</span> <span class="n">Lage</span> <span class="n">ist</span> <span class="p">,</span> <span class="n">die</span> <span class="n">für</span> <span class="n">eine</span> <span class="n">Antwort</span> <span class="n">der</span> <span class="n">Entwicklung</span> <span class="n">für</span> <span class="n">die</span> <span class="n">Entwicklung</span> <span class="n">von</span> <span class="n">Präsident</span> <span class="o">.</span>
+<span class="n">PRED</span> <span class="n">SCORE</span><span class="p">:</span> <span class="o">-</span><span class="mf">1.6834</span>
+
+
+<span class="n">SENT</span> <span class="mi">0</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;In&#39;</span><span class="p">,</span> <span class="s1">&#39;October&#39;</span><span class="p">,</span> <span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="s1">&#39;Tymoshenko&#39;</span><span class="p">,</span> <span class="s1">&#39;was&#39;</span><span class="p">,</span> <span class="s1">&#39;sentenced&#39;</span><span class="p">,</span> <span class="s1">&#39;to&#39;</span><span class="p">,</span> <span class="s1">&#39;seven&#39;</span><span class="p">,</span> <span class="s1">&#39;years&#39;</span><span class="p">,</span> <span class="s1">&#39;in&#39;</span><span class="p">,</span> <span class="s1">&#39;prison&#39;</span><span class="p">,</span> <span class="s1">&#39;for&#39;</span><span class="p">,</span> <span class="s1">&#39;entering&#39;</span><span class="p">,</span> <span class="s1">&#39;into&#39;</span><span class="p">,</span> <span class="s1">&#39;what&#39;</span><span class="p">,</span> <span class="s1">&#39;was&#39;</span><span class="p">,</span> <span class="s1">&#39;reported&#39;</span><span class="p">,</span> <span class="s1">&#39;to&#39;</span><span class="p">,</span> <span class="s1">&#39;be&#39;</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;disadvantageous&#39;</span><span class="p">,</span> <span class="s1">&#39;gas&#39;</span><span class="p">,</span> <span class="s1">&#39;deal&#39;</span><span class="p">,</span> <span class="s1">&#39;with&#39;</span><span class="p">,</span> <span class="s1">&#39;Russia&#39;</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">]</span>
+<span class="n">PRED</span> <span class="mi">0</span><span class="p">:</span> <span class="n">In</span> <span class="n">der</span> <span class="n">Nähe</span> <span class="n">wurde</span> <span class="n">die</span> <span class="n">Menschen</span> <span class="ow">in</span> <span class="n">der</span> <span class="n">Lage</span> <span class="n">ist</span> <span class="p">,</span> <span class="n">die</span> <span class="n">sich</span> <span class="ow">in</span> <span class="n">der</span> <span class="n">Lage</span> <span class="o">&lt;</span><span class="n">unk</span><span class="o">&gt;</span> <span class="o">.</span>
+<span class="n">PRED</span> <span class="n">SCORE</span><span class="p">:</span> <span class="o">-</span><span class="mf">1.5765</span>
+
+
+<span class="n">SENT</span> <span class="mi">0</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;The&#39;</span><span class="p">,</span> <span class="s1">&#39;verdict&#39;</span><span class="p">,</span> <span class="s1">&#39;is&#39;</span><span class="p">,</span> <span class="s1">&#39;not&#39;</span><span class="p">,</span> <span class="s1">&#39;yet&#39;</span><span class="p">,</span> <span class="s1">&#39;final;&#39;</span><span class="p">,</span> <span class="s1">&#39;the&#39;</span><span class="p">,</span> <span class="s1">&#39;court&#39;</span><span class="p">,</span> <span class="s1">&#39;will&#39;</span><span class="p">,</span> <span class="s1">&#39;hear&#39;</span><span class="p">,</span> <span class="s1">&#39;Tymoshenko&#39;</span><span class="p">,</span> <span class="s1">&#39;&amp;apos;s&#39;</span><span class="p">,</span> <span class="s1">&#39;appeal&#39;</span><span class="p">,</span> <span class="s1">&#39;in&#39;</span><span class="p">,</span> <span class="s1">&#39;December&#39;</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">]</span>
+<span class="n">PRED</span> <span class="mi">0</span><span class="p">:</span> <span class="n">Es</span> <span class="n">ist</span> <span class="n">nicht</span> <span class="n">der</span> <span class="n">Fall</span> <span class="p">,</span> <span class="n">die</span> <span class="ow">in</span> <span class="n">der</span> <span class="n">Lage</span> <span class="ow">in</span> <span class="n">der</span> <span class="n">Lage</span> <span class="n">sind</span> <span class="o">.</span>
+<span class="n">PRED</span> <span class="n">SCORE</span><span class="p">:</span> <span class="o">-</span><span class="mf">1.3287</span>
+
+
+<span class="n">SENT</span> <span class="mi">0</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Tymoshenko&#39;</span><span class="p">,</span> <span class="s1">&#39;claims&#39;</span><span class="p">,</span> <span class="s1">&#39;the&#39;</span><span class="p">,</span> <span class="s1">&#39;verdict&#39;</span><span class="p">,</span> <span class="s1">&#39;is&#39;</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;political&#39;</span><span class="p">,</span> <span class="s1">&#39;revenge&#39;</span><span class="p">,</span> <span class="s1">&#39;of&#39;</span><span class="p">,</span> <span class="s1">&#39;the&#39;</span><span class="p">,</span> <span class="s1">&#39;regime;&#39;</span><span class="p">,</span> <span class="s1">&#39;in&#39;</span><span class="p">,</span> <span class="s1">&#39;the&#39;</span><span class="p">,</span> <span class="s1">&#39;West&#39;</span><span class="p">,</span> <span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="s1">&#39;the&#39;</span><span class="p">,</span> <span class="s1">&#39;trial&#39;</span><span class="p">,</span> <span class="s1">&#39;has&#39;</span><span class="p">,</span> <span class="s1">&#39;also&#39;</span><span class="p">,</span> <span class="s1">&#39;evoked&#39;</span><span class="p">,</span> <span class="s1">&#39;suspicion&#39;</span><span class="p">,</span> <span class="s1">&#39;of&#39;</span><span class="p">,</span> <span class="s1">&#39;being&#39;</span><span class="p">,</span> <span class="s1">&#39;biased&#39;</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">]</span>
+<span class="n">PRED</span> <span class="mi">0</span><span class="p">:</span> <span class="n">Um</span> <span class="ow">in</span> <span class="n">der</span> <span class="n">Lage</span> <span class="n">ist</span> <span class="n">auch</span> <span class="n">eine</span> <span class="n">Lösung</span> <span class="n">Rolle</span> <span class="o">.</span>
+<span class="n">PRED</span> <span class="n">SCORE</span><span class="p">:</span> <span class="o">-</span><span class="mf">1.3975</span>
+
+
+<span class="n">SENT</span> <span class="mi">0</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;The&#39;</span><span class="p">,</span> <span class="s1">&#39;proposal&#39;</span><span class="p">,</span> <span class="s1">&#39;to&#39;</span><span class="p">,</span> <span class="s1">&#39;remove&#39;</span><span class="p">,</span> <span class="s1">&#39;Article&#39;</span><span class="p">,</span> <span class="s1">&#39;365&#39;</span><span class="p">,</span> <span class="s1">&#39;from&#39;</span><span class="p">,</span> <span class="s1">&#39;the&#39;</span><span class="p">,</span> <span class="s1">&#39;Code&#39;</span><span class="p">,</span> <span class="s1">&#39;of&#39;</span><span class="p">,</span> <span class="s1">&#39;Criminal&#39;</span><span class="p">,</span> <span class="s1">&#39;Procedure&#39;</span><span class="p">,</span> <span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="s1">&#39;upon&#39;</span><span class="p">,</span> <span class="s1">&#39;which&#39;</span><span class="p">,</span> <span class="s1">&#39;the&#39;</span><span class="p">,</span> <span class="s1">&#39;former&#39;</span><span class="p">,</span> <span class="s1">&#39;Prime&#39;</span><span class="p">,</span> <span class="s1">&#39;Minister&#39;</span><span class="p">,</span> <span class="s1">&#39;was&#39;</span><span class="p">,</span> <span class="s1">&#39;sentenced&#39;</span><span class="p">,</span> <span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="s1">&#39;was&#39;</span><span class="p">,</span> <span class="s1">&#39;supported&#39;</span><span class="p">,</span> <span class="s1">&#39;by&#39;</span><span class="p">,</span> <span class="s1">&#39;147&#39;</span><span class="p">,</span> <span class="s1">&#39;members&#39;</span><span class="p">,</span> <span class="s1">&#39;of&#39;</span><span class="p">,</span> <span class="s1">&#39;parliament&#39;</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">]</span>
+<span class="n">PRED</span> <span class="mi">0</span><span class="p">:</span> <span class="n">Der</span> <span class="n">Vorschlag</span> <span class="p">,</span> <span class="n">die</span> <span class="ow">in</span> <span class="n">der</span> <span class="n">Lage</span> <span class="p">,</span> <span class="n">die</span> <span class="ow">in</span> <span class="n">der</span> <span class="n">Lage</span> <span class="p">,</span> <span class="n">die</span> <span class="ow">in</span> <span class="n">der</span> <span class="n">Lage</span> <span class="n">ist</span> <span class="p">,</span> <span class="n">war</span> <span class="n">er</span> <span class="n">von</span> <span class="n">der</span> <span class="n">Fall</span> <span class="o">&lt;</span><span class="n">unk</span><span class="o">&gt;</span> <span class="n">wurde</span> <span class="o">.</span>
+<span class="n">PRED</span> <span class="n">SCORE</span><span class="p">:</span> <span class="o">-</span><span class="mf">1.6062</span>
+
+
+<span class="n">SENT</span> <span class="mi">0</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Its&#39;</span><span class="p">,</span> <span class="s1">&#39;ratification&#39;</span><span class="p">,</span> <span class="s1">&#39;would&#39;</span><span class="p">,</span> <span class="s1">&#39;require&#39;</span><span class="p">,</span> <span class="s1">&#39;226&#39;</span><span class="p">,</span> <span class="s1">&#39;votes&#39;</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">]</span>
+<span class="n">PRED</span> <span class="mi">0</span><span class="p">:</span> <span class="n">Es</span> <span class="n">wäre</span> <span class="n">noch</span> <span class="n">einmal</span> <span class="n">noch</span> <span class="n">einmal</span> <span class="o">&lt;</span><span class="n">unk</span><span class="o">&gt;</span> <span class="o">.</span>
+<span class="n">PRED</span> <span class="n">SCORE</span><span class="p">:</span> <span class="o">-</span><span class="mf">1.8001</span>
+
+
+<span class="n">SENT</span> <span class="mi">0</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Libya&#39;</span><span class="p">,</span> <span class="s1">&#39;&amp;apos;s&#39;</span><span class="p">,</span> <span class="s1">&#39;Victory&#39;</span><span class="p">]</span>
+<span class="n">PRED</span> <span class="mi">0</span><span class="p">:</span> <span class="n">In</span> <span class="n">der</span> <span class="n">Nähe</span> <span class="n">des</span> <span class="n">Hotels</span> <span class="n">befindet</span> <span class="n">sich</span> <span class="ow">in</span> <span class="n">der</span> <span class="n">Nähe</span> <span class="n">des</span> <span class="n">Hotels</span> <span class="ow">in</span> <span class="n">der</span> <span class="n">Lage</span> <span class="o">.</span>
+<span class="n">PRED</span> <span class="n">SCORE</span><span class="p">:</span> <span class="o">-</span><span class="mf">1.7097</span>
+
+
+<span class="n">SENT</span> <span class="mi">0</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;The&#39;</span><span class="p">,</span> <span class="s1">&#39;story&#39;</span><span class="p">,</span> <span class="s1">&#39;of&#39;</span><span class="p">,</span> <span class="s1">&#39;Libya&#39;</span><span class="p">,</span> <span class="s1">&#39;&amp;apos;s&#39;</span><span class="p">,</span> <span class="s1">&#39;liberation&#39;</span><span class="p">,</span> <span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="s1">&#39;or&#39;</span><span class="p">,</span> <span class="s1">&#39;rebellion&#39;</span><span class="p">,</span> <span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="s1">&#39;already&#39;</span><span class="p">,</span> <span class="s1">&#39;has&#39;</span><span class="p">,</span> <span class="s1">&#39;its&#39;</span><span class="p">,</span> <span class="s1">&#39;defeated&#39;</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">]</span>
+<span class="n">PRED</span> <span class="mi">0</span><span class="p">:</span> <span class="n">In</span> <span class="n">der</span> <span class="n">Nähe</span> <span class="n">des</span> <span class="n">Hotels</span> <span class="ow">in</span> <span class="n">der</span> <span class="n">Lage</span> <span class="n">ist</span> <span class="ow">in</span> <span class="n">der</span> <span class="n">Lage</span> <span class="o">.</span>
+<span class="n">PRED</span> <span class="n">SCORE</span><span class="p">:</span> <span class="o">-</span><span class="mf">1.7885</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="Translation.html" class="btn btn-neutral float-right" title="Translation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../FAQ.html" class="btn btn-neutral float-left" title="How do I use Pretrained embeddings (e.g. GloVe)?" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, srush
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

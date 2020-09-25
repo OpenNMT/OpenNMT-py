@@ -85,23 +85,31 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../main.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../CONTRIBUTING.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../ref.html">References</a></li>
 </ul>
+<p class="caption"><span class="caption-text">FAQ</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-do-i-use-the-transformer-model">How do I use the Transformer model?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
+</ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../Library.html">Library</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../extended.html">Translation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../Summarization.html">Summarization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../im2text.html">Image to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../speech2text.html">Speech to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../vid2text.html">Video to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../ggnn.html">Gated Graph Sequence Neural Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/Library.html">Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/Translation.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/GGNN.html">Gated Graph Sequence Neural Networks</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Scripts</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../options/preprocess.html">Preprocess</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/build_vocab.html">Build Vocab</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../options/train.html">Train</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../options/translate.html">Translate</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../options/server.html">Server</a></li>
@@ -113,6 +121,13 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../onmt.translation.html">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../onmt.translate.translation_server.html">Server</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../onmt.inputters.html">Data Loaders</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Legacy</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../legacy/FAQ.html">FAQ (Legacy version)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../legacy/im2text.html">Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../legacy/speech2text.html">Speech to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../legacy/vid2text.html">Video to Text</a></li>
 </ul>
 
             
@@ -216,7 +231,7 @@
 <span class="sd">        tgt_field (torchtext.data.Field): Field object.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        torchtext.data.Vocab and ``example``, changed as described.</span>
+<span class="sd">        ``example``, changed as described.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">src</span> <span class="o">=</span> <span class="n">src_field</span><span class="o">.</span><span class="n">tokenize</span><span class="p">(</span><span class="n">example</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">])</span>
@@ -235,7 +250,7 @@
         <span class="n">mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span>
             <span class="p">[</span><span class="n">unk_idx</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">src_ex_vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">w</span><span class="p">]</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">tgt</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">unk_idx</span><span class="p">])</span>
         <span class="n">example</span><span class="p">[</span><span class="s2">&quot;alignment&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mask</span>
-    <span class="k">return</span> <span class="n">src_ex_vocab</span><span class="p">,</span> <span class="n">example</span>
+    <span class="k">return</span> <span class="n">example</span>
 
 
 <div class="viewcode-block" id="Dataset"><a class="viewcode-back" href="../../../onmt.inputters.html#onmt.inputters.Dataset">[docs]</a><span class="k">class</span> <span class="nc">Dataset</span><span class="p">(</span><span class="n">TorchtextDataset</span><span class="p">):</span>
@@ -270,8 +285,6 @@
 <span class="sd">            where ``data_arg`` is passed to the ``read()`` method of the</span>
 <span class="sd">            reader in ``readers`` at that position. (See the reader object for</span>
 <span class="sd">            details on the ``Any`` type.)</span>
-<span class="sd">        dirs (Iterable[str or NoneType]): A list of directories where</span>
-<span class="sd">            data is contained. See the reader object for more details.</span>
 <span class="sd">        sort_key (Callable[[torchtext.data.Example], Any]): A function</span>
 <span class="sd">            for determining the value on which data is sorted (i.e. length).</span>
 <span class="sd">        filter_pred (Callable[[torchtext.data.Example], bool]): A function</span>
@@ -285,29 +298,23 @@
 <span class="sd">            predict to copy them.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">readers</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">dirs</span><span class="p">,</span> <span class="n">sort_key</span><span class="p">,</span>
-                 <span class="n">filter_pred</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">corpus_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">readers</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">sort_key</span><span class="p">,</span> <span class="n">filter_pred</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sort_key</span> <span class="o">=</span> <span class="n">sort_key</span>
         <span class="n">can_copy</span> <span class="o">=</span> <span class="s1">&#39;src_map&#39;</span> <span class="ow">in</span> <span class="n">fields</span> <span class="ow">and</span> <span class="s1">&#39;alignment&#39;</span> <span class="ow">in</span> <span class="n">fields</span>
 
-        <span class="n">read_iters</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">dat</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">dat</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dir_</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span><span class="p">,</span> <span class="n">dat</span><span class="p">,</span> <span class="n">dir_</span>
-                      <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">readers</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">dirs</span><span class="p">)]</span>
+        <span class="n">read_iters</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">dat</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">dat</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">for</span> <span class="n">r</span><span class="p">,</span> <span class="n">dat</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">readers</span><span class="p">,</span> <span class="n">data</span><span class="p">)]</span>
 
         <span class="c1"># self.src_vocabs is used in collapse_copy_scores and Translator.py</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">src_vocabs</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">examples</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">ex_dict</span> <span class="ow">in</span> <span class="n">starmap</span><span class="p">(</span><span class="n">_join_dicts</span><span class="p">,</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">read_iters</span><span class="p">)):</span>
-            <span class="k">if</span> <span class="n">corpus_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">ex_dict</span><span class="p">[</span><span class="s2">&quot;corpus_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">corpus_id</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">ex_dict</span><span class="p">[</span><span class="s2">&quot;corpus_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;train&quot;</span>
             <span class="k">if</span> <span class="n">can_copy</span><span class="p">:</span>
                 <span class="n">src_field</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">]</span>
                 <span class="n">tgt_field</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span>
                 <span class="c1"># this assumes src_field and tgt_field are both text</span>
-                <span class="n">src_ex_vocab</span><span class="p">,</span> <span class="n">ex_dict</span> <span class="o">=</span> <span class="n">_dynamic_dict</span><span class="p">(</span>
+                <span class="n">ex_dict</span> <span class="o">=</span> <span class="n">_dynamic_dict</span><span class="p">(</span>
                     <span class="n">ex_dict</span><span class="p">,</span> <span class="n">src_field</span><span class="o">.</span><span class="n">base_field</span><span class="p">,</span> <span class="n">tgt_field</span><span class="o">.</span><span class="n">base_field</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">src_vocabs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">src_ex_vocab</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">src_vocabs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ex_dict</span><span class="p">[</span><span class="s2">&quot;src_ex_vocab&quot;</span><span class="p">])</span>
             <span class="n">ex_fields</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="p">[(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)]</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">fields</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span>
                          <span class="n">k</span> <span class="ow">in</span> <span class="n">ex_dict</span><span class="p">}</span>
             <span class="n">ex</span> <span class="o">=</span> <span class="n">Example</span><span class="o">.</span><span class="n">fromdict</span><span class="p">(</span><span class="n">ex_dict</span><span class="p">,</span> <span class="n">ex_fields</span><span class="p">)</span>
@@ -337,13 +344,12 @@
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">config</span><span class="p">(</span><span class="n">fields</span><span class="p">):</span>
-        <span class="n">readers</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">dirs</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
+        <span class="n">readers</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">field</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">readers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">field</span><span class="p">[</span><span class="s2">&quot;reader&quot;</span><span class="p">])</span>
                 <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">name</span><span class="p">,</span> <span class="n">field</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">]))</span>
-                <span class="n">dirs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">field</span><span class="p">[</span><span class="s2">&quot;dir&quot;</span><span class="p">])</span>
-        <span class="k">return</span> <span class="n">readers</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">dirs</span></div>
+        <span class="k">return</span> <span class="n">readers</span><span class="p">,</span> <span class="n">data</span></div>
 </pre></div>
 
            </div>

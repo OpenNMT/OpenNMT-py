@@ -1,0 +1,418 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Translation &mdash; OpenNMT-py  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Summarization" href="Summarization.html" />
+    <link rel="prev" title="Library" href="Library.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> OpenNMT-py
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../main.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../CONTRIBUTING.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ref.html">References</a></li>
+</ul>
+<p class="caption"><span class="caption-text">FAQ</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-do-i-use-the-transformer-model">How do I use the Transformer model?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="Library.html">Library</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Translation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#step-0-download-the-data-and-prepare-the-subwords-model">Step 0: Download the data and prepare the subwords model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#step-1-build-the-vocabulary">Step 1. Build the vocabulary.</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#step-2-train-the-model">Step 2: Train the model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#step-3-translate-and-evaluate">Step 3: Translate and evaluate</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GGNN.html">Gated Graph Sequence Neural Networks</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Scripts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../options/build_vocab.html">Build Vocab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../options/train.html">Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../options/translate.html">Translate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../options/server.html">Server</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../onmt.html">Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../onmt.modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../onmt.translation.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../onmt.translate.translation_server.html">Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../onmt.inputters.html">Data Loaders</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Legacy</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../legacy/FAQ.html">FAQ (Legacy version)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../legacy/im2text.html">Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../legacy/speech2text.html">Speech to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../legacy/vid2text.html">Video to Text</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">OpenNMT-py</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li>Translation</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/examples/Translation.md.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="translation">
+<h1>Translation<a class="headerlink" href="#translation" title="Permalink to this headline">¶</a></h1>
+<p>This example is for training for the <a class="reference external" href="https://www.statmt.org/wmt14/translation-task.html">WMT’14 English to German news translation task</a>. It will use on the fly tokenization with <a class="reference external" href="https://github.com/google/sentencepiece">sentencepiece</a> and <a class="reference external" href="https://github.com/mjpost/sacrebleu">sacrebleu</a> for evaluation.</p>
+<div class="section" id="step-0-download-the-data-and-prepare-the-subwords-model">
+<h2>Step 0: Download the data and prepare the subwords model<a class="headerlink" href="#step-0-download-the-data-and-prepare-the-subwords-model" title="Permalink to this headline">¶</a></h2>
+<p>Preliminary steps are defined in the <a class="reference external" href="https://github.com/OpenNMT/OpenNMT-py/tree/master/examples/scripts/prepare_wmt_data.sh"><code class="docutils literal notranslate"><span class="pre">examples/scripts/prepare_wmt_data.sh</span></code></a>. The following command will download the necessary datasets, and prepare a sentencepiece model:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>chmod u+x prepare_wmt_data.sh
+./prepare_wmt_data.sh
+</pre></div>
+</div>
+<p>Note: you should have installed <a class="reference external" href="https://github.com/google/sentencepiece">sentencepiece</a> binaries before running this script.</p>
+</div>
+<div class="section" id="step-1-build-the-vocabulary">
+<h2>Step 1. Build the vocabulary.<a class="headerlink" href="#step-1-build-the-vocabulary" title="Permalink to this headline">¶</a></h2>
+<p>We need to setup the desired configuration with 1. the data 2. the tokenization options:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># wmt14_en_de.yaml</span>
+<span class="nt">save_data</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">data/wmt/run/example</span>
+
+<span class="c1"># Corpus opts:</span>
+<span class="nt">data</span><span class="p">:</span>
+    <span class="nt">commoncrawl</span><span class="p">:</span>
+        <span class="nt">path_src</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">data/wmt/commoncrawl.de-en.en</span>
+        <span class="nt">path_tgt</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">data/wmt/commoncrawl.de-en.de</span>
+        <span class="nt">transforms</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">sentencepiece</span><span class="p p-Indicator">,</span> <span class="nv">filtertoolong</span><span class="p p-Indicator">]</span>
+        <span class="nt">weight</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">23</span>
+    <span class="nt">europarl</span><span class="p">:</span>
+        <span class="nt">path_src</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">data/wmt/europarl-v7.de-en.en</span>
+        <span class="nt">path_tgt</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">data/wmt/europarl-v7.de-en.de</span>
+        <span class="nt">transforms</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">sentencepiece</span><span class="p p-Indicator">,</span> <span class="nv">filtertoolong</span><span class="p p-Indicator">]</span>
+        <span class="nt">weight</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">19</span>
+    <span class="nt">news_commentary</span><span class="p">:</span>
+        <span class="nt">path_src</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">data/wmt/news-commentary-v11.de-en.en</span>
+        <span class="nt">path_tgt</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">data/wmt/news-commentary-v11.de-en.de</span>
+        <span class="nt">transforms</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">sentencepiece</span><span class="p p-Indicator">,</span> <span class="nv">filtertoolong</span><span class="p p-Indicator">]</span>
+        <span class="nt">weight</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">3</span>
+    <span class="nt">valid</span><span class="p">:</span>
+        <span class="nt">path_src</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">data/wmt/valid.en</span>
+        <span class="nt">path_tgt</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">data/wmt/valid.de</span>
+        <span class="nt">transforms</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">sentencepiece</span><span class="p p-Indicator">]</span>
+
+<span class="c1">### Transform related opts:</span>
+<span class="c1">#### Subword</span>
+<span class="nt">src_subword_model</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">data/wmt/wmtende.model</span>
+<span class="nt">tgt_subword_model</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">data/wmt/wmtende.model</span>
+<span class="nt">src_subword_nbest</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="nt">src_subword_alpha</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0.0</span>
+<span class="nt">tgt_subword_nbest</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="nt">tgt_subword_alpha</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0.0</span>
+<span class="c1">#### Filter</span>
+<span class="nt">src_seq_length</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">150</span>
+<span class="nt">tgt_seq_length</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">150</span>
+
+<span class="c1"># silently ignore empty lines in the data</span>
+<span class="nt">skip_empty_level</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">silent</span>
+</pre></div>
+</div>
+<p>Then we can execute the vocabulary building script. Let’s set <code class="docutils literal notranslate"><span class="pre">-n_sample</span></code> to <code class="docutils literal notranslate"><span class="pre">-1</span></code> to compute the vocabulary over the whole corpora:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_build_vocab -config wmt14_en_de.yaml -n_sample -1
+</pre></div>
+</div>
+</div>
+<div class="section" id="step-2-train-the-model">
+<h2>Step 2: Train the model<a class="headerlink" href="#step-2-train-the-model" title="Permalink to this headline">¶</a></h2>
+<p>We need to add the following parameters to the YAML configuration:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nn">...</span>
+
+<span class="c1"># General opts</span>
+<span class="nt">save_model</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">data/wmt/run/model</span>
+<span class="nt">keep_checkpoint</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">50</span>
+<span class="nt">save_checkpoint_steps</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">5000</span>
+<span class="nt">average_decay</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0.0005</span>
+<span class="nt">seed</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1234</span>
+<span class="nt">report_every</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">100</span>
+<span class="nt">train_steps</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">100000</span>
+<span class="nt">valid_steps</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">5000</span>
+
+<span class="c1"># Batching</span>
+<span class="nt">queue_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">10000</span>
+<span class="nt">bucket_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">32768</span>
+<span class="nt">world_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">2</span>
+<span class="nt">gpu_ranks</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">0</span><span class="p p-Indicator">,</span> <span class="nv">1</span><span class="p p-Indicator">]</span>
+<span class="nt">batch_type</span><span class="p">:</span> <span class="s">&quot;tokens&quot;</span>
+<span class="nt">batch_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">4096</span>
+<span class="nt">valid_batch_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">16</span>
+<span class="nt">batch_size_multiple</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="nt">max_generator_batches</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
+<span class="nt">accum_count</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">3</span><span class="p p-Indicator">]</span>
+<span class="nt">accum_steps</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">0</span><span class="p p-Indicator">]</span>
+
+<span class="c1"># Optimization</span>
+<span class="nt">model_dtype</span><span class="p">:</span> <span class="s">&quot;fp32&quot;</span>
+<span class="nt">optim</span><span class="p">:</span> <span class="s">&quot;adam&quot;</span>
+<span class="nt">learning_rate</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">2</span>
+<span class="nt">warmup_steps</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">8000</span>
+<span class="nt">decay_method</span><span class="p">:</span> <span class="s">&quot;noam&quot;</span>
+<span class="nt">adam_beta2</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0.998</span>
+<span class="nt">max_grad_norm</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
+<span class="nt">label_smoothing</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0.1</span>
+<span class="nt">param_init</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
+<span class="nt">param_init_glorot</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="nt">normalization</span><span class="p">:</span> <span class="s">&quot;tokens&quot;</span>
+
+<span class="c1"># Model</span>
+<span class="nt">encoder_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">transformer</span>
+<span class="nt">decoder_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">transformer</span>
+<span class="nt">enc_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">6</span>
+<span class="nt">dec_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">6</span>
+<span class="nt">heads</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">8</span>
+<span class="nt">rnn_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">512</span>
+<span class="nt">word_vec_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">512</span>
+<span class="nt">transformer_ff</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">2048</span>
+<span class="nt">dropout_steps</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">0</span><span class="p p-Indicator">]</span>
+<span class="nt">dropout</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">0.1</span><span class="p p-Indicator">]</span>
+<span class="nt">attention_dropout</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">0.1</span><span class="p p-Indicator">]</span>
+<span class="nt">share_decoder_embeddings</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="nt">share_embeddings</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="step-3-translate-and-evaluate">
+<h2>Step 3: Translate and evaluate<a class="headerlink" href="#step-3-translate-and-evaluate" title="Permalink to this headline">¶</a></h2>
+<p>We need to tokenize the testset with the same sentencepiece model as used in training:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>spm_encode --model<span class="o">=</span>data/wmt/wmtende.model <span class="se">\</span>
+    &lt; data/wmt/test.en <span class="se">\</span>
+    &gt; data/wmt/test.en.sp
+spm_encode --model<span class="o">=</span>data/wmt/wmtende.model <span class="se">\</span>
+    &lt; data/wmt/test.de <span class="se">\</span>
+    &gt; data/wmt/test.de.sp
+</pre></div>
+</div>
+<p>We can translate the testset with the following command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> checkpoint in data/wmt/run/model_step*.pt<span class="p">;</span> <span class="k">do</span>
+    <span class="nb">echo</span> <span class="s2">&quot;# Translating with checkpoint </span><span class="nv">$checkpoint</span><span class="s2">&quot;</span>
+    <span class="nv">base</span><span class="o">=</span><span class="k">$(</span>basename <span class="nv">$checkpoint</span><span class="k">)</span>
+    onmt_translate <span class="se">\</span>
+        -gpu <span class="m">0</span> <span class="se">\</span>
+        -batch_size <span class="m">16384</span> -batch_type tokens <span class="se">\</span>
+        -beam_size <span class="m">5</span> <span class="se">\</span>
+        -model <span class="nv">$checkpoint</span> <span class="se">\</span>
+        -src data/wmt/test.en.sp <span class="se">\</span>
+        -tgt data/wmt/test.de.sp <span class="se">\</span>
+        -output data/wmt/test.de.hyp_<span class="si">${</span><span class="nv">base</span><span class="p">%.*</span><span class="si">}</span>.sp
+<span class="k">done</span>
+</pre></div>
+</div>
+<p>Prior to evaluation, we need to detokenize the hypothesis:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> checkpoint in data/wmt/run/model_step*.pt<span class="p">;</span> <span class="k">do</span>
+    <span class="nv">base</span><span class="o">=</span><span class="k">$(</span>basename <span class="nv">$checkpoint</span><span class="k">)</span>
+    spm_decode <span class="se">\</span>
+        -model<span class="o">=</span>data/wmt/wmtende.model <span class="se">\</span>
+        -input_format<span class="o">=</span>piece <span class="se">\</span>
+        &lt; data/wmt/test.de.hyp_<span class="si">${</span><span class="nv">base</span><span class="p">%.*</span><span class="si">}</span>.sp <span class="se">\</span>
+        &gt; data/wmt/test.de.hyp_<span class="si">${</span><span class="nv">base</span><span class="p">%.*</span><span class="si">}</span>
+<span class="k">done</span>
+</pre></div>
+</div>
+<p>Finally, we can compute detokenized BLEU with <code class="docutils literal notranslate"><span class="pre">sacrebleu</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> checkpoint in data/wmt/run/model_step*.pt<span class="p">;</span> <span class="k">do</span>
+    <span class="nb">echo</span> <span class="s2">&quot;</span><span class="nv">$checkpoint</span><span class="s2">&quot;</span>
+    <span class="nv">base</span><span class="o">=</span><span class="k">$(</span>basename <span class="nv">$checkpoint</span><span class="k">)</span>
+    sacrebleu data/wmt/test.de &lt; data/wmt/test.de.hyp_<span class="si">${</span><span class="nv">base</span><span class="p">%.*</span><span class="si">}</span>
+<span class="k">done</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="Summarization.html" class="btn btn-neutral float-right" title="Summarization" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="Library.html" class="btn btn-neutral float-left" title="Library" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, srush
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

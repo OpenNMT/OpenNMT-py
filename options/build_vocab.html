@@ -1,0 +1,487 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Build Vocab &mdash; OpenNMT-py  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script src="https://unpkg.com/mermaid@8.4.8/dist/mermaid.min.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Train" href="train.html" />
+    <link rel="prev" title="Gated Graph Sequence Neural Networks" href="../examples/GGNN.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> OpenNMT-py
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../main.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../CONTRIBUTING.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ref.html">References</a></li>
+</ul>
+<p class="caption"><span class="caption-text">FAQ</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-do-i-use-the-transformer-model">How do I use the Transformer model?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../examples/Library.html">Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/Translation.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/GGNN.html">Gated Graph Sequence Neural Networks</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Scripts</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Build Vocab</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Configuration">Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Data">Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Vocab">Vocab</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Transform/Filter">Transform/Filter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Transform/BART">Transform/BART</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Transform/SwitchOut">Transform/SwitchOut</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Transform/Token_Drop">Transform/Token_Drop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Transform/Token_Mask">Transform/Token_Mask</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Transform/Subword/Common">Transform/Subword/Common</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Transform/Subword/ONMTTOK">Transform/Subword/ONMTTOK</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Reproducibility">Reproducibility</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="train.html">Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="translate.html">Translate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="server.html">Server</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../onmt.html">Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../onmt.modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../onmt.translation.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../onmt.translate.translation_server.html">Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../onmt.inputters.html">Data Loaders</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Legacy</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../legacy/FAQ.html">FAQ (Legacy version)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../legacy/im2text.html">Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../legacy/speech2text.html">Speech to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../legacy/vid2text.html">Video to Text</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">OpenNMT-py</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li>Build Vocab</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/options/build_vocab.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="build-vocab">
+<h1>Build Vocab<a class="headerlink" href="#build-vocab" title="Permalink to this headline">¶</a></h1>
+<p><p>build_vocab.py</p>
+</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">build_vocab</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">config</span> <span class="n">CONFIG</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">save_config</span> <span class="n">SAVE_CONFIG</span><span class="p">]</span> <span class="o">-</span><span class="n">data</span>
+                      <span class="n">DATA</span> <span class="p">[</span><span class="o">-</span><span class="n">skip_empty_level</span> <span class="p">{</span><span class="n">silent</span><span class="p">,</span><span class="n">warning</span><span class="p">,</span><span class="n">error</span><span class="p">}]</span>
+                      <span class="p">[</span><span class="o">-</span><span class="n">transforms</span> <span class="p">{</span><span class="n">filtertoolong</span><span class="p">,</span><span class="n">prefix</span><span class="p">,</span><span class="n">bart</span><span class="p">,</span><span class="n">switchout</span><span class="p">,</span><span class="n">tokendrop</span><span class="p">,</span><span class="n">tokenmask</span><span class="p">,</span><span class="n">sentencepiece</span><span class="p">,</span><span class="n">bpe</span><span class="p">,</span><span class="n">onmt_tokenize</span><span class="p">}</span> <span class="p">[{</span><span class="n">filtertoolong</span><span class="p">,</span><span class="n">prefix</span><span class="p">,</span><span class="n">bart</span><span class="p">,</span><span class="n">switchout</span><span class="p">,</span><span class="n">tokendrop</span><span class="p">,</span><span class="n">tokenmask</span><span class="p">,</span><span class="n">sentencepiece</span><span class="p">,</span><span class="n">bpe</span><span class="p">,</span><span class="n">onmt_tokenize</span><span class="p">}</span> <span class="o">...</span><span class="p">]]</span>
+                      <span class="o">-</span><span class="n">save_data</span> <span class="n">SAVE_DATA</span> <span class="p">[</span><span class="o">-</span><span class="n">overwrite</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">n_sample</span> <span class="n">N_SAMPLE</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">-</span><span class="n">src_vocab</span> <span class="n">SRC_VOCAB</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">tgt_vocab</span> <span class="n">TGT_VOCAB</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">-</span><span class="n">share_vocab</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">src_seq_length</span> <span class="n">SRC_SEQ_LENGTH</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">--</span><span class="n">tgt_seq_length</span> <span class="n">TGT_SEQ_LENGTH</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">--</span><span class="n">permute_sent_ratio</span> <span class="n">PERMUTE_SENT_RATIO</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">--</span><span class="n">rotate_ratio</span> <span class="n">ROTATE_RATIO</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">--</span><span class="n">insert_ratio</span> <span class="n">INSERT_RATIO</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">--</span><span class="n">random_ratio</span> <span class="n">RANDOM_RATIO</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">mask_ratio</span> <span class="n">MASK_RATIO</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">--</span><span class="n">mask_length</span> <span class="p">{</span><span class="n">subword</span><span class="p">,</span><span class="n">word</span><span class="p">,</span><span class="n">span</span><span class="o">-</span><span class="n">poisson</span><span class="p">}]</span>
+                      <span class="p">[</span><span class="o">--</span><span class="n">poisson_lambda</span> <span class="n">POISSON_LAMBDA</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">--</span><span class="n">replace_length</span> <span class="p">{</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">}]</span>
+                      <span class="p">[</span><span class="o">-</span><span class="n">switchout_temperature</span> <span class="n">SWITCHOUT_TEMPERATURE</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">-</span><span class="n">tokendrop_temperature</span> <span class="n">TOKENDROP_TEMPERATURE</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">-</span><span class="n">tokenmask_temperature</span> <span class="n">TOKENMASK_TEMPERATURE</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">-</span><span class="n">src_subword_model</span> <span class="n">SRC_SUBWORD_MODEL</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">-</span><span class="n">tgt_subword_model</span> <span class="n">TGT_SUBWORD_MODEL</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">-</span><span class="n">src_subword_nbest</span> <span class="n">SRC_SUBWORD_NBEST</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">-</span><span class="n">tgt_subword_nbest</span> <span class="n">TGT_SUBWORD_NBEST</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">-</span><span class="n">src_subword_alpha</span> <span class="n">SRC_SUBWORD_ALPHA</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">-</span><span class="n">tgt_subword_alpha</span> <span class="n">TGT_SUBWORD_ALPHA</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">-</span><span class="n">src_subword_type</span> <span class="p">{</span><span class="n">none</span><span class="p">,</span><span class="n">sentencepiece</span><span class="p">,</span><span class="n">bpe</span><span class="p">}]</span>
+                      <span class="p">[</span><span class="o">-</span><span class="n">tgt_subword_type</span> <span class="p">{</span><span class="n">none</span><span class="p">,</span><span class="n">sentencepiece</span><span class="p">,</span><span class="n">bpe</span><span class="p">}]</span>
+                      <span class="p">[</span><span class="o">-</span><span class="n">src_onmttok_kwargs</span> <span class="n">SRC_ONMTTOK_KWARGS</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">-</span><span class="n">tgt_onmttok_kwargs</span> <span class="n">TGT_ONMTTOK_KWARGS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">seed</span> <span class="n">SEED</span><span class="p">]</span>
+</pre></div>
+</div>
+<div class="section" id="Configuration">
+<h2>Configuration<a class="headerlink" href="#Configuration" title="Permalink to this headline">¶</a></h2>
+<dl class="option-list">
+<dt><kbd>-config, --config</kbd></dt>
+<dd><p>Path of the main YAML config file.</p>
+</dd>
+<dt><kbd>-save_config, --save_config</kbd></dt>
+<dd><p>Path where to save the config.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="Data">
+<h2>Data<a class="headerlink" href="#Data" title="Permalink to this headline">¶</a></h2>
+<dl class="option-list">
+<dt><kbd>-data, --data</kbd></dt>
+<dd><p>List of datasets and their specifications. See examples/<a href="#id1"><span class="problematic" id="id2">*</span></a>.yaml for further details.</p>
+</dd>
+<dt><kbd>-skip_empty_level, --skip_empty_level</kbd></dt>
+<dd><p>Possible choices: silent, warning, error</p>
+<p>Security level when encounter empty examples.silent: silently ignore/skip empty example;warning: warning when ignore/skip empty example;error: raise error &amp; stop excution when encouter empty.)</p>
+<p>Default: “warning”</p>
+</dd>
+<dt><kbd>-transforms, --transforms</kbd></dt>
+<dd><p>Possible choices: filtertoolong, prefix, bart, switchout, tokendrop, tokenmask, sentencepiece, bpe, onmt_tokenize</p>
+<p>Default transform pipeline to apply to data. Can be specified in each corpus of data to override.</p>
+<p>Default: []</p>
+</dd>
+<dt><kbd>-save_data, --save_data</kbd></dt>
+<dd><p>Output base path for objects that will be saved (vocab, transforms, embeddings, …).</p>
+</dd>
+<dt><kbd>-overwrite, --overwrite</kbd></dt>
+<dd><p>Overwrite existing objects if any.</p>
+<p>Default: False</p>
+</dd>
+<dt><kbd>-n_sample, --n_sample</kbd></dt>
+<dd><p>Build vocab using this number of transformed samples/corpus. Can be [-1, 0, N&gt;0]. Set to -1 to go full corpus, 0 to skip.</p>
+<p>Default: 5000</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="Vocab">
+<h2>Vocab<a class="headerlink" href="#Vocab" title="Permalink to this headline">¶</a></h2>
+<dl class="option-list">
+<dt><kbd>-src_vocab, --src_vocab</kbd></dt>
+<dd><p>Path to a vocabulary file for src.Format: one &lt;word&gt; or &lt;word&gt;  &lt;count&gt; per line.</p>
+</dd>
+<dt><kbd>-tgt_vocab, --tgt_vocab</kbd></dt>
+<dd><p>Path to a vocabulary file for tgt.Format: one &lt;word&gt; or &lt;word&gt;  &lt;count&gt; per line.</p>
+</dd>
+<dt><kbd>-share_vocab, --share_vocab</kbd></dt>
+<dd><p>Share source and target vocabulary.</p>
+<p>Default: False</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="Transform/Filter">
+<h2>Transform/Filter<a class="headerlink" href="#Transform/Filter" title="Permalink to this headline">¶</a></h2>
+<dl class="option-list">
+<dt><kbd>--src_seq_length, -src_seq_length</kbd></dt>
+<dd><p>Maximum source sequence length.</p>
+<p>Default: 200</p>
+</dd>
+<dt><kbd>--tgt_seq_length, -tgt_seq_length</kbd></dt>
+<dd><p>Maximum target sequence length.</p>
+<p>Default: 200</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="Transform/BART">
+<h2>Transform/BART<a class="headerlink" href="#Transform/BART" title="Permalink to this headline">¶</a></h2>
+<dl class="option-list">
+<dt><kbd>--permute_sent_ratio, -permute_sent_ratio</kbd></dt>
+<dd><p>Permute this proportion of sentences (boundaries defined by [‘.’, ‘?’, ‘!’]) in all inputs.</p>
+<p>Default: 0.0</p>
+</dd>
+<dt><kbd>--rotate_ratio, -rotate_ratio</kbd></dt>
+<dd><p>Rotate this proportion of inputs.</p>
+<p>Default: 0.5</p>
+</dd>
+<dt><kbd>--insert_ratio, -insert_ratio</kbd></dt>
+<dd><p>Insert this percentage of additional random tokens.</p>
+<p>Default: 0.0</p>
+</dd>
+<dt><kbd>--random_ratio, -random_ratio</kbd></dt>
+<dd><p>Instead of using &lt;mask&gt;, use random token this often.</p>
+<p>Default: 0.0</p>
+</dd>
+<dt><kbd>--mask_ratio, -mask_ratio</kbd></dt>
+<dd><p>Fraction of words/subwords that will be masked.</p>
+<p>Default: 0.0</p>
+</dd>
+<dt><kbd>--mask_length, -mask_length</kbd></dt>
+<dd><p>Possible choices: subword, word, span-poisson</p>
+<p>Length of masking window to apply.</p>
+<p>Default: “subword”</p>
+</dd>
+<dt><kbd>--poisson_lambda, -poisson_lambda</kbd></dt>
+<dd><p>Lambda for Poisson distribution to sample span length if <cite>-mask_length</cite> set to span-poisson.</p>
+<p>Default: 0.0</p>
+</dd>
+<dt><kbd>--replace_length, -replace_length</kbd></dt>
+<dd><p>Possible choices: -1, 0, 1</p>
+<p>When masking N tokens, replace with 0, 1, or N tokens. (use -1 for N)</p>
+<p>Default: -1</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="Transform/SwitchOut">
+<h2>Transform/SwitchOut<a class="headerlink" href="#Transform/SwitchOut" title="Permalink to this headline">¶</a></h2>
+<dl class="option-list">
+<dt><kbd>-switchout_temperature, --switchout_temperature</kbd></dt>
+<dd><p>Sampling temperature for SwitchOut. tau^(-1) in <a class="bibtex reference internal" href="../ref.html#dblp-journals-corr-abs-1808-07512" id="id1">[WPDN18]</a>. Smaller value makes data more diverse.</p>
+<p>Default: 1.0</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="Transform/Token_Drop">
+<h2>Transform/Token_Drop<a class="headerlink" href="#Transform/Token_Drop" title="Permalink to this headline">¶</a></h2>
+<dl class="option-list">
+<dt><kbd>-tokendrop_temperature, --tokendrop_temperature</kbd></dt>
+<dd><p>Sampling temperature for token deletion.</p>
+<p>Default: 1.0</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="Transform/Token_Mask">
+<h2>Transform/Token_Mask<a class="headerlink" href="#Transform/Token_Mask" title="Permalink to this headline">¶</a></h2>
+<dl class="option-list">
+<dt><kbd>-tokenmask_temperature, --tokenmask_temperature</kbd></dt>
+<dd><p>Sampling temperature for token masking.</p>
+<p>Default: 1.0</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="Transform/Subword/Common">
+<h2>Transform/Subword/Common<a class="headerlink" href="#Transform/Subword/Common" title="Permalink to this headline">¶</a></h2>
+<dl class="option-list">
+<dt><kbd>-src_subword_model, --src_subword_model</kbd></dt>
+<dd><p>Path of subword model for src (or shared).</p>
+</dd>
+<dt><kbd>-tgt_subword_model, --tgt_subword_model</kbd></dt>
+<dd><p>Path of subword model for tgt.</p>
+</dd>
+<dt><kbd>-src_subword_nbest, --src_subword_nbest</kbd></dt>
+<dd><p>Number of candidates in subword regularization. Valid for unigram sampling, invalid for BPE-dropout. (source side)</p>
+<p>Default: 1</p>
+</dd>
+<dt><kbd>-tgt_subword_nbest, --tgt_subword_nbest</kbd></dt>
+<dd><p>Number of candidates in subword regularization. Valid for unigram sampling, invalid for BPE-dropout. (target side)</p>
+<p>Default: 1</p>
+</dd>
+<dt><kbd>-src_subword_alpha, --src_subword_alpha</kbd></dt>
+<dd><p>Smoothing parameter for sentencepiece unigram sampling, and dropout probability for BPE-dropout. (source side)</p>
+<p>Default: 0</p>
+</dd>
+<dt><kbd>-tgt_subword_alpha, --tgt_subword_alpha</kbd></dt>
+<dd><p>Smoothing parameter for sentencepiece unigram sampling, and dropout probability for BPE-dropout. (target side)</p>
+<p>Default: 0</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="Transform/Subword/ONMTTOK">
+<h2>Transform/Subword/ONMTTOK<a class="headerlink" href="#Transform/Subword/ONMTTOK" title="Permalink to this headline">¶</a></h2>
+<dl class="option-list">
+<dt><kbd>-src_subword_type, --src_subword_type</kbd></dt>
+<dd><p>Possible choices: none, sentencepiece, bpe</p>
+<p>Type of subword model for src (or shared) in pyonmttok.</p>
+<p>Default: “none”</p>
+</dd>
+<dt><kbd>-tgt_subword_type, --tgt_subword_type</kbd></dt>
+<dd><p>Possible choices: none, sentencepiece, bpe</p>
+<p>Type of subword model for tgt in  pyonmttok.</p>
+<p>Default: “none”</p>
+</dd>
+<dt><kbd>-src_onmttok_kwargs, --src_onmttok_kwargs</kbd></dt>
+<dd><p>Other pyonmttok options for src in dict string, except subword related options listed earlier.</p>
+<p>Default: “{‘mode’: ‘none’}”</p>
+</dd>
+<dt><kbd>-tgt_onmttok_kwargs, --tgt_onmttok_kwargs</kbd></dt>
+<dd><p>Other pyonmttok options for tgt in dict string, except subword related options listed earlier.</p>
+<p>Default: “{‘mode’: ‘none’}”</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="Reproducibility">
+<h2>Reproducibility<a class="headerlink" href="#Reproducibility" title="Permalink to this headline">¶</a></h2>
+<dl class="option-list">
+<dt><kbd>--seed, -seed</kbd></dt>
+<dd><p>Set random seed used for better reproducibility between experiments.</p>
+<p>Default: -1</p>
+</dd>
+</dl>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="train.html" class="btn btn-neutral float-right" title="Train" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../examples/GGNN.html" class="btn btn-neutral float-left" title="Gated Graph Sequence Neural Networks" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, srush
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

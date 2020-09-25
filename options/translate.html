@@ -87,33 +87,42 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../main.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../FAQ.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../CONTRIBUTING.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ref.html">References</a></li>
 </ul>
+<p class="caption"><span class="caption-text">FAQ</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-do-i-use-the-transformer-model">How do I use the Transformer model?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
+</ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../Library.html">Library</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../extended.html">Translation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../Summarization.html">Summarization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../im2text.html">Image to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../speech2text.html">Speech to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../vid2text.html">Video to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../ggnn.html">Gated Graph Sequence Neural Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/Library.html">Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/Translation.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/GGNN.html">Gated Graph Sequence Neural Networks</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Scripts</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="preprocess.html">Preprocess</a></li>
+<li class="toctree-l1"><a class="reference internal" href="build_vocab.html">Build Vocab</a></li>
 <li class="toctree-l1"><a class="reference internal" href="train.html">Train</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Translate</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#Named Arguments">Named Arguments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Configuration">Configuration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Model">Model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Data">Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Decoding tricks">Decoding tricks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Random Sampling">Random Sampling</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#Beam">Beam</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Reproducibility">Reproducibility</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Beam Search">Beam Search</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Logging">Logging</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Efficiency">Efficiency</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#Speech">Speech</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="server.html">Server</a></li>
@@ -125,6 +134,13 @@
 <li class="toctree-l1"><a class="reference internal" href="../onmt.translation.html">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../onmt.translate.translation_server.html">Server</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../onmt.inputters.html">Data Loaders</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Legacy</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../legacy/FAQ.html">FAQ (Legacy version)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../legacy/im2text.html">Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../legacy/speech2text.html">Speech to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../legacy/vid2text.html">Video to Text</a></li>
 </ul>
 
             
@@ -195,10 +211,12 @@
 </p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">translate</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">config</span> <span class="n">CONFIG</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">save_config</span> <span class="n">SAVE_CONFIG</span><span class="p">]</span> <span class="o">--</span><span class="n">model</span>
                     <span class="n">MODEL</span> <span class="p">[</span><span class="n">MODEL</span> <span class="o">...</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">fp32</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">avg_raw_probs</span><span class="p">]</span>
-                    <span class="p">[</span><span class="o">--</span><span class="n">data_type</span> <span class="n">DATA_TYPE</span><span class="p">]</span> <span class="o">--</span><span class="n">src</span> <span class="n">SRC</span> <span class="p">[</span><span class="o">--</span><span class="n">src_dir</span> <span class="n">SRC_DIR</span><span class="p">]</span>
-                    <span class="p">[</span><span class="o">--</span><span class="n">tgt</span> <span class="n">TGT</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">tgt_prefix</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">shard_size</span> <span class="n">SHARD_SIZE</span><span class="p">]</span>
-                    <span class="p">[</span><span class="o">--</span><span class="n">output</span> <span class="n">OUTPUT</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">report_align</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">report_time</span><span class="p">]</span>
-                    <span class="p">[</span><span class="o">--</span><span class="n">dynamic_dict</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">share_vocab</span><span class="p">]</span>
+                    <span class="p">[</span><span class="o">--</span><span class="n">data_type</span> <span class="n">DATA_TYPE</span><span class="p">]</span> <span class="o">--</span><span class="n">src</span> <span class="n">SRC</span> <span class="p">[</span><span class="o">--</span><span class="n">tgt</span> <span class="n">TGT</span><span class="p">]</span>
+                    <span class="p">[</span><span class="o">--</span><span class="n">tgt_prefix</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">shard_size</span> <span class="n">SHARD_SIZE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">output</span> <span class="n">OUTPUT</span><span class="p">]</span>
+                    <span class="p">[</span><span class="o">--</span><span class="n">report_align</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">report_time</span><span class="p">]</span>
+                    <span class="p">[</span><span class="o">--</span><span class="n">block_ngram_repeat</span> <span class="n">BLOCK_NGRAM_REPEAT</span><span class="p">]</span>
+                    <span class="p">[</span><span class="o">--</span><span class="n">ignore_when_blocking</span> <span class="n">IGNORE_WHEN_BLOCKING</span> <span class="p">[</span><span class="n">IGNORE_WHEN_BLOCKING</span> <span class="o">...</span><span class="p">]]</span>
+                    <span class="p">[</span><span class="o">--</span><span class="n">replace_unk</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">phrase_table</span> <span class="n">PHRASE_TABLE</span><span class="p">]</span>
                     <span class="p">[</span><span class="o">--</span><span class="n">random_sampling_topk</span> <span class="n">RANDOM_SAMPLING_TOPK</span><span class="p">]</span>
                     <span class="p">[</span><span class="o">--</span><span class="n">random_sampling_temp</span> <span class="n">RANDOM_SAMPLING_TEMP</span><span class="p">]</span>
                     <span class="p">[</span><span class="o">--</span><span class="n">seed</span> <span class="n">SEED</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">beam_size</span> <span class="n">BEAM_SIZE</span><span class="p">]</span>
@@ -206,27 +224,22 @@
                     <span class="p">[</span><span class="o">--</span><span class="n">max_sent_length</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">stepwise_penalty</span><span class="p">]</span>
                     <span class="p">[</span><span class="o">--</span><span class="n">length_penalty</span> <span class="p">{</span><span class="n">none</span><span class="p">,</span><span class="n">wu</span><span class="p">,</span><span class="n">avg</span><span class="p">}]</span> <span class="p">[</span><span class="o">--</span><span class="n">ratio</span> <span class="n">RATIO</span><span class="p">]</span>
                     <span class="p">[</span><span class="o">--</span><span class="n">coverage_penalty</span> <span class="p">{</span><span class="n">none</span><span class="p">,</span><span class="n">wu</span><span class="p">,</span><span class="n">summary</span><span class="p">}]</span> <span class="p">[</span><span class="o">--</span><span class="n">alpha</span> <span class="n">ALPHA</span><span class="p">]</span>
-                    <span class="p">[</span><span class="o">--</span><span class="n">beta</span> <span class="n">BETA</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">block_ngram_repeat</span> <span class="n">BLOCK_NGRAM_REPEAT</span><span class="p">]</span>
-                    <span class="p">[</span><span class="o">--</span><span class="n">ignore_when_blocking</span> <span class="n">IGNORE_WHEN_BLOCKING</span> <span class="p">[</span><span class="n">IGNORE_WHEN_BLOCKING</span> <span class="o">...</span><span class="p">]]</span>
-                    <span class="p">[</span><span class="o">--</span><span class="n">replace_unk</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">phrase_table</span> <span class="n">PHRASE_TABLE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">verbose</span><span class="p">]</span>
-                    <span class="p">[</span><span class="o">--</span><span class="n">log_file</span> <span class="n">LOG_FILE</span><span class="p">]</span>
+                    <span class="p">[</span><span class="o">--</span><span class="n">beta</span> <span class="n">BETA</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">log_file</span> <span class="n">LOG_FILE</span><span class="p">]</span>
                     <span class="p">[</span><span class="o">--</span><span class="n">log_file_level</span> <span class="p">{</span><span class="n">CRITICAL</span><span class="p">,</span><span class="n">ERROR</span><span class="p">,</span><span class="n">WARNING</span><span class="p">,</span><span class="n">INFO</span><span class="p">,</span><span class="n">DEBUG</span><span class="p">,</span><span class="n">NOTSET</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="mi">40</span><span class="p">,</span><span class="mi">30</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">0</span><span class="p">}]</span>
-                    <span class="p">[</span><span class="o">--</span><span class="n">attn_debug</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">align_debug</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">dump_beam</span> <span class="n">DUMP_BEAM</span><span class="p">]</span>
-                    <span class="p">[</span><span class="o">--</span><span class="n">n_best</span> <span class="n">N_BEST</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">batch_size</span> <span class="n">BATCH_SIZE</span><span class="p">]</span>
-                    <span class="p">[</span><span class="o">--</span><span class="n">batch_type</span> <span class="p">{</span><span class="n">sents</span><span class="p">,</span><span class="n">tokens</span><span class="p">}]</span> <span class="p">[</span><span class="o">--</span><span class="n">gpu</span> <span class="n">GPU</span><span class="p">]</span>
-                    <span class="p">[</span><span class="o">--</span><span class="n">sample_rate</span> <span class="n">SAMPLE_RATE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">window_size</span> <span class="n">WINDOW_SIZE</span><span class="p">]</span>
-                    <span class="p">[</span><span class="o">--</span><span class="n">window_stride</span> <span class="n">WINDOW_STRIDE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">window</span> <span class="n">WINDOW</span><span class="p">]</span>
-                    <span class="p">[</span><span class="o">--</span><span class="n">image_channel_size</span> <span class="p">{</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">}]</span>
+                    <span class="p">[</span><span class="o">--</span><span class="n">verbose</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">attn_debug</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">align_debug</span><span class="p">]</span>
+                    <span class="p">[</span><span class="o">--</span><span class="n">dump_beam</span> <span class="n">DUMP_BEAM</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">n_best</span> <span class="n">N_BEST</span><span class="p">]</span>
+                    <span class="p">[</span><span class="o">--</span><span class="n">batch_size</span> <span class="n">BATCH_SIZE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">batch_type</span> <span class="p">{</span><span class="n">sents</span><span class="p">,</span><span class="n">tokens</span><span class="p">}]</span>
+                    <span class="p">[</span><span class="o">--</span><span class="n">gpu</span> <span class="n">GPU</span><span class="p">]</span>
 </pre></div>
 </div>
-<div class="section" id="Named Arguments">
-<h2>Named Arguments<a class="headerlink" href="#Named Arguments" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="Configuration">
+<h2>Configuration<a class="headerlink" href="#Configuration" title="Permalink to this headline">¶</a></h2>
 <dl class="option-list">
 <dt><kbd>-config, --config</kbd></dt>
-<dd><p>config file path</p>
+<dd><p>Path of the main YAML config file.</p>
 </dd>
 <dt><kbd>-save_config, --save_config</kbd></dt>
-<dd><p>config file save path</p>
+<dd><p>Path where to save the config.</p>
 </dd>
 </dl>
 </div>
@@ -251,15 +264,11 @@
 <h2>Data<a class="headerlink" href="#Data" title="Permalink to this headline">¶</a></h2>
 <dl class="option-list">
 <dt><kbd>--data_type, -data_type</kbd></dt>
-<dd><p>Type of the source input. Options: [text|img].</p>
+<dd><p>Type of the source input. Options: [text].</p>
 <p>Default: “text”</p>
 </dd>
 <dt><kbd>--src, -src</kbd></dt>
 <dd><p>Source sequence to decode (one line per sequence)</p>
-</dd>
-<dt><kbd>--src_dir, -src_dir</kbd></dt>
-<dd><p>Source directory for image or audio files</p>
-<p>Default: “”</p>
 </dd>
 <dt><kbd>--tgt, -tgt</kbd></dt>
 <dd><p>True target sequence (optional)</p>
@@ -284,13 +293,26 @@
 <dd><p>Report some translation time metrics</p>
 <p>Default: False</p>
 </dd>
-<dt><kbd>--dynamic_dict, -dynamic_dict</kbd></dt>
-<dd><p>Create dynamic dictionaries</p>
+</dl>
+</div>
+<div class="section" id="Decoding tricks">
+<h2>Decoding tricks<a class="headerlink" href="#Decoding tricks" title="Permalink to this headline">¶</a></h2>
+<dl class="option-list">
+<dt><kbd>--block_ngram_repeat, -block_ngram_repeat</kbd></dt>
+<dd><p>Block repetition of ngrams during decoding.</p>
+<p>Default: 0</p>
+</dd>
+<dt><kbd>--ignore_when_blocking, -ignore_when_blocking</kbd></dt>
+<dd><p>Ignore these strings when blocking repeats. You want to block sentence delimiters.</p>
+<p>Default: []</p>
+</dd>
+<dt><kbd>--replace_unk, -replace_unk</kbd></dt>
+<dd><p>Replace the generated UNK tokens with the source token that had highest attention weight. If phrase_table is provided, it will look up the identified source token and give the corresponding target token. If it is not provided (or the identified source token does not exist in the table), then it will copy the source token.</p>
 <p>Default: False</p>
 </dd>
-<dt><kbd>--share_vocab, -share_vocab</kbd></dt>
-<dd><p>Share source and target vocabulary</p>
-<p>Default: False</p>
+<dt><kbd>--phrase_table, -phrase_table</kbd></dt>
+<dd><p>If phrase_table is provided (with replace_unk), it will look up the identified source token and give the corresponding target token. If it is not provided (or the identified source token does not exist in the table), then it will copy the source token.</p>
+<p>Default: “”</p>
 </dd>
 </dl>
 </div>
@@ -305,14 +327,19 @@
 <dd><p>If doing random sampling, divide the logits by this before computing softmax during decoding.</p>
 <p>Default: 1.0</p>
 </dd>
+</dl>
+</div>
+<div class="section" id="Reproducibility">
+<h2>Reproducibility<a class="headerlink" href="#Reproducibility" title="Permalink to this headline">¶</a></h2>
+<dl class="option-list">
 <dt><kbd>--seed, -seed</kbd></dt>
-<dd><p>Random seed</p>
-<p>Default: 829</p>
+<dd><p>Set random seed used for better reproducibility between experiments.</p>
+<p>Default: -1</p>
 </dd>
 </dl>
 </div>
-<div class="section" id="Beam">
-<h2>Beam<a class="headerlink" href="#Beam" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="Beam Search">
+<h2>Beam Search<a class="headerlink" href="#Beam Search" title="Permalink to this headline">¶</a></h2>
 <dl class="option-list">
 <dt><kbd>--beam_size, -beam_size</kbd></dt>
 <dd><p>Beam size</p>
@@ -355,31 +382,11 @@
 <dd><p>Coverage penalty parameter</p>
 <p>Default: -0.0</p>
 </dd>
-<dt><kbd>--block_ngram_repeat, -block_ngram_repeat</kbd></dt>
-<dd><p>Block repetition of ngrams during decoding.</p>
-<p>Default: 0</p>
-</dd>
-<dt><kbd>--ignore_when_blocking, -ignore_when_blocking</kbd></dt>
-<dd><p>Ignore these strings when blocking repeats. You want to block sentence delimiters.</p>
-<p>Default: []</p>
-</dd>
-<dt><kbd>--replace_unk, -replace_unk</kbd></dt>
-<dd><p>Replace the generated UNK tokens with the source token that had highest attention weight. If phrase_table is provided, it will look up the identified source token and give the corresponding target token. If it is not provided (or the identified source token does not exist in the table), then it will copy the source token.</p>
-<p>Default: False</p>
-</dd>
-<dt><kbd>--phrase_table, -phrase_table</kbd></dt>
-<dd><p>If phrase_table is provided (with replace_unk), it will look up the identified source token and give the corresponding target token. If it is not provided (or the identified source token does not exist in the table), then it will copy the source token.</p>
-<p>Default: “”</p>
-</dd>
 </dl>
 </div>
 <div class="section" id="Logging">
 <h2>Logging<a class="headerlink" href="#Logging" title="Permalink to this headline">¶</a></h2>
 <dl class="option-list">
-<dt><kbd>--verbose, -verbose</kbd></dt>
-<dd><p>Print scores and predictions for each sentence</p>
-<p>Default: False</p>
-</dd>
 <dt><kbd>--log_file, -log_file</kbd></dt>
 <dd><p>Output logs to a file under this path.</p>
 <p>Default: “”</p>
@@ -387,6 +394,10 @@
 <dt><kbd>--log_file_level, -log_file_level</kbd></dt>
 <dd><p>Possible choices: CRITICAL, ERROR, WARNING, INFO, DEBUG, NOTSET, 50, 40, 30, 20, 10, 0</p>
 <p>Default: “0”</p>
+</dd>
+<dt><kbd>--verbose, -verbose</kbd></dt>
+<dd><p>Print scores and predictions for each sentence</p>
+<p>Default: False</p>
 </dd>
 <dt><kbd>--attn_debug, -attn_debug</kbd></dt>
 <dd><p>Print best attn for each word</p>
@@ -421,32 +432,6 @@
 <dt><kbd>--gpu, -gpu</kbd></dt>
 <dd><p>Device to run on</p>
 <p>Default: -1</p>
-</dd>
-</dl>
-</div>
-<div class="section" id="Speech">
-<h2>Speech<a class="headerlink" href="#Speech" title="Permalink to this headline">¶</a></h2>
-<dl class="option-list">
-<dt><kbd>--sample_rate, -sample_rate</kbd></dt>
-<dd><p>Sample rate.</p>
-<p>Default: 16000</p>
-</dd>
-<dt><kbd>--window_size, -window_size</kbd></dt>
-<dd><p>Window size for spectrogram in seconds</p>
-<p>Default: 0.02</p>
-</dd>
-<dt><kbd>--window_stride, -window_stride</kbd></dt>
-<dd><p>Window stride for spectrogram in seconds</p>
-<p>Default: 0.01</p>
-</dd>
-<dt><kbd>--window, -window</kbd></dt>
-<dd><p>Window type for spectrogram generation</p>
-<p>Default: “hamming”</p>
-</dd>
-<dt><kbd>--image_channel_size, -image_channel_size</kbd></dt>
-<dd><p>Possible choices: 3, 1</p>
-<p>Using grayscale image can training model faster and smaller</p>
-<p>Default: 3</p>
 </dd>
 </dl>
 </div>

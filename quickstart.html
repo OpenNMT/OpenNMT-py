@@ -38,7 +38,7 @@
   <link rel="stylesheet" href="_static/theme_overrides.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="FAQ" href="FAQ.html" />
+    <link rel="next" title="Contributors" href="CONTRIBUTING.html" />
     <link rel="prev" title="Overview" href="main.html" /> 
 </head>
 
@@ -87,28 +87,37 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="main.html">Overview</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Quickstart</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#step-1-preprocess-the-data">Step 1: Preprocess the data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#step-0-install-opennmt-py">Step 0: Install OpenNMT-py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#step-1-prepare-the-data">Step 1: Prepare the data</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#step-2-train-the-model">Step 2: Train the model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#step-3-translate">Step 3: Translate</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="FAQ.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="CONTRIBUTING.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ref.html">References</a></li>
 </ul>
+<p class="caption"><span class="caption-text">FAQ</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-do-i-use-the-transformer-model">How do I use the Transformer model?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
+</ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="Library.html">Library</a></li>
-<li class="toctree-l1"><a class="reference internal" href="extended.html">Translation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Summarization.html">Summarization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="im2text.html">Image to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="speech2text.html">Speech to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="vid2text.html">Video to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ggnn.html">Gated Graph Sequence Neural Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/Library.html">Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/Translation.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/GGNN.html">Gated Graph Sequence Neural Networks</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Scripts</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="options/preprocess.html">Preprocess</a></li>
+<li class="toctree-l1"><a class="reference internal" href="options/build_vocab.html">Build Vocab</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/train.html">Train</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/translate.html">Translate</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/server.html">Server</a></li>
@@ -120,6 +129,13 @@
 <li class="toctree-l1"><a class="reference internal" href="onmt.translation.html">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="onmt.translate.translation_server.html">Server</a></li>
 <li class="toctree-l1"><a class="reference internal" href="onmt.inputters.html">Data Loaders</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Legacy</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="legacy/FAQ.html">FAQ (Legacy version)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="legacy/im2text.html">Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="legacy/speech2text.html">Speech to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="legacy/vid2text.html">Video to Text</a></li>
 </ul>
 
             
@@ -186,12 +202,21 @@
             
   <div class="section" id="quickstart">
 <h1>Quickstart<a class="headerlink" href="#quickstart" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="step-1-preprocess-the-data">
-<h2>Step 1: Preprocess the data<a class="headerlink" href="#step-1-preprocess-the-data" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_preprocess -train_src data/src-train.txt -train_tgt data/tgt-train.txt -valid_src data/src-val.txt -valid_tgt data/tgt-val.txt -save_data data/demo
+<div class="section" id="step-0-install-opennmt-py">
+<h2>Step 0: Install OpenNMT-py<a class="headerlink" href="#step-0-install-opennmt-py" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install --upgrade pip
+pip install OpenNMT-py
 </pre></div>
 </div>
-<p>We will be working with some example data in <code class="docutils literal notranslate"><span class="pre">data/</span></code> folder.</p>
+</div>
+<div class="section" id="step-1-prepare-the-data">
+<h2>Step 1: Prepare the data<a class="headerlink" href="#step-1-prepare-the-data" title="Permalink to this headline">¶</a></h2>
+<p>To get started, we propose to download a toy English-German dataset for machine translation containing 10k tokenized sentences:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>wget https://s3.amazonaws.com/opennmt-trainingdata/toy-ende.tar.gz
+tar xf toy-ende.tar.gz
+<span class="nb">cd</span> toy-ende
+</pre></div>
+</div>
 <p>The data consists of parallel source (<code class="docutils literal notranslate"><span class="pre">src</span></code>) and target (<code class="docutils literal notranslate"><span class="pre">tgt</span></code>) data containing one sentence per line with tokens separated by a space:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">src-train.txt</span></code></p></li>
@@ -199,34 +224,83 @@
 <li><p><code class="docutils literal notranslate"><span class="pre">src-val.txt</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">tgt-val.txt</span></code></p></li>
 </ul>
-<p>Validation files are required and used to evaluate the convergence of the training. It usually contains no more than 5000 sentences.</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>$ head -n 3 data/src-train.txt
+<p>Validation files are used to evaluate the convergence of the training. It usually contains no more than 5k sentences.</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>$ head -n 3 toy_ende/src-train.txt
 It is not acceptable that , with the help of the national bureaucracies , Parliament &amp;apos;s legislative prerogative should be made null and void by means of implementing provisions whose content , purpose and extent are not laid down in advance .
 Federal Master Trainer and Senior Instructor of the Italian Federation of Aerobic Fitness , Group Fitness , Postural Gym , Stretching and Pilates; from 2004 , he has been collaborating with Antiche Terme as personal Trainer and Instructor of Stretching , Pilates and Postural Gym .
 &amp;quot; Two soldiers came up to me and told me that if I refuse to sleep with them , they will kill me . They beat me and ripped my clothes .
 </pre></div>
 </div>
+<p>We need to build a <strong>YAML configuration file</strong> to specify the data that will be used:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># toy_en_de.yaml</span>
+
+<span class="c1">## Where the vocab(s) will be written</span>
+<span class="nt">save_data</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">toy-ende/run/example</span>
+<span class="c1"># Prevent overwriting existing files in the folder</span>
+<span class="nt">overwrite</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+
+<span class="c1"># Corpus opts:</span>
+<span class="nt">data</span><span class="p">:</span>
+    <span class="nt">corpus_1</span><span class="p">:</span>
+        <span class="nt">path_src</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">toy-ende/src-train.txt</span>
+        <span class="nt">path_tgt</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">toy-ende/tgt-train.txt</span>
+    <span class="nt">valid</span><span class="p">:</span>
+        <span class="nt">path_src</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">data/src-val.txt</span>
+        <span class="nt">path_tgt</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">data/tgt-val.txt</span>
+<span class="nn">...</span>
+</pre></div>
+</div>
+<p>From this configuration, we can build the vocab(s), that will be necessary to train the model:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_build_vocab -config toy_en_de.yaml -n_sample <span class="m">10000</span>
+</pre></div>
+</div>
+<p><strong>Notes</strong>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">-n_sample</span></code> is required here – it represents the number of lines sampled from each corpus to build the vocab.</p></li>
+<li><p>This configuration is the simplest possible, without any tokenization or other <em>transforms</em>. See <a class="reference external" href="https://github.com/OpenNMT/OpenNMT-py/tree/master/config">other example configurations</a> for more complex pipelines.</p></li>
+</ul>
 </div>
 <div class="section" id="step-2-train-the-model">
 <h2>Step 2: Train the model<a class="headerlink" href="#step-2-train-the-model" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_train -data data/demo -save_model demo-model
+<p>To train a model, we need to <strong>add the following to the YAML configuration file</strong>:</p>
+<ul class="simple">
+<li><p>the vocabulary path(s) that will be used;</p></li>
+<li><p>training specific parameters.</p></li>
+</ul>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># toy_en_de.yaml</span>
+
+<span class="nn">...</span>
+
+<span class="c1"># Vocabulary files that were just created</span>
+<span class="nt">src_vocab</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">toy-ende/run/example.vocab.src</span>
+<span class="nt">tgt_vocab</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">toy-ende/run/example.vocab.tgt</span>
+
+<span class="c1"># Train on a single GPU</span>
+<span class="nt">world_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="nt">gpu_ranks</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">0</span><span class="p p-Indicator">]</span>
+
+<span class="c1"># Where to save the checkpoints</span>
+<span class="nt">save_model</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">toy-ende/run/model</span>
+<span class="nt">save_checkpoint_steps</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">500</span>
+<span class="nt">train_steps</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1000</span>
+<span class="nt">valid_steps</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">500</span>
 </pre></div>
 </div>
-<p>The main train command is quite simple. Minimally it takes a data file
-and a save file.  This will run the default model, which consists of a
-2-layer LSTM with 500 hidden units on both the encoder/decoder.
-If you want to train on GPU, you need to set, as an example:
-CUDA_VISIBLE_DEVICES=1,3
-<code class="docutils literal notranslate"><span class="pre">-world_size</span> <span class="pre">2</span> <span class="pre">-gpu_ranks</span> <span class="pre">0</span> <span class="pre">1</span></code> to use (say) GPU 1 and 3 on this node only.
-To know more about distributed training on single or multi nodes, read the FAQ section.</p>
+<p>Then you can simply run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_train -config toy_en_de.yaml
+</pre></div>
+</div>
+<p>This configuration will run the default model, which consists of a 2-layer LSTM with 500 hidden units on both the encoder and decoder. It will run on a single GPU (<code class="docutils literal notranslate"><span class="pre">world_size</span> <span class="pre">1</span></code> &amp; <code class="docutils literal notranslate"><span class="pre">gpu_ranks</span> <span class="pre">[0]</span></code>).</p>
+<p>Before the training process actually starts, the <code class="docutils literal notranslate"><span class="pre">*.vocab.pt</span></code> together with <code class="docutils literal notranslate"><span class="pre">*.transforms.pt</span></code> can be dumped to <code class="docutils literal notranslate"><span class="pre">-save_data</span></code> with configurations specified in <code class="docutils literal notranslate"><span class="pre">-config</span></code> yaml file by enabling the <code class="docutils literal notranslate"><span class="pre">-dump_fields</span></code> and <code class="docutils literal notranslate"><span class="pre">-dump_transforms</span></code> flags. It is also possible to generate transformed samples to simplify any potentially required visual inspection. The number of sample lines to dump per corpus is set with the <code class="docutils literal notranslate"><span class="pre">-n_sample</span></code> flag.</p>
+<p>For more advanded models and parameters, see <a class="reference external" href="https://github.com/OpenNMT/OpenNMT-py/tree/master/config">other example configurations</a> or the <a class="reference internal" href="FAQ.html"><span class="doc">FAQ</span></a>.</p>
 </div>
 <div class="section" id="step-3-translate">
 <h2>Step 3: Translate<a class="headerlink" href="#step-3-translate" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_translate -model demo-model_XYZ.pt -src data/src-test.txt -output pred.txt -replace_unk -verbose
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_translate -model toy-ende/run/model_step_1000.pt -src toy-ende/src-test.txt -output toy-ende/pred_1000.txt -gpu <span class="m">0</span> -verbose
 </pre></div>
 </div>
-<p>Now you have a model which you can use to predict on new data. We do this by running beam search. This will output predictions into <code class="docutils literal notranslate"><span class="pre">pred.txt</span></code>.</p>
-<p>Note:</p>
+<p>Now you have a model which you can use to predict on new data. We do this by running beam search. This will output predictions into <code class="docutils literal notranslate"><span class="pre">toy-ende/pred_1000.txt</span></code>.</p>
+<p><strong>Note</strong>:</p>
 <p>The predictions are going to be quite terrible, as the demo dataset is small. Try running on some larger datasets! For example you can download millions of parallel sentences for <a class="reference external" href="http://www.statmt.org/wmt16/translation-task.html">translation</a> or <a class="reference external" href="https://github.com/harvardnlp/sent-summary">summarization</a>.</p>
 </div>
 </div>
@@ -239,7 +313,7 @@ To know more about distributed training on single or multi nodes, read the FAQ s
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="FAQ.html" class="btn btn-neutral float-right" title="FAQ" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="CONTRIBUTING.html" class="btn btn-neutral float-right" title="Contributors" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="main.html" class="btn btn-neutral float-left" title="Overview" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>

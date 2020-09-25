@@ -85,23 +85,31 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../main.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../CONTRIBUTING.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../ref.html">References</a></li>
 </ul>
+<p class="caption"><span class="caption-text">FAQ</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-do-i-use-the-transformer-model">How do I use the Transformer model?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
+</ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../Library.html">Library</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../extended.html">Translation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../Summarization.html">Summarization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../im2text.html">Image to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../speech2text.html">Speech to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../vid2text.html">Video to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../ggnn.html">Gated Graph Sequence Neural Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/Library.html">Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/Translation.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/GGNN.html">Gated Graph Sequence Neural Networks</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Scripts</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../options/preprocess.html">Preprocess</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/build_vocab.html">Build Vocab</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../options/train.html">Train</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../options/translate.html">Translate</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../options/server.html">Server</a></li>
@@ -113,6 +121,13 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../onmt.translation.html">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../onmt.translate.translation_server.html">Server</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../onmt.inputters.html">Data Loaders</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Legacy</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../legacy/FAQ.html">FAQ (Legacy version)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../legacy/im2text.html">Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../legacy/speech2text.html">Speech to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../legacy/vid2text.html">Video to Text</a></li>
 </ul>
 
             
@@ -231,7 +246,28 @@
 
     <span class="k">def</span> <span class="nf">update_dropout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dropout</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="o">.</span><span class="n">update_dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">update_dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">update_dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span>
+
+<div class="viewcode-block" id="NMTModel.count_parameters"><a class="viewcode-back" href="../../../onmt.html#onmt.models.NMTModel.count_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">count_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="nb">print</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Count number of parameters in model (&amp; print with `log` callback).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (int, int):</span>
+<span class="sd">            * encoder side parameter count</span>
+<span class="sd">            * decoder side parameter count</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">enc</span><span class="p">,</span> <span class="n">dec</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">():</span>
+            <span class="k">if</span> <span class="s1">&#39;encoder&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+                <span class="n">enc</span> <span class="o">+=</span> <span class="n">param</span><span class="o">.</span><span class="n">nelement</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">dec</span> <span class="o">+=</span> <span class="n">param</span><span class="o">.</span><span class="n">nelement</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">log</span><span class="p">):</span>
+            <span class="n">log</span><span class="p">(</span><span class="s1">&#39;encoder: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">enc</span><span class="p">))</span>
+            <span class="n">log</span><span class="p">(</span><span class="s1">&#39;decoder: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dec</span><span class="p">))</span>
+            <span class="n">log</span><span class="p">(</span><span class="s1">&#39;* number of parameters: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">enc</span> <span class="o">+</span> <span class="n">dec</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">enc</span><span class="p">,</span> <span class="n">dec</span></div></div>
 </pre></div>
 
            </div>
