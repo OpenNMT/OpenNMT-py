@@ -449,10 +449,10 @@ def _add_train_general_opts(parser):
     # Fixed word vectors
     group.add('--fix_word_vecs_enc', '-fix_word_vecs_enc',
               action='store_true',
-              help="Fix word embeddings on the encoder side.")
+              help="Freeze word embeddings on the encoder side.")
     group.add('--fix_word_vecs_dec', '-fix_word_vecs_dec',
               action='store_true',
-              help="Fix word embeddings on the decoder side.")
+              help="Freeze word embeddings on the decoder side.")
 
     # Optimization options
     group = parser.add_argument_group('Optimization- Type')
