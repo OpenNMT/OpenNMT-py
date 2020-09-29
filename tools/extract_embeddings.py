@@ -4,6 +4,8 @@ import torch
 
 import onmt
 import onmt.model_builder
+
+from onmt.utils.parse import ArgumentParser
 import onmt.opts
 
 from onmt.utils.misc import use_gpu
