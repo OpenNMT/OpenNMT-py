@@ -158,6 +158,12 @@ class ArgumentParser(cfargparse.ArgumentParser, DataOptsCheckerMixin):
             model_opt.src_word_vec_size = model_opt.word_vec_size
             model_opt.tgt_word_vec_size = model_opt.word_vec_size
 
+        # Backward compatibility with "fix_word_vecs_*" opts
+        if hasattr(model_opt, 'fix_word_vecs_enc'):
+            model_opt.freeze_word_vecs_enc = model_opt.fix_word_vecs_enc
+        if hasattr(model_opt, 'fix_word_vecs_dec'):
+            model_opt.freeze_word_vecs_dec = model_opt.fix_word_vecs_dec
+
         if model_opt.layers > 0:
             model_opt.enc_layers = model_opt.layers
             model_opt.dec_layers = model_opt.layers
