@@ -4,8 +4,6 @@ import torch
 
 import onmt
 import onmt.model_builder
-
-from onmt.utils.parse import ArgumentParser
 import onmt.opts
 
 from onmt.utils.misc import use_gpu
@@ -34,7 +32,6 @@ def main():
     dummy_parser = argparse.ArgumentParser(description='train.py')
     onmt.opts.model_opts(dummy_parser)
     dummy_opt = dummy_parser.parse_known_args([])[0]
-
     opt = parser.parse_args()
     opt.cuda = opt.gpu > -1
     if opt.cuda:
