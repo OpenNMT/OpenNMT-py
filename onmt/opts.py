@@ -446,13 +446,13 @@ def _add_train_general_opts(parser):
               help="If a valid path is specified, then this will load "
                    "pretrained word embeddings on the decoder side. "
                    "See README for specific formatting instructions.")
-    # Fixed word vectors
-    group.add('--fix_word_vecs_enc', '-fix_word_vecs_enc',
+    # Freeze word vectors
+    group.add('--freeze_word_vecs_enc', '-freeze_word_vecs_enc',
               action='store_true',
-              help="Fix word embeddings on the encoder side.")
-    group.add('--fix_word_vecs_dec', '-fix_word_vecs_dec',
+              help="Freeze word embeddings on the encoder side.")
+    group.add('--freeze_word_vecs_dec', '-freeze_word_vecs_dec',
               action='store_true',
-              help="Fix word embeddings on the decoder side.")
+              help="Freeze word embeddings on the decoder side.")
 
     # Optimization options
     group = parser.add_argument_group('Optimization- Type')

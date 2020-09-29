@@ -34,8 +34,8 @@ def build_embeddings(opt, text_field, for_encoder=True):
     num_embs = [len(f.vocab) for _, f in text_field]
     num_word_embeddings, num_feat_embeddings = num_embs[0], num_embs[1:]
 
-    fix_word_vecs = opt.fix_word_vecs_enc if for_encoder \
-        else opt.fix_word_vecs_dec
+    freeze_word_vecs = opt.freeze_word_vecs_enc if for_encoder \
+        else opt.freeze_word_vecs_dec
 
     emb = Embeddings(
         word_vec_size=emb_dim,
@@ -49,7 +49,7 @@ def build_embeddings(opt, text_field, for_encoder=True):
         word_vocab_size=num_word_embeddings,
         feat_vocab_sizes=num_feat_embeddings,
         sparse=opt.optim == "sparseadam",
-        fix_word_vecs=fix_word_vecs
+        freeze_word_vecs=freeze_word_vecs
     )
     return emb
 

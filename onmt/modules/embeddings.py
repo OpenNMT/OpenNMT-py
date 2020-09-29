@@ -94,6 +94,7 @@ class Embeddings(nn.Module):
         feat_vec_size (int): embedding dimension for features when using
             `-feat_merge mlp`
         dropout (float): dropout probability.
+        freeze_word_vecs (bool): freeze weights of word vectors.
     """
 
     def __init__(self, word_vec_size,
@@ -107,7 +108,7 @@ class Embeddings(nn.Module):
                  feat_vocab_sizes=[],
                  dropout=0,
                  sparse=False,
-                 fix_word_vecs=False):
+                 freeze_word_vecs=False):
         self._validate_args(feat_merge, feat_vocab_sizes, feat_vec_exponent,
                             feat_vec_size, feat_padding_idx)
 
@@ -169,7 +170,7 @@ class Embeddings(nn.Module):
             pe = PositionalEncoding(dropout, self.embedding_size)
             self.make_embedding.add_module('pe', pe)
 
-        if fix_word_vecs:
+        if freeze_word_vecs:
             self.word_lut.weight.requires_grad = False
 
     def _validate_args(self, feat_merge, feat_vocab_sizes, feat_vec_exponent,

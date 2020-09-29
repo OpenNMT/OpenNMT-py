@@ -47,7 +47,7 @@ onmt_train -config <your_config>.yaml
 
 Notes:
 - the matched embeddings will be saved at `<save_data>.enc_embeddings.pt` and `<save_data>.dec_embeddings.pt`;
-- additional flags `fix_word_vecs_enc` and `fix_word_vecs_dec` are available to freeze the embeddings.
+- additional flags `freeze_word_vecs_enc` and `freeze_word_vecs_dec` are available to freeze the embeddings.
 
 ## How do I use the Transformer model?
 
