@@ -287,6 +287,7 @@
 <span class="sd">        feat_vec_size (int): embedding dimension for features when using</span>
 <span class="sd">            `-feat_merge mlp`</span>
 <span class="sd">        dropout (float): dropout probability.</span>
+<span class="sd">        freeze_word_vecs (bool): freeze weights of word vectors.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">word_vec_size</span><span class="p">,</span>
@@ -300,7 +301,7 @@
                  <span class="n">feat_vocab_sizes</span><span class="o">=</span><span class="p">[],</span>
                  <span class="n">dropout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                  <span class="n">sparse</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                 <span class="n">fix_word_vecs</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+                 <span class="n">freeze_word_vecs</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_validate_args</span><span class="p">(</span><span class="n">feat_merge</span><span class="p">,</span> <span class="n">feat_vocab_sizes</span><span class="p">,</span> <span class="n">feat_vec_exponent</span><span class="p">,</span>
                             <span class="n">feat_vec_size</span><span class="p">,</span> <span class="n">feat_padding_idx</span><span class="p">)</span>
 
@@ -362,7 +363,7 @@
             <span class="n">pe</span> <span class="o">=</span> <span class="n">PositionalEncoding</span><span class="p">(</span><span class="n">dropout</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_size</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">make_embedding</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s1">&#39;pe&#39;</span><span class="p">,</span> <span class="n">pe</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">fix_word_vecs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">freeze_word_vecs</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">word_lut</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="k">def</span> <span class="nf">_validate_args</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feat_merge</span><span class="p">,</span> <span class="n">feat_vocab_sizes</span><span class="p">,</span> <span class="n">feat_vec_exponent</span><span class="p">,</span>
