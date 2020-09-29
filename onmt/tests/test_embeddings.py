@@ -21,7 +21,7 @@ class TestEmbeddings(unittest.TestCase):
         feat_padding_idx=[[], [29], [0, 1]],
         feat_vocab_sizes=[[], [39], [401, 39]],
         dropout=[0, 0.5],
-        fix_word_vecs=[False, True]
+        freeze_word_vecs=[False, True]
     ))
     PARAMS = list(product_dict(
         batch_size=[1, 14],
@@ -105,9 +105,9 @@ class TestEmbeddings(unittest.TestCase):
             for key in emb.state_dict():
                 if key not in trainable_params:
                     if key.endswith("emb_luts.0.weight") and \
-                            init_case["fix_word_vecs"]:
+                            init_case["freeze_word_vecs"]:
                         # ok: word embeddings shouldn't be trainable
-                        # if word vecs are fixed
+                        # if word vecs are freezed
                         continue
                     if key.endswith(".pe.pe"):
                         # ok: positional encodings shouldn't be trainable
@@ -117,11 +117,11 @@ class TestEmbeddings(unittest.TestCase):
                         self.fail("Param {:s} is unexpectedly not "
                                   "trainable.".format(key))
             # then check nothing unexpectedly trainable
-            if init_case["fix_word_vecs"]:
+            if init_case["freeze_word_vecs"]:
                 self.assertFalse(
                     any(trainable_param.endswith("emb_luts.0.weight")
                         for trainable_param in trainable_params),
-                    "Word embedding is trainable but word vecs are fixed.")
+                    "Word embedding is trainable but word vecs are freezed.")
             if init_case["position_encoding"]:
                 self.assertFalse(
                     any(trainable_p.endswith(".pe.pe")
