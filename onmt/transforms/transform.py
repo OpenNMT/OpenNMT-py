@@ -1,5 +1,4 @@
 """Base Transform class and relate utils."""
-import os
 import torch
 from onmt.utils.logging import logger
 from onmt.utils.misc import check_path
@@ -192,7 +191,6 @@ def get_specials(opts, transforms_cls_dict):
 def save_transforms(transforms, save_data, overwrite=True):
     """Dump `transforms` object."""
     transforms_path = "{}.transforms.pt".format(save_data)
-    os.makedirs(os.path.dirname(transforms_path), exist_ok=True)
     check_path(transforms_path, exist_ok=overwrite, log=logger.warning)
     logger.info(f"Saving Transforms to {transforms_path}.")
     torch.save(transforms, transforms_path)

@@ -16,6 +16,7 @@ mkdir "glove_dir"
 wget http://nlp.stanford.edu/data/glove.6B.zip
 unzip glove.6B.zip -d "glove_dir"
 ```
+
 2. Adapt the configuration:
 
 ```yaml
@@ -46,6 +47,7 @@ onmt_train -config <your_config>.yaml
 ```
 
 Notes:
+
 - the matched embeddings will be saved at `<save_data>.enc_embeddings.pt` and `<save_data>.dec_embeddings.pt`;
 - additional flags `freeze_word_vecs_enc` and `freeze_word_vecs_dec` are available to freeze the embeddings.
 

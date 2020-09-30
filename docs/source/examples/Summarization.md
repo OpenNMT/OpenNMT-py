@@ -34,8 +34,11 @@ For CNN-DM we follow See et al. [2] and additionally truncate the source length 
 ```yaml
 # cnndm.yaml
 
-## Where the vocab(s) will be written
+## Where the samples will be written
 save_data: cnndm/run/example
+## Where the vocab(s) will be written
+src_vocab: cnndm/run/example.vocab.src
+tgt_vocab: cnndm/run/example.vocab.tgt
 # Prevent overwriting existing files in the folder
 overwrite: False
 

@@ -95,8 +95,11 @@ As for any use case of OpenNMT-py 2.0, we can start by creating a simple YAML co
 
 ```python
 yaml_config = """
-## Where the vocab(s) will be written
+## Where the samples will be written
 save_data: toy-ende/run/example
+## Where the vocab(s) will be written
+src_vocab: toy-ende/run/example.vocab.src
+tgt_vocab: toy-ende/run/example.vocab.tgt
 # Corpus opts:
 data:
     corpus:

@@ -92,11 +92,16 @@ class DataOptsCheckerMixin(object):
         opt._all_transform = all_transforms
 
     @classmethod
-    def _validate_vocab_opts(cls, opt, build_vocab_only=False):
-        """Check options relate to vocab."""
-        if opt.src_vocab:
-            cls._validate_file(opt.src_vocab, info='src vocab')
-        if opt.tgt_vocab:
+    def _validate_fields_opts(cls, opt, build_vocab_only=False):
+        """Check options relate to vocab and fields."""
+        if build_vocab_only:
+            if not opt.share_vocab:
+                assert opt.tgt_vocab, \
+                    "-tgt_vocab is required if not -share_vocab."
+            return
+        # validation when train:
+        cls._validate_file(opt.src_vocab, info='src vocab')
+        if not opt.share_vocab:
             cls._validate_file(opt.tgt_vocab, info='tgt vocab')
 
         if opt.dump_fields or opt.dump_transforms:
@@ -126,8 +131,7 @@ class DataOptsCheckerMixin(object):
         cls._validate_data(opt)
         cls._get_all_transform(opt)
         cls._validate_transforms_opts(opt)
-        if not build_vocab_only:
-            cls._validate_vocab_opts(opt)
+        cls._validate_fields_opts(opt, build_vocab_only=build_vocab_only)
 
 
 class ArgumentParser(cfargparse.ArgumentParser, DataOptsCheckerMixin):
