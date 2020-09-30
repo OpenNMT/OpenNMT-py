@@ -399,10 +399,10 @@
 <h2>Vocab<a class="headerlink" href="#Vocab" title="Permalink to this headline">¶</a></h2>
 <dl class="option-list">
 <dt><kbd>-src_vocab, --src_vocab</kbd></dt>
-<dd><p>Path to a vocabulary file for src.Format: one &lt;word&gt; or &lt;word&gt;  &lt;count&gt; per line.</p>
+<dd><p>Path to src (or shared) vocabulary file. Format: one &lt;word&gt; or &lt;word&gt;   &lt;count&gt; per line.</p>
 </dd>
 <dt><kbd>-tgt_vocab, --tgt_vocab</kbd></dt>
-<dd><p>Path to a vocabulary file for tgt.Format: one &lt;word&gt; or &lt;word&gt;  &lt;count&gt; per line.</p>
+<dd><p>Path to tgt vocabulary file. Format: one &lt;word&gt; or &lt;word&gt;       &lt;count&gt; per line.</p>
 </dd>
 <dt><kbd>-share_vocab, --share_vocab</kbd></dt>
 <dd><p>Share source and target vocabulary.</p>
@@ -515,7 +515,7 @@
 <h2>Transform/SwitchOut<a class="headerlink" href="#Transform/SwitchOut" title="Permalink to this headline">¶</a></h2>
 <dl class="option-list">
 <dt><kbd>-switchout_temperature, --switchout_temperature</kbd></dt>
-<dd><p>Sampling temperature for SwitchOut. tau^(-1) in <a class="bibtex reference internal" href="../ref.html#dblp-journals-corr-abs-1808-07512" id="id1">[WPDN18]</a>. Smaller value makes data more diverse.</p>
+<dd><p>Sampling temperature for SwitchOut. <span class="math notranslate nohighlight">\(\tau^{-1}\)</span> in <a class="bibtex reference internal" href="../ref.html#dblp-journals-corr-abs-1808-07512" id="id1">[WPDN18]</a>. Smaller value makes data more diverse.</p>
 <p>Default: 1.0</p>
 </dd>
 </dl>

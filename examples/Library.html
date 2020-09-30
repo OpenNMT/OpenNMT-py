@@ -279,8 +279,11 @@ toy-ende.tar.gz.5   100%[===================&gt;]   1,58M  2,33MB/s    in 0,7s
 <h2>Prepare data and vocab<a class="headerlink" href="#prepare-data-and-vocab" title="Permalink to this headline">¶</a></h2>
 <p>As for any use case of OpenNMT-py 2.0, we can start by creating a simple YAML configuration with our datasets. This is the easiest way to build the proper <code class="docutils literal notranslate"><span class="pre">opts</span></code> <code class="docutils literal notranslate"><span class="pre">Namespace</span></code> that will be used to create the vocabulary(ies).</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">yaml_config</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">## Where the vocab(s) will be written</span>
+<span class="s2">## Where the samples will be written</span>
 <span class="s2">save_data: toy-ende/run/example</span>
+<span class="s2">## Where the vocab(s) will be written</span>
+<span class="s2">src_vocab: toy-ende/run/example.vocab.src</span>
+<span class="s2">tgt_vocab: toy-ende/run/example.vocab.tgt</span>
 <span class="s2"># Corpus opts:</span>
 <span class="s2">data:</span>
 <span class="s2">    corpus:</span>

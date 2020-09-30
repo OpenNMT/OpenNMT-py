@@ -21,6 +21,9 @@ We need to setup the desired configuration with 1. the data 2. the tokenization 
 ```yaml
 # wmt14_en_de.yaml
 save_data: data/wmt/run/example
+## Where the vocab(s) will be written
+src_vocab: data/wmt/run/example.vocab.src
+tgt_vocab: data/wmt/run/example.vocab.tgt
 
 # Corpus opts:
 data:

@@ -216,6 +216,9 @@
 <p>We need to setup the desired configuration with 1. the data 2. the tokenization options:</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># wmt14_en_de.yaml</span>
 <span class="nt">save_data</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">data/wmt/run/example</span>
+<span class="c1">## Where the vocab(s) will be written</span>
+<span class="nt">src_vocab</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">data/wmt/run/example.vocab.src</span>
+<span class="nt">tgt_vocab</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">data/wmt/run/example.vocab.tgt</span>
 
 <span class="c1"># Corpus opts:</span>
 <span class="nt">data</span><span class="p">:</span>

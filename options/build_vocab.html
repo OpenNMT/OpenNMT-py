@@ -215,7 +215,7 @@
                       <span class="n">DATA</span> <span class="p">[</span><span class="o">-</span><span class="n">skip_empty_level</span> <span class="p">{</span><span class="n">silent</span><span class="p">,</span><span class="n">warning</span><span class="p">,</span><span class="n">error</span><span class="p">}]</span>
                       <span class="p">[</span><span class="o">-</span><span class="n">transforms</span> <span class="p">{</span><span class="n">filtertoolong</span><span class="p">,</span><span class="n">prefix</span><span class="p">,</span><span class="n">bart</span><span class="p">,</span><span class="n">switchout</span><span class="p">,</span><span class="n">tokendrop</span><span class="p">,</span><span class="n">tokenmask</span><span class="p">,</span><span class="n">sentencepiece</span><span class="p">,</span><span class="n">bpe</span><span class="p">,</span><span class="n">onmt_tokenize</span><span class="p">}</span> <span class="p">[{</span><span class="n">filtertoolong</span><span class="p">,</span><span class="n">prefix</span><span class="p">,</span><span class="n">bart</span><span class="p">,</span><span class="n">switchout</span><span class="p">,</span><span class="n">tokendrop</span><span class="p">,</span><span class="n">tokenmask</span><span class="p">,</span><span class="n">sentencepiece</span><span class="p">,</span><span class="n">bpe</span><span class="p">,</span><span class="n">onmt_tokenize</span><span class="p">}</span> <span class="o">...</span><span class="p">]]</span>
                       <span class="o">-</span><span class="n">save_data</span> <span class="n">SAVE_DATA</span> <span class="p">[</span><span class="o">-</span><span class="n">overwrite</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">n_sample</span> <span class="n">N_SAMPLE</span><span class="p">]</span>
-                      <span class="p">[</span><span class="o">-</span><span class="n">src_vocab</span> <span class="n">SRC_VOCAB</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">tgt_vocab</span> <span class="n">TGT_VOCAB</span><span class="p">]</span>
+                      <span class="o">-</span><span class="n">src_vocab</span> <span class="n">SRC_VOCAB</span> <span class="p">[</span><span class="o">-</span><span class="n">tgt_vocab</span> <span class="n">TGT_VOCAB</span><span class="p">]</span>
                       <span class="p">[</span><span class="o">-</span><span class="n">share_vocab</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">src_seq_length</span> <span class="n">SRC_SEQ_LENGTH</span><span class="p">]</span>
                       <span class="p">[</span><span class="o">--</span><span class="n">tgt_seq_length</span> <span class="n">TGT_SEQ_LENGTH</span><span class="p">]</span>
                       <span class="p">[</span><span class="o">--</span><span class="n">permute_sent_ratio</span> <span class="n">PERMUTE_SENT_RATIO</span><span class="p">]</span>
@@ -284,10 +284,10 @@
 <h2>Vocab<a class="headerlink" href="#Vocab" title="Permalink to this headline">¶</a></h2>
 <dl class="option-list">
 <dt><kbd>-src_vocab, --src_vocab</kbd></dt>
-<dd><p>Path to a vocabulary file for src.Format: one &lt;word&gt; or &lt;word&gt;  &lt;count&gt; per line.</p>
+<dd><p>Path to save src (or shared) vocabulary file. Format: one &lt;word&gt; or &lt;word&gt;      &lt;count&gt; per line.</p>
 </dd>
 <dt><kbd>-tgt_vocab, --tgt_vocab</kbd></dt>
-<dd><p>Path to a vocabulary file for tgt.Format: one &lt;word&gt; or &lt;word&gt;  &lt;count&gt; per line.</p>
+<dd><p>Path to save tgt vocabulary file. Format: one &lt;word&gt; or &lt;word&gt;  &lt;count&gt; per line.</p>
 </dd>
 <dt><kbd>-share_vocab, --share_vocab</kbd></dt>
 <dd><p>Share source and target vocabulary.</p>
@@ -310,6 +310,7 @@
 </div>
 <div class="section" id="Transform/BART">
 <h2>Transform/BART<a class="headerlink" href="#Transform/BART" title="Permalink to this headline">¶</a></h2>
+<p>This transform will not take effet when building vocabulary.</p>
 <dl class="option-list">
 <dt><kbd>--permute_sent_ratio, -permute_sent_ratio</kbd></dt>
 <dd><p>Permute this proportion of sentences (boundaries defined by [‘.’, ‘?’, ‘!’]) in all inputs.</p>
@@ -349,9 +350,10 @@
 </div>
 <div class="section" id="Transform/SwitchOut">
 <h2>Transform/SwitchOut<a class="headerlink" href="#Transform/SwitchOut" title="Permalink to this headline">¶</a></h2>
+<p>This transform will not take effet when building vocabulary.</p>
 <dl class="option-list">
 <dt><kbd>-switchout_temperature, --switchout_temperature</kbd></dt>
-<dd><p>Sampling temperature for SwitchOut. tau^(-1) in <a class="bibtex reference internal" href="../ref.html#dblp-journals-corr-abs-1808-07512" id="id1">[WPDN18]</a>. Smaller value makes data more diverse.</p>
+<dd><p>Sampling temperature for SwitchOut. <span class="math notranslate nohighlight">\(\tau^{-1}\)</span> in <a class="bibtex reference internal" href="../ref.html#dblp-journals-corr-abs-1808-07512" id="id1">[WPDN18]</a>. Smaller value makes data more diverse.</p>
 <p>Default: 1.0</p>
 </dd>
 </dl>
@@ -376,6 +378,8 @@
 </div>
 <div class="section" id="Transform/Subword/Common">
 <h2>Transform/Subword/Common<a class="headerlink" href="#Transform/Subword/Common" title="Permalink to this headline">¶</a></h2>
+<p>Common options for transforms related to tokenization/subword.
+See <code class="xref py py-class docutils literal notranslate"><span class="pre">TokenizerTransform</span></code> for more detail.</p>
 <dl class="option-list">
 <dt><kbd>-src_subword_model, --src_subword_model</kbd></dt>
 <dd><p>Path of subword model for src (or shared).</p>
