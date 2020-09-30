@@ -34,7 +34,7 @@ jobs:
       script:
         - python -m unittest discover
         # test build vocabulary
-        - PYTHONPATH=$PYTHONPATH:. python onmt/bin/build_vocab.py -config data/data.yaml -save_data /tmp/onmt -n_sample 5000 && rm -rf /tmp/sample
+        - PYTHONPATH=$PYTHONPATH:. python onmt/bin/build_vocab.py -config data/data.yaml -save_data /tmp/onmt -n_sample 5000 -src_vocab /tmp/onmt.vocab.src -tgt_vocab /tmp/onmt.vocab.tgt && rm -rf /tmp/sample
 
         # test nmt field/transform prepare: used for tool testing
         - python train.py -config data/data.yaml -save_data /tmp/onmt.train.check -dump_fields -dump_transforms -n_sample 30 -src_vocab /tmp/onmt.vocab.src -tgt_vocab /tmp/onmt.vocab.tgt -src_vocab_size 1000 -tgt_vocab_size 1000

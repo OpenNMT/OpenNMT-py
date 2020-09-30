@@ -64,6 +64,8 @@ echo -n "[+] Testing vocabulary building..."
 PYTHONPATH=${PROJECT_ROOT}:${PYTHONPATH} ${PYTHON} onmt/bin/build_vocab.py \
             -config ${DATA_DIR}/data.yaml \
             -save_data $TMP_OUT_DIR/onmt \
+            -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
+            -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
             -n_sample 5000 >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}

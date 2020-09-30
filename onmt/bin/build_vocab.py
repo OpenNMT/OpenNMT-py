@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Get vocabulary coutings from transformed corpora samples."""
 from onmt.utils.logging import init_logger
-from onmt.utils.misc import set_random_seed
+from onmt.utils.misc import set_random_seed, check_path
 from onmt.utils.parse import ArgumentParser
 from onmt.opts import dynamic_prepare_opts
 from onmt.inputters.corpus import save_transformed_sample
@@ -37,18 +37,21 @@ def build_vocab_main(opts):
 
     logger.info(f"Counters src:{len(src_counter)}")
     logger.info(f"Counters tgt:{len(tgt_counter)}")
-    if opts.share_vocab:
-        src_counter += tgt_counter
-        tgt_counter = src_counter
-        logger.info(f"Counters after share:{len(src_counter)}")
 
     def save_counter(counter, save_path):
+        check_path(save_path, exist_ok=opts.overwrite, log=logger.warning)
         with open(save_path, "w") as fo:
             for tok, count in counter.most_common():
                 fo.write(tok + "\t" + str(count) + "\n")
 
-    save_counter(src_counter, opts.save_data + '.vocab.src')
-    save_counter(tgt_counter, opts.save_data + '.vocab.tgt')
+    if opts.share_vocab:
+        src_counter += tgt_counter
+        tgt_counter = src_counter
+        logger.info(f"Counters after share:{len(src_counter)}")
+        save_counter(src_counter, opts.src_vocab)
+    else:
+        save_counter(src_counter, opts.src_vocab)
+        save_counter(tgt_counter, opts.tgt_vocab)
 
 
 def _get_parser():

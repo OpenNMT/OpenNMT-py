@@ -59,8 +59,8 @@ class SwitchOutTransform(Transform, HammingDistanceSampling):
         group = parser.add_argument_group("Transform/SwitchOut")
         group.add("-switchout_temperature", "--switchout_temperature",
                   type=float, default=1.0,
-                  help="Sampling temperature for SwitchOut. tau^(-1) "
-                       "in :cite:`DBLP:journals/corr/abs-1808-07512`. "
+                  help="Sampling temperature for SwitchOut. :math:`\\tau^{-1}`"
+                       " in :cite:`DBLP:journals/corr/abs-1808-07512`. "
                        "Smaller value makes data more diverse.")
 
     def _switchout(self, tokens, vocab, stats=None):

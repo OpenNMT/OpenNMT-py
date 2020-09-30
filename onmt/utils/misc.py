@@ -9,11 +9,14 @@ import os
 
 
 def check_path(path, exist_ok=False, log=print):
+    """Check if `path` exists, makedirs if not else warning/IOError."""
     if os.path.exists(path):
         if exist_ok:
             log(f"path {path} exists, may overwrite...")
         else:
             raise IOError(f"path {path} exists, stop.")
+    else:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
 
 
 def split_corpus(path, shard_size, default=None):
