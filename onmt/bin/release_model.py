@@ -34,7 +34,7 @@ def main():
                         default="pytorch",
                         help="The format of the released model")
     parser.add_argument("--quantization", "-q",
-                        choices=["int8", "int16"],
+                        choices=["int8", "int16", "float16"],
                         default=None,
                         help="Quantization type for CT2 model.")
     opt = parser.parse_args()
