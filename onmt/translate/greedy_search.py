@@ -89,7 +89,6 @@ class GreedySearch(DecodeStrategy):
             exclusion_tokens, return_attention, max_length)
         self.sampling_temp = sampling_temp
         self.keep_topk = keep_topk
-        self.topk_scores = None
 
     def initialize(self, memory_bank, src_lengths, src_map=None, device=None,
                    target_prefix=None):
@@ -110,6 +109,8 @@ class GreedySearch(DecodeStrategy):
             self.batch_size, dtype=torch.long, device=device)
         self.original_batch_idx = torch.arange(
             self.batch_size, dtype=torch.long, device=device)
+        self.topk_scores = torch.empty((self.batch_size, 1),
+                                       dtype=torch.float, device=device)
         return fn_map_state, memory_bank, self.memory_lengths, src_map
 
     @property
@@ -148,7 +149,9 @@ class GreedySearch(DecodeStrategy):
         self.ensure_min_length(log_probs)
         self.block_ngram_repeats(log_probs)
 
-        topk_ids, self.topk_scores = self._pick(log_probs)
+        topk_ids, topk_scores = self._pick(log_probs)
+
+        self.topk_scores[self.original_batch_idx] += topk_scores
 
         self.is_finished = topk_ids.eq(self.eos)
 
@@ -166,7 +169,7 @@ class GreedySearch(DecodeStrategy):
         finished_batches = self.is_finished.view(-1).nonzero()
         for b in finished_batches.view(-1):
             b_orig = self.original_batch_idx[b]
-            self.scores[b_orig].append(self.topk_scores[b, 0])
+            self.scores[b_orig].append(self.topk_scores[b_orig, 0])
             self.predictions[b_orig].append(self.alive_seq[b, 1:])
             self.attention[b_orig].append(
                 self.alive_attn[:, b, :self.memory_lengths[b]]
