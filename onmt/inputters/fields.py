@@ -54,9 +54,9 @@ def build_dynamic_fields(opts, src_specials=None, tgt_specials=None):
 
 
 def get_vocabs(fields):
-    """Get a dict contain src & tgt vocab list extracted from fields."""
-    src_vocab = fields['src'].base_field.vocab.itos
-    tgt_vocab = fields['tgt'].base_field.vocab.itos
+    """Get a dict contain src & tgt vocab extracted from fields."""
+    src_vocab = fields['src'].base_field.vocab
+    tgt_vocab = fields['tgt'].base_field.vocab
     vocabs = {'src': src_vocab, 'tgt': tgt_vocab}
     return vocabs
 
