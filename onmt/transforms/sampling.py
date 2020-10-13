@@ -84,8 +84,10 @@ class SwitchOutTransform(Transform, HammingDistanceSampling):
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Apply switchout to both src and tgt side tokens."""
         if is_train and self.vocab is not None:
-            src = self._switchout(example['src'], self.vocab['src'], stats)
-            tgt = self._switchout(example['tgt'], self.vocab['tgt'], stats)
+            src = self._switchout(
+                example['src'], self.vocab['src'].itos, stats)
+            tgt = self._switchout(
+                example['tgt'], self.vocab['tgt'].itos, stats)
             example['src'], example['tgt'] = src, tgt
         return example
 
