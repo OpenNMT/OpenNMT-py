@@ -15,6 +15,7 @@ import traceback
 import onmt.utils
 from onmt.utils.logging import logger
 
+patience = 3 # 3 seems to be enough
 
 def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
     """
@@ -74,6 +75,11 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
     return trainer
 
 
+def finish_training(train_steps, step, num_of_validation_since_best):
+    # we finish when the patience is covered
+    return 0 < train_steps <= step or num_of_validation_since_best >= patience
+
+
 class Trainer(object):
     """
     Class that controls the training process.
@@ -109,6 +115,8 @@ class Trainer(object):
                  average_decay=0, average_every=1, model_dtype='fp32',
                  earlystopper=None, dropout=[0.3], dropout_steps=[0]):
         # Basic attributes.
+        self.best_validation_stats = None
+        self.num_of_validation_since_best = 0
         self.model = model
         self.train_loss = train_loss
         self.valid_loss = valid_loss
@@ -216,7 +224,6 @@ class Trainer(object):
         else:
             logger.info('Start training loop and validate every %d steps...',
                         valid_steps)
-
         total_stats = onmt.utils.Statistics()
         report_stats = onmt.utils.Statistics()
         self._start_report_manager(start_time=total_stats.start_time)
@@ -261,6 +268,7 @@ class Trainer(object):
                     logger.info('GpuRank %d: gather valid stat \
                                 step %d' % (self.gpu_rank, step))
                 valid_stats = self._maybe_gather_stats(valid_stats)
+                self.update_valid_stop_cond_stats(valid_stats, step)
                 if self.gpu_verbose_level > 0:
                     logger.info('GpuRank %d: report stat step %d'
                                 % (self.gpu_rank, step))
@@ -278,7 +286,7 @@ class Trainer(object):
                          and step % save_checkpoint_steps == 0)):
                 self.model_saver.save(step, moving_average=self.moving_average)
 
-            if train_steps > 0 and step >= train_steps:
+            if finish_training(train_steps, step, self.num_of_validation_since_best):
                 break
 
         if self.model_saver is not None:
@@ -473,3 +481,20 @@ class Trainer(object):
                 else self.earlystopper.current_tolerance,
                 step, train_stats=train_stats,
                 valid_stats=valid_stats)
+
+    def update_valid_stop_cond_stats(self, valid_stats,step):
+        # if this validation is better than the best one - it replaces it.
+        # better means better acc (higher)
+        if self.best_validation_stats is None:
+            self.num_of_validation_since_best = 0
+            self.best_validation_stats = valid_stats
+            logger.info('trying_to_save')
+            self.model_saver.save(0)
+        else:
+            if valid_stats.accuracy() < self.best_validation_stats.accuracy():
+                self.num_of_validation_since_best += 1
+            else:
+                self.num_of_validation_since_best = 0
+                self.best_validation_stats = valid_stats
+                logger.info('trying_to_save')
+                self.model_saver.save(0)

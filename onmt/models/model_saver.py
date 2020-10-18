@@ -58,9 +58,6 @@ class ModelSaverBase(object):
         related logic
         """
 
-        if self.keep_checkpoint == 0 or step == self.last_saved_step:
-            return
-
         save_model = self.model
         if moving_average:
             model_params_data = []
