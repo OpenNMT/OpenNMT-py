@@ -227,7 +227,7 @@ class Trainer(object):
         total_stats = onmt.utils.Statistics()
         report_stats = onmt.utils.Statistics()
         self._start_report_manager(start_time=total_stats.start_time)
-
+        step = 1
         for i, (batches, normalization) in enumerate(
                 self._accum_batches(train_iter)):
             step = self.optim.training_step
@@ -268,7 +268,7 @@ class Trainer(object):
                     logger.info('GpuRank %d: gather valid stat \
                                 step %d' % (self.gpu_rank, step))
                 valid_stats = self._maybe_gather_stats(valid_stats)
-                self.update_valid_stop_cond_stats(valid_stats, step)
+                self.update_valid_stop_cond_stats(valid_stats)
                 if self.gpu_verbose_level > 0:
                     logger.info('GpuRank %d: report stat step %d'
                                 % (self.gpu_rank, step))
@@ -482,7 +482,7 @@ class Trainer(object):
                 step, train_stats=train_stats,
                 valid_stats=valid_stats)
 
-    def update_valid_stop_cond_stats(self, valid_stats,step):
+    def update_valid_stop_cond_stats(self, valid_stats):
         # if this validation is better than the best one - it replaces it.
         # better means better acc (higher)
         if self.best_validation_stats is None:
@@ -491,7 +491,7 @@ class Trainer(object):
             logger.info('trying_to_save')
             self.model_saver.save(0)
         else:
-            if valid_stats.accuracy() < self.best_validation_stats.accuracy():
+            if valid_stats.ppl() > self.best_validation_stats.ppl():
                 self.num_of_validation_since_best += 1
             else:
                 self.num_of_validation_since_best = 0
