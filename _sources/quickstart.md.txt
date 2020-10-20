@@ -54,8 +54,8 @@ data:
         path_src: toy-ende/src-train.txt
         path_tgt: toy-ende/tgt-train.txt
     valid:
-        path_src: data/src-val.txt
-        path_tgt: data/tgt-val.txt
+        path_src: toy-ende/src-val.txt
+        path_tgt: toy-ende/tgt-val.txt
 ...
 
 ```
