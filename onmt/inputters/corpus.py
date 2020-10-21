@@ -312,9 +312,11 @@ def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
             build_sub_vocab.queues[c_name][offset].put("break")
     return sub_counter_src, sub_counter_tgt
 
+
 def init_pool(queues):
     """Add the queues as attribute of the pooled function."""
     build_sub_vocab.queues = queues
+
 
 def build_vocab(opts, transforms, n_sample=3):
     """Build vocabulary from data."""
