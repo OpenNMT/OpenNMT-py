@@ -99,6 +99,12 @@ def _add_dynamic_corpus_opts(parser, build_vocab_only=False):
         group.add('-dump_transforms', '--dump_transforms', action='store_true',
                   help="Dump transforms `*.transforms.pt` to disk."
                   " -save_data should be set as saving prefix.")
+    else:
+        group.add('-dump_samples', '--dump_samples', action='store_true',
+                  help="Dump samples when building vocab. "
+                  "Warning: this may slow down the process.")
+        group.add('-num_threads', '--num_threads', type=int, default=1,
+                  help="Number of parallel threads to build the vocab.")
 
 
 def _add_dynamic_fields_opts(parser, build_vocab_only=False):
