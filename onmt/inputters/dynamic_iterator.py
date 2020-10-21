@@ -1,10 +1,8 @@
 """Module that contain iterator used for dynamic data."""
 from itertools import cycle
 
-from torchtext.data import Dataset as TorchtextDataset, \
-    Example as TorchtextExample, batch as torchtext_batch
+from torchtext.data import batch as torchtext_batch
 from onmt.inputters import str2sortkey, max_tok_len, OrderedIterator
-from onmt.inputters.dataset_base import _dynamic_dict
 from onmt.inputters.corpus import get_corpora, build_corpora_iters, DatasetAdapter
 from onmt.transforms import make_transforms
 

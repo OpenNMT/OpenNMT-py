@@ -3,6 +3,9 @@ import os
 from onmt.utils.logging import logger
 from onmt.constants import CorpusName
 from onmt.transforms import TransformPipe
+from onmt.inputters.dataset_base import _dynamic_dict
+from torchtext.data import Dataset as TorchtextDataset, \
+    Example as TorchtextExample
 
 from collections import Counter
 from contextlib import contextmanager
