@@ -24,7 +24,7 @@ class BARTNoising(object):
 
     def __init__(self, vocab, mask_tok=DefaultTokens.MASK, mask_ratio=0.0,
                  insert_ratio=0.0, permute_sent_ratio=0.0, poisson_lambda=3.0,
-                 replace_length=-1, rotate_ratio=0.5, mask_length='subword',
+                 replace_length=-1, rotate_ratio=0.0, mask_length='subword',
                  random_ratio=0.0, is_joiner=False,
                  full_stop_token=DefaultTokens.SENT_FULL_STOPS):
         self.vocab = vocab
@@ -318,7 +318,7 @@ class BARTNoiseTransform(Transform):
                   help="Permute this proportion of sentences "
                        "(boundaries defined by {}) in all inputs.".format(
                         DefaultTokens.SENT_FULL_STOPS))
-        group.add("--rotate_ratio", "-rotate_ratio", type=float, default=0.5,
+        group.add("--rotate_ratio", "-rotate_ratio", type=float, default=0.0,
                   help="Rotate this proportion of inputs.")
         group.add("--insert_ratio", "-insert_ratio", type=float, default=0.0,
                   help="Insert this percentage of additional random tokens.")
