@@ -105,6 +105,9 @@ def _add_dynamic_corpus_opts(parser, build_vocab_only=False):
                   "Warning: this may slow down the process.")
         group.add('-num_threads', '--num_threads', type=int, default=1,
                   help="Number of parallel threads to build the vocab.")
+        group.add('-vocab_sample_queue_size', '--vocab_sample_queue_size',
+                  type=int, default=100,
+                  help="Size of queues used in the build_vocab dump path.")
 
 
 def _add_dynamic_fields_opts(parser, build_vocab_only=False):

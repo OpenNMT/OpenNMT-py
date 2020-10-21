@@ -335,7 +335,8 @@ def build_vocab(opts, transforms, n_sample=3):
     counter_src = Counter()
     counter_tgt = Counter()
     from functools import partial
-    queues = {c_name: [mp.Queue(500) for i in range(opts.num_threads)]
+    queues = {c_name: [mp.Queue(opts.vocab_sample_queue_size)
+                       for i in range(opts.num_threads)]
               for c_name in corpora.keys()}
     sample_path = os.path.join(
         os.path.dirname(opts.save_data), CorpusName.SAMPLE)
