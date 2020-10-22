@@ -1,75 +1,11 @@
 """Module that contain iterator used for dynamic data."""
 from itertools import cycle
 
-from torchtext.data import Dataset as TorchtextDataset, \
-    Example as TorchtextExample, batch as torchtext_batch
+from torchtext.data import batch as torchtext_batch
 from onmt.inputters import str2sortkey, max_tok_len, OrderedIterator
-from onmt.inputters.dataset_base import _dynamic_dict
-from onmt.inputters.corpus import get_corpora, build_corpora_iters
+from onmt.inputters.corpus import get_corpora, build_corpora_iters,\
+    DatasetAdapter
 from onmt.transforms import make_transforms
-
-
-class DatasetAdapter(object):
-    """Adapte a buckets of tuples into examples of a torchtext Dataset."""
-
-    valid_field_name = (
-        'src', 'tgt', 'indices', 'src_map', 'src_ex_vocab', 'alignment',
-        'align')
-
-    def __init__(self, fields, is_train):
-        self.fields_dict = self._valid_fields(fields)
-        self.is_train = is_train
-
-    @classmethod
-    def _valid_fields(cls, fields):
-        """Return valid fields in dict format."""
-        return {
-            f_k: f_v for f_k, f_v in fields.items()
-            if f_k in cls.valid_field_name
-        }
-
-    @staticmethod
-    def _process(item, is_train):
-        """Return valid transformed example from `item`."""
-        example, transform, cid = item
-        # this is a hack: appears quicker to apply it here
-        # than in the ParallelCorpusIterator
-        maybe_example = transform.apply(
-            example, is_train=is_train, corpus_name=cid)
-        if maybe_example is None:
-            return None
-        maybe_example['src'] = ' '.join(maybe_example['src'])
-        maybe_example['tgt'] = ' '.join(maybe_example['tgt'])
-        if 'align' in maybe_example:
-            maybe_example['align'] = ' '.join(maybe_example['align'])
-        return maybe_example
-
-    def _maybe_add_dynamic_dict(self, example, fields):
-        """maybe update `example` with dynamic_dict related fields."""
-        if 'src_map' in fields and 'alignment' in fields:
-            example = _dynamic_dict(
-                example,
-                fields['src'].base_field,
-                fields['tgt'].base_field)
-        return example
-
-    def _to_examples(self, bucket, is_train=False):
-        examples = []
-        for item in bucket:
-            maybe_example = self._process(item, is_train=is_train)
-            if maybe_example is not None:
-                example = self._maybe_add_dynamic_dict(
-                    maybe_example, self.fields_dict)
-                ex_fields = {k: [(k, v)] for k, v in self.fields_dict.items()
-                             if k in example}
-                ex = TorchtextExample.fromdict(example, ex_fields)
-                examples.append(ex)
-        return examples
-
-    def __call__(self, bucket):
-        examples = self._to_examples(bucket, is_train=self.is_train)
-        dataset = TorchtextDataset(examples, self.fields_dict)
-        return dataset
 
 
 class MixingStrategy(object):

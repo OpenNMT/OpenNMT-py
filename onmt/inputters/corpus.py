@@ -3,9 +3,14 @@ import os
 from onmt.utils.logging import logger
 from onmt.constants import CorpusName
 from onmt.transforms import TransformPipe
+from onmt.inputters.dataset_base import _dynamic_dict
+from torchtext.data import Dataset as TorchtextDataset, \
+    Example as TorchtextExample
 
 from collections import Counter
 from contextlib import contextmanager
+
+import multiprocessing as mp
 
 
 @contextmanager
@@ -34,6 +39,69 @@ def exfile_open(filename, *args, **kwargs):
     yield _file
     if filename is not None and _file:
         _file.close()
+
+
+class DatasetAdapter(object):
+    """Adapte a buckets of tuples into examples of a torchtext Dataset."""
+
+    valid_field_name = (
+        'src', 'tgt', 'indices', 'src_map', 'src_ex_vocab', 'alignment',
+        'align')
+
+    def __init__(self, fields, is_train):
+        self.fields_dict = self._valid_fields(fields)
+        self.is_train = is_train
+
+    @classmethod
+    def _valid_fields(cls, fields):
+        """Return valid fields in dict format."""
+        return {
+            f_k: f_v for f_k, f_v in fields.items()
+            if f_k in cls.valid_field_name
+        }
+
+    @staticmethod
+    def _process(item, is_train):
+        """Return valid transformed example from `item`."""
+        example, transform, cid = item
+        # this is a hack: appears quicker to apply it here
+        # than in the ParallelCorpusIterator
+        maybe_example = transform.apply(
+            example, is_train=is_train, corpus_name=cid)
+        if maybe_example is None:
+            return None
+        maybe_example['src'] = ' '.join(maybe_example['src'])
+        maybe_example['tgt'] = ' '.join(maybe_example['tgt'])
+        if 'align' in maybe_example:
+            maybe_example['align'] = ' '.join(maybe_example['align'])
+        return maybe_example
+
+    def _maybe_add_dynamic_dict(self, example, fields):
+        """maybe update `example` with dynamic_dict related fields."""
+        if 'src_map' in fields and 'alignment' in fields:
+            example = _dynamic_dict(
+                example,
+                fields['src'].base_field,
+                fields['tgt'].base_field)
+        return example
+
+    def _to_examples(self, bucket, is_train=False):
+        examples = []
+        for item in bucket:
+            maybe_example = self._process(item, is_train=is_train)
+            if maybe_example is not None:
+                example = self._maybe_add_dynamic_dict(
+                    maybe_example, self.fields_dict)
+                ex_fields = {k: [(k, v)] for k, v in self.fields_dict.items()
+                             if k in example}
+                ex = TorchtextExample.fromdict(example, ex_fields)
+                examples.append(ex)
+        return examples
+
+    def __call__(self, bucket):
+        examples = self._to_examples(bucket, is_train=self.is_train)
+        dataset = TorchtextDataset(examples, self.fields_dict)
+        return dataset
 
 
 class ParallelCorpus(object):
@@ -192,7 +260,106 @@ def build_corpora_iters(corpora, transforms, corpora_info, is_train=False,
     return corpora_iters
 
 
-def save_transformed_sample(opts, transforms, n_sample=3, build_vocab=False):
+def write_files_from_queues(sample_path, queues):
+    """
+    Standalone process that reads data from
+    queues in order and write to sample files.
+    """
+    os.makedirs(sample_path, exist_ok=True)
+    for c_name in queues.keys():
+        dest_base = dest_base = os.path.join(
+            sample_path, "{}.{}".format(c_name, CorpusName.SAMPLE))
+        with open(dest_base + ".src", 'w', encoding="utf-8") as f_src,\
+                open(dest_base + ".tgt", 'w', encoding="utf-8") as f_tgt:
+            while True:
+                _next = False
+                for i, q in enumerate(queues[c_name]):
+                    item = q.get()
+                    if item == "break":
+                        _next = True
+                        break
+                    j, src_line, tgt_line = item
+                    f_src.write(src_line + '\n')
+                    f_tgt.write(tgt_line + '\n')
+                if _next:
+                    break
+
+
+def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
+    """Build vocab on (strided) subpart of the data."""
+    sub_counter_src = Counter()
+    sub_counter_tgt = Counter()
+    datasets_iterables = build_corpora_iters(
+        corpora, transforms, opts.data, is_train=False,
+        skip_empty_level=opts.skip_empty_level,
+        stride=stride, offset=offset)
+    for c_name, c_iter in datasets_iterables.items():
+        for i, item in enumerate(c_iter):
+            maybe_example = DatasetAdapter._process(item, is_train=True)
+            if maybe_example is None:
+                continue
+            src_line, tgt_line = maybe_example['src'], maybe_example['tgt']
+            sub_counter_src.update(src_line.split(' '))
+            sub_counter_tgt.update(tgt_line.split(' '))
+            if opts.dump_samples:
+                build_sub_vocab.queues[c_name][offset].put(
+                    (i, src_line, tgt_line))
+            if n_sample > 0 and ((i+1) * stride + offset) >= n_sample:
+                if opts.dump_samples:
+                    build_sub_vocab.queues[c_name][offset].put("break")
+                break
+        if opts.dump_samples:
+            build_sub_vocab.queues[c_name][offset].put("break")
+    return sub_counter_src, sub_counter_tgt
+
+
+def init_pool(queues):
+    """Add the queues as attribute of the pooled function."""
+    build_sub_vocab.queues = queues
+
+
+def build_vocab(opts, transforms, n_sample=3):
+    """Build vocabulary from data."""
+
+    if n_sample == -1:
+        logger.info(f"n_sample={n_sample}: Build vocab on full datasets.")
+    elif n_sample > 0:
+        logger.info(f"Build vocab on {n_sample} transformed examples/corpus.")
+    else:
+        raise ValueError(f"n_sample should > 0 or == -1, get {n_sample}.")
+
+    if opts.dump_samples:
+        logger.info("The samples on which the vocab is built will be "
+                    "dumped to disk. It may slow down the process.")
+    corpora = get_corpora(opts, is_train=True)
+    counter_src = Counter()
+    counter_tgt = Counter()
+    from functools import partial
+    queues = {c_name: [mp.Queue(opts.vocab_sample_queue_size)
+                       for i in range(opts.num_threads)]
+              for c_name in corpora.keys()}
+    sample_path = os.path.join(
+        os.path.dirname(opts.save_data), CorpusName.SAMPLE)
+    if opts.dump_samples:
+        write_process = mp.Process(
+            target=write_files_from_queues,
+            args=(sample_path, queues),
+            daemon=True)
+        write_process.start()
+    with mp.Pool(opts.num_threads, init_pool, [queues]) as p:
+        func = partial(
+            build_sub_vocab, corpora, transforms,
+            opts, n_sample, opts.num_threads)
+        for sub_counter_src, sub_counter_tgt in p.imap(
+                func, range(0, opts.num_threads)):
+            counter_src.update(sub_counter_src)
+            counter_tgt.update(sub_counter_tgt)
+    if opts.dump_samples:
+        write_process.join()
+    return counter_src, counter_tgt
+
+
+def save_transformed_sample(opts, transforms, n_sample=3):
     """Save transformed data sample as specified in opts."""
 
     if n_sample == -1:
@@ -205,11 +372,7 @@ def save_transformed_sample(opts, transforms, n_sample=3, build_vocab=False):
     else:
         raise ValueError(f"n_sample should >= -1, get {n_sample}.")
 
-    from onmt.inputters.dynamic_iterator import DatasetAdapter
     corpora = get_corpora(opts, is_train=True)
-    if build_vocab:
-        counter_src = Counter()
-        counter_tgt = Counter()
     datasets_iterables = build_corpora_iters(
         corpora, transforms, opts.data, is_train=False,
         skip_empty_level=opts.skip_empty_level)
@@ -226,12 +389,7 @@ def save_transformed_sample(opts, transforms, n_sample=3, build_vocab=False):
                 if maybe_example is None:
                     continue
                 src_line, tgt_line = maybe_example['src'], maybe_example['tgt']
-                if build_vocab:
-                    counter_src.update(src_line.split(' '))
-                    counter_tgt.update(tgt_line.split(' '))
                 f_src.write(src_line + '\n')
                 f_tgt.write(tgt_line + '\n')
                 if n_sample > 0 and i >= n_sample:
                     break
-    if build_vocab:
-        return counter_src, counter_tgt

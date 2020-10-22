@@ -4,7 +4,7 @@ from onmt.utils.logging import init_logger
 from onmt.utils.misc import set_random_seed, check_path
 from onmt.utils.parse import ArgumentParser
 from onmt.opts import dynamic_prepare_opts
-from onmt.inputters.corpus import save_transformed_sample
+from onmt.inputters.corpus import build_vocab
 from onmt.transforms import make_transforms, get_transforms_cls
 
 
@@ -32,8 +32,8 @@ def build_vocab_main(opts):
     transforms = make_transforms(opts, transforms_cls, fields)
 
     logger.info(f"Counter vocab from {opts.n_sample} samples.")
-    src_counter, tgt_counter = save_transformed_sample(
-        opts, transforms, n_sample=opts.n_sample, build_vocab=True)
+    src_counter, tgt_counter = build_vocab(
+        opts, transforms, n_sample=opts.n_sample)
 
     logger.info(f"Counters src:{len(src_counter)}")
     logger.info(f"Counters tgt:{len(tgt_counter)}")
