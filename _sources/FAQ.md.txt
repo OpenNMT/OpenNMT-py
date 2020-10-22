@@ -204,7 +204,8 @@ subword_nbest: 20
 # Smoothing parameter for SentencePiece sampling
 subword_alpha: 0.1
 # Specific arguments for pyonmttok
-onmttok_kwargs: "{'mode': 'none', 'spacer_annotate': True}"
+src_onmttok_kwargs: "{'mode': 'none', 'spacer_annotate': True}"
+tgt_onmttok_kwargs: "{'mode': 'none', 'spacer_annotate': True}"
 
 # Corpus opts:
 data:
@@ -283,7 +284,7 @@ Additional options are available:
 - `src_subword_type`: type of subword model for source side (from `["none", "sentencepiece", "bpe"]`);
 - `tgt_subword_type`: type of subword model for target side (from `["none", "sentencepiece", "bpe"]`);
 - `src_onmttok_kwargs`: additional kwargs for pyonmttok Tokenizer class, source side;
-- `src_onmttok_kwargs`: additional kwargs for pyonmttok Tokenizer class, target side.
+- `tgt_onmttok_kwargs`: additional kwargs for pyonmttok Tokenizer class, target side.
 
 #### [SentencePiece](https://github.com/google/sentencepiece)
 

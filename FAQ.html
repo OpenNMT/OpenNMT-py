@@ -413,7 +413,8 @@ Bear in mind that your models must share the same target vocabulary.</p>
 <span class="c1"># Smoothing parameter for SentencePiece sampling</span>
 <span class="nt">subword_alpha</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0.1</span>
 <span class="c1"># Specific arguments for pyonmttok</span>
-<span class="nt">onmttok_kwargs</span><span class="p">:</span> <span class="s">&quot;{&#39;mode&#39;:</span><span class="nv"> </span><span class="s">&#39;none&#39;,</span><span class="nv"> </span><span class="s">&#39;spacer_annotate&#39;:</span><span class="nv"> </span><span class="s">True}&quot;</span>
+<span class="nt">src_onmttok_kwargs</span><span class="p">:</span> <span class="s">&quot;{&#39;mode&#39;:</span><span class="nv"> </span><span class="s">&#39;none&#39;,</span><span class="nv"> </span><span class="s">&#39;spacer_annotate&#39;:</span><span class="nv"> </span><span class="s">True}&quot;</span>
+<span class="nt">tgt_onmttok_kwargs</span><span class="p">:</span> <span class="s">&quot;{&#39;mode&#39;:</span><span class="nv"> </span><span class="s">&#39;none&#39;,</span><span class="nv"> </span><span class="s">&#39;spacer_annotate&#39;:</span><span class="nv"> </span><span class="s">True}&quot;</span>
 
 <span class="c1"># Corpus opts:</span>
 <span class="nt">data</span><span class="p">:</span>
@@ -485,7 +486,7 @@ Bear in mind that your models must share the same target vocabulary.</p>
 <li><p><code class="docutils literal notranslate"><span class="pre">src_subword_type</span></code>: type of subword model for source side (from <code class="docutils literal notranslate"><span class="pre">[&quot;none&quot;,</span> <span class="pre">&quot;sentencepiece&quot;,</span> <span class="pre">&quot;bpe&quot;]</span></code>);</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">tgt_subword_type</span></code>: type of subword model for target side (from <code class="docutils literal notranslate"><span class="pre">[&quot;none&quot;,</span> <span class="pre">&quot;sentencepiece&quot;,</span> <span class="pre">&quot;bpe&quot;]</span></code>);</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">src_onmttok_kwargs</span></code>: additional kwargs for pyonmttok Tokenizer class, source side;</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">src_onmttok_kwargs</span></code>: additional kwargs for pyonmttok Tokenizer class, target side.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tgt_onmttok_kwargs</span></code>: additional kwargs for pyonmttok Tokenizer class, target side.</p></li>
 </ul>
 </div>
 <div class="section" id="sentencepiece">
