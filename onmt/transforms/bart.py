@@ -156,8 +156,9 @@ class BARTNoising(object):
             lengths = torch.ones((n_mask,)).long()
         # assert is_word_start[-1] == 0
         word_starts = is_word_start.nonzero(as_tuple=False)
-        indices = word_starts[torch.randperm(word_starts.size(0))[
-            :n_mask]].squeeze(1)
+        indices = word_starts[
+            torch.randperm(word_starts.size(0))[:n_mask]
+        ].squeeze(1)
         mask_random = torch.FloatTensor(n_mask).uniform_() < self.random_ratio
 
         tokens_length = len(tokens)
@@ -168,12 +169,12 @@ class BARTNoising(object):
             to_keep[indices] = 0
         else:
             # keep index, but replace it with [MASK]
-            for i in indices:
+            for i in indices.tolist():
                 tokens[i] = self.mask_tok
-            random_toks = torch.randint(
-                0, len(self.vocab), size=(mask_random.sum(),))
-            for i, rand_tok in zip(indices[mask_random], random_toks):
-                tokens[i] = rand_tok
+            random_tok_ids = torch.randint(
+                0, len(self.vocab), size=(mask_random.sum(),)).tolist()
+            for i, rid in zip(indices[mask_random].tolist(), random_tok_ids):
+                tokens[i] = self.vocab[rid]
 
         if tokens_length - 1 in indices:
             uncompleted = (indices != tokens_length - 1)
@@ -201,12 +202,13 @@ class BARTNoising(object):
                     to_keep[indices] = 0
                 else:
                     # keep index, but replace it with [MASK]: 1 mask per token
-                    for i in indices:
+                    for i in indices.tolist():
                         tokens[i] = self.mask_tok
-                    random_toks = torch.randint(
-                        0, len(self.vocab), size=(mask_random.sum(),))
-                    for i, rand_tok in zip(indices[mask_random], random_toks):
-                        tokens[i] = rand_tok
+                    random_tok_ids = torch.randint(
+                        0, len(self.vocab), size=(mask_random.sum(),)).tolist()
+                    for i, rid in zip(
+                            indices[mask_random].tolist(), random_tok_ids):
+                        tokens[i] = self.vocab[rid]
         else:
             # A bit faster when all lengths are 1
             while indices.size(0) > 0:
@@ -219,17 +221,18 @@ class BARTNoising(object):
                     to_keep[indices] = 0
                 else:
                     # keep index, but replace it with [MASK]
-                    for i in indices:
+                    for i in indices.tolist():
                         tokens[i] = self.mask_tok
-                    random_toks = torch.randint(
-                        0, len(self.vocab), size=(mask_random.sum(),))
-                    for i, rand_tok in zip(indices[mask_random], random_toks):
-                        tokens[i] = rand_tok
+                    random_tok_ids = torch.randint(
+                        0, len(self.vocab), size=(mask_random.sum(),)).tolist()
+                    for i, rid in zip(
+                            indices[mask_random].tolist(), random_tok_ids):
+                        tokens[i] = self.vocab[rid]
 
                 # assert tokens_length - 1 not in indices
 
-        tokens = [tok for tok, keep in zip(tokens, to_keep)
-                  if keep.item() is True]
+        tokens = [tok for tok, keep in zip(tokens, to_keep.tolist())
+                  if keep is True]
 
         if n_insert > 0:
             tokens = self.insertion_noise(tokens, n_insert / len(tokens))
@@ -257,7 +260,7 @@ class BARTNoising(object):
 
         assert all([item is not None for item in result]),\
             "Error when inserting noise."
-        return [tok for tok in result]
+        return result.tolist()
 
     def rolling_noise(self, tokens, p=1.0):
         if np.random.random() >= p:
@@ -341,7 +344,9 @@ class BARTNoiseTransform(Transform):
                        "or N tokens. (use -1 for N)")
 
     def warm_up(self, vocabs):
-        self.vocab = vocabs
+        if vocabs is None:
+            return
+        self.vocab = vocabs['src'].itos
 
         subword_type = self.opts.src_subword_type
         if self.opts.mask_length == 'subword':
@@ -351,7 +356,7 @@ class BARTNoiseTransform(Transform):
                     f'mask_length={self.opts.mask_length}!')
         is_joiner = (subword_type == 'bpe') if subword_type != 'none' else None
         self.bart_noise = BARTNoising(
-            vocabs,
+            self.vocab,
             mask_tok=DefaultTokens.MASK,
             mask_ratio=self.opts.mask_ratio,
             insert_ratio=self.opts.insert_ratio,
