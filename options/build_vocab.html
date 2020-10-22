@@ -215,6 +215,8 @@
                       <span class="n">DATA</span> <span class="p">[</span><span class="o">-</span><span class="n">skip_empty_level</span> <span class="p">{</span><span class="n">silent</span><span class="p">,</span><span class="n">warning</span><span class="p">,</span><span class="n">error</span><span class="p">}]</span>
                       <span class="p">[</span><span class="o">-</span><span class="n">transforms</span> <span class="p">{</span><span class="n">filtertoolong</span><span class="p">,</span><span class="n">prefix</span><span class="p">,</span><span class="n">bart</span><span class="p">,</span><span class="n">switchout</span><span class="p">,</span><span class="n">tokendrop</span><span class="p">,</span><span class="n">tokenmask</span><span class="p">,</span><span class="n">sentencepiece</span><span class="p">,</span><span class="n">bpe</span><span class="p">,</span><span class="n">onmt_tokenize</span><span class="p">}</span> <span class="p">[{</span><span class="n">filtertoolong</span><span class="p">,</span><span class="n">prefix</span><span class="p">,</span><span class="n">bart</span><span class="p">,</span><span class="n">switchout</span><span class="p">,</span><span class="n">tokendrop</span><span class="p">,</span><span class="n">tokenmask</span><span class="p">,</span><span class="n">sentencepiece</span><span class="p">,</span><span class="n">bpe</span><span class="p">,</span><span class="n">onmt_tokenize</span><span class="p">}</span> <span class="o">...</span><span class="p">]]</span>
                       <span class="o">-</span><span class="n">save_data</span> <span class="n">SAVE_DATA</span> <span class="p">[</span><span class="o">-</span><span class="n">overwrite</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">n_sample</span> <span class="n">N_SAMPLE</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">-</span><span class="n">dump_samples</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">num_threads</span> <span class="n">NUM_THREADS</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">-</span><span class="n">vocab_sample_queue_size</span> <span class="n">VOCAB_SAMPLE_QUEUE_SIZE</span><span class="p">]</span>
                       <span class="o">-</span><span class="n">src_vocab</span> <span class="n">SRC_VOCAB</span> <span class="p">[</span><span class="o">-</span><span class="n">tgt_vocab</span> <span class="n">TGT_VOCAB</span><span class="p">]</span>
                       <span class="p">[</span><span class="o">-</span><span class="n">share_vocab</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">src_seq_length</span> <span class="n">SRC_SEQ_LENGTH</span><span class="p">]</span>
                       <span class="p">[</span><span class="o">--</span><span class="n">tgt_seq_length</span> <span class="n">TGT_SEQ_LENGTH</span><span class="p">]</span>
@@ -277,6 +279,18 @@
 <dt><kbd>-n_sample, --n_sample</kbd></dt>
 <dd><p>Build vocab using this number of transformed samples/corpus. Can be [-1, 0, N&gt;0]. Set to -1 to go full corpus, 0 to skip.</p>
 <p>Default: 5000</p>
+</dd>
+<dt><kbd>-dump_samples, --dump_samples</kbd></dt>
+<dd><p>Dump samples when building vocab. Warning: this may slow down the process.</p>
+<p>Default: False</p>
+</dd>
+<dt><kbd>-num_threads, --num_threads</kbd></dt>
+<dd><p>Number of parallel threads to build the vocab.</p>
+<p>Default: 1</p>
+</dd>
+<dt><kbd>-vocab_sample_queue_size, --vocab_sample_queue_size</kbd></dt>
+<dd><p>Size of queues used in the build_vocab dump path.</p>
+<p>Default: 100</p>
 </dd>
 </dl>
 </div>
