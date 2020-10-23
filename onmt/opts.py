@@ -693,6 +693,8 @@ def translate_opts(parser):
     group.add('--fp32', '-fp32', action='store_true',
               help="Force the model to be in FP32 "
                    "because FP16 is very slow on GTX1080(ti).")
+    group.add('--int8', '-int8', action='store_true',
+              help="Enable dynamic 8-bit quantization (CPU only).")
     group.add('--avg_raw_probs', '-avg_raw_probs', action='store_true',
               help="If this is set, during ensembling scores from "
                    "different models will be combined by averaging their "
