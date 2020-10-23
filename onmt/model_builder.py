@@ -92,6 +92,11 @@ def load_test_model(opt, model_path=None):
                              opt.gpu)
     if opt.fp32:
         model.float()
+    elif opt.int8:
+        if opt.gpu >= 0:
+            raise ValueError(
+                "Dynamic 8-bit quantization is not supported on GPU")
+        torch.quantization.quantize_dynamic(model, inplace=True)
     model.eval()
     model.generator.eval()
     return fields, model, model_opt
