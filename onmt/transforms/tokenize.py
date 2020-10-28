@@ -8,7 +8,7 @@ class TokenizerTransform(Transform):
     """Tokenizer transform abstract class."""
 
     def __init__(self, opts):
-        """Initialize neccessary options for Tokenizer."""
+        """Initialize necessary options for Tokenizer."""
         super().__init__(opts)
         self._parse_opts()
 
@@ -127,7 +127,7 @@ class SentencePieceTransform(TokenizerTransform):
     """SentencePiece subword transform class."""
 
     def __init__(self, opts):
-        """Initialize necessaryoptions for sentencepiece."""
+        """Initialize necessary options for sentencepiece."""
         super().__init__(opts)
         self._parse_opts()
 
