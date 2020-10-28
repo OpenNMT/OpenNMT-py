@@ -7,7 +7,7 @@ Build Vocab
     :prog: build_vocab.py
 
     Transform/BART : @before
-        This transform will not take effet when building vocabulary.
+        .. Caution:: This transform will not take effect when building vocabulary.
 
     Transform/SwitchOut : @before
-        This transform will not take effet when building vocabulary.
+        .. Caution:: This transform will not take effect when building vocabulary.
