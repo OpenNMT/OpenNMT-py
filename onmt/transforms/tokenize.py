@@ -10,7 +10,6 @@ class TokenizerTransform(Transform):
     def __init__(self, opts):
         """Initialize necessary options for Tokenizer."""
         super().__init__(opts)
-        self._parse_opts()
 
     @classmethod
     def add_options(cls, parser):
@@ -80,10 +79,6 @@ class TokenizerTransform(Transform):
             "tgt_subword_alpha should be in the range [0, 1]"
 
     def _parse_opts(self):
-        raise NotImplementedError
-
-    def _set_subword_opts(self):
-        """Set necessary options relate to subword."""
         self.share_vocab = self.opts.share_vocab
         self.src_subword_model = self.opts.src_subword_model
         self.tgt_subword_model = self.opts.tgt_subword_model
@@ -95,16 +90,6 @@ class TokenizerTransform(Transform):
         self.tgt_subword_vocab = self.opts.tgt_subword_vocab
         self.src_vocab_threshold = self.opts.src_vocab_threshold
         self.tgt_vocab_threshold = self.opts.tgt_vocab_threshold
-
-    def __getstate__(self):
-        """Pickling following for rebuild."""
-        return self.opts
-
-    def __setstate__(self, opts):
-        """Reload when unpickling from save file."""
-        self.opts = opts
-        self._parse_opts()
-        self.warm_up()
 
     def _repr_args(self):
         """Return str represent key arguments for TokenizerTransform."""
@@ -129,13 +114,18 @@ class SentencePieceTransform(TokenizerTransform):
     def __init__(self, opts):
         """Initialize necessary options for sentencepiece."""
         super().__init__(opts)
-        self._parse_opts()
 
-    def _parse_opts(self):
-        self._set_subword_opts()
+    def _set_seed(self, seed):
+        """set seed to ensure reproducibility."""
+        try:
+            import sentencepiece as spm
+            spm.set_random_generator_seed(seed)
+        except AttributeError as err:
+            logger.warning(f"{err}, please update for reproducibility.")
 
     def warm_up(self, vocabs=None):
         """Load subword models."""
+        super().warm_up(None)
         import sentencepiece as spm
         load_src_model = spm.SentencePieceProcessor()
         load_src_model.Load(self.src_subword_model)
@@ -201,18 +191,25 @@ class SentencePieceTransform(TokenizerTransform):
 
 @register_transform(name='bpe')
 class BPETransform(TokenizerTransform):
+    """subword_nmt: official BPE subword transform class."""
+
     def __init__(self, opts):
         """Initialize necessary options for subword_nmt."""
         super().__init__(opts)
-        self._parse_opts()
 
     def _parse_opts(self):
-        self._set_subword_opts()
+        super()._parse_opts()
         self.dropout = {'src': self.src_subword_alpha,
                         'tgt': self.tgt_subword_alpha}
 
+    def _set_seed(self, seed):
+        """set seed to ensure reproducibility."""
+        import random
+        random.seed(seed)
+
     def warm_up(self, vocabs=None):
         """Load subword models."""
+        super().warm_up(None)
         from subword_nmt.apply_bpe import BPE, read_vocabulary
         import codecs
         src_codes = codecs.open(self.src_subword_model, encoding='utf-8')
@@ -265,7 +262,14 @@ class ONMTTokenizerTransform(TokenizerTransform):
     def __init__(self, opts):
         """Initialize necessary options for OpenNMT Tokenizer."""
         super().__init__(opts)
-        self._parse_opts()
+
+    def _set_seed(self, seed):
+        """set seed to ensure reproducibility."""
+        try:
+            import pyonmttok
+            pyonmttok.set_random_seed(seed)
+        except AttributeError as err:
+            logger.warning(f"{err}, please update for reproducibility.")
 
     @classmethod
     def add_options(cls, parser):
@@ -303,14 +307,10 @@ class ONMTTokenizerTransform(TokenizerTransform):
         opts.src_onmttok_kwargs = src_kwargs_dict
         opts.tgt_onmttok_kwargs = tgt_kwargs_dict
 
-    def _set_subword_opts(self):
-        """Set all options relate to subword for OpenNMT/Tokenizer."""
-        super()._set_subword_opts()
+    def _parse_opts(self):
+        super()._parse_opts()
         self.src_subword_type = self.opts.src_subword_type
         self.tgt_subword_type = self.opts.tgt_subword_type
-
-    def _parse_opts(self):
-        self._set_subword_opts()
         logger.info("Parsed pyonmttok kwargs for src: {}".format(
             self.opts.src_onmttok_kwargs))
         logger.info("Parsed pyonmttok kwargs for tgt: {}".format(
@@ -364,6 +364,7 @@ class ONMTTokenizerTransform(TokenizerTransform):
 
     def warm_up(self, vocab=None):
         """Initialize Tokenizer models."""
+        super().warm_up(None)
         import pyonmttok
         src_subword_kwargs = self._get_subword_kwargs(side='src')
         src_tokenizer = pyonmttok.Tokenizer(

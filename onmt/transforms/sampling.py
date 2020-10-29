@@ -36,8 +36,17 @@ class HammingDistanceSampling(object):
         return chosen_indices
 
 
+class HammingDistanceSamplingTransform(Transform, HammingDistanceSampling):
+    """Abstract Transform class based on HammingDistanceSampling."""
+
+    def _set_seed(self, seed):
+        """set seed to ensure reproducibility."""
+        np.random.seed(seed)
+        random.seed(seed)
+
+
 @register_transform(name='switchout')
-class SwitchOutTransform(Transform, HammingDistanceSampling):
+class SwitchOutTransform(HammingDistanceSamplingTransform):
     """
     SwitchOut.
     :cite:`DBLP:journals/corr/abs-1808-07512`
@@ -47,11 +56,11 @@ class SwitchOutTransform(Transform, HammingDistanceSampling):
         super().__init__(opts)
 
     def warm_up(self, vocabs):
-        self.vocab = vocabs
+        super().warm_up(None)
+        self.vocabs = vocabs
         if vocabs is None:
             logger.warning(
                 "Switchout disable as no vocab, shouldn't happen in training!")
-        self.temperature = self.opts.switchout_temperature
 
     @classmethod
     def add_options(cls, parser):
@@ -62,6 +71,9 @@ class SwitchOutTransform(Transform, HammingDistanceSampling):
                   help="Sampling temperature for SwitchOut. :math:`\\tau^{-1}`"
                        " in :cite:`DBLP:journals/corr/abs-1808-07512`. "
                        "Smaller value makes data more diverse.")
+
+    def _parse_opts(self):
+        self.temperature = self.opts.switchout_temperature
 
     def _switchout(self, tokens, vocab, stats=None):
         assert vocab is not None, "vocab can not be None for SwitchOut."
@@ -83,11 +95,11 @@ class SwitchOutTransform(Transform, HammingDistanceSampling):
 
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Apply switchout to both src and tgt side tokens."""
-        if is_train and self.vocab is not None:
+        if is_train and self.vocabs is not None:
             src = self._switchout(
-                example['src'], self.vocab['src'].itos, stats)
+                example['src'], self.vocabs['src'].itos, stats)
             tgt = self._switchout(
-                example['tgt'], self.vocab['tgt'].itos, stats)
+                example['tgt'], self.vocabs['tgt'].itos, stats)
             example['src'], example['tgt'] = src, tgt
         return example
 
@@ -97,12 +109,11 @@ class SwitchOutTransform(Transform, HammingDistanceSampling):
 
 
 @register_transform(name='tokendrop')
-class TokenDropTransform(Transform, HammingDistanceSampling):
+class TokenDropTransform(HammingDistanceSamplingTransform):
     """Random drop tokens from sentence."""
 
     def __init__(self, opts):
         super().__init__(opts)
-        self.temperature = self.opts.tokendrop_temperature
 
     @classmethod
     def add_options(cls, parser):
@@ -111,6 +122,9 @@ class TokenDropTransform(Transform, HammingDistanceSampling):
         group.add("-tokendrop_temperature", "--tokendrop_temperature",
                   type=float, default=1.0,
                   help="Sampling temperature for token deletion.")
+
+    def _parse_opts(self):
+        self.temperature = self.opts.tokendrop_temperature
 
     def _token_drop(self, tokens, stats=None):
         # 1. sample number of tokens to corrupt
@@ -138,14 +152,13 @@ class TokenDropTransform(Transform, HammingDistanceSampling):
 
 
 @register_transform(name='tokenmask')
-class TokenMaskTransform(Transform, HammingDistanceSampling):
+class TokenMaskTransform(HammingDistanceSamplingTransform):
     """Random mask tokens from src sentence."""
 
     MASK_TOK = DefaultTokens.MASK
 
     def __init__(self, opts):
         super().__init__(opts)
-        self.temperature = opts.tokenmask_temperature
 
     @classmethod
     def add_options(cls, parser):
@@ -154,6 +167,9 @@ class TokenMaskTransform(Transform, HammingDistanceSampling):
         group.add('-tokenmask_temperature', '--tokenmask_temperature',
                   type=float, default=1.0,
                   help="Sampling temperature for token masking.")
+
+    def _parse_opts(self):
+        self.temperature = self.opts.tokenmask_temperature
 
     @classmethod
     def get_specials(cls, opts):
