@@ -9,8 +9,6 @@ class FilterTooLongTransform(Transform):
 
     def __init__(self, opts):
         super().__init__(opts)
-        self.src_seq_length = opts.src_seq_length
-        self.tgt_seq_length = opts.tgt_seq_length
 
     @classmethod
     def add_options(cls, parser):
@@ -20,6 +18,10 @@ class FilterTooLongTransform(Transform):
                   help="Maximum source sequence length.")
         group.add("--tgt_seq_length", "-tgt_seq_length", type=int, default=200,
                   help="Maximum target sequence length.")
+
+    def _parse_opts(self):
+        self.src_seq_length = self.opts.src_seq_length
+        self.tgt_seq_length = self.opts.tgt_seq_length
 
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Return None if too long else return as is."""
@@ -45,7 +47,6 @@ class PrefixTransform(Transform):
 
     def __init__(self, opts):
         super().__init__(opts)
-        self.prefix_dict = self.get_prefix_dict(self.opts)
 
     @staticmethod
     def _get_prefix(corpus):
@@ -79,6 +80,11 @@ class PrefixTransform(Transform):
             src_specials.update(prefix['src'].split())
             tgt_specials.update(prefix['tgt'].split())
         return (src_specials, tgt_specials)
+
+    def warm_up(self, vocabs=None):
+        """Warm up to get prefix dictionary."""
+        super().warm_up(None)
+        self.prefix_dict = self.get_prefix_dict(self.opts)
 
     def _prepend(self, example, prefix):
         """Prepend `prefix` to `tokens`."""

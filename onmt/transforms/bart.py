@@ -240,12 +240,11 @@ class BARTNoising(object):
         return tokens
 
     def insertion_noise(self, tokens, p=1.0):
-        if p == 0.0:
-            return tokens
-
         n_tokens = len(tokens)
-        n_insert = int(math.ceil(n_tokens * p))
-        n_random = int(math.ceil(n_insert * self.random_ratio))
+        n_insert = math.ceil(n_tokens * p)
+        if n_insert == 0:
+            return tokens
+        n_random = math.ceil(n_insert * self.random_ratio)
 
         noise_indices = np.random.permutation(n_tokens + n_insert)[:n_insert]
         noise_mask = np.zeros(shape=(n_tokens + n_insert,), dtype=bool)
@@ -312,6 +311,11 @@ class BARTNoiseTransform(Transform):
     def __init__(self, opts):
         super().__init__(opts)
 
+    def _set_seed(self, seed):
+        """set seed to ensure reproducibility."""
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+
     @classmethod
     def add_options(cls, parser):
         """Avalilable options relate to BART."""
@@ -344,9 +348,10 @@ class BARTNoiseTransform(Transform):
                        "or N tokens. (use -1 for N)")
 
     def warm_up(self, vocabs):
+        super().warm_up(None)
         if vocabs is None:
             return
-        self.vocab = vocabs['src'].itos
+        self.vocabs = vocabs
 
         subword_type = self.opts.src_subword_type
         if self.opts.mask_length == 'subword':
@@ -356,7 +361,7 @@ class BARTNoiseTransform(Transform):
                     f'mask_length={self.opts.mask_length}!')
         is_joiner = (subword_type == 'bpe') if subword_type != 'none' else None
         self.bart_noise = BARTNoising(
-            self.vocab,
+            self.vocabs['src'].itos,
             mask_tok=DefaultTokens.MASK,
             mask_ratio=self.opts.mask_ratio,
             insert_ratio=self.opts.insert_ratio,
@@ -371,7 +376,7 @@ class BARTNoiseTransform(Transform):
 
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Apply BART noise to src side tokens."""
-        if is_train and self.vocab is not None:
+        if is_train and self.vocabs is not None:
             src = self.bart_noise.apply(example['src'])
             example['src'] = src
         return example

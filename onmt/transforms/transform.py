@@ -7,15 +7,29 @@ from onmt.inputters.fields import get_vocabs
 
 class Transform(object):
     """A Base class that every transform method should derived from."""
+
     def __init__(self, opts):
+        """Initialize Transform by parsing `opts` and add them as attribute."""
         self.opts = opts
+        self._parse_opts()
+
+    def _set_seed(self, seed):
+        """Reproducibility: Set seed for non-deterministic transform."""
+        pass
 
     def warm_up(self, vocabs=None):
-        pass
+        """Procedure needed after initialize and before apply.
+
+        This should be override if there exist any procedure necessary
+        before `apply`, like setups based on parsed options or load models,
+        etc.
+        """
+        if self.opts.seed > 0:
+            self._set_seed(self.opts.seed)
 
     @classmethod
     def add_options(cls, parser):
-        """Avalilable options relate to this Transform."""
+        """Available options relate to this Transform."""
         pass
 
     @classmethod
@@ -36,6 +50,27 @@ class Transform(object):
             stats (TransformStatistics): a statistic object.
         """
         raise NotImplementedError
+
+    def __getstate__(self):
+        """Pickling following for rebuild."""
+        return self.opts
+
+    def _parse_opts(self):
+        """Parse opts to set/reset instance's attributes.
+
+        This should be override if there are attributes other than self.opts.
+        To make sure we recover from picked state.
+        (This should only contain attribute assignment, other routine is
+        suggest to define in `warm_up`.)
+        """
+        pass
+
+    def __setstate__(self, opts):
+        """Reload when unpickling from save file."""
+        self.opts = opts
+        self._parse_opts()
+        vocabs = self.vocabs if hasattr(self, 'vocabs') else None
+        self.warm_up(vocabs=vocabs)
 
     def stats(self):
         """Return statistic message."""
@@ -153,6 +188,14 @@ class TransformPipe(Transform):
             if example is None:
                 break
         return example
+
+    def __getstate__(self):
+        """Pickling following for rebuild."""
+        return (self.opts, self.transforms, self.statistics)
+
+    def __setstate__(self, state):
+        """Reload when unpickling from save file."""
+        self.opts, self.transforms, self.statistics = state
 
     def stats(self):
         """Return statistic message."""
