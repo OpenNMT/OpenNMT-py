@@ -236,6 +236,10 @@
                       <span class="p">[</span><span class="o">-</span><span class="n">tgt_subword_nbest</span> <span class="n">TGT_SUBWORD_NBEST</span><span class="p">]</span>
                       <span class="p">[</span><span class="o">-</span><span class="n">src_subword_alpha</span> <span class="n">SRC_SUBWORD_ALPHA</span><span class="p">]</span>
                       <span class="p">[</span><span class="o">-</span><span class="n">tgt_subword_alpha</span> <span class="n">TGT_SUBWORD_ALPHA</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">-</span><span class="n">src_subword_vocab</span> <span class="n">SRC_SUBWORD_VOCAB</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">-</span><span class="n">tgt_subword_vocab</span> <span class="n">TGT_SUBWORD_VOCAB</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">-</span><span class="n">src_vocab_threshold</span> <span class="n">SRC_VOCAB_THRESHOLD</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">-</span><span class="n">tgt_vocab_threshold</span> <span class="n">TGT_VOCAB_THRESHOLD</span><span class="p">]</span>
                       <span class="p">[</span><span class="o">-</span><span class="n">src_subword_type</span> <span class="p">{</span><span class="n">none</span><span class="p">,</span><span class="n">sentencepiece</span><span class="p">,</span><span class="n">bpe</span><span class="p">}]</span>
                       <span class="p">[</span><span class="o">-</span><span class="n">tgt_subword_type</span> <span class="p">{</span><span class="n">none</span><span class="p">,</span><span class="n">sentencepiece</span><span class="p">,</span><span class="n">bpe</span><span class="p">}]</span>
                       <span class="p">[</span><span class="o">-</span><span class="n">src_onmttok_kwargs</span> <span class="n">SRC_ONMTTOK_KWARGS</span><span class="p">]</span>
@@ -324,7 +328,10 @@
 </div>
 <div class="section" id="Transform/BART">
 <h2>Transform/BART<a class="headerlink" href="#Transform/BART" title="Permalink to this headline">¶</a></h2>
-<p>This transform will not take effet when building vocabulary.</p>
+<div class="admonition caution">
+<p class="admonition-title">Caution</p>
+<p>This transform will not take effect when building vocabulary.</p>
+</div>
 <dl class="option-list">
 <dt><kbd>--permute_sent_ratio, -permute_sent_ratio</kbd></dt>
 <dd><p>Permute this proportion of sentences (boundaries defined by [‘.’, ‘?’, ‘!’]) in all inputs.</p>
@@ -364,7 +371,10 @@
 </div>
 <div class="section" id="Transform/SwitchOut">
 <h2>Transform/SwitchOut<a class="headerlink" href="#Transform/SwitchOut" title="Permalink to this headline">¶</a></h2>
-<p>This transform will not take effet when building vocabulary.</p>
+<div class="admonition caution">
+<p class="admonition-title">Caution</p>
+<p>This transform will not take effect when building vocabulary.</p>
+</div>
 <dl class="option-list">
 <dt><kbd>-switchout_temperature, --switchout_temperature</kbd></dt>
 <dd><p>Sampling temperature for SwitchOut. <span class="math notranslate nohighlight">\(\tau^{-1}\)</span> in <a class="bibtex reference internal" href="../ref.html#dblp-journals-corr-abs-1808-07512" id="id1">[WPDN18]</a>. Smaller value makes data more diverse.</p>
@@ -392,8 +402,10 @@
 </div>
 <div class="section" id="Transform/Subword/Common">
 <h2>Transform/Subword/Common<a class="headerlink" href="#Transform/Subword/Common" title="Permalink to this headline">¶</a></h2>
-<p>Common options for transforms related to tokenization/subword.
-See <code class="xref py py-class docutils literal notranslate"><span class="pre">TokenizerTransform</span></code> for more detail.</p>
+<div class="admonition attention">
+<p class="admonition-title">Attention</p>
+<p>Common options shared by all subword transforms. Including options for indicate subword model path, <a class="reference external" href="https://arxiv.org/abs/1804.10959">Subword Regularization</a>/<a class="reference external" href="https://arxiv.org/abs/1910.13267">BPE-Dropout</a>, and <a class="reference external" href="https://github.com/rsennrich/subword-nmt#best-practice-advice-for-byte-pair-encoding-in-nmt">Vocabulary Restriction</a>.</p>
+</div>
 <dl class="option-list">
 <dt><kbd>-src_subword_model, --src_subword_model</kbd></dt>
 <dd><p>Path of subword model for src (or shared).</p>
@@ -415,6 +427,22 @@ See <code class="xref py py-class docutils literal notranslate"><span class="pre
 </dd>
 <dt><kbd>-tgt_subword_alpha, --tgt_subword_alpha</kbd></dt>
 <dd><p>Smoothing parameter for sentencepiece unigram sampling, and dropout probability for BPE-dropout. (target side)</p>
+<p>Default: 0</p>
+</dd>
+<dt><kbd>-src_subword_vocab, --src_subword_vocab</kbd></dt>
+<dd><p>Path to the vocabulary file for src subword. Format: &lt;word&gt;     &lt;count&gt; per line.</p>
+<p>Default: “”</p>
+</dd>
+<dt><kbd>-tgt_subword_vocab, --tgt_subword_vocab</kbd></dt>
+<dd><p>Path to the vocabulary file for tgt subword. Format: &lt;word&gt;     &lt;count&gt; per line.</p>
+<p>Default: “”</p>
+</dd>
+<dt><kbd>-src_vocab_threshold, --src_vocab_threshold</kbd></dt>
+<dd><p>Only produce src subword in src_subword_vocab with  frequency &gt;= src_vocab_threshold.</p>
+<p>Default: 0</p>
+</dd>
+<dt><kbd>-tgt_vocab_threshold, --tgt_vocab_threshold</kbd></dt>
+<dd><p>Only produce tgt subword in tgt_subword_vocab with  frequency &gt;= tgt_vocab_threshold.</p>
 <p>Default: 0</p>
 </dd>
 </dl>
