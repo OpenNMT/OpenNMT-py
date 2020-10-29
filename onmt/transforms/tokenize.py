@@ -8,17 +8,22 @@ class TokenizerTransform(Transform):
     """Tokenizer transform abstract class."""
 
     def __init__(self, opts):
-        """Initialize neccessary options for Tokenizer."""
+        """Initialize necessary options for Tokenizer."""
         super().__init__(opts)
         self._parse_opts()
 
     @classmethod
     def add_options(cls, parser):
-        """Avalilable options relate to Subword."""
+        """Available options relate to Subword."""
         # Sharing options among `TokenizerTransform`s, same name conflict in
         # this scope will be resolved by remove previous occurrence in parser
         group = parser.add_argument_group(
-            'Transform/Subword/Common', conflict_handler='resolve')
+            'Transform/Subword/Common', conflict_handler='resolve',
+            description=".. Attention:: Common options shared by all subword transforms. "  # noqa: E501
+            "Including options for indicate subword model path, "
+            "`Subword Regularization <https://arxiv.org/abs/1804.10959>`_"
+            "/`BPE-Dropout <https://arxiv.org/abs/1910.13267>`_, "
+            "and `Vocabulary Restriction <https://github.com/rsennrich/subword-nmt#best-practice-advice-for-byte-pair-encoding-in-nmt>`__.")  # noqa: E501
         group.add('-src_subword_model', '--src_subword_model',
                   help="Path of subword model for src (or shared).")
         group.add("-tgt_subword_model", "--tgt_subword_model",
@@ -48,6 +53,24 @@ class TokenizerTransform(Transform):
                        "sampling, and dropout probability for BPE-dropout. "
                        "(target side)")
 
+        # subword vocabulary restriction options:
+        group.add('-src_subword_vocab', '--src_subword_vocab',
+                  type=str, default="",
+                  help="Path to the vocabulary file for src subword. "
+                  "Format: <word>\t<count> per line.")
+        group.add("-tgt_subword_vocab", "--tgt_subword_vocab",
+                  type=str, default="",
+                  help="Path to the vocabulary file for tgt subword. "
+                  "Format: <word>\t<count> per line.")
+        group.add('-src_vocab_threshold', '--src_vocab_threshold',
+                  type=int, default=0,
+                  help="Only produce src subword in src_subword_vocab with "
+                  " frequency >= src_vocab_threshold.")
+        group.add("-tgt_vocab_threshold", "--tgt_vocab_threshold",
+                  type=int, default=0,
+                  help="Only produce tgt subword in tgt_subword_vocab with "
+                  " frequency >= tgt_vocab_threshold.")
+
     @classmethod
     def _validate_options(cls, opts):
         """Extra checks for Subword options."""
@@ -68,6 +91,10 @@ class TokenizerTransform(Transform):
         self.tgt_subword_nbest = self.opts.tgt_subword_nbest
         self.src_subword_alpha = self.opts.src_subword_alpha
         self.tgt_subword_alpha = self.opts.tgt_subword_alpha
+        self.src_subword_vocab = self.opts.src_subword_vocab
+        self.tgt_subword_vocab = self.opts.tgt_subword_vocab
+        self.src_vocab_threshold = self.opts.src_vocab_threshold
+        self.tgt_vocab_threshold = self.opts.tgt_vocab_threshold
 
     def __getstate__(self):
         """Pickling following for rebuild."""
@@ -86,7 +113,11 @@ class TokenizerTransform(Transform):
             'src_subword_model': self.src_subword_model,
             'tgt_subword_model': self.tgt_subword_model,
             'src_subword_alpha': self.src_subword_alpha,
-            'tgt_subword_alpha': self.tgt_subword_alpha
+            'tgt_subword_alpha': self.tgt_subword_alpha,
+            'src_subword_vocab': self.src_subword_vocab,
+            'tgt_subword_vocab': self.tgt_subword_vocab,
+            'src_vocab_threshold': self.src_vocab_threshold,
+            'tgt_vocab_threshold': self.tgt_vocab_threshold
         }
         return ', '.join([f'{kw}={arg}' for kw, arg in kwargs.items()])
 
@@ -96,7 +127,7 @@ class SentencePieceTransform(TokenizerTransform):
     """SentencePiece subword transform class."""
 
     def __init__(self, opts):
-        """Initialize neccessary options for sentencepiece."""
+        """Initialize necessary options for sentencepiece."""
         super().__init__(opts)
         self._parse_opts()
 
@@ -108,7 +139,12 @@ class SentencePieceTransform(TokenizerTransform):
         import sentencepiece as spm
         load_src_model = spm.SentencePieceProcessor()
         load_src_model.Load(self.src_subword_model)
-        if self.share_vocab:
+        _diff_vocab = self.src_subword_vocab != self.tgt_subword_vocab or \
+            self.src_vocab_threshold != self.tgt_vocab_threshold
+        if self.src_subword_vocab != "" and self.src_vocab_threshold > 0:
+            load_src_model.LoadVocabulary(
+                self.src_subword_vocab, self.src_vocab_threshold)
+        if self.share_vocab and not _diff_vocab:
             self.load_models = {
                 'src': load_src_model,
                 'tgt': load_src_model
@@ -116,6 +152,9 @@ class SentencePieceTransform(TokenizerTransform):
         else:
             load_tgt_model = spm.SentencePieceProcessor()
             load_tgt_model.Load(self.tgt_subword_model)
+            if self.tgt_subword_vocab != "" and self.tgt_vocab_threshold > 0:
+                load_tgt_model.LoadVocabulary(
+                    self.tgt_subword_vocab, self.tgt_vocab_threshold)
             self.load_models = {
                 'src': load_src_model,
                 'tgt': load_tgt_model
@@ -163,7 +202,7 @@ class SentencePieceTransform(TokenizerTransform):
 @register_transform(name='bpe')
 class BPETransform(TokenizerTransform):
     def __init__(self, opts):
-        """Initialize neccessary options for subword_nmt."""
+        """Initialize necessary options for subword_nmt."""
         super().__init__(opts)
         self._parse_opts()
 
@@ -174,18 +213,27 @@ class BPETransform(TokenizerTransform):
 
     def warm_up(self, vocabs=None):
         """Load subword models."""
-        from subword_nmt.apply_bpe import BPE
+        from subword_nmt.apply_bpe import BPE, read_vocabulary
         import codecs
         src_codes = codecs.open(self.src_subword_model, encoding='utf-8')
-        load_src_model = BPE(codes=src_codes)
-        if self.share_vocab:
+        src_vocabulary, tgt_vocabulary = None, None
+        if self.src_subword_vocab != "" and self.src_vocab_threshold > 0:
+            src_vocabulary = read_vocabulary(
+                codecs.open(self.src_subword_vocab, encoding='utf-8'),
+                self.src_vocab_threshold)
+        if self.tgt_subword_vocab != "" and self.tgt_vocab_threshold > 0:
+            tgt_vocabulary = read_vocabulary(
+                codecs.open(self.tgt_subword_vocab, encoding='utf-8'),
+                self.tgt_vocab_threshold)
+        load_src_model = BPE(codes=src_codes, vocab=src_vocabulary)
+        if self.share_vocab and (src_vocabulary == tgt_vocabulary):
             self.load_models = {
                 'src': load_src_model,
                 'tgt': load_src_model
             }
         else:
             tgt_codes = codecs.open(self.tgt_subword_model, encoding='utf-8')
-            load_tgt_model = BPE(codes=tgt_codes)
+            load_tgt_model = BPE(codes=tgt_codes, vocab=tgt_vocabulary)
             self.load_models = {
                 'src': load_src_model,
                 'tgt': load_tgt_model
@@ -215,13 +263,13 @@ class ONMTTokenizerTransform(TokenizerTransform):
     """OpenNMT Tokenizer transform class."""
 
     def __init__(self, opts):
-        """Initialize neccessary options for OpenNMT Tokenizer."""
+        """Initialize necessary options for OpenNMT Tokenizer."""
         super().__init__(opts)
         self._parse_opts()
 
     @classmethod
     def add_options(cls, parser):
-        """Avalilable options relate to Subword."""
+        """Available options relate to Subword."""
         super().add_options(parser)
         group = parser.add_argument_group('Transform/Subword/ONMTTOK')
         group.add('-src_subword_type', '--src_subword_type',
@@ -305,16 +353,29 @@ class ONMTTokenizerTransform(TokenizerTransform):
             kwopts['sp_alpha'] = subword_alpha
         else:
             logger.warning('No subword method will be applied.')
+        vocabulary_threshold = self.tgt_vocab_threshold if side == 'tgt' \
+            else self.src_vocab_threshold
+        vocabulary_path = self.tgt_subword_vocab if side == 'tgt' \
+            else self.src_subword_vocab
+        if vocabulary_threshold > 0 and vocabulary_path != "":
+            kwopts['vocabulary_path'] = vocabulary_path
+            kwopts['vocabulary_threshold'] = vocabulary_threshold
         return kwopts
 
     def warm_up(self, vocab=None):
-        """Initilize Tokenizer models."""
+        """Initialize Tokenizer models."""
         import pyonmttok
         src_subword_kwargs = self._get_subword_kwargs(side='src')
         src_tokenizer = pyonmttok.Tokenizer(
             **src_subword_kwargs, **self.src_other_kwargs
         )
-        if self.share_vocab:
+        tgt_subword_kwargs = self._get_subword_kwargs(side='tgt')
+        _diff_vocab = (
+            src_subword_kwargs.get('vocabulary_path', '') !=
+            tgt_subword_kwargs.get('vocabulary_path', '') or
+            src_subword_kwargs.get('vocabulary_threshold', 0) !=
+            tgt_subword_kwargs.get('vocabulary_threshold', 0))
+        if self.share_vocab and not _diff_vocab:
             self.load_models = {
                 'src': src_tokenizer,
                 'tgt': src_tokenizer
