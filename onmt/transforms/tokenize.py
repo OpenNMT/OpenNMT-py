@@ -117,11 +117,8 @@ class SentencePieceTransform(TokenizerTransform):
 
     def _set_seed(self, seed):
         """set seed to ensure reproducibility."""
-        try:
-            import sentencepiece as spm
-            spm.set_random_generator_seed(seed)
-        except AttributeError as err:
-            logger.warning(f"{err}, please update for reproducibility.")
+        import sentencepiece as spm
+        spm.set_random_generator_seed(seed)
 
     def warm_up(self, vocabs=None):
         """Load subword models."""
@@ -265,11 +262,8 @@ class ONMTTokenizerTransform(TokenizerTransform):
 
     def _set_seed(self, seed):
         """set seed to ensure reproducibility."""
-        try:
-            import pyonmttok
-            pyonmttok.set_random_seed(seed)
-        except AttributeError as err:
-            logger.warning(f"{err}, please update for reproducibility.")
+        import pyonmttok
+        pyonmttok.set_random_seed(seed)
 
     @classmethod
     def add_options(cls, parser):
