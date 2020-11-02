@@ -356,7 +356,7 @@ class ONMTTokenizerTransform(TokenizerTransform):
             kwopts['vocabulary_threshold'] = vocabulary_threshold
         return kwopts
 
-    def warm_up(self, vocab=None):
+    def warm_up(self, vocabs=None):
         """Initialize Tokenizer models."""
         super().warm_up(None)
         import pyonmttok
