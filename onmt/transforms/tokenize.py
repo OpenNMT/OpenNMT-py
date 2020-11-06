@@ -295,9 +295,9 @@ class ONMTTokenizerTransform(TokenizerTransform):
         src_kwargs_dict = eval(opts.src_onmttok_kwargs)
         tgt_kwargs_dict = eval(opts.tgt_onmttok_kwargs)
         if not isinstance(src_kwargs_dict, dict):
-            raise ValueError(f"-src_onmttok_kwargs isn't a dict valid string.")
+            raise ValueError("-src_onmttok_kwargs isn't a dict valid string.")
         if not isinstance(tgt_kwargs_dict, dict):
-            raise ValueError(f"-tgt_onmttok_kwargs isn't a dict valid string.")
+            raise ValueError("-tgt_onmttok_kwargs isn't a dict valid string.")
         opts.src_onmttok_kwargs = src_kwargs_dict
         opts.tgt_onmttok_kwargs = tgt_kwargs_dict
 

@@ -72,7 +72,7 @@ def save_fields(fields, save_data, overwrite=True):
 def load_fields(save_data, checkpoint=None):
     """Load dumped fields object from `save_data` or `checkpoint` if any."""
     if checkpoint is not None:
-        logger.info(f"Loading fields from checkpoint...")
+        logger.info("Loading fields from checkpoint...")
         fields = checkpoint['vocab']
     else:
         fields_path = "{}.vocab.pt".format(save_data)
