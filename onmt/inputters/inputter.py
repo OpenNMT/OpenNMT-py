@@ -9,7 +9,7 @@ import torch
 from torchtext.data import Field, RawField, LabelField
 from torchtext.vocab import Vocab
 
-from onmt.constants import DefaultTokens
+from onmt.constants import DefaultTokens, ModelTask
 from onmt.inputters.text_dataset import text_fields
 from onmt.utils.logging import logger
 # backwards compatibility
@@ -91,6 +91,24 @@ def parse_align_idx(align_pharaoh):
     return flatten_align_idx
 
 
+def get_task_spec_tokens(data_task, pad, bos, eos):
+    """
+    Retrieve pad/bos/eos tokens for each data tasks
+    """
+    if data_task == ModelTask.SEQ2SEQ:
+        return {
+            "src": {"pad": pad, "bos": None, "eos": None},
+            "tgt": {"pad": pad, "bos": bos, "eos": eos},
+        }
+    elif data_task == ModelTask.LANGUAGE_MODEL:
+        return {
+            "src": {"pad": pad, "bos": bos, "eos": None},
+            "tgt": {"pad": pad, "bos": None, "eos": eos},
+        }
+    else:
+        raise ValueError(f"No task specific tokens defined for {data_task}")
+
+
 def get_fields(
     src_data_type,
     n_src_feats,
@@ -101,7 +119,8 @@ def get_fields(
     dynamic_dict=False,
     with_align=False,
     src_truncate=None,
-    tgt_truncate=None
+    tgt_truncate=None,
+    data_task=ModelTask.SEQ2SEQ
 ):
     """
     Args:
@@ -136,19 +155,28 @@ def get_fields(
     fields = {}
 
     fields_getters = {"text": text_fields}
+    task_spec_tokens = get_task_spec_tokens(data_task, pad, bos, eos)
 
-    src_field_kwargs = {"n_feats": n_src_feats,
-                        "include_lengths": True,
-                        "pad": pad, "bos": None, "eos": None,
-                        "truncate": src_truncate,
-                        "base_name": "src"}
+    src_field_kwargs = {
+        "n_feats": n_src_feats,
+        "include_lengths": True,
+        "pad": task_spec_tokens["src"]["pad"],
+        "bos": task_spec_tokens["src"]["bos"],
+        "eos": task_spec_tokens["src"]["eos"],
+        "truncate": src_truncate,
+        "base_name": "src",
+    }
     fields["src"] = fields_getters[src_data_type](**src_field_kwargs)
 
-    tgt_field_kwargs = {"n_feats": n_tgt_feats,
-                        "include_lengths": False,
-                        "pad": pad, "bos": bos, "eos": eos,
-                        "truncate": tgt_truncate,
-                        "base_name": "tgt"}
+    tgt_field_kwargs = {
+        "n_feats": n_tgt_feats,
+        "include_lengths": False,
+        "pad": task_spec_tokens["tgt"]["pad"],
+        "bos": task_spec_tokens["tgt"]["bos"],
+        "eos": task_spec_tokens["tgt"]["eos"],
+        "truncate": tgt_truncate,
+        "base_name": "tgt",
+    }
     fields["tgt"] = fields_getters["text"](**tgt_field_kwargs)
 
     indices = Field(use_vocab=False, dtype=torch.long, sequential=False)

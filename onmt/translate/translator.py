@@ -18,6 +18,7 @@ from onmt.translate.greedy_search import GreedySearch
 from onmt.utils.misc import tile, set_random_seed, report_matrix
 from onmt.utils.alignment import extract_alignment, build_align_pharaoh
 from onmt.modules.copy_generator import collapse_copy_scores
+from onmt.constants import ModelTask
 
 
 def build_translator(opt, report_score=True, logger=None, out_file=None):
@@ -233,6 +234,11 @@ class Translator(object):
             logger (logging.Logger or NoneType): See :func:`__init__()`.
         """
         # TODO: maybe add dynamic part
+        if model_opt.model_task != ModelTask.SEQ2SEQ:
+            raise ValueError(
+                f"Translator does not support task {opt.model_task}."
+                f"Tasks supported: {ModelTask.SEQ2SEQ}"
+            )
         src_reader = inputters.str2reader[opt.data_type].from_opt(opt)
         tgt_reader = inputters.str2reader["text"].from_opt(opt)
         return cls(

@@ -5,6 +5,7 @@ import configargparse
 
 from onmt.models.sru import CheckSRU
 from onmt.transforms import AVAILABLE_TRANSFORMS
+from onmt.constants import ModelTask
 
 
 def config_opts(parser):
@@ -240,6 +241,16 @@ def model_opts(parser):
                    "embedding sizes will be set to N^feat_vec_exponent "
                    "where N is the number of values the feature takes.")
 
+    # Model Task Options
+    group = parser.add_argument_group("Model- Task")
+    group.add(
+        "-model_task",
+        "--model_task",
+        default=ModelTask.SEQ2SEQ,
+        choices=[ModelTask.SEQ2SEQ, ModelTask.LANGUAGE_MODEL],
+        help="Type of task for the model either seq2seq or lm",
+    )
+
     # Encoder-Decoder Options
     group = parser.add_argument_group('Model- Encoder-Decoder')
     group.add('--model_type', '-model_type', default='text',
@@ -252,15 +263,16 @@ def model_opts(parser):
               help='Data type of the model.')
 
     group.add('--encoder_type', '-encoder_type', type=str, default='rnn',
-              choices=['rnn', 'brnn', 'ggnn', 'mean', 'transformer', 'cnn'],
+              choices=['rnn', 'brnn', 'ggnn', 'mean', 'transformer', 'cnn',
+                       'transformer_lm'],
               help="Type of encoder layer to use. Non-RNN layers "
                    "are experimental. Options are "
-                   "[rnn|brnn|ggnn|mean|transformer|cnn].")
+                   "[rnn|brnn|ggnn|mean|transformer|cnn|transformer_lm].")
     group.add('--decoder_type', '-decoder_type', type=str, default='rnn',
-              choices=['rnn', 'transformer', 'cnn'],
+              choices=['rnn', 'transformer', 'cnn', 'transformer_lm'],
               help="Type of decoder layer to use. Non-RNN layers "
                    "are experimental. Options are "
-                   "[rnn|transformer|cnn].")
+                   "[rnn|transformer|cnn|transformer].")
 
     group.add('--layers', '-layers', type=int, default=-1,
               help='Number of layers in enc/dec.')

@@ -49,10 +49,11 @@ class EncoderBase(nn.Module):
 
 
         Returns:
-            (FloatTensor, FloatTensor):
+            (FloatTensor, FloatTensor, FloatTensor):
 
             * final encoder state, used to initialize decoder
             * memory bank for attention, ``(src_len, batch, hidden)``
+            * lengths
         """
 
         raise NotImplementedError

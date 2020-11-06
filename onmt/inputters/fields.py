@@ -16,7 +16,8 @@ def _get_dynamic_fields(opts):
                         dynamic_dict=opts.copy_attn,
                         src_truncate=opts.src_seq_length_trunc,
                         tgt_truncate=opts.tgt_seq_length_trunc,
-                        with_align=with_align)
+                        with_align=with_align,
+                        data_task=opts.data_task)
 
     return fields
 
