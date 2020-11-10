@@ -31,3 +31,12 @@ jobs:
         BRANCH: gh-pages
         FOLDER: docs/build/html
         CLEAN: true
+  publish-pypi:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Publish release to PyPi
+        uses: pypa/gh-action-pypi-publish@54b39fb
+        with:
+          user: __token__
+          password: ${{ secrets.pypi_password }}
