@@ -1,4 +1,4 @@
-name: Release
+name: Deploy Docs & Publish to PyPi
 
 on:
   release:
@@ -9,10 +9,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - name: Set up Python 3.8
+    - name: Set up Python 3.6
       uses: actions/setup-python@v2
       with:
-        python-version: 3.8
+        python-version: 3.6
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -34,9 +34,21 @@ jobs:
   publish-pypi:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Publish release to PyPi
-        uses: pypa/gh-action-pypi-publish@54b39fb
-        with:
-          user: __token__
-          password: ${{ secrets.pypi_password }}
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.6
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.6
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install --upgrade setuptools wheel
+    - name: Build a binary wheel and a source tarball
+      run: |
+        python setup.py sdist bdist_wheel
+    - name: Publish release to PyPi
+      uses: pypa/gh-action-pypi-publish@54b39fb
+      with:
+        user: __token__
+        password: ${{ secrets.pypi_password }}
+        verbose: true
