@@ -1116,6 +1116,20 @@ which is the combination of base emb and top output of encode</p></li>
 <dt id="onmt.modules.WeightNormConv2d">
 <em class="property">class </em><code class="sig-prename descclassname">onmt.modules.</code><code class="sig-name descname">WeightNormConv2d</code><span class="sig-paren">(</span><em class="sig-param">in_channels</em>, <em class="sig-param">out_channels</em>, <em class="sig-param">kernel_size</em>, <em class="sig-param">stride=1</em>, <em class="sig-param">padding=0</em>, <em class="sig-param">dilation=1</em>, <em class="sig-param">groups=1</em>, <em class="sig-param">init_scale=1.0</em>, <em class="sig-param">polyak_decay=0.9995</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/weight_norm.html#WeightNormConv2d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.WeightNormConv2d" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.conv.Conv2d</span></code></p>
+<dl class="method">
+<dt id="onmt.modules.WeightNormConv2d.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">init=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/weight_norm.html#WeightNormConv2d.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.WeightNormConv2d.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -1144,6 +1158,20 @@ which is the combination of base emb and top output of encode</p></li>
 </ul>
 </dd>
 </dl>
+<dl class="method">
+<dt id="onmt.models.sru.SRU.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">input</em>, <em class="sig-param">c0=None</em>, <em class="sig-param">return_hidden=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/models/sru.html#SRU.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.models.sru.SRU.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -1226,6 +1254,20 @@ its index in the “extended” vocab containing.
 of non-projective dependency parsing. This attention layer is used
 in the paper “Learning Structured Text Representations”
 <a class="bibtex reference internal" href="ref.html#dblp-journals-corr-liul17d" id="id15">[LL17]</a>.</p>
+<dl class="method">
+<dt id="onmt.modules.structured_attention.MatrixTree.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">input</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/structured_attention.html#MatrixTree.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.structured_attention.MatrixTree.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
 </dd></dl>
 
 </div>

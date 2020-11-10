@@ -119,12 +119,12 @@
 <li class="toctree-l2"><a class="reference internal" href="#Pruning">Pruning</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Embeddings">Embeddings</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Transform/Filter">Transform/Filter</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#Transform/BART">Transform/BART</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Transform/SwitchOut">Transform/SwitchOut</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Transform/Token_Drop">Transform/Token_Drop</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Transform/Token_Mask">Transform/Token_Mask</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Transform/Subword/Common">Transform/Subword/Common</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Transform/Subword/ONMTTOK">Transform/Subword/ONMTTOK</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Transform/BART">Transform/BART</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Model-Embeddings">Model-Embeddings</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Model-Embedding Features">Model-Embedding Features</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Model- Encoder-Decoder">Model- Encoder-Decoder</a></li>
@@ -227,7 +227,7 @@
 </p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">train</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">config</span> <span class="n">CONFIG</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">save_config</span> <span class="n">SAVE_CONFIG</span><span class="p">]</span> <span class="o">-</span><span class="n">data</span> <span class="n">DATA</span>
                 <span class="p">[</span><span class="o">-</span><span class="n">skip_empty_level</span> <span class="p">{</span><span class="n">silent</span><span class="p">,</span><span class="n">warning</span><span class="p">,</span><span class="n">error</span><span class="p">}]</span>
-                <span class="p">[</span><span class="o">-</span><span class="n">transforms</span> <span class="p">{</span><span class="n">filtertoolong</span><span class="p">,</span><span class="n">prefix</span><span class="p">,</span><span class="n">bart</span><span class="p">,</span><span class="n">switchout</span><span class="p">,</span><span class="n">tokendrop</span><span class="p">,</span><span class="n">tokenmask</span><span class="p">,</span><span class="n">sentencepiece</span><span class="p">,</span><span class="n">bpe</span><span class="p">,</span><span class="n">onmt_tokenize</span><span class="p">}</span> <span class="p">[{</span><span class="n">filtertoolong</span><span class="p">,</span><span class="n">prefix</span><span class="p">,</span><span class="n">bart</span><span class="p">,</span><span class="n">switchout</span><span class="p">,</span><span class="n">tokendrop</span><span class="p">,</span><span class="n">tokenmask</span><span class="p">,</span><span class="n">sentencepiece</span><span class="p">,</span><span class="n">bpe</span><span class="p">,</span><span class="n">onmt_tokenize</span><span class="p">}</span> <span class="o">...</span><span class="p">]]</span>
+                <span class="p">[</span><span class="o">-</span><span class="n">transforms</span> <span class="p">{</span><span class="n">filtertoolong</span><span class="p">,</span><span class="n">prefix</span><span class="p">,</span><span class="n">switchout</span><span class="p">,</span><span class="n">tokendrop</span><span class="p">,</span><span class="n">tokenmask</span><span class="p">,</span><span class="n">sentencepiece</span><span class="p">,</span><span class="n">bpe</span><span class="p">,</span><span class="n">onmt_tokenize</span><span class="p">,</span><span class="n">bart</span><span class="p">}</span> <span class="p">[{</span><span class="n">filtertoolong</span><span class="p">,</span><span class="n">prefix</span><span class="p">,</span><span class="n">switchout</span><span class="p">,</span><span class="n">tokendrop</span><span class="p">,</span><span class="n">tokenmask</span><span class="p">,</span><span class="n">sentencepiece</span><span class="p">,</span><span class="n">bpe</span><span class="p">,</span><span class="n">onmt_tokenize</span><span class="p">,</span><span class="n">bart</span><span class="p">}</span> <span class="o">...</span><span class="p">]]</span>
                 <span class="p">[</span><span class="o">-</span><span class="n">save_data</span> <span class="n">SAVE_DATA</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">overwrite</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">n_sample</span> <span class="n">N_SAMPLE</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">-</span><span class="n">dump_fields</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">dump_transforms</span><span class="p">]</span> <span class="o">-</span><span class="n">src_vocab</span> <span class="n">SRC_VOCAB</span>
                 <span class="p">[</span><span class="o">-</span><span class="n">tgt_vocab</span> <span class="n">TGT_VOCAB</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">share_vocab</span><span class="p">]</span>
@@ -244,11 +244,6 @@
                 <span class="p">[</span><span class="o">-</span><span class="n">embeddings_type</span> <span class="p">{</span><span class="n">GloVe</span><span class="p">,</span><span class="n">word2vec</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">src_seq_length</span> <span class="n">SRC_SEQ_LENGTH</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">tgt_seq_length</span> <span class="n">TGT_SEQ_LENGTH</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">permute_sent_ratio</span> <span class="n">PERMUTE_SENT_RATIO</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">rotate_ratio</span> <span class="n">ROTATE_RATIO</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">insert_ratio</span> <span class="n">INSERT_RATIO</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">random_ratio</span> <span class="n">RANDOM_RATIO</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">mask_ratio</span> <span class="n">MASK_RATIO</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">mask_length</span> <span class="p">{</span><span class="n">subword</span><span class="p">,</span><span class="n">word</span><span class="p">,</span><span class="n">span</span><span class="o">-</span><span class="n">poisson</span><span class="p">}]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">poisson_lambda</span> <span class="n">POISSON_LAMBDA</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">replace_length</span> <span class="p">{</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">-</span><span class="n">switchout_temperature</span> <span class="n">SWITCHOUT_TEMPERATURE</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">-</span><span class="n">tokendrop_temperature</span> <span class="n">TOKENDROP_TEMPERATURE</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">-</span><span class="n">tokenmask_temperature</span> <span class="n">TOKENMASK_TEMPERATURE</span><span class="p">]</span>
@@ -266,6 +261,11 @@
                 <span class="p">[</span><span class="o">-</span><span class="n">tgt_subword_type</span> <span class="p">{</span><span class="n">none</span><span class="p">,</span><span class="n">sentencepiece</span><span class="p">,</span><span class="n">bpe</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">-</span><span class="n">src_onmttok_kwargs</span> <span class="n">SRC_ONMTTOK_KWARGS</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">-</span><span class="n">tgt_onmttok_kwargs</span> <span class="n">TGT_ONMTTOK_KWARGS</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">permute_sent_ratio</span> <span class="n">PERMUTE_SENT_RATIO</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">rotate_ratio</span> <span class="n">ROTATE_RATIO</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">insert_ratio</span> <span class="n">INSERT_RATIO</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">random_ratio</span> <span class="n">RANDOM_RATIO</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">mask_ratio</span> <span class="n">MASK_RATIO</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">mask_length</span> <span class="p">{</span><span class="n">subword</span><span class="p">,</span><span class="n">word</span><span class="p">,</span><span class="n">span</span><span class="o">-</span><span class="n">poisson</span><span class="p">}]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">poisson_lambda</span> <span class="n">POISSON_LAMBDA</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">replace_length</span> <span class="p">{</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">src_word_vec_size</span> <span class="n">SRC_WORD_VEC_SIZE</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">tgt_word_vec_size</span> <span class="n">TGT_WORD_VEC_SIZE</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">word_vec_size</span> <span class="n">WORD_VEC_SIZE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">share_decoder_embeddings</span><span class="p">]</span>
@@ -374,7 +374,7 @@
 <p>Default: “warning”</p>
 </dd>
 <dt><kbd>-transforms, --transforms</kbd></dt>
-<dd><p>Possible choices: filtertoolong, prefix, bart, switchout, tokendrop, tokenmask, sentencepiece, bpe, onmt_tokenize</p>
+<dd><p>Possible choices: filtertoolong, prefix, switchout, tokendrop, tokenmask, sentencepiece, bpe, onmt_tokenize, bart</p>
 <p>Default transform pipeline to apply to data. Can be specified in each corpus of data to override.</p>
 <p>Default: []</p>
 </dd>
@@ -476,45 +476,6 @@
 </dd>
 </dl>
 </div>
-<div class="section" id="Transform/BART">
-<h2>Transform/BART<a class="headerlink" href="#Transform/BART" title="Permalink to this headline">¶</a></h2>
-<dl class="option-list">
-<dt><kbd>--permute_sent_ratio, -permute_sent_ratio</kbd></dt>
-<dd><p>Permute this proportion of sentences (boundaries defined by [‘.’, ‘?’, ‘!’]) in all inputs.</p>
-<p>Default: 0.0</p>
-</dd>
-<dt><kbd>--rotate_ratio, -rotate_ratio</kbd></dt>
-<dd><p>Rotate this proportion of inputs.</p>
-<p>Default: 0.0</p>
-</dd>
-<dt><kbd>--insert_ratio, -insert_ratio</kbd></dt>
-<dd><p>Insert this percentage of additional random tokens.</p>
-<p>Default: 0.0</p>
-</dd>
-<dt><kbd>--random_ratio, -random_ratio</kbd></dt>
-<dd><p>Instead of using &lt;mask&gt;, use random token this often.</p>
-<p>Default: 0.0</p>
-</dd>
-<dt><kbd>--mask_ratio, -mask_ratio</kbd></dt>
-<dd><p>Fraction of words/subwords that will be masked.</p>
-<p>Default: 0.0</p>
-</dd>
-<dt><kbd>--mask_length, -mask_length</kbd></dt>
-<dd><p>Possible choices: subword, word, span-poisson</p>
-<p>Length of masking window to apply.</p>
-<p>Default: “subword”</p>
-</dd>
-<dt><kbd>--poisson_lambda, -poisson_lambda</kbd></dt>
-<dd><p>Lambda for Poisson distribution to sample span length if <cite>-mask_length</cite> set to span-poisson.</p>
-<p>Default: 0.0</p>
-</dd>
-<dt><kbd>--replace_length, -replace_length</kbd></dt>
-<dd><p>Possible choices: -1, 0, 1</p>
-<p>When masking N tokens, replace with 0, 1, or N tokens. (use -1 for N)</p>
-<p>Default: -1</p>
-</dd>
-</dl>
-</div>
 <div class="section" id="Transform/SwitchOut">
 <h2>Transform/SwitchOut<a class="headerlink" href="#Transform/SwitchOut" title="Permalink to this headline">¶</a></h2>
 <dl class="option-list">
@@ -609,6 +570,45 @@
 <dt><kbd>-tgt_onmttok_kwargs, --tgt_onmttok_kwargs</kbd></dt>
 <dd><p>Other pyonmttok options for tgt in dict string, except subword related options listed earlier.</p>
 <p>Default: “{‘mode’: ‘none’}”</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="Transform/BART">
+<h2>Transform/BART<a class="headerlink" href="#Transform/BART" title="Permalink to this headline">¶</a></h2>
+<dl class="option-list">
+<dt><kbd>--permute_sent_ratio, -permute_sent_ratio</kbd></dt>
+<dd><p>Permute this proportion of sentences (boundaries defined by [‘.’, ‘?’, ‘!’]) in all inputs.</p>
+<p>Default: 0.0</p>
+</dd>
+<dt><kbd>--rotate_ratio, -rotate_ratio</kbd></dt>
+<dd><p>Rotate this proportion of inputs.</p>
+<p>Default: 0.0</p>
+</dd>
+<dt><kbd>--insert_ratio, -insert_ratio</kbd></dt>
+<dd><p>Insert this percentage of additional random tokens.</p>
+<p>Default: 0.0</p>
+</dd>
+<dt><kbd>--random_ratio, -random_ratio</kbd></dt>
+<dd><p>Instead of using &lt;mask&gt;, use random token this often.</p>
+<p>Default: 0.0</p>
+</dd>
+<dt><kbd>--mask_ratio, -mask_ratio</kbd></dt>
+<dd><p>Fraction of words/subwords that will be masked.</p>
+<p>Default: 0.0</p>
+</dd>
+<dt><kbd>--mask_length, -mask_length</kbd></dt>
+<dd><p>Possible choices: subword, word, span-poisson</p>
+<p>Length of masking window to apply.</p>
+<p>Default: “subword”</p>
+</dd>
+<dt><kbd>--poisson_lambda, -poisson_lambda</kbd></dt>
+<dd><p>Lambda for Poisson distribution to sample span length if <cite>-mask_length</cite> set to span-poisson.</p>
+<p>Default: 0.0</p>
+</dd>
+<dt><kbd>--replace_length, -replace_length</kbd></dt>
+<dd><p>Possible choices: -1, 0, 1</p>
+<p>When masking N tokens, replace with 0, 1, or N tokens. (use -1 for N)</p>
+<p>Default: -1</p>
 </dd>
 </dl>
 </div>
