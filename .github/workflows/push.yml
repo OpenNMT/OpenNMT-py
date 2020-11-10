@@ -1,0 +1,212 @@
+name: Lint & Tests
+
+on: [push]
+
+jobs:
+  lint-and-tests:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.6] # build only for 3.6 for now
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install --upgrade setuptools
+        python setup.py install
+        pip install -r requirements.opt.txt
+        pip install flake8
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    - name: Lint with flake8
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 . --count --exit-zero --statistics
+    - name: Unit tests
+      run: |
+        python -m unittest discover
+    - name: Test vocabulary build
+      run: |
+        python onmt/bin/build_vocab.py \
+          -config data/data.yaml \
+          -save_data /tmp/onmt \
+          -n_sample 5000 \
+          -src_vocab /tmp/onmt.vocab.src \
+          -tgt_vocab /tmp/onmt.vocab.tgt \
+          && rm -rf /tmp/sample
+    - name: Test field/transform dump
+      run: |
+        # The dumped fields are used later when testing tools
+        python train.py \
+          -config data/data.yaml \
+          -save_data /tmp/onmt.train.check \
+          -dump_fields \
+          -dump_transforms \
+          -n_sample 30 \
+          -src_vocab /tmp/onmt.vocab.src \
+          -tgt_vocab /tmp/onmt.vocab.tgt \
+          -src_vocab_size 1000 \
+          -tgt_vocab_size 1000
+    - name: Test RNN training
+      run: |
+        python train.py \
+          -config data/data.yaml \
+          -src_vocab /tmp/onmt.vocab.src \
+          -tgt_vocab /tmp/onmt.vocab.tgt \
+          -src_vocab_size 1000 \
+          -tgt_vocab_size 1000 \
+          -rnn_size 2 \
+          -batch_size 10 \
+          -word_vec_size 5 \
+          -report_every 5\
+          -rnn_size 10 \
+          -train_steps 10
+    - name: Test RNN training with copy
+      run: |
+        python train.py \
+          -config data/data.yaml \
+          -src_vocab /tmp/onmt.vocab.src \
+          -tgt_vocab /tmp/onmt.vocab.tgt \
+          -src_vocab_size 1000 \
+          -tgt_vocab_size 1000 \
+          -rnn_size 2 \
+          -batch_size 10 \
+          -word_vec_size 5 \
+          -report_every 5 \
+          -rnn_size 10 \
+          -train_steps 10 \
+          -copy_attn
+    - name: Test Transformer training with align
+      run: |
+        python train.py \
+          -config data/align_data.yaml \
+          -src_vocab /tmp/onmt.vocab.src \
+          -tgt_vocab /tmp/onmt.vocab.tgt \
+          -src_vocab_size 1000 \
+          -tgt_vocab_size 1000 \
+          -max_generator_batches 0 \
+          -encoder_type transformer \
+          -decoder_type transformer \
+          -layers 4 \
+          -word_vec_size 16 \
+          -rnn_size 16 \
+          -heads 2 \
+          -transformer_ff 64 \
+          -lambda_align 0.05 \
+          -alignment_layer 2 \
+          -alignment_heads 0 \
+          -report_every 5 \
+          -train_steps 10
+    - name: Test Graph neural network training
+      run: |
+        python train.py \
+          -config data/ggnn_data.yaml \
+          -src_seq_length 1000 \
+          -tgt_seq_length 30 \
+          -encoder_type ggnn \
+          -layers 2 \
+          -decoder_type rnn \
+          -rnn_size 256 \
+          -learning_rate 0.1 \
+          -learning_rate_decay 0.8 \
+          -global_attention general \
+          -batch_size 32 \
+          -word_vec_size 256 \
+          -bridge \
+          -train_steps 10 \
+          -n_edge_types 9 \
+          -state_dim 256 \
+          -n_steps 10 \
+          -n_node 64
+    - name: Test RNN translation
+      run: |
+        head data/src-test.txt > /tmp/src-test.txt
+        python translate.py \
+          -model onmt/tests/test_model.pt \
+          -src /tmp/src-test.txt \
+          -verbose
+    - name: Test RNN ensemble translation
+      run: |
+        head data/src-test.txt > /tmp/src-test.txt
+        python translate.py \
+          -model onmt/tests/test_model.pt \
+          onmt/tests/test_model.pt \
+          -src /tmp/src-test.txt \
+          -verbose
+    - name: Test RNN translation with beam search
+      run: |
+        python translate.py \
+          -model onmt/tests/test_model2.pt \
+          -src data/morph/src.valid \
+          -verbose \
+          -batch_size 10 \
+          -beam_size 10 \
+          -tgt data/morph/tgt.valid \
+          -out /tmp/trans
+        diff data/morph/tgt.valid /tmp/trans && rm /tmp/trans
+    - name: Test RNN translation with random sampling
+      run: |
+        python translate.py \
+          -model onmt/tests/test_model2.pt \
+          -src data/morph/src.valid \
+          -verbose \
+          -batch_size 10 \
+          -beam_size 1 \
+          -seed 1 \
+          -random_sampling_topk "-1" \
+          -random_sampling_temp 0.0001 \
+          -tgt data/morph/tgt.valid \
+          -out /tmp/trans
+        diff data/morph/tgt.valid /tmp/trans && rm /tmp/trans
+    - name: Test extract_vocabulary tool
+      run: |
+        python tools/extract_vocabulary.py \
+          -file /tmp/onmt.train.check.vocab.pt \
+          -file_type field \
+          -side src \
+          -out_file /tmp/onmt.vocab.txt
+        if ! wc -l /tmp/onmt.vocab.txt | grep -qF  "1002"
+          then echo "wrong word count" && exit 1
+        else
+          echo "creat vocabulary pass"
+        fi
+    - name: Test embeddings_to_torch tool
+      run: |
+        python tools/embeddings_to_torch.py \
+          -emb_file_enc onmt/tests/sample_glove.txt \
+          -emb_file_dec onmt/tests/sample_glove.txt \
+          -dict_file /tmp/onmt.train.check.vocab.pt \
+          -output_file /tmp/q_gloveembeddings \
+          && rm /tmp/q_gloveembeddings*
+        rm /tmp/onmt.train.check.*.pt
+    - name: Test extract_embeddings tool
+      run: |
+        python tools/extract_embeddings.py \
+          -model onmt/tests/test_model.pt
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.6
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.6
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install --upgrade setuptools
+        python setup.py install
+        pip install -r docs/requirements.txt
+    - name: Build docs
+      run: |
+        set -e
+        # Check that docs are built without errors
+        cd docs/ && make html && cd ..
