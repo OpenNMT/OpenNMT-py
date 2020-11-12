@@ -13,7 +13,7 @@ from onmt.constants import DefaultTokens
 import onmt.model_builder
 import onmt.inputters as inputters
 import onmt.decoders.ensemble
-from onmt.translate.beam_search import BeamSearch
+from onmt.generate.beam_search import BeamSearchGenerate
 from onmt.translate.greedy_search import GreedySearch
 from onmt.utils.misc import tile, set_random_seed, report_matrix
 from onmt.utils.alignment import extract_alignment, build_align_pharaoh
@@ -234,10 +234,10 @@ class Translator(object):
             logger (logging.Logger or NoneType): See :func:`__init__()`.
         """
         # TODO: maybe add dynamic part
-        if model_opt.model_task != ModelTask.SEQ2SEQ:
+        if model_opt.model_task != ModelTask.LANGUAGE_MODEL:
             raise ValueError(
                 f"Translator does not support task {model_opt.model_task}."
-                f" Tasks supported: {ModelTask.SEQ2SEQ}"
+                f"Tasks supported: {ModelTask.LANGUAGE_MODEL}"
             )
         src_reader = inputters.str2reader[opt.data_type].from_opt(opt)
         tgt_reader = inputters.str2reader["text"].from_opt(opt)
@@ -284,7 +284,7 @@ class Translator(object):
             gs = self._score_target(
                 batch, memory_bank, src_lengths, src_vocabs,
                 batch.src_map if use_src_map else None)
-            self.model.decoder.init_state(src, memory_bank, enc_states)
+            self.model.decoder.init_state(src, None, None)
         else:
             gs = [0] * batch_size
         return gs
@@ -488,7 +488,8 @@ class Translator(object):
 
         n_best = batch_tgt_idxs.size(1)
         # (1) Encoder forward.
-        src, enc_states, memory_bank, src_lengths = self._run_encoder(batch)
+        src, src_lengths = batch.src if isinstance(batch.src, tuple) \
+                           else (batch.src, None)
 
         # (2) Repeat src objects `n_best` times.
         # We use batch_size x n_best, get ``(src_len, batch * n_best, nfeat)``
@@ -535,7 +536,7 @@ class Translator(object):
             else:
                 # TODO: support these blacklisted features
                 assert not self.dump_beam
-                decode_strategy = BeamSearch(
+                decode_strategy = BeamSearchGenerate(
                     self.beam_size,
                     batch_size=batch.batch_size,
                     pad=self._tgt_pad_idx,
@@ -552,20 +553,6 @@ class Translator(object):
             return self._translate_batch_with_strategy(batch, src_vocabs,
                                                        decode_strategy)
 
-    def _run_encoder(self, batch):
-        src, src_lengths = batch.src if isinstance(batch.src, tuple) \
-                           else (batch.src, None)
-
-        enc_states, memory_bank, src_lengths = self.model.encoder(
-            src, src_lengths)
-        if src_lengths is None:
-            assert not isinstance(memory_bank, tuple), \
-                'Ensemble decoding only supported for text data'
-            src_lengths = torch.Tensor(batch.batch_size) \
-                               .type_as(memory_bank) \
-                               .long() \
-                               .fill_(memory_bank.size(0))
-        return src, enc_states, memory_bank, src_lengths
 
     def _decode_and_generate(
             self,
@@ -587,8 +574,9 @@ class Translator(object):
         # and [src_len, batch, hidden] as memory_bank
         # in case of inference tgt_len = 1, batch = beam times batch_size
         # in case of Gold Scoring tgt_len = actual length, batch = 1 batch
+
         dec_out, dec_attn = self.model.decoder(
-            decoder_in, memory_bank, memory_lengths=memory_lengths, step=step
+            decoder_in, memory_bank=None, memory_lengths=memory_lengths, step=step
         )
 
         # Generator forward.
@@ -647,8 +635,10 @@ class Translator(object):
         batch_size = batch.batch_size
 
         # (1) Run the encoder on the src.
-        src, enc_states, memory_bank, src_lengths = self._run_encoder(batch)
-        self.model.decoder.init_state(src, memory_bank, enc_states)
+        
+        src, src_lengths = batch.src if isinstance(batch.src, tuple) \
+                           else (batch.src, None)
+        self.model.decoder.init_state(src, None, None)
 
         results = {
             "predictions": None,
@@ -656,33 +646,42 @@ class Translator(object):
             "attention": None,
             "batch": batch,
             "gold_score": self._gold_score(
-                batch, memory_bank, src_lengths, src_vocabs, use_src_map,
-                enc_states, batch_size, src)}
+                batch, None, src_lengths, src_vocabs, use_src_map,
+                None, batch_size, src)}
 
         # (2) prep decode_strategy. Possibly repeat src objects.
         src_map = batch.src_map if use_src_map else None
-        target_prefix = batch.tgt if self.tgt_prefix else None
-        fn_map_state, memory_bank, memory_lengths, src_map = \
-            decode_strategy.initialize(memory_bank, src_lengths, src_map,
-                                       target_prefix=target_prefix)
+        fn_map_state, src, memory_lengths, src_map = \
+            decode_strategy.initialize(src, src_lengths, src_map)
         if fn_map_state is not None:
             self.model.decoder.map_state(fn_map_state)
 
         # (3) Begin decoding step by step:
         for step in range(decode_strategy.max_length):
-            decoder_input = decode_strategy.current_predictions.view(1, -1, 1)
-
+            # print('begin')
+            # print(memory_lengths)
+            # print(src)
+            memory_lengths = memory_lengths.clone()
             log_probs, attn = self._decode_and_generate(
-                decoder_input,
-                memory_bank,
+                src,
+                None,
                 batch,
                 src_vocabs,
                 memory_lengths=memory_lengths,
                 src_map=src_map,
                 step=step,
                 batch_offset=decode_strategy.batch_offset)
+            
+            log_prob_index = (memory_lengths - 1).unsqueeze(-1).repeat(1, log_probs.shape[-1]).unsqueeze(0)
 
-            decode_strategy.advance(log_probs, attn)
+            decode_strategy.advance(log_probs.gather(0, log_prob_index).squeeze(0), attn)
+
+            # add prediction to target
+            current_predictions = decode_strategy.current_predictions.view(1, -1, 1)
+            src = torch.cat([src, torch.ones([1, src.shape[1], 1], dtype=torch.int64)*self._tgt_pad_idx], 0)
+            src = src.scatter(0, memory_lengths.view(1, -1, 1), current_predictions)
+            memory_lengths += 1
+
             any_finished = decode_strategy.is_finished.any()
             if any_finished:
                 decode_strategy.update_finished()
@@ -690,16 +689,12 @@ class Translator(object):
                     break
 
             select_indices = decode_strategy.select_indices
+            print(select_indices)
 
             if any_finished:
                 # Reorder states.
-                if isinstance(memory_bank, tuple):
-                    memory_bank = tuple(x.index_select(1, select_indices)
-                                        for x in memory_bank)
-                else:
-                    memory_bank = memory_bank.index_select(1, select_indices)
-
                 memory_lengths = memory_lengths.index_select(0, select_indices)
+                src = src.index_select(1, select_indices)
 
                 if src_map is not None:
                     src_map = src_map.index_select(1, select_indices)

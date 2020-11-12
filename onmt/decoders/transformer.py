@@ -286,8 +286,10 @@ class TransformerDecoder(DecoderBase):
     def detach_state(self):
         self.state["src"] = self.state["src"].detach()
 
-    def forward(self, tgt, memory_bank, step=None, **kwargs):
+    def forward(self, tgt, memory_bank=None, step=None, **kwargs):
         """Decode, possibly stepwise."""
+        if memory_bank is None:
+            memory_bank = self.embeddings(tgt)
         if step == 0:
             self._init_cache(memory_bank)
 
