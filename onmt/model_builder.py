@@ -168,7 +168,8 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
         generator = nn.Sequential(
             nn.Linear(model_opt.dec_rnn_size,
                       len(fields["tgt"].base_field.vocab),
-                      bias=False),
+                      bias="0.bias" in checkpoint.get("generator", {}).keys()
+                           if checkpoint is not None else None),
             Cast(torch.float32),
             gen_func
         )
@@ -180,7 +181,7 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
         pad_idx = tgt_base_field.vocab.stoi[tgt_base_field.pad_token]
         generator = CopyGenerator(
             model_opt.dec_rnn_size, vocab_size, pad_idx,
-            bias=("linear.bias" in checkpoint.get("generator", {}).keys())
+            bias="linear.bias" in checkpoint.get("generator", {}).keys()
                  if checkpoint is not None else None)
         if model_opt.share_decoder_embeddings:
             generator.linear.weight = decoder.embeddings.word_lut.weight
