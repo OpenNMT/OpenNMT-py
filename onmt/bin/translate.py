@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 
 from onmt.utils.logging import init_logger
 from onmt.utils.misc import split_corpus
-from onmt.generate.generator import build_translator
+from onmt.translate.translator import build_translator
 
 import onmt.opts as opts
 from onmt.utils.parse import ArgumentParser

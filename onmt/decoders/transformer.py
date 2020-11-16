@@ -137,76 +137,6 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
         self.feed_forward.update_dropout(dropout)
         self.drop.p = dropout
 
-
-class TransformerDecoderBase(DecoderBase):
-    def __init__(self, d_model, copy_attn, embeddings, alignment_layer):
-        super(TransformerDecoderBase, self).__init__()
-
-        self.embeddings = embeddings
-
-        # Decoder State
-        self.state = {}
-
-        # previously, there was a GlobalAttention module here for copy
-        # attention. But it was never actually used -- the "copy" attention
-        # just reuses the context attention.
-        self._copy = copy_attn
-        self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
-
-        self.alignment_layer = alignment_layer
-
-    @classmethod
-    def from_opt(cls, opt, embeddings):
-        """Alternate constructor."""
-        return cls(
-            opt.dec_layers,
-            opt.dec_rnn_size,
-            opt.heads,
-            opt.transformer_ff,
-            opt.copy_attn,
-            opt.self_attn_type,
-            opt.dropout[0] if type(opt.dropout) is list else opt.dropout,
-            opt.attention_dropout[0]
-            if type(opt.attention_dropout) is list
-            else opt.attention_dropout,
-            embeddings,
-            opt.max_relative_positions,
-            opt.aan_useffn,
-            opt.full_context_alignment,
-            opt.alignment_layer,
-            alignment_heads=opt.alignment_heads,
-        )
-
-    def init_state(self, src, memory_bank, enc_hidden):
-        """Initialize decoder state."""
-        self.state["src"] = src
-        self.state["cache"] = None
-
-    def map_state(self, fn):
-        def _recursive_map(struct, batch_dim=0):
-            for k, v in struct.items():
-                if v is not None:
-                    if isinstance(v, dict):
-                        _recursive_map(v)
-                    else:
-                        struct[k] = fn(v, batch_dim)
-
-        if self.state["src"] is not None:
-            self.state["src"] = fn(self.state["src"], 1)
-        if self.state["cache"] is not None:
-            _recursive_map(self.state["cache"])
-
-    def detach_state(self):
-        raise NotImplementedError
-
-    def forward(self, *args, **kwargs):
-        raise NotImplementedError
-
-    def update_dropout(self, dropout, attention_dropout):
-        self.embeddings.update_dropout(dropout)
-        for layer in self.transformer_layers:
-            layer.update_dropout(dropout, attention_dropout)
-
     def _forward(
         self,
         inputs,
@@ -287,6 +217,76 @@ class TransformerDecoderBase(DecoderBase):
         output = self.feed_forward(self.drop(mid) + query)
 
         return output, attns
+
+
+class TransformerDecoderBase(DecoderBase):
+    def __init__(self, d_model, copy_attn, embeddings, alignment_layer):
+        super(TransformerDecoderBase, self).__init__()
+
+        self.embeddings = embeddings
+
+        # Decoder State
+        self.state = {}
+
+        # previously, there was a GlobalAttention module here for copy
+        # attention. But it was never actually used -- the "copy" attention
+        # just reuses the context attention.
+        self._copy = copy_attn
+        self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
+
+        self.alignment_layer = alignment_layer
+
+    @classmethod
+    def from_opt(cls, opt, embeddings):
+        """Alternate constructor."""
+        return cls(
+            opt.dec_layers,
+            opt.dec_rnn_size,
+            opt.heads,
+            opt.transformer_ff,
+            opt.copy_attn,
+            opt.self_attn_type,
+            opt.dropout[0] if type(opt.dropout) is list else opt.dropout,
+            opt.attention_dropout[0]
+            if type(opt.attention_dropout) is list
+            else opt.attention_dropout,
+            embeddings,
+            opt.max_relative_positions,
+            opt.aan_useffn,
+            opt.full_context_alignment,
+            opt.alignment_layer,
+            alignment_heads=opt.alignment_heads,
+        )
+
+    def init_state(self, src, memory_bank, enc_hidden):
+        """Initialize decoder state."""
+        self.state["src"] = src
+        self.state["cache"] = None
+
+    def map_state(self, fn):
+        def _recursive_map(struct, batch_dim=0):
+            for k, v in struct.items():
+                if v is not None:
+                    if isinstance(v, dict):
+                        _recursive_map(v)
+                    else:
+                        struct[k] = fn(v, batch_dim)
+
+        if self.state["src"] is not None:
+            self.state["src"] = fn(self.state["src"], 1)
+        if self.state["cache"] is not None:
+            _recursive_map(self.state["cache"])
+
+    def detach_state(self):
+        raise NotImplementedError
+
+    def forward(self, *args, **kwargs):
+        raise NotImplementedError
+
+    def update_dropout(self, dropout, attention_dropout):
+        self.embeddings.update_dropout(dropout)
+        for layer in self.transformer_layers:
+            layer.update_dropout(dropout, attention_dropout)
 
 
 class TransformerDecoder(TransformerDecoderBase):
@@ -444,11 +444,7 @@ class TransformerDecoder(TransformerDecoderBase):
 
 
 class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
-    """Transformer Decoder layer block in Pre-Norm style.
-    Pre-Norm style is an improvement w.r.t. Original paper's Post-Norm style,
-    providing better converge speed and performance. This is also the actual
-    implementation in tensor2tensor and also avalable in fairseq.
-    See https://tunz.kr/post/4 and :cite:`DeeperTransformer`.
+    """Transformer Decoder only layer block in GPT style.
 
     .. mermaid::
 
