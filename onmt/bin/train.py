@@ -56,7 +56,6 @@ def prepare_fields_transforms(opt):
 def _init_train(opt):
     """Common initilization stuff for all training process."""
     ArgumentParser.validate_prepare_opts(opt)
-    ArgumentParser.validate_model_opts(opt)
 
     if opt.train_from:
         # Load checkpoint if we resume from a previous training.

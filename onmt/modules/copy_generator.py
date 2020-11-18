@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 from onmt.utils.misc import aeq
-from onmt.utils.loss import NMTLossCompute
+from onmt.utils.loss import LanguageModelLossCompute, NMTLossCompute
 
 
 def collapse_copy_scores(scores, batch, tgt_vocab, src_vocabs=None,
@@ -177,30 +177,7 @@ class CopyGeneratorLoss(nn.Module):
         return loss
 
 
-class CopyGeneratorLossCompute(NMTLossCompute):
-    """Copy Generator Loss Computation."""
-    def __init__(self, criterion, generator, tgt_vocab, normalize_by_length,
-                 lambda_coverage=0.0):
-        super(CopyGeneratorLossCompute, self).__init__(
-            criterion, generator, lambda_coverage=lambda_coverage)
-        self.tgt_vocab = tgt_vocab
-        self.normalize_by_length = normalize_by_length
-
-    def _make_shard_state(self, batch, output, range_, attns):
-        """See base class for args description."""
-        if getattr(batch, "alignment", None) is None:
-            raise AssertionError("using -copy_attn you need to pass in "
-                                 "-dynamic_dict during preprocess stage.")
-
-        shard_state = super(CopyGeneratorLossCompute, self)._make_shard_state(
-            batch, output, range_, attns)
-
-        shard_state.update({
-            "copy_attn": attns.get("copy"),
-            "align": batch.alignment[range_[0] + 1: range_[1]]
-        })
-        return shard_state
-
+class CopyGeneratorLossComputeBase(object):
     def _compute_loss(self, batch, output, target, copy_attn, align,
                       std_attn=None, coverage_attn=None):
         """Compute the loss.
@@ -259,3 +236,69 @@ class CopyGeneratorLossCompute(NMTLossCompute):
             loss = loss.sum()
 
         return loss, stats
+
+
+class CopyGeneratorLossCompute(NMTLossCompute, CopyGeneratorLossComputeBase):
+    """Copy Generator Loss Computation."""
+    def __init__(self, criterion, generator, tgt_vocab, normalize_by_length,
+                 lambda_coverage=0.0):
+        super(CopyGeneratorLossCompute, self).__init__(
+            criterion, generator, lambda_coverage=lambda_coverage)
+        self.tgt_vocab = tgt_vocab
+        self.normalize_by_length = normalize_by_length
+
+    def _make_shard_state(self, batch, output, range_, attns):
+        """See base class for args description."""
+        if getattr(batch, "alignment", None) is None:
+            raise AssertionError("using -copy_attn you need to pass in "
+                                 "-dynamic_dict during preprocess stage.")
+
+        shard_state = super(CopyGeneratorLossCompute, self)._make_shard_state(
+            batch, output, range_, attns)
+
+        shard_state.update({
+            "copy_attn": attns.get("copy"),
+            "align": batch.alignment[range_[0] + 1: range_[1]]
+        })
+        return shard_state
+
+    def _compute_loss(self, batch, output, target, copy_attn, align,
+                      std_attn=None, coverage_attn=None):
+        return CopyGeneratorLossComputeBase._compute_loss(self, batch, output,
+                                                          target, copy_attn,
+                                                          align, std_attn,
+                                                          coverage_attn)
+
+
+class CopyGeneratorLanguageModelLossCompute(LanguageModelLossCompute,
+                                            CopyGeneratorLossComputeBase):
+    """Copy Generator Loss Computation."""
+    def __init__(self, criterion, generator, tgt_vocab, normalize_by_length,
+                 lambda_coverage=0.0):
+        super(CopyGeneratorLanguageModelLossCompute, self).__init__(
+            criterion, generator, lambda_coverage=lambda_coverage)
+        self.tgt_vocab = tgt_vocab
+        self.normalize_by_length = normalize_by_length
+
+    def _compute_loss(self, batch, output, target, copy_attn, align,
+                      std_attn=None, coverage_attn=None):
+        return CopyGeneratorLossComputeBase._compute_loss(self, batch, output,
+                                                          target, copy_attn,
+                                                          align, std_attn,
+                                                          coverage_attn)
+
+    def _make_shard_state(self, batch, output, range_, attns):
+        """See base class for args description."""
+        if getattr(batch, "alignment", None) is None:
+            raise AssertionError("using -copy_attn you need to pass in "
+                                 "-dynamic_dict during preprocess stage.")
+
+        shard_state = super(CopyGeneratorLanguageModelLossCompute,
+                            self)._make_shard_state(batch, output, range_,
+                                                    attns)
+
+        shard_state.update({
+            "copy_attn": attns.get("copy"),
+            "align": batch.alignment[range_[0]: range_[1]]
+        })
+        return shard_state

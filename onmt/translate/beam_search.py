@@ -92,6 +92,8 @@ class BeamSearchBase(DecodeStrategy):
             not stepwise_penalty and self.global_scorer.has_cov_pen)
         self._cov_pen = self.global_scorer.has_cov_pen
 
+        self.memory_lengths = None
+
     def initialize(self, *args, **kwargs):
         raise NotImplementedError
 
@@ -324,16 +326,6 @@ class BeamSearch(BeamSearchBase):
     """
         Beam search for seq2seq/encoder-decoder models
     """
-    def __init__(self, beam_size, batch_size, pad, bos, eos, n_best,
-                 global_scorer, min_length, max_length, return_attention,
-                 block_ngram_repeat, exclusion_tokens,
-                 stepwise_penalty, ratio):
-        super(BeamSearch, self).__init__(beam_size, batch_size, pad, bos, eos,
-                                         n_best, global_scorer, min_length,
-                                         max_length, return_attention,
-                                         block_ngram_repeat, exclusion_tokens,
-                                         stepwise_penalty, ratio)
-
     def initialize(self, memory_bank, src_lengths, src_map=None, device=None,
                    target_prefix=None):
         """Initialize for decoding.
@@ -393,10 +385,20 @@ class BeamSearchGenerate(BeamSearchBase):
 
         return fn_map_state, src, self.memory_lengths, src_map
 
+    def advance(self, log_probs, attn):
+        super(BeamSearchGenerate, self).advance(log_probs, attn)
+
+        # in LM task memory_lengths is associated with currently generated src
+        # and therefore needs to follow the generation
+        self.memory_lengths += 1
+
     def remove_finished_batches(self, _B_new, _B_old, non_finished,
                                 predictions, attention, step):
         super(BeamSearchGenerate, self).remove_finished_batches(
             _B_new, _B_old, non_finished, predictions, attention, step)
+
+        # in LM task memory_lengths is associated with currently generated src
+        # and therefore needs to follow the generation
         self.memory_lengths = self.memory_lengths.view(
             _B_old, self.beam_size) \
             .index_select(0, non_finished) \

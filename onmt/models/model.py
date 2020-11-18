@@ -100,7 +100,7 @@ class LanguageModel(BaseModel):
     Core trainable object in OpenNMT. Implements a trainable interface
     for a simple, generic  decoder model.
     Args:
-      decoder (onmt.decoders.DecoderBase): a decoder object
+      decoder (onmt.decoders.TransformerLMDecoder): a transformer decoder
     """
 
     def __init__(self, encoder=None, decoder=None):

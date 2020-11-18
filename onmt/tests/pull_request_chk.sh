@@ -25,6 +25,7 @@ clean_up()
         # delete all .pt's
         rm -f $TMP_OUT_DIR/*.pt
         rm -rf $TMP_OUT_DIR/sample
+        rm $TMP_OUT_DIR/onmt.vocab*
         rm -d $TMP_OUT_DIR
     fi
 }
@@ -128,6 +129,41 @@ ${PYTHON} onmt/bin/train.py \
             -layers 4 -word_vec_size 16 -rnn_size 16 -heads 2 -transformer_ff 64 \
             -lambda_align 0.05 -alignment_layer 2 -alignment_heads 0 \
             -report_every 5 -train_steps 10 >> ${LOG_FILE} 2>&1
+[ "$?" -eq 0 ] || error_exit
+echo "Succeeded" | tee -a ${LOG_FILE}
+
+echo -n "  [+] Testing LM training..."
+${PYTHON} onmt/bin/train.py \
+            -config ${DATA_DIR}/lm_data.yaml \
+            -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
+            -tgt_vocab $TMP_OUT_DIR/onmt.vocab.src \
+            -model_task lm \
+            -encoder_type transformer_lm \
+            -decoder_type transformer_lm \
+            -src_vocab_size 1000 \
+            -tgt_vocab_size 1000 \
+            -dec_layers 2 -batch_size 10 \
+            -heads 4 -transformer_ff 64 \
+            -word_vec_size 16 -report_every 5        \
+            -rnn_size 16 -train_steps 10 >> ${LOG_FILE} 2>&1
+[ "$?" -eq 0 ] || error_exit
+echo "Succeeded" | tee -a ${LOG_FILE}
+
+echo -n "  [+] Testing LM training w/ copy..."
+${PYTHON} onmt/bin/train.py \
+            -config ${DATA_DIR}/lm_data.yaml \
+            -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
+            -tgt_vocab $TMP_OUT_DIR/onmt.vocab.src \
+            -model_task lm \
+            -encoder_type transformer_lm \
+            -decoder_type transformer_lm \
+            -src_vocab_size 1000 \
+            -tgt_vocab_size 1000 \
+            -dec_layers 2 -batch_size 10 \
+            -heads 4 -transformer_ff 64 \
+            -word_vec_size 16 -report_every 5        \
+            -rnn_size 16 -train_steps 10 \
+            -copy_attn >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 rm $TMP_OUT_DIR/onmt.vocab*

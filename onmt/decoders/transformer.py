@@ -1,5 +1,6 @@
 """
-Implementation of "Attention is All You Need"
+Implementation of "Attention is All You Need" and of
+subsequent transformer based architectures
 """
 
 import torch
@@ -624,12 +625,12 @@ class TransformerLMDecoder(TransformerDecoderBase):
         embeddings,
         max_relative_positions,
         aan_useffn,
-        full_context_alignment,
-        alignment_layer,
-        alignment_heads,
+        full_context_alignment=None,
+        alignment_layer=None,
+        alignment_heads=None,
     ):
         super(TransformerLMDecoder, self).__init__(
-            d_model, copy_attn, embeddings, alignment_layer
+            d_model, copy_attn, embeddings, None
         )
 
         self.transformer_layers = nn.ModuleList(
@@ -643,8 +644,8 @@ class TransformerLMDecoder(TransformerDecoderBase):
                     self_attn_type=self_attn_type,
                     max_relative_positions=max_relative_positions,
                     aan_useffn=aan_useffn,
-                    full_context_alignment=full_context_alignment,
-                    alignment_heads=alignment_heads,
+                    full_context_alignment=None,
+                    alignment_heads=None,
                 )
                 for i in range(num_layers)
             ]
@@ -672,7 +673,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
         tgt_pad_mask = tgt_words.data.eq(pad_idx).unsqueeze(1)  # [B, 1, T_tgt]
 
         with_align = kwargs.pop("with_align", False)
-        attn_aligns = []
+        assert not with_align, "TransformerLMDecoder does not support align"
 
         for i, layer in enumerate(self.transformer_layers):
             layer_cache = (
@@ -680,15 +681,13 @@ class TransformerLMDecoder(TransformerDecoderBase):
                 if step is not None
                 else None
             )
-            output, attn, attn_align = layer(
+            output, attn, _ = layer(
                 output,
                 tgt_pad_mask,
                 layer_cache=layer_cache,
                 step=step,
                 with_align=with_align,
             )
-            if attn_align is not None:
-                attn_aligns.append(attn_align)
 
         output = self.layer_norm(output)
         dec_outs = output.transpose(0, 1).contiguous()
@@ -697,9 +696,6 @@ class TransformerLMDecoder(TransformerDecoderBase):
         attns = {"std": attn}
         if self._copy:
             attns["copy"] = attn
-        if with_align:
-            attns["align"] = attn_aligns[self.alignment_layer]  # `(B, Q, K)`
-            # attns["align"] = torch.stack(attn_aligns, 0).mean(0)  # All avg
 
         # TODO change the way attns is returned dict => list or tuple (onnx)
         return dec_outs, attns
