@@ -1,0 +1,8 @@
+# Corpus opts:
+data:
+    corpus_1:
+        path_src: data/morph/src.train
+        path_tgt: data/morph/tgt.train
+    valid:
+        path_src: data/morph/src.valid
+        path_tgt: data/morph/tgt.valid
