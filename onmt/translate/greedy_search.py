@@ -181,3 +181,20 @@ class GreedySearch(DecodeStrategy):
         self.select_indices = is_alive.nonzero(as_tuple=False).view(-1)
         self.original_batch_idx = self.original_batch_idx[is_alive]
         self.maybe_update_target_prefix(self.select_indices)
+
+
+class GreedySearchLM(GreedySearch):
+    def update_finished(self):
+        super(GreedySearchLM, self).update_finished()
+        self.update_memory_lengths()
+
+    def update_memory_lengths(self):
+        is_alive = ~self.is_finished.view(-1)
+        self.memory_lengths = self.memory_lengths[is_alive]
+
+    def advance(self, log_probs, attn):
+        super(GreedySearchLM, self).advance(log_probs, attn)
+
+        # in LM task memory_lengths is associated with currently generated src
+        # and therefore needs to follow the generation
+        self.memory_lengths += 1

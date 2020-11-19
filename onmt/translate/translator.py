@@ -13,8 +13,8 @@ from onmt.constants import DefaultTokens
 import onmt.model_builder
 import onmt.inputters as inputters
 import onmt.decoders.ensemble
-from onmt.translate.beam_search import BeamSearch, BeamSearchGenerate
-from onmt.translate.greedy_search import GreedySearch
+from onmt.translate.beam_search import BeamSearch, BeamSearchLM
+from onmt.translate.greedy_search import GreedySearch, GreedySearchLM
 from onmt.utils.misc import tile, set_random_seed, report_matrix
 from onmt.utils.alignment import extract_alignment, build_align_pharaoh
 from onmt.modules.copy_generator import collapse_copy_scores
@@ -914,7 +914,7 @@ class Generator(Inference):
         """Translate a batch of sentences."""
         with torch.no_grad():
             if self.beam_size == 1:
-                decode_strategy = GreedySearch(
+                decode_strategy = GreedySearchLM(
                     pad=self._tgt_pad_idx,
                     bos=self._tgt_bos_idx,
                     eos=self._tgt_eos_idx,
@@ -930,7 +930,7 @@ class Generator(Inference):
             else:
                 # TODO: support these blacklisted features
                 assert not self.dump_beam
-                decode_strategy = BeamSearchGenerate(
+                decode_strategy = BeamSearchLM(
                     self.beam_size,
                     batch_size=batch.batch_size,
                     pad=self._tgt_pad_idx,
@@ -1079,7 +1079,9 @@ class Generator(Inference):
         self, batch, memory_bank, src_lengths, src_vocabs, src_map
     ):
         tgt = batch.tgt
-        src = batch.src
+        src, src_lengths = (
+            batch.src if isinstance(batch.src, tuple) else (batch.src, None)
+        )
 
         log_probs, attn = self._decode_and_generate(
             src,
@@ -1091,8 +1093,7 @@ class Generator(Inference):
         )
 
         log_probs[:, :, self._tgt_pad_idx] = 0
-        gold = tgt[1:]
-        gold_scores = log_probs.gather(2, gold)
+        gold_scores = log_probs.gather(2, tgt)
         gold_scores = gold_scores.sum(dim=0).view(-1)
 
         return gold_scores

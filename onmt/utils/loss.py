@@ -59,9 +59,6 @@ def build_loss_compute(model, tgt_field, opt, train=True):
                 lambda_coverage=opt.lambda_coverage
             )
         elif opt.model_task == ModelTask.LANGUAGE_MODEL:
-            assert (
-                opt.lambda_align == 0.0
-            ), "lamdba_align not supported in LM loss"
             compute = onmt.modules.CopyGeneratorLanguageModelLossCompute(
                 criterion, loss_gen, tgt_field.vocab,
                 opt.copy_loss_by_seqlength,
@@ -69,7 +66,7 @@ def build_loss_compute(model, tgt_field, opt, train=True):
             )
         else:
             raise ValueError(
-                f"No compute loss defined for task {opt.model_task}"
+                f"No copy generator loss defined for task {opt.model_task}"
             )
     else:
         if opt.model_task == ModelTask.SEQ2SEQ:
@@ -257,7 +254,9 @@ class LabelSmoothingLoss(nn.Module):
 
 class CommonLossCompute(LossComputeBase):
     """
-    Standard common Loss Computation.
+    Loss Computation parent for NMTLossCompute and LanguageModelLossCompute
+
+    Implement loss compatible with coverage and alignement shards
     """
 
     def __init__(self, criterion, generator, normalization="sents",
@@ -270,11 +269,14 @@ class CommonLossCompute(LossComputeBase):
         coverage = attns.get("coverage", None)
         std = attns.get("std", None)
         assert attns is not None
-        assert std is not None, (
-            "lambda_coverage != 0.0 requires attention mechanism"
-        )
         assert coverage is not None, (
             "lambda_coverage != 0.0 requires coverage attention"
+            " that could not be found in the model."
+            " Transformer decoders do not implement coverage"
+        )
+        assert std is not None, (
+            "lambda_coverage != 0.0 requires attention mechanism"
+            " that could not be found in the model."
         )
         shard_state.update({"std_attn": attns.get("std"),
                             "coverage_attn": coverage})

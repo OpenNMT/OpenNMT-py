@@ -3,6 +3,7 @@ import torch.nn as nn
 
 from onmt.utils.misc import aeq
 from onmt.utils.loss import LanguageModelLossCompute, NMTLossCompute
+from onmt.utils.loss import CommonLossCompute
 
 
 def collapse_copy_scores(scores, batch, tgt_vocab, src_vocabs=None,
@@ -177,7 +178,7 @@ class CopyGeneratorLoss(nn.Module):
         return loss
 
 
-class CopyGeneratorLossComputeBase(object):
+class CopyGeneratorLossComputeBase(CommonLossCompute):
     def _compute_loss(self, batch, output, target, copy_attn, align,
                       std_attn=None, coverage_attn=None):
         """Compute the loss.

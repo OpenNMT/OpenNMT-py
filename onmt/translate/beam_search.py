@@ -357,7 +357,7 @@ class BeamSearch(BeamSearchBase):
         return fn_map_state, memory_bank, self.memory_lengths, src_map
 
 
-class BeamSearchGenerate(BeamSearchBase):
+class BeamSearchLM(BeamSearchBase):
     """
         Beam search for language/decoder only models
     """
@@ -379,14 +379,14 @@ class BeamSearchGenerate(BeamSearchBase):
         if target_prefix is not None:
             target_prefix = tile(target_prefix, self.beam_size, dim=1)
 
-        super(BeamSearchGenerate, self).initialize_(
+        super(BeamSearchLM, self).initialize_(
             None, self.memory_lengths, src_map=src_map, device=device,
             target_prefix=target_prefix)
 
         return fn_map_state, src, self.memory_lengths, src_map
 
     def advance(self, log_probs, attn):
-        super(BeamSearchGenerate, self).advance(log_probs, attn)
+        super(BeamSearchLM, self).advance(log_probs, attn)
 
         # in LM task memory_lengths is associated with currently generated src
         # and therefore needs to follow the generation
@@ -394,7 +394,7 @@ class BeamSearchGenerate(BeamSearchBase):
 
     def remove_finished_batches(self, _B_new, _B_old, non_finished,
                                 predictions, attention, step):
-        super(BeamSearchGenerate, self).remove_finished_batches(
+        super(BeamSearchLM, self).remove_finished_batches(
             _B_new, _B_old, non_finished, predictions, attention, step)
 
         # in LM task memory_lengths is associated with currently generated src
