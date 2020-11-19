@@ -350,6 +350,7 @@ class BARTNoiseTransform(Transform):
     def warm_up(self, vocabs):
         super().warm_up(None)
         if vocabs is None:
+            self.bart_noise = None
             return
         self.vocabs = vocabs
 
