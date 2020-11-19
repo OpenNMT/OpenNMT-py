@@ -132,6 +132,20 @@ ${PYTHON} onmt/bin/train.py \
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 
+echo -n "  [+] Testing NMT training w/ coverage..."
+${PYTHON} onmt/bin/train.py \
+            -config ${DATA_DIR}/data.yaml \
+            -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
+            -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
+            -src_vocab_size 1000 \
+            -tgt_vocab_size 1000 \
+            -rnn_size 2 -batch_size 10 \
+            -word_vec_size 5 -report_every 5        \
+            -coverage_attn true -lambda_coverage 0.1 \
+            -rnn_size 10 -train_steps 10 >> ${LOG_FILE} 2>&1
+[ "$?" -eq 0 ] || error_exit
+echo "Succeeded" | tee -a ${LOG_FILE}
+
 echo -n "  [+] Testing LM training..."
 ${PYTHON} onmt/bin/train.py \
             -config ${DATA_DIR}/lm_data.yaml \
@@ -165,7 +179,7 @@ ${PYTHON} onmt/bin/train.py \
             -rnn_size 16 -train_steps 10 \
             -copy_attn >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
-echo "Succeeded" | tee -a ${LOG_FILE}
+echo "Succeeded" | tee -a ${LOG_FILE}*
 rm $TMP_OUT_DIR/onmt.vocab*
 
 echo -n "  [+] Testing Graph Neural Network training..."
@@ -222,6 +236,40 @@ ${PYTHON} translate.py -model ${TEST_DIR}/test_model2.pt  \
             -random_sampling_topk=-1    \
             -random_sampling_temp=0.0001    \
             -tgt ${DATA_DIR}/morph/tgt.valid   \
+            -out $TMP_OUT_DIR/trans_sampling  >> ${LOG_FILE} 2>&1
+diff ${DATA_DIR}/morph/tgt.valid $TMP_OUT_DIR/trans_sampling
+[ "$?" -eq 0 ] || error_exit
+echo "Succeeded" | tee -a ${LOG_FILE}
+rm $TMP_OUT_DIR/trans_sampling
+
+echo -n "  [+] Testing LM generation..."
+head ${DATA_DIR}/src-test.txt > $TMP_OUT_DIR/src-test.txt
+${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt -src $TMP_OUT_DIR/src-test.txt -verbose >> ${LOG_FILE} 2>&1
+[ "$?" -eq 0 ] || error_exit
+echo "Succeeded" | tee -a ${LOG_FILE}
+rm $TMP_OUT_DIR/src-test.txt
+
+echo -n "  [+] Testing LM generation w/ Beam search..."
+${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
+            -src ${DATA_DIR}/morph/src.valid   \
+            -verbose -batch_size 10     \
+            -beam_size 10               \
+            -tgt ${DATA_DIR}/morph/src.valid   \
+            -out $TMP_OUT_DIR/trans_beam  >> ${LOG_FILE} 2>&1
+diff ${DATA_DIR}/morph/tgt.valid $TMP_OUT_DIR/trans_beam
+[ "$?" -eq 0 ] || error_exit
+echo "Succeeded" | tee -a ${LOG_FILE}
+rm $TMP_OUT_DIR/trans_beam
+
+echo -n "  [+] Testing LM generation w/ Random Sampling..."
+${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
+            -src ${DATA_DIR}/morph/src.valid   \
+            -verbose -batch_size 10     \
+            -beam_size 1                \
+            -seed 1                     \
+            -random_sampling_topk=-1    \
+            -random_sampling_temp=0.0001    \
+            -tgt ${DATA_DIR}/morph/src.valid   \
             -out $TMP_OUT_DIR/trans_sampling  >> ${LOG_FILE} 2>&1
 diff ${DATA_DIR}/morph/tgt.valid $TMP_OUT_DIR/trans_sampling
 [ "$?" -eq 0 ] || error_exit

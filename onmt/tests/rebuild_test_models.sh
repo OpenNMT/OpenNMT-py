@@ -43,7 +43,6 @@ mv /tmp/tmp*10000.pt onmt/tests/test_model.pt
 rm /tmp/tmp*.pt
 fi
 
-
 ################# MORPH DATA
 if false; then
 $my_python build_vocab.py \
@@ -97,4 +96,23 @@ $my_python translate.py -gpu 0 -model onmt/tests/test_model.pt \
 
 fi
 
+############### TEST LANGUAGE MODEL
+if true; then
+rm data/data_lm/*.python
+
+$my_python train.py -config data/lm_data.yaml -data data/data_lm -save_model /tmp/tmp -batch_type tokens -batch_size 1024 -accum_count 4 \
+ -layers 4 -rnn_size 256 -word_vec_size 256 -encoder_type transformer_lm -decoder_type transformer_lm -share_embedding \
+ -train_steps 10000 -world_size 1 -gpu_ranks 0 -max_generator_batches 4 -dropout 0.1 -normalization tokens \
+ -max_grad_norm 0 -optim adam -decay_method noam -learning_rate 2 -label_smoothing 0.1 -model_task lm \
+ -position_encoding -param_init 0 -warmup_steps 100 -param_init_glorot -adam_beta2 0.998
+#
+mv /tmp/tmp*10000.pt onmt/tests/test_model_lm.pt
+rm /tmp/tmp*.pt
+fi
+#
+if false; then
+$my_python translate.py -gpu 0 -model onmt/tests/test_model_lm.pt \
+  -src data/src-val.txt -output onmt/tests/output_hyp.txt -beam 5 -batch_size 16
+
+fi
 
