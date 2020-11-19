@@ -143,6 +143,7 @@ def build_task_specific_model(model_opt, fields):
             fields["src"].base_field.vocab == fields["tgt"].base_field.vocab
         ), "preprocess with -share_vocab if you use share_embeddings"
 
+    print(model_opt.model_task)
     if model_opt.model_task == ModelTask.SEQ2SEQ:
         encoder, src_emb = build_encoder_with_embeddings(model_opt, fields)
         decoder, _ = build_decoder_with_embeddings(
@@ -185,30 +186,6 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
         model_opt.attention_dropout
     except AttributeError:
         model_opt.attention_dropout = model_opt.dropout
-
-    # Build embeddings.
-    if model_opt.model_type == "text":
-        src_field = fields["src"]
-        src_emb = build_embeddings(model_opt, src_field)
-    else:
-        src_emb = None
-
-    # Build encoder.
-    encoder = build_encoder(model_opt, src_emb)
-
-    # Build decoder.
-    tgt_field = fields["tgt"]
-    tgt_emb = build_embeddings(model_opt, tgt_field, for_encoder=False)
-
-    # Share the embedding matrix - preprocess with share_vocab required.
-    if model_opt.share_embeddings:
-        # src/tgt vocab should be the same if `-share_vocab` is specified.
-        assert src_field.base_field.vocab == tgt_field.base_field.vocab, \
-            "-share_vocab is required if you use -share_embeddings"
-
-        tgt_emb.word_lut.weight = src_emb.word_lut.weight
-
-    decoder = build_decoder(model_opt, tgt_emb)
 
     # Build Model
     if gpu and gpu_id is not None:
