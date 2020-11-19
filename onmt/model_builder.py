@@ -186,7 +186,31 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
     except AttributeError:
         model_opt.attention_dropout = model_opt.dropout
 
-    # Build Model.
+    # Build embeddings.
+    if model_opt.model_type == "text":
+        src_field = fields["src"]
+        src_emb = build_embeddings(model_opt, src_field)
+    else:
+        src_emb = None
+
+    # Build encoder.
+    encoder = build_encoder(model_opt, src_emb)
+
+    # Build decoder.
+    tgt_field = fields["tgt"]
+    tgt_emb = build_embeddings(model_opt, tgt_field, for_encoder=False)
+
+    # Share the embedding matrix - preprocess with share_vocab required.
+    if model_opt.share_embeddings:
+        # src/tgt vocab should be the same if `-share_vocab` is specified.
+        assert src_field.base_field.vocab == tgt_field.base_field.vocab, \
+            "-share_vocab is required if you use -share_embeddings"
+
+        tgt_emb.word_lut.weight = src_emb.word_lut.weight
+
+    decoder = build_decoder(model_opt, tgt_emb)
+
+    # Build Model
     if gpu and gpu_id is not None:
         device = torch.device("cuda", gpu_id)
     elif gpu and not gpu_id:
