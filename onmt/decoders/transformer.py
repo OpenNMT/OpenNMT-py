@@ -552,25 +552,26 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
             else:  # only mask padding, result mask in (B, 1, T)
                 dec_mask = tgt_pad_mask
 
+        inputs_norm = self.layer_norm_1(inputs)
         if isinstance(self.self_attn, MultiHeadedAttention):
             query, attns = self.self_attn(
-                inputs,
-                inputs,
-                inputs,
+                inputs_norm,
+                inputs_norm,
+                inputs_norm,
                 mask=dec_mask,
                 layer_cache=layer_cache,
                 attn_type="self",
             )
         elif isinstance(self.self_attn, AverageAttention):
             query, attns = self.self_attn(
-                inputs, mask=dec_mask, layer_cache=layer_cache, step=step
+                inputs_norm, mask=dec_mask, layer_cache=layer_cache, step=step
             )
 
-        output = self.layer_norm_1(self.drop(query) + inputs)
+        output = self.drop(query) + inputs
 
-        output_feedforward = self.feed_forward(output)
+        output_feedforward = self.feed_forward(self.layer_norm_2(output))
 
-        output_norm = self.layer_norm_2(self.drop(output_feedforward) + output)
+        output_norm = self.drop(output_feedforward) + output
 
         return output_norm, attns
 
@@ -581,8 +582,7 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
 
 
 class TransformerLMDecoder(TransformerDecoderBase):
-    """The Transformer decoder from "Attention is All You Need".
-    :cite:`DBLP:journals/corr/VaswaniSPUJGKP17`
+    """The Transformer decoder from GPT-2
 
     .. mermaid::
 
@@ -632,7 +632,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
         super(TransformerLMDecoder, self).__init__(
             d_model, copy_attn, embeddings, None
         )
-
+        self.drop = nn.Dropout(dropout)
         self.transformer_layers = nn.ModuleList(
             [
                 TransformerLMDecoderLayer(
@@ -668,6 +668,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
         assert emb.dim() == 3  # len x batch x embedding_dim
 
         output = emb.transpose(0, 1).contiguous()
+        output = self.drop(output)
 
         pad_idx = self.embeddings.word_padding_idx
         tgt_pad_mask = tgt_words.data.eq(pad_idx).unsqueeze(1)  # [B, 1, T_tgt]
@@ -708,3 +709,8 @@ class TransformerLMDecoder(TransformerDecoderBase):
             if isinstance(layer.self_attn, AverageAttention):
                 raise NotImplementedError
             self.state["cache"]["layer_{}".format(i)] = layer_cache
+
+    def update_dropout(self, dropout, attention_dropout):
+        super(TransformerLMDecoder, self).update_dropout(dropout,
+                                                         attention_dropout)
+        self.drop.p = dropout
