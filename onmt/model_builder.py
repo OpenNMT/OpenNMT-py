@@ -143,7 +143,6 @@ def build_task_specific_model(model_opt, fields):
             fields["src"].base_field.vocab == fields["tgt"].base_field.vocab
         ), "preprocess with -share_vocab if you use share_embeddings"
 
-    print(model_opt.model_task)
     if model_opt.model_task == ModelTask.SEQ2SEQ:
         encoder, src_emb = build_encoder_with_embeddings(model_opt, fields)
         decoder, _ = build_decoder_with_embeddings(

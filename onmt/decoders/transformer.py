@@ -632,7 +632,6 @@ class TransformerLMDecoder(TransformerDecoderBase):
         super(TransformerLMDecoder, self).__init__(
             d_model, copy_attn, embeddings, None
         )
-        self.drop = nn.Dropout(dropout)
         self.transformer_layers = nn.ModuleList(
             [
                 TransformerLMDecoderLayer(
@@ -668,7 +667,6 @@ class TransformerLMDecoder(TransformerDecoderBase):
         assert emb.dim() == 3  # len x batch x embedding_dim
 
         output = emb.transpose(0, 1).contiguous()
-        output = self.drop(output)
 
         pad_idx = self.embeddings.word_padding_idx
         tgt_pad_mask = tgt_words.data.eq(pad_idx).unsqueeze(1)  # [B, 1, T_tgt]
@@ -709,8 +707,3 @@ class TransformerLMDecoder(TransformerDecoderBase):
             if isinstance(layer.self_attn, AverageAttention):
                 raise NotImplementedError
             self.state["cache"]["layer_{}".format(i)] = layer_cache
-
-    def update_dropout(self, dropout, attention_dropout):
-        super(TransformerLMDecoder, self).update_dropout(dropout,
-                                                         attention_dropout)
-        self.drop.p = dropout

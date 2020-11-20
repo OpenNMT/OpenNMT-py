@@ -97,7 +97,7 @@ $my_python translate.py -gpu 0 -model onmt/tests/test_model.pt \
 fi
 
 ############### TEST LANGUAGE MODEL
-if true; then
+if false; then
 rm data/data_lm/*.python
 
 $my_python build_vocab.py \
@@ -105,16 +105,16 @@ $my_python build_vocab.py \
     -src_vocab data/data_lm/data.vocab.src -tgt_vocab data/data_lm/data.vocab.tgt \
     -overwrite true
 
-$my_python train.py -config data/lm_data.yaml -save_model /tmp/tmp -batch_type tokens \
- -accum_count 4 -dec_layers 2 -rnn_size 512 -word_vec_size 512 \
+$my_python train.py -config data/lm_data.yaml -save_model /tmp/tmp \
+ -accum_count 2 -dec_layers 2 -rnn_size 64 -word_vec_size 64 -batch_size 256 \
  -encoder_type transformer_lm -decoder_type transformer_lm -share_embedding \
- -train_steps 10000 -max_generator_batches 4 -dropout 0.1 -normalization tokens \
- -share_vocab -transformer_ff 2048 -max_grad_norm 0 -optim adam -decay_method noam \
+ -train_steps 2000 -max_generator_batches 4 -dropout 0.1 -normalization tokens \
+ -share_vocab -transformer_ff 256 -max_grad_norm 0 -optim adam -decay_method noam \
  -learning_rate 2 -label_smoothing 0.1 -model_task lm -world_size 1 -gpu_ranks 0 \
- -attention_dropout 0.1 -heads 4 -position_encoding -param_init 0 -warmup_steps 100 \
+ -attention_dropout 0.1 -heads 2 -position_encoding -param_init 0 -warmup_steps 100 \
  -param_init_glorot -adam_beta2 0.998 -src_vocab data/data_lm/data.vocab.src
 #
-mv /tmp/tmp*10000.pt onmt/tests/test_model_lm.pt
+mv /tmp/tmp*2000.pt onmt/tests/test_model_lm_2.pt
 rm /tmp/tmp*.pt
 fi
 #

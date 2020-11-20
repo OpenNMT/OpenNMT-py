@@ -251,30 +251,28 @@ rm $TMP_OUT_DIR/src-test.txt
 
 echo -n "  [+] Testing LM generation w/ Beam search..."
 ${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
-            -src ${DATA_DIR}/morph/src.valid   \
+            -src ${DATA_DIR}/data_lm/src-gen.txt   \
             -verbose -batch_size 10     \
             -beam_size 10               \
-            -tgt ${DATA_DIR}/morph/src.valid   \
-            -out $TMP_OUT_DIR/trans_beam  >> ${LOG_FILE} 2>&1
-diff ${DATA_DIR}/morph/tgt.valid $TMP_OUT_DIR/trans_beam
+            -out $TMP_OUT_DIR/gen_beam  >> ${LOG_FILE} 2>&1
+diff ${DATA_DIR}/data_lm/gen-beam-sol.txt $TMP_OUT_DIR/gen_beam
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
-rm $TMP_OUT_DIR/trans_beam
+rm $TMP_OUT_DIR/gen_beam
 
 echo -n "  [+] Testing LM generation w/ Random Sampling..."
 ${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
-            -src ${DATA_DIR}/morph/src.valid   \
+            -src ${DATA_DIR}/data_lm/src-gen.txt   \
             -verbose -batch_size 10     \
             -beam_size 1                \
             -seed 1                     \
             -random_sampling_topk=-1    \
             -random_sampling_temp=0.0001    \
-            -tgt ${DATA_DIR}/morph/src.valid   \
-            -out $TMP_OUT_DIR/trans_sampling  >> ${LOG_FILE} 2>&1
-diff ${DATA_DIR}/morph/tgt.valid $TMP_OUT_DIR/trans_sampling
+            -out $TMP_OUT_DIR/gen_sampling  >> ${LOG_FILE} 2>&1
+diff ${DATA_DIR}/data_lm/gen-sampling-sol.txt $TMP_OUT_DIR/gen_sampling
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
-rm $TMP_OUT_DIR/trans_sampling
+rm $TMP_OUT_DIR/gen_sampling
 
 #
 # Tools test
