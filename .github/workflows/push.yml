@@ -234,7 +234,7 @@ jobs:
           -seed 1 \
           -random_sampling_topk=-1 \
           -random_sampling_temp=0.0001 \
-          -out /tpm/gen
+          -out /tmp/gen
         diff data/data_lm/gen-sampling-sol.txt /tmp/gen && rm /tmp/gen
     - name: Test extract_vocabulary tool
       run: |
