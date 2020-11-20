@@ -147,7 +147,7 @@ jobs:
           -heads 4 -transformer_ff 64 \
           -word_vec_size 16 -report_every 5        \
           -rnn_size 16 -train_steps 10 \
-          -copy_attn >> ${LOG_FILE} 2>&1
+          -copy_attn
     - name: Test Graph neural network training
       run: |
         python train.py \
