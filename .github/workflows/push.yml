@@ -246,7 +246,7 @@ jobs:
         if ! wc -l /tmp/onmt.vocab.txt | grep -qF  "1002"
           then echo "wrong word count" && exit 1
         else
-          echo "creat vocabulary pass"
+          echo "create vocabulary pass"
         fi
     - name: Test embeddings_to_torch tool
       run: |
