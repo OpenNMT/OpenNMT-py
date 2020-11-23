@@ -11,11 +11,11 @@ from onmt.utils.logging import logger
 def build_report_manager(opt, gpu_rank):
     if opt.tensorboard and gpu_rank <= 0:
         from torch.utils.tensorboard import SummaryWriter
-        if not opt.train_from:
-            opt.tensorboard_log_dir += datetime.now().strftime(
-                "/%b-%d_%H-%M-%S")
-
-        writer = SummaryWriter(opt.tensorboard_log_dir, comment="Unmt")
+        if not hasattr(opt, 'tensorboard_log_dir_dated'):
+            opt.tensorboard_log_dir_dated = (
+                opt.tensorboard_log_dir + datetime.now().strftime("/%b-%d_%H-%M-%S")
+            )
+        writer = SummaryWriter(opt.tensorboard_log_dir_dated, comment="Unmt")
     else:
         writer = None
 
