@@ -98,7 +98,8 @@ class NMTModel(BaseModel):
 class LanguageModel(BaseModel):
     """
     Core trainable object in OpenNMT. Implements a trainable interface
-    for a simple, generic  decoder model.
+    for a simple, generic decoder only model.
+    Currently TransformerLMDecoder is the only LM decoder implemented
     Args:
       decoder (onmt.decoders.TransformerLMDecoder): a transformer decoder
     """

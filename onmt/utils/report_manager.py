@@ -13,7 +13,8 @@ def build_report_manager(opt, gpu_rank):
         from torch.utils.tensorboard import SummaryWriter
         if not hasattr(opt, 'tensorboard_log_dir_dated'):
             opt.tensorboard_log_dir_dated = (
-                opt.tensorboard_log_dir + datetime.now().strftime("/%b-%d_%H-%M-%S")
+                opt.tensorboard_log_dir +
+                datetime.now().strftime("/%b-%d_%H-%M-%S")
             )
         writer = SummaryWriter(opt.tensorboard_log_dir_dated, comment="Unmt")
     else:

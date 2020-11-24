@@ -46,6 +46,7 @@ def _dynamic_dict(example, src_field, tgt_field):
     unk = src_field.unk_token
     pad = src_field.pad_token
 
+    # add init_token and eos_token according to src construction
     if src_field.init_token:
         src = [src_field.init_token] + src
     if src_field.eos_token:

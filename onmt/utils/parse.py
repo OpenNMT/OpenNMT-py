@@ -43,7 +43,7 @@ class DataOptsCheckerMixin(object):
             else:
                 opt.data_task = ModelTask.SEQ2SEQ
                 if path_tgt is None:
-                    logger.warn(
+                    logger.warning(
                         "path_tgt is None, it should be set unless the task"
                         " is language modeling"
                     )

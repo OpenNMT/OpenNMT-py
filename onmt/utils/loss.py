@@ -59,7 +59,7 @@ def build_loss_compute(model, tgt_field, opt, train=True):
                 lambda_coverage=opt.lambda_coverage
             )
         elif opt.model_task == ModelTask.LANGUAGE_MODEL:
-            compute = onmt.modules.CopyGeneratorLanguageModelLossCompute(
+            compute = onmt.modules.CopyGeneratorLMLossCompute(
                 criterion, loss_gen, tgt_field.vocab,
                 opt.copy_loss_by_seqlength,
                 lambda_coverage=opt.lambda_coverage
@@ -80,7 +80,7 @@ def build_loss_compute(model, tgt_field, opt, train=True):
             assert (
                 opt.lambda_align == 0.0
             ), "lamdba_align not supported in LM loss"
-            compute = LanguageModelLossCompute(
+            compute = LMLossCompute(
                 criterion,
                 loss_gen,
                 lambda_coverage=opt.lambda_coverage,
@@ -254,16 +254,16 @@ class LabelSmoothingLoss(nn.Module):
 
 class CommonLossCompute(LossComputeBase):
     """
-    Loss Computation parent for NMTLossCompute and LanguageModelLossCompute
+    Loss Computation parent for NMTLossCompute and LMLossCompute
 
     Implement loss compatible with coverage and alignement shards
     """
-
     def __init__(self, criterion, generator, normalization="sents",
-                 lambda_coverage=0.0, lambda_align=0.0):
+                 lambda_coverage=0.0, lambda_align=0.0, tgt_shift_index=1):
         super(CommonLossCompute, self).__init__(criterion, generator)
         self.lambda_coverage = lambda_coverage
         self.lambda_align = lambda_align
+        self.tgt_shift_index = tgt_shift_index
 
     def _add_coverage_shard_state(self, shard_state, attns):
         coverage = attns.get("coverage", None)
@@ -311,16 +311,6 @@ class CommonLossCompute(LossComputeBase):
         covloss *= self.lambda_coverage
         return covloss
 
-    def _compute_alignement_loss(self, align_head, ref_align):
-        """Compute loss between 2 partial alignment matrix."""
-        raise NotImplementedError
-
-
-class NMTLossCompute(CommonLossCompute):
-    """
-    Standard NMT Loss Computation.
-    """
-
     def _add_align_shard_state(self, shard_state, batch, range_start,
                                range_end, attns):
         # attn_align should be in (batch_size, pad_tgt_size, pad_src_size)
@@ -362,7 +352,7 @@ class NMTLossCompute(CommonLossCompute):
         return align_loss
 
     def _make_shard_state(self, batch, output, range_, attns=None):
-        range_start = range_[0] + 1
+        range_start = range_[0] + self.tgt_shift_index
         range_end = range_[1]
         shard_state = {
             "output": output,
@@ -377,24 +367,30 @@ class NMTLossCompute(CommonLossCompute):
         return shard_state
 
 
-class LanguageModelLossCompute(CommonLossCompute):
+class NMTLossCompute(CommonLossCompute):
+    """
+    Standard NMT Loss Computation.
+    """
+    def __init__(self, criterion, generator, normalization="sents",
+                 lambda_coverage=0.0, lambda_align=0.0):
+        super(NMTLossCompute, self).__init__(criterion, generator,
+                                             normalization=normalization,
+                                             lambda_coverage=lambda_coverage,
+                                             lambda_align=lambda_align,
+                                             tgt_shift_index=1)
+
+
+class LMLossCompute(CommonLossCompute):
     """
     Standard LM Loss Computation.
     """
-
-    def _compute_alignement_loss(self, align_head, ref_align):
-        return 0
-
-    def _make_shard_state(self, batch, output, range_, attns=None):
-        range_start = range_[0]
-        range_end = range_[1]
-        shard_state = {
-            "output": output,
-            "target": batch.tgt[range_start:range_end, :, 0],
-        }
-        if self.lambda_coverage != 0.0:
-            self._add_coverage_shard_state(shard_state, attns)
-        return shard_state
+    def __init__(self, criterion, generator, normalization="sents",
+                 lambda_coverage=0.0, lambda_align=0.0):
+        super(LMLossCompute, self).__init__(criterion, generator,
+                                            normalization=normalization,
+                                            lambda_coverage=lambda_coverage,
+                                            lambda_align=lambda_align,
+                                            tgt_shift_index=0)
 
 
 def filter_shard_state(state, shard_size=None):
