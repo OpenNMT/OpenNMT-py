@@ -27,7 +27,7 @@ def _get_model_opts(opt, checkpoint=None):
         ArgumentParser.update_model_opts(model_opt)
         ArgumentParser.validate_model_opts(model_opt)
         if (opt.tensorboard_log_dir == model_opt.tensorboard_log_dir and
-            hasattr(model_opt, 'tensorboard_log_dir_dated')):
+                hasattr(model_opt, 'tensorboard_log_dir_dated')):
             # ensure tensorboard output is written in the directory
             # of previous checkpoints
             opt.tensorboard_log_dir_dated = model_opt.tensorboard_log_dir_dated

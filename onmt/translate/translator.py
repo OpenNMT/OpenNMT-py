@@ -35,7 +35,7 @@ def build_translator(opt, report_score=True, logger=None, out_file=None):
     scorer = onmt.translate.GNMTGlobalScorer.from_opt(opt)
 
     if model_opt.model_task == ModelTask.LANGUAGE_MODEL:
-        translator = Generator.from_opt(
+        translator = GeneratorLM.from_opt(
             model,
             fields,
             opt,
@@ -894,12 +894,12 @@ class Translator(Inference):
         return gold_scores
 
 
-class Generator(Inference):
+class GeneratorLM(Inference):
     @classmethod
     def validate_task(cls, task):
         if task != ModelTask.LANGUAGE_MODEL:
             raise ValueError(
-                f"Generator does not support task {task}."
+                f"GeneratorLM does not support task {task}."
                 f" Tasks supported: {ModelTask.LANGUAGE_MODEL}"
             )
 

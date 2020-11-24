@@ -13,6 +13,7 @@ from onmt.utils.logging import logger
 class SequenceTooLongError(Exception):
     pass
 
+
 class PositionalEncoding(nn.Module):
     """Sinusoidal positional encoding for non-recurrent neural networks.
 
