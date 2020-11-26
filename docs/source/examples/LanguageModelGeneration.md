@@ -69,7 +69,7 @@ transforms: [onmt_tokenize]
 ```
 
 ### Build vocabulary command
-The vocabulary can be build using:
+The vocabulary is build using:
 ```bash
 onmt_build_vocab -config examples/wiki_103.yaml -n_sample -1
 ```
@@ -89,7 +89,7 @@ decoder_type: transformer_lm
 share_vocab: true
 ```
 
-The training can be launched using:
+The training is launched using:
 ```bash
 onmt_train -config examples/wiki_103.yaml
 ```
@@ -98,7 +98,7 @@ Tensorboard can be used to monitor the training
 ## Step 4: Generate output
 Options contained in the loaded model will trigger language modeling inference. When batch mode is used the end of sequences will be repeated in the predictions.
 
-*input.txt* must contain already tokenized, with the same method as the training data. Here, validation data can be used
+*input.txt* must contain already tokenized, with the same method as the training data. Here, part of validation data will be used:
 ```bash
 head data/wikitext-103-raw/wiki.valid.bpe | cut -d" " -f-15 > data/lm_input.txt
 ```
