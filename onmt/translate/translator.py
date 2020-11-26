@@ -950,7 +950,7 @@ class GeneratorLM(Inference):
                 batch, src_vocabs, decode_strategy
             )
 
-    def split_src_to_avoid_padding(self, src, src_lengths):
+    def split_src_to_prevent_padding(self, src, src_lengths):
         min_len_batch = torch.min(src_lengths).item()
         target_prefix = None
         if min_len_batch > 0 and min_len_batch <= src.size(0):
@@ -989,7 +989,7 @@ class GeneratorLM(Inference):
             batch.src if isinstance(batch.src, tuple) else (batch.src, None)
         )
 
-        src, src_lengths, target_prefix = self.split_src_to_avoid_padding(
+        src, src_lengths, target_prefix = self.split_src_to_prevent_padding(
             src, src_lengths
         )
 
