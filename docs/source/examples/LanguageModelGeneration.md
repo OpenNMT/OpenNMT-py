@@ -3,7 +3,7 @@
 
 ## Step 0: Download and clean the data
 
-Preliminary steps are defined in the [`examples/scripts/prepare_wikitext-103_data.sh`](https://github.com/OpenNMT/OpenNMT-py/tree/master/examples/scripts/prepare_wikitext-103_data.sh). The following command will download the WikiText103 dataset, remove empty lines and shuffle the training corpus:
+Preliminary steps are defined in the [`examples/scripts/prepare_wikitext-103_data.sh`](https://github.com/OpenNMT/OpenNMT-py/tree/master/examples/scripts/prepare_wikitext-103_data.sh). The following command will download the [WikiText103 dataset](https://blog.einstein.ai/the-wikitext-long-term-dependency-language-modeling-dataset/), remove empty lines and shuffle the training corpus:
 ```bash
 chmod u+x prepare_wikitext-103_data.sh
 ./prepare_wikitext-103_data.sh
@@ -11,9 +11,9 @@ chmod u+x prepare_wikitext-103_data.sh
 
 ## Step 1: Prepare the subword model - BPE with pyonmttok
 
-This snippet will train a bpe of 40000 symbols on the train dataset. The bpe model will be stored in *subwords.bpe* and the train/valid/test sets will be tokenized and saved.
+This snippet will train a bpe of 40000 symbols on the training dataset using pyonmttok. The bpe model will be stored in `subwords.bpe` and the train/valid/test sets will be tokenized and saved.
 
-The tokenized files won't be used for training. Indeed, dynamic iteration over the training dataset allows on the fly tokenization using transforms (see step 2). 
+The tokenized files won't be used for training. Indeed, dynamic iteration over the training dataset enables on the fly tokenization using transforms (see step 2).
 
 ```python
 import pyonmttok
@@ -42,11 +42,12 @@ for data_file in ["wiki.valid", "wiki.test", "wiki.train"]:
 ```
 
 ## Step 2: Build the vocabulary
-An example if a yaml configuration for language modeling task is available in [`examples/wiki_103.yaml`](https://github.com/OpenNMT/OpenNMT-py/tree/master/examples/wiki_103.yaml)
+An example of yaml configuration for language modeling task is available in [`examples/wiki_103.yaml`](https://github.com/OpenNMT/OpenNMT-py/tree/master/examples/wiki_103.yaml). This configuration will be used for building the vocabulary and training the model.
+BPE and language modeling specificities are explained in the following sections.
 
 ### Language Model specificities
 
-In LM tasks we expect a single source, therefore path_tgt is not required for LM task.
+In LM tasks we expect a single source, therefore path_tgt is not required for LM tasks.
 
 ```yaml
 data:
@@ -69,16 +70,16 @@ transforms: [onmt_tokenize]
 ```
 
 ### Build vocabulary command
-The vocabulary is build using:
+The vocabulary is built using:
 ```bash
 onmt_build_vocab -config examples/wiki_103.yaml -n_sample -1
 ```
 
 ## Step 3: Train the model
-To train a model for LM tasks, the following parameters must be in the config file.
+To train a model for LM tasks, the following parameters are required:
 
 * *model_task* is used to specify that the task will be language modeling (decoder only model with tansform_lm decoder type, source only dataset expected)
-* *decoder_type* must be transform_lm. This transformer is the one used in GPT-2: **Language Models are Unsupervised Multitask Learners**. Basically, it is a transformer without the encoder attention block.
+* *decoder_type* must be transform_lm. This transformer is the one used in GPT-2: [**Language Models are Unsupervised Multitask Learners**](https://d4mucfpksywv.cloudfront.net/better-language-models/language_models_are_unsupervised_multitask_learners.pdf). Basically, it is a transformer without an encoder attention block
 * *encoder_type* is not useful but need to be mentionned
 * *share_vocab* must be true. The slided source will play the role of the target hence vocabulary must be shared. 
 ```yaml
@@ -98,9 +99,9 @@ Tensorboard can be used to monitor the training.
 **Expected results:** perplexity of 20-22 on the validation set.
 
 ## Step 4: Generate output
-Options contained in the loaded model will trigger language modeling inference. When batch mode is used the end of sequences will be repeated in the predictions.
+Options contained in the loaded model will trigger language modeling specific inference. When batch mode is used the end of longer sequences will be repeated in the predictions.
 
-*input.txt* must contain already tokenized, with the same method as the training data. Here, part of validation data will be used:
+`input.txt` must contain already tokenized examples, with the same method as the training data. Here, part of validation data will be used:
 ```bash
 head data/wikitext-103-raw/wiki.valid.bpe | cut -d" " -f-15 > data/wikitext-103-raw/lm_input.txt
 ```
