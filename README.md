@@ -6,14 +6,14 @@
 [![Gitter](https://badges.gitter.im/OpenNMT/OpenNMT-py.svg)](https://gitter.im/OpenNMT/OpenNMT-py?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![Forum](https://img.shields.io/badge/discourse-online-green.svg)](https://forum.opennmt.net/)
 
-This is the [PyTorch](https://github.com/pytorch/pytorch) version of the [OpenNMT](https://opennmt.net) project, an open-source (MIT) neural machine translation framework. It is designed to be research friendly to try out new ideas in translation, summary, morphology, and many other domains. Some companies have proven the code to be production ready.
+OpenNMT-py is the [PyTorch](https://github.com/pytorch/pytorch) version of the [OpenNMT](https://opennmt.net) project, an open-source (MIT) neural machine translation framework. It is designed to be research friendly to try out new ideas in translation, summary, morphology, and many other domains. Some companies have proven the code to be production ready.
 
-We love contributions. Please consult the Issues page for any [Contributions Welcome](https://github.com/OpenNMT/OpenNMT-py/issues?q=is%3Aissue+is%3Aopen+label%3A%22contributions+welcome%22) tagged post. 
+We love contributions! Please look at issues marked with the [contributions welcome](https://github.com/OpenNMT/OpenNMT-py/issues?q=is%3Aissue+is%3Aopen+label%3A%22contributions+welcome%22) tag.
 
 <center style="padding: 40px"><img width="70%" src="http://opennmt.github.io/simple-attn.png" /></center>
 Before raising an issue, make sure you read the requirements and the documentation examples.
 
-Unless there is a bug, please use the [Forum](http://forum.opennmt.net) or [Gitter](https://gitter.im/OpenNMT/OpenNMT-py) to ask questions.
+Unless there is a bug, please use the [forum](https://forum.opennmt.net) or [Gitter](https://gitter.im/OpenNMT/OpenNMT-py) to ask questions.
 
 ----
 
@@ -56,11 +56,12 @@ Feel free to check it out and let us know what you think of the new paradigm!
 
 Table of Contents
 =================
-  * [Full Documentation](http://opennmt.net/OpenNMT-py/)
-  * [Usage](#usage)
+  * [Setup](#setup)
   * [Features](#features)
   * [Quickstart](#quickstart)
-  * [Run on FloydHub](#run-on-floydhub)
+  * [Alternative: Run on FloydHub](#alternative-run-on-floydhub)
+  * [Pretrained embeddings](#pretrained-embeddings-eg-glove)
+  * [Pretrained models](#pretrained-models)
   * [Acknowledgements](#acknowledgements)
   * [Citation](#citation)
 
@@ -69,7 +70,7 @@ Table of Contents
 OpenNMT-py requires:
 
 - Python >= 3.6
-- Pytorch == 1.6.0
+- PyTorch == 1.6.0
 
 Install `OpenNMT-py` from `pip`:
 ```bash
@@ -80,12 +81,12 @@ or from the sources:
 ```bash
 git clone https://github.com/OpenNMT/OpenNMT-py.git
 cd OpenNMT-py
-python setup.py install
+pip install -e .
 ```
 
-Note: If you have MemoryError in the install try to use `pip` with `--no-cache-dir`.
+Note: if you encounter a `MemoryError` during installation, try to use `pip` with `--no-cache-dir`.
 
-*(Optional)* some advanced features (e.g. working pretrained models or specific transforms) requires extra packages, you can install it with:
+*(Optional)* Some advanced features (e.g. working pretrained models or specific transforms) require extra packages, you can install them with:
 
 ```bash
 pip install -r requirements.opt.txt
@@ -95,23 +96,24 @@ pip install -r requirements.opt.txt
 
 - :warning: **New in OpenNMT-py 2.0**: [On the fly data processing]([here](https://opennmt.net/OpenNMT-py/FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms).)
 
-- [Seq2Seq models (encoder-decoder) with multiple RNN cells (lstm/gru) and attention (dotprod/mlp) types](http://opennmt.net/OpenNMT-py/options/train.html#model-encoder-decoder)
-- [Transformer models](http://opennmt.net/OpenNMT-py/FAQ.html#how-do-i-use-the-transformer-model)
-- [Copy and Coverage Attention](http://opennmt.net/OpenNMT-py/options/train.html#model-attention)
-- [Pretrained Embeddings](http://opennmt.net/OpenNMT-py/FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove)
-- [Source word features](http://opennmt.net/OpenNMT-py/options/train.html#model-embeddings)
-- [TensorBoard logging](http://opennmt.net/OpenNMT-py/options/train.html#logging)
-- [Multi-GPU training](http://opennmt.net/OpenNMT-py/FAQ.html##do-you-support-multi-gpu)
-- [Data preprocessing](http://opennmt.net/OpenNMT-py/options/preprocess.html)
-- [Inference (translation) with batching and beam search](http://opennmt.net/OpenNMT-py/options/translate.html)
+- [Encoder-decoder models with multiple RNN cells (LSTM, GRU) and attention types (Luong, Bahdanau)](https://opennmt.net/OpenNMT-py/options/train.html#model-encoder-decoder)
+- [Transformer models](https://opennmt.net/OpenNMT-py/FAQ.html#how-do-i-use-the-transformer-model)
+- [Copy and Coverage Attention](https://opennmt.net/OpenNMT-py/options/train.html#model-attention)
+- [Pretrained Embeddings](https://opennmt.net/OpenNMT-py/FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove)
+- [Source word features](https://opennmt.net/OpenNMT-py/options/train.html#model-embeddings)
+- [TensorBoard logging](https://opennmt.net/OpenNMT-py/options/train.html#logging)
+- [Multi-GPU training](https://opennmt.net/OpenNMT-py/FAQ.html##do-you-support-multi-gpu)
+- [Data preprocessing](https://opennmt.net/OpenNMT-py/options/preprocess.html)
+- [Inference (translation) with batching and beam search](https://opennmt.net/OpenNMT-py/options/translate.html)
 - Inference time loss functions
 - [Conv2Conv convolution model](https://arxiv.org/abs/1705.03122)
 - SRU "RNNs faster than CNN" [paper](https://arxiv.org/abs/1709.02755)
 - Mixed-precision training with [APEX](https://github.com/NVIDIA/apex), optimized on [Tensor Cores](https://developer.nvidia.com/tensor-cores)
+- Model export to [CTranslate2](https://github.com/OpenNMT/CTranslate2), a fast and efficient inference engine
 
 ## Quickstart
 
-[Full Documentation](http://opennmt.net/OpenNMT-py/)
+[Full Documentation](https://opennmt.net/OpenNMT-py/)
 
 ### Step 1: Prepare the data
 
@@ -164,7 +166,6 @@ data:
 
 ```
 
-From this configuration, we can build the vocab(s), that will be necessary to train the model:
 
 ```bash
 onmt_build_vocab -config toy_en_de.yaml -n_sample 10000
@@ -225,6 +226,16 @@ Now you have a model which you can use to predict on new data. We do this by run
 
 The predictions are going to be quite terrible, as the demo dataset is small. Try running on some larger datasets! For example you can download millions of parallel sentences for [translation](http://www.statmt.org/wmt16/translation-task.html) or [summarization](https://github.com/harvardnlp/sent-summary).
 
+### (Optional) Step 4: Release
+
+When you are satisfied with your trained model, you can release it for inference. The release process will remove training-only parameters from the checkpoint:
+
+```bash
+onmt_release_model -model toy-ende/run/model_step_1000.pt -output toy-ende/run/model_step_1000_release.pt
+```
+
+The release script can also export checkpoints to [CTranslate2](https://github.com/OpenNMT/CTranslate2), a fast inference engine for Transformer models. See the `-format` command line option.
+
 ## Alternative: Run on FloydHub
 
 [![Run on FloydHub](https://static.floydhub.com/button/button.svg)](https://floydhub.com/run?template=https://github.com/OpenNMT/OpenNMT-py)
@@ -236,50 +247,51 @@ Click this button to open a Workspace on [FloydHub](https://www.floydhub.com/?ut
 
 Please see the FAQ: [How to use GloVe pre-trained embeddings in OpenNMT-py](http://opennmt.net/OpenNMT-py/FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove)
 
-## Pretrained Models
+## Pretrained models
 
-The following pretrained models can be downloaded and used with translate.py.
+Several pretrained models can be downloaded and used with `onmt_translate`:
 
 http://opennmt.net/Models-py/
 
 ## Acknowledgements
 
 OpenNMT-py is run as a collaborative open-source project.
-The original code was written by [Adam Lerer](http://github.com/adamlerer) (NYC) to reproduce OpenNMT-Lua using Pytorch.
+The original code was written by [Adam Lerer](http://github.com/adamlerer) (NYC) to reproduce OpenNMT-Lua using PyTorch.
 
 Major contributors are:
-[Sasha Rush](https://github.com/srush) (Cambridge, MA)
-[Vincent Nguyen](https://github.com/vince62s) (Ubiqus)
-[Ben Peters](http://github.com/bpopeters) (Lisbon)
-[Sebastian Gehrmann](https://github.com/sebastianGehrmann) (Harvard NLP)
-[Yuntian Deng](https://github.com/da03) (Harvard NLP)
-[Guillaume Klein](https://github.com/guillaumekln) (Systran)
-[Paul Tardy](https://github.com/pltrdy) (Ubiqus / Lium)
-[François Hernandez](https://github.com/francoishernandez) (Ubiqus)
-[Linxiao Zeng](https://github.com/Zenglinxiao) (Ubiqus)
-[Jianyu Zhan](http://github.com/jianyuzhan) (Shanghai)
-[Dylan Flaute](http://github.com/flauted) (University of Dayton)
-and more !
+* [Sasha Rush](https://github.com/srush) (Cambridge, MA)
+* [Vincent Nguyen](https://github.com/vince62s) (Ubiqus)
+* [Ben Peters](http://github.com/bpopeters) (Lisbon)
+* [Sebastian Gehrmann](https://github.com/sebastianGehrmann) (Harvard NLP)
+* [Yuntian Deng](https://github.com/da03) (Harvard NLP)
+* [Guillaume Klein](https://github.com/guillaumekln) (Systran)
+* [Paul Tardy](https://github.com/pltrdy) (Ubiqus / Lium)
+* [François Hernandez](https://github.com/francoishernandez) (Ubiqus)
+* [Linxiao Zeng](https://github.com/Zenglinxiao) (Ubiqus)
+* [Jianyu Zhan](http://github.com/jianyuzhan) (Shanghai)
+* [Dylan Flaute](http://github.com/flauted) (University of Dayton)
+* ... and more!
 
-OpenNMT-py belongs to the OpenNMT project along with OpenNMT-Lua and OpenNMT-tf.
+OpenNMT-py is part of the [OpenNMT](https://opennmt.net/) project.
 
 ## Citation
 
-[OpenNMT: Neural Machine Translation Toolkit](https://arxiv.org/pdf/1805.11462)
-
-[OpenNMT technical report](https://doi.org/10.18653/v1/P17-4012)
+If you are using OpenNMT-py for academic work, please cite the initial [system demonstration paper](https://www.aclweb.org/anthology/P17-4012) published in ACL 2017:
 
 ```
-@inproceedings{opennmt,
-  author    = {Guillaume Klein and
-               Yoon Kim and
-               Yuntian Deng and
-               Jean Senellart and
-               Alexander M. Rush},
-  title     = {Open{NMT}: Open-Source Toolkit for Neural Machine Translation},
-  booktitle = {Proc. ACL},
-  year      = {2017},
-  url       = {https://doi.org/10.18653/v1/P17-4012},
-  doi       = {10.18653/v1/P17-4012}
+@inproceedings{klein-etal-2017-opennmt,
+    title = "{O}pen{NMT}: Open-Source Toolkit for Neural Machine Translation",
+    author = "Klein, Guillaume  and
+      Kim, Yoon  and
+      Deng, Yuntian  and
+      Senellart, Jean  and
+      Rush, Alexander",
+    booktitle = "Proceedings of {ACL} 2017, System Demonstrations",
+    month = jul,
+    year = "2017",
+    address = "Vancouver, Canada",
+    publisher = "Association for Computational Linguistics",
+    url = "https://www.aclweb.org/anthology/P17-4012",
+    pages = "67--72",
 }
 ```
