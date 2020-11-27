@@ -11,7 +11,7 @@ chmod u+x prepare_wikitext-103_data.sh
 
 ## Step 1: Prepare the subword model - BPE with pyonmttok
 
-This snippet will train a bpe of 40000 symbols on the train dataset. The bpe model will be stored in "subwords.bpe" and the train, valid and test set will be tokenized and saved.
+This snippet will train a bpe of 40000 symbols on the train dataset. The bpe model will be stored in *subwords.bpe* and the train/valid/test sets will be tokenized and saved.
 
 The tokenized files won't be used for training. Indeed, dynamic iteration over the training dataset allows on the fly tokenization using transforms (see step 2). 
 
@@ -93,17 +93,19 @@ The training is launched using:
 ```bash
 onmt_train -config examples/wiki_103.yaml
 ```
-Tensorboard can be used to monitor the training
+Tensorboard can be used to monitor the training.
+
+**Expected results:** perplexity of 20-22 on the validation set.
 
 ## Step 4: Generate output
 Options contained in the loaded model will trigger language modeling inference. When batch mode is used the end of sequences will be repeated in the predictions.
 
 *input.txt* must contain already tokenized, with the same method as the training data. Here, part of validation data will be used:
 ```bash
-head data/wikitext-103-raw/wiki.valid.bpe | cut -d" " -f-15 > data/lm_input.txt
+head data/wikitext-103-raw/wiki.valid.bpe | cut -d" " -f-15 > data/wikitext-103-raw/lm_input.txt
 ```
 
 To proceed with inference:
 ```bash
-onmt_translate -model data/wikitext-103-raw/run/model-lm_step_1000000.pt -src data/lm_input.txt -output data/lm_pred_input.txt -verbose -n_best 3
+onmt_translate -model data/wikitext-103-raw/run/model-lm_step_1000000.pt -src data/wikitext-103-raw/lm_input.txt -output data/wikitext-103-raw/lm_pred_input.txt -verbose -n_best 3
 ```
