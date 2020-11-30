@@ -910,6 +910,30 @@ class GeneratorLM(Inference):
         """
         raise NotImplementedError
 
+    def translate(
+        self,
+        src,
+        tgt=None,
+        batch_size=None,
+        batch_type="sents",
+        attn_debug=False,
+        align_debug=False,
+        phrase_table="",
+    ):
+        self.logger.warn("GeneratorLM does not support batch_size != 1"
+                         " nicely. You can remove this limitation here."
+                         " With batch_size > 1 the end of each input is"
+                         " repeated until the input is finished. Then"
+                         " generation will start.")
+        super(GeneratorLM, self).translate(src,
+            tgt,
+            batch_size=1,
+            batch_type=batch_type,
+            attn_debug=attn_debug,
+            align_debug=align_debug,
+            phrase_table=phrase_table,
+        )
+
     def translate_batch(self, batch, src_vocabs, attn_debug):
         """Translate a batch of sentences."""
         with torch.no_grad():

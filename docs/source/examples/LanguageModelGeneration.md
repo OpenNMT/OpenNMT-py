@@ -78,8 +78,8 @@ onmt_build_vocab -config examples/wiki_103.yaml -n_sample -1
 ## Step 3: Train the model
 To train a model for LM tasks, the following parameters are required:
 
-* *model_task* is used to specify that the task will be language modeling (decoder only model with tansform_lm decoder type, source only dataset expected)
-* *decoder_type* must be transform_lm. This transformer is the one used in GPT-2: [**Language Models are Unsupervised Multitask Learners**](https://d4mucfpksywv.cloudfront.net/better-language-models/language_models_are_unsupervised_multitask_learners.pdf). Basically, it is a transformer without an encoder attention block
+* *model_task* is used to specify that the task will be language modeling (decoder only model with tansformer_lm decoder type, source only dataset expected)
+* *decoder_type* must be transformer_lm. This transformer is the one used in GPT-2: [**Language Models are Unsupervised Multitask Learners**](https://d4mucfpksywv.cloudfront.net/better-language-models/language_models_are_unsupervised_multitask_learners.pdf). Basically, it is a transformer without an encoder attention block
 * *encoder_type* is not useful but need to be mentionned
 * *share_vocab* must be true. The slided source will play the role of the target hence vocabulary must be shared. 
 ```yaml
@@ -99,7 +99,7 @@ Tensorboard can be used to monitor the training.
 **Expected results:** perplexity of 20-22 on the validation set.
 
 ## Step 4: Generate output
-Options contained in the loaded model will trigger language modeling specific inference. When batch mode is used the end of longer sequences will be repeated in the predictions.
+Options contained in the loaded model will trigger language modeling specific inference.
 
 `input.txt` must contain already tokenized examples, with the same method as the training data. Here, part of validation data will be used:
 ```bash
