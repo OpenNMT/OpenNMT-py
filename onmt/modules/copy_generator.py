@@ -248,10 +248,6 @@ class CommonCopyGeneratorLossCompute(CommonLossCompute):
 
     def _make_shard_state(self, batch, output, range_, attns):
         """See base class for args description."""
-        if getattr(batch, "alignment", None) is None:
-            raise AssertionError("using -copy_attn you need to pass in "
-                                 "-dynamic_dict during preprocess stage.")
-
         shard_state = super(CommonCopyGeneratorLossCompute,
                             self)._make_shard_state(batch, output,
                                                     range_, attns)
