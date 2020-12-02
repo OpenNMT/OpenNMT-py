@@ -920,12 +920,19 @@ class GeneratorLM(Inference):
         align_debug=False,
         phrase_table="",
     ):
-        self.logger.warn("GeneratorLM does not support batch_size != 1"
-                         " nicely. You can remove this limitation here."
-                         " With batch_size > 1 the end of each input is"
-                         " repeated until the input is finished. Then"
-                         " generation will start.")
-        super(GeneratorLM, self).translate(src,
+        if batch_size != 1:
+            warning_msg = ("GeneratorLM does not support batch_size != 1"
+                           " nicely. You can remove this limitation here."
+                           " With batch_size > 1 the end of each input is"
+                           " repeated until the input is finished. Then"
+                           " generation will start.")
+            if self.logger:
+                self.logger.info(warning_msg)
+            else:
+                os.write(1, warning_msg.encode("utf-8"))
+
+        return super(GeneratorLM, self).translate(
+            src,
             tgt,
             batch_size=1,
             batch_type=batch_type,
@@ -1007,8 +1014,7 @@ class GeneratorLM(Inference):
         parallel_paths = decode_strategy.parallel_paths  # beam_size
         batch_size = batch.batch_size
 
-        # (1) Run the encoder on the src.
-
+        # (1) split src into src and target_prefix to avoid padding.
         src, src_lengths = (
             batch.src if isinstance(batch.src, tuple) else (batch.src, None)
         )
@@ -1017,6 +1023,7 @@ class GeneratorLM(Inference):
             src, src_lengths
         )
 
+        # (2) init decoder
         self.model.decoder.init_state(src, None, None)
         gold_score = self._gold_score(
             batch,
@@ -1028,7 +1035,8 @@ class GeneratorLM(Inference):
             batch_size,
             src,
         )
-        # (2) prep decode_strategy. Possibly repeat src objects.
+
+        # (3) prep decode_strategy. Possibly repeat src objects.
         src_map = batch.src_map if use_src_map else None
         (
             fn_map_state,
@@ -1044,7 +1052,7 @@ class GeneratorLM(Inference):
         if fn_map_state is not None:
             self.model.decoder.map_state(fn_map_state)
 
-        # (3) Begin decoding step by step:
+        # (4) Begin decoding step by step:
         for step in range(decode_strategy.max_length):
             decoder_input = (
                 src

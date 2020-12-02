@@ -399,6 +399,7 @@ class BeamSearchLM(BeamSearchBase):
 
         # in LM task memory_lengths is associated with currently generated src
         # and therefore needs to follow the generation
+        non_finished = non_finished.to(self.topk_ids.device)
         self.memory_lengths = self.memory_lengths.view(
             _B_old, self.beam_size) \
             .index_select(0, non_finished) \
