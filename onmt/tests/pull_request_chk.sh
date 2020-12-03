@@ -274,6 +274,21 @@ diff ${DATA_DIR}/data_lm/gen-sampling-sol.txt $TMP_OUT_DIR/gen_sampling
 echo "Succeeded" | tee -a ${LOG_FILE}
 rm $TMP_OUT_DIR/gen_sampling
 
+echo -n "  [+] Testing LM generation w/ Random Top-k/Nucleus Sampling..."
+${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
+            -src ${DATA_DIR}/data_lm/src-gen.txt   \
+            -verbose -batch_size 10     \
+            -beam_size 1                \
+            -seed 1                     \
+            -random_sampling_topk=-1    \
+            -random_sampling_top_p=0.95    \
+            -random_sampling_temp=1    \
+            -out $TMP_OUT_DIR/gen_sampling  >> ${LOG_FILE} 2>&1
+diff ${DATA_DIR}/data_lm/gen-nucleus-sampling-sol.txt $TMP_OUT_DIR/gen_sampling
+[ "$?" -eq 0 ] || error_exit
+echo "Succeeded" | tee -a ${LOG_FILE}
+rm $TMP_OUT_DIR/gen_sampling
+
 #
 # Tools test
 #

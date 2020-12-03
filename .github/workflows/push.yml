@@ -236,6 +236,18 @@ jobs:
           -random_sampling_temp=0.0001 \
           -out /tmp/gen
         diff data/data_lm/gen-sampling-sol.txt /tmp/gen && rm /tmp/gen
+    - name: Test LM generation with random top-k/nucleus sampling
+      run: |
+        python translate.py -model onmt/tests/test_model_lm.pt \
+          -src data/data_lm/src-gen.txt \
+          -verbose -batch_size 10 \
+          -beam_size 1 \
+          -seed 1 \
+          -random_sampling_topk=-1 \
+          -random_sampling_top_p=0.95 \
+          -random_sampling_temp=1 \
+          -out /tmp/gen
+        diff data/data_lm/gen-nucleus-sampling-sol.txt /tmp/gen && rm /tmp/gen
     - name: Test extract_vocabulary tool
       run: |
         python tools/extract_vocabulary.py \

@@ -133,6 +133,7 @@ class Inference(object):
         ratio=0.0,
         beam_size=30,
         random_sampling_topk=1,
+        random_sampling_top_p=0,
         random_sampling_temp=1,
         stepwise_penalty=None,
         dump_beam=False,
@@ -176,6 +177,7 @@ class Inference(object):
         self.beam_size = beam_size
         self.random_sampling_temp = random_sampling_temp
         self.sample_from_topk = random_sampling_topk
+        self.sample_from_top_p = random_sampling_top_p
 
         self.min_length = min_length
         self.ratio = ratio
@@ -275,6 +277,7 @@ class Inference(object):
             ratio=opt.ratio,
             beam_size=opt.beam_size,
             random_sampling_topk=opt.random_sampling_topk,
+            random_sampling_top_p=opt.random_sampling_top_p,
             random_sampling_temp=opt.random_sampling_temp,
             stepwise_penalty=opt.stepwise_penalty,
             dump_beam=opt.dump_beam,
@@ -725,6 +728,7 @@ class Translator(Inference):
                     return_attention=attn_debug or self.replace_unk,
                     sampling_temp=self.random_sampling_temp,
                     keep_topk=self.sample_from_topk,
+                    keep_top_p=self.sample_from_top_p,
                 )
             else:
                 # TODO: support these blacklisted features
@@ -957,6 +961,7 @@ class GeneratorLM(Inference):
                     return_attention=attn_debug or self.replace_unk,
                     sampling_temp=self.random_sampling_temp,
                     keep_topk=self.sample_from_topk,
+                    keep_top_p=self.sample_from_top_p,
                 )
             else:
                 # TODO: support these blacklisted features

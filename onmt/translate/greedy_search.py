@@ -1,9 +1,10 @@
 import torch
+import torch.nn.functional as F
 
 from onmt.translate.decode_strategy import DecodeStrategy
 
 
-def sample_with_temperature(logits, sampling_temp, keep_topk):
+def sample_with_temperature(logits, sampling_temp, keep_topk, keep_top_p):
     """Select next tokens randomly from the top k possible next tokens.
 
     Samples from a categorical distribution over the ``keep_topk`` words using
@@ -20,6 +21,9 @@ def sample_with_temperature(logits, sampling_temp, keep_topk):
             sampled.
         keep_topk (int): This many words could potentially be chosen. The
             other logits are set to have probability 0.
+        keep_top_p (float): Keep most likely words until the cumulated
+            probability is greater than p. If used with keep_topk: both
+            conditions will be applied
 
     Returns:
         (LongTensor, FloatTensor):
@@ -39,7 +43,29 @@ def sample_with_temperature(logits, sampling_temp, keep_topk):
     else:
         logits = torch.div(logits, sampling_temp)
 
-        if keep_topk > 0:
+        if keep_top_p > 0:
+            sorted_logits, sorted_indices = torch.sort(logits,
+                                                       descending=True)
+            cumulative_probs = torch.cumsum(F.softmax(sorted_logits,
+                                                      dim=-1), dim=-1)
+            sorted_indices_to_keep = cumulative_probs < keep_top_p
+            nb_keep = torch.sum(sorted_indices_to_keep)
+            if nb_keep < sorted_indices_to_keep.shape[-1]:
+                # keep indexes until overflowing p
+                sorted_indices_to_keep[0, nb_keep] = 1
+
+            # Set all logits that are not in the top-p to -10000.
+            # This puts the probabilities close to 0.
+            device = sorted_indices.device
+            pth_best_indices = sorted_indices[sorted_indices_to_keep].view(
+                [1, -1]
+            )
+            ignore = torch.ones(logits.shape).to(device)
+            ignore.scatter_(1, pth_best_indices,
+                            torch.zeros(pth_best_indices.shape).to(device))
+            logits = logits.masked_fill(ignore > 0, -10000)
+
+        if keep_topk > 0 and not (keep_top_p > 0 and nb_keep+1 <= keep_topk):
             top_values, top_indices = torch.topk(logits, keep_topk, dim=1)
             kth_best = top_values[:, -1].view([-1, 1])
             kth_best = kth_best.repeat([1, logits.shape[1]]).float()
@@ -82,13 +108,14 @@ class GreedySearch(DecodeStrategy):
 
     def __init__(self, pad, bos, eos, batch_size, min_length,
                  block_ngram_repeat, exclusion_tokens, return_attention,
-                 max_length, sampling_temp, keep_topk):
+                 max_length, sampling_temp, keep_topk, keep_top_p=0):
         assert block_ngram_repeat == 0
         super(GreedySearch, self).__init__(
             pad, bos, eos, batch_size, 1, min_length, block_ngram_repeat,
             exclusion_tokens, return_attention, max_length)
         self.sampling_temp = sampling_temp
         self.keep_topk = keep_topk
+        self.keep_top_p = keep_top_p
         self.topk_scores = None
 
     def initialize(self, memory_bank, src_lengths, src_map=None, device=None,
@@ -129,7 +156,7 @@ class GreedySearch(DecodeStrategy):
         # maybe fix some prediction at this step by modifying log_probs
         log_probs = self.target_prefixing(log_probs)
         topk_ids, topk_scores = sample_with_temperature(
-            log_probs, self.sampling_temp, self.keep_topk)
+            log_probs, self.sampling_temp, self.keep_topk, self.keep_top_p)
         return topk_ids, topk_scores
 
     def advance(self, log_probs, attn):
