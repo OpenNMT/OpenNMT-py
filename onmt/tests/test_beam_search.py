@@ -613,6 +613,7 @@ class TestBeamSearchLM(TestBeamSearchAgainstReferenceCase):
         device_init = torch.zeros(1, 1)
         src_lengths = torch.randint(0, 30, (self.BATCH_SZ,))
         fn_map_state, _, _, _ = beam.initialize(device_init, src_lengths)
+        self.init_step(beam, 1)
         self.finish_first_beam_step(beam)
 
         n_steps = beam.alive_seq.shape[-1] - 1
