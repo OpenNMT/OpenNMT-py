@@ -55,7 +55,7 @@ transformer_ff: 2048
 dropout_steps: [0]
 dropout: [0.1]
 attention_dropout: [0.1]
-batch_size: 1024
+batch_size: 2048
 batch_type: tokens
 
 model_dtype: "fp32"
