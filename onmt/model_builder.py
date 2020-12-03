@@ -17,6 +17,7 @@ from onmt.modules.util_class import Cast
 from onmt.utils.misc import use_gpu
 from onmt.utils.logging import logger
 from onmt.utils.parse import ArgumentParser
+from onmt.constants import ModelTask
 
 
 def build_embeddings(opt, text_field, for_encoder=True):
@@ -102,6 +103,65 @@ def load_test_model(opt, model_path=None):
     return fields, model, model_opt
 
 
+def build_src_emb(model_opt, fields):
+    # Build embeddings.
+    if model_opt.model_type == "text":
+        src_field = fields["src"]
+        src_emb = build_embeddings(model_opt, src_field)
+    else:
+        src_emb = None
+    return src_emb
+
+
+def build_encoder_with_embeddings(model_opt, fields):
+    # Build encoder.
+    src_emb = build_src_emb(model_opt, fields)
+    encoder = build_encoder(model_opt, src_emb)
+    return encoder, src_emb
+
+
+def build_decoder_with_embeddings(
+    model_opt, fields, share_embeddings=False, src_emb=None
+):
+    # Build embeddings.
+    tgt_field = fields["tgt"]
+    tgt_emb = build_embeddings(model_opt, tgt_field, for_encoder=False)
+
+    if share_embeddings:
+        tgt_emb.word_lut.weight = src_emb.word_lut.weight
+
+    # Build decoder.
+    decoder = build_decoder(model_opt, tgt_emb)
+    return decoder, tgt_emb
+
+
+def build_task_specific_model(model_opt, fields):
+    # Share the embedding matrix - preprocess with share_vocab required.
+    if model_opt.share_embeddings:
+        # src/tgt vocab should be the same if `-share_vocab` is specified.
+        assert (
+            fields["src"].base_field.vocab == fields["tgt"].base_field.vocab
+        ), "preprocess with -share_vocab if you use share_embeddings"
+
+    if model_opt.model_task == ModelTask.SEQ2SEQ:
+        encoder, src_emb = build_encoder_with_embeddings(model_opt, fields)
+        decoder, _ = build_decoder_with_embeddings(
+            model_opt,
+            fields,
+            share_embeddings=model_opt.share_embeddings,
+            src_emb=src_emb,
+        )
+        return onmt.models.NMTModel(encoder=encoder, decoder=decoder)
+    elif model_opt.model_task == ModelTask.LANGUAGE_MODEL:
+        src_emb = build_src_emb(model_opt, fields)
+        decoder, _ = build_decoder_with_embeddings(
+            model_opt, fields, share_embeddings=True, src_emb=src_emb
+        )
+        return onmt.models.LanguageModel(decoder=decoder)
+    else:
+        raise ValueError(f"No model defined for {model_opt.model_task} task")
+
+
 def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
     """Build a model from opts.
 
@@ -126,38 +186,15 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
     except AttributeError:
         model_opt.attention_dropout = model_opt.dropout
 
-    # Build embeddings.
-    if model_opt.model_type == "text":
-        src_field = fields["src"]
-        src_emb = build_embeddings(model_opt, src_field)
-    else:
-        src_emb = None
-
-    # Build encoder.
-    encoder = build_encoder(model_opt, src_emb)
-
-    # Build decoder.
-    tgt_field = fields["tgt"]
-    tgt_emb = build_embeddings(model_opt, tgt_field, for_encoder=False)
-
-    # Share the embedding matrix - preprocess with share_vocab required.
-    if model_opt.share_embeddings:
-        # src/tgt vocab should be the same if `-share_vocab` is specified.
-        assert src_field.base_field.vocab == tgt_field.base_field.vocab, \
-            "-share_vocab is required if you use -share_embeddings"
-
-        tgt_emb.word_lut.weight = src_emb.word_lut.weight
-
-    decoder = build_decoder(model_opt, tgt_emb)
-
-    # Build NMTModel(= encoder + decoder).
+    # Build Model
     if gpu and gpu_id is not None:
         device = torch.device("cuda", gpu_id)
     elif gpu and not gpu_id:
         device = torch.device("cuda")
     elif not gpu:
         device = torch.device("cpu")
-    model = onmt.models.NMTModel(encoder, decoder)
+
+    model = build_task_specific_model(model_opt, fields)
 
     # Build Generator.
     if not model_opt.copy_attn:
@@ -172,14 +209,14 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
             gen_func
         )
         if model_opt.share_decoder_embeddings:
-            generator[0].weight = decoder.embeddings.word_lut.weight
+            generator[0].weight = model.decoder.embeddings.word_lut.weight
     else:
         tgt_base_field = fields["tgt"].base_field
         vocab_size = len(tgt_base_field.vocab)
         pad_idx = tgt_base_field.vocab.stoi[tgt_base_field.pad_token]
         generator = CopyGenerator(model_opt.dec_rnn_size, vocab_size, pad_idx)
         if model_opt.share_decoder_embeddings:
-            generator.linear.weight = decoder.embeddings.word_lut.weight
+            generator.linear.weight = model.decoder.embeddings.word_lut.weight
 
     # Load the model states from checkpoint or initialize them.
     if checkpoint is not None:
@@ -211,7 +248,7 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
                 if p.dim() > 1:
                     xavier_uniform_(p)
 
-        if hasattr(model.encoder, 'embeddings'):
+        if hasattr(model, "encoder") and hasattr(model.encoder, "embeddings"):
             model.encoder.embeddings.load_pretrained_vectors(
                 model_opt.pre_word_vecs_enc)
         if hasattr(model.decoder, 'embeddings'):

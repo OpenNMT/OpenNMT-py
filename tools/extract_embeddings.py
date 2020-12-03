@@ -59,7 +59,7 @@ def main():
 
     model = onmt.model_builder.build_base_model(
         model_opt, fields, use_gpu(opt), checkpoint)
-    encoder = model.encoder
+    encoder = model.encoder  # no encoder for LM task
     decoder = model.decoder
 
     encoder_embeddings = encoder.embeddings.word_lut.weight.data.tolist()

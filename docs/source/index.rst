@@ -24,6 +24,7 @@ Contents
       examples/Library.md
       examples/Translation.md
       examples/Summarization.md
+      examples/LanguageModelGeneration.md
       examples/GGNN.md
 
 

@@ -4,7 +4,7 @@ import torch
 
 import onmt.opts as opts
 from onmt.utils.logging import logger
-from onmt.constants import CorpusName
+from onmt.constants import CorpusName, ModelTask
 from onmt.transforms import AVAILABLE_TRANSFORMS
 
 
@@ -36,9 +36,22 @@ class DataOptsCheckerMixin(object):
             # Check path
             path_src = corpus.get('path_src', None)
             path_tgt = corpus.get('path_tgt', None)
-            if path_src is None or path_tgt is None:
-                raise ValueError(f'Corpus {cname} path are required')
+            if path_src is None:
+                raise ValueError(f'Corpus {cname} src path is required.'
+                                 'tgt path is also required for non language'
+                                 ' modeling tasks.')
             else:
+                opt.data_task = ModelTask.SEQ2SEQ
+                if path_tgt is None:
+                    logger.warning(
+                        "path_tgt is None, it should be set unless the task"
+                        " is language modeling"
+                    )
+                    opt.data_task = ModelTask.LANGUAGE_MODEL
+                    # tgt is src for LM task
+                    corpus["path_tgt"] = path_src
+                    corpora[cname] = corpus
+                    path_tgt = path_src
                 cls._validate_file(path_src, info=f'{cname}/path_src')
                 cls._validate_file(path_tgt, info=f'{cname}/path_tgt')
             path_align = corpus.get('path_align', None)
@@ -123,6 +136,21 @@ class DataOptsCheckerMixin(object):
                 pretrained embeddings."
 
     @classmethod
+    def _validate_language_model_compatibilities_opts(cls, opt):
+        if opt.model_task != ModelTask.LANGUAGE_MODEL:
+            return
+
+        logger.info("encoder is not used for LM task")
+
+        assert opt.share_vocab and (
+            opt.tgt_vocab is None
+        ), "vocab must be shared for LM task"
+
+        assert (
+            opt.decoder_type == "transformer"
+        ), "Only transformer decoder is supported for LM task"
+
+    @classmethod
     def validate_prepare_opts(cls, opt, build_vocab_only=False):
         """Validate all options relate to prepare (data/transform/vocab)."""
         if opt.n_sample != 0:
@@ -132,6 +160,10 @@ class DataOptsCheckerMixin(object):
         cls._get_all_transform(opt)
         cls._validate_transforms_opts(opt)
         cls._validate_fields_opts(opt, build_vocab_only=build_vocab_only)
+
+    @classmethod
+    def validate_model_opts(cls, opt):
+        cls._validate_language_model_compatibilities_opts(opt)
 
 
 class ArgumentParser(cfargparse.ArgumentParser, DataOptsCheckerMixin):

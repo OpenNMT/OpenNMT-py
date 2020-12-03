@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 from onmt.utils.misc import aeq
-from onmt.utils.loss import NMTLossCompute
+from onmt.utils.loss import CommonLossCompute
 
 
 def collapse_copy_scores(scores, batch, tgt_vocab, src_vocabs=None,
@@ -177,29 +177,15 @@ class CopyGeneratorLoss(nn.Module):
         return loss
 
 
-class CopyGeneratorLossCompute(NMTLossCompute):
-    """Copy Generator Loss Computation."""
+class CommonCopyGeneratorLossCompute(CommonLossCompute):
+    """Common Copy Generator Loss Computation."""
     def __init__(self, criterion, generator, tgt_vocab, normalize_by_length,
-                 lambda_coverage=0.0):
-        super(CopyGeneratorLossCompute, self).__init__(
-            criterion, generator, lambda_coverage=lambda_coverage)
+                 lambda_coverage=0.0, tgt_shift_index=1):
+        super(CommonCopyGeneratorLossCompute, self).__init__(
+            criterion, generator, lambda_coverage=lambda_coverage,
+            tgt_shift_index=tgt_shift_index)
         self.tgt_vocab = tgt_vocab
         self.normalize_by_length = normalize_by_length
-
-    def _make_shard_state(self, batch, output, range_, attns):
-        """See base class for args description."""
-        if getattr(batch, "alignment", None) is None:
-            raise AssertionError("using -copy_attn you need to pass in "
-                                 "-dynamic_dict during preprocess stage.")
-
-        shard_state = super(CopyGeneratorLossCompute, self)._make_shard_state(
-            batch, output, range_, attns)
-
-        shard_state.update({
-            "copy_attn": attns.get("copy"),
-            "align": batch.alignment[range_[0] + 1: range_[1]]
-        })
-        return shard_state
 
     def _compute_loss(self, batch, output, target, copy_attn, align,
                       std_attn=None, coverage_attn=None):
@@ -259,3 +245,39 @@ class CopyGeneratorLossCompute(NMTLossCompute):
             loss = loss.sum()
 
         return loss, stats
+
+    def _make_shard_state(self, batch, output, range_, attns):
+        """See base class for args description."""
+        shard_state = super(CommonCopyGeneratorLossCompute,
+                            self)._make_shard_state(batch, output,
+                                                    range_, attns)
+
+        start_range = range_[0] + self.tgt_shift_index
+        end_range = range_[1]
+        shard_state.update({
+            "copy_attn": attns.get("copy"),
+            "align": batch.alignment[start_range: end_range]
+        })
+        return shard_state
+
+
+class CopyGeneratorLossCompute(CommonCopyGeneratorLossCompute):
+    """Copy Generator Loss Computation."""
+    def __init__(self, criterion, generator, tgt_vocab, normalize_by_length,
+                 lambda_coverage=0.0):
+        super(CopyGeneratorLossCompute, self).__init__(criterion, generator,
+                                                       tgt_vocab,
+                                                       normalize_by_length,
+                                                       lambda_coverage=0.0,
+                                                       tgt_shift_index=1)
+
+
+class CopyGeneratorLMLossCompute(CommonCopyGeneratorLossCompute):
+    """Copy Generator LM Loss Computation."""
+    def __init__(self, criterion, generator, tgt_vocab, normalize_by_length,
+                 lambda_coverage=0.0):
+        super(CopyGeneratorLMLossCompute, self).__init__(criterion, generator,
+                                                         tgt_vocab,
+                                                         normalize_by_length,
+                                                         lambda_coverage=0.0,
+                                                         tgt_shift_index=0)

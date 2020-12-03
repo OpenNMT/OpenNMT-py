@@ -1,5 +1,6 @@
 import unittest
 from onmt.translate.beam_search import BeamSearch, GNMTGlobalScorer
+from onmt.translate.beam_search import BeamSearchLM
 
 from copy import deepcopy
 
@@ -566,3 +567,54 @@ class TestBeamWithLengthPenalty(TestBeamSearchAgainstReferenceCase):
         expected_beam_scores = self.first_step(beam, expected_beam_scores, 3)
         expected_beam_scores = self.second_step(beam, expected_beam_scores, 4)
         self.third_step(beam, expected_beam_scores, 5)
+
+
+class TestBeamSearchLM(TestBeamSearchAgainstReferenceCase):
+    def finish_first_beam_step(self, beam):
+        scores_finish = torch.log_softmax(torch.tensor(
+            [[0, 0, 10000, 0, 5000, .51, .2, 0],  # beam 0 shouldn't cont
+             [100000, 100001, 0, 0, 0, 0, 0, 0],
+             [0,100000, 0, 0, 0, 5000, 0, 0],
+             [0, 0, 0, .2, .2, .2, .2, .2],
+             [0, 0, 0, 0, .2, .2, .2, .2]]  # beam 4 -> beam 1 should die
+        ), dim=1)
+        scores_finish = scores_finish.repeat(self.BATCH_SZ, 1)
+        scores_finish[:self.BEAM_SZ, beam.eos] = 0
+        beam.advance( scores_finish, None)
+        
+        any_finished = beam.is_finished.any()
+        if any_finished:
+            beam.update_finished()
+
+    def test_beam_lm_increase_memory_length(self):
+        beam = BeamSearchLM(
+            self.BEAM_SZ, self.BATCH_SZ, 0, 1, 2, self.N_BEST,
+            GlobalScorerStub(),
+            0, 30, False, 0, set(),
+            False, 0.)
+        device_init = torch.zeros(1, 1)
+        src_lengths = torch.randint(0, 30, (self.BATCH_SZ,))
+        fn_map_state, _, _, _ = beam.initialize(device_init, src_lengths)
+        expected_beam_scores = self.init_step(beam, 1)
+        expected_beam_scores = self.first_step(beam, expected_beam_scores, 1)
+        expected_beam_scores = self.second_step(beam, expected_beam_scores, 1)
+        self.third_step(beam, expected_beam_scores, 1)
+
+        n_steps = beam.alive_seq.shape[-1] - 1
+        self.assertTrue(beam.memory_lengths.equal(n_steps+fn_map_state(src_lengths, dim=0)))
+    
+    
+    def test_beam_lm_update_memory_length_when_finished(self):
+        beam = BeamSearchLM(
+            self.BEAM_SZ, self.BATCH_SZ, 0, 1, 2, self.N_BEST,
+            GlobalScorerStub(),
+            0, 30, False, 0, set(),
+            False, 0.)
+        device_init = torch.zeros(1, 1)
+        src_lengths = torch.randint(0, 30, (self.BATCH_SZ,))
+        fn_map_state, _, _, _ = beam.initialize(device_init, src_lengths)
+        expected_beam_scores = self.init_step(beam, 1)
+        self.finish_first_beam_step(beam)
+        
+        n_steps = beam.alive_seq.shape[-1] - 1
+        self.assertTrue(beam.memory_lengths.equal(n_steps+fn_map_state(src_lengths[1:], dim=0)))
