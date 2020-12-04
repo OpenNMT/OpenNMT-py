@@ -47,14 +47,14 @@ from torchtext.vocab import Vocab
 from torchtext.utils import download_from_url, extract_archive
 import io
 
-url_base = 'https://raw.githubusercontent.com/multi30k/dataset/master/data/task1/raw/'
-train_urls = ('train.de.gz', 'train.en.gz')
-val_urls = ('val.de.gz', 'val.en.gz')
-test_urls = ('test_2016_flickr.de.gz', 'test_2016_flickr.en.gz')
+base_dir = '/mnt/c/Codenator/try_10/datasets/'
+train_files_names = ('train0.corpus.ll', 'train0.corpus.hl')
+val_files_names = ('validate0.corpus.ll', 'validate0.corpus.hl')
+test_files_names = ('test0.corpus.ll', 'test0.corpus.hl')
 
-train_filepaths = [extract_archive(download_from_url(url_base + url))[0] for url in train_urls]
-val_filepaths = [extract_archive(download_from_url(url_base + url))[0] for url in val_urls]
-test_filepaths = [extract_archive(download_from_url(url_base + url))[0] for url in test_urls]
+train_filepaths = [base_dir + file_name for file_name in train_files_names]
+val_filepaths = [base_dir + file_name for file_name in val_files_names]
+test_filepaths = [base_dir + file_name for file_name in test_files_names]
 
 ll_tokenizer = get_tokenizer(None)
 hl_tokenizer = get_tokenizer(None)
@@ -73,12 +73,16 @@ def data_process(filepaths):
   raw_ll_iter = iter(io.open(filepaths[0], encoding="utf8"))
   raw_hl_iter = iter(io.open(filepaths[1], encoding="utf8"))
   data = []
+  counter = 0
   for (raw_ll, raw_hl) in zip(raw_ll_iter, raw_hl_iter):
     ll_tensor_ = torch.tensor([ll_vocab[token] for token in ll_tokenizer(raw_ll)],
                               dtype=torch.long)
     hl_tensor_ = torch.tensor([hl_vocab[token] for token in hl_tokenizer(raw_hl)],
                               dtype=torch.long)
     data.append((ll_tensor_, hl_tensor_))
+    counter += 1
+    if counter > 1000:
+        break
   return data
 
 train_data = data_process(train_filepaths)
