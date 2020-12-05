@@ -81,7 +81,7 @@ def data_process(filepaths):
                               dtype=torch.long)
     data.append((ll_tensor_, hl_tensor_))
     counter += 1
-    if counter > 1000:
+    if counter > 100:
         break
   return data
 
@@ -104,7 +104,7 @@ import torch
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-BATCH_SIZE = 128
+BATCH_SIZE = 8
 PAD_IDX = ll_vocab['<pad>']
 BOS_IDX = ll_vocab['<bos>']
 EOS_IDX = ll_vocab['<eos>']
@@ -159,12 +159,16 @@ import torch.optim as optim
 import torch.nn.functional as F
 from torch import Tensor
 
-INPUT_DIM = len(ll_vocab)
-OUTPUT_DIM = len(hl_vocab)
+m_dim = 32
+nhead = 2
+num_encoder_layers = 2
+num_decoder_layers = 2
+dim_feedforward=64
 
-
-model = Transformer().to(device)
-
+model = Transformer(d_model=m_dim, nhead=nhead, num_encoder_layers=num_encoder_layers,
+                    num_decoder_layers=num_decoder_layers, dim_feedforward=dim_feedforward).to(device)
+model2 = Transformer(d_model=m_dim, nhead=nhead, num_encoder_layers=num_encoder_layers,
+                    num_decoder_layers=num_decoder_layers, dim_feedforward=dim_feedforward).to(device)
 
 def init_weights(m: nn.Module):
     for name, param in m.named_parameters():
@@ -175,6 +179,7 @@ def init_weights(m: nn.Module):
 
 
 model.apply(init_weights)
+model2.apply(init_weights)
 
 optimizer = optim.Adam(model.parameters())
 
@@ -200,12 +205,34 @@ criterion = nn.CrossEntropyLoss(ignore_index=PAD_IDX)
 import math
 import time
 
+class PositionalEncoding(nn.Module):
+
+    def __init__(self, d_model, dropout=0.1, max_len=5000):
+        super(PositionalEncoding, self).__init__()
+        self.dropout = nn.Dropout(p=dropout)
+
+        pe = torch.zeros(max_len, d_model)
+        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model))
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
+        pe = pe.unsqueeze(0).transpose(0, 1)
+        self.register_buffer('pe', pe)
+
+    def forward(self, x):
+        x = x + self.pe[:x.size(0), :]
+        return self.dropout(x)
+
 
 def train(model: nn.Module,
+          model2: nn.Module,
           iterator: torch.utils.data.DataLoader,
           optimizer: optim.Optimizer,
           criterion: nn.Module,
-          clip: float):
+          pos_encoding: PositionalEncoding,
+          clip: float,
+          ll_embedder: nn.Module,
+          hl_embedder: nn.Module):
 
     model.train()
 
@@ -213,15 +240,22 @@ def train(model: nn.Module,
 
     for _, (src, trg) in enumerate(iterator):
         src, trg = src.to(device), trg.to(device)
+        or_trg = trg
 
         optimizer.zero_grad()
+        src = ll_embedder(src) * math.sqrt(m_dim)
+        src = pos_encoding(src)
+
+        trg = hl_embedder(trg) * math.sqrt(m_dim)
+        trg = pos_encoding(trg)
 
         output = model(src, trg)
+        # output = model2(output, trg)
 
         output = output[1:].view(-1, output.shape[-1])
-        trg = trg[1:].view(-1)
+        or_trg = or_trg[1:].view(-1)
 
-        loss = criterion(output, trg)
+        loss = criterion(output, or_trg)
 
         loss.backward()
 
@@ -230,6 +264,10 @@ def train(model: nn.Module,
         optimizer.step()
 
         epoch_loss += loss.item()
+
+        print('one_step_over')
+        print(epoch_loss)
+        exit(5)
 
     return epoch_loss / len(iterator)
 
@@ -276,7 +314,8 @@ for epoch in range(N_EPOCHS):
 
     start_time = time.time()
 
-    train_loss = train(model, train_iter, optimizer, criterion, CLIP)
+    train_loss = train(model, model2, train_iter, optimizer, criterion, PositionalEncoding(m_dim), CLIP,
+                       nn.Embedding(len(ll_vocab), m_dim), nn.Embedding(len(hl_vocab), m_dim))
     valid_loss = evaluate(model, valid_iter, criterion)
 
     end_time = time.time()
