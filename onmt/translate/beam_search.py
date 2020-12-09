@@ -6,7 +6,7 @@ from onmt.utils.misc import tile
 import warnings
 
 
-class BeamSearch(DecodeStrategy):
+class BeamSearchBase(DecodeStrategy):
     """Generation beam search.
 
     Note that the attributes list is not exhaustive. Rather, it highlights
@@ -54,12 +54,11 @@ class BeamSearch(DecodeStrategy):
         hypotheses (list[list[Tuple[Tensor]]]): Contains a tuple
             of score (float), sequence (long), and attention (float or None).
     """
-
     def __init__(self, beam_size, batch_size, pad, bos, eos, n_best,
                  global_scorer, min_length, max_length, return_attention,
                  block_ngram_repeat, exclusion_tokens,
                  stepwise_penalty, ratio):
-        super(BeamSearch, self).__init__(
+        super(BeamSearchBase, self).__init__(
             pad, bos, eos, batch_size, beam_size, min_length,
             block_ngram_repeat, exclusion_tokens, return_attention,
             max_length)
@@ -93,33 +92,15 @@ class BeamSearch(DecodeStrategy):
             not stepwise_penalty and self.global_scorer.has_cov_pen)
         self._cov_pen = self.global_scorer.has_cov_pen
 
-    def initialize(self, memory_bank, src_lengths, src_map=None, device=None,
-                   target_prefix=None):
-        """Initialize for decoding.
-        Repeat src objects `beam_size` times.
-        """
+        self.memory_lengths = None
 
-        def fn_map_state(state, dim):
-            return tile(state, self.beam_size, dim=dim)
+    def initialize(self, *args, **kwargs):
+        raise NotImplementedError
 
-        if isinstance(memory_bank, tuple):
-            memory_bank = tuple(tile(x, self.beam_size, dim=1)
-                                for x in memory_bank)
-            mb_device = memory_bank[0].device
-        else:
-            memory_bank = tile(memory_bank, self.beam_size, dim=1)
-            mb_device = memory_bank.device
-        if src_map is not None:
-            src_map = tile(src_map, self.beam_size, dim=1)
-        if device is None:
-            device = mb_device
-
-        self.memory_lengths = tile(src_lengths, self.beam_size)
-        if target_prefix is not None:
-            target_prefix = tile(target_prefix, self.beam_size, dim=1)
-
-        super(BeamSearch, self).initialize(
-            memory_bank, self.memory_lengths, src_map, device, target_prefix)
+    def initialize_(self, memory_bank, memory_lengths, src_map, device,
+                    target_prefix):
+        super(BeamSearchBase, self).initialize(
+            memory_bank, memory_lengths, src_map, device, target_prefix)
 
         self.best_scores = torch.full(
             [self.batch_size], -1e10, dtype=torch.float, device=device)
@@ -136,7 +117,6 @@ class BeamSearch(DecodeStrategy):
                                     dtype=torch.long, device=device)
         self._batch_index = torch.empty([self.batch_size, self.beam_size],
                                         dtype=torch.long, device=device)
-        return fn_map_state, memory_bank, self.memory_lengths, src_map
 
     @property
     def current_predictions(self):
@@ -170,6 +150,95 @@ class BeamSearch(DecodeStrategy):
         curr_scores = log_probs.reshape(-1, self.beam_size * vocab_size)
         topk_scores, topk_ids = torch.topk(curr_scores, self.beam_size, dim=-1)
         return topk_scores, topk_ids
+
+    def update_finished(self):
+        # Penalize beams that finished.
+        _B_old = self.topk_log_probs.shape[0]
+        step = self.alive_seq.shape[-1]  # 1 greater than the step in advance
+        self.topk_log_probs.masked_fill_(self.is_finished, -1e10)
+        # on real data (newstest2017) with the pretrained transformer,
+        # it's faster to not move this back to the original device
+        self.is_finished = self.is_finished.to('cpu')
+        self.top_beam_finished |= self.is_finished[:, 0].eq(1)
+        predictions = self.alive_seq.view(_B_old, self.beam_size, step)
+        attention = (
+            self.alive_attn.view(
+                step - 1, _B_old, self.beam_size, self.alive_attn.size(-1))
+            if self.alive_attn is not None else None)
+        non_finished_batch = []
+        for i in range(self.is_finished.size(0)):  # Batch level
+            b = self._batch_offset[i]
+            finished_hyp = self.is_finished[i].nonzero(as_tuple=False).view(-1)
+            # Store finished hypotheses for this batch.
+            for j in finished_hyp:  # Beam level: finished beam j in batch i
+                if self.ratio > 0:
+                    s = self.topk_scores[i, j] / (step + 1)
+                    if self.best_scores[b] < s:
+                        self.best_scores[b] = s
+                self.hypotheses[b].append((
+                    self.topk_scores[i, j],
+                    predictions[i, j, 1:],  # Ignore start_token.
+                    attention[:, i, j, :self.memory_lengths[i]]
+                    if attention is not None else None))
+            # End condition is the top beam finished and we can return
+            # n_best hypotheses.
+            if self.ratio > 0:
+                pred_len = self.memory_lengths[i] * self.ratio
+                finish_flag = ((self.topk_scores[i, 0] / pred_len)
+                               <= self.best_scores[b]) or \
+                    self.is_finished[i].all()
+            else:
+                finish_flag = self.top_beam_finished[i] != 0
+            if finish_flag and len(self.hypotheses[b]) >= self.n_best:
+                best_hyp = sorted(
+                    self.hypotheses[b], key=lambda x: x[0], reverse=True)
+                for n, (score, pred, attn) in enumerate(best_hyp):
+                    if n >= self.n_best:
+                        break
+                    self.scores[b].append(score)
+                    self.predictions[b].append(pred)  # ``(batch, n_best,)``
+                    self.attention[b].append(
+                        attn if attn is not None else [])
+            else:
+                non_finished_batch.append(i)
+        non_finished = torch.tensor(non_finished_batch)
+        # If all sentences are translated, no need to go further.
+        if len(non_finished) == 0:
+            self.done = True
+            return
+
+        _B_new = non_finished.shape[0]
+        self.remove_finished_batches(_B_new, _B_old, non_finished,
+                                     predictions, attention, step)
+
+    def remove_finished_batches(self, _B_new, _B_old, non_finished,
+                                predictions, attention, step):
+        # Remove finished batches for the next step.
+        self.top_beam_finished = self.top_beam_finished.index_select(
+            0, non_finished)
+        self._batch_offset = self._batch_offset.index_select(0, non_finished)
+        non_finished = non_finished.to(self.topk_ids.device)
+        self.topk_log_probs = self.topk_log_probs.index_select(0,
+                                                               non_finished)
+        self._batch_index = self._batch_index.index_select(0, non_finished)
+        self.select_indices = self._batch_index.view(_B_new * self.beam_size)
+        self.alive_seq = predictions.index_select(0, non_finished) \
+            .view(-1, self.alive_seq.size(-1))
+        self.topk_scores = self.topk_scores.index_select(0, non_finished)
+        self.topk_ids = self.topk_ids.index_select(0, non_finished)
+        self.maybe_update_target_prefix(self.select_indices)
+        if self.alive_attn is not None:
+            inp_seq_len = self.alive_attn.size(-1)
+            self.alive_attn = attention.index_select(1, non_finished) \
+                .view(step - 1, _B_new * self.beam_size, inp_seq_len)
+            if self._cov_pen:
+                self._coverage = self._coverage \
+                    .view(1, _B_old, self.beam_size, inp_seq_len) \
+                    .index_select(1, non_finished) \
+                    .view(1, _B_new * self.beam_size, inp_seq_len)
+                if self._stepwise_cov_pen:
+                    self._prev_penalty = self._prev_penalty.index_select(
+                        0, non_finished)
 
     def advance(self, log_probs, attn):
         vocab_size = log_probs.size(-1)
@@ -252,89 +321,89 @@ class BeamSearch(DecodeStrategy):
         self.is_finished = self.topk_ids.eq(self.eos)
         self.ensure_max_length()
 
-    def update_finished(self):
-        # Penalize beams that finished.
-        _B_old = self.topk_log_probs.shape[0]
-        step = self.alive_seq.shape[-1]  # 1 greater than the step in advance
-        self.topk_log_probs.masked_fill_(self.is_finished, -1e10)
-        # on real data (newstest2017) with the pretrained transformer,
-        # it's faster to not move this back to the original device
-        self.is_finished = self.is_finished.to('cpu')
-        self.top_beam_finished |= self.is_finished[:, 0].eq(1)
-        predictions = self.alive_seq.view(_B_old, self.beam_size, step)
-        attention = (
-            self.alive_attn.view(
-                step - 1, _B_old, self.beam_size, self.alive_attn.size(-1))
-            if self.alive_attn is not None else None)
-        non_finished_batch = []
-        for i in range(self.is_finished.size(0)):  # Batch level
-            b = self._batch_offset[i]
-            finished_hyp = self.is_finished[i].nonzero(as_tuple=False).view(-1)
-            # Store finished hypotheses for this batch.
-            for j in finished_hyp:  # Beam level: finished beam j in batch i
-                if self.ratio > 0:
-                    s = self.topk_scores[i, j] / (step + 1)
-                    if self.best_scores[b] < s:
-                        self.best_scores[b] = s
-                self.hypotheses[b].append((
-                    self.topk_scores[i, j],
-                    predictions[i, j, 1:],  # Ignore start_token.
-                    attention[:, i, j, :self.memory_lengths[i]]
-                    if attention is not None else None))
-            # End condition is the top beam finished and we can return
-            # n_best hypotheses.
-            if self.ratio > 0:
-                pred_len = self.memory_lengths[i] * self.ratio
-                finish_flag = ((self.topk_scores[i, 0] / pred_len)
-                               <= self.best_scores[b]) or \
-                    self.is_finished[i].all()
-            else:
-                finish_flag = self.top_beam_finished[i] != 0
-            if finish_flag and len(self.hypotheses[b]) >= self.n_best:
-                best_hyp = sorted(
-                    self.hypotheses[b], key=lambda x: x[0], reverse=True)
-                for n, (score, pred, attn) in enumerate(best_hyp):
-                    if n >= self.n_best:
-                        break
-                    self.scores[b].append(score)
-                    self.predictions[b].append(pred)  # ``(batch, n_best,)``
-                    self.attention[b].append(
-                        attn if attn is not None else [])
-            else:
-                non_finished_batch.append(i)
-        non_finished = torch.tensor(non_finished_batch)
-        # If all sentences are translated, no need to go further.
-        if len(non_finished) == 0:
-            self.done = True
-            return
 
-        _B_new = non_finished.shape[0]
-        # Remove finished batches for the next step.
-        self.top_beam_finished = self.top_beam_finished.index_select(
-            0, non_finished)
-        self._batch_offset = self._batch_offset.index_select(0, non_finished)
+class BeamSearch(BeamSearchBase):
+    """
+        Beam search for seq2seq/encoder-decoder models
+    """
+    def initialize(self, memory_bank, src_lengths, src_map=None, device=None,
+                   target_prefix=None):
+        """Initialize for decoding.
+        Repeat src objects `beam_size` times.
+        """
+
+        def fn_map_state(state, dim):
+            return tile(state, self.beam_size, dim=dim)
+
+        if isinstance(memory_bank, tuple):
+            memory_bank = tuple(tile(x, self.beam_size, dim=1)
+                                for x in memory_bank)
+            mb_device = memory_bank[0].device
+        else:
+            memory_bank = tile(memory_bank, self.beam_size, dim=1)
+            mb_device = memory_bank.device
+        if src_map is not None:
+            src_map = tile(src_map, self.beam_size, dim=1)
+        if device is None:
+            device = mb_device
+
+        self.memory_lengths = tile(src_lengths, self.beam_size)
+        if target_prefix is not None:
+            target_prefix = tile(target_prefix, self.beam_size, dim=1)
+
+        super(BeamSearch, self).initialize_(
+            memory_bank, self.memory_lengths, src_map, device, target_prefix)
+
+        return fn_map_state, memory_bank, self.memory_lengths, src_map
+
+
+class BeamSearchLM(BeamSearchBase):
+    """
+        Beam search for language/decoder only models
+    """
+    def initialize(self, src, src_lengths, src_map=None, device=None,
+                   target_prefix=None):
+        """Initialize for decoding.
+        Repeat src objects `beam_size` times.
+        """
+        def fn_map_state(state, dim):
+            return tile(state, self.beam_size, dim=dim)
+
+        src = fn_map_state(src, dim=1)
+        if src_map is not None:
+            src_map = tile(src_map, self.beam_size, dim=1)
+        if device is None:
+            device = src.device
+
+        self.memory_lengths = tile(src_lengths, self.beam_size)
+        if target_prefix is not None:
+            target_prefix = tile(target_prefix, self.beam_size, dim=1)
+
+        super(BeamSearchLM, self).initialize_(
+            None, self.memory_lengths, src_map=src_map, device=device,
+            target_prefix=target_prefix)
+
+        return fn_map_state, src, self.memory_lengths, src_map
+
+    def advance(self, log_probs, attn):
+        super(BeamSearchLM, self).advance(log_probs, attn)
+
+        # in LM task memory_lengths is associated with currently generated src
+        # and therefore needs to follow the generation
+        self.memory_lengths += 1
+
+    def remove_finished_batches(self, _B_new, _B_old, non_finished,
+                                predictions, attention, step):
+        super(BeamSearchLM, self).remove_finished_batches(
+            _B_new, _B_old, non_finished, predictions, attention, step)
+
+        # in LM task memory_lengths is associated with currently generated src
+        # and therefore needs to follow the generation
         non_finished = non_finished.to(self.topk_ids.device)
-        self.topk_log_probs = self.topk_log_probs.index_select(0,
-                                                               non_finished)
-        self._batch_index = self._batch_index.index_select(0, non_finished)
-        self.select_indices = self._batch_index.view(_B_new * self.beam_size)
-        self.alive_seq = predictions.index_select(0, non_finished) \
-            .view(-1, self.alive_seq.size(-1))
-        self.topk_scores = self.topk_scores.index_select(0, non_finished)
-        self.topk_ids = self.topk_ids.index_select(0, non_finished)
-        self.maybe_update_target_prefix(self.select_indices)
-        if self.alive_attn is not None:
-            inp_seq_len = self.alive_attn.size(-1)
-            self.alive_attn = attention.index_select(1, non_finished) \
-                .view(step - 1, _B_new * self.beam_size, inp_seq_len)
-            if self._cov_pen:
-                self._coverage = self._coverage \
-                    .view(1, _B_old, self.beam_size, inp_seq_len) \
-                    .index_select(1, non_finished) \
-                    .view(1, _B_new * self.beam_size, inp_seq_len)
-                if self._stepwise_cov_pen:
-                    self._prev_penalty = self._prev_penalty.index_select(
-                        0, non_finished)
+        self.memory_lengths = self.memory_lengths.view(
+            _B_old, self.beam_size) \
+            .index_select(0, non_finished) \
+            .view(_B_new * self.beam_size)
 
 
 class GNMTGlobalScorer(object):

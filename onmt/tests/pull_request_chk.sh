@@ -25,6 +25,7 @@ clean_up()
         # delete all .pt's
         rm -f $TMP_OUT_DIR/*.pt
         rm -rf $TMP_OUT_DIR/sample
+        rm $TMP_OUT_DIR/onmt.vocab*
         rm -d $TMP_OUT_DIR
     fi
 }
@@ -130,6 +131,55 @@ ${PYTHON} onmt/bin/train.py \
             -report_every 5 -train_steps 10 >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
+
+echo -n "  [+] Testing NMT training w/ coverage..."
+${PYTHON} onmt/bin/train.py \
+            -config ${DATA_DIR}/data.yaml \
+            -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
+            -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
+            -src_vocab_size 1000 \
+            -tgt_vocab_size 1000 \
+            -rnn_size 2 -batch_size 10 \
+            -word_vec_size 5 -report_every 5        \
+            -coverage_attn true -lambda_coverage 0.1 \
+            -rnn_size 10 -train_steps 10 >> ${LOG_FILE} 2>&1
+[ "$?" -eq 0 ] || error_exit
+echo "Succeeded" | tee -a ${LOG_FILE}
+
+echo -n "  [+] Testing LM training..."
+${PYTHON} onmt/bin/train.py \
+            -config ${DATA_DIR}/lm_data.yaml \
+            -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
+            -tgt_vocab $TMP_OUT_DIR/onmt.vocab.src \
+            -model_task lm \
+            -encoder_type transformer_lm \
+            -decoder_type transformer_lm \
+            -src_vocab_size 1000 \
+            -tgt_vocab_size 1000 \
+            -dec_layers 2 -batch_size 10 \
+            -heads 4 -transformer_ff 64 \
+            -word_vec_size 16 -report_every 5        \
+            -rnn_size 16 -train_steps 10 >> ${LOG_FILE} 2>&1
+[ "$?" -eq 0 ] || error_exit
+echo "Succeeded" | tee -a ${LOG_FILE}
+
+echo -n "  [+] Testing LM training w/ copy..."
+${PYTHON} onmt/bin/train.py \
+            -config ${DATA_DIR}/lm_data.yaml \
+            -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
+            -tgt_vocab $TMP_OUT_DIR/onmt.vocab.src \
+            -model_task lm \
+            -encoder_type transformer_lm \
+            -decoder_type transformer_lm \
+            -src_vocab_size 1000 \
+            -tgt_vocab_size 1000 \
+            -dec_layers 2 -batch_size 10 \
+            -heads 4 -transformer_ff 64 \
+            -word_vec_size 16 -report_every 5        \
+            -rnn_size 16 -train_steps 10 \
+            -copy_attn >> ${LOG_FILE} 2>&1
+[ "$?" -eq 0 ] || error_exit
+echo "Succeeded" | tee -a ${LOG_FILE}*
 rm $TMP_OUT_DIR/onmt.vocab*
 
 echo -n "  [+] Testing Graph Neural Network training..."
@@ -191,6 +241,38 @@ diff ${DATA_DIR}/morph/tgt.valid $TMP_OUT_DIR/trans_sampling
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 rm $TMP_OUT_DIR/trans_sampling
+
+echo -n "  [+] Testing LM generation..."
+head ${DATA_DIR}/src-test.txt > $TMP_OUT_DIR/src-test.txt
+${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt -src $TMP_OUT_DIR/src-test.txt -verbose >> ${LOG_FILE} 2>&1
+[ "$?" -eq 0 ] || error_exit
+echo "Succeeded" | tee -a ${LOG_FILE}
+rm $TMP_OUT_DIR/src-test.txt
+
+echo -n "  [+] Testing LM generation w/ Beam search..."
+${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
+            -src ${DATA_DIR}/data_lm/src-gen.txt   \
+            -verbose -batch_size 10     \
+            -beam_size 10               \
+            -out $TMP_OUT_DIR/gen_beam  >> ${LOG_FILE} 2>&1
+diff ${DATA_DIR}/data_lm/gen-beam-sol.txt $TMP_OUT_DIR/gen_beam
+[ "$?" -eq 0 ] || error_exit
+echo "Succeeded" | tee -a ${LOG_FILE}
+rm $TMP_OUT_DIR/gen_beam
+
+echo -n "  [+] Testing LM generation w/ Random Sampling..."
+${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
+            -src ${DATA_DIR}/data_lm/src-gen.txt   \
+            -verbose -batch_size 10     \
+            -beam_size 1                \
+            -seed 1                     \
+            -random_sampling_topk=-1    \
+            -random_sampling_temp=0.0001    \
+            -out $TMP_OUT_DIR/gen_sampling  >> ${LOG_FILE} 2>&1
+diff ${DATA_DIR}/data_lm/gen-sampling-sol.txt $TMP_OUT_DIR/gen_sampling
+[ "$?" -eq 0 ] || error_exit
+echo "Succeeded" | tee -a ${LOG_FILE}
+rm $TMP_OUT_DIR/gen_sampling
 
 #
 # Tools test

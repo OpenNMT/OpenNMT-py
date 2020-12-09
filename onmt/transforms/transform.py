@@ -53,7 +53,10 @@ class Transform(object):
 
     def __getstate__(self):
         """Pickling following for rebuild."""
-        return self.opts
+        state = {"opts": self.opts}
+        if hasattr(self, 'vocabs'):
+            state['vocabs'] = self.vocabs
+        return state
 
     def _parse_opts(self):
         """Parse opts to set/reset instance's attributes.
@@ -65,11 +68,11 @@ class Transform(object):
         """
         pass
 
-    def __setstate__(self, opts):
+    def __setstate__(self, state):
         """Reload when unpickling from save file."""
-        self.opts = opts
+        self.opts = state["opts"]
         self._parse_opts()
-        vocabs = self.vocabs if hasattr(self, 'vocabs') else None
+        vocabs = state.get('vocabs', None)
         self.warm_up(vocabs=vocabs)
 
     def stats(self):

@@ -16,7 +16,8 @@ def _get_dynamic_fields(opts):
                         dynamic_dict=opts.copy_attn,
                         src_truncate=opts.src_seq_length_trunc,
                         tgt_truncate=opts.tgt_seq_length_trunc,
-                        with_align=with_align)
+                        with_align=with_align,
+                        data_task=opts.data_task)
 
     return fields
 
@@ -72,7 +73,7 @@ def save_fields(fields, save_data, overwrite=True):
 def load_fields(save_data, checkpoint=None):
     """Load dumped fields object from `save_data` or `checkpoint` if any."""
     if checkpoint is not None:
-        logger.info(f"Loading fields from checkpoint...")
+        logger.info("Loading fields from checkpoint...")
         fields = checkpoint['vocab']
     else:
         fields_path = "{}.vocab.pt".format(save_data)

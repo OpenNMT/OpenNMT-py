@@ -49,7 +49,7 @@ class BARTNoising(object):
         if mask_length not in ['subword', 'word', 'span-poisson']:
             raise ValueError(f'invalid arg: mask-length={mask_length}')
         if mask_length == 'subword' and replace_length not in [0, 1]:
-            raise ValueError(f'if using subwords, use replace-length=1 or 0')
+            raise ValueError('if using subwords, use replace-length=1 or 0')
 
         if mask_length == 'subword' or is_joiner is None:
             # view each subword as word start / input is word level token
@@ -350,6 +350,7 @@ class BARTNoiseTransform(Transform):
     def warm_up(self, vocabs):
         super().warm_up(None)
         if vocabs is None:
+            self.bart_noise = None
             return
         self.vocabs = vocabs
 

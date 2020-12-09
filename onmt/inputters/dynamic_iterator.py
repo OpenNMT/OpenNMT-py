@@ -110,8 +110,7 @@ class DynamicDatasetIter(object):
         self.is_train = is_train
         self.init_iterators = False
         self.batch_size = batch_size
-        self.batch_size_fn = max_tok_len \
-            if is_train and batch_type == "tokens" else None
+        self.batch_size_fn = max_tok_len if batch_type == "tokens" else None
         self.batch_size_multiple = batch_size_multiple
         self.device = 'cpu'
         self.sort_key = str2sortkey[data_type]

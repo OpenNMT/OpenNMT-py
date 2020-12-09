@@ -1,0 +1,54 @@
+name: Deploy Docs & Publish to PyPi
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy-docs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.6
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.6
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install --upgrade setuptools
+        python setup.py install
+        pip install -r docs/requirements.txt
+    - name: Build docs
+      run: |
+        set -e
+        # Check that docs are built without errors
+        cd docs/ && make html && cd ..
+    - name: Deploy docs
+      uses: JamesIves/github-pages-deploy-action@3.7.1
+      with:
+        GITHUB_TOKEN:  ${{ secrets.GITHUB_TOKEN }}
+        BRANCH: gh-pages
+        FOLDER: docs/build/html
+        CLEAN: true
+  publish-pypi:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.6
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.6
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install --upgrade setuptools wheel
+    - name: Build a binary wheel and a source tarball
+      run: |
+        python setup.py sdist bdist_wheel
+    - name: Publish release to PyPi
+      uses: pypa/gh-action-pypi-publish@54b39fb
+      with:
+        user: __token__
+        password: ${{ secrets.pypi_password }}
+        verbose: true

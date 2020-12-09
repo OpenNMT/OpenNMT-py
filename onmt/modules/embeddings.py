@@ -10,6 +10,10 @@ from onmt.modules.util_class import Elementwise
 from onmt.utils.logging import logger
 
 
+class SequenceTooLongError(Exception):
+    pass
+
+
 class PositionalEncoding(nn.Module):
     """Sinusoidal positional encoding for non-recurrent neural networks.
 
@@ -49,6 +53,11 @@ class PositionalEncoding(nn.Module):
 
         emb = emb * math.sqrt(self.dim)
         if step is None:
+            if self.pe.size(0) < emb.size(0):
+                raise SequenceTooLongError(
+                    f"Sequence is {emb.size(0)} but PositionalEncoding is"
+                    f" limited to {self.pe.size(0)}. See max_len argument."
+                )
             emb = emb + self.pe[:emb.size(0)]
         else:
             emb = emb + self.pe[step]
