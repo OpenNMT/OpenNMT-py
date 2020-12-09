@@ -20,17 +20,18 @@ setup(
         "Source": "https://github.com/OpenNMT/OpenNMT-py/"
     },
     install_requires=[
-        "six",
-        "tqdm",
-        "torch>=1.6.0",
+        "numpy==1.19.3",
+        "six==1.15.0",
+        "tqdm==4.51.0",
+        "torch==1.6.0",
         "torchtext==0.4.0",
-        "future",
-        "configargparse",
-        "tensorboard>=1.14",
-        "flask",
-        "waitress",
-        "pyonmttok>=1.22.*;platform_system=='Linux'",
-        "pyyaml",
+        "future==0.18.2",
+        "configargparse==1.2.3",
+        "tensorboard==2.3.0",
+        "flask==1.1.2",
+        "waitress==1.4.4",
+        "pyonmttok==1.22.1;platform_system=='Linux'",
+        "pyyaml==5.3.1",
     ],
     entry_points={
         "console_scripts": [
