@@ -20,6 +20,7 @@ setup(
         "Source": "https://github.com/OpenNMT/OpenNMT-py/"
     },
     install_requires=[
+        "numpy==1.19.3",
         "six==1.15.0",
         "tqdm==4.51.0",
         "torch==1.6.0",
