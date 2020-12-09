@@ -31,7 +31,7 @@ class EncoderBase(nn.Module):
     """
 
     @classmethod
-    def from_opt(cls, opt, embeddings=None):
+    def from_opt(cls, opt, embeddings=None, tg_embeddings=None):
         raise NotImplementedError
 
     def _check_args(self, src, lengths=None, hidden=None):
@@ -40,7 +40,7 @@ class EncoderBase(nn.Module):
             n_batch_, = lengths.size()
             aeq(n_batch, n_batch_)
 
-    def forward(self, src, lengths=None):
+    def forward(self, src, lengths=None, dec_in=None):
         """
         Args:
             src (LongTensor):

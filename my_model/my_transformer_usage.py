@@ -47,7 +47,7 @@ from torchtext.vocab import Vocab
 from torchtext.utils import download_from_url, extract_archive
 import io
 
-base_dir = '/mnt/c/Codenator/try_10/datasets/'
+base_dir = '/mnt/c/Codenator/try_2/datasets/'
 train_files_names = ('train0.corpus.ll', 'train0.corpus.hl')
 val_files_names = ('validate0.corpus.ll', 'validate0.corpus.hl')
 test_files_names = ('test0.corpus.ll', 'test0.corpus.hl')
@@ -81,7 +81,7 @@ def data_process(filepaths):
                               dtype=torch.long)
     data.append((ll_tensor_, hl_tensor_))
     counter += 1
-    if counter > 100:
+    if counter > 2:
         break
   return data
 
@@ -114,9 +114,9 @@ from torch.utils.data import DataLoader
 
 def generate_batch(data_batch):
   ll_batch, hl_batch = [], []
-  for (de_item, en_item) in data_batch:
-    ll_batch.append(torch.cat([torch.tensor([BOS_IDX]), de_item, torch.tensor([EOS_IDX])], dim=0))
-    hl_batch.append(torch.cat([torch.tensor([BOS_IDX]), en_item, torch.tensor([EOS_IDX])], dim=0))
+  for (ll_item, hl_item) in data_batch:
+    ll_batch.append(torch.cat([torch.tensor([BOS_IDX]), ll_item, torch.tensor([EOS_IDX])], dim=0))
+    hl_batch.append(torch.cat([torch.tensor([BOS_IDX]), hl_item, torch.tensor([EOS_IDX])], dim=0))
   ll_batch = pad_sequence(ll_batch, padding_value=PAD_IDX)
   hl_batch = pad_sequence(hl_batch, padding_value=PAD_IDX)
   return ll_batch, hl_batch
@@ -197,7 +197,7 @@ print(f'The model has {count_parameters(model):,} trainable parameters')
 
 PAD_IDX = hl_vocab.stoi['<pad>']
 
-criterion = nn.CrossEntropyLoss(ignore_index=PAD_IDX)
+criterion = nn.L1Loss()
 
 ######################################################################
 # Finally, we can train and evaluate this model:
@@ -207,7 +207,7 @@ import time
 
 class PositionalEncoding(nn.Module):
 
-    def __init__(self, d_model, dropout=0.1, max_len=5000):
+    def __init__(self, d_model, dropout=0.1, max_len=1000):
         super(PositionalEncoding, self).__init__()
         self.dropout = nn.Dropout(p=dropout)
 
@@ -232,7 +232,8 @@ def train(model: nn.Module,
           pos_encoding: PositionalEncoding,
           clip: float,
           ll_embedder: nn.Module,
-          hl_embedder: nn.Module):
+          hl_embedder: nn.Module,
+          linear_decoder: nn.Module):
 
     model.train()
 
@@ -250,12 +251,17 @@ def train(model: nn.Module,
         trg = pos_encoding(trg)
 
         output = model(src, trg)
-        # output = model2(output, trg)
+        output = model2(output, trg)
+        # print(output.shape)
+        # output = linear_decoder(output)
+        # print(output.shape)
+        # print(trg.shape)
+        # output = output[1:].view(-1, output.shape[-1])
+        # trg = trg[1:].view(-1)
 
-        output = output[1:].view(-1, output.shape[-1])
-        or_trg = or_trg[1:].view(-1)
-
-        loss = criterion(output, or_trg)
+        print(output.shape)
+        print(trg.shape)
+        loss = criterion(output, trg)
 
         loss.backward()
 
@@ -265,16 +271,13 @@ def train(model: nn.Module,
 
         epoch_loss += loss.item()
 
-        print('one_step_over')
-        print(epoch_loss)
-        exit(5)
-
     return epoch_loss / len(iterator)
 
 
 def evaluate(model: nn.Module,
              iterator: torch.utils.data.DataLoader,
-             criterion: nn.Module):
+             criterion: nn.Module,
+             is_translation: int):
 
     model.eval()
 
@@ -305,7 +308,7 @@ def epoch_time(start_time: int,
     return elapsed_mins, elapsed_secs
 
 
-N_EPOCHS = 10
+N_EPOCHS = 1
 CLIP = 1
 
 best_valid_loss = float('inf')
@@ -315,7 +318,7 @@ for epoch in range(N_EPOCHS):
     start_time = time.time()
 
     train_loss = train(model, model2, train_iter, optimizer, criterion, PositionalEncoding(m_dim), CLIP,
-                       nn.Embedding(len(ll_vocab), m_dim), nn.Embedding(len(hl_vocab), m_dim))
+                       nn.Embedding(len(ll_vocab), m_dim), nn.Embedding(len(hl_vocab), m_dim), nn.Linear(m_dim, len(hl_vocab)))
     valid_loss = evaluate(model, valid_iter, criterion)
 
     end_time = time.time()
@@ -327,15 +330,7 @@ for epoch in range(N_EPOCHS):
     print(f'\t Val. Loss: {valid_loss:.3f} |  Val. PPL: {math.exp(valid_loss):7.3f}')
 
 test_loss = evaluate(model, test_iter, criterion)
+max_len = 10
+
 
 print(f'| Test Loss: {test_loss:.3f} | Test PPL: {math.exp(test_loss):7.3f} |')
-
-######################################################################
-# Next steps
-# --------------
-#
-# - Check out the rest of Ben Trevett's tutorials using ``torchtext``
-#   `here <https://github.com/bentrevett/>`__
-# - Stay tuned for a tutorial using other ``torchtext`` features along
-#   with ``nn.Transformer`` for language modeling via next word prediction!
-#

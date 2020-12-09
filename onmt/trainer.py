@@ -13,6 +13,7 @@ import torch
 import traceback
 
 import onmt.utils
+from onmt.translate import translator
 from onmt.utils.logging import logger
 
 patience = 3 # 3 seems to be enough
@@ -31,7 +32,7 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
         model_saver(:obj:`onmt.models.ModelSaverBase`): the utility object
             used to save the model
     """
-
+    print(fields)
     tgt_field = dict(fields)["tgt"].base_field
     train_loss = onmt.utils.loss.build_loss_compute(model, tgt_field, opt)
     valid_loss = onmt.utils.loss.build_loss_compute(
@@ -371,11 +372,17 @@ class Trainer(object):
                     self.optim.zero_grad()
 
                 with torch.cuda.amp.autocast(enabled=self.optim.amp):
+                    print(self.train_loss)
+                    print(src_lengths)
+                    print('bla bla')
+                    print(torch.tensor([src.shape[0], src.shape[0]]))
+                    print(src.shape[0])
+                    print(tgt.shape)
                     outputs, attns = self.model(
                         src, tgt, src_lengths, bptt=bptt,
                         with_align=self.with_align)
                     bptt = True
-
+                    print(outputs.shape)
                     # 3. Compute loss.
                     loss, batch_stats = self.train_loss(
                         batch,

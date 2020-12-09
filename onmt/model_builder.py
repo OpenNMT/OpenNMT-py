@@ -11,6 +11,7 @@ import onmt.modules
 from onmt.encoders import str2enc
 
 from onmt.decoders import str2dec
+from onmt.encoders.double_transformer import DoubleTransformerEncoder
 
 from onmt.modules import Embeddings, CopyGenerator
 from onmt.modules.util_class import Cast
@@ -54,7 +55,7 @@ def build_embeddings(opt, text_field, for_encoder=True):
     return emb
 
 
-def build_encoder(opt, embeddings):
+def build_encoder(opt, embeddings, tg_embeddings=None):
     """
     Various encoder dispatcher function.
     Args:
@@ -62,7 +63,7 @@ def build_encoder(opt, embeddings):
         embeddings (Embeddings): vocab embeddings for this encoder.
     """
     enc_type = opt.encoder_type if opt.model_type == "text" else opt.model_type
-    return str2enc[enc_type].from_opt(opt, embeddings)
+    return DoubleTransformerEncoder.from_opt(opt, embeddings, tg_embeddings)
 
 
 def build_decoder(opt, embeddings):
@@ -128,9 +129,6 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
     else:
         src_emb = None
 
-    # Build encoder.
-    encoder = build_encoder(model_opt, src_emb)
-
     # Build decoder.
     tgt_field = fields["tgt"]
     tgt_emb = build_embeddings(model_opt, tgt_field, for_encoder=False)
@@ -142,6 +140,9 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
             "preprocess with -share_vocab if you use share_embeddings"
 
         tgt_emb.word_lut.weight = src_emb.word_lut.weight
+
+    # Build encoder.
+    encoder = build_encoder(model_opt, src_emb, tgt_emb)
 
     decoder = build_decoder(model_opt, tgt_emb)
 

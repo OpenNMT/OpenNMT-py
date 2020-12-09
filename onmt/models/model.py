@@ -1,4 +1,5 @@
 """ Onmt NMT Model base class definition """
+import torch
 import torch.nn as nn
 
 
@@ -41,11 +42,18 @@ class NMTModel(nn.Module):
             * dictionary attention dists of ``(tgt_len, batch, src_len)``
         """
         dec_in = tgt[:-1]  # exclude last target from inputs
-
-        enc_state, memory_bank, lengths = self.encoder(src, lengths)
-
+        enc_state, memory_bank, lengths, second_src = self.encoder(src, lengths, dec_in=dec_in, bptt=bptt)
         if bptt is False:
-            self.decoder.init_state(src, memory_bank, enc_state)
+            self.decoder.init_state(second_src, memory_bank, enc_state)
+        print()
+        print()
+        print('second decoder')
+        print('src.shape: ' + str(second_src.shape))
+        print('memory_bank.shape: ' + str(memory_bank.shape))
+        print('dec_in.shape: ' + str(dec_in.shape))
+        print('lengths: ' + str(lengths))
+        # lengths = torch.tensor([second_src.shape[0], memory_bank.shape[0]])
+        # print('lengths: ' + str(lengths))
         dec_out, attns = self.decoder(dec_in, memory_bank,
                                       memory_lengths=lengths,
                                       with_align=with_align)
