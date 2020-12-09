@@ -27,3 +27,8 @@ class SubwordMarker(object):
 class ModelTask(object):
     LANGUAGE_MODEL = 'lm'
     SEQ2SEQ = 'seq2seq'
+
+
+class DecodingStrategy(object):
+    SAMPLING = 'sampling'
+    BEAM_SEARCH = 'beam_search'

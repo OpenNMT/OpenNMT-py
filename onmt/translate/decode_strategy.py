@@ -1,6 +1,8 @@
 import torch
 from copy import deepcopy
 
+from onmt.utils.misc import tile
+
 
 class DecodeStrategy(object):
     """Base class for generation strategies.
@@ -86,6 +88,32 @@ class DecodeStrategy(object):
         self.return_attention = return_attention
 
         self.done = False
+
+    def get_device_from_memory_bank(self, memory_bank):
+        if isinstance(memory_bank, tuple):
+            mb_device = memory_bank[0].device
+        else:
+            mb_device = memory_bank.device
+        return mb_device
+
+    def initialize_tile(self, memory_bank, src_lengths, src_map=None,
+                        target_prefix=None):
+        def fn_map_state(state, dim):
+            return tile(state, self.beam_size, dim=dim)
+
+        if isinstance(memory_bank, tuple):
+            memory_bank = tuple(tile(x, self.beam_size, dim=1)
+                                for x in memory_bank)
+        elif memory_bank is not None:
+            memory_bank = tile(memory_bank, self.beam_size, dim=1)
+        if src_map is not None:
+            src_map = tile(src_map, self.beam_size, dim=1)
+
+        self.memory_lengths = tile(src_lengths, self.beam_size)
+        if target_prefix is not None:
+            target_prefix = tile(target_prefix, self.beam_size, dim=1)
+
+        return fn_map_state, memory_bank, src_map, target_prefix
 
     def initialize(self, memory_bank, src_lengths, src_map=None, device=None,
                    target_prefix=None):

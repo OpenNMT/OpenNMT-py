@@ -1,7 +1,6 @@
 import torch
 from onmt.translate import penalties
 from onmt.translate.decode_strategy import DecodeStrategy
-from onmt.utils.misc import tile
 
 import warnings
 
@@ -332,24 +331,11 @@ class BeamSearch(BeamSearchBase):
         Repeat src objects `beam_size` times.
         """
 
-        def fn_map_state(state, dim):
-            return tile(state, self.beam_size, dim=dim)
-
-        if isinstance(memory_bank, tuple):
-            memory_bank = tuple(tile(x, self.beam_size, dim=1)
-                                for x in memory_bank)
-            mb_device = memory_bank[0].device
-        else:
-            memory_bank = tile(memory_bank, self.beam_size, dim=1)
-            mb_device = memory_bank.device
-        if src_map is not None:
-            src_map = tile(src_map, self.beam_size, dim=1)
+        (fn_map_state, memory_bank, src_map,
+            target_prefix) = self.initialize_tile(
+                memory_bank, src_lengths, src_map, target_prefix)
         if device is None:
-            device = mb_device
-
-        self.memory_lengths = tile(src_lengths, self.beam_size)
-        if target_prefix is not None:
-            target_prefix = tile(target_prefix, self.beam_size, dim=1)
+            device = self.get_device_from_memory_bank(memory_bank)
 
         super(BeamSearch, self).initialize_(
             memory_bank, self.memory_lengths, src_map, device, target_prefix)
@@ -366,18 +352,12 @@ class BeamSearchLM(BeamSearchBase):
         """Initialize for decoding.
         Repeat src objects `beam_size` times.
         """
-        def fn_map_state(state, dim):
-            return tile(state, self.beam_size, dim=dim)
-
+        (fn_map_state, _, src_map,
+            target_prefix) = self.initialize_tile(
+                None, src_lengths, src_map, target_prefix)
         src = fn_map_state(src, dim=1)
-        if src_map is not None:
-            src_map = tile(src_map, self.beam_size, dim=1)
         if device is None:
             device = src.device
-
-        self.memory_lengths = tile(src_lengths, self.beam_size)
-        if target_prefix is not None:
-            target_prefix = tile(target_prefix, self.beam_size, dim=1)
 
         super(BeamSearchLM, self).initialize_(
             None, self.memory_lengths, src_map=src_map, device=device,

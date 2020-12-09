@@ -42,38 +42,49 @@ def sample_with_temperature(logits, sampling_temp, keep_topk, keep_top_p):
             topk_scores /= sampling_temp
     else:
         logits = torch.div(logits, sampling_temp)
-
         if keep_top_p > 0:
             sorted_logits, sorted_indices = torch.sort(logits,
-                                                       descending=True)
+                                                       descending=True,
+                                                       dim=1)
+
             cumulative_probs = torch.cumsum(F.softmax(sorted_logits,
                                                       dim=-1), dim=-1)
             sorted_indices_to_keep = cumulative_probs < keep_top_p
-            nb_keep = torch.sum(sorted_indices_to_keep)
-            if nb_keep < sorted_indices_to_keep.shape[-1]:
-                # keep indexes until overflowing p
-                sorted_indices_to_keep[0, nb_keep] = 1
+
+            # keep indices until overflowing p
+            nb_keep = torch.sum(sorted_indices_to_keep, dim=1)
+            underflown_indices = (nb_keep < sorted_indices_to_keep.shape[-1])
+            sorted_indices_to_keep[underflown_indices,
+                                   nb_keep[underflown_indices]] = 1
 
             # Set all logits that are not in the top-p to -10000.
             # This puts the probabilities close to 0.
-            device = sorted_indices.device
-            pth_best_indices = sorted_indices[sorted_indices_to_keep].view(
-                [1, -1]
-            )
-            ignore = torch.ones(logits.shape).to(device)
-            ignore.scatter_(1, pth_best_indices,
-                            torch.zeros(pth_best_indices.shape).to(device))
-            logits = logits.masked_fill(ignore > 0, -10000)
+            keep_indices = torch.zeros(sorted_indices.shape, dtype=torch.bool,
+                                       device=logits.device).scatter(
+                                           1,
+                                           sorted_indices,
+                                           sorted_indices_to_keep,
+                                        )
+            logits = logits.masked_fill(~keep_indices, -10000)
 
-        if keep_topk > 0 and not (keep_top_p > 0 and nb_keep+1 <= keep_topk):
-            top_values, top_indices = torch.topk(logits, keep_topk, dim=1)
+        if keep_topk > 0:
+            if keep_top_p > 0:
+                over_k_indices = (nb_keep+1 <= keep_topk)
+            else:
+                over_k_indices = torch.ones(logits.size(0),
+                                            device=logits.device,
+                                            dtype=torch.bool)
+            top_values, top_indices = torch.topk(logits[over_k_indices],
+                                                 keep_topk, dim=1)
             kth_best = top_values[:, -1].view([-1, 1])
-            kth_best = kth_best.repeat([1, logits.shape[1]]).float()
+            kth_best = kth_best.repeat([1, logits[over_k_indices].shape[1]]
+                                       ).float()
 
             # Set all logits that are not in the top-k to -10000.
             # This puts the probabilities close to 0.
-            ignore = torch.lt(logits, kth_best)
-            logits = logits.masked_fill(ignore, -10000)
+            ignore = torch.lt(logits[over_k_indices], kth_best)
+            logits[over_k_indices] = logits[over_k_indices].masked_fill(ignore,
+                                                                        -10000)
 
         dist = torch.distributions.Multinomial(
             logits=logits, total_count=1)
@@ -108,35 +119,33 @@ class GreedySearch(DecodeStrategy):
 
     def __init__(self, pad, bos, eos, batch_size, min_length,
                  block_ngram_repeat, exclusion_tokens, return_attention,
-                 max_length, sampling_temp, keep_topk, keep_top_p=0):
+                 max_length, sampling_temp, keep_topk, keep_top_p=0,
+                 beam_size=1):
         assert block_ngram_repeat == 0
         super(GreedySearch, self).__init__(
-            pad, bos, eos, batch_size, 1, min_length, block_ngram_repeat,
-            exclusion_tokens, return_attention, max_length)
+            pad, bos, eos, batch_size, beam_size, min_length,
+            block_ngram_repeat, exclusion_tokens, return_attention, max_length)
         self.sampling_temp = sampling_temp
         self.keep_topk = keep_topk
         self.keep_top_p = keep_top_p
         self.topk_scores = None
+        self.beam_size = beam_size
 
     def initialize(self, memory_bank, src_lengths, src_map=None, device=None,
                    target_prefix=None):
         """Initialize for decoding."""
-        fn_map_state = None
-
-        if isinstance(memory_bank, tuple):
-            mb_device = memory_bank[0].device
-        else:
-            mb_device = memory_bank.device
+        (fn_map_state, memory_bank,
+            src_map, target_prefix) = self.initialize_tile(
+                memory_bank, src_lengths, src_map, target_prefix)
         if device is None:
-            device = mb_device
+            device = self.get_device_from_memory_bank(memory_bank)
 
-        self.memory_lengths = src_lengths
         super(GreedySearch, self).initialize(
             memory_bank, src_lengths, src_map, device, target_prefix)
         self.select_indices = torch.arange(
-            self.batch_size, dtype=torch.long, device=device)
-        self.original_batch_idx = torch.arange(
-            self.batch_size, dtype=torch.long, device=device)
+            self.batch_size*self.beam_size, dtype=torch.long, device=device)
+        self.original_batch_idx = fn_map_state(torch.arange(
+            self.batch_size, dtype=torch.long, device=device), dim=0)
         return fn_map_state, memory_bank, self.memory_lengths, src_map
 
     @property
@@ -159,6 +168,14 @@ class GreedySearch(DecodeStrategy):
             log_probs, self.sampling_temp, self.keep_topk, self.keep_top_p)
         return topk_ids, topk_scores
 
+    def align_select_indices(self):
+        nb_finished_beams = (self.is_finished.view(-1).size(0) -
+                             self.select_indices.size(0))
+        if nb_finished_beams:
+            self.select_indices = torch.arange(
+                self.select_indices.size(0), dtype=torch.long,
+                device=self.select_indices.device)
+
     def advance(self, log_probs, attn):
         """Select next tokens randomly from the top k possible next tokens.
 
@@ -172,6 +189,7 @@ class GreedySearch(DecodeStrategy):
             attn (FloatTensor): Shaped ``(1, B, inp_seq_len)``.
         """
 
+        self.align_select_indices()
         self.ensure_min_length(log_probs)
         self.block_ngram_repeats(log_probs)
 
@@ -225,3 +243,17 @@ class GreedySearchLM(GreedySearch):
         # in LM task memory_lengths is associated with currently generated src
         # and therefore needs to follow the generation
         self.memory_lengths += 1
+
+    def initialize(self, src, src_lengths, src_map=None, device=None,
+                   target_prefix=None):
+        """Initialize for decoding."""
+
+        if device is None:
+            device = src.device
+
+        (fn_map_state, _, self.memory_lengths,
+            src_map) = super(GreedySearchLM, self).initialize(
+                None, src_lengths, src_map, device, target_prefix)
+        src = fn_map_state(src, dim=1)
+
+        return fn_map_state, src, self.memory_lengths, src_map

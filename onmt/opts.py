@@ -5,7 +5,7 @@ import configargparse
 
 from onmt.models.sru import CheckSRU
 from onmt.transforms import AVAILABLE_TRANSFORMS
-from onmt.constants import ModelTask
+from onmt.constants import ModelTask, DecodingStrategy
 
 
 def config_opts(parser):
@@ -627,6 +627,16 @@ def train_opts(parser):
 
 
 def _add_decoding_opts(parser):
+    group = parser.add_argument_group('Decoding')
+    group.add('--decoding_strategy', '-decoding_strategy',
+              default=DecodingStrategy.SAMPLING,
+              choices=[DecodingStrategy.SAMPLING,
+                       DecodingStrategy.BEAM_SEARCH],
+              help="Choose between sampling (greedy/top-k/top-p) or"
+                   " optimal (beam search) decoding strategy")
+    group.add('--beam_size', '-beam_size', type=int, default=5,
+              help='Beam size')
+
     group = parser.add_argument_group('Decoding tricks')
     group.add('--block_ngram_repeat', '-block_ngram_repeat',
               type=int, default=0,
@@ -671,8 +681,6 @@ def _add_decoding_opts(parser):
     _add_reproducibility_opts(parser)
 
     group = parser.add_argument_group('Beam Search')
-    group.add('--beam_size', '-beam_size', type=int, default=5,
-              help='Beam size')
     group.add('--min_length', '-min_length', type=int, default=0,
               help='Minimum prediction length')
     group.add('--max_length', '-max_length', type=int, default=100,
