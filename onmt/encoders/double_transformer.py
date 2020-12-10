@@ -51,9 +51,9 @@ class DoubleTransformerEncoder(EncoderBase):
 
     def __init__(self, opt, embeddings, tg_embeddings=None):
         super(DoubleTransformerEncoder, self).__init__()
-        self.first_encoder = TransformerEncoder.from_opt(opt, embeddings, tg_embeddings=0)
+        self.first_encoder = TransformerEncoder.from_opt(opt, embeddings)
         self.decoder = TransformerDecoder.from_opt(opt, tg_embeddings)
-        self.second_encoder = TransformerEncoder.from_opt(opt, embeddings, tg_embeddings=None)
+        self.second_encoder = TransformerEncoder.from_opt(opt, embeddings)
         self.bptt = False
 
     @classmethod
@@ -65,17 +65,12 @@ class DoubleTransformerEncoder(EncoderBase):
     def forward(self, src, lengths=None, dec_in=None, bptt=False):
         """See :func:`EncoderBase.forward()`"""
         enc_state, memory_bank, lengths = self.first_encoder(src, lengths)
-        print('src.shape: ' + str(src.shape))
-        print('memory_bank.shape: ' + str(memory_bank.shape))
-        print('dec_in.shape: ' + str(dec_in.shape))
-        print('lengths: ' + str(lengths))
         if self.bptt is False:
             self.decoder.init_state(src, memory_bank, enc_state)
 
         dec_out, attns = self.decoder(dec_in, memory_bank,
                                       memory_lengths=lengths,
                                       with_align=False)
-        print('dec_out: ' + str(dec_out.shape))
         dec_out = torch.argmax(dec_out, dim=2)
         dec_out.unsqueeze_(-1)
         enc_state2, memory_bank2, lengths2 = self.second_encoder(dec_out, torch.tensor([dec_out.shape[0], dec_out.shape[1]]))

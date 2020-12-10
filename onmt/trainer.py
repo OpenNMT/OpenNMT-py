@@ -372,17 +372,10 @@ class Trainer(object):
                     self.optim.zero_grad()
 
                 with torch.cuda.amp.autocast(enabled=self.optim.amp):
-                    print(self.train_loss)
-                    print(src_lengths)
-                    print('bla bla')
-                    print(torch.tensor([src.shape[0], src.shape[0]]))
-                    print(src.shape[0])
-                    print(tgt.shape)
                     outputs, attns = self.model(
                         src, tgt, src_lengths, bptt=bptt,
                         with_align=self.with_align)
                     bptt = True
-                    print(outputs.shape)
                     # 3. Compute loss.
                     loss, batch_stats = self.train_loss(
                         batch,
