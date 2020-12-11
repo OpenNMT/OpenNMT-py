@@ -141,6 +141,7 @@ class Inference(object):
         ignore_when_blocking=frozenset(),
         replace_unk=False,
         prevent_unk_token=False,
+        always_sample_eos=False,
         tgt_prefix=False,
         phrase_table="",
         data_type="text",
@@ -182,6 +183,7 @@ class Inference(object):
 
         self.min_length = min_length
         self.prevent_unk_token = prevent_unk_token
+        self.always_sample_eos = always_sample_eos
         self.ratio = ratio
         self.stepwise_penalty = stepwise_penalty
         self.dump_beam = dump_beam
@@ -287,6 +289,7 @@ class Inference(object):
             ignore_when_blocking=set(opt.ignore_when_blocking),
             replace_unk=opt.replace_unk,
             prevent_unk_token=opt.prevent_unk_token,
+            always_sample_eos=opt.always_sample_eos,
             tgt_prefix=opt.tgt_prefix,
             phrase_table=opt.phrase_table,
             data_type=opt.data_type,
@@ -736,6 +739,7 @@ class Translator(Inference):
                     keep_top_p=self.sample_from_top_p,
                     beam_size=self.beam_size,
                     prevent_unk_token=self.prevent_unk_token,
+                    always_sample_eos=self.always_sample_eos,
                 )
             else:
                 # TODO: support these blacklisted features
@@ -975,6 +979,7 @@ class GeneratorLM(Inference):
                     keep_top_p=self.sample_from_top_p,
                     beam_size=self.beam_size,
                     prevent_unk_token=self.prevent_unk_token,
+                    always_sample_eos=self.always_sample_eos,
                 )
             else:
                 # TODO: support these blacklisted features

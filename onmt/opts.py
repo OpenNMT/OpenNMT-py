@@ -674,6 +674,9 @@ def _add_decoding_opts(parser):
               default=1., type=float,
               help="If doing random sampling, divide the logits by "
                    "this before computing softmax during decoding.")
+    group.add('--always_sample_eos', '-always_sample_eos',
+              default=False, type=bool,
+              help="Whether to keep eos among sampled from token list")
     _add_reproducibility_opts(parser)
 
     group = parser.add_argument_group('Beam Search')

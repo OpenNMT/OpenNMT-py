@@ -21,7 +21,7 @@ class DecodeStrategy(object):
         max_length (int): Longest acceptable sequence, not counting
             begin-of-sentence (presumably there has been no EOS
             yet if max_length is used as a cutoff).
-        prevent_unk_token (Boolean): Either unk token is forbidden
+        prevent_unk_token (Boolean): Whether unk token is forbidden
         block_ngram_repeat (int): Block beams where
             ``block_ngram_repeat``-grams repeat.
         exclusion_tokens (set[int]): If a gram contains any of these

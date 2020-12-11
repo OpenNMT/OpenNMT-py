@@ -42,7 +42,7 @@ class TestGreedySearch(unittest.TestCase):
             lengths = torch.randint(0, 30, (batch_sz,))
             samp = GreedySearch(
                 0, 1, 2, 3, batch_sz, GlobalScorerStub(), min_length,
-                False, set(), False, 30, 1., 1, 0, 1, False)
+                False, set(), False, 30, 1., 1, 0, 1, False, False)
             samp.initialize(torch.zeros((1, 1)), lengths)
             all_attns = []
             for i in range(min_length + 4):
@@ -83,7 +83,7 @@ class TestGreedySearch(unittest.TestCase):
                 lengths = torch.randint(0, 30, (batch_sz,))
                 samp = GreedySearch(
                     0, 1, 2, 3, batch_sz, GlobalScorerStub(), 0,
-                    False, set(), False, 30, temp, 1, 0, 1, False)
+                    False, set(), False, 30, temp, 1, 0, 1, False, False)
                 samp.initialize(torch.zeros((1, 1)), lengths)
                 # initial step
                 i = 0
@@ -154,7 +154,7 @@ class TestGreedySearch(unittest.TestCase):
                 lengths = torch.randint(0, 30, (batch_sz,))
                 samp = GreedySearch(
                     0, 1, 2, 3, batch_sz, GlobalScorerStub(), 0,
-                    False, set(), False, 30, temp, 2, 0, 1, False)
+                    False, set(), False, 30, temp, 2, 0, 1, False, False)
                 samp.initialize(torch.zeros((1, 1)), lengths)
                 # initial step
                 i = 0
@@ -245,7 +245,7 @@ class TestGreedySearch(unittest.TestCase):
                 samp = GreedySearch(
                     0, 1, 2, 3, batch_sz, GlobalScorerStub(), 0,
                     False, set(), False, 30, temp, 50, 0,
-                    beam_size, False)
+                    beam_size, False, False)
                 samp.initialize(torch.zeros((1, 1)), lengths)
                 # initial step
                 # finish one beam
@@ -346,7 +346,7 @@ class TestGreedySearch(unittest.TestCase):
                 lengths = torch.randint(0, 30, (batch_sz,))
                 samp = GreedySearch(
                     0, 1, 2, 3, batch_sz, GlobalScorerStub(), 0,
-                    False, set(), False, -1, temp, 50, 0.5, 1, False)
+                    False, set(), False, -1, temp, 50, 0.5, 1, False, False)
                 samp.initialize(torch.zeros((1, 1)), lengths)
                 # initial step
                 i = 0

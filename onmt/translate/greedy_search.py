@@ -4,7 +4,8 @@ import torch.nn.functional as F
 from onmt.translate.decode_strategy import DecodeStrategy
 
 
-def sample_with_temperature(logits, sampling_temp, keep_topk, keep_top_p):
+def sample_with_temperature(logits, sampling_temp, keep_topk, keep_top_p,
+                            always_sample_eos, eos):
     """Select next tokens randomly from the top k possible next tokens.
 
     Samples from a categorical distribution over the ``keep_topk`` words using
@@ -24,6 +25,9 @@ def sample_with_temperature(logits, sampling_temp, keep_topk, keep_top_p):
         keep_top_p (float): Keep most likely words until the cumulated
             probability is greater than p. If used with keep_topk: both
             conditions will be applied
+        always_sample_eos (bool): Whether to keep eos in list of tokens
+            to sample from
+        eos (int): eos index
 
     Returns:
         (LongTensor, FloatTensor):
@@ -65,6 +69,8 @@ def sample_with_temperature(logits, sampling_temp, keep_topk, keep_top_p):
                                            sorted_indices,
                                            sorted_indices_to_keep,
                                         )
+            if always_sample_eos:
+                keep_indices[:, eos] = True
             logits = logits.masked_fill(~keep_indices, -10000)
 
         if keep_topk > 0:
@@ -83,6 +89,8 @@ def sample_with_temperature(logits, sampling_temp, keep_topk, keep_top_p):
             # Set all logits that are not in the top-k to -10000.
             # This puts the probabilities close to 0.
             ignore = torch.lt(logits[over_k_indices], kth_best)
+            if always_sample_eos:
+                ignore[:, eos] = False
             logits[over_k_indices] = logits[over_k_indices].masked_fill(ignore,
                                                                         -10000)
 
@@ -126,7 +134,7 @@ class GreedySearch(DecodeStrategy):
     def __init__(self, pad, bos, eos, unk, batch_size, global_scorer,
                  min_length, block_ngram_repeat, exclusion_tokens,
                  return_attention, max_length, sampling_temp, keep_topk,
-                 keep_top_p, beam_size, prevent_unk_token):
+                 keep_top_p, beam_size, prevent_unk_token, always_sample_eos):
         assert block_ngram_repeat == 0
         super(GreedySearch, self).__init__(
             pad, bos, eos, unk, batch_size, beam_size, global_scorer,
@@ -137,6 +145,7 @@ class GreedySearch(DecodeStrategy):
         self.keep_top_p = keep_top_p
         self.topk_scores = None
         self.beam_size = beam_size
+        self.always_sample_eos = always_sample_eos
 
     def initialize(self, memory_bank, src_lengths, src_map=None, device=None,
                    target_prefix=None):
@@ -174,7 +183,8 @@ class GreedySearch(DecodeStrategy):
         # maybe fix some prediction at this step by modifying log_probs
         log_probs = self.target_prefixing(log_probs)
         topk_ids, topk_scores = sample_with_temperature(
-            log_probs, self.sampling_temp, self.keep_topk, self.keep_top_p)
+            log_probs, self.sampling_temp, self.keep_topk, self.keep_top_p,
+            self.always_sample_eos, self.eos)
         return topk_ids, topk_scores
 
     def align_select_indices(self):
