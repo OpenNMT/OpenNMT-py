@@ -140,6 +140,7 @@ class Inference(object):
         block_ngram_repeat=0,
         ignore_when_blocking=frozenset(),
         replace_unk=False,
+        prevent_unk_token=False,
         tgt_prefix=False,
         phrase_table="",
         data_type="text",
@@ -180,6 +181,7 @@ class Inference(object):
         self.sample_from_top_p = random_sampling_top_p
 
         self.min_length = min_length
+        self.prevent_unk_token = prevent_unk_token
         self.ratio = ratio
         self.stepwise_penalty = stepwise_penalty
         self.dump_beam = dump_beam
@@ -284,6 +286,7 @@ class Inference(object):
             block_ngram_repeat=opt.block_ngram_repeat,
             ignore_when_blocking=set(opt.ignore_when_blocking),
             replace_unk=opt.replace_unk,
+            prevent_unk_token=opt.prevent_unk_token,
             tgt_prefix=opt.tgt_prefix,
             phrase_table=opt.phrase_table,
             data_type=opt.data_type,
@@ -720,6 +723,7 @@ class Translator(Inference):
                     pad=self._tgt_pad_idx,
                     bos=self._tgt_bos_idx,
                     eos=self._tgt_eos_idx,
+                    unk=self._tgt_unk_idx,
                     batch_size=batch.batch_size,
                     global_scorer=self.global_scorer,
                     min_length=self.min_length,
@@ -731,6 +735,7 @@ class Translator(Inference):
                     keep_topk=self.sample_from_topk,
                     keep_top_p=self.sample_from_top_p,
                     beam_size=self.beam_size,
+                    prevent_unk_token=self.prevent_unk_token,
                 )
             else:
                 # TODO: support these blacklisted features
@@ -741,6 +746,7 @@ class Translator(Inference):
                     pad=self._tgt_pad_idx,
                     bos=self._tgt_bos_idx,
                     eos=self._tgt_eos_idx,
+                    unk=self._tgt_unk_idx,
                     n_best=self.n_best,
                     global_scorer=self.global_scorer,
                     min_length=self.min_length,
@@ -750,6 +756,7 @@ class Translator(Inference):
                     exclusion_tokens=self._exclusion_idxs,
                     stepwise_penalty=self.stepwise_penalty,
                     ratio=self.ratio,
+                    prevent_unk_token=self.prevent_unk_token,
                 )
             return self._translate_batch_with_strategy(
                 batch, src_vocabs, decode_strategy
@@ -955,6 +962,7 @@ class GeneratorLM(Inference):
                     pad=self._tgt_pad_idx,
                     bos=self._tgt_bos_idx,
                     eos=self._tgt_eos_idx,
+                    unk=self._tgt_unk_idx,
                     batch_size=batch.batch_size,
                     global_scorer=self.global_scorer,
                     min_length=self.min_length,
@@ -966,6 +974,7 @@ class GeneratorLM(Inference):
                     keep_topk=self.sample_from_topk,
                     keep_top_p=self.sample_from_top_p,
                     beam_size=self.beam_size,
+                    prevent_unk_token=self.prevent_unk_token,
                 )
             else:
                 # TODO: support these blacklisted features
@@ -976,6 +985,7 @@ class GeneratorLM(Inference):
                     pad=self._tgt_pad_idx,
                     bos=self._tgt_bos_idx,
                     eos=self._tgt_eos_idx,
+                    unk=self._tgt_unk_idx,
                     n_best=self.n_best,
                     global_scorer=self.global_scorer,
                     min_length=self.min_length,
@@ -985,6 +995,7 @@ class GeneratorLM(Inference):
                     exclusion_tokens=self._exclusion_idxs,
                     stepwise_penalty=self.stepwise_penalty,
                     ratio=self.ratio,
+                    prevent_unk_token=self.prevent_unk_token,
                 )
             return self._translate_batch_with_strategy(
                 batch, src_vocabs, decode_strategy

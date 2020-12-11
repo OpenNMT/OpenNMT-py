@@ -19,6 +19,7 @@ class BeamSearchBase(DecodeStrategy):
         pad (int): See base.
         bos (int): See base.
         eos (int): See base.
+        unk (int): See base.
         n_best (int): Don't stop until at least this many beams have
             reached EOS.
         global_scorer (onmt.translate.GNMTGlobalScorer): Scorer instance.
@@ -53,14 +54,14 @@ class BeamSearchBase(DecodeStrategy):
         hypotheses (list[list[Tuple[Tensor]]]): Contains a tuple
             of score (float), sequence (long), and attention (float or None).
     """
-    def __init__(self, beam_size, batch_size, pad, bos, eos, n_best,
+    def __init__(self, beam_size, batch_size, pad, bos, eos, unk, n_best,
                  global_scorer, min_length, max_length, return_attention,
-                 block_ngram_repeat, exclusion_tokens,
-                 stepwise_penalty, ratio):
+                 block_ngram_repeat, exclusion_tokens, stepwise_penalty,
+                 ratio, prevent_unk_token):
         super(BeamSearchBase, self).__init__(
-            pad, bos, eos, batch_size, beam_size, global_scorer, min_length,
-            block_ngram_repeat, exclusion_tokens, return_attention,
-            max_length)
+            pad, bos, eos, unk, batch_size, beam_size, global_scorer,
+            min_length, block_ngram_repeat, exclusion_tokens,
+            return_attention, max_length, prevent_unk_token)
         # beam parameters
         self.beam_size = beam_size
         self.n_best = n_best

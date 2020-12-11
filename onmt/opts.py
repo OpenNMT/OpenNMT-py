@@ -644,6 +644,9 @@ def _add_decoding_opts(parser):
                    "target token. If it is not provided (or the identified "
                    "source token does not exist in the table), then it "
                    "will copy the source token.")
+    group.add('--prevent_unk_token', '-prevent_unk_token',
+              type=bool, default=False,
+              help="Prevent unk token use by setting unk proba to 0")
     group.add('--phrase_table', '-phrase_table', type=str, default="",
               help="If phrase_table is provided (with replace_unk), it will "
                    "look up the identified source token and give the "

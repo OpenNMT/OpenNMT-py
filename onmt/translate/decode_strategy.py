@@ -11,6 +11,7 @@ class DecodeStrategy(object):
         pad (int): Magic integer in output vocab.
         bos (int): Magic integer in output vocab.
         eos (int): Magic integer in output vocab.
+        unk (int): Magic integer in output vocab.
         batch_size (int): Current batch size.
         parallel_paths (int): Decoding strategies like beam search
             use parallel paths. Each batch is repeated ``parallel_paths``
@@ -20,6 +21,7 @@ class DecodeStrategy(object):
         max_length (int): Longest acceptable sequence, not counting
             begin-of-sentence (presumably there has been no EOS
             yet if max_length is used as a cutoff).
+        prevent_unk_token (Boolean): Either unk token is forbidden
         block_ngram_repeat (int): Block beams where
             ``block_ngram_repeat``-grams repeat.
         exclusion_tokens (set[int]): If a gram contains any of these
@@ -31,6 +33,7 @@ class DecodeStrategy(object):
         pad (int): See above.
         bos (int): See above.
         eos (int): See above.
+        unk (int): See above.
         predictions (list[list[LongTensor]]): For each batch, holds a
             list of beam prediction sequences.
         scores (list[list[FloatTensor]]): For each batch, holds a
@@ -53,20 +56,23 @@ class DecodeStrategy(object):
             is the (max) length of the pre-fixed prediction.
         min_length (int): See above.
         max_length (int): See above.
+        prevent_unk_token (Boolean): See above.
         block_ngram_repeat (int): See above.
         exclusion_tokens (set[int]): See above.
         return_attention (bool): See above.
         done (bool): See above.
     """
 
-    def __init__(self, pad, bos, eos, batch_size, parallel_paths,
+    def __init__(self, pad, bos, eos, unk, batch_size, parallel_paths,
                  global_scorer, min_length, block_ngram_repeat,
-                 exclusion_tokens, return_attention, max_length):
+                 exclusion_tokens, return_attention, max_length,
+                 prevent_unk_token):
 
         # magic indices
         self.pad = pad
         self.bos = bos
         self.eos = eos
+        self.unk = unk
 
         self.batch_size = batch_size
         self.parallel_paths = parallel_paths
@@ -82,6 +88,7 @@ class DecodeStrategy(object):
 
         self.min_length = min_length
         self.max_length = max_length
+        self.prevent_unk_token = prevent_unk_token
 
         self.block_ngram_repeat = block_ngram_repeat
         n_paths = batch_size * parallel_paths
@@ -152,6 +159,10 @@ class DecodeStrategy(object):
     def ensure_min_length(self, log_probs):
         if len(self) <= self.min_length:
             log_probs[:, self.eos] = -1e20
+
+    def ensure_unk_removed(self, log_probs):
+        if self.prevent_unk_token:
+            log_probs[:, self.unk] = -1e20
 
     def ensure_max_length(self):
         # add one to account for BOS. Don't account for EOS because hitting

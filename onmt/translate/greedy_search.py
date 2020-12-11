@@ -104,10 +104,12 @@ class GreedySearch(DecodeStrategy):
         pad (int): See base.
         bos (int): See base.
         eos (int): See base.
+        unk (int): See base.
         batch_size (int): See base.
         global_scorer (onmt.translate.GNMTGlobalScorer): Scorer instance.
         min_length (int): See base.
         max_length (int): See base.
+        prevent_unk_token (Boolean): See base.
         block_ngram_repeat (int): See base.
         exclusion_tokens (set[int]): See base.
         return_attention (bool): See base.
@@ -121,14 +123,15 @@ class GreedySearch(DecodeStrategy):
         beam_size (int): Number of beams to use.
     """
 
-    def __init__(self, pad, bos, eos, batch_size, global_scorer, min_length,
-                 block_ngram_repeat, exclusion_tokens, return_attention,
-                 max_length, sampling_temp, keep_topk, keep_top_p=0,
-                 beam_size=1):
+    def __init__(self, pad, bos, eos, unk, batch_size, global_scorer,
+                 min_length, block_ngram_repeat, exclusion_tokens,
+                 return_attention, max_length, sampling_temp, keep_topk,
+                 keep_top_p, beam_size, prevent_unk_token):
         assert block_ngram_repeat == 0
         super(GreedySearch, self).__init__(
-            pad, bos, eos, batch_size, beam_size, global_scorer, min_length,
-            block_ngram_repeat, exclusion_tokens, return_attention, max_length)
+            pad, bos, eos, unk, batch_size, beam_size, global_scorer,
+            min_length, block_ngram_repeat, exclusion_tokens,
+            return_attention, max_length, prevent_unk_token)
         self.sampling_temp = sampling_temp
         self.keep_topk = keep_topk
         self.keep_top_p = keep_top_p
@@ -219,7 +222,7 @@ class GreedySearch(DecodeStrategy):
         finished_batches = self.is_finished.view(-1).nonzero(as_tuple=False)
         step = len(self)
         length_penalty = self.global_scorer.length_penalty(
-            step + 1, alpha=self.global_scorer.alpha)
+            step, alpha=self.global_scorer.alpha)
 
         for b in finished_batches.view(-1):
             b_orig = self.original_batch_idx[b]
