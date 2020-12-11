@@ -192,7 +192,6 @@ jobs:
           -verbose \
           -batch_size 10 \
           -beam_size 10 \
-          -decoding_strategy beam_search \
           -tgt data/morph/tgt.valid \
           -out /tmp/trans
         diff data/morph/tgt.valid /tmp/trans && rm /tmp/trans
@@ -224,7 +223,6 @@ jobs:
           -src data/data_lm/src-gen.txt \
           -verbose -batch_size 10 \
           -beam_size 10 \
-          -decoding_strategy beam_search \
           -out /tmp/gen
         diff data/data_lm/gen-beam-sol.txt /tmp/gen && rm /tmp/gen
     - name: Test LM generation with random sampling
@@ -260,6 +258,7 @@ jobs:
           -random_sampling_topk=50 \
           -random_sampling_top_p=0.95 \
           -random_sampling_temp=1 \
+          -length_penalty=avg \
           -out /tmp/gen
         diff data/data_lm/gen-sampling-beams-sol.txt /tmp/gen && rm /tmp/gen
     - name: Test extract_vocabulary tool

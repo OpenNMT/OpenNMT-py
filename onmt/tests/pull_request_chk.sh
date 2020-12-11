@@ -219,7 +219,7 @@ echo -n "  [+] Testing NMT translation w/ Beam search..."
 ${PYTHON} translate.py -model ${TEST_DIR}/test_model2.pt  \
             -src ${DATA_DIR}/morph/src.valid   \
             -verbose -batch_size 10     \
-            -beam_size 10 -decoding_strategy beam_search \
+            -beam_size 10 \
             -tgt ${DATA_DIR}/morph/tgt.valid   \
             -out $TMP_OUT_DIR/trans_beam  >> ${LOG_FILE} 2>&1
 diff ${DATA_DIR}/morph/tgt.valid $TMP_OUT_DIR/trans_beam
@@ -253,7 +253,7 @@ echo -n "  [+] Testing LM generation w/ Beam search..."
 ${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
             -src ${DATA_DIR}/data_lm/src-gen.txt   \
             -verbose -batch_size 10     \
-            -beam_size 10 -decoding_strategy beam_search \
+            -beam_size 10 \
             -out $TMP_OUT_DIR/gen_beam  >> ${LOG_FILE} 2>&1
 diff ${DATA_DIR}/data_lm/gen-beam-sol.txt $TMP_OUT_DIR/gen_beam
 [ "$?" -eq 0 ] || error_exit
@@ -298,6 +298,7 @@ ${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
             -random_sampling_topk=50    \
             -random_sampling_top_p=0.95    \
             -random_sampling_temp=1    \
+            -length_penalty=avg \
             -out $TMP_OUT_DIR/gen_sampling  >> ${LOG_FILE} 2>&1
 diff ${DATA_DIR}/data_lm/gen-sampling-beams-sol.txt $TMP_OUT_DIR/gen_sampling
 [ "$?" -eq 0 ] || error_exit

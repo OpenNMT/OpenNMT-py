@@ -105,6 +105,7 @@ class GreedySearch(DecodeStrategy):
         bos (int): See base.
         eos (int): See base.
         batch_size (int): See base.
+        global_scorer (onmt.translate.GNMTGlobalScorer): Scorer instance.
         min_length (int): See base.
         max_length (int): See base.
         block_ngram_repeat (int): See base.
@@ -115,15 +116,18 @@ class GreedySearch(DecodeStrategy):
             :func:`~onmt.translate.greedy_search.sample_with_temperature()`.
         keep_topk (int): See
             :func:`~onmt.translate.greedy_search.sample_with_temperature()`.
+        keep_top_p (float): See
+            :func:`~onmt.translate.greedy_search.sample_with_temperature()`.
+        beam_size (int): Number of beams to use.
     """
 
-    def __init__(self, pad, bos, eos, batch_size, min_length,
+    def __init__(self, pad, bos, eos, batch_size, global_scorer, min_length,
                  block_ngram_repeat, exclusion_tokens, return_attention,
                  max_length, sampling_temp, keep_topk, keep_top_p=0,
                  beam_size=1):
         assert block_ngram_repeat == 0
         super(GreedySearch, self).__init__(
-            pad, bos, eos, batch_size, beam_size, min_length,
+            pad, bos, eos, batch_size, beam_size, global_scorer, min_length,
             block_ngram_repeat, exclusion_tokens, return_attention, max_length)
         self.sampling_temp = sampling_temp
         self.keep_topk = keep_topk
@@ -146,6 +150,8 @@ class GreedySearch(DecodeStrategy):
             self.batch_size*self.beam_size, dtype=torch.long, device=device)
         self.original_batch_idx = fn_map_state(torch.arange(
             self.batch_size, dtype=torch.long, device=device), dim=0)
+        self.beams_scores = torch.zeros((self.batch_size*self.beam_size, 1),
+                                        dtype=torch.float, device=device)
         return fn_map_state, memory_bank, self.memory_lengths, src_map
 
     @property
@@ -190,10 +196,12 @@ class GreedySearch(DecodeStrategy):
         """
 
         self.align_select_indices()
+
         self.ensure_min_length(log_probs)
         self.block_ngram_repeats(log_probs)
 
         topk_ids, self.topk_scores = self._pick(log_probs)
+        self.beams_scores += self.topk_scores
 
         self.is_finished = topk_ids.eq(self.eos)
 
@@ -209,18 +217,31 @@ class GreedySearch(DecodeStrategy):
         """Finalize scores and predictions."""
         # shape: (sum(~ self.is_finished), 1)
         finished_batches = self.is_finished.view(-1).nonzero(as_tuple=False)
+        step = len(self)
+        length_penalty = self.global_scorer.length_penalty(
+            step + 1, alpha=self.global_scorer.alpha)
+
         for b in finished_batches.view(-1):
             b_orig = self.original_batch_idx[b]
-            self.scores[b_orig].append(self.topk_scores[b, 0])
-            self.predictions[b_orig].append(self.alive_seq[b, 1:])
-            self.attention[b_orig].append(
+            score = self.beams_scores[b, 0]/length_penalty
+            pred = self.alive_seq[b, 1:]
+            attention = (
                 self.alive_attn[:, b, :self.memory_lengths[b]]
                 if self.alive_attn is not None else [])
+            self.hypotheses[b_orig].append((score, pred, attention))
         self.done = self.is_finished.all()
         if self.done:
+            for b in range(self.batch_size):
+                best_hyp = sorted(
+                    self.hypotheses[b], key=lambda x: x[0], reverse=True)
+                for score, pred, attn in best_hyp:
+                    self.scores[b].append(score)
+                    self.predictions[b].append(pred)
+                    self.attention[b].append(attn)
             return
         is_alive = ~self.is_finished.view(-1)
         self.alive_seq = self.alive_seq[is_alive]
+        self.beams_scores = self.beams_scores[is_alive]
         if self.alive_attn is not None:
             self.alive_attn = self.alive_attn[:, is_alive]
         self.select_indices = is_alive.nonzero(as_tuple=False).view(-1)

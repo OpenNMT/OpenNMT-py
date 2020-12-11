@@ -5,7 +5,7 @@ import configargparse
 
 from onmt.models.sru import CheckSRU
 from onmt.transforms import AVAILABLE_TRANSFORMS
-from onmt.constants import ModelTask, DecodingStrategy
+from onmt.constants import ModelTask
 
 
 def config_opts(parser):
@@ -627,15 +627,6 @@ def train_opts(parser):
 
 
 def _add_decoding_opts(parser):
-    group = parser.add_argument_group('Decoding')
-    group.add('--decoding_strategy', '-decoding_strategy',
-              default=DecodingStrategy.SAMPLING,
-              choices=[DecodingStrategy.SAMPLING,
-                       DecodingStrategy.BEAM_SEARCH],
-              help="Choose between sampling (greedy/top-k/top-p) or"
-                   " optimal (beam search) decoding strategy")
-    group.add('--beam_size', '-beam_size', type=int, default=5,
-              help='Beam size')
 
     group = parser.add_argument_group('Decoding tricks')
     group.add('--block_ngram_repeat', '-block_ngram_repeat',
@@ -659,10 +650,12 @@ def _add_decoding_opts(parser):
                    "corresponding target token. If it is not provided "
                    "(or the identified source token does not exist in "
                    "the table), then it will copy the source token.")
+    group.add('--beam_size', '-beam_size', type=int, default=5,
+              help='Beam size')
 
     group = parser.add_argument_group('Random Sampling')
     group.add('--random_sampling_topk', '-random_sampling_topk',
-              default=1, type=int,
+              default=0, type=int,
               help="Set this to -1 to do random sampling from full "
                    "distribution. Set this to value k>1 to do random "
                    "sampling restricted to the k most likely next tokens. "

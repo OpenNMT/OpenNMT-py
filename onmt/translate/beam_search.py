@@ -58,17 +58,13 @@ class BeamSearchBase(DecodeStrategy):
                  block_ngram_repeat, exclusion_tokens,
                  stepwise_penalty, ratio):
         super(BeamSearchBase, self).__init__(
-            pad, bos, eos, batch_size, beam_size, min_length,
+            pad, bos, eos, batch_size, beam_size, global_scorer, min_length,
             block_ngram_repeat, exclusion_tokens, return_attention,
             max_length)
         # beam parameters
-        self.global_scorer = global_scorer
         self.beam_size = beam_size
         self.n_best = n_best
         self.ratio = ratio
-
-        # result caching
-        self.hypotheses = [[] for _ in range(batch_size)]
 
         # beam state
         self.top_beam_finished = torch.zeros([batch_size], dtype=torch.uint8)

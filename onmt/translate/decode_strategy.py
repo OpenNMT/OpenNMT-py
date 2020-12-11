@@ -60,8 +60,8 @@ class DecodeStrategy(object):
     """
 
     def __init__(self, pad, bos, eos, batch_size, parallel_paths,
-                 min_length, block_ngram_repeat, exclusion_tokens,
-                 return_attention, max_length):
+                 global_scorer, min_length, block_ngram_repeat,
+                 exclusion_tokens, return_attention, max_length):
 
         # magic indices
         self.pad = pad
@@ -70,10 +70,13 @@ class DecodeStrategy(object):
 
         self.batch_size = batch_size
         self.parallel_paths = parallel_paths
+        self.global_scorer = global_scorer
+
         # result caching
         self.predictions = [[] for _ in range(batch_size)]
         self.scores = [[] for _ in range(batch_size)]
         self.attention = [[] for _ in range(batch_size)]
+        self.hypotheses = [[] for _ in range(batch_size)]
 
         self.alive_attn = None
 

@@ -18,7 +18,7 @@ from onmt.translate.greedy_search import GreedySearch, GreedySearchLM
 from onmt.utils.misc import tile, set_random_seed, report_matrix
 from onmt.utils.alignment import extract_alignment, build_align_pharaoh
 from onmt.modules.copy_generator import collapse_copy_scores
-from onmt.constants import ModelTask, DecodingStrategy
+from onmt.constants import ModelTask
 
 
 def build_translator(opt, report_score=True, logger=None, out_file=None):
@@ -152,7 +152,6 @@ class Inference(object):
         report_score=True,
         logger=None,
         seed=-1,
-        decoding_strategy=DecodingStrategy.SAMPLING
     ):
         self.model = model
         self.fields = fields
@@ -175,7 +174,6 @@ class Inference(object):
         self.n_best = n_best
         self.max_length = max_length
 
-        self.decoding_strategy = decoding_strategy
         self.beam_size = beam_size
         self.random_sampling_temp = random_sampling_temp
         self.sample_from_topk = random_sampling_topk
@@ -298,7 +296,6 @@ class Inference(object):
             report_score=report_score,
             logger=logger,
             seed=opt.seed,
-            decoding_strategy=opt.decoding_strategy,
         )
 
     def _log(self, msg):
@@ -718,12 +715,13 @@ class Translator(Inference):
     def translate_batch(self, batch, src_vocabs, attn_debug):
         """Translate a batch of sentences."""
         with torch.no_grad():
-            if self.decoding_strategy == DecodingStrategy.SAMPLING:
+            if self.sample_from_topk != 0 or self.sample_from_top_p != 0:
                 decode_strategy = GreedySearch(
                     pad=self._tgt_pad_idx,
                     bos=self._tgt_bos_idx,
                     eos=self._tgt_eos_idx,
                     batch_size=batch.batch_size,
+                    global_scorer=self.global_scorer,
                     min_length=self.min_length,
                     max_length=self.max_length,
                     block_ngram_repeat=self.block_ngram_repeat,
@@ -734,7 +732,7 @@ class Translator(Inference):
                     keep_top_p=self.sample_from_top_p,
                     beam_size=self.beam_size,
                 )
-            elif self.decoding_strategy == DecodingStrategy.BEAM_SEARCH:
+            else:
                 # TODO: support these blacklisted features
                 assert not self.dump_beam
                 decode_strategy = BeamSearch(
@@ -753,11 +751,6 @@ class Translator(Inference):
                     stepwise_penalty=self.stepwise_penalty,
                     ratio=self.ratio,
                 )
-            else:
-                raise ValueError(f"decoding strategy {self.decoding_strategy}"
-                                 " has no decode strategy. Available decoding"
-                                 f" strategies: {DecodingStrategy.SAMPLING},"
-                                 f" {DecodingStrategy.BEAM_SEARCH}")
             return self._translate_batch_with_strategy(
                 batch, src_vocabs, decode_strategy
             )
@@ -957,12 +950,13 @@ class GeneratorLM(Inference):
     def translate_batch(self, batch, src_vocabs, attn_debug):
         """Translate a batch of sentences."""
         with torch.no_grad():
-            if self.decoding_strategy == DecodingStrategy.SAMPLING:
+            if self.sample_from_topk != 0 or self.sample_from_top_p != 0:
                 decode_strategy = GreedySearchLM(
                     pad=self._tgt_pad_idx,
                     bos=self._tgt_bos_idx,
                     eos=self._tgt_eos_idx,
                     batch_size=batch.batch_size,
+                    global_scorer=self.global_scorer,
                     min_length=self.min_length,
                     max_length=self.max_length,
                     block_ngram_repeat=self.block_ngram_repeat,
@@ -973,7 +967,7 @@ class GeneratorLM(Inference):
                     keep_top_p=self.sample_from_top_p,
                     beam_size=self.beam_size,
                 )
-            elif self.decoding_strategy == DecodingStrategy.BEAM_SEARCH:
+            else:
                 # TODO: support these blacklisted features
                 assert not self.dump_beam
                 decode_strategy = BeamSearchLM(
@@ -992,11 +986,6 @@ class GeneratorLM(Inference):
                     stepwise_penalty=self.stepwise_penalty,
                     ratio=self.ratio,
                 )
-            else:
-                raise ValueError(f"decoding strategy {self.decoding_strategy}"
-                                 " has no decode strategy. Available decoding"
-                                 f" strategies: {DecodingStrategy.SAMPLING},"
-                                 f" {DecodingStrategy.BEAM_SEARCH}")
             return self._translate_batch_with_strategy(
                 batch, src_vocabs, decode_strategy
             )
