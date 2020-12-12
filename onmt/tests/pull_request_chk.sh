@@ -233,8 +233,8 @@ ${PYTHON} translate.py -model ${TEST_DIR}/test_model2.pt  \
             -verbose -batch_size 10     \
             -beam_size 1                \
             -seed 1                     \
-            -random_sampling_topk=-1    \
-            -random_sampling_temp=0.0001    \
+            -random_sampling_topk -1    \
+            -random_sampling_temp 0.0001    \
             -tgt ${DATA_DIR}/morph/tgt.valid   \
             -out $TMP_OUT_DIR/trans_sampling  >> ${LOG_FILE} 2>&1
 diff ${DATA_DIR}/morph/tgt.valid $TMP_OUT_DIR/trans_sampling
@@ -266,8 +266,8 @@ ${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
             -verbose -batch_size 10     \
             -beam_size 1                \
             -seed 1                     \
-            -random_sampling_topk=-1    \
-            -random_sampling_temp=0.0001    \
+            -random_sampling_topk -1    \
+            -random_sampling_temp 0.0001    \
             -out $TMP_OUT_DIR/gen_sampling  >> ${LOG_FILE} 2>&1
 diff ${DATA_DIR}/data_lm/gen-sampling-sol.txt $TMP_OUT_DIR/gen_sampling
 [ "$?" -eq 0 ] || error_exit
@@ -280,9 +280,9 @@ ${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
             -verbose -batch_size 10     \
             -beam_size 1                \
             -seed 1                     \
-            -random_sampling_topk=-1    \
-            -random_sampling_top_p=0.95    \
-            -random_sampling_temp=1    \
+            -random_sampling_topk -1    \
+            -random_sampling_top_p 0.95    \
+            -random_sampling_temp 1    \
             -out $TMP_OUT_DIR/gen_sampling  >> ${LOG_FILE} 2>&1
 diff ${DATA_DIR}/data_lm/gen-nucleus-sampling-sol.txt $TMP_OUT_DIR/gen_sampling
 [ "$?" -eq 0 ] || error_exit
@@ -295,10 +295,10 @@ ${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
             -verbose -batch_size 10     \
             -beam_size 10                \
             -seed 1                     \
-            -random_sampling_topk=50    \
-            -random_sampling_top_p=0.95    \
-            -random_sampling_temp=1    \
-            -length_penalty=avg \
+            -random_sampling_topk 50    \
+            -random_sampling_top_p 0.95    \
+            -random_sampling_temp 1    \
+            -length_penalty avg \
             -out $TMP_OUT_DIR/gen_sampling  >> ${LOG_FILE} 2>&1
 diff ${DATA_DIR}/data_lm/gen-sampling-beams-sol.txt $TMP_OUT_DIR/gen_sampling
 [ "$?" -eq 0 ] || error_exit
