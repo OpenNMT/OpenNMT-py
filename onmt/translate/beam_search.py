@@ -57,11 +57,11 @@ class BeamSearchBase(DecodeStrategy):
     def __init__(self, beam_size, batch_size, pad, bos, eos, unk, n_best,
                  global_scorer, min_length, max_length, return_attention,
                  block_ngram_repeat, exclusion_tokens, stepwise_penalty,
-                 ratio, prevent_unk_token):
+                 ratio, ban_unk_token):
         super(BeamSearchBase, self).__init__(
             pad, bos, eos, unk, batch_size, beam_size, global_scorer,
             min_length, block_ngram_repeat, exclusion_tokens,
-            return_attention, max_length, prevent_unk_token)
+            return_attention, max_length, ban_unk_token)
         # beam parameters
         self.beam_size = beam_size
         self.n_best = n_best
@@ -251,6 +251,7 @@ class BeamSearchBase(DecodeStrategy):
         # force the output to be longer than self.min_length
         step = len(self)
         self.ensure_min_length(log_probs)
+        self.ensure_unk_removed(log_probs)
 
         # Multiply probs by the beam probability.
         log_probs += self.topk_log_probs.view(_B * self.beam_size, 1)

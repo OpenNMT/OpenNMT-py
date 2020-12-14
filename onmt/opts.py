@@ -644,8 +644,8 @@ def _add_decoding_opts(parser):
                    "target token. If it is not provided (or the identified "
                    "source token does not exist in the table), then it "
                    "will copy the source token.")
-    group.add('--prevent_unk_token', '-prevent_unk_token',
-              type=bool, default=False,
+    group.add('--ban_unk_token', '-ban_unk_token',
+              action="store_true",
               help="Prevent unk token use by setting unk proba to 0")
     group.add('--phrase_table', '-phrase_table', type=str, default="",
               help="If phrase_table is provided (with replace_unk), it will "
@@ -675,7 +675,7 @@ def _add_decoding_opts(parser):
               help="If doing random sampling, divide the logits by "
                    "this before computing softmax during decoding.")
     group.add('--always_sample_eos', '-always_sample_eos',
-              default=False, type=bool,
+              action="store_true",
               help="Whether to keep eos among sampled from token list")
     _add_reproducibility_opts(parser)
 

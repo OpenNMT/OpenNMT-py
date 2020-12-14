@@ -140,7 +140,7 @@ class Inference(object):
         block_ngram_repeat=0,
         ignore_when_blocking=frozenset(),
         replace_unk=False,
-        prevent_unk_token=False,
+        ban_unk_token=False,
         always_sample_eos=False,
         tgt_prefix=False,
         phrase_table="",
@@ -182,7 +182,7 @@ class Inference(object):
         self.sample_from_top_p = random_sampling_top_p
 
         self.min_length = min_length
-        self.prevent_unk_token = prevent_unk_token
+        self.ban_unk_token = ban_unk_token
         self.always_sample_eos = always_sample_eos
         self.ratio = ratio
         self.stepwise_penalty = stepwise_penalty
@@ -288,7 +288,7 @@ class Inference(object):
             block_ngram_repeat=opt.block_ngram_repeat,
             ignore_when_blocking=set(opt.ignore_when_blocking),
             replace_unk=opt.replace_unk,
-            prevent_unk_token=opt.prevent_unk_token,
+            ban_unk_token=opt.ban_unk_token,
             always_sample_eos=opt.always_sample_eos,
             tgt_prefix=opt.tgt_prefix,
             phrase_table=opt.phrase_table,
@@ -738,7 +738,7 @@ class Translator(Inference):
                     keep_topk=self.sample_from_topk,
                     keep_top_p=self.sample_from_top_p,
                     beam_size=self.beam_size,
-                    prevent_unk_token=self.prevent_unk_token,
+                    ban_unk_token=self.ban_unk_token,
                     always_sample_eos=self.always_sample_eos,
                 )
             else:
@@ -760,7 +760,7 @@ class Translator(Inference):
                     exclusion_tokens=self._exclusion_idxs,
                     stepwise_penalty=self.stepwise_penalty,
                     ratio=self.ratio,
-                    prevent_unk_token=self.prevent_unk_token,
+                    ban_unk_token=self.ban_unk_token,
                 )
             return self._translate_batch_with_strategy(
                 batch, src_vocabs, decode_strategy
@@ -978,7 +978,7 @@ class GeneratorLM(Inference):
                     keep_topk=self.sample_from_topk,
                     keep_top_p=self.sample_from_top_p,
                     beam_size=self.beam_size,
-                    prevent_unk_token=self.prevent_unk_token,
+                    ban_unk_token=self.ban_unk_token,
                     always_sample_eos=self.always_sample_eos,
                 )
             else:
@@ -1000,7 +1000,7 @@ class GeneratorLM(Inference):
                     exclusion_tokens=self._exclusion_idxs,
                     stepwise_penalty=self.stepwise_penalty,
                     ratio=self.ratio,
-                    prevent_unk_token=self.prevent_unk_token,
+                    ban_unk_token=self.ban_unk_token,
                 )
             return self._translate_batch_with_strategy(
                 batch, src_vocabs, decode_strategy

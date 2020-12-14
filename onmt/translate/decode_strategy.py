@@ -21,7 +21,7 @@ class DecodeStrategy(object):
         max_length (int): Longest acceptable sequence, not counting
             begin-of-sentence (presumably there has been no EOS
             yet if max_length is used as a cutoff).
-        prevent_unk_token (Boolean): Whether unk token is forbidden
+        ban_unk_token (Boolean): Whether unk token is forbidden
         block_ngram_repeat (int): Block beams where
             ``block_ngram_repeat``-grams repeat.
         exclusion_tokens (set[int]): If a gram contains any of these
@@ -56,7 +56,7 @@ class DecodeStrategy(object):
             is the (max) length of the pre-fixed prediction.
         min_length (int): See above.
         max_length (int): See above.
-        prevent_unk_token (Boolean): See above.
+        ban_unk_token (Boolean): See above.
         block_ngram_repeat (int): See above.
         exclusion_tokens (set[int]): See above.
         return_attention (bool): See above.
@@ -66,7 +66,7 @@ class DecodeStrategy(object):
     def __init__(self, pad, bos, eos, unk, batch_size, parallel_paths,
                  global_scorer, min_length, block_ngram_repeat,
                  exclusion_tokens, return_attention, max_length,
-                 prevent_unk_token):
+                 ban_unk_token):
 
         # magic indices
         self.pad = pad
@@ -88,7 +88,7 @@ class DecodeStrategy(object):
 
         self.min_length = min_length
         self.max_length = max_length
-        self.prevent_unk_token = prevent_unk_token
+        self.ban_unk_token = ban_unk_token
 
         self.block_ngram_repeat = block_ngram_repeat
         n_paths = batch_size * parallel_paths
@@ -161,7 +161,7 @@ class DecodeStrategy(object):
             log_probs[:, self.eos] = -1e20
 
     def ensure_unk_removed(self, log_probs):
-        if self.prevent_unk_token:
+        if self.ban_unk_token:
             log_probs[:, self.unk] = -1e20
 
     def ensure_max_length(self):

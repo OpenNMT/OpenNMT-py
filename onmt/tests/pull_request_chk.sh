@@ -268,6 +268,7 @@ ${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
             -seed 1                     \
             -random_sampling_topk -1    \
             -random_sampling_temp 0.0001    \
+            -ban_unk_token \
             -out $TMP_OUT_DIR/gen_sampling  >> ${LOG_FILE} 2>&1
 diff ${DATA_DIR}/data_lm/gen-sampling-sol.txt $TMP_OUT_DIR/gen_sampling
 [ "$?" -eq 0 ] || error_exit

@@ -117,7 +117,7 @@ class GreedySearch(DecodeStrategy):
         global_scorer (onmt.translate.GNMTGlobalScorer): Scorer instance.
         min_length (int): See base.
         max_length (int): See base.
-        prevent_unk_token (Boolean): See base.
+        ban_unk_token (Boolean): See base.
         block_ngram_repeat (int): See base.
         exclusion_tokens (set[int]): See base.
         return_attention (bool): See base.
@@ -134,12 +134,12 @@ class GreedySearch(DecodeStrategy):
     def __init__(self, pad, bos, eos, unk, batch_size, global_scorer,
                  min_length, block_ngram_repeat, exclusion_tokens,
                  return_attention, max_length, sampling_temp, keep_topk,
-                 keep_top_p, beam_size, prevent_unk_token, always_sample_eos):
+                 keep_top_p, beam_size, ban_unk_token, always_sample_eos):
         assert block_ngram_repeat == 0
         super(GreedySearch, self).__init__(
             pad, bos, eos, unk, batch_size, beam_size, global_scorer,
             min_length, block_ngram_repeat, exclusion_tokens,
-            return_attention, max_length, prevent_unk_token)
+            return_attention, max_length, ban_unk_token)
         self.sampling_temp = sampling_temp
         self.keep_topk = keep_topk
         self.keep_top_p = keep_top_p
@@ -211,6 +211,7 @@ class GreedySearch(DecodeStrategy):
         self.align_select_indices()
 
         self.ensure_min_length(log_probs)
+        self.ensure_unk_removed(log_probs)
         self.block_ngram_repeats(log_probs)
 
         topk_ids, self.topk_scores = self._pick(log_probs)
