@@ -133,7 +133,7 @@ class Inference(object):
         ratio=0.0,
         beam_size=30,
         random_sampling_topk=1,
-        random_sampling_top_p=0,
+        random_sampling_topp=0,
         random_sampling_temp=1,
         stepwise_penalty=None,
         dump_beam=False,
@@ -179,7 +179,7 @@ class Inference(object):
         self.beam_size = beam_size
         self.random_sampling_temp = random_sampling_temp
         self.sample_from_topk = random_sampling_topk
-        self.sample_from_top_p = random_sampling_top_p
+        self.sample_from_topp = random_sampling_topp
 
         self.min_length = min_length
         self.ban_unk_token = ban_unk_token
@@ -281,7 +281,7 @@ class Inference(object):
             ratio=opt.ratio,
             beam_size=opt.beam_size,
             random_sampling_topk=opt.random_sampling_topk,
-            random_sampling_top_p=opt.random_sampling_top_p,
+            random_sampling_topp=opt.random_sampling_topp,
             random_sampling_temp=opt.random_sampling_temp,
             stepwise_penalty=opt.stepwise_penalty,
             dump_beam=opt.dump_beam,
@@ -721,7 +721,7 @@ class Translator(Inference):
     def translate_batch(self, batch, src_vocabs, attn_debug):
         """Translate a batch of sentences."""
         with torch.no_grad():
-            if self.sample_from_topk != 0 or self.sample_from_top_p != 0:
+            if self.sample_from_topk != 0 or self.sample_from_topp != 0:
                 decode_strategy = GreedySearch(
                     pad=self._tgt_pad_idx,
                     bos=self._tgt_bos_idx,
@@ -736,7 +736,7 @@ class Translator(Inference):
                     return_attention=attn_debug or self.replace_unk,
                     sampling_temp=self.random_sampling_temp,
                     keep_topk=self.sample_from_topk,
-                    keep_top_p=self.sample_from_top_p,
+                    keep_topp=self.sample_from_topp,
                     beam_size=self.beam_size,
                     ban_unk_token=self.ban_unk_token,
                     always_sample_eos=self.always_sample_eos,
@@ -961,7 +961,7 @@ class GeneratorLM(Inference):
     def translate_batch(self, batch, src_vocabs, attn_debug):
         """Translate a batch of sentences."""
         with torch.no_grad():
-            if self.sample_from_topk != 0 or self.sample_from_top_p != 0:
+            if self.sample_from_topk != 0 or self.sample_from_topp != 0:
                 decode_strategy = GreedySearchLM(
                     pad=self._tgt_pad_idx,
                     bos=self._tgt_bos_idx,
@@ -976,7 +976,7 @@ class GeneratorLM(Inference):
                     return_attention=attn_debug or self.replace_unk,
                     sampling_temp=self.random_sampling_temp,
                     keep_topk=self.sample_from_topk,
-                    keep_top_p=self.sample_from_top_p,
+                    keep_topp=self.sample_from_topp,
                     beam_size=self.beam_size,
                     ban_unk_token=self.ban_unk_token,
                     always_sample_eos=self.always_sample_eos,

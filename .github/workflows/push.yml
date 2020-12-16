@@ -245,7 +245,7 @@ jobs:
           -beam_size 1 \
           -seed 1 \
           -random_sampling_topk -1 \
-          -random_sampling_top_p 0.95 \
+          -random_sampling_topp 0.95 \
           -random_sampling_temp 1 \
           -out /tmp/gen
         diff data/data_lm/gen-nucleus-sampling-sol.txt /tmp/gen && rm /tmp/gen
@@ -257,9 +257,12 @@ jobs:
           -beam_size 10 \
           -seed 1 \
           -random_sampling_topk 50 \
-          -random_sampling_top_p 0.95 \
+          -random_sampling_topp 0.95 \
           -random_sampling_temp 1 \
           -length_penalty avg \
+          -ban_unk_token \
+          -min_length 5 \
+          -always_sample_eos \
           -out /tmp/gen
         diff data/data_lm/gen-sampling-beams-sol.txt /tmp/gen && rm /tmp/gen
     - name: Test extract_vocabulary tool

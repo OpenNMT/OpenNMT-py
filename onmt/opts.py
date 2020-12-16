@@ -664,7 +664,7 @@ def _add_decoding_opts(parser):
                    "sampling restricted to the k most likely next tokens. "
                    "Set this to 1 to use argmax or for doing beam "
                    "search.")
-    group.add('--random_sampling_top_p', '-random_sampling_top_p',
+    group.add('--random_sampling_topp', '-random_sampling_topp',
               default=0, type=float,
               help="Probability for top-p/nucleus sampling. Restrict tokens"
                    " to the most likely until the cumulated probability is"

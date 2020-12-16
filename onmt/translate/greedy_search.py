@@ -4,7 +4,48 @@ import torch.nn.functional as F
 from onmt.translate.decode_strategy import DecodeStrategy
 
 
-def sample_with_temperature(logits, sampling_temp, keep_topk, keep_top_p,
+def sample_topp(logits, keep_topp, always_sample_eos, eos):
+    sorted_logits, sorted_indices = torch.sort(logits,
+                                               descending=True,
+                                               dim=1)
+
+    cumulative_probs = torch.cumsum(F.softmax(sorted_logits,
+                                              dim=-1), dim=-1)
+    sorted_indices_to_keep = cumulative_probs.lt(keep_topp)
+
+    # keep indices until overflowing p
+    cumsum_mask = sorted_indices_to_keep.cumsum(dim=1)
+    last_included = cumsum_mask[:, -1:]
+    last_included.clamp_(0, sorted_indices_to_keep.size()[1] - 1)
+    sorted_indices_to_keep = sorted_indices_to_keep.scatter_(
+        1, last_included, 1)
+
+    # Set all logits that are not in the top-p to -10000.
+    # This puts the probabilities close to 0.
+    keep_indices = sorted_indices_to_keep.scatter(
+                                1,
+                                sorted_indices,
+                                sorted_indices_to_keep,
+                                )
+    if always_sample_eos:
+        keep_indices[:, eos] = True
+    return logits.masked_fill(~keep_indices, -10000)
+
+
+def sample_topk(logits, keep_topk, always_sample_eos, eos):
+    top_values, _ = torch.topk(logits, keep_topk, dim=1)
+    kth_best = top_values[:, -1].view([-1, 1])
+    kth_best = kth_best.repeat([1, logits.shape[1]]).float()
+
+    # Set all logits that are not in the top-k to -10000.
+    # This puts the probabilities close to 0.
+    ignore = torch.lt(logits, kth_best)
+    if always_sample_eos:
+        ignore[:, eos] = False
+    return logits.masked_fill(ignore, -10000)
+
+
+def sample_with_temperature(logits, sampling_temp, keep_topk, keep_topp,
                             always_sample_eos, eos):
     """Select next tokens randomly from the top k possible next tokens.
 
@@ -22,7 +63,7 @@ def sample_with_temperature(logits, sampling_temp, keep_topk, keep_top_p,
             sampled.
         keep_topk (int): This many words could potentially be chosen. The
             other logits are set to have probability 0.
-        keep_top_p (float): Keep most likely words until the cumulated
+        keep_topp (float): Keep most likely words until the cumulated
             probability is greater than p. If used with keep_topk: both
             conditions will be applied
         always_sample_eos (bool): Whether to keep eos in list of tokens
@@ -46,54 +87,10 @@ def sample_with_temperature(logits, sampling_temp, keep_topk, keep_top_p,
             topk_scores /= sampling_temp
     else:
         logits = torch.div(logits, sampling_temp)
-        if keep_top_p > 0:
-            sorted_logits, sorted_indices = torch.sort(logits,
-                                                       descending=True,
-                                                       dim=1)
-
-            cumulative_probs = torch.cumsum(F.softmax(sorted_logits,
-                                                      dim=-1), dim=-1)
-            sorted_indices_to_keep = cumulative_probs < keep_top_p
-
-            # keep indices until overflowing p
-            nb_keep = torch.sum(sorted_indices_to_keep, dim=1)
-            underflown_indices = (nb_keep < sorted_indices_to_keep.shape[-1])
-            sorted_indices_to_keep[underflown_indices,
-                                   nb_keep[underflown_indices]] = 1
-
-            # Set all logits that are not in the top-p to -10000.
-            # This puts the probabilities close to 0.
-            keep_indices = torch.zeros(sorted_indices.shape, dtype=torch.bool,
-                                       device=logits.device).scatter(
-                                           1,
-                                           sorted_indices,
-                                           sorted_indices_to_keep,
-                                        )
-            if always_sample_eos:
-                keep_indices[:, eos] = True
-            logits = logits.masked_fill(~keep_indices, -10000)
-
+        if keep_topp > 0:
+            logits = sample_topp(logits, keep_topp, always_sample_eos, eos)
         if keep_topk > 0:
-            if keep_top_p > 0:
-                over_k_indices = (nb_keep+1 <= keep_topk)
-            else:
-                over_k_indices = torch.ones(logits.size(0),
-                                            device=logits.device,
-                                            dtype=torch.bool)
-            top_values, top_indices = torch.topk(logits[over_k_indices],
-                                                 keep_topk, dim=1)
-            kth_best = top_values[:, -1].view([-1, 1])
-            kth_best = kth_best.repeat([1, logits[over_k_indices].shape[1]]
-                                       ).float()
-
-            # Set all logits that are not in the top-k to -10000.
-            # This puts the probabilities close to 0.
-            ignore = torch.lt(logits[over_k_indices], kth_best)
-            if always_sample_eos:
-                ignore[:, eos] = False
-            logits[over_k_indices] = logits[over_k_indices].masked_fill(ignore,
-                                                                        -10000)
-
+            logits = sample_topk(logits, keep_topk, always_sample_eos, eos)
         dist = torch.distributions.Multinomial(
             logits=logits, total_count=1)
         topk_ids = torch.argmax(dist.sample(), dim=1, keepdim=True)
@@ -126,7 +123,7 @@ class GreedySearch(DecodeStrategy):
             :func:`~onmt.translate.greedy_search.sample_with_temperature()`.
         keep_topk (int): See
             :func:`~onmt.translate.greedy_search.sample_with_temperature()`.
-        keep_top_p (float): See
+        keep_topp (float): See
             :func:`~onmt.translate.greedy_search.sample_with_temperature()`.
         beam_size (int): Number of beams to use.
     """
@@ -134,7 +131,7 @@ class GreedySearch(DecodeStrategy):
     def __init__(self, pad, bos, eos, unk, batch_size, global_scorer,
                  min_length, block_ngram_repeat, exclusion_tokens,
                  return_attention, max_length, sampling_temp, keep_topk,
-                 keep_top_p, beam_size, ban_unk_token, always_sample_eos):
+                 keep_topp, beam_size, ban_unk_token, always_sample_eos):
         assert block_ngram_repeat == 0
         super(GreedySearch, self).__init__(
             pad, bos, eos, unk, batch_size, beam_size, global_scorer,
@@ -142,7 +139,7 @@ class GreedySearch(DecodeStrategy):
             return_attention, max_length, ban_unk_token)
         self.sampling_temp = sampling_temp
         self.keep_topk = keep_topk
-        self.keep_top_p = keep_top_p
+        self.keep_topp = keep_topp
         self.topk_scores = None
         self.beam_size = beam_size
         self.always_sample_eos = always_sample_eos
@@ -183,7 +180,7 @@ class GreedySearch(DecodeStrategy):
         # maybe fix some prediction at this step by modifying log_probs
         log_probs = self.target_prefixing(log_probs)
         topk_ids, topk_scores = sample_with_temperature(
-            log_probs, self.sampling_temp, self.keep_topk, self.keep_top_p,
+            log_probs, self.sampling_temp, self.keep_topk, self.keep_topp,
             self.always_sample_eos, self.eos)
         return topk_ids, topk_scores
 

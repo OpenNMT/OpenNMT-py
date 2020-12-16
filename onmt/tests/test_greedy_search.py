@@ -333,7 +333,7 @@ class TestGreedySearch(unittest.TestCase):
 
                 self.assertTrue(samp.done)
 
-    def test_returns_correct_scores_non_deterministic_top_p(self):
+    def test_returns_correct_scores_non_deterministic_topp(self):
         for batch_sz in [1, 13]:
             for temp in [1., 0.3]:
                 n_words = 100

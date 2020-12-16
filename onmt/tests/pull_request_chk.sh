@@ -282,7 +282,7 @@ ${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
             -beam_size 1                \
             -seed 1                     \
             -random_sampling_topk -1    \
-            -random_sampling_top_p 0.95    \
+            -random_sampling_topp 0.95    \
             -random_sampling_temp 1    \
             -out $TMP_OUT_DIR/gen_sampling  >> ${LOG_FILE} 2>&1
 diff ${DATA_DIR}/data_lm/gen-nucleus-sampling-sol.txt $TMP_OUT_DIR/gen_sampling
@@ -297,9 +297,12 @@ ${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
             -beam_size 10                \
             -seed 1                     \
             -random_sampling_topk 50    \
-            -random_sampling_top_p 0.95    \
+            -random_sampling_topp 0.95    \
             -random_sampling_temp 1    \
             -length_penalty avg \
+            -ban_unk_token \
+            -min_length 5 \
+            -always_sample_eos \
             -out $TMP_OUT_DIR/gen_sampling  >> ${LOG_FILE} 2>&1
 diff ${DATA_DIR}/data_lm/gen-sampling-beams-sol.txt $TMP_OUT_DIR/gen_sampling
 [ "$?" -eq 0 ] || error_exit
