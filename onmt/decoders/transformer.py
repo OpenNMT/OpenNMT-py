@@ -506,7 +506,6 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
 
         self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout)
         self.layer_norm_1 = nn.LayerNorm(d_model, eps=1e-6)
-        self.layer_norm_2 = nn.LayerNorm(d_model, eps=1e-6)
         self.drop = nn.Dropout(dropout)
         self.full_context_alignment = full_context_alignment
         self.alignment_heads = alignment_heads
@@ -569,11 +568,9 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
 
         output = self.drop(query) + inputs
 
-        output_feedforward = self.feed_forward(self.layer_norm_2(output))
+        output_feedforward = self.feed_forward(output)
 
-        output_norm = self.drop(output_feedforward) + output
-
-        return output_norm, attns
+        return output_feedforward, attns
 
     def update_dropout(self, dropout, attention_dropout):
         self.self_attn.update_dropout(attention_dropout)
