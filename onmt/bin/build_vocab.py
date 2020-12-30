@@ -40,7 +40,7 @@ def build_vocab_main(opts):
 
     def save_counter(counter, save_path):
         check_path(save_path, exist_ok=opts.overwrite, log=logger.warning)
-        with open(save_path, "w",encoding="utf8") as fo:
+        with open(save_path, "w", encoding="utf8") as fo:
             for tok, count in counter.most_common():
                 fo.write(tok + "\t" + str(count) + "\n")
 
