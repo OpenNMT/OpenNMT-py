@@ -30,7 +30,7 @@ setup(
         "tensorboard==2.3.0",
         "flask==1.1.2",
         "waitress==1.4.4",
-        "pyonmttok==1.22.1;platform_system=='Linux'",
+        "pyonmttok>=1.23,<2;platform_system=='Linux' or platform_system=='Darwin'",
         "pyyaml==5.3.1",
     ],
     entry_points={
