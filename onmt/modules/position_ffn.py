@@ -3,6 +3,12 @@
 import torch.nn as nn
 
 
+ACTIVATION_FUNCTIONS = {
+    "relu": nn.ReLU,
+    "gelu": nn.GELU,
+}
+
+
 class PositionwiseFeedForward(nn.Module):
     """ A two-layer Feed-Forward-Network with residual layer norm.
 
@@ -13,13 +19,13 @@ class PositionwiseFeedForward(nn.Module):
         dropout (float): dropout probability in :math:`[0, 1)`.
     """
 
-    def __init__(self, d_model, d_ff, dropout=0.1):
+    def __init__(self, d_model, d_ff, dropout=0.1, activation_fn="relu"):
         super(PositionwiseFeedForward, self).__init__()
         self.w_1 = nn.Linear(d_model, d_ff)
         self.w_2 = nn.Linear(d_ff, d_model)
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
         self.dropout_1 = nn.Dropout(dropout)
-        self.relu = nn.ReLU()
+        self.acctivation = ACTIVATION_FUNCTIONS[activation_fn]()
         self.dropout_2 = nn.Dropout(dropout)
 
     def forward(self, x):
@@ -32,7 +38,7 @@ class PositionwiseFeedForward(nn.Module):
             (FloatTensor): Output ``(batch_size, input_len, model_dim)``.
         """
 
-        inter = self.dropout_1(self.relu(self.w_1(self.layer_norm(x))))
+        inter = self.dropout_1(self.acctivation(self.w_1(self.layer_norm(x))))
         output = self.dropout_2(self.w_2(inter))
         return output + x
 

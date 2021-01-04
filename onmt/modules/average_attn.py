@@ -19,13 +19,15 @@ class AverageAttention(nn.Module):
        dropout (float): dropout parameter
     """
 
-    def __init__(self, model_dim, dropout=0.1, aan_useffn=False):
+    def __init__(self, model_dim, dropout=0.1, aan_useffn=False,
+                 activation_fn="relu"):
         self.model_dim = model_dim
         self.aan_useffn = aan_useffn
         super(AverageAttention, self).__init__()
         if aan_useffn:
             self.average_layer = PositionwiseFeedForward(model_dim, model_dim,
-                                                         dropout)
+                                                         dropout,
+                                                         activation_fn)
         self.gating_layer = nn.Linear(model_dim * 2, model_dim * 2)
 
     def cumulative_average_mask(self, batch_size, inputs_len, device):
