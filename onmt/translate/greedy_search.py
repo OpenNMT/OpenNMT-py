@@ -132,7 +132,6 @@ class GreedySearch(DecodeStrategy):
                  min_length, block_ngram_repeat, exclusion_tokens,
                  return_attention, max_length, sampling_temp, keep_topk,
                  keep_topp, beam_size, ban_unk_token, always_sample_eos):
-        assert block_ngram_repeat == 0
         super(GreedySearch, self).__init__(
             pad, bos, eos, unk, batch_size, beam_size, global_scorer,
             min_length, block_ngram_repeat, exclusion_tokens,
