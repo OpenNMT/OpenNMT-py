@@ -39,7 +39,7 @@ def main():
                         help="Quantization type for CT2 model.")
     opt = parser.parse_args()
 
-    model = torch.load(opt.model)
+    model = torch.load(opt.model, map_location=torch.device("cpu"))
     if opt.format == "pytorch":
         model["optim"] = None
         torch.save(model, opt.output)
