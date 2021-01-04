@@ -1,6 +1,6 @@
 sphinx==2.4.*
-sphinxcontrib.bibtex
-sphinxcontrib.mermaid
+sphinxcontrib.bibtex==1.0.0
+sphinxcontrib.mermaid==0.5.0
 sphinx-rtd-theme==0.4.*
 recommonmark==0.6.*
 sphinx-argparse==0.2.*

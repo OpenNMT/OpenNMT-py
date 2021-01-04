@@ -32,16 +32,12 @@
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 
-from recommonmark.parser import CommonMarkParser
 import sphinx_rtd_theme
 from recommonmark.transform import AutoStructify
 
-source_parsers = {
-    '.md': CommonMarkParser,
-}
-
 source_suffix = ['.rst', '.md']
-extensions = ['sphinx.ext.autodoc',
+extensions = ['recommonmark',
+              'sphinx.ext.autodoc',
               'sphinx.ext.mathjax',
               'sphinx.ext.viewcode',
               'sphinx.ext.coverage',
