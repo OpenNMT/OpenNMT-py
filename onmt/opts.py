@@ -655,7 +655,6 @@ def _add_decoding_opts(parser):
                    "the table), then it will copy the source token.")
 
     group = parser.add_argument_group('Beam Search')
-    # beam_size is also a Beam
     group.add('--min_length', '-min_length', type=int, default=0,
               help='Minimum prediction length')
     group.add('--max_length', '-max_length', type=int, default=100,
