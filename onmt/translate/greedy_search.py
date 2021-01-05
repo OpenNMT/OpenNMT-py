@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from onmt.translate.decode_strategy import DecodeStrategy
 
 
-def sample_topp(logits, keep_topp, always_sample_eos, eos):
+def sample_topp(logits, keep_topp):
     sorted_logits, sorted_indices = torch.sort(logits,
                                                descending=True,
                                                dim=1)
@@ -27,12 +27,10 @@ def sample_topp(logits, keep_topp, always_sample_eos, eos):
                                 sorted_indices,
                                 sorted_indices_to_keep,
                                 )
-    if always_sample_eos:
-        keep_indices[:, eos] = True
     return logits.masked_fill(~keep_indices, -10000)
 
 
-def sample_topk(logits, keep_topk, always_sample_eos, eos):
+def sample_topk(logits, keep_topk):
     top_values, _ = torch.topk(logits, keep_topk, dim=1)
     kth_best = top_values[:, -1].view([-1, 1])
     kth_best = kth_best.repeat([1, logits.shape[1]]).float()
@@ -40,13 +38,10 @@ def sample_topk(logits, keep_topk, always_sample_eos, eos):
     # Set all logits that are not in the top-k to -10000.
     # This puts the probabilities close to 0.
     ignore = torch.lt(logits, kth_best)
-    if always_sample_eos:
-        ignore[:, eos] = False
     return logits.masked_fill(ignore, -10000)
 
 
-def sample_with_temperature(logits, sampling_temp, keep_topk, keep_topp,
-                            always_sample_eos, eos):
+def sample_with_temperature(logits, sampling_temp, keep_topk, keep_topp):
     """Select next tokens randomly from the top k possible next tokens.
 
     Samples from a categorical distribution over the ``keep_topk`` words using
@@ -66,9 +61,6 @@ def sample_with_temperature(logits, sampling_temp, keep_topk, keep_topp,
         keep_topp (float): Keep most likely words until the cumulated
             probability is greater than p. If used with keep_topk: both
             conditions will be applied
-        always_sample_eos (bool): Whether to keep eos in list of tokens
-            to sample from
-        eos (int): eos index
 
     Returns:
         (LongTensor, FloatTensor):
@@ -88,9 +80,9 @@ def sample_with_temperature(logits, sampling_temp, keep_topk, keep_topp,
     else:
         logits = torch.div(logits, sampling_temp)
         if keep_topp > 0:
-            logits = sample_topp(logits, keep_topp, always_sample_eos, eos)
+            logits = sample_topp(logits, keep_topp)
         if keep_topk > 0:
-            logits = sample_topk(logits, keep_topk, always_sample_eos, eos)
+            logits = sample_topk(logits, keep_topk)
         dist = torch.distributions.Multinomial(
             logits=logits, total_count=1)
         topk_ids = torch.argmax(dist.sample(), dim=1, keepdim=True)
@@ -131,7 +123,7 @@ class GreedySearch(DecodeStrategy):
     def __init__(self, pad, bos, eos, unk, batch_size, global_scorer,
                  min_length, block_ngram_repeat, exclusion_tokens,
                  return_attention, max_length, sampling_temp, keep_topk,
-                 keep_topp, beam_size, ban_unk_token, always_sample_eos):
+                 keep_topp, beam_size, ban_unk_token):
         super(GreedySearch, self).__init__(
             pad, bos, eos, unk, batch_size, beam_size, global_scorer,
             min_length, block_ngram_repeat, exclusion_tokens,
@@ -141,7 +133,6 @@ class GreedySearch(DecodeStrategy):
         self.keep_topp = keep_topp
         self.topk_scores = None
         self.beam_size = beam_size
-        self.always_sample_eos = always_sample_eos
 
     def initialize(self, memory_bank, src_lengths, src_map=None, device=None,
                    target_prefix=None):
@@ -179,8 +170,7 @@ class GreedySearch(DecodeStrategy):
         # maybe fix some prediction at this step by modifying log_probs
         log_probs = self.target_prefixing(log_probs)
         topk_ids, topk_scores = sample_with_temperature(
-            log_probs, self.sampling_temp, self.keep_topk, self.keep_topp,
-            self.always_sample_eos, self.eos)
+            log_probs, self.sampling_temp, self.keep_topk, self.keep_topp)
         return topk_ids, topk_scores
 
     def align_select_indices(self):

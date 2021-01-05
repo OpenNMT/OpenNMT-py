@@ -262,7 +262,6 @@ jobs:
           -length_penalty avg \
           -ban_unk_token \
           -min_length 5 \
-          -always_sample_eos \
           -out /tmp/gen
         diff data/data_lm/gen-sampling-beams-sol.txt /tmp/gen && rm /tmp/gen
     - name: Test extract_vocabulary tool

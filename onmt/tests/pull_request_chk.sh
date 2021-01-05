@@ -302,7 +302,6 @@ ${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
             -length_penalty avg \
             -ban_unk_token \
             -min_length 5 \
-            -always_sample_eos \
             -out $TMP_OUT_DIR/gen_sampling  >> ${LOG_FILE} 2>&1
 diff ${DATA_DIR}/data_lm/gen-sampling-beams-sol.txt $TMP_OUT_DIR/gen_sampling
 [ "$?" -eq 0 ] || error_exit

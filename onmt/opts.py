@@ -646,15 +646,24 @@ def _add_decoding_opts(parser):
                    "will copy the source token.")
     group.add('--ban_unk_token', '-ban_unk_token',
               action="store_true",
-              help="Prevent unk token use by setting unk proba to 0")
+              help="Prevent unk token generation by setting unk proba to 0")
     group.add('--phrase_table', '-phrase_table', type=str, default="",
               help="If phrase_table is provided (with replace_unk), it will "
                    "look up the identified source token and give the "
                    "corresponding target token. If it is not provided "
                    "(or the identified source token does not exist in "
                    "the table), then it will copy the source token.")
-    group.add('--beam_size', '-beam_size', type=int, default=5,
-              help='Beam size')
+
+    group = parser.add_argument_group('Beam Search')
+    # beam_size is also a Beam
+    group.add('--min_length', '-min_length', type=int, default=0,
+              help='Minimum prediction length')
+    group.add('--max_length', '-max_length', type=int, default=100,
+              help='Maximum prediction length.')
+    group.add('--max_sent_length', '-max_sent_length', action=DeprecateAction,
+              help="Deprecated, use `-max_length` instead")
+    beam_size = group.add('--beam_size', '-beam_size', type=int, default=5,
+                          help='Beam size')
 
     group = parser.add_argument_group('Random Sampling')
     group.add('--random_sampling_topk', '-random_sampling_topk',
@@ -674,18 +683,8 @@ def _add_decoding_opts(parser):
               default=1., type=float,
               help="If doing random sampling, divide the logits by "
                    "this before computing softmax during decoding.")
-    group.add('--always_sample_eos', '-always_sample_eos',
-              action="store_true",
-              help="Whether to keep eos among sampled from token list")
+    group._group_actions.append(beam_size)
     _add_reproducibility_opts(parser)
-
-    group = parser.add_argument_group('Beam Search')
-    group.add('--min_length', '-min_length', type=int, default=0,
-              help='Minimum prediction length')
-    group.add('--max_length', '-max_length', type=int, default=100,
-              help='Maximum prediction length.')
-    group.add('--max_sent_length', '-max_sent_length', action=DeprecateAction,
-              help="Deprecated, use `-max_length` instead")
 
     # Alpha and Beta values for Google Length + Coverage penalty
     # Described here: https://arxiv.org/pdf/1609.08144.pdf, Section 7
