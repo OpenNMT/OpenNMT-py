@@ -339,7 +339,7 @@ class BARTNoiseTransform(Transform):
                   choices=["subword", "word", "span-poisson"],
                   help="Length of masking window to apply.")
         group.add("--poisson_lambda", "-poisson_lambda",
-                  type=float, default=0.0,
+                  type=float, default=3.0,
                   help="Lambda for Poisson distribution to sample span length "
                        "if `-mask_length` set to span-poisson.")
         group.add("--replace_length", "-replace_length",
