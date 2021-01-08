@@ -114,7 +114,7 @@ $my_python train.py -config data/lm_data.yaml -save_model /tmp/tmp \
  -attention_dropout 0.1 -heads 2 -position_encoding -param_init 0 -warmup_steps 100 \
  -param_init_glorot -adam_beta2 0.998 -src_vocab data/data_lm/data.vocab.src
 #
-mv /tmp/tmp*2000.pt onmt/tests/test_model_lm_2.pt
+mv /tmp/tmp*2000.pt onmt/tests/test_model_lm.pt
 rm /tmp/tmp*.pt
 fi
 #

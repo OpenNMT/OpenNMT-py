@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 
 from onmt.modules.position_ffn import PositionwiseFeedForward
+from onmt.modules.position_ffn import ActivationFunction
 
 
 class AverageAttention(nn.Module):
@@ -17,15 +18,20 @@ class AverageAttention(nn.Module):
        model_dim (int): the dimension of keys/values/queries,
            must be divisible by head_count
        dropout (float): dropout parameter
+       pos_ffn_activation_fn (ActivationFunction):
+           activation function choice for PositionwiseFeedForward layer
     """
 
-    def __init__(self, model_dim, dropout=0.1, aan_useffn=False):
+    def __init__(self, model_dim, dropout=0.1, aan_useffn=False,
+                 pos_ffn_activation_fn=ActivationFunction.relu):
         self.model_dim = model_dim
         self.aan_useffn = aan_useffn
         super(AverageAttention, self).__init__()
         if aan_useffn:
             self.average_layer = PositionwiseFeedForward(model_dim, model_dim,
-                                                         dropout)
+                                                         dropout,
+                                                         pos_ffn_activation_fn
+                                                         )
         self.gating_layer = nn.Linear(model_dim * 2, model_dim * 2)
 
     def cumulative_average_mask(self, batch_size, inputs_len, device):

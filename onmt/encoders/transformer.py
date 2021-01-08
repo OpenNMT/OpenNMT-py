@@ -7,6 +7,7 @@ import torch.nn as nn
 from onmt.encoders.encoder import EncoderBase
 from onmt.modules import MultiHeadedAttention
 from onmt.modules.position_ffn import PositionwiseFeedForward
+from onmt.modules.position_ffn import ActivationFunction
 from onmt.utils.misc import sequence_mask
 
 
@@ -21,16 +22,20 @@ class TransformerEncoderLayer(nn.Module):
         heads (int): the number of head for MultiHeadedAttention.
         d_ff (int): the second-layer of the PositionwiseFeedForward.
         dropout (float): dropout probability(0-1.0).
+        pos_ffn_activation_fn (ActivationFunction):
+            activation function choice for PositionwiseFeedForward layer
     """
 
     def __init__(self, d_model, heads, d_ff, dropout, attention_dropout,
-                 max_relative_positions=0):
+                 max_relative_positions=0,
+                 pos_ffn_activation_fn=ActivationFunction.relu):
         super(TransformerEncoderLayer, self).__init__()
 
         self.self_attn = MultiHeadedAttention(
             heads, d_model, dropout=attention_dropout,
             max_relative_positions=max_relative_positions)
-        self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout)
+        self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout,
+                                                    pos_ffn_activation_fn)
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
         self.dropout = nn.Dropout(dropout)
 
@@ -80,6 +85,8 @@ class TransformerEncoder(EncoderBase):
         dropout (float): dropout parameters
         embeddings (onmt.modules.Embeddings):
           embeddings to use, should have positional encodings
+        pos_ffn_activation_fn (ActivationFunction):
+            activation function choice for PositionwiseFeedForward layer
 
     Returns:
         (torch.FloatTensor, torch.FloatTensor):
@@ -89,14 +96,16 @@ class TransformerEncoder(EncoderBase):
     """
 
     def __init__(self, num_layers, d_model, heads, d_ff, dropout,
-                 attention_dropout, embeddings, max_relative_positions):
+                 attention_dropout, embeddings, max_relative_positions,
+                 pos_ffn_activation_fn=ActivationFunction.relu):
         super(TransformerEncoder, self).__init__()
 
         self.embeddings = embeddings
         self.transformer = nn.ModuleList(
             [TransformerEncoderLayer(
                 d_model, heads, d_ff, dropout, attention_dropout,
-                max_relative_positions=max_relative_positions)
+                max_relative_positions=max_relative_positions,
+                pos_ffn_activation_fn=pos_ffn_activation_fn)
              for i in range(num_layers)])
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
 
@@ -112,7 +121,9 @@ class TransformerEncoder(EncoderBase):
             opt.attention_dropout[0] if type(opt.attention_dropout)
             is list else opt.attention_dropout,
             embeddings,
-            opt.max_relative_positions)
+            opt.max_relative_positions,
+            pos_ffn_activation_fn=opt.pos_ffn_activation_fn,
+        )
 
     def forward(self, src, lengths=None):
         """See :func:`EncoderBase.forward()`"""
