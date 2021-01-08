@@ -52,15 +52,13 @@ class PositionalEncoding(nn.Module):
         """
 
         emb = emb * math.sqrt(self.dim)
-        if step is None:
-            if self.pe.size(0) < emb.size(0):
-                raise SequenceTooLongError(
-                    f"Sequence is {emb.size(0)} but PositionalEncoding is"
-                    f" limited to {self.pe.size(0)}. See max_len argument."
-                )
-            emb = emb + self.pe[:emb.size(0)]
-        else:
-            emb = emb + self.pe[step]
+        step = step or 0
+        if self.pe.size(0) < step + emb.size(0):
+            raise SequenceTooLongError(
+                f"Sequence is {emb.size(0) + step} but PositionalEncoding is"
+                f" limited to {self.pe.size(0)}. See max_len argument."
+            )
+        emb = emb + self.pe[step:emb.size(0)+step]
         emb = self.dropout(emb)
         return emb
 

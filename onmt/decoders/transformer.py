@@ -9,12 +9,73 @@ import torch.nn as nn
 from onmt.decoders.decoder import DecoderBase
 from onmt.modules import MultiHeadedAttention, AverageAttention
 from onmt.modules.position_ffn import PositionwiseFeedForward
+from onmt.modules.position_ffn import ActivationFunction
 from onmt.utils.misc import sequence_mask
 
 
 class TransformerDecoderLayerBase(nn.Module):
-    def __init__(self):
+    def __init__(
+        self,
+        d_model,
+        heads,
+        d_ff,
+        dropout,
+        attention_dropout,
+        self_attn_type="scaled-dot",
+        max_relative_positions=0,
+        aan_useffn=False,
+        full_context_alignment=False,
+        alignment_heads=0,
+        pos_ffn_activation_fn=ActivationFunction.relu,
+    ):
+        """
+        Args:
+            d_model (int): the dimension of keys/values/queries in
+                :class:`MultiHeadedAttention`, also the input size of
+                the first-layer of the :class:`PositionwiseFeedForward`.
+            heads (int): the number of heads for MultiHeadedAttention.
+            d_ff (int): the second-layer of the
+                :class:`PositionwiseFeedForward`.
+            dropout (float): dropout in residual, self-attn(dot) and
+                feed-forward
+            attention_dropout (float): dropout in context_attn  (and
+                self-attn(avg))
+            self_attn_type (string): type of self-attention scaled-dot,
+                average
+            max_relative_positions (int):
+                Max distance between inputs in relative positions
+                representations
+            aan_useffn (bool): Turn on the FFN layer in the AAN decoder
+            full_context_alignment (bool):
+                whether enable an extra full context decoder forward for
+                alignment
+            alignment_heads (int):
+                N. of cross attention heads to use for alignment guiding
+            pos_ffn_activation_fn (ActivationFunction):
+                activation function choice for PositionwiseFeedForward layer
+
+        """
         super(TransformerDecoderLayerBase, self).__init__()
+
+        if self_attn_type == "scaled-dot":
+            self.self_attn = MultiHeadedAttention(
+                heads,
+                d_model,
+                dropout=attention_dropout,
+                max_relative_positions=max_relative_positions,
+            )
+        elif self_attn_type == "average":
+            self.self_attn = AverageAttention(
+                d_model, dropout=attention_dropout, aan_useffn=aan_useffn
+            )
+
+        self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout,
+                                                    pos_ffn_activation_fn
+                                                    )
+        self.layer_norm_1 = nn.LayerNorm(d_model, eps=1e-6)
+        self.drop = nn.Dropout(dropout)
+        self.full_context_alignment = full_context_alignment
+        self.alignment_heads = alignment_heads
 
     def forward(self, *args, **kwargs):
         """Extend `_forward` for (possibly) multiple decoder pass:
@@ -51,11 +112,51 @@ class TransformerDecoderLayerBase(nn.Module):
             attn_align = attns.mean(dim=1)
         return output, top_attn, attn_align
 
+    def update_dropout(self, dropout, attention_dropout):
+        self.self_attn.update_dropout(attention_dropout)
+        self.feed_forward.update_dropout(dropout)
+        self.drop.p = dropout
+
     def _forward(self, *args, **kwargs):
         raise NotImplementedError
 
-    def update_dropout(self, dropout, attention_dropout):
-        raise NotImplementedError
+    def _compute_dec_mask(self, tgt_pad_mask, future):
+        tgt_len = tgt_pad_mask.size(-1)
+        if not future:  # apply future_mask, result mask in (B, T, T)
+            future_mask = torch.ones(
+                [tgt_len, tgt_len],
+                device=tgt_pad_mask.device,
+                dtype=torch.uint8,
+            )
+            future_mask = future_mask.triu_(1).view(1, tgt_len, tgt_len)
+            # BoolTensor was introduced in pytorch 1.2
+            try:
+                future_mask = future_mask.bool()
+            except AttributeError:
+                pass
+            dec_mask = torch.gt(tgt_pad_mask + future_mask, 0)
+        else:  # only mask padding, result mask in (B, 1, T)
+            dec_mask = tgt_pad_mask
+        return dec_mask
+
+    def _forward_self_attn(self, inputs_norm, dec_mask, layer_cache, step):
+        if isinstance(self.self_attn, MultiHeadedAttention):
+            return self.self_attn(
+                inputs_norm,
+                inputs_norm,
+                inputs_norm,
+                mask=dec_mask,
+                layer_cache=layer_cache,
+                attn_type="self",
+            )
+        elif isinstance(self.self_attn, AverageAttention):
+            return self.self_attn(
+                inputs_norm, mask=dec_mask, layer_cache=layer_cache, step=step
+            )
+        else:
+            raise ValueError(
+                f"self attention {type(self.self_attn)} not supported"
+            )
 
 
 class TransformerDecoderLayer(TransformerDecoderLayerBase):
@@ -76,23 +177,6 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
             A --> E
             E --> F(out)
 
-
-    Args:
-        d_model (int): the dimension of keys/values/queries in
-            :class:`MultiHeadedAttention`, also the input size of
-            the first-layer of the :class:`PositionwiseFeedForward`.
-        heads (int): the number of heads for MultiHeadedAttention.
-        d_ff (int): the second-layer of the :class:`PositionwiseFeedForward`.
-        dropout (float): dropout in residual, self-attn(dot) and feed-forward
-        attention_dropout (float): dropout in context_attn (and self-attn(avg))
-        self_attn_type (string): type of self-attention scaled-dot, average
-        max_relative_positions (int):
-            Max distance between inputs in relative positions representations
-        aan_useffn (bool): Turn on the FFN layer in the AAN decoder
-        full_context_alignment (bool):
-            whether enable an extra full context decoder forward for alignment
-        alignment_heads (int):
-            N. of cross attention heads to use for alignment guiding
     """
 
     def __init__(
@@ -107,36 +191,35 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
         aan_useffn=False,
         full_context_alignment=False,
         alignment_heads=0,
+        pos_ffn_activation_fn=ActivationFunction.relu,
     ):
-        super(TransformerDecoderLayer, self).__init__()
-
-        if self_attn_type == "scaled-dot":
-            self.self_attn = MultiHeadedAttention(
-                heads,
-                d_model,
-                dropout=attention_dropout,
-                max_relative_positions=max_relative_positions,
-            )
-        elif self_attn_type == "average":
-            self.self_attn = AverageAttention(
-                d_model, dropout=attention_dropout, aan_useffn=aan_useffn
-            )
-
+        """
+        Args:
+            See TransformerDecoderLayerBase
+        """
+        super(TransformerDecoderLayer, self).__init__(
+            d_model,
+            heads,
+            d_ff,
+            dropout,
+            attention_dropout,
+            self_attn_type,
+            max_relative_positions,
+            aan_useffn,
+            full_context_alignment,
+            alignment_heads,
+            pos_ffn_activation_fn=pos_ffn_activation_fn,
+        )
         self.context_attn = MultiHeadedAttention(
             heads, d_model, dropout=attention_dropout
         )
-        self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout)
-        self.layer_norm_1 = nn.LayerNorm(d_model, eps=1e-6)
         self.layer_norm_2 = nn.LayerNorm(d_model, eps=1e-6)
-        self.drop = nn.Dropout(dropout)
-        self.full_context_alignment = full_context_alignment
-        self.alignment_heads = alignment_heads
 
     def update_dropout(self, dropout, attention_dropout):
-        self.self_attn.update_dropout(attention_dropout)
+        super(TransformerDecoderLayer, self).update_dropout(
+            dropout, attention_dropout
+        )
         self.context_attn.update_dropout(attention_dropout)
-        self.feed_forward.update_dropout(dropout)
-        self.drop.p = dropout
 
     def _forward(
         self,
@@ -170,39 +253,15 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
         """
         dec_mask = None
 
-        if step is None:
-            tgt_len = tgt_pad_mask.size(-1)
-            if not future:  # apply future_mask, result mask in (B, T, T)
-                future_mask = torch.ones(
-                    [tgt_len, tgt_len],
-                    device=tgt_pad_mask.device,
-                    dtype=torch.uint8,
-                )
-                future_mask = future_mask.triu_(1).view(1, tgt_len, tgt_len)
-                # BoolTensor was introduced in pytorch 1.2
-                try:
-                    future_mask = future_mask.bool()
-                except AttributeError:
-                    pass
-                dec_mask = torch.gt(tgt_pad_mask + future_mask, 0)
-            else:  # only mask padding, result mask in (B, 1, T)
-                dec_mask = tgt_pad_mask
+        if inputs.size(1) > 1:
+            # masking is necessary when sequence length is greater than one
+            dec_mask = self._compute_dec_mask(tgt_pad_mask, future)
 
-        input_norm = self.layer_norm_1(inputs)
+        inputs_norm = self.layer_norm_1(inputs)
 
-        if isinstance(self.self_attn, MultiHeadedAttention):
-            query, _ = self.self_attn(
-                input_norm,
-                input_norm,
-                input_norm,
-                mask=dec_mask,
-                layer_cache=layer_cache,
-                attn_type="self",
-            )
-        elif isinstance(self.self_attn, AverageAttention):
-            query, _ = self.self_attn(
-                input_norm, mask=dec_mask, layer_cache=layer_cache, step=step
-            )
+        query, _ = self._forward_self_attn(
+            inputs_norm, dec_mask, layer_cache, step
+        )
 
         query = self.drop(query) + inputs
 
@@ -257,6 +316,7 @@ class TransformerDecoderBase(DecoderBase):
             opt.full_context_alignment,
             opt.alignment_layer,
             alignment_heads=opt.alignment_heads,
+            pos_ffn_activation_fn=opt.pos_ffn_activation_fn,
         )
 
     def init_state(self, src, memory_bank, enc_hidden):
@@ -345,6 +405,7 @@ class TransformerDecoder(TransformerDecoderBase):
         full_context_alignment,
         alignment_layer,
         alignment_heads,
+        pos_ffn_activation_fn=ActivationFunction.relu,
     ):
         super(TransformerDecoder, self).__init__(
             d_model, copy_attn, embeddings, alignment_layer
@@ -363,6 +424,7 @@ class TransformerDecoder(TransformerDecoderBase):
                     aan_useffn=aan_useffn,
                     full_context_alignment=full_context_alignment,
                     alignment_heads=alignment_heads,
+                    pos_ffn_activation_fn=pos_ffn_activation_fn,
                 )
                 for i in range(num_layers)
             ]
@@ -460,56 +522,8 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
 
 
     Args:
-        d_model (int): the dimension of keys/values/queries in
-            :class:`MultiHeadedAttention`, also the input size of
-            the first-layer of the :class:`PositionwiseFeedForward`.
-        heads (int): the number of heads for MultiHeadedAttention.
-        d_ff (int): the second-layer of the :class:`PositionwiseFeedForward`.
-        dropout (float): dropout in residual, self-attn(dot) and feed-forward
-        attention_dropout (float): dropout in context_attn (and self-attn(avg))
-        self_attn_type (string): type of self-attention scaled-dot, average
-        max_relative_positions (int):
-            Max distance between inputs in relative positions representations
-        aan_useffn (bool): Turn on the FFN layer in the AAN decoder
-        full_context_alignment (bool):
-            whether enable an extra full context decoder forward for alignment
-        alignment_heads (int):
-            N. of cross attention heads to use for alignment guiding
+        See TransformerDecoderLayerBase
     """
-
-    def __init__(
-        self,
-        d_model,
-        heads,
-        d_ff,
-        dropout,
-        attention_dropout,
-        self_attn_type="scaled-dot",
-        max_relative_positions=0,
-        aan_useffn=False,
-        full_context_alignment=False,
-        alignment_heads=0,
-    ):
-        super(TransformerLMDecoderLayer, self).__init__()
-
-        if self_attn_type == "scaled-dot":
-            self.self_attn = MultiHeadedAttention(
-                heads,
-                d_model,
-                dropout=attention_dropout,
-                max_relative_positions=max_relative_positions,
-            )
-        elif self_attn_type == "average":
-            self.self_attn = AverageAttention(
-                d_model, dropout=attention_dropout, aan_useffn=aan_useffn
-            )
-
-        self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout)
-        self.layer_norm_1 = nn.LayerNorm(d_model, eps=1e-6)
-        self.layer_norm_2 = nn.LayerNorm(d_model, eps=1e-6)
-        self.drop = nn.Dropout(dropout)
-        self.full_context_alignment = full_context_alignment
-        self.alignment_heads = alignment_heads
 
     def _forward(
         self, inputs, tgt_pad_mask, layer_cache=None, step=None, future=False
@@ -534,51 +548,21 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
         """
         dec_mask = None
 
-        if step is None:
-            tgt_len = tgt_pad_mask.size(-1)
-            if not future:  # apply future_mask, result mask in (B, T, T)
-                future_mask = torch.ones(
-                    [tgt_len, tgt_len],
-                    device=tgt_pad_mask.device,
-                    dtype=torch.uint8,
-                )
-                future_mask = future_mask.triu_(1).view(1, tgt_len, tgt_len)
-                # BoolTensor was introduced in pytorch 1.2
-                try:
-                    future_mask = future_mask.bool()
-                except AttributeError:
-                    pass
-                dec_mask = torch.gt(tgt_pad_mask + future_mask, 0)
-            else:  # only mask padding, result mask in (B, 1, T)
-                dec_mask = tgt_pad_mask
+        if inputs.size(1) > 1:
+            # masking is necessary when sequence length is greater than one
+            dec_mask = self._compute_dec_mask(tgt_pad_mask, future)
 
         inputs_norm = self.layer_norm_1(inputs)
-        if isinstance(self.self_attn, MultiHeadedAttention):
-            query, attns = self.self_attn(
-                inputs_norm,
-                inputs_norm,
-                inputs_norm,
-                mask=dec_mask,
-                layer_cache=layer_cache,
-                attn_type="self",
-            )
-        elif isinstance(self.self_attn, AverageAttention):
-            query, attns = self.self_attn(
-                inputs_norm, mask=dec_mask, layer_cache=layer_cache, step=step
-            )
+
+        query, attns = self._forward_self_attn(
+            inputs_norm, dec_mask, layer_cache, step
+        )
 
         output = self.drop(query) + inputs
 
-        output_feedforward = self.feed_forward(self.layer_norm_2(output))
+        output_feedforward = self.feed_forward(output)
 
-        output_norm = self.drop(output_feedforward) + output
-
-        return output_norm, attns
-
-    def update_dropout(self, dropout, attention_dropout):
-        self.self_attn.update_dropout(attention_dropout)
-        self.feed_forward.update_dropout(dropout)
-        self.drop.p = dropout
+        return output_feedforward, attns
 
 
 class TransformerLMDecoder(TransformerDecoderBase):
@@ -628,6 +612,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
         full_context_alignment=None,
         alignment_layer=None,
         alignment_heads=None,
+        pos_ffn_activation_fn=ActivationFunction.relu,
     ):
         super(TransformerLMDecoder, self).__init__(
             d_model, copy_attn, embeddings, None
@@ -645,6 +630,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
                     aan_useffn=aan_useffn,
                     full_context_alignment=None,
                     alignment_heads=None,
+                    pos_ffn_activation_fn=pos_ffn_activation_fn,
                 )
                 for i in range(num_layers)
             ]

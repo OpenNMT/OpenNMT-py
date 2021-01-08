@@ -100,7 +100,7 @@ class CopyGenerator(nn.Module):
 
         Args:
            hidden (FloatTensor): hidden outputs ``(batch x tlen, input_size)``
-           attn (FloatTensor): attn for each ``(batch x tlen, input_size)``
+           attn (FloatTensor): attn for each ``(batch x tlen, slen)``
            src_map (FloatTensor):
                A sparse indicator matrix mapping each source word to
                its index in the "extended" vocab containing.

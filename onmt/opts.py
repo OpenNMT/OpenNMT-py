@@ -6,6 +6,8 @@ import configargparse
 from onmt.models.sru import CheckSRU
 from onmt.transforms import AVAILABLE_TRANSFORMS
 from onmt.constants import ModelTask
+from onmt.modules.position_ffn import ACTIVATION_FUNCTIONS
+from onmt.modules.position_ffn import ActivationFunction
 
 
 def config_opts(parser):
@@ -290,6 +292,13 @@ def model_opts(parser):
     group.add('--cnn_kernel_width', '-cnn_kernel_width', type=int, default=3,
               help="Size of windows in the cnn, the kernel_size is "
                    "(cnn_kernel_width, 1) in conv layer")
+
+    group.add('--pos_ffn_activation_fn', '-pos_ffn_activation_fn',
+              type=str, default=ActivationFunction.relu,
+              choices=ACTIVATION_FUNCTIONS.keys(), help='The activation'
+              ' function to use in PositionwiseFeedForward layer. Choices are'
+              f' {ACTIVATION_FUNCTIONS.keys()}. Default to'
+              f' {ActivationFunction.relu}.')
 
     group.add('--input_feed', '-input_feed', type=int, default=1,
               help="Feed the context vector at each time step as "
