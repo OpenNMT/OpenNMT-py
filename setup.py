@@ -19,6 +19,7 @@ setup(
         "Gitter": "https://gitter.im/OpenNMT/OpenNMT-py",
         "Source": "https://github.com/OpenNMT/OpenNMT-py/"
     },
+    python_requires=">=3.5",
     install_requires=[
         "numpy==1.19.3",
         "six==1.15.0",
@@ -27,7 +28,7 @@ setup(
         "torchtext==0.5.0",
         "future==0.18.2",
         "configargparse==1.2.3",
-        "tensorboard==2.3.0",
+        "tensorboard>=2.3,<3",
         "flask==1.1.2",
         "waitress==1.4.4",
         "pyonmttok>=1.23,<2;platform_system=='Linux' or platform_system=='Darwin'",
