@@ -1,11 +1,17 @@
 """Position feed-forward network from "Attention is All You Need"."""
 
 import torch.nn as nn
+import torch.nn.functional as F
+
+
+class ActivationFunction(object):
+    relu = "relu"
+    gelu = "gelu"
 
 
 ACTIVATION_FUNCTIONS = {
-    "relu": nn.ReLU,
-    "gelu": nn.GELU,
+    ActivationFunction.relu: F.relu,
+    ActivationFunction.gelu: F.gelu,
 }
 
 
@@ -17,15 +23,17 @@ class PositionwiseFeedForward(nn.Module):
         d_ff (int): the hidden layer size of the second-layer
             of the FNN.
         dropout (float): dropout probability in :math:`[0, 1)`.
+        activation_fn (ActivationFunction): activation function used.
     """
 
-    def __init__(self, d_model, d_ff, dropout=0.1, activation_fn="relu"):
+    def __init__(self, d_model, d_ff, dropout=0.1,
+                 activation_fn=ActivationFunction.relu):
         super(PositionwiseFeedForward, self).__init__()
         self.w_1 = nn.Linear(d_model, d_ff)
         self.w_2 = nn.Linear(d_ff, d_model)
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
         self.dropout_1 = nn.Dropout(dropout)
-        self.activation = ACTIVATION_FUNCTIONS[activation_fn]()
+        self.activation = ACTIVATION_FUNCTIONS[activation_fn]
         self.dropout_2 = nn.Dropout(dropout)
 
     def forward(self, x):
