@@ -22,7 +22,8 @@ setup(
     python_requires=">=3.5",
     install_requires=[
         "numpy==1.19.3",
-        "tqdm==4.51.0",
+        "six==1.15.0",
+        "tqdm>=4.51,<5",
         "torch==1.6.0",
         "torchtext==0.5.0",
         "future==0.18.2",
