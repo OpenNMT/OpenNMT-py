@@ -1,5 +1,4 @@
 """ Embeddings module """
-import six
 import math
 import warnings
 
@@ -298,7 +297,7 @@ def calc_vocab_load_stats(vocab, loaded_embed_dict):
 
 
 def convert_to_torch_tensor(word_to_float_list_dict, vocab):
-    dim = len(six.next(six.itervalues(word_to_float_list_dict)))
+    dim = len(next(iter(word_to_float_list_dict.values())))
     tensor = torch.zeros((len(vocab), dim))
     for word, values in word_to_float_list_dict.items():
         tensor[vocab.stoi[word]] = torch.Tensor(values)

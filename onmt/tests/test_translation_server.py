@@ -2,7 +2,6 @@ import unittest
 from onmt.translate.translation_server import ServerModel, TranslationServer
 
 import os
-from six import string_types
 from textwrap import dedent
 
 import torch
@@ -115,7 +114,7 @@ class TestServerModel(unittest.TestCase):
         results, scores, n_best, time, aligns = sm.run(inp)
         self.assertIsInstance(results, list)
         for sentence_string in results:
-            self.assertIsInstance(sentence_string, string_types)
+            self.assertIsInstance(sentence_string, str)
         self.assertIsInstance(scores, list)
         for elem in scores:
             self.assertIsInstance(elem, float)
@@ -123,7 +122,7 @@ class TestServerModel(unittest.TestCase):
         for align_list in aligns:
             for align_string in align_list:
                 if align_string is not None:
-                    self.assertIsInstance(align_string, string_types)
+                    self.assertIsInstance(align_string, str)
         self.assertEqual(len(results), len(scores))
         self.assertEqual(len(scores), len(inp) * n_best)
         self.assertEqual(len(time), 1)
