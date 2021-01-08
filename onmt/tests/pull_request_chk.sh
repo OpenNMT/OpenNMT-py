@@ -254,6 +254,7 @@ ${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
             -src ${DATA_DIR}/data_lm/src-gen.txt   \
             -verbose -batch_size 10     \
             -beam_size 10 \
+            -ban_unk_token \
             -out $TMP_OUT_DIR/gen_beam  >> ${LOG_FILE} 2>&1
 diff ${DATA_DIR}/data_lm/gen-beam-sol.txt $TMP_OUT_DIR/gen_beam
 [ "$?" -eq 0 ] || error_exit
@@ -280,10 +281,11 @@ ${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
             -src ${DATA_DIR}/data_lm/src-gen.txt   \
             -verbose -batch_size 10     \
             -beam_size 1                \
-            -seed 1                     \
+            -seed 3                     \
             -random_sampling_topk -1    \
             -random_sampling_topp 0.95    \
             -random_sampling_temp 1    \
+            -ban_unk_token \
             -out $TMP_OUT_DIR/gen_sampling  >> ${LOG_FILE} 2>&1
 diff ${DATA_DIR}/data_lm/gen-nucleus-sampling-sol.txt $TMP_OUT_DIR/gen_sampling
 [ "$?" -eq 0 ] || error_exit

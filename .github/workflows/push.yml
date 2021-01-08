@@ -223,6 +223,7 @@ jobs:
           -src data/data_lm/src-gen.txt \
           -verbose -batch_size 10 \
           -beam_size 10 \
+          -ban_unk_token \
           -out /tmp/gen
         diff data/data_lm/gen-beam-sol.txt /tmp/gen && rm /tmp/gen
     - name: Test LM generation with random sampling
@@ -243,10 +244,11 @@ jobs:
           -src data/data_lm/src-gen.txt \
           -verbose -batch_size 10 \
           -beam_size 1 \
-          -seed 1 \
+          -seed 3 \
           -random_sampling_topk -1 \
           -random_sampling_topp 0.95 \
           -random_sampling_temp 1 \
+          -ban_unk_token \
           -out /tmp/gen
         diff data/data_lm/gen-nucleus-sampling-sol.txt /tmp/gen && rm /tmp/gen
     - name: Test LM generation with random sampling multi-beams
