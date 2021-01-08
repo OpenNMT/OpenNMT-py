@@ -19,9 +19,9 @@ setup(
         "Gitter": "https://gitter.im/OpenNMT/OpenNMT-py",
         "Source": "https://github.com/OpenNMT/OpenNMT-py/"
     },
+    python_requires=">=3.5",
     install_requires=[
         "numpy==1.19.3",
-        "six==1.15.0",
         "tqdm==4.51.0",
         "torch==1.6.0",
         "torchtext==0.5.0",
