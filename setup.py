@@ -27,7 +27,7 @@ setup(
         "torch==1.6.0",
         "torchtext==0.5.0",
         "future==0.18.2",
-        "configargparse==1.2.3",
+        "configargparse>=1.2.3,<2",
         "tensorboard>=2.3,<3",
         "flask==1.1.2",
         "waitress==1.4.4",
