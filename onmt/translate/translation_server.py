@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 """REST Translation server."""
-from __future__ import print_function
 import codecs
 import sys
 import os

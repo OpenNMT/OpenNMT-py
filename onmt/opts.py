@@ -1,6 +1,4 @@
 """ Implementation of all available options """
-from __future__ import print_function
-
 import configargparse
 
 from onmt.models.sru import CheckSRU

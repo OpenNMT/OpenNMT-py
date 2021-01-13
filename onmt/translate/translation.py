@@ -1,6 +1,4 @@
 """ Translation main class """
-from __future__ import unicode_literals, print_function
-
 import os
 import torch
 from onmt.constants import DefaultTokens
