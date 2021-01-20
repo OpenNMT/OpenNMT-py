@@ -106,7 +106,9 @@ Options contained in the loaded model will trigger language modeling specific in
 head data/wikitext-103-raw/wiki.valid.bpe | cut -d" " -f-15 > data/wikitext-103-raw/lm_input.txt
 ```
 
-To proceed with inference:
+To proceed with LM inference, sampling methods such as top-k sampling or nucleus sampling are usually applied. Details and options about inference methods can be found in [`onmt/opts.py`](https://github.com/OpenNMT/OpenNMT-py/tree/master/onmt/opts.py).
+
+The following command will provide inference with nucleus sampling of p=0.9 and return the 3 sequences with the lowest perplexity out of the 10 generated sequences:
 ```bash
-onmt_translate -model data/wikitext-103-raw/run/model-lm_step_1000000.pt -src data/wikitext-103-raw/lm_input.txt -output data/wikitext-103-raw/lm_pred_input.txt -verbose -n_best 3
+onmt_translate -model data/wikitext-103-raw/run/model-lm_step_1000000.pt -src data/wikitext-103-raw/lm_input.txt -output data/wikitext-103-raw/lm_pred_input.txt -verbose -n_best 3 -random_sampling_topp 0.9 -beam_size 10
 ```

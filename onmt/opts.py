@@ -636,7 +636,6 @@ def train_opts(parser):
 
 
 def _add_decoding_opts(parser):
-
     group = parser.add_argument_group('Decoding tricks')
     group.add('--block_ngram_repeat', '-block_ngram_repeat',
               type=int, default=0,
