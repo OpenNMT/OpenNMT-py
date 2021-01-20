@@ -1,6 +1,8 @@
 import torch
 from copy import deepcopy
 
+from onmt.utils.misc import tile
+
 
 class DecodeStrategy(object):
     """Base class for generation strategies.
@@ -9,6 +11,7 @@ class DecodeStrategy(object):
         pad (int): Magic integer in output vocab.
         bos (int): Magic integer in output vocab.
         eos (int): Magic integer in output vocab.
+        unk (int): Magic integer in output vocab.
         batch_size (int): Current batch size.
         parallel_paths (int): Decoding strategies like beam search
             use parallel paths. Each batch is repeated ``parallel_paths``
@@ -18,6 +21,7 @@ class DecodeStrategy(object):
         max_length (int): Longest acceptable sequence, not counting
             begin-of-sentence (presumably there has been no EOS
             yet if max_length is used as a cutoff).
+        ban_unk_token (Boolean): Whether unk token is forbidden
         block_ngram_repeat (int): Block beams where
             ``block_ngram_repeat``-grams repeat.
         exclusion_tokens (set[int]): If a gram contains any of these
@@ -29,6 +33,7 @@ class DecodeStrategy(object):
         pad (int): See above.
         bos (int): See above.
         eos (int): See above.
+        unk (int): See above.
         predictions (list[list[LongTensor]]): For each batch, holds a
             list of beam prediction sequences.
         scores (list[list[FloatTensor]]): For each batch, holds a
@@ -51,32 +56,39 @@ class DecodeStrategy(object):
             is the (max) length of the pre-fixed prediction.
         min_length (int): See above.
         max_length (int): See above.
+        ban_unk_token (Boolean): See above.
         block_ngram_repeat (int): See above.
         exclusion_tokens (set[int]): See above.
         return_attention (bool): See above.
         done (bool): See above.
     """
 
-    def __init__(self, pad, bos, eos, batch_size, parallel_paths,
-                 min_length, block_ngram_repeat, exclusion_tokens,
-                 return_attention, max_length):
+    def __init__(self, pad, bos, eos, unk, batch_size, parallel_paths,
+                 global_scorer, min_length, block_ngram_repeat,
+                 exclusion_tokens, return_attention, max_length,
+                 ban_unk_token):
 
         # magic indices
         self.pad = pad
         self.bos = bos
         self.eos = eos
+        self.unk = unk
 
         self.batch_size = batch_size
         self.parallel_paths = parallel_paths
+        self.global_scorer = global_scorer
+
         # result caching
         self.predictions = [[] for _ in range(batch_size)]
         self.scores = [[] for _ in range(batch_size)]
         self.attention = [[] for _ in range(batch_size)]
+        self.hypotheses = [[] for _ in range(batch_size)]
 
         self.alive_attn = None
 
         self.min_length = min_length
         self.max_length = max_length
+        self.ban_unk_token = ban_unk_token
 
         self.block_ngram_repeat = block_ngram_repeat
         n_paths = batch_size * parallel_paths
@@ -86,6 +98,32 @@ class DecodeStrategy(object):
         self.return_attention = return_attention
 
         self.done = False
+
+    def get_device_from_memory_bank(self, memory_bank):
+        if isinstance(memory_bank, tuple):
+            mb_device = memory_bank[0].device
+        else:
+            mb_device = memory_bank.device
+        return mb_device
+
+    def initialize_tile(self, memory_bank, src_lengths, src_map=None,
+                        target_prefix=None):
+        def fn_map_state(state, dim):
+            return tile(state, self.beam_size, dim=dim)
+
+        if isinstance(memory_bank, tuple):
+            memory_bank = tuple(tile(x, self.beam_size, dim=1)
+                                for x in memory_bank)
+        elif memory_bank is not None:
+            memory_bank = tile(memory_bank, self.beam_size, dim=1)
+        if src_map is not None:
+            src_map = tile(src_map, self.beam_size, dim=1)
+
+        self.memory_lengths = tile(src_lengths, self.beam_size)
+        if target_prefix is not None:
+            target_prefix = tile(target_prefix, self.beam_size, dim=1)
+
+        return fn_map_state, memory_bank, src_map, target_prefix
 
     def initialize(self, memory_bank, src_lengths, src_map=None, device=None,
                    target_prefix=None):
@@ -121,6 +159,10 @@ class DecodeStrategy(object):
     def ensure_min_length(self, log_probs):
         if len(self) <= self.min_length:
             log_probs[:, self.eos] = -1e20
+
+    def ensure_unk_removed(self, log_probs):
+        if self.ban_unk_token:
+            log_probs[:, self.unk] = -1e20
 
     def ensure_max_length(self):
         # add one to account for BOS. Don't account for EOS because hitting

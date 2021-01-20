@@ -37,10 +37,10 @@ class TestBeamSearch(unittest.TestCase):
         device_init = torch.zeros(1, 1)
         for batch_sz in [1, 3]:
             beam = BeamSearch(
-                beam_sz, batch_sz, 0, 1, 2, 2,
+                beam_sz, batch_sz, 0, 1, 2, 3, 2,
                 GlobalScorerStub(), 0, 30,
                 False, ngram_repeat, set(),
-                False, 0.)
+                False, 0., False)
             beam.initialize(device_init, torch.randint(0, 30, (batch_sz,)))
             for i in range(ngram_repeat + 4):
                 # predict repeat_idx over and over again
@@ -86,10 +86,10 @@ class TestBeamSearch(unittest.TestCase):
         device_init = torch.zeros(1, 1)
         for batch_sz in [1, 3]:
             beam = BeamSearch(
-                beam_sz, batch_sz, 0, 1, 2, 2,
+                beam_sz, batch_sz, 0, 1, 2, 3, 2,
                 GlobalScorerStub(), 0, 30,
                 False, ngram_repeat, set(),
-                False, 0.)
+                False, 0., False)
             beam.initialize(device_init, torch.randint(0, 30, (batch_sz,)))
             for i in range(ngram_repeat + 4):
                 # non-interesting beams are going to get dummy values
@@ -150,10 +150,10 @@ class TestBeamSearch(unittest.TestCase):
         device_init = torch.zeros(1, 1)
         for batch_sz in [1, 3]:
             beam = BeamSearch(
-                beam_sz, batch_sz, 0, 1, 2, 2,
+                beam_sz, batch_sz, 0, 1, 2, 3, 2,
                 GlobalScorerStub(), 0, 30,
                 False, ngram_repeat, {repeat_idx_ignored},
-                False, 0.)
+                False, 0., False)
             beam.initialize(device_init, torch.randint(0, 30, (batch_sz,)))
             for i in range(ngram_repeat + 4):
                 # non-interesting beams are going to get dummy values
@@ -207,10 +207,10 @@ class TestBeamSearch(unittest.TestCase):
             min_length = 5
             eos_idx = 2
             lengths = torch.randint(0, 30, (batch_sz,))
-            beam = BeamSearch(beam_sz, batch_sz, 0, 1, 2, 2,
+            beam = BeamSearch(beam_sz, batch_sz, 0, 1, 2, 3, 2,
                               GlobalScorerStub(),
                               min_length, 30, False, 0, set(),
-                              False, 0.)
+                              False, 0., False)
             device_init = torch.zeros(1, 1)
             beam.initialize(device_init, lengths)
             all_attns = []
@@ -264,10 +264,10 @@ class TestBeamSearch(unittest.TestCase):
         min_length = 5
         eos_idx = 2
         beam = BeamSearch(
-            beam_sz, batch_sz, 0, 1, 2, 2,
+            beam_sz, batch_sz, 0, 1, 2, 3, 2,
             GlobalScorerStub(),
             min_length, 30, False, 0, set(),
-            False, 0.)
+            False, 0., False)
         device_init = torch.zeros(1, 1)
         beam.initialize(device_init, torch.randint(0, 30, (batch_sz,)))
         for i in range(min_length + 4):
@@ -324,10 +324,10 @@ class TestBeamSearch(unittest.TestCase):
         eos_idx = 2
         inp_lens = torch.randint(1, 30, (batch_sz,))
         beam = BeamSearch(
-            beam_sz, batch_sz, 0, 1, 2, 2,
+            beam_sz, batch_sz, 0, 1, 2, 3, 2,
             GlobalScorerStub(),
             min_length, 30, True, 0, set(),
-            False, 0.)
+            False, 0., False)
         device_init = torch.zeros(1, 1)
         _, _, inp_lens, _ = beam.initialize(device_init, inp_lens)
         # inp_lens is tiled in initialize, reassign to make attn match
@@ -538,10 +538,10 @@ class TestBeamSearchAgainstReferenceCase(unittest.TestCase):
 
     def test_beam_advance_against_known_reference(self):
         beam = BeamSearch(
-            self.BEAM_SZ, self.BATCH_SZ, 0, 1, 2, self.N_BEST,
+            self.BEAM_SZ, self.BATCH_SZ, 0, 1, 2, 3, self.N_BEST,
             GlobalScorerStub(),
             0, 30, False, 0, set(),
-            False, 0.)
+            False, 0., False)
         device_init = torch.zeros(1, 1)
         beam.initialize(device_init, torch.randint(0, 30, (self.BATCH_SZ,)))
         expected_beam_scores = self.init_step(beam, 1)
@@ -557,10 +557,10 @@ class TestBeamWithLengthPenalty(TestBeamSearchAgainstReferenceCase):
     def test_beam_advance_against_known_reference(self):
         scorer = GNMTGlobalScorer(0.7, 0., "avg", "none")
         beam = BeamSearch(
-            self.BEAM_SZ, self.BATCH_SZ, 0, 1, 2, self.N_BEST,
+            self.BEAM_SZ, self.BATCH_SZ, 0, 1, 2, 3, self.N_BEST,
             scorer,
             0, 30, False, 0, set(),
-            False, 0.)
+            False, 0., False)
         device_init = torch.zeros(1, 1)
         beam.initialize(device_init, torch.randint(0, 30, (self.BATCH_SZ,)))
         expected_beam_scores = self.init_step(beam, 1.)
@@ -588,10 +588,10 @@ class TestBeamSearchLM(TestBeamSearchAgainstReferenceCase):
 
     def test_beam_lm_increase_memory_length(self):
         beam = BeamSearchLM(
-            self.BEAM_SZ, self.BATCH_SZ, 0, 1, 2, self.N_BEST,
+            self.BEAM_SZ, self.BATCH_SZ, 0, 1, 2, 3, self.N_BEST,
             GlobalScorerStub(),
             0, 30, False, 0, set(),
-            False, 0.)
+            False, 0., False)
         device_init = torch.zeros(1, 1)
         src_lengths = torch.randint(0, 30, (self.BATCH_SZ,))
         fn_map_state, _, _, _ = beam.initialize(device_init, src_lengths)
@@ -601,21 +601,21 @@ class TestBeamSearchLM(TestBeamSearchAgainstReferenceCase):
         self.third_step(beam, expected_beam_scores, 1)
 
         n_steps = beam.alive_seq.shape[-1] - 1
-        self.assertTrue(beam.memory_lengths.equal(n_steps+fn_map_state(
-            src_lengths, dim=0)))
+        self.assertTrue(beam.memory_lengths.equal(
+            n_steps+fn_map_state(src_lengths, dim=0)))
 
     def test_beam_lm_update_memory_length_when_finished(self):
         beam = BeamSearchLM(
-            self.BEAM_SZ, self.BATCH_SZ, 0, 1, 2, self.N_BEST,
+            self.BEAM_SZ, self.BATCH_SZ, 0, 1, 2, 3, self.N_BEST,
             GlobalScorerStub(),
             0, 30, False, 0, set(),
-            False, 0.)
+            False, 0., False)
         device_init = torch.zeros(1, 1)
         src_lengths = torch.randint(0, 30, (self.BATCH_SZ,))
         fn_map_state, _, _, _ = beam.initialize(device_init, src_lengths)
-        _ = self.init_step(beam, 1)
+        self.init_step(beam, 1)
         self.finish_first_beam_step(beam)
 
         n_steps = beam.alive_seq.shape[-1] - 1
-        self.assertTrue(beam.memory_lengths.equal(n_steps+fn_map_state(
-            src_lengths[1:], dim=0)))
+        self.assertTrue(beam.memory_lengths.equal(
+            n_steps+fn_map_state(src_lengths[1:], dim=0)))

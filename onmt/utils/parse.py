@@ -289,5 +289,4 @@ class ArgumentParser(cfargparse.ArgumentParser, DataOptsCheckerMixin):
 
     @classmethod
     def validate_translate_opts(cls, opt):
-        if opt.beam_size != 1 and opt.random_sampling_topk != 1:
-            raise ValueError('Can either do beam search OR random sampling.')
+        pass

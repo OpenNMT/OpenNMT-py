@@ -650,6 +650,9 @@ def _add_decoding_opts(parser):
                    "target token. If it is not provided (or the identified "
                    "source token does not exist in the table), then it "
                    "will copy the source token.")
+    group.add('--ban_unk_token', '-ban_unk_token',
+              action="store_true",
+              help="Prevent unk token generation by setting unk proba to 0")
     group.add('--phrase_table', '-phrase_table', type=str, default="",
               help="If phrase_table is provided (with replace_unk), it will "
                    "look up the identified source token and give the "
@@ -657,29 +660,36 @@ def _add_decoding_opts(parser):
                    "(or the identified source token does not exist in "
                    "the table), then it will copy the source token.")
 
-    group = parser.add_argument_group('Random Sampling')
-    group.add('--random_sampling_topk', '-random_sampling_topk',
-              default=1, type=int,
-              help="Set this to -1 to do random sampling from full "
-                   "distribution. Set this to value k>1 to do random "
-                   "sampling restricted to the k most likely next tokens. "
-                   "Set this to 1 to use argmax or for doing beam "
-                   "search.")
-    group.add('--random_sampling_temp', '-random_sampling_temp',
-              default=1., type=float,
-              help="If doing random sampling, divide the logits by "
-                   "this before computing softmax during decoding.")
-    _add_reproducibility_opts(parser)
-
     group = parser.add_argument_group('Beam Search')
-    group.add('--beam_size', '-beam_size', type=int, default=5,
-              help='Beam size')
     group.add('--min_length', '-min_length', type=int, default=0,
               help='Minimum prediction length')
     group.add('--max_length', '-max_length', type=int, default=100,
               help='Maximum prediction length.')
     group.add('--max_sent_length', '-max_sent_length', action=DeprecateAction,
               help="Deprecated, use `-max_length` instead")
+    beam_size = group.add('--beam_size', '-beam_size', type=int, default=5,
+                          help='Beam size')
+
+    group = parser.add_argument_group('Random Sampling')
+    group.add('--random_sampling_topk', '-random_sampling_topk',
+              default=0, type=int,
+              help="Set this to -1 to do random sampling from full "
+                   "distribution. Set this to value k>1 to do random "
+                   "sampling restricted to the k most likely next tokens. "
+                   "Set this to 1 to use argmax or for doing beam "
+                   "search.")
+    group.add('--random_sampling_topp', '-random_sampling_topp',
+              default=0, type=float,
+              help="Probability for top-p/nucleus sampling. Restrict tokens"
+                   " to the most likely until the cumulated probability is"
+                   " over p. In range [0, 1]."
+                   " https://arxiv.org/abs/1904.09751")
+    group.add('--random_sampling_temp', '-random_sampling_temp',
+              default=1., type=float,
+              help="If doing random sampling, divide the logits by "
+                   "this before computing softmax during decoding.")
+    group._group_actions.append(beam_size)
+    _add_reproducibility_opts(parser)
 
     # Alpha and Beta values for Google Length + Coverage penalty
     # Described here: https://arxiv.org/pdf/1609.08144.pdf, Section 7

@@ -132,12 +132,14 @@ class Inference(object):
         ratio=0.0,
         beam_size=30,
         random_sampling_topk=1,
+        random_sampling_topp=0,
         random_sampling_temp=1,
         stepwise_penalty=None,
         dump_beam=False,
         block_ngram_repeat=0,
         ignore_when_blocking=frozenset(),
         replace_unk=False,
+        ban_unk_token=False,
         tgt_prefix=False,
         phrase_table="",
         data_type="text",
@@ -175,8 +177,10 @@ class Inference(object):
         self.beam_size = beam_size
         self.random_sampling_temp = random_sampling_temp
         self.sample_from_topk = random_sampling_topk
+        self.sample_from_topp = random_sampling_topp
 
         self.min_length = min_length
+        self.ban_unk_token = ban_unk_token
         self.ratio = ratio
         self.stepwise_penalty = stepwise_penalty
         self.dump_beam = dump_beam
@@ -274,12 +278,14 @@ class Inference(object):
             ratio=opt.ratio,
             beam_size=opt.beam_size,
             random_sampling_topk=opt.random_sampling_topk,
+            random_sampling_topp=opt.random_sampling_topp,
             random_sampling_temp=opt.random_sampling_temp,
             stepwise_penalty=opt.stepwise_penalty,
             dump_beam=opt.dump_beam,
             block_ngram_repeat=opt.block_ngram_repeat,
             ignore_when_blocking=set(opt.ignore_when_blocking),
             replace_unk=opt.replace_unk,
+            ban_unk_token=opt.ban_unk_token,
             tgt_prefix=opt.tgt_prefix,
             phrase_table=opt.phrase_table,
             data_type=opt.data_type,
@@ -711,12 +717,14 @@ class Translator(Inference):
     def translate_batch(self, batch, src_vocabs, attn_debug):
         """Translate a batch of sentences."""
         with torch.no_grad():
-            if self.beam_size == 1:
+            if self.sample_from_topk != 0 or self.sample_from_topp != 0:
                 decode_strategy = GreedySearch(
                     pad=self._tgt_pad_idx,
                     bos=self._tgt_bos_idx,
                     eos=self._tgt_eos_idx,
+                    unk=self._tgt_unk_idx,
                     batch_size=batch.batch_size,
+                    global_scorer=self.global_scorer,
                     min_length=self.min_length,
                     max_length=self.max_length,
                     block_ngram_repeat=self.block_ngram_repeat,
@@ -724,6 +732,9 @@ class Translator(Inference):
                     return_attention=attn_debug or self.replace_unk,
                     sampling_temp=self.random_sampling_temp,
                     keep_topk=self.sample_from_topk,
+                    keep_topp=self.sample_from_topp,
+                    beam_size=self.beam_size,
+                    ban_unk_token=self.ban_unk_token,
                 )
             else:
                 # TODO: support these blacklisted features
@@ -734,6 +745,7 @@ class Translator(Inference):
                     pad=self._tgt_pad_idx,
                     bos=self._tgt_bos_idx,
                     eos=self._tgt_eos_idx,
+                    unk=self._tgt_unk_idx,
                     n_best=self.n_best,
                     global_scorer=self.global_scorer,
                     min_length=self.min_length,
@@ -743,6 +755,7 @@ class Translator(Inference):
                     exclusion_tokens=self._exclusion_idxs,
                     stepwise_penalty=self.stepwise_penalty,
                     ratio=self.ratio,
+                    ban_unk_token=self.ban_unk_token,
                 )
             return self._translate_batch_with_strategy(
                 batch, src_vocabs, decode_strategy
@@ -943,12 +956,14 @@ class GeneratorLM(Inference):
     def translate_batch(self, batch, src_vocabs, attn_debug):
         """Translate a batch of sentences."""
         with torch.no_grad():
-            if self.beam_size == 1:
+            if self.sample_from_topk != 0 or self.sample_from_topp != 0:
                 decode_strategy = GreedySearchLM(
                     pad=self._tgt_pad_idx,
                     bos=self._tgt_bos_idx,
                     eos=self._tgt_eos_idx,
+                    unk=self._tgt_unk_idx,
                     batch_size=batch.batch_size,
+                    global_scorer=self.global_scorer,
                     min_length=self.min_length,
                     max_length=self.max_length,
                     block_ngram_repeat=self.block_ngram_repeat,
@@ -956,6 +971,9 @@ class GeneratorLM(Inference):
                     return_attention=attn_debug or self.replace_unk,
                     sampling_temp=self.random_sampling_temp,
                     keep_topk=self.sample_from_topk,
+                    keep_topp=self.sample_from_topp,
+                    beam_size=self.beam_size,
+                    ban_unk_token=self.ban_unk_token,
                 )
             else:
                 # TODO: support these blacklisted features
@@ -966,6 +984,7 @@ class GeneratorLM(Inference):
                     pad=self._tgt_pad_idx,
                     bos=self._tgt_bos_idx,
                     eos=self._tgt_eos_idx,
+                    unk=self._tgt_unk_idx,
                     n_best=self.n_best,
                     global_scorer=self.global_scorer,
                     min_length=self.min_length,
@@ -975,6 +994,7 @@ class GeneratorLM(Inference):
                     exclusion_tokens=self._exclusion_idxs,
                     stepwise_penalty=self.stepwise_penalty,
                     ratio=self.ratio,
+                    ban_unk_token=self.ban_unk_token,
                 )
             return self._translate_batch_with_strategy(
                 batch, src_vocabs, decode_strategy
