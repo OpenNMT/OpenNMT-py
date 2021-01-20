@@ -105,6 +105,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/Library.html">Library</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/Translation.html">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/LanguageModelGeneration.html">Language Model Generation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/GGNN.html">Gated Graph Sequence Neural Networks</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Scripts</span></p>
@@ -195,7 +196,6 @@
 <span class="sd">This includes: LossComputeBase and the standard NMTLossCompute, and</span>
 <span class="sd">               sharded loss compute stuff.</span>
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">division</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
 <span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
@@ -203,6 +203,7 @@
 <span class="kn">import</span> <span class="nn">onmt</span>
 <span class="kn">from</span> <span class="nn">onmt.modules.sparse_losses</span> <span class="kn">import</span> <span class="n">SparsemaxLoss</span>
 <span class="kn">from</span> <span class="nn">onmt.modules.sparse_activations</span> <span class="kn">import</span> <span class="n">LogSparsemax</span>
+<span class="kn">from</span> <span class="nn">onmt.constants</span> <span class="kn">import</span> <span class="n">ModelTask</span>
 
 
 <span class="k">def</span> <span class="nf">build_loss_compute</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">tgt_field</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">train</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
@@ -244,14 +245,44 @@
     <span class="n">use_raw_logits</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">criterion</span><span class="p">,</span> <span class="n">SparsemaxLoss</span><span class="p">)</span>
     <span class="n">loss_gen</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">generator</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">use_raw_logits</span> <span class="k">else</span> <span class="n">model</span><span class="o">.</span><span class="n">generator</span>
     <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">copy_attn</span><span class="p">:</span>
-        <span class="n">compute</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">CopyGeneratorLossCompute</span><span class="p">(</span>
-            <span class="n">criterion</span><span class="p">,</span> <span class="n">loss_gen</span><span class="p">,</span> <span class="n">tgt_field</span><span class="o">.</span><span class="n">vocab</span><span class="p">,</span> <span class="n">opt</span><span class="o">.</span><span class="n">copy_loss_by_seqlength</span><span class="p">,</span>
-            <span class="n">lambda_coverage</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">lambda_coverage</span>
-        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">model_task</span> <span class="o">==</span> <span class="n">ModelTask</span><span class="o">.</span><span class="n">SEQ2SEQ</span><span class="p">:</span>
+            <span class="n">compute</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">CopyGeneratorLossCompute</span><span class="p">(</span>
+                <span class="n">criterion</span><span class="p">,</span> <span class="n">loss_gen</span><span class="p">,</span> <span class="n">tgt_field</span><span class="o">.</span><span class="n">vocab</span><span class="p">,</span>
+                <span class="n">opt</span><span class="o">.</span><span class="n">copy_loss_by_seqlength</span><span class="p">,</span>
+                <span class="n">lambda_coverage</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">lambda_coverage</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">model_task</span> <span class="o">==</span> <span class="n">ModelTask</span><span class="o">.</span><span class="n">LANGUAGE_MODEL</span><span class="p">:</span>
+            <span class="n">compute</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">CopyGeneratorLMLossCompute</span><span class="p">(</span>
+                <span class="n">criterion</span><span class="p">,</span> <span class="n">loss_gen</span><span class="p">,</span> <span class="n">tgt_field</span><span class="o">.</span><span class="n">vocab</span><span class="p">,</span>
+                <span class="n">opt</span><span class="o">.</span><span class="n">copy_loss_by_seqlength</span><span class="p">,</span>
+                <span class="n">lambda_coverage</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">lambda_coverage</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;No copy generator loss defined for task </span><span class="si">{</span><span class="n">opt</span><span class="o">.</span><span class="n">model_task</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">compute</span> <span class="o">=</span> <span class="n">NMTLossCompute</span><span class="p">(</span>
-            <span class="n">criterion</span><span class="p">,</span> <span class="n">loss_gen</span><span class="p">,</span> <span class="n">lambda_coverage</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">lambda_coverage</span><span class="p">,</span>
-            <span class="n">lambda_align</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">lambda_align</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">model_task</span> <span class="o">==</span> <span class="n">ModelTask</span><span class="o">.</span><span class="n">SEQ2SEQ</span><span class="p">:</span>
+            <span class="n">compute</span> <span class="o">=</span> <span class="n">NMTLossCompute</span><span class="p">(</span>
+                <span class="n">criterion</span><span class="p">,</span>
+                <span class="n">loss_gen</span><span class="p">,</span>
+                <span class="n">lambda_coverage</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">lambda_coverage</span><span class="p">,</span>
+                <span class="n">lambda_align</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">lambda_align</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">model_task</span> <span class="o">==</span> <span class="n">ModelTask</span><span class="o">.</span><span class="n">LANGUAGE_MODEL</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="p">(</span>
+                <span class="n">opt</span><span class="o">.</span><span class="n">lambda_align</span> <span class="o">==</span> <span class="mf">0.0</span>
+            <span class="p">),</span> <span class="s2">&quot;lamdba_align not supported in LM loss&quot;</span>
+            <span class="n">compute</span> <span class="o">=</span> <span class="n">LMLossCompute</span><span class="p">(</span>
+                <span class="n">criterion</span><span class="p">,</span>
+                <span class="n">loss_gen</span><span class="p">,</span>
+                <span class="n">lambda_coverage</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">lambda_coverage</span><span class="p">,</span>
+                <span class="n">lambda_align</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">lambda_align</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;No compute loss defined for task </span><span class="si">{</span><span class="n">opt</span><span class="o">.</span><span class="n">model_task</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
     <span class="n">compute</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">compute</span>
@@ -414,59 +445,34 @@
         <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">kl_div</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">model_prob</span><span class="p">,</span> <span class="n">reduction</span><span class="o">=</span><span class="s1">&#39;sum&#39;</span><span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">NMTLossCompute</span><span class="p">(</span><span class="n">LossComputeBase</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">CommonLossCompute</span><span class="p">(</span><span class="n">LossComputeBase</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Standard NMT Loss Computation.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    Loss Computation parent for NMTLossCompute and LMLossCompute</span>
 
+<span class="sd">    Implement loss compatible with coverage and alignement shards</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">criterion</span><span class="p">,</span> <span class="n">generator</span><span class="p">,</span> <span class="n">normalization</span><span class="o">=</span><span class="s2">&quot;sents&quot;</span><span class="p">,</span>
-                 <span class="n">lambda_coverage</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">lambda_align</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">NMTLossCompute</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">criterion</span><span class="p">,</span> <span class="n">generator</span><span class="p">)</span>
+                 <span class="n">lambda_coverage</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">lambda_align</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">tgt_shift_index</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">CommonLossCompute</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">criterion</span><span class="p">,</span> <span class="n">generator</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lambda_coverage</span> <span class="o">=</span> <span class="n">lambda_coverage</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lambda_align</span> <span class="o">=</span> <span class="n">lambda_align</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tgt_shift_index</span> <span class="o">=</span> <span class="n">tgt_shift_index</span>
 
-    <span class="k">def</span> <span class="nf">_make_shard_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">range_</span><span class="p">,</span> <span class="n">attns</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="n">shard_state</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;output&quot;</span><span class="p">:</span> <span class="n">output</span><span class="p">,</span>
-            <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="n">batch</span><span class="o">.</span><span class="n">tgt</span><span class="p">[</span><span class="n">range_</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span> <span class="n">range_</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">],</span>
-        <span class="p">}</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lambda_coverage</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">:</span>
-            <span class="n">coverage</span> <span class="o">=</span> <span class="n">attns</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;coverage&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-            <span class="n">std</span> <span class="o">=</span> <span class="n">attns</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;std&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-            <span class="k">assert</span> <span class="n">attns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-            <span class="k">assert</span> <span class="n">std</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;lambda_coverage != 0.0 requires &quot;</span> \
-                <span class="s2">&quot;attention mechanism&quot;</span>
-            <span class="k">assert</span> <span class="n">coverage</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;lambda_coverage != 0.0 requires &quot;</span> \
-                <span class="s2">&quot;coverage attention&quot;</span>
-
-            <span class="n">shard_state</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
-                <span class="s2">&quot;std_attn&quot;</span><span class="p">:</span> <span class="n">attns</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;std&quot;</span><span class="p">),</span>
-                <span class="s2">&quot;coverage_attn&quot;</span><span class="p">:</span> <span class="n">coverage</span>
-            <span class="p">})</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lambda_align</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">:</span>
-            <span class="c1"># attn_align should be in (batch_size, pad_tgt_size, pad_src_size)</span>
-            <span class="n">attn_align</span> <span class="o">=</span> <span class="n">attns</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;align&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-            <span class="c1"># align_idx should be a Tensor in size([N, 3]), N is total number</span>
-            <span class="c1"># of align src-tgt pair in current batch, each as</span>
-            <span class="c1"># [&#39;sent_N°_in_batch&#39;, &#39;tgt_id+1&#39;, &#39;src_id&#39;] (check AlignField)</span>
-            <span class="n">align_idx</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">align</span>
-            <span class="k">assert</span> <span class="n">attns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-            <span class="k">assert</span> <span class="n">attn_align</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;lambda_align != 0.0 requires &quot;</span> \
-                <span class="s2">&quot;alignement attention head&quot;</span>
-            <span class="k">assert</span> <span class="n">align_idx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;lambda_align != 0.0 requires &quot;</span> \
-                <span class="s2">&quot;provide guided alignement&quot;</span>
-            <span class="n">pad_tgt_size</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">tgt</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
-            <span class="n">pad_src_size</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">src</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-            <span class="n">align_matrix_size</span> <span class="o">=</span> <span class="p">[</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">pad_tgt_size</span><span class="p">,</span> <span class="n">pad_src_size</span><span class="p">]</span>
-            <span class="n">ref_align</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">make_batch_align_matrix</span><span class="p">(</span>
-                <span class="n">align_idx</span><span class="p">,</span> <span class="n">align_matrix_size</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="c1"># NOTE: tgt-src ref alignement that in range_ of shard</span>
-            <span class="c1"># (coherent with batch.tgt)</span>
-            <span class="n">shard_state</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
-                <span class="s2">&quot;align_head&quot;</span><span class="p">:</span> <span class="n">attn_align</span><span class="p">,</span>
-                <span class="s2">&quot;ref_align&quot;</span><span class="p">:</span> <span class="n">ref_align</span><span class="p">[:,</span> <span class="n">range_</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span> <span class="n">range_</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="p">:]</span>
-            <span class="p">})</span>
-        <span class="k">return</span> <span class="n">shard_state</span>
+    <span class="k">def</span> <span class="nf">_add_coverage_shard_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shard_state</span><span class="p">,</span> <span class="n">attns</span><span class="p">):</span>
+        <span class="n">coverage</span> <span class="o">=</span> <span class="n">attns</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;coverage&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">std</span> <span class="o">=</span> <span class="n">attns</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;std&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">attns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">assert</span> <span class="n">coverage</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="p">(</span>
+            <span class="s2">&quot;lambda_coverage != 0.0 requires coverage attention&quot;</span>
+            <span class="s2">&quot; that could not be found in the model.&quot;</span>
+            <span class="s2">&quot; Transformer decoders do not implement coverage&quot;</span>
+        <span class="p">)</span>
+        <span class="k">assert</span> <span class="n">std</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="p">(</span>
+            <span class="s2">&quot;lambda_coverage != 0.0 requires attention mechanism&quot;</span>
+            <span class="s2">&quot; that could not be found in the model.&quot;</span>
+        <span class="p">)</span>
+        <span class="n">shard_state</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;std_attn&quot;</span><span class="p">:</span> <span class="n">attns</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;std&quot;</span><span class="p">),</span>
+                            <span class="s2">&quot;coverage_attn&quot;</span><span class="p">:</span> <span class="n">coverage</span><span class="p">})</span>
 
     <span class="k">def</span> <span class="nf">_compute_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">std_attn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                       <span class="n">coverage_attn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">align_head</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ref_align</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -498,6 +504,36 @@
         <span class="n">covloss</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lambda_coverage</span>
         <span class="k">return</span> <span class="n">covloss</span>
 
+    <span class="k">def</span> <span class="nf">_add_align_shard_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shard_state</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">range_start</span><span class="p">,</span>
+                               <span class="n">range_end</span><span class="p">,</span> <span class="n">attns</span><span class="p">):</span>
+        <span class="c1"># attn_align should be in (batch_size, pad_tgt_size, pad_src_size)</span>
+        <span class="n">attn_align</span> <span class="o">=</span> <span class="n">attns</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;align&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="c1"># align_idx should be a Tensor in size([N, 3]), N is total number</span>
+        <span class="c1"># of align src-tgt pair in current batch, each as</span>
+        <span class="c1"># [&#39;sent_N°_in_batch&#39;, &#39;tgt_id+1&#39;, &#39;src_id&#39;] (check AlignField)</span>
+        <span class="n">align_idx</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">align</span>
+        <span class="k">assert</span> <span class="n">attns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">assert</span> <span class="n">attn_align</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="p">(</span>
+            <span class="s2">&quot;lambda_align != 0.0 requires &quot;</span> <span class="s2">&quot;alignement attention head&quot;</span>
+        <span class="p">)</span>
+        <span class="k">assert</span> <span class="n">align_idx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="p">(</span>
+            <span class="s2">&quot;lambda_align != 0.0 requires &quot;</span> <span class="s2">&quot;provide guided alignement&quot;</span>
+        <span class="p">)</span>
+        <span class="n">pad_tgt_size</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">tgt</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+        <span class="n">pad_src_size</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">src</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">align_matrix_size</span> <span class="o">=</span> <span class="p">[</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">pad_tgt_size</span><span class="p">,</span> <span class="n">pad_src_size</span><span class="p">]</span>
+        <span class="n">ref_align</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">make_batch_align_matrix</span><span class="p">(</span>
+            <span class="n">align_idx</span><span class="p">,</span> <span class="n">align_matrix_size</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+        <span class="c1"># NOTE: tgt-src ref alignement that in range_ of shard</span>
+        <span class="c1"># (coherent with batch.tgt)</span>
+        <span class="n">shard_state</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;align_head&quot;</span><span class="p">:</span> <span class="n">attn_align</span><span class="p">,</span>
+                <span class="s2">&quot;ref_align&quot;</span><span class="p">:</span> <span class="n">ref_align</span><span class="p">[:,</span> <span class="n">range_start</span><span class="p">:</span><span class="n">range_end</span><span class="p">,</span> <span class="p">:],</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+
     <span class="k">def</span> <span class="nf">_compute_alignement_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">align_head</span><span class="p">,</span> <span class="n">ref_align</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute loss between 2 partial alignment matrix.&quot;&quot;&quot;</span>
         <span class="c1"># align_head contains value in [0, 1) presenting attn prob,</span>
@@ -507,6 +543,47 @@
         <span class="n">align_loss</span> <span class="o">=</span> <span class="o">-</span><span class="n">align_head</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mf">1e-18</span><span class="p">)</span><span class="o">.</span><span class="n">log</span><span class="p">()</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">ref_align</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
         <span class="n">align_loss</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lambda_align</span>
         <span class="k">return</span> <span class="n">align_loss</span>
+
+    <span class="k">def</span> <span class="nf">_make_shard_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">range_</span><span class="p">,</span> <span class="n">attns</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">range_start</span> <span class="o">=</span> <span class="n">range_</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">tgt_shift_index</span>
+        <span class="n">range_end</span> <span class="o">=</span> <span class="n">range_</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">shard_state</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;output&quot;</span><span class="p">:</span> <span class="n">output</span><span class="p">,</span>
+            <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="n">batch</span><span class="o">.</span><span class="n">tgt</span><span class="p">[</span><span class="n">range_start</span><span class="p">:</span><span class="n">range_end</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">],</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lambda_coverage</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_add_coverage_shard_state</span><span class="p">(</span><span class="n">shard_state</span><span class="p">,</span> <span class="n">attns</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lambda_align</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_add_align_shard_state</span><span class="p">(</span>
+                <span class="n">shard_state</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">range_start</span><span class="p">,</span> <span class="n">range_end</span><span class="p">,</span> <span class="n">attns</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">shard_state</span>
+
+
+<span class="k">class</span> <span class="nc">NMTLossCompute</span><span class="p">(</span><span class="n">CommonLossCompute</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Standard NMT Loss Computation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">criterion</span><span class="p">,</span> <span class="n">generator</span><span class="p">,</span> <span class="n">normalization</span><span class="o">=</span><span class="s2">&quot;sents&quot;</span><span class="p">,</span>
+                 <span class="n">lambda_coverage</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">lambda_align</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">NMTLossCompute</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">criterion</span><span class="p">,</span> <span class="n">generator</span><span class="p">,</span>
+                                             <span class="n">normalization</span><span class="o">=</span><span class="n">normalization</span><span class="p">,</span>
+                                             <span class="n">lambda_coverage</span><span class="o">=</span><span class="n">lambda_coverage</span><span class="p">,</span>
+                                             <span class="n">lambda_align</span><span class="o">=</span><span class="n">lambda_align</span><span class="p">,</span>
+                                             <span class="n">tgt_shift_index</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">LMLossCompute</span><span class="p">(</span><span class="n">CommonLossCompute</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Standard LM Loss Computation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">criterion</span><span class="p">,</span> <span class="n">generator</span><span class="p">,</span> <span class="n">normalization</span><span class="o">=</span><span class="s2">&quot;sents&quot;</span><span class="p">,</span>
+                 <span class="n">lambda_coverage</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">lambda_align</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">LMLossCompute</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">criterion</span><span class="p">,</span> <span class="n">generator</span><span class="p">,</span>
+                                            <span class="n">normalization</span><span class="o">=</span><span class="n">normalization</span><span class="p">,</span>
+                                            <span class="n">lambda_coverage</span><span class="o">=</span><span class="n">lambda_coverage</span><span class="p">,</span>
+                                            <span class="n">lambda_align</span><span class="o">=</span><span class="n">lambda_align</span><span class="p">,</span>
+                                            <span class="n">tgt_shift_index</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">filter_shard_state</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">shard_size</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>

@@ -105,6 +105,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/Library.html">Library</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/Translation.html">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/LanguageModelGeneration.html">Language Model Generation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/GGNN.html">Gated Graph Sequence Neural Networks</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Scripts</span></p>
@@ -200,6 +201,7 @@
 <span class="kn">from</span> <span class="nn">onmt.encoders.encoder</span> <span class="kn">import</span> <span class="n">EncoderBase</span>
 <span class="kn">from</span> <span class="nn">onmt.modules</span> <span class="kn">import</span> <span class="n">MultiHeadedAttention</span>
 <span class="kn">from</span> <span class="nn">onmt.modules.position_ffn</span> <span class="kn">import</span> <span class="n">PositionwiseFeedForward</span>
+<span class="kn">from</span> <span class="nn">onmt.modules.position_ffn</span> <span class="kn">import</span> <span class="n">ActivationFunction</span>
 <span class="kn">from</span> <span class="nn">onmt.utils.misc</span> <span class="kn">import</span> <span class="n">sequence_mask</span>
 
 
@@ -214,16 +216,20 @@
 <span class="sd">        heads (int): the number of head for MultiHeadedAttention.</span>
 <span class="sd">        d_ff (int): the second-layer of the PositionwiseFeedForward.</span>
 <span class="sd">        dropout (float): dropout probability(0-1.0).</span>
+<span class="sd">        pos_ffn_activation_fn (ActivationFunction):</span>
+<span class="sd">            activation function choice for PositionwiseFeedForward layer</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d_model</span><span class="p">,</span> <span class="n">heads</span><span class="p">,</span> <span class="n">d_ff</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">attention_dropout</span><span class="p">,</span>
-                 <span class="n">max_relative_positions</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+                 <span class="n">max_relative_positions</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                 <span class="n">pos_ffn_activation_fn</span><span class="o">=</span><span class="n">ActivationFunction</span><span class="o">.</span><span class="n">relu</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">TransformerEncoderLayer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">self_attn</span> <span class="o">=</span> <span class="n">MultiHeadedAttention</span><span class="p">(</span>
             <span class="n">heads</span><span class="p">,</span> <span class="n">d_model</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="n">attention_dropout</span><span class="p">,</span>
             <span class="n">max_relative_positions</span><span class="o">=</span><span class="n">max_relative_positions</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">feed_forward</span> <span class="o">=</span> <span class="n">PositionwiseFeedForward</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">d_ff</span><span class="p">,</span> <span class="n">dropout</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">feed_forward</span> <span class="o">=</span> <span class="n">PositionwiseFeedForward</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">d_ff</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span>
+                                                    <span class="n">pos_ffn_activation_fn</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span>
 
@@ -273,6 +279,8 @@
 <span class="sd">        dropout (float): dropout parameters</span>
 <span class="sd">        embeddings (onmt.modules.Embeddings):</span>
 <span class="sd">          embeddings to use, should have positional encodings</span>
+<span class="sd">        pos_ffn_activation_fn (ActivationFunction):</span>
+<span class="sd">            activation function choice for PositionwiseFeedForward layer</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        (torch.FloatTensor, torch.FloatTensor):</span>
@@ -282,14 +290,16 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span> <span class="n">d_model</span><span class="p">,</span> <span class="n">heads</span><span class="p">,</span> <span class="n">d_ff</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span>
-                 <span class="n">attention_dropout</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">,</span> <span class="n">max_relative_positions</span><span class="p">):</span>
+                 <span class="n">attention_dropout</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">,</span> <span class="n">max_relative_positions</span><span class="p">,</span>
+                 <span class="n">pos_ffn_activation_fn</span><span class="o">=</span><span class="n">ActivationFunction</span><span class="o">.</span><span class="n">relu</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">TransformerEncoder</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span> <span class="o">=</span> <span class="n">embeddings</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">transformer</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">(</span>
             <span class="p">[</span><span class="n">TransformerEncoderLayer</span><span class="p">(</span>
                 <span class="n">d_model</span><span class="p">,</span> <span class="n">heads</span><span class="p">,</span> <span class="n">d_ff</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">attention_dropout</span><span class="p">,</span>
-                <span class="n">max_relative_positions</span><span class="o">=</span><span class="n">max_relative_positions</span><span class="p">)</span>
+                <span class="n">max_relative_positions</span><span class="o">=</span><span class="n">max_relative_positions</span><span class="p">,</span>
+                <span class="n">pos_ffn_activation_fn</span><span class="o">=</span><span class="n">pos_ffn_activation_fn</span><span class="p">)</span>
              <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_layers</span><span class="p">)])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
 
@@ -305,7 +315,9 @@
             <span class="n">opt</span><span class="o">.</span><span class="n">attention_dropout</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">attention_dropout</span><span class="p">)</span>
             <span class="ow">is</span> <span class="nb">list</span> <span class="k">else</span> <span class="n">opt</span><span class="o">.</span><span class="n">attention_dropout</span><span class="p">,</span>
             <span class="n">embeddings</span><span class="p">,</span>
-            <span class="n">opt</span><span class="o">.</span><span class="n">max_relative_positions</span><span class="p">)</span></div>
+            <span class="n">opt</span><span class="o">.</span><span class="n">max_relative_positions</span><span class="p">,</span>
+            <span class="n">pos_ffn_activation_fn</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">pos_ffn_activation_fn</span><span class="p">,</span>
+        <span class="p">)</span></div>
 
 <div class="viewcode-block" id="TransformerEncoder.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.encoders.TransformerEncoder.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">lengths</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;See :func:`EncoderBase.forward()`&quot;&quot;&quot;</span>

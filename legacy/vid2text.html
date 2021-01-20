@@ -105,6 +105,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../examples/Library.html">Library</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../examples/Translation.html">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../examples/Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/LanguageModelGeneration.html">Language Model Generation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../examples/GGNN.html">Gated Graph Sequence Neural Networks</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Scripts</span></p>
@@ -242,7 +243,7 @@ Use <code class="docutils literal notranslate"><span class="pre">unzip</span> <s
 </pre></div>
 </div>
 <p>Make sure all the videos have the same (low) framerate by changing to the YouTubeClips directory and using</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="k">fi</span> in <span class="k">$(</span> ls <span class="k">)</span><span class="p">;</span> <span class="k">do</span> ffmpeg -y -i <span class="nv">$fi</span> -r <span class="m">2</span> <span class="nv">$fi</span><span class="p">;</span> <span class="k">done</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="k">fi</span> <span class="k">in</span> <span class="k">$(</span> ls <span class="k">)</span><span class="p">;</span> <span class="k">do</span> ffmpeg -y -i <span class="nv">$fi</span> -r <span class="m">2</span> <span class="nv">$fi</span><span class="p">;</span> <span class="k">done</span>
 </pre></div>
 </div>
 <p>Now we want to convert the frames into sequences of CNN feature vectors.
@@ -443,7 +444,7 @@ on the MSVD (YouTube2Text) dataset. See Table 3, Base model(R).</p>
 <p>In Section 4.3, the authors report most of their preprocessing and hyperparameters.</p>
 <p>Create a folder called <em>yt2t_2</em>. Copy <em>youtube2text_iccv15</em> directory and <em>YouTubeClips.tar</em> into
 the new directory and untar <em>YouTubeClips</em>. Rerun the renaming code. Subssample at 5 FPS using</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="k">fi</span> in <span class="k">$(</span> ls <span class="k">)</span><span class="p">;</span> <span class="k">do</span> ffmpeg -y -i <span class="nv">$fi</span> -r <span class="m">5</span> <span class="nv">$fi</span><span class="p">;</span> <span class="k">done</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="k">fi</span> <span class="k">in</span> <span class="k">$(</span> ls <span class="k">)</span><span class="p">;</span> <span class="k">do</span> ffmpeg -y -i <span class="nv">$fi</span> -r <span class="m">5</span> <span class="nv">$fi</span><span class="p">;</span> <span class="k">done</span>
 </pre></div>
 </div>
 <p>Set the environment variable <code class="docutils literal notranslate"><span class="pre">$YT2T</span></code> to this new directory and change to the repo directory.
@@ -645,7 +646,7 @@ although this too is not mentioned. You can reproduce our early-stops with these
 <div class="code-block-caption"><span class="caption-text"><cite>find_val_stops.sh</cite></span><a class="headerlink" href="#id2" title="Permalink to this code">¶</a></div>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>rm results.txt
 touch results.txt
-<span class="k">for</span> file in <span class="k">$(</span> ls -1v yt2t-model_step*.pt <span class="k">)</span>
+<span class="k">for</span> file <span class="k">in</span> <span class="k">$(</span> ls -1v yt2t-model_step*.pt <span class="k">)</span>
 <span class="k">do</span>
     <span class="nb">echo</span> <span class="nv">$file</span>
     onmt_translate -model <span class="nv">$file</span> -src <span class="nv">$YT2T</span>/yt2t_val_folded_files.txt -output pred.txt -verbose -data_type vec -src_dir <span class="nv">$YT2T</span>/r152 -gpu <span class="m">0</span> -batch_size <span class="m">16</span> -max_length <span class="m">20</span> &gt;/dev/null <span class="m">2</span>&gt;/dev/null

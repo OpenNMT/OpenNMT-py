@@ -107,6 +107,7 @@
 <li class="toctree-l1"><a class="reference internal" href="examples/Library.html">Library</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/Translation.html">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/LanguageModelGeneration.html">Language Model Generation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/GGNN.html">Gated Graph Sequence Neural Networks</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Scripts</span></p>
@@ -333,11 +334,12 @@ and required by <code class="xref py py-class docutils literal notranslate"><spa
 <dd class="field-even"><p><ul class="simple">
 <li><p>final encoder state, used to initialize decoder</p></li>
 <li><p>memory bank for attention, <code class="docutils literal notranslate"><span class="pre">(src_len,</span> <span class="pre">batch,</span> <span class="pre">hidden)</span></code></p></li>
+<li><p>lengths</p></li>
 </ul>
 </p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>(FloatTensor, FloatTensor)</p>
+<dd class="field-odd"><p>(FloatTensor, FloatTensor, FloatTensor)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -563,7 +565,7 @@ or <cite>copy_attn</cite> support.</p>
 <h2>Attention<a class="headerlink" href="#attention" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.modules.AverageAttention">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.modules.</code><code class="sig-name descname">AverageAttention</code><span class="sig-paren">(</span><em class="sig-param">model_dim</em>, <em class="sig-param">dropout=0.1</em>, <em class="sig-param">aan_useffn=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/average_attn.html#AverageAttention"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.AverageAttention" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.modules.</code><code class="sig-name descname">AverageAttention</code><span class="sig-paren">(</span><em class="sig-param">model_dim</em>, <em class="sig-param">dropout=0.1</em>, <em class="sig-param">aan_useffn=False</em>, <em class="sig-param">pos_ffn_activation_fn='relu'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/average_attn.html#AverageAttention"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.AverageAttention" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.module.Module</span></code></p>
 <p>Average Attention module from
 “Accelerating Neural Transformer via an Average Attention Network”
@@ -574,6 +576,7 @@ or <cite>copy_attn</cite> support.</p>
 <li><p><strong>model_dim</strong> (<em>int</em>) – the dimension of keys/values/queries,
 must be divisible by head_count</p></li>
 <li><p><strong>dropout</strong> (<em>float</em>) – dropout parameter</p></li>
+<li><p><strong>pos_ffn_activation_fn</strong> (<em>ActivationFunction</em>) – activation function choice for PositionwiseFeedForward layer</p></li>
 </ul>
 </dd>
 </dl>
@@ -801,7 +804,7 @@ the encoding for this position.</p></li>
 
 <dl class="class">
 <dt id="onmt.modules.position_ffn.PositionwiseFeedForward">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.modules.position_ffn.</code><code class="sig-name descname">PositionwiseFeedForward</code><span class="sig-paren">(</span><em class="sig-param">d_model</em>, <em class="sig-param">d_ff</em>, <em class="sig-param">dropout=0.1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/position_ffn.html#PositionwiseFeedForward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.position_ffn.PositionwiseFeedForward" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.modules.position_ffn.</code><code class="sig-name descname">PositionwiseFeedForward</code><span class="sig-paren">(</span><em class="sig-param">d_model</em>, <em class="sig-param">d_ff</em>, <em class="sig-param">dropout=0.1</em>, <em class="sig-param">activation_fn='relu'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/position_ffn.html#PositionwiseFeedForward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.position_ffn.PositionwiseFeedForward" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.module.Module</span></code></p>
 <p>A two-layer Feed-Forward-Network with residual layer norm.</p>
 <dl class="field-list simple">
@@ -811,6 +814,7 @@ the encoding for this position.</p></li>
 <li><p><strong>d_ff</strong> (<em>int</em>) – the hidden layer size of the second-layer
 of the FNN.</p></li>
 <li><p><strong>dropout</strong> (<em>float</em>) – dropout probability in <span class="math notranslate nohighlight">\([0, 1)\)</span>.</p></li>
+<li><p><strong>activation_fn</strong> (<em>ActivationFunction</em>) – activation function used.</p></li>
 </ul>
 </dd>
 </dl>
@@ -835,7 +839,7 @@ of the FNN.</p></li>
 
 <dl class="class">
 <dt id="onmt.encoders.TransformerEncoder">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.encoders.</code><code class="sig-name descname">TransformerEncoder</code><span class="sig-paren">(</span><em class="sig-param">num_layers</em>, <em class="sig-param">d_model</em>, <em class="sig-param">heads</em>, <em class="sig-param">d_ff</em>, <em class="sig-param">dropout</em>, <em class="sig-param">attention_dropout</em>, <em class="sig-param">embeddings</em>, <em class="sig-param">max_relative_positions</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/encoders/transformer.html#TransformerEncoder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.encoders.TransformerEncoder" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.encoders.</code><code class="sig-name descname">TransformerEncoder</code><span class="sig-paren">(</span><em class="sig-param">num_layers</em>, <em class="sig-param">d_model</em>, <em class="sig-param">heads</em>, <em class="sig-param">d_ff</em>, <em class="sig-param">dropout</em>, <em class="sig-param">attention_dropout</em>, <em class="sig-param">embeddings</em>, <em class="sig-param">max_relative_positions</em>, <em class="sig-param">pos_ffn_activation_fn='relu'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/encoders/transformer.html#TransformerEncoder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.encoders.TransformerEncoder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.encoders.encoder.EncoderBase</span></code></p>
 <p>The Transformer encoder from “Attention is All You Need”
 <a class="bibtex reference internal" href="ref.html#dblp-journals-corr-vaswanispujgkp17" id="id8">[VSP+17]</a></p>
@@ -857,6 +861,7 @@ of the FNN.</p></li>
 <li><p><strong>d_ff</strong> (<em>int</em>) – size of the inner FF layer</p></li>
 <li><p><strong>dropout</strong> (<em>float</em>) – dropout parameters</p></li>
 <li><p><strong>embeddings</strong> (<a class="reference internal" href="#onmt.modules.Embeddings" title="onmt.modules.Embeddings"><em>onmt.modules.Embeddings</em></a>) – embeddings to use, should have positional encodings</p></li>
+<li><p><strong>pos_ffn_activation_fn</strong> (<em>ActivationFunction</em>) – activation function choice for PositionwiseFeedForward layer</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -886,8 +891,8 @@ of the FNN.</p></li>
 
 <dl class="class">
 <dt id="onmt.decoders.TransformerDecoder">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.decoders.</code><code class="sig-name descname">TransformerDecoder</code><span class="sig-paren">(</span><em class="sig-param">num_layers</em>, <em class="sig-param">d_model</em>, <em class="sig-param">heads</em>, <em class="sig-param">d_ff</em>, <em class="sig-param">copy_attn</em>, <em class="sig-param">self_attn_type</em>, <em class="sig-param">dropout</em>, <em class="sig-param">attention_dropout</em>, <em class="sig-param">embeddings</em>, <em class="sig-param">max_relative_positions</em>, <em class="sig-param">aan_useffn</em>, <em class="sig-param">full_context_alignment</em>, <em class="sig-param">alignment_layer</em>, <em class="sig-param">alignment_heads</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/decoders/transformer.html#TransformerDecoder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.decoders.TransformerDecoder" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.decoders.decoder.DecoderBase</span></code></p>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.decoders.</code><code class="sig-name descname">TransformerDecoder</code><span class="sig-paren">(</span><em class="sig-param">num_layers</em>, <em class="sig-param">d_model</em>, <em class="sig-param">heads</em>, <em class="sig-param">d_ff</em>, <em class="sig-param">copy_attn</em>, <em class="sig-param">self_attn_type</em>, <em class="sig-param">dropout</em>, <em class="sig-param">attention_dropout</em>, <em class="sig-param">embeddings</em>, <em class="sig-param">max_relative_positions</em>, <em class="sig-param">aan_useffn</em>, <em class="sig-param">full_context_alignment</em>, <em class="sig-param">alignment_layer</em>, <em class="sig-param">alignment_heads</em>, <em class="sig-param">pos_ffn_activation_fn='relu'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/decoders/transformer.html#TransformerDecoder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.decoders.TransformerDecoder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.decoders.transformer.TransformerDecoderBase</span></code></p>
 <p>The Transformer decoder from “Attention is All You Need”.
 <a class="bibtex reference internal" href="ref.html#dblp-journals-corr-vaswanispujgkp17" id="id9">[VSP+17]</a></p>
 <div class="mermaid">
@@ -926,20 +931,8 @@ of the FNN.</p></li>
 </dl>
 <dl class="method">
 <dt id="onmt.decoders.TransformerDecoder.forward">
-<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">tgt</em>, <em class="sig-param">memory_bank</em>, <em class="sig-param">step=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/decoders/transformer.html#TransformerDecoder.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.decoders.TransformerDecoder.forward" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">tgt</em>, <em class="sig-param">memory_bank=None</em>, <em class="sig-param">step=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/decoders/transformer.html#TransformerDecoder.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.decoders.TransformerDecoder.forward" title="Permalink to this definition">¶</a></dt>
 <dd><p>Decode, possibly stepwise.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="onmt.decoders.TransformerDecoder.from_opt">
-<em class="property">classmethod </em><code class="sig-name descname">from_opt</code><span class="sig-paren">(</span><em class="sig-param">opt</em>, <em class="sig-param">embeddings</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/decoders/transformer.html#TransformerDecoder.from_opt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.decoders.TransformerDecoder.from_opt" title="Permalink to this definition">¶</a></dt>
-<dd><p>Alternate constructor.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="onmt.decoders.TransformerDecoder.init_state">
-<code class="sig-name descname">init_state</code><span class="sig-paren">(</span><em class="sig-param">src</em>, <em class="sig-param">memory_bank</em>, <em class="sig-param">enc_hidden</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/decoders/transformer.html#TransformerDecoder.init_state"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.decoders.TransformerDecoder.init_state" title="Permalink to this definition">¶</a></dt>
-<dd><p>Initialize decoder state.</p>
 </dd></dl>
 
 </dd></dl>
@@ -1116,20 +1109,6 @@ which is the combination of base emb and top output of encode</p></li>
 <dt id="onmt.modules.WeightNormConv2d">
 <em class="property">class </em><code class="sig-prename descclassname">onmt.modules.</code><code class="sig-name descname">WeightNormConv2d</code><span class="sig-paren">(</span><em class="sig-param">in_channels</em>, <em class="sig-param">out_channels</em>, <em class="sig-param">kernel_size</em>, <em class="sig-param">stride=1</em>, <em class="sig-param">padding=0</em>, <em class="sig-param">dilation=1</em>, <em class="sig-param">groups=1</em>, <em class="sig-param">init_scale=1.0</em>, <em class="sig-param">polyak_decay=0.9995</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/weight_norm.html#WeightNormConv2d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.WeightNormConv2d" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.conv.Conv2d</span></code></p>
-<dl class="method">
-<dt id="onmt.modules.WeightNormConv2d.forward">
-<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">init=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/weight_norm.html#WeightNormConv2d.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.WeightNormConv2d.forward" title="Permalink to this definition">¶</a></dt>
-<dd><p>Defines the computation performed at every call.</p>
-<p>Should be overridden by all subclasses.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Although the recipe for forward pass needs to be defined within
-this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
-instead of this since the former takes care of running the
-registered hooks while the latter silently ignores them.</p>
-</div>
-</dd></dl>
-
 </dd></dl>
 
 </div>
@@ -1158,20 +1137,6 @@ registered hooks while the latter silently ignores them.</p>
 </ul>
 </dd>
 </dl>
-<dl class="method">
-<dt id="onmt.models.sru.SRU.forward">
-<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">input</em>, <em class="sig-param">c0=None</em>, <em class="sig-param">return_hidden=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/models/sru.html#SRU.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.models.sru.SRU.forward" title="Permalink to this definition">¶</a></dt>
-<dd><p>Defines the computation performed at every call.</p>
-<p>Should be overridden by all subclasses.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Although the recipe for forward pass needs to be defined within
-this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
-instead of this since the former takes care of running the
-registered hooks while the latter silently ignores them.</p>
-</div>
-</dd></dl>
-
 </dd></dl>
 
 </div>
@@ -1232,7 +1197,7 @@ source words.</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>hidden</strong> (<em>FloatTensor</em>) – hidden outputs <code class="docutils literal notranslate"><span class="pre">(batch</span> <span class="pre">x</span> <span class="pre">tlen,</span> <span class="pre">input_size)</span></code></p></li>
-<li><p><strong>attn</strong> (<em>FloatTensor</em>) – attn for each <code class="docutils literal notranslate"><span class="pre">(batch</span> <span class="pre">x</span> <span class="pre">tlen,</span> <span class="pre">input_size)</span></code></p></li>
+<li><p><strong>attn</strong> (<em>FloatTensor</em>) – attn for each <code class="docutils literal notranslate"><span class="pre">(batch</span> <span class="pre">x</span> <span class="pre">tlen,</span> <span class="pre">slen)</span></code></p></li>
 <li><p><strong>src_map</strong> (<em>FloatTensor</em>) – A sparse indicator matrix mapping each source word to
 its index in the “extended” vocab containing.
 <code class="docutils literal notranslate"><span class="pre">(src_len,</span> <span class="pre">batch,</span> <span class="pre">extra_words)</span></code></p></li>
@@ -1254,20 +1219,6 @@ its index in the “extended” vocab containing.
 of non-projective dependency parsing. This attention layer is used
 in the paper “Learning Structured Text Representations”
 <a class="bibtex reference internal" href="ref.html#dblp-journals-corr-liul17d" id="id15">[LL17]</a>.</p>
-<dl class="method">
-<dt id="onmt.modules.structured_attention.MatrixTree.forward">
-<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">input</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/structured_attention.html#MatrixTree.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.structured_attention.MatrixTree.forward" title="Permalink to this definition">¶</a></dt>
-<dd><p>Defines the computation performed at every call.</p>
-<p>Should be overridden by all subclasses.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Although the recipe for forward pass needs to be defined within
-this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
-instead of this since the former takes care of running the
-registered hooks while the latter silently ignores them.</p>
-</div>
-</dd></dl>
-
 </dd></dl>
 
 </div>

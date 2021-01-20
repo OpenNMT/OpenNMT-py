@@ -112,6 +112,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="LanguageModelGeneration.html">Language Model Generation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="GGNN.html">Gated Graph Sequence Neural Networks</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Scripts</span></p>
@@ -333,7 +334,7 @@ spm_encode --model<span class="o">=</span>data/wmt/wmtende.model <span class="se
 </pre></div>
 </div>
 <p>We can translate the testset with the following command:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> checkpoint in data/wmt/run/model_step*.pt<span class="p">;</span> <span class="k">do</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> checkpoint <span class="k">in</span> data/wmt/run/model_step*.pt<span class="p">;</span> <span class="k">do</span>
     <span class="nb">echo</span> <span class="s2">&quot;# Translating with checkpoint </span><span class="nv">$checkpoint</span><span class="s2">&quot;</span>
     <span class="nv">base</span><span class="o">=</span><span class="k">$(</span>basename <span class="nv">$checkpoint</span><span class="k">)</span>
     onmt_translate <span class="se">\</span>
@@ -348,7 +349,7 @@ spm_encode --model<span class="o">=</span>data/wmt/wmtende.model <span class="se
 </pre></div>
 </div>
 <p>Prior to evaluation, we need to detokenize the hypothesis:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> checkpoint in data/wmt/run/model_step*.pt<span class="p">;</span> <span class="k">do</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> checkpoint <span class="k">in</span> data/wmt/run/model_step*.pt<span class="p">;</span> <span class="k">do</span>
     <span class="nv">base</span><span class="o">=</span><span class="k">$(</span>basename <span class="nv">$checkpoint</span><span class="k">)</span>
     spm_decode <span class="se">\</span>
         -model<span class="o">=</span>data/wmt/wmtende.model <span class="se">\</span>
@@ -359,7 +360,7 @@ spm_encode --model<span class="o">=</span>data/wmt/wmtende.model <span class="se
 </pre></div>
 </div>
 <p>Finally, we can compute detokenized BLEU with <code class="docutils literal notranslate"><span class="pre">sacrebleu</span></code>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> checkpoint in data/wmt/run/model_step*.pt<span class="p">;</span> <span class="k">do</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> checkpoint <span class="k">in</span> data/wmt/run/model_step*.pt<span class="p">;</span> <span class="k">do</span>
     <span class="nb">echo</span> <span class="s2">&quot;</span><span class="nv">$checkpoint</span><span class="s2">&quot;</span>
     <span class="nv">base</span><span class="o">=</span><span class="k">$(</span>basename <span class="nv">$checkpoint</span><span class="k">)</span>
     sacrebleu data/wmt/test.de &lt; data/wmt/test.de.hyp_<span class="si">${</span><span class="nv">base</span><span class="p">%.*</span><span class="si">}</span>

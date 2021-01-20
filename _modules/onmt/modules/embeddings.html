@@ -105,6 +105,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/Library.html">Library</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/Translation.html">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/LanguageModelGeneration.html">Language Model Generation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/GGNN.html">Gated Graph Sequence Neural Networks</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Scripts</span></p>
@@ -192,7 +193,6 @@
             
   <h1>Source code for onmt.modules.embeddings</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot; Embeddings module &quot;&quot;&quot;</span>
-<span class="kn">import</span> <span class="nn">six</span>
 <span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
 
@@ -201,6 +201,10 @@
 
 <span class="kn">from</span> <span class="nn">onmt.modules.util_class</span> <span class="kn">import</span> <span class="n">Elementwise</span>
 <span class="kn">from</span> <span class="nn">onmt.utils.logging</span> <span class="kn">import</span> <span class="n">logger</span>
+
+
+<span class="k">class</span> <span class="nc">SequenceTooLongError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span>
 
 
 <div class="viewcode-block" id="PositionalEncoding"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.PositionalEncoding">[docs]</a><span class="k">class</span> <span class="nc">PositionalEncoding</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -241,10 +245,13 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">emb</span> <span class="o">=</span> <span class="n">emb</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">step</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">emb</span> <span class="o">=</span> <span class="n">emb</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">pe</span><span class="p">[:</span><span class="n">emb</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)]</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">emb</span> <span class="o">=</span> <span class="n">emb</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">pe</span><span class="p">[</span><span class="n">step</span><span class="p">]</span>
+        <span class="n">step</span> <span class="o">=</span> <span class="n">step</span> <span class="ow">or</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pe</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">step</span> <span class="o">+</span> <span class="n">emb</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SequenceTooLongError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Sequence is </span><span class="si">{</span><span class="n">emb</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">step</span><span class="si">}</span><span class="s2"> but PositionalEncoding is&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot; limited to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">pe</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="si">}</span><span class="s2">. See max_len argument.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">emb</span> <span class="o">=</span> <span class="n">emb</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">pe</span><span class="p">[</span><span class="n">step</span><span class="p">:</span><span class="n">emb</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">+</span><span class="n">step</span><span class="p">]</span>
         <span class="n">emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">emb</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">emb</span></div></div>
 
@@ -484,7 +491,7 @@
 
 
 <span class="k">def</span> <span class="nf">convert_to_torch_tensor</span><span class="p">(</span><span class="n">word_to_float_list_dict</span><span class="p">,</span> <span class="n">vocab</span><span class="p">):</span>
-    <span class="n">dim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">next</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">itervalues</span><span class="p">(</span><span class="n">word_to_float_list_dict</span><span class="p">)))</span>
+    <span class="n">dim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">word_to_float_list_dict</span><span class="o">.</span><span class="n">values</span><span class="p">())))</span>
     <span class="n">tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">vocab</span><span class="p">),</span> <span class="n">dim</span><span class="p">))</span>
     <span class="k">for</span> <span class="n">word</span><span class="p">,</span> <span class="n">values</span> <span class="ow">in</span> <span class="n">word_to_float_list_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="n">tensor</span><span class="p">[</span><span class="n">vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">word</span><span class="p">]]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>

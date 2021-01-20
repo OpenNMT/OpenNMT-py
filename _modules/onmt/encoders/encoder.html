@@ -105,6 +105,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/Library.html">Library</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/Translation.html">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/LanguageModelGeneration.html">Language Model Generation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/GGNN.html">Gated Graph Sequence Neural Networks</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Scripts</span></p>
@@ -242,10 +243,11 @@
 
 
 <span class="sd">        Returns:</span>
-<span class="sd">            (FloatTensor, FloatTensor):</span>
+<span class="sd">            (FloatTensor, FloatTensor, FloatTensor):</span>
 
 <span class="sd">            * final encoder state, used to initialize decoder</span>
 <span class="sd">            * memory bank for attention, ``(src_len, batch, hidden)``</span>
+<span class="sd">            * lengths</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div></div>

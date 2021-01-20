@@ -106,6 +106,7 @@
 <li class="toctree-l1"><a class="reference internal" href="examples/Library.html">Library</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/Translation.html">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/LanguageModelGeneration.html">Language Model Generation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/GGNN.html">Gated Graph Sequence Neural Networks</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Scripts</span></p>
@@ -223,18 +224,16 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="onmt.html#onmt.utils.Statistics.accuracy">accuracy() (onmt.utils.Statistics method)</a>
 </li>
-      <li><a href="onmt.translation.html#onmt.translate.BeamSearch.advance">advance() (onmt.translate.BeamSearch method)</a>
+      <li><a href="onmt.translation.html#onmt.translate.DecodeStrategy.advance">advance() (onmt.translate.DecodeStrategy method)</a>
 
       <ul>
-        <li><a href="onmt.translation.html#onmt.translate.DecodeStrategy.advance">(onmt.translate.DecodeStrategy method)</a>
-</li>
         <li><a href="onmt.translation.html#onmt.translate.GreedySearch.advance">(onmt.translate.GreedySearch method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="onmt.html#onmt.utils.Statistics.all_gather_stats">all_gather_stats() (onmt.utils.Statistics static method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="onmt.html#onmt.utils.Statistics.all_gather_stats_list">all_gather_stats_list() (onmt.utils.Statistics static method)</a>
 </li>
       <li><a href="onmt.html#onmt.utils.Optimizer.amp">amp() (onmt.utils.Optimizer property)</a>
@@ -350,8 +349,6 @@
 </li>
         <li><a href="onmt.html#onmt.models.NMTModel.forward">(onmt.models.NMTModel method)</a>
 </li>
-        <li><a href="onmt.modules.html#onmt.models.sru.SRU.forward">(onmt.models.sru.SRU method)</a>
-</li>
         <li><a href="onmt.modules.html#onmt.modules.AverageAttention.forward">(onmt.modules.AverageAttention method)</a>
 </li>
         <li><a href="onmt.modules.html#onmt.modules.ConvMultiStepAttention.forward">(onmt.modules.ConvMultiStepAttention method)</a>
@@ -368,10 +365,6 @@
 </li>
         <li><a href="onmt.modules.html#onmt.modules.PositionalEncoding.forward">(onmt.modules.PositionalEncoding method)</a>
 </li>
-        <li><a href="onmt.modules.html#onmt.modules.structured_attention.MatrixTree.forward">(onmt.modules.structured_attention.MatrixTree method)</a>
-</li>
-        <li><a href="onmt.modules.html#onmt.modules.WeightNormConv2d.forward">(onmt.modules.WeightNormConv2d method)</a>
-</li>
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -382,8 +375,6 @@
 </li>
         <li><a href="onmt.modules.html#onmt.decoders.DecoderBase.from_opt">(onmt.decoders.DecoderBase class method)</a>
 </li>
-        <li><a href="onmt.modules.html#onmt.decoders.TransformerDecoder.from_opt">(onmt.decoders.TransformerDecoder class method)</a>
-</li>
         <li><a href="onmt.modules.html#onmt.encoders.CNNEncoder.from_opt">(onmt.encoders.CNNEncoder class method)</a>
 </li>
         <li><a href="onmt.modules.html#onmt.encoders.MeanEncoder.from_opt">(onmt.encoders.MeanEncoder class method)</a>
@@ -393,8 +384,6 @@
         <li><a href="onmt.modules.html#onmt.encoders.TransformerEncoder.from_opt">(onmt.encoders.TransformerEncoder class method)</a>
 </li>
         <li><a href="onmt.inputters.html#onmt.inputters.DataReaderBase.from_opt">(onmt.inputters.DataReaderBase class method)</a>
-</li>
-        <li><a href="onmt.translation.html#onmt.translate.Translator.from_opt">(onmt.translate.Translator class method)</a>
 </li>
         <li><a href="onmt.html#onmt.utils.Optimizer.from_opt">(onmt.utils.Optimizer class method)</a>
 </li>
@@ -424,11 +413,7 @@
       <ul>
         <li><a href="onmt.modules.html#onmt.decoders.decoder.RNNDecoderBase.init_state">(onmt.decoders.decoder.RNNDecoderBase method)</a>
 </li>
-        <li><a href="onmt.modules.html#onmt.decoders.TransformerDecoder.init_state">(onmt.decoders.TransformerDecoder method)</a>
-</li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="onmt.translation.html#onmt.translate.BeamSearch.initialize">initialize() (onmt.translate.BeamSearch method)</a>
 
       <ul>
@@ -437,6 +422,8 @@
         <li><a href="onmt.translation.html#onmt.translate.GreedySearch.initialize">(onmt.translate.GreedySearch method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="onmt.modules.html#onmt.decoders.InputFeedRNNDecoder">InputFeedRNNDecoder (class in onmt.decoders)</a>
 </li>
   </ul></td>
@@ -613,17 +600,15 @@
 </li>
       <li><a href="onmt.html#onmt.Trainer">Trainer (class in onmt)</a>
 </li>
-      <li><a href="onmt.modules.html#onmt.modules.MultiHeadedAttention.training">training (onmt.modules.MultiHeadedAttention attribute)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="onmt.modules.html#onmt.modules.MultiHeadedAttention.training">training (onmt.modules.MultiHeadedAttention attribute)</a>
+</li>
       <li><a href="onmt.html#onmt.utils.Optimizer.training_step">training_step() (onmt.utils.Optimizer property)</a>
 </li>
       <li><a href="onmt.modules.html#onmt.decoders.TransformerDecoder">TransformerDecoder (class in onmt.decoders)</a>
 </li>
       <li><a href="onmt.modules.html#onmt.encoders.TransformerEncoder">TransformerEncoder (class in onmt.encoders)</a>
-</li>
-      <li><a href="onmt.translation.html#onmt.translate.Translator.translate">translate() (onmt.translate.Translator method)</a>
 </li>
       <li><a href="onmt.translation.html#onmt.translate.Translator.translate_batch">translate_batch() (onmt.translate.Translator method)</a>
 </li>
@@ -645,15 +630,13 @@
 </li>
       <li><a href="onmt.html#onmt.utils.Statistics.update">update() (onmt.utils.Statistics method)</a>
 </li>
-      <li><a href="onmt.modules.html#onmt.modules.MultiHeadedAttention.update_dropout">update_dropout() (onmt.modules.MultiHeadedAttention method)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="onmt.translation.html#onmt.translate.BeamSearch.update_finished">update_finished() (onmt.translate.BeamSearch method)</a>
+      <li><a href="onmt.modules.html#onmt.modules.MultiHeadedAttention.update_dropout">update_dropout() (onmt.modules.MultiHeadedAttention method)</a>
+</li>
+      <li><a href="onmt.translation.html#onmt.translate.DecodeStrategy.update_finished">update_finished() (onmt.translate.DecodeStrategy method)</a>
 
       <ul>
-        <li><a href="onmt.translation.html#onmt.translate.DecodeStrategy.update_finished">(onmt.translate.DecodeStrategy method)</a>
-</li>
         <li><a href="onmt.translation.html#onmt.translate.GreedySearch.update_finished">(onmt.translate.GreedySearch method)</a>
 </li>
       </ul></li>

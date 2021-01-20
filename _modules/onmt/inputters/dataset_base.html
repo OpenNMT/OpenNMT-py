@@ -105,6 +105,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/Library.html">Library</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/Translation.html">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/LanguageModelGeneration.html">Language Model Generation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/GGNN.html">Gated Graph Sequence Neural Networks</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Scripts</span></p>
@@ -238,6 +239,13 @@
     <span class="c1"># make a small vocab containing just the tokens in the source sequence</span>
     <span class="n">unk</span> <span class="o">=</span> <span class="n">src_field</span><span class="o">.</span><span class="n">unk_token</span>
     <span class="n">pad</span> <span class="o">=</span> <span class="n">src_field</span><span class="o">.</span><span class="n">pad_token</span>
+
+    <span class="c1"># add init_token and eos_token according to src construction</span>
+    <span class="k">if</span> <span class="n">src_field</span><span class="o">.</span><span class="n">init_token</span><span class="p">:</span>
+        <span class="n">src</span> <span class="o">=</span> <span class="p">[</span><span class="n">src_field</span><span class="o">.</span><span class="n">init_token</span><span class="p">]</span> <span class="o">+</span> <span class="n">src</span>
+    <span class="k">if</span> <span class="n">src_field</span><span class="o">.</span><span class="n">eos_token</span><span class="p">:</span>
+        <span class="n">src</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">src_field</span><span class="o">.</span><span class="n">eos_token</span><span class="p">)</span>
+
     <span class="n">src_ex_vocab</span> <span class="o">=</span> <span class="n">Vocab</span><span class="p">(</span><span class="n">Counter</span><span class="p">(</span><span class="n">src</span><span class="p">),</span> <span class="n">specials</span><span class="o">=</span><span class="p">[</span><span class="n">unk</span><span class="p">,</span> <span class="n">pad</span><span class="p">])</span>
     <span class="n">unk_idx</span> <span class="o">=</span> <span class="n">src_ex_vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">unk</span><span class="p">]</span>
     <span class="c1"># Map source tokens to indices in the dynamic dict.</span>

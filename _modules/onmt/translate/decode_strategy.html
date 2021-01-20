@@ -105,6 +105,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/Library.html">Library</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/Translation.html">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/LanguageModelGeneration.html">Language Model Generation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/GGNN.html">Gated Graph Sequence Neural Networks</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Scripts</span></p>
@@ -194,6 +195,8 @@
 <span></span><span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
 
+<span class="kn">from</span> <span class="nn">onmt.utils.misc</span> <span class="kn">import</span> <span class="n">tile</span>
+
 
 <div class="viewcode-block" id="DecodeStrategy"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.DecodeStrategy">[docs]</a><span class="k">class</span> <span class="nc">DecodeStrategy</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Base class for generation strategies.</span>
@@ -202,6 +205,7 @@
 <span class="sd">        pad (int): Magic integer in output vocab.</span>
 <span class="sd">        bos (int): Magic integer in output vocab.</span>
 <span class="sd">        eos (int): Magic integer in output vocab.</span>
+<span class="sd">        unk (int): Magic integer in output vocab.</span>
 <span class="sd">        batch_size (int): Current batch size.</span>
 <span class="sd">        parallel_paths (int): Decoding strategies like beam search</span>
 <span class="sd">            use parallel paths. Each batch is repeated ``parallel_paths``</span>
@@ -211,6 +215,7 @@
 <span class="sd">        max_length (int): Longest acceptable sequence, not counting</span>
 <span class="sd">            begin-of-sentence (presumably there has been no EOS</span>
 <span class="sd">            yet if max_length is used as a cutoff).</span>
+<span class="sd">        ban_unk_token (Boolean): Whether unk token is forbidden</span>
 <span class="sd">        block_ngram_repeat (int): Block beams where</span>
 <span class="sd">            ``block_ngram_repeat``-grams repeat.</span>
 <span class="sd">        exclusion_tokens (set[int]): If a gram contains any of these</span>
@@ -222,6 +227,7 @@
 <span class="sd">        pad (int): See above.</span>
 <span class="sd">        bos (int): See above.</span>
 <span class="sd">        eos (int): See above.</span>
+<span class="sd">        unk (int): See above.</span>
 <span class="sd">        predictions (list[list[LongTensor]]): For each batch, holds a</span>
 <span class="sd">            list of beam prediction sequences.</span>
 <span class="sd">        scores (list[list[FloatTensor]]): For each batch, holds a</span>
@@ -244,32 +250,39 @@
 <span class="sd">            is the (max) length of the pre-fixed prediction.</span>
 <span class="sd">        min_length (int): See above.</span>
 <span class="sd">        max_length (int): See above.</span>
+<span class="sd">        ban_unk_token (Boolean): See above.</span>
 <span class="sd">        block_ngram_repeat (int): See above.</span>
 <span class="sd">        exclusion_tokens (set[int]): See above.</span>
 <span class="sd">        return_attention (bool): See above.</span>
 <span class="sd">        done (bool): See above.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pad</span><span class="p">,</span> <span class="n">bos</span><span class="p">,</span> <span class="n">eos</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">parallel_paths</span><span class="p">,</span>
-                 <span class="n">min_length</span><span class="p">,</span> <span class="n">block_ngram_repeat</span><span class="p">,</span> <span class="n">exclusion_tokens</span><span class="p">,</span>
-                 <span class="n">return_attention</span><span class="p">,</span> <span class="n">max_length</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pad</span><span class="p">,</span> <span class="n">bos</span><span class="p">,</span> <span class="n">eos</span><span class="p">,</span> <span class="n">unk</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">parallel_paths</span><span class="p">,</span>
+                 <span class="n">global_scorer</span><span class="p">,</span> <span class="n">min_length</span><span class="p">,</span> <span class="n">block_ngram_repeat</span><span class="p">,</span>
+                 <span class="n">exclusion_tokens</span><span class="p">,</span> <span class="n">return_attention</span><span class="p">,</span> <span class="n">max_length</span><span class="p">,</span>
+                 <span class="n">ban_unk_token</span><span class="p">):</span>
 
         <span class="c1"># magic indices</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pad</span> <span class="o">=</span> <span class="n">pad</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bos</span> <span class="o">=</span> <span class="n">bos</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">eos</span> <span class="o">=</span> <span class="n">eos</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">unk</span> <span class="o">=</span> <span class="n">unk</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch_size</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parallel_paths</span> <span class="o">=</span> <span class="n">parallel_paths</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">global_scorer</span> <span class="o">=</span> <span class="n">global_scorer</span>
+
         <span class="c1"># result caching</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">predictions</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scores</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">attention</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hypotheses</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">alive_attn</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">min_length</span> <span class="o">=</span> <span class="n">min_length</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_length</span> <span class="o">=</span> <span class="n">max_length</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ban_unk_token</span> <span class="o">=</span> <span class="n">ban_unk_token</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">block_ngram_repeat</span> <span class="o">=</span> <span class="n">block_ngram_repeat</span>
         <span class="n">n_paths</span> <span class="o">=</span> <span class="n">batch_size</span> <span class="o">*</span> <span class="n">parallel_paths</span>
@@ -279,6 +292,32 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">return_attention</span> <span class="o">=</span> <span class="n">return_attention</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">done</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="nf">get_device_from_memory_bank</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">memory_bank</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="n">mb_device</span> <span class="o">=</span> <span class="n">memory_bank</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">device</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mb_device</span> <span class="o">=</span> <span class="n">memory_bank</span><span class="o">.</span><span class="n">device</span>
+        <span class="k">return</span> <span class="n">mb_device</span>
+
+    <span class="k">def</span> <span class="nf">initialize_tile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">,</span> <span class="n">src_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">target_prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">fn_map_state</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">dim</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">tile</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">memory_bank</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="n">memory_bank</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">tile</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                                <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">memory_bank</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">memory_bank</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">memory_bank</span> <span class="o">=</span> <span class="n">tile</span><span class="p">(</span><span class="n">memory_bank</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">src_map</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">src_map</span> <span class="o">=</span> <span class="n">tile</span><span class="p">(</span><span class="n">src_map</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">memory_lengths</span> <span class="o">=</span> <span class="n">tile</span><span class="p">(</span><span class="n">src_lengths</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">target_prefix</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">target_prefix</span> <span class="o">=</span> <span class="n">tile</span><span class="p">(</span><span class="n">target_prefix</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">fn_map_state</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_map</span><span class="p">,</span> <span class="n">target_prefix</span>
 
 <div class="viewcode-block" id="DecodeStrategy.initialize"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.DecodeStrategy.initialize">[docs]</a>    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">,</span> <span class="n">src_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                    <span class="n">target_prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -314,6 +353,10 @@
     <span class="k">def</span> <span class="nf">ensure_min_length</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log_probs</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_length</span><span class="p">:</span>
             <span class="n">log_probs</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">eos</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1e20</span>
+
+    <span class="k">def</span> <span class="nf">ensure_unk_removed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log_probs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ban_unk_token</span><span class="p">:</span>
+            <span class="n">log_probs</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unk</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1e20</span>
 
     <span class="k">def</span> <span class="nf">ensure_max_length</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># add one to account for BOS. Don&#39;t account for EOS because hitting</span>

@@ -106,6 +106,7 @@
 <li class="toctree-l1"><a class="reference internal" href="examples/Library.html">Library</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/Translation.html">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/LanguageModelGeneration.html">Language Model Generation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/GGNN.html">Gated Graph Sequence Neural Networks</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Scripts</span></p>
@@ -206,17 +207,13 @@
 <dl class="class">
 <dt id="onmt.models.NMTModel">
 <em class="property">class </em><code class="sig-prename descclassname">onmt.models.</code><code class="sig-name descname">NMTModel</code><span class="sig-paren">(</span><em class="sig-param">encoder</em>, <em class="sig-param">decoder</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/models/model.html#NMTModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.models.NMTModel" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.module.Module</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.models.model.BaseModel</span></code></p>
 <p>Core trainable object in OpenNMT. Implements a trainable interface
-for a simple, generic encoder + decoder model.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>encoder</strong> (<a class="reference internal" href="onmt.modules.html#onmt.encoders.EncoderBase" title="onmt.encoders.EncoderBase"><em>onmt.encoders.EncoderBase</em></a>) – an encoder object</p></li>
-<li><p><strong>decoder</strong> (<a class="reference internal" href="onmt.modules.html#onmt.decoders.DecoderBase" title="onmt.decoders.DecoderBase"><em>onmt.decoders.DecoderBase</em></a>) – a decoder object</p></li>
-</ul>
-</dd>
-</dl>
+for a simple, generic encoder + decoder model.
+:param encoder: an encoder object
+:type encoder: onmt.encoders.EncoderBase
+:param decoder: a decoder object
+:type decoder: onmt.decoders.DecoderBase</p>
 <dl class="method">
 <dt id="onmt.models.NMTModel.count_parameters">
 <code class="sig-name descname">count_parameters</code><span class="sig-paren">(</span><em class="sig-param">log=&lt;built-in function print&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/models/model.html#NMTModel.count_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.models.NMTModel.count_parameters" title="Permalink to this definition">¶</a></dt>

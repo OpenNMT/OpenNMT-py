@@ -105,6 +105,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/Library.html">Library</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/Translation.html">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/LanguageModelGeneration.html">Language Model Generation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/GGNN.html">Gated Graph Sequence Neural Networks</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Scripts</span></p>
@@ -195,7 +196,7 @@
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
 
 <span class="kn">from</span> <span class="nn">onmt.utils.misc</span> <span class="kn">import</span> <span class="n">aeq</span>
-<span class="kn">from</span> <span class="nn">onmt.utils.loss</span> <span class="kn">import</span> <span class="n">NMTLossCompute</span>
+<span class="kn">from</span> <span class="nn">onmt.utils.loss</span> <span class="kn">import</span> <span class="n">CommonLossCompute</span>
 
 
 <span class="k">def</span> <span class="nf">collapse_copy_scores</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">tgt_vocab</span><span class="p">,</span> <span class="n">src_vocabs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -281,7 +282,7 @@
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_size</span><span class="p">,</span> <span class="n">output_size</span><span class="p">,</span> <span class="n">pad_idx</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">CopyGenerator</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">linear</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">input_size</span><span class="p">,</span> <span class="n">output_size</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">linear</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">input_size</span><span class="p">,</span> <span class="n">output_size</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">linear_copy</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">input_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pad_idx</span> <span class="o">=</span> <span class="n">pad_idx</span>
 
@@ -293,7 +294,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">           hidden (FloatTensor): hidden outputs ``(batch x tlen, input_size)``</span>
-<span class="sd">           attn (FloatTensor): attn for each ``(batch x tlen, input_size)``</span>
+<span class="sd">           attn (FloatTensor): attn for each ``(batch x tlen, slen)``</span>
 <span class="sd">           src_map (FloatTensor):</span>
 <span class="sd">               A sparse indicator matrix mapping each source word to</span>
 <span class="sd">               its index in the &quot;extended&quot; vocab containing.</span>
@@ -370,29 +371,15 @@
         <span class="k">return</span> <span class="n">loss</span>
 
 
-<span class="k">class</span> <span class="nc">CopyGeneratorLossCompute</span><span class="p">(</span><span class="n">NMTLossCompute</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Copy Generator Loss Computation.&quot;&quot;&quot;</span>
+<span class="k">class</span> <span class="nc">CommonCopyGeneratorLossCompute</span><span class="p">(</span><span class="n">CommonLossCompute</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Common Copy Generator Loss Computation.&quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">criterion</span><span class="p">,</span> <span class="n">generator</span><span class="p">,</span> <span class="n">tgt_vocab</span><span class="p">,</span> <span class="n">normalize_by_length</span><span class="p">,</span>
-                 <span class="n">lambda_coverage</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">CopyGeneratorLossCompute</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">criterion</span><span class="p">,</span> <span class="n">generator</span><span class="p">,</span> <span class="n">lambda_coverage</span><span class="o">=</span><span class="n">lambda_coverage</span><span class="p">)</span>
+                 <span class="n">lambda_coverage</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">tgt_shift_index</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">CommonCopyGeneratorLossCompute</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">criterion</span><span class="p">,</span> <span class="n">generator</span><span class="p">,</span> <span class="n">lambda_coverage</span><span class="o">=</span><span class="n">lambda_coverage</span><span class="p">,</span>
+            <span class="n">tgt_shift_index</span><span class="o">=</span><span class="n">tgt_shift_index</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tgt_vocab</span> <span class="o">=</span> <span class="n">tgt_vocab</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">normalize_by_length</span> <span class="o">=</span> <span class="n">normalize_by_length</span>
-
-    <span class="k">def</span> <span class="nf">_make_shard_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">range_</span><span class="p">,</span> <span class="n">attns</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;See base class for args description.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="s2">&quot;alignment&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="s2">&quot;using -copy_attn you need to pass in &quot;</span>
-                                 <span class="s2">&quot;-dynamic_dict during preprocess stage.&quot;</span><span class="p">)</span>
-
-        <span class="n">shard_state</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">CopyGeneratorLossCompute</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_make_shard_state</span><span class="p">(</span>
-            <span class="n">batch</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">range_</span><span class="p">,</span> <span class="n">attns</span><span class="p">)</span>
-
-        <span class="n">shard_state</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
-            <span class="s2">&quot;copy_attn&quot;</span><span class="p">:</span> <span class="n">attns</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;copy&quot;</span><span class="p">),</span>
-            <span class="s2">&quot;align&quot;</span><span class="p">:</span> <span class="n">batch</span><span class="o">.</span><span class="n">alignment</span><span class="p">[</span><span class="n">range_</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span> <span class="n">range_</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
-        <span class="p">})</span>
-        <span class="k">return</span> <span class="n">shard_state</span>
 
     <span class="k">def</span> <span class="nf">_compute_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">copy_attn</span><span class="p">,</span> <span class="n">align</span><span class="p">,</span>
                       <span class="n">std_attn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">coverage_attn</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -452,6 +439,42 @@
             <span class="n">loss</span> <span class="o">=</span> <span class="n">loss</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
 
         <span class="k">return</span> <span class="n">loss</span><span class="p">,</span> <span class="n">stats</span>
+
+    <span class="k">def</span> <span class="nf">_make_shard_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">range_</span><span class="p">,</span> <span class="n">attns</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;See base class for args description.&quot;&quot;&quot;</span>
+        <span class="n">shard_state</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">CommonCopyGeneratorLossCompute</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_make_shard_state</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span>
+                                                    <span class="n">range_</span><span class="p">,</span> <span class="n">attns</span><span class="p">)</span>
+
+        <span class="n">start_range</span> <span class="o">=</span> <span class="n">range_</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">tgt_shift_index</span>
+        <span class="n">end_range</span> <span class="o">=</span> <span class="n">range_</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">shard_state</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
+            <span class="s2">&quot;copy_attn&quot;</span><span class="p">:</span> <span class="n">attns</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;copy&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;align&quot;</span><span class="p">:</span> <span class="n">batch</span><span class="o">.</span><span class="n">alignment</span><span class="p">[</span><span class="n">start_range</span><span class="p">:</span> <span class="n">end_range</span><span class="p">]</span>
+        <span class="p">})</span>
+        <span class="k">return</span> <span class="n">shard_state</span>
+
+
+<span class="k">class</span> <span class="nc">CopyGeneratorLossCompute</span><span class="p">(</span><span class="n">CommonCopyGeneratorLossCompute</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Copy Generator Loss Computation.&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">criterion</span><span class="p">,</span> <span class="n">generator</span><span class="p">,</span> <span class="n">tgt_vocab</span><span class="p">,</span> <span class="n">normalize_by_length</span><span class="p">,</span>
+                 <span class="n">lambda_coverage</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">CopyGeneratorLossCompute</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">criterion</span><span class="p">,</span> <span class="n">generator</span><span class="p">,</span>
+                                                       <span class="n">tgt_vocab</span><span class="p">,</span>
+                                                       <span class="n">normalize_by_length</span><span class="p">,</span>
+                                                       <span class="n">lambda_coverage</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+                                                       <span class="n">tgt_shift_index</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">CopyGeneratorLMLossCompute</span><span class="p">(</span><span class="n">CommonCopyGeneratorLossCompute</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Copy Generator LM Loss Computation.&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">criterion</span><span class="p">,</span> <span class="n">generator</span><span class="p">,</span> <span class="n">tgt_vocab</span><span class="p">,</span> <span class="n">normalize_by_length</span><span class="p">,</span>
+                 <span class="n">lambda_coverage</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">CopyGeneratorLMLossCompute</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">criterion</span><span class="p">,</span> <span class="n">generator</span><span class="p">,</span>
+                                                         <span class="n">tgt_vocab</span><span class="p">,</span>
+                                                         <span class="n">normalize_by_length</span><span class="p">,</span>
+                                                         <span class="n">lambda_coverage</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+                                                         <span class="n">tgt_shift_index</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 </pre></div>
 
            </div>

@@ -105,6 +105,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/Library.html">Library</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/Translation.html">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/LanguageModelGeneration.html">Language Model Generation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/GGNN.html">Gated Graph Sequence Neural Networks</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Scripts</span></p>
@@ -194,6 +195,18 @@
 <span></span><span class="sd">&quot;&quot;&quot;Position feed-forward network from &quot;Attention is All You Need&quot;.&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
+
+
+<span class="k">class</span> <span class="nc">ActivationFunction</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="n">relu</span> <span class="o">=</span> <span class="s2">&quot;relu&quot;</span>
+    <span class="n">gelu</span> <span class="o">=</span> <span class="s2">&quot;gelu&quot;</span>
+
+
+<span class="n">ACTIVATION_FUNCTIONS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">ActivationFunction</span><span class="o">.</span><span class="n">relu</span><span class="p">:</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">,</span>
+    <span class="n">ActivationFunction</span><span class="o">.</span><span class="n">gelu</span><span class="p">:</span> <span class="n">F</span><span class="o">.</span><span class="n">gelu</span><span class="p">,</span>
+<span class="p">}</span>
 
 
 <div class="viewcode-block" id="PositionwiseFeedForward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.position_ffn.PositionwiseFeedForward">[docs]</a><span class="k">class</span> <span class="nc">PositionwiseFeedForward</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -204,15 +217,17 @@
 <span class="sd">        d_ff (int): the hidden layer size of the second-layer</span>
 <span class="sd">            of the FNN.</span>
 <span class="sd">        dropout (float): dropout probability in :math:`[0, 1)`.</span>
+<span class="sd">        activation_fn (ActivationFunction): activation function used.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d_model</span><span class="p">,</span> <span class="n">d_ff</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d_model</span><span class="p">,</span> <span class="n">d_ff</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+                 <span class="n">activation_fn</span><span class="o">=</span><span class="n">ActivationFunction</span><span class="o">.</span><span class="n">relu</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">PositionwiseFeedForward</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">w_1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">d_ff</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">w_2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">d_ff</span><span class="p">,</span> <span class="n">d_model</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dropout_1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">relu</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">activation</span> <span class="o">=</span> <span class="n">ACTIVATION_FUNCTIONS</span><span class="p">[</span><span class="n">activation_fn</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dropout_2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span>
 
 <div class="viewcode-block" id="PositionwiseFeedForward.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.position_ffn.PositionwiseFeedForward.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
@@ -225,7 +240,7 @@
 <span class="sd">            (FloatTensor): Output ``(batch_size, input_len, model_dim)``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="n">inter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout_1</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">w_1</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span><span class="p">(</span><span class="n">x</span><span class="p">))))</span>
+        <span class="n">inter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout_1</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">activation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">w_1</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span><span class="p">(</span><span class="n">x</span><span class="p">))))</span>
         <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout_2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">w_2</span><span class="p">(</span><span class="n">inter</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">output</span> <span class="o">+</span> <span class="n">x</span></div>
 
