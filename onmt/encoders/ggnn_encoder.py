@@ -87,7 +87,7 @@ class GGNNEncoder(EncoderBase):
     """
 
     def __init__(self, rnn_type, src_word_vec_size, src_ggnn_size,
-                 state_dim, bidir_edges, n_edge_types, n_node, 
+                 state_dim, bidir_edges, n_edge_types, n_node,
                  bridge_extra_node, n_steps, src_vocab):
         super(GGNNEncoder, self).__init__()
 
@@ -133,11 +133,11 @@ class GGNNEncoder(EncoderBase):
             idx += 1
 
         assert self.COMMA >= 0, \
-          "No ',' character found in vocab, GGNN vocab must include ','"
+            "GGNN vocab must include ',' character"
         assert self.DELIMITER >= 0, \
-          "No '<EOT>' token found in vocab, GGNN vocab must include <EOT>"
+            "GGNN vocab must include <EOT> token"
         assert found_n_minus_one, \
-          "Numbers for all nodes not found in vocab, GGNN vocab must include numbers for nodes for edge connections"
+            "GGNN vocab must include numbers for nodes for edge connections"
 
         # Propogation Model
         self.propogator = GGNNPropogator(self.state_dim, self.n_node,
@@ -155,12 +155,12 @@ class GGNNEncoder(EncoderBase):
                 nn.LeakyReLU()
             )
             assert self.src_ggnn_size >= self.DELIMITER, \
-              "Embedding input must be larger than vocabulary"
+                "Embedding input must be larger than vocabulary"
             assert self.src_word_vec_size < self.state_dim, \
-              "Embedding size must be smaller than state_dim"
+                "Embedding size must be smaller than state_dim"
         else:
             assert self.DELIMITER < self.state_dim, \
-              "Vocabulary too large, consider -src_ggnn_size"
+                "Vocabulary too large, consider -src_ggnn_size"
 
     @classmethod
     def from_opt(cls, opt, embeddings):
@@ -189,8 +189,10 @@ class GGNNEncoder(EncoderBase):
         nodes = self.n_node
         batch_size = src.size()[1]
         first_extra = np.zeros(batch_size, dtype=np.int32)
-        token_onehot = np.zeros((batch_size, nodes, self.src_ggnn_size),
-                              dtype=np.int32)
+        token_onehot = np.zeros((batch_size, nodes,
+                                 self.src_ggnn_size if self.src_ggnn_size > 0
+                                 else self.state_dim),
+                                dtype=np.int32)
         edges = np.zeros((batch_size, nodes, nodes*self.n_edge_types*2),
                          dtype=np.int32)
         npsrc = src[:, :, 0].cpu().data.numpy().astype(np.int32)
@@ -215,7 +217,7 @@ class GGNNEncoder(EncoderBase):
                 elif token == self.DELIMITER:
                     flag_node += 1
                     flags_done = True
-                    assert flag_node <= nodes
+                    assert flag_node <= nodes, "Too many nodes with flags"
                 elif not flags_done:
                     # The total number of integers in the vocab should allow
                     # for all features and edges to be defined.
@@ -228,9 +230,9 @@ class GGNNEncoder(EncoderBase):
                         flag_node += 1
                 elif token == self.COMMA:
                     edge += 1
-                    assert source_node == -1, 'Error in graph edge input'
-                    assert (edge <= 2*self.n_edge_types and
-                            (not self.bidir_edges or edge < self.n_edge_types))
+                    assert source_node == -1, "Error in graph edge input"
+                    assert edge < self.n_edge_types, \
+                        "Too many edge types in input"
                 else:
                     num = self.idx2num[token]
                     if source_node < 0:
@@ -243,9 +245,11 @@ class GGNNEncoder(EncoderBase):
                         source_node = -1
 
         token_onehot = torch.from_numpy(token_onehot).float().to(src.device)
-        if self.src_ggnn_size >0:
+        if self.src_ggnn_size > 0:
             token_embed = self.embed(token_onehot)
-            prop_state = torch.cat((token_embed,torch.zeros((batch_size, nodes, self.state_dim - self.src_word_vec_size)).float().to(src.device)),2)
+            prop_state = torch.cat((token_embed, torch.zeros(
+                (batch_size, nodes, self.state_dim - self.src_word_vec_size)
+                 ).float().to(src.device)), 2)
         else:
             prop_state = token_onehot
         edges = torch.from_numpy(edges).float().to(src.device)
