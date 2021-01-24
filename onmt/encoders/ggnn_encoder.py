@@ -133,11 +133,11 @@ class GGNNEncoder(EncoderBase):
             idx += 1
 
         assert self.COMMA >= 0, \
-            "GGNN vocab must include ',' character"
+            "GGNN src_vocab must include ',' character"
         assert self.DELIMITER >= 0, \
-            "GGNN vocab must include <EOT> token"
+            "GGNN src_vocab must include <EOT> token"
         assert found_n_minus_one, \
-            "GGNN vocab must include numbers for nodes for edge connections"
+            "GGNN src_vocab must include node numbers for edge connections"
 
         # Propogation Model
         self.propogator = GGNNPropogator(self.state_dim, self.n_node,
