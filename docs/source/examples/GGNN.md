@@ -93,8 +93,8 @@ python translate.py \
     -src ../OpenNMT-py-ggnn-example/src-test.txt \
     -beam_size 5 -n_best 5 \
     -gpu 0 \
-    -output ../OpenNMT-py-ggnn-example/pred-test_beam5.txt \
-    > ../OpenNMT-py-ggnn-example/translate5.out 2>&1
+    -output ../OpenNMT-py-ggnn-example/run/pred-test_beam5.txt \
+    > ../OpenNMT-py-ggnn-example/run/translate5.out 2>&1
 ```
 ### Graph data format
 
