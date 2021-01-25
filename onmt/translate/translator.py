@@ -97,7 +97,7 @@ class Inference(object):
         beam_size (int): Number of beams.
         random_sampling_topk (int): See
             :class:`onmt.translate.greedy_search.GreedySearch`.
-        random_sampling_temp (int): See
+        random_sampling_temp (float): See
             :class:`onmt.translate.greedy_search.GreedySearch`.
         stepwise_penalty (bool): Whether coverage penalty is applied every step
             or not.
@@ -131,9 +131,9 @@ class Inference(object):
         max_length=100,
         ratio=0.0,
         beam_size=30,
-        random_sampling_topk=1,
-        random_sampling_topp=0,
-        random_sampling_temp=1,
+        random_sampling_topk=0,
+        random_sampling_topp=0.0,
+        random_sampling_temp=1.0,
         stepwise_penalty=None,
         dump_beam=False,
         block_ngram_repeat=0,
