@@ -131,6 +131,10 @@ Note that the source vocabulary file needs to include the '<EOT>' token,
 the ',' token, and all of the numbers used for feature flags and node
 identifiers in the edge list.
 
+### Vocabulary notes
+
+Because edge information and feature data is provided through tokens in the source files, the `-src_vocab` file requires a certain format. The `<EOT>` token should occur in the vocab files after all tokens which are part of the `sentence tokens` shown above. After the `<EOT>` token, any remaining numerical tokens appropriate for node numbers or feature values can be included too (it is OK for integers to occur in the `sentence tokens` and such tokens should not be duplicated after the `<EOT>` token). The full size of the vector used as input per node is the number of tokens up to and including `<EOT>` plus the largest feature number used in the input. If the optional `src_ggnn_size` parameter is used to create an embedding layer, then its value must be at or above the full node input vector size; the embedding initializes the lower `src_word_vec_size` dimensions of the node value. If `src_ggnn_size` is not used, then `state_dim` must bet at or above the full node input vector size; as there is no embedding layer in this case, the initial value of the node is set directly.
+For an example of generating and adjusting a vocabulary for GGNN, please refer to the [GGNN end-to-end example](https://github.com/SteveKommrusch/OpenNMT-py-ggnn-example#graph-input-processing-end-to-end-example).
 
 ### Options
 
