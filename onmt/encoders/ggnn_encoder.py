@@ -120,6 +120,12 @@ class GGNNEncoder(EncoderBase):
         for ln in f:
             ln = ln.strip('\n')
             ln = ln.split('\t')[0]
+            if idx == 0 and ln != "<unk>":
+                idx += 1
+                self.idx2num.append(-1)
+            if idx == 1 and ln != "<blank>":
+                idx += 1
+                self.idx2num.append(-1)
             if ln == ",":
                 self.COMMA = idx
             if ln == "<EOT>":
@@ -230,7 +236,8 @@ class GGNNEncoder(EncoderBase):
                         flag_node += 1
                 elif token == self.COMMA:
                     edge += 1
-                    assert source_node == -1, "Error in graph edge input"
+                    assert source_node == -1, \
+                        f'Error in graph edge input: {source_node} unpaired'
                     assert edge < self.n_edge_types, \
                         "Too many edge types in input"
                 else:
