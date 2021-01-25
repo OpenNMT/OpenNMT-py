@@ -202,7 +202,7 @@ jobs:
           -src data/morph/src.valid \
           -verbose \
           -batch_size 10 \
-          -beam_size 1 \
+          -parallel_paths 1 \
           -seed 1 \
           -random_sampling_topk "-1" \
           -random_sampling_temp 0.0001 \
@@ -231,7 +231,7 @@ jobs:
         python translate.py -model onmt/tests/test_model_lm.pt \
           -src data/data_lm/src-gen.txt \
           -verbose -batch_size 10 \
-          -beam_size 1 \
+          -parallel_paths 1 \
           -seed 1 \
           -random_sampling_topk -1 \
           -random_sampling_temp 0.0001 \
@@ -243,7 +243,7 @@ jobs:
         python translate.py -model onmt/tests/test_model_lm.pt \
           -src data/data_lm/src-gen.txt \
           -verbose -batch_size 10 \
-          -beam_size 1 \
+          -parallel_paths 1 \
           -seed 3 \
           -random_sampling_topk -1 \
           -random_sampling_topp 0.95 \
@@ -256,7 +256,7 @@ jobs:
         python translate.py -model onmt/tests/test_model_lm.pt \
           -src data/data_lm/src-gen.txt \
           -verbose -batch_size 10 \
-          -beam_size 10 \
+          -parallel_paths 10 \
           -seed 1 \
           -random_sampling_topk 50 \
           -random_sampling_topp 0.95 \

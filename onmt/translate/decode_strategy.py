@@ -109,19 +109,19 @@ class DecodeStrategy(object):
     def initialize_tile(self, memory_bank, src_lengths, src_map=None,
                         target_prefix=None):
         def fn_map_state(state, dim):
-            return tile(state, self.beam_size, dim=dim)
+            return tile(state, self.parallel_paths, dim=dim)
 
         if isinstance(memory_bank, tuple):
-            memory_bank = tuple(tile(x, self.beam_size, dim=1)
+            memory_bank = tuple(tile(x, self.parallel_paths, dim=1)
                                 for x in memory_bank)
         elif memory_bank is not None:
-            memory_bank = tile(memory_bank, self.beam_size, dim=1)
+            memory_bank = tile(memory_bank, self.parallel_paths, dim=1)
         if src_map is not None:
-            src_map = tile(src_map, self.beam_size, dim=1)
+            src_map = tile(src_map, self.parallel_paths, dim=1)
 
-        self.memory_lengths = tile(src_lengths, self.beam_size)
+        self.memory_lengths = tile(src_lengths, self.parallel_paths)
         if target_prefix is not None:
-            target_prefix = tile(target_prefix, self.beam_size, dim=1)
+            target_prefix = tile(target_prefix, self.parallel_paths, dim=1)
 
         return fn_map_state, memory_bank, src_map, target_prefix
 

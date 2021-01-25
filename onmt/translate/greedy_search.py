@@ -117,22 +117,21 @@ class GreedySearch(DecodeStrategy):
             :func:`~onmt.translate.greedy_search.sample_with_temperature()`.
         keep_topp (float): See
             :func:`~onmt.translate.greedy_search.sample_with_temperature()`.
-        beam_size (int): Number of beams to use.
+        parallel_paths (int): Number of parallel paths to use.
     """
 
     def __init__(self, pad, bos, eos, unk, batch_size, global_scorer,
                  min_length, block_ngram_repeat, exclusion_tokens,
                  return_attention, max_length, sampling_temp, keep_topk,
-                 keep_topp, beam_size, ban_unk_token):
+                 keep_topp, parallel_paths, ban_unk_token):
         super(GreedySearch, self).__init__(
-            pad, bos, eos, unk, batch_size, beam_size, global_scorer,
+            pad, bos, eos, unk, batch_size, parallel_paths, global_scorer,
             min_length, block_ngram_repeat, exclusion_tokens,
             return_attention, max_length, ban_unk_token)
         self.sampling_temp = sampling_temp
         self.keep_topk = keep_topk
         self.keep_topp = keep_topp
         self.topk_scores = None
-        self.beam_size = beam_size
 
     def initialize(self, memory_bank, src_lengths, src_map=None, device=None,
                    target_prefix=None):
@@ -146,11 +145,15 @@ class GreedySearch(DecodeStrategy):
         super(GreedySearch, self).initialize(
             memory_bank, src_lengths, src_map, device, target_prefix)
         self.select_indices = torch.arange(
-            self.batch_size*self.beam_size, dtype=torch.long, device=device)
+            self.batch_size*self.parallel_paths, dtype=torch.long,
+            device=device)
         self.original_batch_idx = fn_map_state(torch.arange(
             self.batch_size, dtype=torch.long, device=device), dim=0)
-        self.beams_scores = torch.zeros((self.batch_size*self.beam_size, 1),
-                                        dtype=torch.float, device=device)
+        self.beams_scores = torch.zeros(
+            (self.batch_size * self.parallel_paths, 1),
+            dtype=torch.float,
+            device=device,
+        )
         return fn_map_state, memory_bank, self.memory_lengths, src_map
 
     @property

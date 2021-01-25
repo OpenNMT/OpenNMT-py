@@ -231,7 +231,7 @@ echo -n "  [+] Testing NMT translation w/ Random Sampling..."
 ${PYTHON} translate.py -model ${TEST_DIR}/test_model2.pt  \
             -src ${DATA_DIR}/morph/src.valid   \
             -verbose -batch_size 10     \
-            -beam_size 1                \
+            -parallel_paths 1                \
             -seed 1                     \
             -random_sampling_topk -1    \
             -random_sampling_temp 0.0001    \
@@ -265,7 +265,7 @@ echo -n "  [+] Testing LM generation w/ Random Sampling..."
 ${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
             -src ${DATA_DIR}/data_lm/src-gen.txt   \
             -verbose -batch_size 10     \
-            -beam_size 1                \
+            -parallel_paths 1                \
             -seed 1                     \
             -random_sampling_topk -1    \
             -random_sampling_temp 0.0001    \
@@ -280,7 +280,7 @@ echo -n "  [+] Testing LM generation w/ Random Top-k/Nucleus Sampling..."
 ${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
             -src ${DATA_DIR}/data_lm/src-gen.txt   \
             -verbose -batch_size 10     \
-            -beam_size 1                \
+            -parallel_paths 1                \
             -seed 3                     \
             -random_sampling_topk -1    \
             -random_sampling_topp 0.95    \
@@ -296,7 +296,7 @@ echo -n "  [+] Testing LM generation w/ Random Top-k/Nucleus Sampling and multi 
 ${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
             -src ${DATA_DIR}/data_lm/src-gen.txt   \
             -verbose -batch_size 10     \
-            -beam_size 10                \
+            -parallel_paths 10                \
             -seed 1                     \
             -random_sampling_topk 50    \
             -random_sampling_topp 0.95    \

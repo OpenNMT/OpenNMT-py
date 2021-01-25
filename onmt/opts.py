@@ -667,8 +667,8 @@ def _add_decoding_opts(parser):
               help='Maximum prediction length.')
     group.add('--max_sent_length', '-max_sent_length', action=DeprecateAction,
               help="Deprecated, use `-max_length` instead")
-    beam_size = group.add('--beam_size', '-beam_size', type=int, default=5,
-                          help='Beam size')
+    group.add('--beam_size', '-beam_size', type=int, default=5,
+              help='Beam size')
 
     group = parser.add_argument_group('Random Sampling')
     group.add('--random_sampling_topk', '-random_sampling_topk',
@@ -688,7 +688,8 @@ def _add_decoding_opts(parser):
               default=1., type=float,
               help="If doing random sampling, divide the logits by "
                    "this before computing softmax during decoding.")
-    group._group_actions.append(beam_size)
+    group.add('--parallel_paths', '-parallel_paths', type=int, default=0,
+              help='Amount of parallel paths for random sampling.')
     _add_reproducibility_opts(parser)
 
     # Alpha and Beta values for Google Length + Coverage penalty

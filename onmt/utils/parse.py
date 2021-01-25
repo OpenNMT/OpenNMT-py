@@ -289,4 +289,12 @@ class ArgumentParser(cfargparse.ArgumentParser, DataOptsCheckerMixin):
 
     @classmethod
     def validate_translate_opts(cls, opt):
-        pass
+        if opt.parallel_paths > 0:
+            assert (opt.random_sampling_topk != 0 or
+                    opt.random_sampling_topp != 0), "Parallel paths" \
+                    " activates GreedyDecoding mode, topk or topp must be set."
+        else:
+            assert (opt.random_sampling_topk == 0 and
+                    opt.random_sampling_topp == 0), "GreedyDecoding must be" \
+                    " activated with parallel_paths or topk and topp must" \
+                    " be disabled."
