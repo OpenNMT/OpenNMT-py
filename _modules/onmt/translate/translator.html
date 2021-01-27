@@ -291,7 +291,7 @@
 <span class="sd">        beam_size (int): Number of beams.</span>
 <span class="sd">        random_sampling_topk (int): See</span>
 <span class="sd">            :class:`onmt.translate.greedy_search.GreedySearch`.</span>
-<span class="sd">        random_sampling_temp (int): See</span>
+<span class="sd">        random_sampling_temp (float): See</span>
 <span class="sd">            :class:`onmt.translate.greedy_search.GreedySearch`.</span>
 <span class="sd">        stepwise_penalty (bool): Whether coverage penalty is applied every step</span>
 <span class="sd">            or not.</span>
@@ -325,9 +325,9 @@
         <span class="n">max_length</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
         <span class="n">ratio</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
         <span class="n">beam_size</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
-        <span class="n">random_sampling_topk</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-        <span class="n">random_sampling_topp</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-        <span class="n">random_sampling_temp</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">random_sampling_topk</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">random_sampling_topp</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">random_sampling_temp</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
         <span class="n">stepwise_penalty</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">dump_beam</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">block_ngram_repeat</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>

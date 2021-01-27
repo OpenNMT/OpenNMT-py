@@ -1,6 +1,6 @@
 # Gated Graph Sequence Neural Networks
 
-Graph-to-sequence networks allow information represtable as a graph (such as an annotated NLP sentence or computer code structure as an AST) to be connected to a sequence generator to produce output which can benefit from the graph structure of the input.
+Graph-to-sequence networks allow information representable as a graph (such as an annotated NLP sentence or computer code structured as an AST) to be connected to a sequence generator to produce output which can benefit from the graph structure of the input.
 
 The training option `-encoder_type ggnn` implements a GGNN (Gated Graph Neural Network) based on github.com/JamesChuanggg/ggnn.pytorch.git which is based on the paper "Gated Graph Sequence Neural Networks" by Y. Li, D. Tarlow, M. Brockschmidt, and R. Zemel.
 
@@ -27,9 +27,8 @@ cd OpenNMT-py
 The YAML configuration for this example is the following:
 
 ```yaml
-# ggnn_example.yaml
-## Where the necessary objects will be written
-save_data: <path_to>/OpenNMT-py-ggnn-example/run/example
+# save_data is where the necessary objects will be written
+save_data: OpenNMT-py-ggnn-example/run/example
 
 # Filter long examples
 src_seq_length: 1000
@@ -38,18 +37,18 @@ tgt_seq_length: 30
 # Data definition
 data:
     cnndm:
-        path_src: <path_to>/OpenNMT-py-ggnn-example/src-train.txt
-        path_tgt: <path_to>/OpenNMT-py-ggnn-example/tgt-train.txt
+        path_src: OpenNMT-py-ggnn-example/src-train.txt
+        path_tgt: OpenNMT-py-ggnn-example/tgt-train.txt
         transforms: [filtertoolong]
         weight: 1
     valid:
-        path_src: <path_to>/OpenNMT-py-ggnn-example/src-val.txt
-        path_tgt: <path_to>/OpenNMT-py-ggnn-example/tgt-val.txt
+        path_src: OpenNMT-py-ggnn-example/src-val.txt
+        path_tgt: OpenNMT-py-ggnn-example/tgt-val.txt
 
-src_vocab: <path_to>/OpenNMT-py-ggnn-example/srcvocab.txt
-tgt_vocab: <path_to>/OpenNMT-py-ggnn-example/tgtvocab.txt
+src_vocab: OpenNMT-py-ggnn-example/srcvocab.txt
+tgt_vocab: OpenNMT-py-ggnn-example/tgtvocab.txt
 
-save_model: <path_to>/OpenNMT-py-ggnn-example/run/model
+save_model: OpenNMT-py-ggnn-example/run/model
 
 # Model options
 train_steps: 10000
@@ -57,41 +56,46 @@ save_checkpoint_steps: 5000
 encoder_type: ggnn
 layers: 2
 decoder_type: rnn
-rnn_size: 256
 learning_rate: 0.1
 start_decay_steps: 5000
 learning_rate_decay: 0.8
 global_attention: general
 batch_size: 32
-word_vec_size: 256
+# src_ggnn_size is larger than vocab plus features to allow one-hot settings
+src_ggnn_size: 100
+# src_word_vec_size less than rnn_size allows rnn learning during GGNN steps
+src_word_vec_size: 16
+# Increase tgt_word_vec_size, rnn_size, and state_dim together
+# to provide larger GGNN embeddings and larger decoder RNN
+tgt_word_vec_size: 64
+rnn_size: 64
+state_dim: 64
 bridge: true
 gpu_ranks: 0
 n_edge_types: 9
-state_dim: 256
-n_steps: 10
-n_node: 64
+# Increasing n_steps slows model computation but allows information
+# to be aggregated over more node hops
+n_steps: 5
+n_node: 70
 ```
 
 2) Train the model.
 
-You can simply run the following command:
-
 ```
-python train.py -config ggnn_example.yaml
+python train.py -config examples/ggnn.yaml
 ```
 
 3) Translate the graph of 2 equivalent linear algebra expressions into the axiom list which proves them equivalent.
 
 ```
 python translate.py \
-    -model <path_to>/OpenNMT-py-ggnn-example/run/model_step_10000.pt \
-    -src <path_to>/OpenNMT-py-ggnn-example$data_path/src-test.txt \
+    -model ../OpenNMT-py-ggnn-example/run/model_step_10000.pt \
+    -src ../OpenNMT-py-ggnn-example/src-test.txt \
     -beam_size 5 -n_best 5 \
     -gpu 0 \
-    -output <path_to>/OpenNMT-py-ggnn-example/pred-test_beam5.txt \
-    2>&1 > <path_to>/OpenNMT-py-ggnn-example/translate5.out
+    -output ../OpenNMT-py-ggnn-example/run/pred-test_beam5.txt \
+    > ../OpenNMT-py-ggnn-example/run/translate5.out 2>&1
 ```
-
 ### Graph data format
 
 The GGNN implementation leverages the sequence processing and vocabulary
@@ -108,7 +112,7 @@ Sentence tokens       Feature values           Edges
 ```
 
 The equations being represented are `((a - a) - b)` and `(0 - b)`, the 
-`sentence tokens` of which are provided before the first `<EOT>`. After
+`sentence tokens` are provided before the first `<EOT>`. After
 the first `<EOT>`, the `features values` are provided. These are extra
 flags with information on each node in the graph. In this case, the 8
 sentence tokens have feature flags ranging from 0 to 4; the 9th feature
@@ -127,10 +131,16 @@ Note that the source vocabulary file needs to include the '<EOT>' token,
 the ',' token, and all of the numbers used for feature flags and node
 identifiers in the edge list.
 
+### Vocabulary notes
+
+Because edge information and feature data is provided through tokens in the source files, the `-src_vocab` file requires a certain format. The `<EOT>` token should occur in the vocab files after all tokens which are part of the `sentence tokens` shown above. After the `<EOT>` token, any remaining numerical tokens appropriate for node numbers or feature values can be included too (it is OK for integers to occur in the `sentence tokens` and such tokens should not be duplicated after the `<EOT>` token). The full size of the vector used as input per node is the number of tokens up to and including `<EOT>` plus the largest feature number used in the input. If the optional `src_ggnn_size` parameter is used to create an embedding layer, then its value must be at or above the full node input vector size; the embedding initializes the lower `src_word_vec_size` dimensions of the node value. If `src_ggnn_size` is not used, then `state_dim` must bet at or above the full node input vector size; as there is no embedding layer in this case, the initial value of the node is set directly.
+Generally, one can use `onmt_build_vocab` to process GGNN input data to create vocab files and then adjust the source vocab appropriately. For an example of generating and adjusting a vocabulary for GGNN, please refer to [GGNN end-to-end example](https://github.com/SteveKommrusch/OpenNMT-py-ggnn-example#graph-input-processing-end-to-end-example).
 
 ### Options
 
 * `-rnn_type (str)`: style of recurrent unit to use, one of [LSTM]
+* `src_ggnn_size (int)`: Size of token-to-node embedding input
+* `src_word_vec_size (int)`: Size of token-to-node embedding output
 * `-state_dim (int)`: Number of state dimensions in nodes
 * `-n_edge_types (int)`: Number of edge types
 * `-bidir_edges (bool)`: True if reverse edges should be automatically created

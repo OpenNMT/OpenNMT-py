@@ -111,6 +111,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#dependencies">Dependencies</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#quick-start">Quick Start</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#graph-data-format">Graph data format</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#vocabulary-notes">Vocabulary notes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#options">Options</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#acknowledgement">Acknowledgement</a></li>
 </ul>
@@ -203,7 +204,7 @@
             
   <div class="section" id="gated-graph-sequence-neural-networks">
 <h1>Gated Graph Sequence Neural Networks<a class="headerlink" href="#gated-graph-sequence-neural-networks" title="Permalink to this headline">¶</a></h1>
-<p>Graph-to-sequence networks allow information represtable as a graph (such as an annotated NLP sentence or computer code structure as an AST) to be connected to a sequence generator to produce output which can benefit from the graph structure of the input.</p>
+<p>Graph-to-sequence networks allow information representable as a graph (such as an annotated NLP sentence or computer code structured as an AST) to be connected to a sequence generator to produce output which can benefit from the graph structure of the input.</p>
 <p>The training option <code class="docutils literal notranslate"><span class="pre">-encoder_type</span> <span class="pre">ggnn</span></code> implements a GGNN (Gated Graph Neural Network) based on github.com/JamesChuanggg/ggnn.pytorch.git which is based on the paper “Gated Graph Sequence Neural Networks” by Y. Li, D. Tarlow, M. Brockschmidt, and R. Zemel.</p>
 <p>The ggnn encoder is used for program equivalence proof generation in the paper <a class="reference external" href="https://arxiv.org/abs/2002.06799">Equivalence of Dataflow Graphs via Rewrite Rules Using a Graph-to-Sequence Neural Model</a>. That paper shows the benefit of the graph-to-sequence model over a sequence-to-sequence model for this problem which can be well represented with graphical input. The integration of the ggnn network into the OpenNMT-py system supports attention on the nodes as well as a copy mechanism.</p>
 <div class="section" id="dependencies">
@@ -225,9 +226,8 @@
 </pre></div>
 </div>
 <p>The YAML configuration for this example is the following:</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># ggnn_example.yaml</span>
-<span class="c1">## Where the necessary objects will be written</span>
-<span class="nt">save_data</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">&lt;path_to&gt;/OpenNMT-py-ggnn-example/run/example</span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># save_data is where the necessary objects will be written</span>
+<span class="nt">save_data</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">OpenNMT-py-ggnn-example/run/example</span>
 
 <span class="c1"># Filter long examples</span>
 <span class="nt">src_seq_length</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1000</span>
@@ -236,18 +236,18 @@
 <span class="c1"># Data definition</span>
 <span class="nt">data</span><span class="p">:</span>
     <span class="nt">cnndm</span><span class="p">:</span>
-        <span class="nt">path_src</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">&lt;path_to&gt;/OpenNMT-py-ggnn-example/src-train.txt</span>
-        <span class="nt">path_tgt</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">&lt;path_to&gt;/OpenNMT-py-ggnn-example/tgt-train.txt</span>
+        <span class="nt">path_src</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">OpenNMT-py-ggnn-example/src-train.txt</span>
+        <span class="nt">path_tgt</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">OpenNMT-py-ggnn-example/tgt-train.txt</span>
         <span class="nt">transforms</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">filtertoolong</span><span class="p p-Indicator">]</span>
         <span class="nt">weight</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
     <span class="nt">valid</span><span class="p">:</span>
-        <span class="nt">path_src</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">&lt;path_to&gt;/OpenNMT-py-ggnn-example/src-val.txt</span>
-        <span class="nt">path_tgt</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">&lt;path_to&gt;/OpenNMT-py-ggnn-example/tgt-val.txt</span>
+        <span class="nt">path_src</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">OpenNMT-py-ggnn-example/src-val.txt</span>
+        <span class="nt">path_tgt</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">OpenNMT-py-ggnn-example/tgt-val.txt</span>
 
-<span class="nt">src_vocab</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">&lt;path_to&gt;/OpenNMT-py-ggnn-example/srcvocab.txt</span>
-<span class="nt">tgt_vocab</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">&lt;path_to&gt;/OpenNMT-py-ggnn-example/tgtvocab.txt</span>
+<span class="nt">src_vocab</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">OpenNMT-py-ggnn-example/srcvocab.txt</span>
+<span class="nt">tgt_vocab</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">OpenNMT-py-ggnn-example/tgtvocab.txt</span>
 
-<span class="nt">save_model</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">&lt;path_to&gt;/OpenNMT-py-ggnn-example/run/model</span>
+<span class="nt">save_model</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">OpenNMT-py-ggnn-example/run/model</span>
 
 <span class="c1"># Model options</span>
 <span class="nt">train_steps</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">10000</span>
@@ -255,38 +255,45 @@
 <span class="nt">encoder_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">ggnn</span>
 <span class="nt">layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">2</span>
 <span class="nt">decoder_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">rnn</span>
-<span class="nt">rnn_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">256</span>
 <span class="nt">learning_rate</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0.1</span>
 <span class="nt">start_decay_steps</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">5000</span>
 <span class="nt">learning_rate_decay</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0.8</span>
 <span class="nt">global_attention</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">general</span>
 <span class="nt">batch_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">32</span>
-<span class="nt">word_vec_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">256</span>
+<span class="c1"># src_ggnn_size is larger than vocab plus features to allow one-hot settings</span>
+<span class="nt">src_ggnn_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">100</span>
+<span class="c1"># src_word_vec_size less than rnn_size allows rnn learning during GGNN steps</span>
+<span class="nt">src_word_vec_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">16</span>
+<span class="c1"># Increase tgt_word_vec_size, rnn_size, and state_dim together</span>
+<span class="c1"># to provide larger GGNN embeddings and larger decoder RNN</span>
+<span class="nt">tgt_word_vec_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">64</span>
+<span class="nt">rnn_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">64</span>
+<span class="nt">state_dim</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">64</span>
 <span class="nt">bridge</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
 <span class="nt">gpu_ranks</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
 <span class="nt">n_edge_types</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">9</span>
-<span class="nt">state_dim</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">256</span>
-<span class="nt">n_steps</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">10</span>
-<span class="nt">n_node</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">64</span>
+<span class="c1"># Increasing n_steps slows model computation but allows information</span>
+<span class="c1"># to be aggregated over more node hops</span>
+<span class="nt">n_steps</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">5</span>
+<span class="nt">n_node</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">70</span>
 </pre></div>
 </div>
 <ol class="simple">
 <li><p>Train the model.</p></li>
 </ol>
-<p>You can simply run the following command:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">train</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">config</span> <span class="n">ggnn_example</span><span class="o">.</span><span class="n">yaml</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">train</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">config</span> <span class="n">examples</span><span class="o">/</span><span class="n">ggnn</span><span class="o">.</span><span class="n">yaml</span>
 </pre></div>
 </div>
 <ol class="simple">
 <li><p>Translate the graph of 2 equivalent linear algebra expressions into the axiom list which proves them equivalent.</p></li>
 </ol>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>python translate.py \
-    -model &lt;path_to&gt;/OpenNMT-py-ggnn-example/run/model_step_10000.pt \
-    -src &lt;path_to&gt;/OpenNMT-py-ggnn-example$data_path/src-test.txt \
-    -beam_size 5 -n_best 5 \
-    -gpu 0 \
-    -output &lt;path_to&gt;/OpenNMT-py-ggnn-example/pred-test_beam5.txt \
-    2&gt;&amp;1 &gt; &lt;path_to&gt;/OpenNMT-py-ggnn-example/translate5.out
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">translate</span><span class="o">.</span><span class="n">py</span> \
+    <span class="o">-</span><span class="n">model</span> <span class="o">../</span><span class="n">OpenNMT</span><span class="o">-</span><span class="n">py</span><span class="o">-</span><span class="n">ggnn</span><span class="o">-</span><span class="n">example</span><span class="o">/</span><span class="n">run</span><span class="o">/</span><span class="n">model_step_10000</span><span class="o">.</span><span class="n">pt</span> \
+    <span class="o">-</span><span class="n">src</span> <span class="o">../</span><span class="n">OpenNMT</span><span class="o">-</span><span class="n">py</span><span class="o">-</span><span class="n">ggnn</span><span class="o">-</span><span class="n">example</span><span class="o">/</span><span class="n">src</span><span class="o">-</span><span class="n">test</span><span class="o">.</span><span class="n">txt</span> \
+    <span class="o">-</span><span class="n">beam_size</span> <span class="mi">5</span> <span class="o">-</span><span class="n">n_best</span> <span class="mi">5</span> \
+    <span class="o">-</span><span class="n">gpu</span> <span class="mi">0</span> \
+    <span class="o">-</span><span class="n">output</span> <span class="o">../</span><span class="n">OpenNMT</span><span class="o">-</span><span class="n">py</span><span class="o">-</span><span class="n">ggnn</span><span class="o">-</span><span class="n">example</span><span class="o">/</span><span class="n">run</span><span class="o">/</span><span class="n">pred</span><span class="o">-</span><span class="n">test_beam5</span><span class="o">.</span><span class="n">txt</span> \
+    <span class="o">&gt;</span> <span class="o">../</span><span class="n">OpenNMT</span><span class="o">-</span><span class="n">py</span><span class="o">-</span><span class="n">ggnn</span><span class="o">-</span><span class="n">example</span><span class="o">/</span><span class="n">run</span><span class="o">/</span><span class="n">translate5</span><span class="o">.</span><span class="n">out</span> <span class="mi">2</span><span class="o">&gt;&amp;</span><span class="mi">1</span>
 </pre></div>
 </div>
 </div>
@@ -304,7 +311,7 @@ of algebraic equations structured as a graph:</p>
 </pre></div>
 </div>
 <p>The equations being represented are <code class="docutils literal notranslate"><span class="pre">((a</span> <span class="pre">-</span> <span class="pre">a)</span> <span class="pre">-</span> <span class="pre">b)</span></code> and <code class="docutils literal notranslate"><span class="pre">(0</span> <span class="pre">-</span> <span class="pre">b)</span></code>, the
-<code class="docutils literal notranslate"><span class="pre">sentence</span> <span class="pre">tokens</span></code> of which are provided before the first <code class="docutils literal notranslate"><span class="pre">&lt;EOT&gt;</span></code>. After
+<code class="docutils literal notranslate"><span class="pre">sentence</span> <span class="pre">tokens</span></code> are provided before the first <code class="docutils literal notranslate"><span class="pre">&lt;EOT&gt;</span></code>. After
 the first <code class="docutils literal notranslate"><span class="pre">&lt;EOT&gt;</span></code>, the <code class="docutils literal notranslate"><span class="pre">features</span> <span class="pre">values</span></code> are provided. These are extra
 flags with information on each node in the graph. In this case, the 8
 sentence tokens have feature flags ranging from 0 to 4; the 9th feature
@@ -322,10 +329,17 @@ second <code class="docutils literal notranslate"><span class="pre">&lt;EOT&gt;<
 the ‘,’ token, and all of the numbers used for feature flags and node
 identifiers in the edge list.</p>
 </div>
+<div class="section" id="vocabulary-notes">
+<h2>Vocabulary notes<a class="headerlink" href="#vocabulary-notes" title="Permalink to this headline">¶</a></h2>
+<p>Because edge information and feature data is provided through tokens in the source files, the <code class="docutils literal notranslate"><span class="pre">-src_vocab</span></code> file requires a certain format. The <code class="docutils literal notranslate"><span class="pre">&lt;EOT&gt;</span></code> token should occur in the vocab files after all tokens which are part of the <code class="docutils literal notranslate"><span class="pre">sentence</span> <span class="pre">tokens</span></code> shown above. After the <code class="docutils literal notranslate"><span class="pre">&lt;EOT&gt;</span></code> token, any remaining numerical tokens appropriate for node numbers or feature values can be included too (it is OK for integers to occur in the <code class="docutils literal notranslate"><span class="pre">sentence</span> <span class="pre">tokens</span></code> and such tokens should not be duplicated after the <code class="docutils literal notranslate"><span class="pre">&lt;EOT&gt;</span></code> token). The full size of the vector used as input per node is the number of tokens up to and including <code class="docutils literal notranslate"><span class="pre">&lt;EOT&gt;</span></code> plus the largest feature number used in the input. If the optional <code class="docutils literal notranslate"><span class="pre">src_ggnn_size</span></code> parameter is used to create an embedding layer, then its value must be at or above the full node input vector size; the embedding initializes the lower <code class="docutils literal notranslate"><span class="pre">src_word_vec_size</span></code> dimensions of the node value. If <code class="docutils literal notranslate"><span class="pre">src_ggnn_size</span></code> is not used, then <code class="docutils literal notranslate"><span class="pre">state_dim</span></code> must bet at or above the full node input vector size; as there is no embedding layer in this case, the initial value of the node is set directly.
+Generally, one can use <code class="docutils literal notranslate"><span class="pre">onmt_build_vocab</span></code> to process GGNN input data to create vocab files and then adjust the source vocab appropriately. For an example of generating and adjusting a vocabulary for GGNN, please refer to <a class="reference external" href="https://github.com/SteveKommrusch/OpenNMT-py-ggnn-example#graph-input-processing-end-to-end-example">GGNN end-to-end example</a>.</p>
+</div>
 <div class="section" id="options">
 <h2>Options<a class="headerlink" href="#options" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">-rnn_type</span> <span class="pre">(str)</span></code>: style of recurrent unit to use, one of [LSTM]</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src_ggnn_size</span> <span class="pre">(int)</span></code>: Size of token-to-node embedding input</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src_word_vec_size</span> <span class="pre">(int)</span></code>: Size of token-to-node embedding output</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">-state_dim</span> <span class="pre">(int)</span></code>: Number of state dimensions in nodes</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">-n_edge_types</span> <span class="pre">(int)</span></code>: Number of edge types</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">-bidir_edges</span> <span class="pre">(bool)</span></code>: True if reverse edges should be automatically created</p></li>
