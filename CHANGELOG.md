@@ -4,6 +4,12 @@
 
 ## [Unreleased]
 
+## [2.0.1](https://github.com/OpenNMT/OpenNMT-py/tree/2.0.0) (2021-01-20)
+
+### Fixes and improvements
+* Support embedding layer for larger vocabularies with GGNN (e8065b7)
+* Reorganize some inference options (9fb5f30)
+
 ## [2.0.0](https://github.com/OpenNMT/OpenNMT-py/tree/2.0.0) (2021-01-20)
 
 First official release for OpenNMT-py major upgdate to 2.0!
