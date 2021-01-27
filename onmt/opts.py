@@ -636,7 +636,67 @@ def train_opts(parser):
 
 
 def _add_decoding_opts(parser):
-    group = parser.add_argument_group('Decoding tricks')
+    group = parser.add_argument_group('Beam Search')
+    beam_size = group.add('--beam_size', '-beam_size', type=int, default=5,
+                          help='Beam size')
+    group.add('--ratio', '-ratio', type=float, default=-0.,
+              help="Ratio based beam stop condition")
+
+    group = parser.add_argument_group('Random Sampling')
+    group.add('--random_sampling_topk', '-random_sampling_topk',
+              default=0, type=int,
+              help="Set this to -1 to do random sampling from full "
+                   "distribution. Set this to value k>1 to do random "
+                   "sampling restricted to the k most likely next tokens. "
+                   "Set this to 1 to use argmax.")
+    group.add('--random_sampling_topp', '-random_sampling_topp',
+              default=0.0, type=float,
+              help="Probability for top-p/nucleus sampling. Restrict tokens"
+                   " to the most likely until the cumulated probability is"
+                   " over p. In range [0, 1]."
+                   " https://arxiv.org/abs/1904.09751")
+    group.add('--random_sampling_temp', '-random_sampling_temp',
+              default=1., type=float,
+              help="If doing random sampling, divide the logits by "
+                   "this before computing softmax during decoding.")
+    group._group_actions.append(beam_size)
+    _add_reproducibility_opts(parser)
+
+    group = parser.add_argument_group(
+        'Penalties',
+        '.. Note:: Coverage Penalty is not available in sampling.')
+    # Alpha and Beta values for Google Length + Coverage penalty
+    # Described here: https://arxiv.org/pdf/1609.08144.pdf, Section 7
+    # Length penalty options
+    group.add('--length_penalty', '-length_penalty', default='none',
+              choices=['none', 'wu', 'avg'],
+              help="Length Penalty to use.")
+    group.add('--alpha', '-alpha', type=float, default=0.,
+              help="Google NMT length penalty parameter "
+                   "(higher = longer generation)")
+    # Coverage penalty options
+    group.add('--coverage_penalty', '-coverage_penalty', default='none',
+              choices=['none', 'wu', 'summary'],
+              help="Coverage Penalty to use. Only available in beam search.")
+    group.add('--beta', '-beta', type=float, default=-0.,
+              help="Coverage penalty parameter")
+    group.add('--stepwise_penalty', '-stepwise_penalty', action='store_true',
+              help="Apply coverage penalty at every decoding step. "
+                   "Helpful for summary penalty.")
+
+    group = parser.add_argument_group(
+        'Decoding tricks',
+        '.. Tip:: Following options can be used to limit the decoding length '
+        'or content.'
+        )
+    # Decoding Length constraint
+    group.add('--min_length', '-min_length', type=int, default=0,
+              help='Minimum prediction length')
+    group.add('--max_length', '-max_length', type=int, default=100,
+              help='Maximum prediction length.')
+    group.add('--max_sent_length', '-max_sent_length', action=DeprecateAction,
+              help="Deprecated, use `-max_length` instead")
+    # Decoding content constraint
     group.add('--block_ngram_repeat', '-block_ngram_repeat',
               type=int, default=0,
               help='Block repetition of ngrams during decoding.')
@@ -661,56 +721,6 @@ def _add_decoding_opts(parser):
                    "corresponding target token. If it is not provided "
                    "(or the identified source token does not exist in "
                    "the table), then it will copy the source token.")
-
-    group = parser.add_argument_group('Beam Search')
-    group.add('--min_length', '-min_length', type=int, default=0,
-              help='Minimum prediction length')
-    group.add('--max_length', '-max_length', type=int, default=100,
-              help='Maximum prediction length.')
-    group.add('--max_sent_length', '-max_sent_length', action=DeprecateAction,
-              help="Deprecated, use `-max_length` instead")
-    beam_size = group.add('--beam_size', '-beam_size', type=int, default=5,
-                          help='Beam size')
-
-    group = parser.add_argument_group('Random Sampling')
-    group.add('--random_sampling_topk', '-random_sampling_topk',
-              default=0, type=int,
-              help="Set this to -1 to do random sampling from full "
-                   "distribution. Set this to value k>1 to do random "
-                   "sampling restricted to the k most likely next tokens. "
-                   "Set this to 1 to use argmax or for doing beam "
-                   "search.")
-    group.add('--random_sampling_topp', '-random_sampling_topp',
-              default=0, type=float,
-              help="Probability for top-p/nucleus sampling. Restrict tokens"
-                   " to the most likely until the cumulated probability is"
-                   " over p. In range [0, 1]."
-                   " https://arxiv.org/abs/1904.09751")
-    group.add('--random_sampling_temp', '-random_sampling_temp',
-              default=1., type=float,
-              help="If doing random sampling, divide the logits by "
-                   "this before computing softmax during decoding.")
-    group._group_actions.append(beam_size)
-    _add_reproducibility_opts(parser)
-
-    # Alpha and Beta values for Google Length + Coverage penalty
-    # Described here: https://arxiv.org/pdf/1609.08144.pdf, Section 7
-    group.add('--stepwise_penalty', '-stepwise_penalty', action='store_true',
-              help="Apply penalty at every decoding step. "
-                   "Helpful for summary penalty.")
-    group.add('--length_penalty', '-length_penalty', default='none',
-              choices=['none', 'wu', 'avg'],
-              help="Length Penalty to use.")
-    group.add('--ratio', '-ratio', type=float, default=-0.,
-              help="Ratio based beam stop condition")
-    group.add('--coverage_penalty', '-coverage_penalty', default='none',
-              choices=['none', 'wu', 'summary'],
-              help="Coverage Penalty to use.")
-    group.add('--alpha', '-alpha', type=float, default=0.,
-              help="Google NMT length penalty parameter "
-                   "(higher = longer generation)")
-    group.add('--beta', '-beta', type=float, default=-0.,
-              help="Coverage penalty parameter")
 
 
 def translate_opts(parser):
