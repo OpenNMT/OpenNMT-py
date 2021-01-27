@@ -1,5 +1,8 @@
-## Where the necessary objects will be written
-save_data: OpenNMT-py-ggnn-example/run/example
+# For full desciption to setup and use this file, refer to
+# https://opennmt.net/OpenNMT-py/examples/GGNN.html
+
+# save_data is where the necessary objects will be written
+save_data: ../OpenNMT-py-ggnn-example/run/example
 
 # Filter long examples
 src_seq_length: 1000
@@ -8,18 +11,18 @@ tgt_seq_length: 30
 # Data definition
 data:
     cnndm:
-        path_src: OpenNMT-py-ggnn-example/src-train.txt
-        path_tgt: OpenNMT-py-ggnn-example/tgt-train.txt
+        path_src: ../OpenNMT-py-ggnn-example/src-train.txt
+        path_tgt: ../OpenNMT-py-ggnn-example/tgt-train.txt
         transforms: [filtertoolong]
         weight: 1
     valid:
-        path_src: OpenNMT-py-ggnn-example/src-val.txt
-        path_tgt: OpenNMT-py-ggnn-example/tgt-val.txt
+        path_src: ../OpenNMT-py-ggnn-example/src-val.txt
+        path_tgt: ../OpenNMT-py-ggnn-example/tgt-val.txt
 
-src_vocab: OpenNMT-py-ggnn-example/srcvocab.txt
-tgt_vocab: OpenNMT-py-ggnn-example/tgtvocab.txt
+src_vocab: ../OpenNMT-py-ggnn-example/srcvocab.txt
+tgt_vocab: ../OpenNMT-py-ggnn-example/tgtvocab.txt
 
-save_model: OpenNMT-py-ggnn-example/run/model
+save_model: ../OpenNMT-py-ggnn-example/run/model
 
 # Model options
 train_steps: 10000
@@ -27,16 +30,24 @@ save_checkpoint_steps: 5000
 encoder_type: ggnn
 layers: 2
 decoder_type: rnn
-rnn_size: 256
 learning_rate: 0.1
 start_decay_steps: 5000
 learning_rate_decay: 0.8
 global_attention: general
 batch_size: 32
-word_vec_size: 256
+# src_ggnn_size is larger than vocab plus features to allow one-hot settings
+src_ggnn_size: 100
+# src_word_vec_size less than rnn_size allows rnn learning during GGNN steps
+src_word_vec_size: 16
+# Increase tgt_word_vec_size, rnn_size, and state_dim together
+# to provide larger GGNN embeddings and larger decoder RNN
+tgt_word_vec_size: 64
+rnn_size: 64
+state_dim: 64
 bridge: true
 gpu_ranks: 0
 n_edge_types: 9
-state_dim: 256
-n_steps: 10
-n_node: 64
+# Increasing n_steps slows model computation but allows information
+# to be aggregated over more node hops
+n_steps: 5
+n_node: 70

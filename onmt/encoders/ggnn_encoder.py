@@ -72,6 +72,8 @@ class GGNNEncoder(EncoderBase):
     Args:
        rnn_type (str):
           style of recurrent unit to use, one of [LSTM]
+       src_ggnn_size (int) : Size of token-to-node embedding input
+       src_word_vec_size (int) : Size of token-to-node embedding output
        state_dim (int) : Number of state dimensions in nodes
        n_edge_types (int) : Number of edge types
        bidir_edges (bool): True if reverse edges should be autocreated
@@ -84,10 +86,13 @@ class GGNNEncoder(EncoderBase):
             which requires parsing the input sequence.)
     """
 
-    def __init__(self, rnn_type, state_dim, bidir_edges,
-                 n_edge_types, n_node, bridge_extra_node, n_steps, src_vocab):
+    def __init__(self, rnn_type, src_word_vec_size, src_ggnn_size,
+                 state_dim, bidir_edges, n_edge_types, n_node,
+                 bridge_extra_node, n_steps, src_vocab):
         super(GGNNEncoder, self).__init__()
 
+        self.src_word_vec_size = src_word_vec_size
+        self.src_ggnn_size = src_ggnn_size
         self.state_dim = state_dim
         self.n_edge_types = n_edge_types
         self.n_node = n_node
@@ -111,17 +116,34 @@ class GGNNEncoder(EncoderBase):
         self.COMMA = -1
         self.DELIMITER = -1
         self.idx2num = []
+        found_n_minus_one = False
         for ln in f:
             ln = ln.strip('\n')
+            ln = ln.split('\t')[0]
+            if idx == 0 and ln != "<unk>":
+                idx += 1
+                self.idx2num.append(-1)
+            if idx == 1 and ln != "<blank>":
+                idx += 1
+                self.idx2num.append(-1)
             if ln == ",":
                 self.COMMA = idx
             if ln == "<EOT>":
                 self.DELIMITER = idx
             if ln.isdigit():
                 self.idx2num.append(int(ln))
+                if int(ln) == n_node-1:
+                    found_n_minus_one = True
             else:
                 self.idx2num.append(-1)
             idx += 1
+
+        assert self.COMMA >= 0, \
+            "GGNN src_vocab must include ',' character"
+        assert self.DELIMITER >= 0, \
+            "GGNN src_vocab must include <EOT> token"
+        assert found_n_minus_one, \
+            "GGNN src_vocab must include node numbers for edge connections"
 
         # Propogation Model
         self.propogator = GGNNPropogator(self.state_dim, self.n_node,
@@ -132,11 +154,27 @@ class GGNNEncoder(EncoderBase):
         # Initialize the bridge layer
         self._initialize_bridge(rnn_type, self.state_dim, 1)
 
+        # Token embedding
+        if src_ggnn_size > 0:
+            self.embed = nn.Sequential(
+                nn.Linear(src_ggnn_size, src_word_vec_size),
+                nn.LeakyReLU()
+            )
+            assert self.src_ggnn_size >= self.DELIMITER, \
+                "Embedding input must be larger than vocabulary"
+            assert self.src_word_vec_size < self.state_dim, \
+                "Embedding size must be smaller than state_dim"
+        else:
+            assert self.DELIMITER < self.state_dim, \
+                "Vocabulary too large, consider -src_ggnn_size"
+
     @classmethod
     def from_opt(cls, opt, embeddings):
         """Alternate constructor."""
         return cls(
             opt.rnn_type,
+            opt.src_word_vec_size,
+            opt.src_ggnn_size,
             opt.state_dim,
             opt.bidir_edges,
             opt.n_edge_types,
@@ -157,8 +195,10 @@ class GGNNEncoder(EncoderBase):
         nodes = self.n_node
         batch_size = src.size()[1]
         first_extra = np.zeros(batch_size, dtype=np.int32)
-        prop_state = np.zeros((batch_size, nodes, self.state_dim),
-                              dtype=np.int32)
+        token_onehot = np.zeros((batch_size, nodes,
+                                 self.src_ggnn_size if self.src_ggnn_size > 0
+                                 else self.state_dim),
+                                dtype=np.int32)
         edges = np.zeros((batch_size, nodes, nodes*self.n_edge_types*2),
                          dtype=np.int32)
         npsrc = src[:, :, 0].cpu().data.numpy().astype(np.int32)
@@ -168,7 +208,7 @@ class GGNNEncoder(EncoderBase):
             tokens_done = False
             # Number of flagged nodes defines node count for this sample
             # (Nodes can have no flags on them, but must be in 'flags' list).
-            flags = 0
+            flag_node = 0
             flags_done = False
             edge = 0
             source_node = -1
@@ -179,26 +219,27 @@ class GGNNEncoder(EncoderBase):
                         tokens_done = True
                         first_extra[i] = j
                     else:
-                        prop_state[i][j][token] = 1
+                        token_onehot[i][j][token] = 1
                 elif token == self.DELIMITER:
-                    flags += 1
+                    flag_node += 1
                     flags_done = True
-                    assert flags <= nodes
+                    assert flag_node <= nodes, "Too many nodes with flags"
                 elif not flags_done:
                     # The total number of integers in the vocab should allow
                     # for all features and edges to be defined.
                     if token == self.COMMA:
-                        flags = 0
+                        flag_node = 0
                     else:
                         num = self.idx2num[token]
                         if num >= 0:
-                            prop_state[i][flags][num+self.DELIMITER] = 1
-                        flags += 1
+                            token_onehot[i][flag_node][num+self.DELIMITER] = 1
+                        flag_node += 1
                 elif token == self.COMMA:
                     edge += 1
-                    assert source_node == -1, 'Error in graph edge input'
-                    assert (edge <= 2*self.n_edge_types and
-                            (not self.bidir_edges or edge < self.n_edge_types))
+                    assert source_node == -1, \
+                        f'Error in graph edge input: {source_node} unpaired'
+                    assert edge < self.n_edge_types, \
+                        "Too many edge types in input"
                 else:
                     num = self.idx2num[token]
                     if source_node < 0:
@@ -210,7 +251,14 @@ class GGNNEncoder(EncoderBase):
                                           + source_node] = 1
                         source_node = -1
 
-        prop_state = torch.from_numpy(prop_state).float().to(src.device)
+        token_onehot = torch.from_numpy(token_onehot).float().to(src.device)
+        if self.src_ggnn_size > 0:
+            token_embed = self.embed(token_onehot)
+            prop_state = torch.cat((token_embed, torch.zeros(
+                (batch_size, nodes, self.state_dim - self.src_word_vec_size)
+                 ).float().to(src.device)), 2)
+        else:
+            prop_state = token_onehot
         edges = torch.from_numpy(edges).float().to(src.device)
 
         for i_step in range(self.n_steps):
