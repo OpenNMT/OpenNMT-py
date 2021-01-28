@@ -2,21 +2,44 @@
 import math
 import numpy as np
 import torch
-from functools import partial
+
+from typing import Sequence, Callable
 from onmt.constants import DefaultTokens, SubwordMarker
 from onmt.transforms import register_transform
 from .transform import Transform
 
 
-def word_start(x, ignore_subword=False, is_joiner=False):
-    """Return if a token is the word start or not."""
+def _subword_start_by_joiner(tokens: Sequence[str]) -> Sequence[bool]:
+    """Find word start in a subword list marked by joiner."""
+    flag = [True] * len(tokens)
+    for i, token in enumerate(tokens):
+        if token.startswith(SubwordMarker.JOINER) and i != 0:
+            flag[i] = False
+        if token.endswith(SubwordMarker.JOINER):
+            try:
+                flag[i+1] = False
+            except IndexError:
+                print("Sentence `{}` not correct!".format(" ".join(token)))
+                raise
+    return flag
+
+
+def _subword_start_by_spacer(tokens: Sequence[str]) -> Sequence[bool]:
+    """Find word start in a subword list marked by spacer(as prefix)."""
+    flag = [x.startswith(SubwordMarker.SPACER) for x in tokens]
+    flag[0] = True
+    return flag
+
+
+def word_start_finder(ignore_subword=False, is_joiner=False) -> Callable:
+    """Return callable to find all word start in the token list."""
     if not ignore_subword:
         if is_joiner:
-            return not x.startswith(SubwordMarker.JOINER)
+            return _subword_start_by_joiner
         else:
-            return x.startswith(SubwordMarker.SPACER)
+            return _subword_start_by_spacer
     else:
-        return True
+        return lambda tokens: [True] * len(tokens)
 
 
 class BARTNoising(object):
@@ -53,9 +76,9 @@ class BARTNoising(object):
 
         if mask_length == 'subword' or is_joiner is None:
             # view each subword as word start / input is word level token
-            self.__is_word_start = partial(word_start, ignore_subword=True)
+            self._is_word_start = word_start_finder(ignore_subword=True)
         else:
-            self.__is_word_start = partial(word_start, is_joiner=is_joiner)
+            self._is_word_start = word_start_finder(is_joiner=is_joiner)
 
         self.mask_span_distribution = None
         if mask_length == 'span-poisson':
@@ -111,12 +134,8 @@ class BARTNoising(object):
         assert len(result) == len(tokens), "Error when permute sentences."
         return result
 
-    def _is_word_start(self, token):
-        return self.__is_word_start(token)
-
     def whole_word_mask(self, tokens, p=1.0):  # text span mask/infilling
-        is_word_start = torch.tensor(
-            [self._is_word_start(token) for token in tokens]).int()
+        is_word_start = torch.tensor(self._is_word_start(tokens)).int()
         n_mask = int(math.ceil(is_word_start.sum() * p))
         n_insert = 0
         if n_mask == 0:
