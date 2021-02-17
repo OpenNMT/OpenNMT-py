@@ -83,6 +83,7 @@ class JoinerDropoutTransform(Transform):
         )
         for elem in seq:
             if elem == SubwordMarker.JOINER:
+                out_seq.append(elem)
                 continue
             if elem.startswith(SubwordMarker.JOINER):
                 if random.random() < dropout:
