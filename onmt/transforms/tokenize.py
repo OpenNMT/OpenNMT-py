@@ -346,9 +346,13 @@ class ONMTTokenizerTransform(TokenizerTransform):
         subword_alpha = self.tgt_subword_alpha if side == 'tgt' \
             else self.src_subword_alpha
         kwopts = dict()
+        if not is_train:
+            # disable random aspects during validation
+            subword_alpha = 0
+            subword_nbest = 1
         if subword_type == 'bpe':
             kwopts['bpe_model_path'] = subword_model
-            kwopts['bpe_dropout'] = subword_alpha if is_train else 0
+            kwopts['bpe_dropout'] = subword_alpha
         elif subword_type == 'sentencepiece':
             kwopts['sp_model_path'] = subword_model
             kwopts['sp_nbest_size'] = subword_nbest
