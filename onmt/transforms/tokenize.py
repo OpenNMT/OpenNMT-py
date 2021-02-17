@@ -91,7 +91,7 @@ class TokenizerTransform(Transform):
         self.tgt_subword_vocab = self.opts.tgt_subword_vocab
         self.src_vocab_threshold = self.opts.src_vocab_threshold
         self.tgt_vocab_threshold = self.opts.tgt_vocab_threshold
-        self.model_task = self.opts.model_task
+        self.model_task = getattr(self.opts, "model_task", None)
 
     def _repr_args(self):
         """Return str represent key arguments for TokenizerTransform."""

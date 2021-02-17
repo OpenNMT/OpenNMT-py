@@ -72,6 +72,7 @@ class JoinerDropoutTransform(Transform):
     def _parse_opts(self):
         self.src_joiner_dropout = self.opts.src_joiner_dropout
         self.tgt_joiner_dropout = self.opts.tgt_joiner_dropout
+        self.model_task = getattr(self.opts, "model_task", None)
 
     def dropout_separate_joiner(self, seq, side="src"):
         out_seq = []
@@ -104,7 +105,7 @@ class JoinerDropoutTransform(Transform):
         else:
             src_out = self.dropout_separate_joiner(example["src"], "src")
             example["src"] = src_out
-            if self.opts.model_task == ModelTask.LANGUAGE_MODEL:
+            if self.model_task == ModelTask.LANGUAGE_MODEL:
                 example["tgt"] = src_out
             else:
                 tgt_out = self.dropout_separate_joiner(example["tgt"], "tgt")
