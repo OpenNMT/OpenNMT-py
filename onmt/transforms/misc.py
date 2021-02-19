@@ -82,21 +82,16 @@ class JoinerDropoutTransform(Transform):
             else self.tgt_joiner_dropout
         )
         for elem in seq:
-            if elem == SubwordMarker.JOINER:
-                out_seq.append(elem)
-                continue
-            if elem.startswith(SubwordMarker.JOINER):
+            if len(elem) > 1 and elem.startswith(SubwordMarker.JOINER):
                 if random.random() < dropout:
                     out_seq.append(SubwordMarker.JOINER)
                     elem = elem[1:]
             if len(elem) > 1 and elem.endswith(SubwordMarker.JOINER):
                 if random.random() < dropout:
                     out_seq.append(elem[:-1])
-                    out_seq.append(SubwordMarker.JOINER)
-                else:
-                    out_seq.append(elem)
-            else:
-                out_seq.append(elem)
+                    elem = elem[-1:]
+            out_seq.append(elem)
+
         return out_seq
 
     def apply(self, example, is_train=False, stats=None, **kwargs):
