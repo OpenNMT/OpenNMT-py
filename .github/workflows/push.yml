@@ -164,7 +164,7 @@ jobs:
             -heads 4 -transformer_ff 64 \
             -word_vec_size 16 -report_every 5 \
             -rnn_size 16 -train_steps 10
-    - name: Test LM training with unlieklihood loss
+    - name: Test LM training with unlikelihood loss
       run: |
         python train.py \
             -config data/lm_data.yaml \

@@ -206,6 +206,11 @@ class LossComputeBase(nn.Module):
             }
         )
 
+    def _compute_coverage_loss(self, std_attn, coverage_attn):
+        covloss = torch.min(std_attn, coverage_attn).sum()
+        covloss *= self.lambda_coverage
+        return covloss
+
     def _compute_loss(self, batch, output, target, **kwargs):
         """
         Compute the loss. Subclass must define this method.
@@ -335,7 +340,9 @@ class UnlikelihoodTokenLoss(nn.Module):
     """
 
     def __init__(self, unlikelihood_coeff, ignore_index=-100):
-        assert 0.0 < unlikelihood_coeff
+        assert 0.0 < unlikelihood_coeff, (
+            f"unlikelihood_coeff {unlikelihood_coeff} must be non negative."
+        )
         self.ignore_index = ignore_index
         super(UnlikelihoodTokenLoss, self).__init__()
 
@@ -344,44 +351,48 @@ class UnlikelihoodTokenLoss(nn.Module):
         )
         self.unlikelihood_coeff = unlikelihood_coeff
 
-    def compute_forbidden_tokens_per_timestep(self, target):
-        expanded_target = target.unsqueeze(-1).expand(
-            target.size(0), target.size(1), target.size(0)
-        ).permute(1, 2, 0)
+    def compute_previous_context_tokens(self, target):
+        expanded_target = (
+            target.unsqueeze(-1)
+            .expand(target.size(0), target.size(1), target.size(0))
+            .permute(1, 2, 0)
+        )
 
-        ctx_cands = (
+        previous_context_tokens = (
             expanded_target.tril(-1)
             + torch.full_like(expanded_target, self.ignore_index).triu()
         )
 
         # remove padded examples
-        ctx_cands = ctx_cands.masked_fill(
+        previous_context_tokens = previous_context_tokens.masked_fill(
             expanded_target.permute(0, 2, 1) == self.ignore_index,
             self.ignore_index,
         )
 
         # remove current word for ctx
-        ctx_cands = ctx_cands.masked_fill(
-            ctx_cands == expanded_target.permute(0, 2, 1),
+        previous_context_tokens = previous_context_tokens.masked_fill(
+            previous_context_tokens == expanded_target.permute(0, 2, 1),
             self.ignore_index,
         )
 
-        return ctx_cands.permute(1, 0, 2)
+        return previous_context_tokens.permute(1, 0, 2)
 
     def compute_unlikelihood_loss(self, output, target):
         with torch.no_grad():
-            ctx_cands = self.compute_forbidden_tokens_per_timestep(target)
+            previous_context_tokens = self.compute_previous_context_tokens(
+                target
+            )
 
         probs = F.softmax(output, dim=-1)
-        probs = probs.view(-1, ctx_cands.size(1), probs.size(1))
+        probs = probs.view(-1, previous_context_tokens.size(1), probs.size(1))
 
         log_probs = -torch.clamp((1.0 - probs), min=1e-5).log()
 
-        one_hot_ctx_cands = torch.zeros_like(log_probs).scatter_(
-            -1, ctx_cands, 1
+        one_hot_previous_context_tokens = torch.zeros_like(log_probs).scatter_(
+            -1, previous_context_tokens, 1
         )
-        one_hot_ctx_cands[:, :, self.ignore_index] = 0
-        unlikelihood_loss = log_probs * one_hot_ctx_cands
+        one_hot_previous_context_tokens[:, :, self.ignore_index] = 0
+        unlikelihood_loss = log_probs * one_hot_previous_context_tokens
         unlikelihood_loss = unlikelihood_loss.view(
             -1, unlikelihood_loss.size(2)
         )
@@ -449,11 +460,6 @@ class CommonLossCompute(LossComputeBase):
         stats = self._stats(loss.clone(), log_ppl, scores, gtruth)
 
         return loss, stats
-
-    def _compute_coverage_loss(self, std_attn, coverage_attn):
-        covloss = torch.min(std_attn, coverage_attn).sum()
-        covloss *= self.lambda_coverage
-        return covloss
 
     def _compute_log_ppl(self, scores, gtruth):
         with torch.no_grad():
