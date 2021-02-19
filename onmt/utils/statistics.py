@@ -1,7 +1,7 @@
 """ Statistics calculation utility """
 import time
-import math
 import sys
+import math
 
 from onmt.utils.logging import logger
 
@@ -16,11 +16,12 @@ class Statistics(object):
     * elapsed time
     """
 
-    def __init__(self, loss=0, n_words=0, n_correct=0):
+    def __init__(self, loss=0, n_words=0, n_correct=0, log_ppl=0):
         self.loss = loss
         self.n_words = n_words
         self.n_correct = n_correct
         self.n_src_words = 0
+        self.log_ppl = log_ppl
         self.start_time = time.time()
 
     @staticmethod
@@ -80,6 +81,7 @@ class Statistics(object):
         self.loss += stat.loss
         self.n_words += stat.n_words
         self.n_correct += stat.n_correct
+        self.log_ppl += stat.log_ppl
 
         if update_n_src_words:
             self.n_src_words += stat.n_src_words
@@ -94,7 +96,7 @@ class Statistics(object):
 
     def ppl(self):
         """ compute perplexity """
-        return math.exp(min(self.loss / self.n_words, 100))
+        return math.exp(min(self.log_ppl / self.n_words, 100))
 
     def elapsed_time(self):
         """ compute elapsed time """

@@ -179,6 +179,42 @@ ${PYTHON} onmt/bin/train.py \
             -rnn_size 16 -train_steps 10 \
             -copy_attn >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
+echo "Succeeded" | tee -a ${LOG_FILE}
+
+echo -n "  [+] Testing LM training with label smoothing..."
+${PYTHON} onmt/bin/train.py \
+            -config ${DATA_DIR}/lm_data.yaml \
+            -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
+            -tgt_vocab $TMP_OUT_DIR/onmt.vocab.src \
+            -model_task lm \
+            -encoder_type transformer_lm \
+            -decoder_type transformer_lm \
+            -src_vocab_size 1000 \
+            -tgt_vocab_size 1000 \
+            -label_smoothing 0.1 \
+            -dec_layers 2 -batch_size 10 \
+            -heads 4 -transformer_ff 64 \
+            -word_vec_size 16 -report_every 5        \
+            -rnn_size 16 -train_steps 10 >> ${LOG_FILE} 2>&1
+[ "$?" -eq 0 ] || error_exit
+echo "Succeeded" | tee -a ${LOG_FILE}
+
+echo -n "  [+] Testing LM training with unlikelihood loss..."
+${PYTHON} onmt/bin/train.py \
+            -config ${DATA_DIR}/lm_data.yaml \
+            -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
+            -tgt_vocab $TMP_OUT_DIR/onmt.vocab.src \
+            -model_task lm \
+            -encoder_type transformer_lm \
+            -decoder_type transformer_lm \
+            -src_vocab_size 1000 \
+            -tgt_vocab_size 1000 \
+            -unlikelihood_coeff 1 \
+            -dec_layers 2 -batch_size 10 \
+            -heads 4 -transformer_ff 64 \
+            -word_vec_size 16 -report_every 5        \
+            -rnn_size 16 -train_steps 10 >> ${LOG_FILE} 2>&1
+[ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}*
 rm $TMP_OUT_DIR/onmt.vocab*
 

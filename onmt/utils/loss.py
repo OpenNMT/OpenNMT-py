@@ -8,6 +8,7 @@ import torch.nn.functional as F
 
 import onmt
 from onmt.modules.sparse_losses import SparsemaxLoss
+from onmt.modules.sparse_losses import ExpandedSparsemaxLoss
 from onmt.modules.sparse_activations import LogSparsemax
 from onmt.constants import ModelTask
 
@@ -35,14 +36,21 @@ def build_loss_compute(model, tgt_field, opt, train=True):
             len(tgt_field.vocab), opt.copy_attn_force,
             unk_index=unk_idx, ignore_index=padding_idx
         )
-    elif opt.label_smoothing > 0 and train:
+    elif opt.label_smoothing > 0:
         criterion = LabelSmoothingLoss(
-            opt.label_smoothing, len(tgt_field.vocab), ignore_index=padding_idx
+            opt.label_smoothing, len(tgt_field.vocab),
+            ignore_index=padding_idx
+        )
+    elif opt.unlikelihood_coeff > 0:
+        criterion = UnlikelihoodTokenLoss(
+            opt.unlikelihood_coeff, ignore_index=padding_idx
         )
     elif isinstance(model.generator[-1], LogSparsemax):
-        criterion = SparsemaxLoss(ignore_index=padding_idx, reduction='sum')
+        criterion = ExpandedSparsemaxLoss(
+            ignore_index=padding_idx, reduction="sum"
+        )
     else:
-        criterion = nn.NLLLoss(ignore_index=padding_idx, reduction='sum')
+        criterion = ExpandedNLLLoss(ignore_index=padding_idx, reduction="sum")
 
     # if the loss function operates on vectors of raw logits instead of
     # probabilities, only the first part of the generator needs to be
@@ -113,10 +121,14 @@ class LossComputeBase(nn.Module):
         normalzation (str): normalize by "sents" or "tokens"
     """
 
-    def __init__(self, criterion, generator):
+    def __init__(self, criterion, generator, lambda_coverage=0.0,
+                 lambda_align=0.0, tgt_shift_index=1):
         super(LossComputeBase, self).__init__()
         self.criterion = criterion
         self.generator = generator
+        self.lambda_coverage = lambda_coverage
+        self.lambda_align = lambda_align
+        self.tgt_shift_index = tgt_shift_index
 
     @property
     def padding_idx(self):
@@ -134,7 +146,65 @@ class LossComputeBase(nn.Module):
                     batch or a trunc of it?
             attns: the attns dictionary returned from the model.
         """
-        return NotImplementedError
+        range_start = range_[0] + self.tgt_shift_index
+        range_end = range_[1]
+        shard_state = {
+            "output": output,
+            "target": batch.tgt[range_start:range_end, :, 0],
+        }
+        if self.lambda_coverage != 0.0:
+            self._add_coverage_shard_state(shard_state, attns)
+        if self.lambda_align != 0.0:
+            self._add_align_shard_state(
+                shard_state, batch, range_start, range_end, attns
+            )
+        return shard_state
+
+    def _add_coverage_shard_state(self, shard_state, attns):
+        coverage = attns.get("coverage", None)
+        std = attns.get("std", None)
+        assert attns is not None
+        assert coverage is not None, (
+            "lambda_coverage != 0.0 requires coverage attention"
+            " that could not be found in the model."
+            " Transformer decoders do not implement coverage"
+        )
+        assert std is not None, (
+            "lambda_coverage != 0.0 requires attention mechanism"
+            " that could not be found in the model."
+        )
+        shard_state.update({"std_attn": attns.get("std"),
+                            "coverage_attn": coverage})
+
+    def _add_align_shard_state(self, shard_state, batch, range_start,
+                               range_end, attns):
+        # attn_align should be in (batch_size, pad_tgt_size, pad_src_size)
+        attn_align = attns.get("align", None)
+        # align_idx should be a Tensor in size([N, 3]), N is total number
+        # of align src-tgt pair in current batch, each as
+        # ['sent_N°_in_batch', 'tgt_id+1', 'src_id'] (check AlignField)
+        align_idx = batch.align
+        assert attns is not None
+        assert attn_align is not None, (
+            "lambda_align != 0.0 requires " "alignement attention head"
+        )
+        assert align_idx is not None, (
+            "lambda_align != 0.0 requires " "provide guided alignement"
+        )
+        pad_tgt_size, batch_size, _ = batch.tgt.size()
+        pad_src_size = batch.src[0].size(0)
+        align_matrix_size = [batch_size, pad_tgt_size, pad_src_size]
+        ref_align = onmt.utils.make_batch_align_matrix(
+            align_idx, align_matrix_size, normalize=True
+        )
+        # NOTE: tgt-src ref alignement that in range_ of shard
+        # (coherent with batch.tgt)
+        shard_state.update(
+            {
+                "align_head": attn_align,
+                "ref_align": ref_align[:, range_start:range_end, :],
+            }
+        )
 
     def _compute_loss(self, batch, output, target, **kwargs):
         """
@@ -198,7 +268,7 @@ class LossComputeBase(nn.Module):
             batch_stats.update(stats)
         return None, batch_stats
 
-    def _stats(self, loss, scores, target):
+    def _stats(self, loss, log_ppl, scores, target):
         """
         Args:
             loss (:obj:`FloatTensor`): the loss computed by the loss criterion.
@@ -212,7 +282,8 @@ class LossComputeBase(nn.Module):
         non_padding = target.ne(self.padding_idx)
         num_correct = pred.eq(target).masked_select(non_padding).sum().item()
         num_non_padding = non_padding.sum().item()
-        return onmt.utils.Statistics(loss.item(), num_non_padding, num_correct)
+        return onmt.utils.Statistics(loss.item(), num_non_padding,
+                                     num_correct, log_ppl.item())
 
     def _bottle(self, _v):
         return _v.view(-1, _v.size(2))
@@ -241,14 +312,95 @@ class LabelSmoothingLoss(nn.Module):
 
     def forward(self, output, target):
         """
-        output (FloatTensor): batch_size x n_classes
-        target (LongTensor): batch_size
+        output (FloatTensor): (batch_size x batch_length) x n_classes
+        target (LongTensor): batch_size x batch_length
         """
-        model_prob = self.one_hot.repeat(target.size(0), 1)
-        model_prob.scatter_(1, target.unsqueeze(1), self.confidence)
-        model_prob.masked_fill_((target == self.ignore_index).unsqueeze(1), 0)
+        gtruth = target.view(-1)
+        model_prob = self.one_hot.repeat(gtruth.size(0), 1)
+        model_prob.scatter_(1, gtruth.unsqueeze(1), self.confidence)
+        model_prob.masked_fill_((gtruth == self.ignore_index).unsqueeze(1), 0)
 
         return F.kl_div(output, model_prob, reduction='sum')
+
+
+class ExpandedNLLLoss(nn.NLLLoss):
+    def forward(self, input, target):
+        gtruth = target.view(-1)
+        return super(ExpandedNLLLoss, self).forward(input, gtruth)
+
+
+class UnlikelihoodTokenLoss(nn.Module):
+    """
+    Unlikelihood token level loss
+    """
+
+    def __init__(self, unlikelihood_coeff, ignore_index=-100):
+        assert 0.0 < unlikelihood_coeff
+        self.ignore_index = ignore_index
+        super(UnlikelihoodTokenLoss, self).__init__()
+
+        self.likelihood_criterion = nn.NLLLoss(
+            ignore_index=ignore_index, reduction="none"
+        )
+        self.unlikelihood_coeff = unlikelihood_coeff
+
+    def compute_forbidden_tokens_per_timestep(self, target):
+        expanded_target = target.unsqueeze(-1).expand(
+            target.size(0), target.size(1), target.size(0)
+        ).permute(1, 2, 0)
+
+        ctx_cands = (
+            expanded_target.tril(-1)
+            + torch.full_like(expanded_target, self.ignore_index).triu()
+        )
+
+        # remove padded examples
+        ctx_cands = ctx_cands.masked_fill(
+            expanded_target.permute(0, 2, 1) == self.ignore_index,
+            self.ignore_index,
+        )
+
+        # remove current word for ctx
+        ctx_cands = ctx_cands.masked_fill(
+            ctx_cands == expanded_target.permute(0, 2, 1),
+            self.ignore_index,
+        )
+
+        return ctx_cands.permute(1, 0, 2)
+
+    def compute_unlikelihood_loss(self, output, target):
+        with torch.no_grad():
+            ctx_cands = self.compute_forbidden_tokens_per_timestep(target)
+
+        probs = F.softmax(output, dim=-1)
+        probs = probs.view(-1, ctx_cands.size(1), probs.size(1))
+
+        log_probs = -torch.clamp((1.0 - probs), min=1e-5).log()
+
+        one_hot_ctx_cands = torch.zeros_like(log_probs).scatter_(
+            -1, ctx_cands, 1
+        )
+        one_hot_ctx_cands[:, :, self.ignore_index] = 0
+        unlikelihood_loss = log_probs * one_hot_ctx_cands
+        unlikelihood_loss = unlikelihood_loss.view(
+            -1, unlikelihood_loss.size(2)
+        )
+
+        return unlikelihood_loss
+
+    def forward(self, output, target):
+        """
+        output (FloatTensor): (seq_length x batch_size) x n_classes
+        target (LongTensor): seq_length x batch_size
+        """
+        gtruth = target.view(-1)
+
+        loss = self.likelihood_criterion(output, gtruth)
+
+        unlikelihood_loss = self.compute_unlikelihood_loss(output, target)
+
+        loss += self.unlikelihood_coeff * unlikelihood_loss.sum(-1)
+        return loss.sum()
 
 
 class CommonLossCompute(LossComputeBase):
@@ -259,26 +411,17 @@ class CommonLossCompute(LossComputeBase):
     """
     def __init__(self, criterion, generator, normalization="sents",
                  lambda_coverage=0.0, lambda_align=0.0, tgt_shift_index=1):
-        super(CommonLossCompute, self).__init__(criterion, generator)
-        self.lambda_coverage = lambda_coverage
-        self.lambda_align = lambda_align
-        self.tgt_shift_index = tgt_shift_index
-
-    def _add_coverage_shard_state(self, shard_state, attns):
-        coverage = attns.get("coverage", None)
-        std = attns.get("std", None)
-        assert attns is not None
-        assert coverage is not None, (
-            "lambda_coverage != 0.0 requires coverage attention"
-            " that could not be found in the model."
-            " Transformer decoders do not implement coverage"
-        )
-        assert std is not None, (
-            "lambda_coverage != 0.0 requires attention mechanism"
-            " that could not be found in the model."
-        )
-        shard_state.update({"std_attn": attns.get("std"),
-                            "coverage_attn": coverage})
+        super(CommonLossCompute, self).__init__(criterion, generator,
+                                                lambda_coverage, lambda_align,
+                                                tgt_shift_index)
+        if isinstance(self.generator[-1], LogSparsemax):
+            self.ppl_criterion = SparsemaxLoss(
+                ignore_index=self.criterion.ignore_index, reduction="sum"
+            )
+        else:
+            self.ppl_criterion = nn.NLLLoss(
+                ignore_index=self.criterion.ignore_index, reduction="sum"
+            )
 
     def _compute_loss(self, batch, output, target, std_attn=None,
                       coverage_attn=None, align_head=None, ref_align=None):
@@ -288,7 +431,7 @@ class CommonLossCompute(LossComputeBase):
         scores = self.generator(bottled_output)
         gtruth = target.view(-1)
 
-        loss = self.criterion(scores, gtruth)
+        loss = self.criterion(scores, target)
         if self.lambda_coverage != 0.0:
             coverage_loss = self._compute_coverage_loss(
                 std_attn=std_attn, coverage_attn=coverage_attn)
@@ -301,7 +444,9 @@ class CommonLossCompute(LossComputeBase):
             align_loss = self._compute_alignement_loss(
                 align_head=align_head, ref_align=ref_align)
             loss += align_loss
-        stats = self._stats(loss.clone(), scores, gtruth)
+
+        log_ppl = self._compute_log_ppl(scores, gtruth)
+        stats = self._stats(loss.clone(), log_ppl, scores, gtruth)
 
         return loss, stats
 
@@ -310,35 +455,10 @@ class CommonLossCompute(LossComputeBase):
         covloss *= self.lambda_coverage
         return covloss
 
-    def _add_align_shard_state(self, shard_state, batch, range_start,
-                               range_end, attns):
-        # attn_align should be in (batch_size, pad_tgt_size, pad_src_size)
-        attn_align = attns.get("align", None)
-        # align_idx should be a Tensor in size([N, 3]), N is total number
-        # of align src-tgt pair in current batch, each as
-        # ['sent_N°_in_batch', 'tgt_id+1', 'src_id'] (check AlignField)
-        align_idx = batch.align
-        assert attns is not None
-        assert attn_align is not None, (
-            "lambda_align != 0.0 requires " "alignement attention head"
-        )
-        assert align_idx is not None, (
-            "lambda_align != 0.0 requires " "provide guided alignement"
-        )
-        pad_tgt_size, batch_size, _ = batch.tgt.size()
-        pad_src_size = batch.src[0].size(0)
-        align_matrix_size = [batch_size, pad_tgt_size, pad_src_size]
-        ref_align = onmt.utils.make_batch_align_matrix(
-            align_idx, align_matrix_size, normalize=True
-        )
-        # NOTE: tgt-src ref alignement that in range_ of shard
-        # (coherent with batch.tgt)
-        shard_state.update(
-            {
-                "align_head": attn_align,
-                "ref_align": ref_align[:, range_start:range_end, :],
-            }
-        )
+    def _compute_log_ppl(self, scores, gtruth):
+        with torch.no_grad():
+            log_ppl = self.ppl_criterion(scores, gtruth)
+        return log_ppl
 
     def _compute_alignement_loss(self, align_head, ref_align):
         """Compute loss between 2 partial alignment matrix."""
@@ -349,21 +469,6 @@ class CommonLossCompute(LossComputeBase):
         align_loss = -align_head.clamp(min=1e-18).log().mul(ref_align).sum()
         align_loss *= self.lambda_align
         return align_loss
-
-    def _make_shard_state(self, batch, output, range_, attns=None):
-        range_start = range_[0] + self.tgt_shift_index
-        range_end = range_[1]
-        shard_state = {
-            "output": output,
-            "target": batch.tgt[range_start:range_end, :, 0],
-        }
-        if self.lambda_coverage != 0.0:
-            self._add_coverage_shard_state(shard_state, attns)
-        if self.lambda_align != 0.0:
-            self._add_align_shard_state(
-                shard_state, batch, range_start, range_end, attns
-            )
-        return shard_state
 
 
 class NMTLossCompute(CommonLossCompute):
