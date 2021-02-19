@@ -118,7 +118,7 @@ class LossComputeBase(nn.Module):
              distribution over the target vocabulary.
         tgt_vocab (:obj:`Vocab`) :
              torchtext vocab object representing the target output
-        normalzation (str): normalize by "sents" or "tokens"
+        normalization (str): normalize by "sents" or "tokens"
     """
 
     def __init__(self, criterion, generator, lambda_coverage=0.0,
@@ -129,6 +129,7 @@ class LossComputeBase(nn.Module):
         self.lambda_coverage = lambda_coverage
         self.lambda_align = lambda_align
         self.tgt_shift_index = tgt_shift_index
+        self.ppl_criterion = None
 
     @property
     def padding_idx(self):
@@ -211,7 +212,8 @@ class LossComputeBase(nn.Module):
         covloss *= self.lambda_coverage
         return covloss
 
-    def _compute_loss(self, batch, output, target, **kwargs):
+    def _compute_loss(self, batch, output, target, std_attn=None,
+                      coverage_attn=None, align_head=None, ref_align=None):
         """
         Compute the loss. Subclass must define this method.
 
@@ -222,7 +224,44 @@ class LossComputeBase(nn.Module):
             target: the validate target to compare output with.
             **kwargs(optional): additional info for computing loss.
         """
-        return NotImplementedError
+        bottled_output = self._bottle(output)
+
+        scores = self.generator(bottled_output)
+        gtruth = target.view(-1)
+
+        loss = self.criterion(scores, target)
+        if self.lambda_coverage != 0.0:
+            coverage_loss = self._compute_coverage_loss(
+                std_attn=std_attn, coverage_attn=coverage_attn)
+            loss += coverage_loss
+        if self.lambda_align != 0.0:
+            if align_head.dtype != loss.dtype:  # Fix FP16
+                align_head = align_head.to(loss.dtype)
+            if ref_align.dtype != loss.dtype:
+                ref_align = ref_align.to(loss.dtype)
+            align_loss = self._compute_alignement_loss(
+                align_head=align_head, ref_align=ref_align)
+            loss += align_loss
+
+        log_ppl = self._compute_log_ppl(scores, gtruth)
+        stats = self._stats(loss.clone(), log_ppl, scores, gtruth)
+
+        return loss, stats
+
+    def _compute_log_ppl(self, scores, gtruth):
+        with torch.no_grad():
+            log_ppl = self.ppl_criterion(scores, gtruth)
+        return log_ppl
+
+    def _compute_alignement_loss(self, align_head, ref_align):
+        """Compute loss between 2 partial alignment matrix."""
+        # align_head contains value in [0, 1) presenting attn prob,
+        # 0 was resulted by the context attention src_pad_mask
+        # So, the correspand position in ref_align should also be 0
+        # Therefore, clip align_head to > 1e-18 should be bias free.
+        align_loss = -align_head.clamp(min=1e-18).log().mul(ref_align).sum()
+        align_loss *= self.lambda_align
+        return align_loss
 
     def __call__(self,
                  batch,
@@ -414,17 +453,16 @@ class UnlikelihoodTokenLoss(nn.Module):
         return loss.sum()
 
 
-class CommonLossCompute(LossComputeBase):
+class NMTLossCompute(LossComputeBase):
     """
-    Loss Computation parent for NMTLossCompute and LMLossCompute
-
-    Implement loss compatible with coverage and alignement shards
+    Standard NMT Loss Computation.
     """
-    def __init__(self, criterion, generator, normalization="sents",
-                 lambda_coverage=0.0, lambda_align=0.0, tgt_shift_index=1):
-        super(CommonLossCompute, self).__init__(criterion, generator,
-                                                lambda_coverage, lambda_align,
-                                                tgt_shift_index)
+    def __init__(self, criterion, generator, lambda_coverage=0.0,
+                 lambda_align=0.0):
+        super(NMTLossCompute, self).__init__(criterion, generator,
+                                             lambda_coverage=lambda_coverage,
+                                             lambda_align=lambda_align,
+                                             tgt_shift_index=1)
         if isinstance(self.generator[-1], LogSparsemax):
             self.ppl_criterion = SparsemaxLoss(
                 ignore_index=self.criterion.ignore_index, reduction="sum"
@@ -434,73 +472,25 @@ class CommonLossCompute(LossComputeBase):
                 ignore_index=self.criterion.ignore_index, reduction="sum"
             )
 
-    def _compute_loss(self, batch, output, target, std_attn=None,
-                      coverage_attn=None, align_head=None, ref_align=None):
 
-        bottled_output = self._bottle(output)
-
-        scores = self.generator(bottled_output)
-        gtruth = target.view(-1)
-
-        loss = self.criterion(scores, target)
-        if self.lambda_coverage != 0.0:
-            coverage_loss = self._compute_coverage_loss(
-                std_attn=std_attn, coverage_attn=coverage_attn)
-            loss += coverage_loss
-        if self.lambda_align != 0.0:
-            if align_head.dtype != loss.dtype:  # Fix FP16
-                align_head = align_head.to(loss.dtype)
-            if ref_align.dtype != loss.dtype:
-                ref_align = ref_align.to(loss.dtype)
-            align_loss = self._compute_alignement_loss(
-                align_head=align_head, ref_align=ref_align)
-            loss += align_loss
-
-        log_ppl = self._compute_log_ppl(scores, gtruth)
-        stats = self._stats(loss.clone(), log_ppl, scores, gtruth)
-
-        return loss, stats
-
-    def _compute_log_ppl(self, scores, gtruth):
-        with torch.no_grad():
-            log_ppl = self.ppl_criterion(scores, gtruth)
-        return log_ppl
-
-    def _compute_alignement_loss(self, align_head, ref_align):
-        """Compute loss between 2 partial alignment matrix."""
-        # align_head contains value in [0, 1) presenting attn prob,
-        # 0 was resulted by the context attention src_pad_mask
-        # So, the correspand position in ref_align should also be 0
-        # Therefore, clip align_head to > 1e-18 should be bias free.
-        align_loss = -align_head.clamp(min=1e-18).log().mul(ref_align).sum()
-        align_loss *= self.lambda_align
-        return align_loss
-
-
-class NMTLossCompute(CommonLossCompute):
-    """
-    Standard NMT Loss Computation.
-    """
-    def __init__(self, criterion, generator, normalization="sents",
-                 lambda_coverage=0.0, lambda_align=0.0):
-        super(NMTLossCompute, self).__init__(criterion, generator,
-                                             normalization=normalization,
-                                             lambda_coverage=lambda_coverage,
-                                             lambda_align=lambda_align,
-                                             tgt_shift_index=1)
-
-
-class LMLossCompute(CommonLossCompute):
+class LMLossCompute(LossComputeBase):
     """
     Standard LM Loss Computation.
     """
-    def __init__(self, criterion, generator, normalization="sents",
-                 lambda_coverage=0.0, lambda_align=0.0):
+    def __init__(self, criterion, generator, lambda_coverage=0.0,
+                 lambda_align=0.0):
         super(LMLossCompute, self).__init__(criterion, generator,
-                                            normalization=normalization,
                                             lambda_coverage=lambda_coverage,
                                             lambda_align=lambda_align,
                                             tgt_shift_index=0)
+        if isinstance(self.generator[-1], LogSparsemax):
+            self.ppl_criterion = SparsemaxLoss(
+                ignore_index=self.criterion.ignore_index, reduction="sum"
+            )
+        else:
+            self.ppl_criterion = nn.NLLLoss(
+                ignore_index=self.criterion.ignore_index, reduction="sum"
+            )
 
 
 def filter_shard_state(state, shard_size=None):
