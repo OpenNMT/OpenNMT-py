@@ -145,11 +145,11 @@ class DecodeStrategy(object):
             assert batch_size == self.batch_size * self.parallel_paths,\
                 "forced target_prefix should've extend to same number of path!"
             target_prefix_words = target_prefix[:, :, 0].transpose(0, 1)
-            target_prefix = target_prefix_words[:, 1:-1] # remove bos and eos
+            target_prefix = target_prefix_words[:, 1:]  # remove bos
             # fix length constraint
             prefix_non_pad = target_prefix.ne(self.pad).sum(dim=-1).tolist()
-            self.max_length += max(prefix_non_pad)
-            self.min_length += min(prefix_non_pad)
+            self.max_length += max(prefix_non_pad)-1
+            self.min_length += min(prefix_non_pad)-1
         self.target_prefix = target_prefix  # NOTE: forced prefix words
         return None, memory_bank, src_lengths, src_map
 
