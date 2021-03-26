@@ -232,6 +232,19 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
                                for k, v in checkpoint['model'].items()}
         # end of patch for backward compatibility
 
+        if model_opt.update_embeddings:
+            enc_emb_name = "encoder.embeddings.make_embedding.emb_luts.0.weight"
+            dec_emb_name = "decoder.embeddings.make_embedding.emb_luts.0.weight"
+            old_enc_emb_size = checkpoint["model"][enc_emb_name].shape[0]
+            old_dec_emb_size = checkpoint["model"][dec_emb_name].shape[0]
+            model.state_dict()[enc_emb_name][:old_enc_emb_size] = checkpoint["model"][enc_emb_name][:]
+            model.state_dict()[dec_emb_name][:old_dec_emb_size] = checkpoint["model"][dec_emb_name][:]
+            generator.state_dict()["0.weight"][:old_dec_emb_size] = checkpoint["generator"]["0.weight"][:]
+            generator.state_dict()["0.bias"][:old_dec_emb_size] = checkpoint["generator"]["0.bias"]
+            del checkpoint["model"][enc_emb_name]
+            del checkpoint["model"][dec_emb_name]
+            del checkpoint["generator"]["0.weight"]
+            del checkpoint["generator"]["0.bias"]
         model.load_state_dict(checkpoint['model'], strict=False)
         generator.load_state_dict(checkpoint['generator'], strict=False)
     else:
