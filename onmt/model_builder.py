@@ -232,19 +232,36 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
                                for k, v in checkpoint['model'].items()}
         # end of patch for backward compatibility
 
-        if model_opt.update_embeddings:
+        if model_opt.update_vocab:
+            # Update vocabualry embeddings with checkpoint embeddings
+            logger.info("Updating vocabulary embeddings with checkpoint embeddings")
+            # Embedding layers
             enc_emb_name = "encoder.embeddings.make_embedding.emb_luts.0.weight"
             dec_emb_name = "decoder.embeddings.make_embedding.emb_luts.0.weight"
-            old_enc_emb_size = checkpoint["model"][enc_emb_name].shape[0]
-            old_dec_emb_size = checkpoint["model"][dec_emb_name].shape[0]
-            model.state_dict()[enc_emb_name][:old_enc_emb_size] = checkpoint["model"][enc_emb_name][:]
-            model.state_dict()[dec_emb_name][:old_dec_emb_size] = checkpoint["model"][dec_emb_name][:]
-            generator.state_dict()["0.weight"][:old_dec_emb_size] = checkpoint["generator"]["0.weight"][:]
-            generator.state_dict()["0.bias"][:old_dec_emb_size] = checkpoint["generator"]["0.bias"]
-            del checkpoint["model"][enc_emb_name]
-            del checkpoint["model"][dec_emb_name]
-            del checkpoint["generator"]["0.weight"]
-            del checkpoint["generator"]["0.bias"]
+
+            tgt_multifield = fields["tgt"]
+            checkpoint_tgt_multifield = checkpoint["vocab"]["tgt"]
+            for field_name, emb_name in [("src", enc_emb_name), ("tgt", dec_emb_name)]:
+                logger.info(field_name)
+                multifield = fields[field_name]
+                checkpoint_multifield = checkpoint["vocab"][field_name]
+                new_tokens = []
+                for (name, field), (checkpoint_name, checkpoint_field) in zip(multifield, checkpoint_multifield):
+                    for i, tok in enumerate(field.vocab.itos):
+                        if tok in checkpoint_field.vocab.stoi:
+                            old_i = checkpoint_field.vocab.stoi[tok]
+                            print(tok, i, old_i)
+                            model.state_dict()[emb_name][i] = checkpoint["model"][emb_name][old_i]
+                            if field_name == "tgt":
+                                generator.state_dict()["0.weight"][i] = checkpoint["generator"]["0.weight"][old_i]
+                                generator.state_dict()["0.bias"][i] = checkpoint["generator"]["0.bias"][old_i]
+                        else:
+                            # Just for debugging purposes
+                            new_tokens.append(tok)
+            # Remove old vocabulary associated embeddings
+            del checkpoint["model"][enc_emb_name], checkpoint["model"][dec_emb_name]
+            del checkpoint["generator"]["0.weight"], checkpoint["generator"]["0.bias"]
+
         model.load_state_dict(checkpoint['model'], strict=False)
         generator.load_state_dict(checkpoint['generator'], strict=False)
     else:

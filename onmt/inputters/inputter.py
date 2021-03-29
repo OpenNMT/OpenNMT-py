@@ -287,17 +287,6 @@ def _build_field_vocab(field, counter, size_multiple=1, **kwargs):
         _pad_vocab_to_multiple(field.vocab, size_multiple)
 
 
-def _update_field_vocab(field, old_field):
-    new_vocabulary = []
-    for w in field.vocab.itos:
-        if w not in old_field.vocab.stoi:
-            new_vocabulary.append(w)
-    logger.info('New vocabulary has %d new tokens.' % (len(new_vocabulary)))
-    print(new_vocabulary)
-    old_field.vocab.extend(field.vocab)
-    field.vocab = old_field.vocab
-
-
 def _load_vocab(vocab_path, name, counters, min_freq=0):
     """Inplace update `counters`[`name`] with vocab in `vocab_path`.
 
@@ -330,16 +319,6 @@ def _build_fv_from_multifield(multifield, counters, build_fv_kwargs,
             size_multiple=size_multiple,
             **build_fv_kwargs[name])
         logger.info(" * %s vocab size: %d." % (name, len(field.vocab)))
-
-
-def _update_fv_from_multifield(multifield, old_multifield):
-    for (name, field), (old_name, old_field) in zip(multifield, old_multifield):
-        logger.info(" * %s checkpoint vocab size: %d." % (old_name, len(old_field.vocab)))
-        logger.info(" * %s new vocab size: %d." % (name, len(field.vocab)))
-        _update_field_vocab(
-            field,
-            old_field)
-        logger.info(" * %s updated vocab size: %d." % (name, len(field.vocab)))
 
 
 def _build_fields_vocab(fields, counters, data_type, share_vocab,
@@ -384,23 +363,6 @@ def _build_fields_vocab(fields, counters, data_type, share_vocab,
                 specials=_all_specials)
             logger.info(" * merged vocab size: %d." % len(src_field.vocab))
 
-    return fields
-
-def _update_fields_vocab(opts, fields, old_fields):
-    tgt_multifield = fields["tgt"]
-    _update_fv_from_multifield(tgt_multifield, old_fields["tgt"])
-    src_multifield = fields["src"]
-    _update_fv_from_multifield(src_multifield, old_fields["src"])
-    '''
-    if opts.share_vocab:
-        # `tgt_vocab_size` is ignored when sharing vocabularies
-        logger.info(" * merging src and tgt vocab...")
-        src_field = src_multifield.base_field
-        tgt_field = tgt_multifield.base_field
-        _merge_field_vocabs(
-            src_field, tgt_field)
-        logger.info(" * merged vocab size: %d." % len(src_field.vocab))
-    '''
     return fields
 
 

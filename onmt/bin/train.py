@@ -17,7 +17,7 @@ from onmt.utils.parse import ArgumentParser
 from onmt.opts import train_opts
 from onmt.inputters.corpus import save_transformed_sample
 from onmt.inputters.fields import build_dynamic_fields, save_fields, \
-    load_fields, build_update_dynamic_fields
+    load_fields
 from onmt.transforms import make_transforms, save_transforms, \
     get_specials, get_transforms_cls
 
@@ -31,33 +31,6 @@ def prepare_fields_transforms(opt):
     specials = get_specials(opt, transforms_cls)
     fields = build_dynamic_fields(
         opt, src_specials=specials['src'], tgt_specials=specials['tgt'])
-
-    # maybe prepare pretrained embeddings, if any
-    prepare_pretrained_embeddings(opt, fields)
-
-    if opt.dump_fields:
-        save_fields(fields, opt.save_data, overwrite=opt.overwrite)
-    if opt.dump_transforms or opt.n_sample != 0:
-        transforms = make_transforms(opt, transforms_cls, fields)
-    if opt.dump_transforms:
-        save_transforms(transforms, opt.save_data, overwrite=opt.overwrite)
-    if opt.n_sample != 0:
-        logger.warning(
-            "`-n_sample` != 0: Training will not be started. "
-            f"Stop after saving {opt.n_sample} samples/corpus.")
-        save_transformed_sample(opt, transforms, n_sample=opt.n_sample)
-        logger.info(
-            "Sample saved, please check it before restart training.")
-        sys.exit()
-    return fields, transforms_cls
-
-
-def prepare_update_fields_transforms(opt, old_fields):
-    """Prepare or dump fields & transforms before training."""
-    transforms_cls = get_transforms_cls(opt._all_transform)
-    specials = get_specials(opt, transforms_cls)
-    fields = build_update_dynamic_fields(
-        opt, old_fields, src_specials=specials['src'], tgt_specials=specials['tgt'])
 
     # maybe prepare pretrained embeddings, if any
     prepare_pretrained_embeddings(opt, fields)
@@ -101,9 +74,9 @@ def _init_train(opt):
             if len(old_transf) != 0:
                 _msg += f" -{old_transf}."
             logger.warning(_msg)
-        if opt.update_embeddings:
+        if opt.update_vocab:
             logger.info("Updating checkpoint vocabulary with new vocabulary")
-            fields, transforms_cls = prepare_update_fields_transforms(opt, fields)
+            fields, transforms_cls = prepare_fields_transforms(opt)
     else:
         checkpoint = None
         fields, transforms_cls = prepare_fields_transforms(opt)

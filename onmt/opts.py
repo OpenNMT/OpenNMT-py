@@ -225,7 +225,7 @@ def model_opts(parser):
     group.add('--position_encoding', '-position_encoding', action='store_true',
               help="Use a sin to mark relative words positions. "
                    "Necessary for non-RNN style models.")
-    group.add("-update_embeddings", "--update_embeddings", action="store_true",
+    group.add("-update_vocab", "--update_vocab", action="store_true",
               help="Update source and target existing vocabularies")
 
     group = parser.add_argument_group('Model-Embedding Features')
