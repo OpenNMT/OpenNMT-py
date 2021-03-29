@@ -17,6 +17,7 @@ from onmt.inputters.text_dataset import _feature_tokenize  # noqa: F401
 
 import gc
 
+
 # monkey-patch to make torchtext Vocab's pickleable
 def _getstate(self):
     return dict(self.__dict__, stoi=dict(self.stoi))

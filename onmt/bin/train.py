@@ -29,6 +29,7 @@ def prepare_fields_transforms(opt):
     """Prepare or dump fields & transforms before training."""
     transforms_cls = get_transforms_cls(opt._all_transform)
     specials = get_specials(opt, transforms_cls)
+    
     fields = build_dynamic_fields(
         opt, src_specials=specials['src'], tgt_specials=specials['tgt'])
 
