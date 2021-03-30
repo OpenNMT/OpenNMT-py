@@ -242,15 +242,13 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
             tgt_multifield = fields["tgt"]
             checkpoint_tgt_multifield = checkpoint["vocab"]["tgt"]
             for field_name, emb_name in [("src", enc_emb_name), ("tgt", dec_emb_name)]:
-                logger.info(field_name)
                 multifield = fields[field_name]
                 checkpoint_multifield = checkpoint["vocab"][field_name]
-                new_tokens = []
                 for (name, field), (checkpoint_name, checkpoint_field) in zip(multifield, checkpoint_multifield):
+                    new_tokens = []
                     for i, tok in enumerate(field.vocab.itos):
                         if tok in checkpoint_field.vocab.stoi:
                             old_i = checkpoint_field.vocab.stoi[tok]
-                            print(tok, i, old_i)
                             model.state_dict()[emb_name][i] = checkpoint["model"][emb_name][old_i]
                             if field_name == "tgt":
                                 generator.state_dict()["0.weight"][i] = checkpoint["generator"]["0.weight"][old_i]
@@ -258,6 +256,8 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
                         else:
                             # Just for debugging purposes
                             new_tokens.append(tok)
+                    logger.info("%s: %d new tokens" % (name, len(new_tokens)))
+
             # Remove old vocabulary associated embeddings
             del checkpoint["model"][enc_emb_name], checkpoint["model"][dec_emb_name]
             del checkpoint["generator"]["0.weight"], checkpoint["generator"]["0.bias"]
