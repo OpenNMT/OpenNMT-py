@@ -162,6 +162,31 @@ def build_task_specific_model(model_opt, fields):
         raise ValueError(f"No model defined for {model_opt.model_task} task")
 
 
+def use_embeddings_from_checkpoint(fields, model, generator, checkpoint):
+    # Update vocabulary embeddings with checkpoint embeddings
+    logger.info("Updating vocabulary embeddings with checkpoint embeddings")
+    # Embedding layers
+    enc_emb_name = "encoder.embeddings.make_embedding.emb_luts.0.weight"
+    dec_emb_name = "decoder.embeddings.make_embedding.emb_luts.0.weight"
+
+    for field_name, emb_name in [("src", enc_emb_name), ("tgt", dec_emb_name)]:
+        multifield = fields[field_name]
+        checkpoint_multifield = checkpoint["vocab"][field_name]
+        for (name, field), (checkpoint_name, checkpoint_field) in zip(multifield, checkpoint_multifield):
+            new_tokens = []
+            for i, tok in enumerate(field.vocab.itos):
+                if tok in checkpoint_field.vocab.stoi:
+                    old_i = checkpoint_field.vocab.stoi[tok]
+                    model.state_dict()[emb_name][i] = checkpoint["model"][emb_name][old_i]
+                    if field_name == "tgt":
+                        generator.state_dict()["0.weight"][i] = checkpoint["generator"]["0.weight"][old_i]
+                        generator.state_dict()["0.bias"][i] = checkpoint["generator"]["0.bias"][old_i]
+                else:
+                    # Just for debugging purposes
+                    new_tokens.append(tok)
+            logger.info("%s: %d new tokens" % (name, len(new_tokens)))
+
+
 def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
     """Build a model from opts.
 
@@ -233,38 +258,24 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
         # end of patch for backward compatibility
 
         if model_opt.update_vocab:
-            # Update vocabualry embeddings with checkpoint embeddings
-            logger.info("Updating vocabulary embeddings with checkpoint embeddings")
+            # Remove old vocabulary associated embeddings
             # Embedding layers
             enc_emb_name = "encoder.embeddings.make_embedding.emb_luts.0.weight"
             dec_emb_name = "decoder.embeddings.make_embedding.emb_luts.0.weight"
-
-            tgt_multifield = fields["tgt"]
-            checkpoint_tgt_multifield = checkpoint["vocab"]["tgt"]
-            for field_name, emb_name in [("src", enc_emb_name), ("tgt", dec_emb_name)]:
-                multifield = fields[field_name]
-                checkpoint_multifield = checkpoint["vocab"][field_name]
-                for (name, field), (checkpoint_name, checkpoint_field) in zip(multifield, checkpoint_multifield):
-                    new_tokens = []
-                    for i, tok in enumerate(field.vocab.itos):
-                        if tok in checkpoint_field.vocab.stoi:
-                            old_i = checkpoint_field.vocab.stoi[tok]
-                            model.state_dict()[emb_name][i] = checkpoint["model"][emb_name][old_i]
-                            if field_name == "tgt":
-                                generator.state_dict()["0.weight"][i] = checkpoint["generator"]["0.weight"][old_i]
-                                generator.state_dict()["0.bias"][i] = checkpoint["generator"]["0.bias"][old_i]
-                        else:
-                            # Just for debugging purposes
-                            new_tokens.append(tok)
-                    logger.info("%s: %d new tokens" % (name, len(new_tokens)))
-
-            # Remove old vocabulary associated embeddings
+            #Store before delete
+            checkpoint_backup = {"model": {}, "generator": {}}
+            checkpoint_backup["model"][enc_emb_name] = checkpoint["model"][enc_emb_name]
+            checkpoint_backup["model"][dec_emb_name] = checkpoint["model"][dec_emb_name]
+            checkpoint_backup["generator"]["0.weight"] = checkpoint["generator"]["0.weight"]
+            checkpoint_backup["generator"]["0.bias"] = checkpoint["generator"]["0.bias"]
+            checkpoint_backup["vocab"] = checkpoint["vocab"]
             del checkpoint["model"][enc_emb_name], checkpoint["model"][dec_emb_name]
             del checkpoint["generator"]["0.weight"], checkpoint["generator"]["0.bias"]
 
         model.load_state_dict(checkpoint['model'], strict=False)
         generator.load_state_dict(checkpoint['generator'], strict=False)
-    else:
+
+    if checkpoint is None or model_opt.update_vocab:
         if model_opt.param_init != 0.0:
             for p in model.parameters():
                 p.data.uniform_(-model_opt.param_init, model_opt.param_init)
@@ -277,6 +288,10 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
             for p in generator.parameters():
                 if p.dim() > 1:
                     xavier_uniform_(p)
+
+        if model_opt.update_vocab:
+            # Update model embeddings with those from the checkpoint after initialization
+            use_embeddings_from_checkpoint(fields, model, generator, checkpoint_backup)
 
         if hasattr(model, "encoder") and hasattr(model.encoder, "embeddings"):
             model.encoder.embeddings.load_pretrained_vectors(
