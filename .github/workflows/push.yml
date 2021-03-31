@@ -305,8 +305,8 @@ jobs:
           -report_every 5\
           -rnn_size 10 \
           -train_steps 10 \
-          -save_model: model \
-          -save_checkpoint_steps: 10
+          -save_model /tmp/onmt.model \
+          -save_checkpoint_steps 10
         sed -i '1s/^/new_tok\t100000000\n/' /tmp/onmt.vocab.src
         python train.py \
           -config data/data.yaml \
@@ -322,7 +322,7 @@ jobs:
           -train_steps 20 \
           -update_vocab \
           -reset_optim "states" \
-          -train_from model_step_10.pt
+          -train_from /tmp/onmt.model_step_10.pt
         rm model_step_10.pt
 
 

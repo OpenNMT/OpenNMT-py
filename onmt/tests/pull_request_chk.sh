@@ -195,6 +195,33 @@ ${PYTHON} onmt/bin/train.py \
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 
+echo -n "  [+] Testing checkpoint vocabulary update..."
+${PYTHON} onmt/bin/train.py \
+            -config ${DATA_DIR}/data.yaml \
+            -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
+            -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
+            -src_vocab_size 1000 -tgt_vocab_size 1000 \
+            -rnn_size 2 -batch_size 10 \
+            -word_vec_size 5 -rnn_size 10 \
+            -report_every 5 -train_steps 10 \
+            -save_model $TMP_OUT_DIR/onmt.model \
+            -save_checkpoint_steps: 10 >> ${LOG_FILE} 2>&1
+sed -i '1s/^/new_tok\t100000000\n/' $TMP_OUT_DIR/onmt.vocab.src >> ${LOG_FILE} 2>&1
+${PYTHON} onmt/bin/train.py \
+            -config ${DATA_DIR}/data.yaml \
+            -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
+            -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
+            -src_vocab_size 1000 -tgt_vocab_size 1000 \
+            -rnn_size 2 -batch_size 10 \
+            -word_vec_size 5 -rnn_size 10 \
+            -report_every 5 -train_steps 20 \
+            -update_vocab -reset_optim "states" \
+            -train_from $TMP_OUT_DIR/onmt.model_step_10.pt >> ${LOG_FILE} 2>&1
+[ "$?" -eq 0 ] || error_exit
+echo "Succeeded" | tee -a ${LOG_FILE}
+rm $TMP_OUT_DIR/onmt.vocab*
+rm $TMP_OUT_DIR/onmt.model*
+
 #
 # Translation test
 #
