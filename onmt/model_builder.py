@@ -244,37 +244,6 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
             generator.linear.weight = model.decoder.embeddings.word_lut.weight
 
     # Load the model states from checkpoint or initialize them.
-    if checkpoint is not None:
-        # This preserves backward-compat for models using customed layernorm
-        def fix_key(s):
-            s = re.sub(r'(.*)\.layer_norm((_\d+)?)\.b_2',
-                       r'\1.layer_norm\2.bias', s)
-            s = re.sub(r'(.*)\.layer_norm((_\d+)?)\.a_2',
-                       r'\1.layer_norm\2.weight', s)
-            return s
-
-        checkpoint['model'] = {fix_key(k): v
-                               for k, v in checkpoint['model'].items()}
-        # end of patch for backward compatibility
-
-        if model_opt.update_vocab:
-            # Remove old vocabulary associated embeddings
-            # Embedding layers
-            enc_emb_name = "encoder.embeddings.make_embedding.emb_luts.0.weight"
-            dec_emb_name = "decoder.embeddings.make_embedding.emb_luts.0.weight"
-            #Store before delete
-            checkpoint_backup = {"model": {}, "generator": {}}
-            checkpoint_backup["model"][enc_emb_name] = checkpoint["model"][enc_emb_name]
-            checkpoint_backup["model"][dec_emb_name] = checkpoint["model"][dec_emb_name]
-            checkpoint_backup["generator"]["0.weight"] = checkpoint["generator"]["0.weight"]
-            checkpoint_backup["generator"]["0.bias"] = checkpoint["generator"]["0.bias"]
-            checkpoint_backup["vocab"] = checkpoint["vocab"]
-            del checkpoint["model"][enc_emb_name], checkpoint["model"][dec_emb_name]
-            del checkpoint["generator"]["0.weight"], checkpoint["generator"]["0.bias"]
-
-        model.load_state_dict(checkpoint['model'], strict=False)
-        generator.load_state_dict(checkpoint['generator'], strict=False)
-
     if checkpoint is None or model_opt.update_vocab:
         if model_opt.param_init != 0.0:
             for p in model.parameters():
@@ -289,16 +258,39 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
                 if p.dim() > 1:
                     xavier_uniform_(p)
 
-        if model_opt.update_vocab:
-            # Update model embeddings with those from the checkpoint after initialization
-            use_embeddings_from_checkpoint(fields, model, generator, checkpoint_backup)
-
         if hasattr(model, "encoder") and hasattr(model.encoder, "embeddings"):
             model.encoder.embeddings.load_pretrained_vectors(
                 model_opt.pre_word_vecs_enc)
         if hasattr(model.decoder, 'embeddings'):
             model.decoder.embeddings.load_pretrained_vectors(
                 model_opt.pre_word_vecs_dec)
+
+    if checkpoint is not None:
+        # This preserves backward-compat for models using customed layernorm
+        def fix_key(s):
+            s = re.sub(r'(.*)\.layer_norm((_\d+)?)\.b_2',
+                       r'\1.layer_norm\2.bias', s)
+            s = re.sub(r'(.*)\.layer_norm((_\d+)?)\.a_2',
+                       r'\1.layer_norm\2.weight', s)
+            return s
+
+        checkpoint['model'] = {fix_key(k): v
+                               for k, v in checkpoint['model'].items()}
+        # end of patch for backward compatibility
+
+        if model_opt.update_vocab:
+            # Update model embeddings with those from the checkpoint after initialization
+            use_embeddings_from_checkpoint(fields, model, generator, checkpoint)
+
+            # Remove old vocabulary associated embeddings
+            # Embedding layers
+            enc_emb_name = "encoder.embeddings.make_embedding.emb_luts.0.weight"
+            dec_emb_name = "decoder.embeddings.make_embedding.emb_luts.0.weight"
+            del checkpoint["model"][enc_emb_name], checkpoint["model"][dec_emb_name]
+            del checkpoint["generator"]["0.weight"], checkpoint["generator"]["0.bias"]
+
+        model.load_state_dict(checkpoint['model'], strict=False)
+        generator.load_state_dict(checkpoint['generator'], strict=False)        
 
     model.generator = generator
     model.to(device)
