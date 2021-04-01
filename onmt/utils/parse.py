@@ -287,6 +287,12 @@ class ArgumentParser(cfargparse.ArgumentParser, DataOptsCheckerMixin):
         assert len(opt.accum_count) == len(opt.accum_steps), \
             'Number of accum_count values must match number of accum_steps'
 
+        if opt.update_vocab:
+            assert opt.train_from, \
+                "-update_vocab needs -train_from option"
+            assert opt.reset_optim == 'states', \
+                '-update_vocab needs -reset_optim "states"'
+
     @classmethod
     def validate_translate_opts(cls, opt):
         pass
