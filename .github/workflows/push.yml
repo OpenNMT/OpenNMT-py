@@ -291,6 +291,41 @@ jobs:
       run: |
         python tools/extract_embeddings.py \
           -model onmt/tests/test_model.pt
+    - name: Test checkpoint vocabulary update
+      run: |
+        python train.py \
+          -config data/data.yaml \
+          -src_vocab /tmp/onmt.vocab.src \
+          -tgt_vocab /tmp/onmt.vocab.tgt \
+          -src_vocab_size 1000 \
+          -tgt_vocab_size 1000 \
+          -rnn_size 2 \
+          -batch_size 10 \
+          -word_vec_size 5 \
+          -report_every 5\
+          -rnn_size 10 \
+          -train_steps 10 \
+          -save_model /tmp/onmt.model \
+          -save_checkpoint_steps 10
+        sed -i '1s/^/new_tok\t100000000\n/' /tmp/onmt.vocab.src
+        python train.py \
+          -config data/data.yaml \
+          -src_vocab /tmp/onmt.vocab.src \
+          -tgt_vocab /tmp/onmt.vocab.tgt \
+          -src_vocab_size 1000 \
+          -tgt_vocab_size 1000 \
+          -rnn_size 2 \
+          -batch_size 10 \
+          -word_vec_size 5 \
+          -report_every 5\
+          -rnn_size 10 \
+          -train_steps 20 \
+          -update_vocab \
+          -reset_optim "states" \
+          -train_from /tmp/onmt.model_step_10.pt
+        rm model_step_10.pt
+
+
   build-docs:
     runs-on: ubuntu-latest
     steps:
