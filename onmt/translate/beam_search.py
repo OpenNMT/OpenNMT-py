@@ -34,7 +34,7 @@ class BeamSearchBase(DecodeStrategy):
         _batch_offset (LongTensor): Shape ``(B,)``.
         _beam_offset (LongTensor): Shape ``(batch_size x beam_size,)``.
         alive_seq (LongTensor): See base.
-        topk_log_probs (FloatTensor): Shape ``(B x beam_size,)``. These
+        topk_log_probs (FloatTensor): Shape ``(B, beam_size,)``. These
             are the scores used for the topk operation.
         memory_lengths (LongTensor): Lengths of encodings. Used for
             masking attentions.
@@ -105,7 +105,7 @@ class BeamSearchBase(DecodeStrategy):
             dtype=torch.long, device=device)
         self.topk_log_probs = torch.tensor(
             [0.0] + [float("-inf")] * (self.beam_size - 1), device=device
-        ).repeat(self.batch_size)
+        ).repeat(self.batch_size).reshape(self.batch_size, self.beam_size)
         # buffers for the topk scores and 'backpointer'
         self.topk_scores = torch.empty((self.batch_size, self.beam_size),
                                        dtype=torch.float, device=device)
