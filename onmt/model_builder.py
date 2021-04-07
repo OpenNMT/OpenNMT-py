@@ -89,6 +89,9 @@ def load_test_model(opt, model_path=None):
     ArgumentParser.validate_model_opts(model_opt)
     fields = checkpoint['vocab']
 
+    # Avoid functionality on inference
+    model_opt.update_vocab = False
+
     model = build_base_model(model_opt, fields, use_gpu(opt), checkpoint,
                              opt.gpu)
     if opt.fp32:
