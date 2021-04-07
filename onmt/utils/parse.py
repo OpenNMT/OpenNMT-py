@@ -290,7 +290,7 @@ class ArgumentParser(cfargparse.ArgumentParser, DataOptsCheckerMixin):
         if opt.update_vocab:
             assert opt.train_from, \
                 "-update_vocab needs -train_from option"
-            assert opt.reset_optim == 'states', \
+            assert opt.reset_optim in ['states', 'all'], \
                 '-update_vocab needs -reset_optim "states"'
 
     @classmethod
