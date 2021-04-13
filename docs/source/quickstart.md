@@ -2,6 +2,14 @@
 
 # Quickstart
 
+This tutorial covers the basic configuration and functionality of OpenNMT-py and makes sure that everything is up and running for Linux based systems. Do not forget to install your Nvidia graphic card's latest drivers and CUDA before applying the steps below. 
+
+```bash
+nvidia-smi
+```
+
+Use [Google Collab](https://colab.research.google.com/drive/1YzHT4av2SPXI_CzpX3mF9ImFv-V39n4D?usp=sharing) to check every steps quickly without any installation on your local machine. 
+
 ### Step 0: Install OpenNMT-py
 
 ```bash
@@ -115,8 +123,32 @@ For more advanded models and parameters, see [other example configurations](http
 onmt_translate -model toy-ende/run/model_step_1000.pt -src toy-ende/src-test.txt -output toy-ende/pred_1000.txt -gpu 0 -verbose
 ```
 
+This will print lines like this:
+```
+...
+[2021-04-13 15:40:17,055 INFO] 
+SENT 2623: ['&quot;', 'I', 'find', 'it', 'wonderful', 'that', 'in', 'America', ',', 'myth', 'and', 'folklore', 'already', 'has', 'a', 'part', 'in', 'education', ',', '&quot;', 'he', 'said', '.']
+PRED 2623: Ich glaube , dass wir nicht auf den Vorschlag der Europäischen Union .
+PRED SCORE: -26.3861
+...
+```
+
 Now you have a model which you can use to predict on new data. We do this by running beam search. This will output predictions into `toy-ende/pred_1000.txt`.
+
+Example output for src-text.txt, line 2623 sentence
+
+English:
+
+&quot; I find it wonderful that in America , myth and folklore already has a part in education , &quot; he said .
+
+pred_1000.txt, line 2623 sentence
+
+German:
+
+Ich glaube , dass wir nicht auf den Vorschlag der Europäischen Union .
 
 **Note**:
 
 The predictions are going to be quite terrible, as the demo dataset is small. Try running on some larger datasets! For example you can download millions of parallel sentences for [translation](http://www.statmt.org/wmt16/translation-task.html) or [summarization](https://github.com/harvardnlp/sent-summary).
+
+
