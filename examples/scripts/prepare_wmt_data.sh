@@ -97,7 +97,7 @@ export PATH=$SP_PATH:$PATH
 
 # Data preparation using SentencePiece
 # First we concat all the datasets to train the SP model
-if false; then
+if true; then
  echo "$0: Training sentencepiece model"
  rm -f $DATA_PATH/train.txt
  for ((i=1; i<= ${#corpus[@]}; i++))
