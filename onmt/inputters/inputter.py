@@ -306,7 +306,11 @@ def _load_vocab(vocab_path, name, counters, min_freq=0):
             # adding them to the counter with decreasing counting values
             counters[name][token] = vocab_size - i + min_freq
     else:
-        for token, count in vocab:
+        for token_and_count in vocab:
+            if len(token_and_count) != 2:
+                logger.info(f'Filtered invalid vocab token {token_and_count}')
+                continue
+            token, count = token_and_count
             counters[name][token] = int(count)
     return vocab, vocab_size
 
