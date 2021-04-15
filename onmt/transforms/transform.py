@@ -132,7 +132,7 @@ class TransformStatistics(object):
         """Return transform statistics report and reset counter."""
         msg = ''
         if self.filtered > 0:
-            msg += f'Filtred sentence: {self.filtered} sent\n'.format()
+            msg += f'Filtered sentence: {self.filtered} sent\n'.format()
         if self.words > 0:
             msg += f'Subword(SP/Tokenizer): {self.words} -> {self.subwords} tok\n'  # noqa: E501
         if self.so_total > 0:
