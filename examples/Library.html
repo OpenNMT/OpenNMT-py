@@ -5,7 +5,8 @@
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  
+  <meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <title>Library &mdash; OpenNMT-py  documentation</title>
@@ -82,14 +83,14 @@
               
             
             
-              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <p><span class="caption-text">Getting Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../main.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../CONTRIBUTING.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ref.html">References</a></li>
 </ul>
-<p class="caption"><span class="caption-text">FAQ</span></p>
+<p><span class="caption-text">FAQ</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-do-i-use-the-transformer-model">How do I use the Transformer model?</a></li>
@@ -100,8 +101,9 @@
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Examples</span></p>
+<p><span class="caption-text">Examples</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Library</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#import-a-few-modules-and-functions-that-will-be-necessary">Import a few modules and functions that will be necessary</a></li>
@@ -121,14 +123,14 @@
 <li class="toctree-l1"><a class="reference internal" href="LanguageModelGeneration.html">Language Model Generation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="GGNN.html">Gated Graph Sequence Neural Networks</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Scripts</span></p>
+<p><span class="caption-text">Scripts</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../options/build_vocab.html">Build Vocab</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../options/train.html">Train</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../options/translate.html">Translate</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../options/server.html">Server</a></li>
 </ul>
-<p class="caption"><span class="caption-text">API</span></p>
+<p><span class="caption-text">API</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../onmt.html">Framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../onmt.modules.html">Modules</a></li>
@@ -136,7 +138,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../onmt.translate.translation_server.html">Server</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../onmt.inputters.html">Data Loaders</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Legacy</span></p>
+<p><span class="caption-text">Legacy</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../legacy/FAQ.html">FAQ (Legacy version)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../legacy/im2text.html">Image to Text</a></li>
@@ -206,11 +208,11 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="library">
+  <section id="library">
 <h1>Library<a class="headerlink" href="#library" title="Permalink to this headline">¶</a></h1>
 <p>The example notebook (available <a class="reference external" href="https://github.com/OpenNMT/OpenNMT-py/blob/master/docs/source/examples/Library.ipynb">here</a>) should be able to run as a standalone execution, provided <code class="docutils literal notranslate"><span class="pre">onmt</span></code> is in the path (installed via <code class="docutils literal notranslate"><span class="pre">pip</span></code> for instance).</p>
 <p>Some parts may not be 100% ‘library-friendly’ but it’s mostly workable.</p>
-<div class="section" id="import-a-few-modules-and-functions-that-will-be-necessary">
+<section id="import-a-few-modules-and-functions-that-will-be-necessary">
 <h2>Import a few modules and functions that will be necessary<a class="headerlink" href="#import-a-few-modules-and-functions-that-will-be-necessary" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">yaml</span>
 <span class="kn">import</span> <span class="nn">torch</span>
@@ -227,8 +229,8 @@
 <span class="kn">from</span> <span class="nn">onmt.utils.misc</span> <span class="kn">import</span> <span class="n">set_random_seed</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="enable-logging">
+</section>
+<section id="enable-logging">
 <h2>Enable logging<a class="headerlink" href="#enable-logging" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># enable logging</span>
 <span class="kn">from</span> <span class="nn">onmt.utils.logging</span> <span class="kn">import</span> <span class="n">init_logger</span><span class="p">,</span> <span class="n">logger</span>
@@ -238,15 +240,15 @@
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">RootLogger</span> <span class="n">root</span> <span class="p">(</span><span class="n">INFO</span><span class="p">)</span><span class="o">&gt;</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="set-random-seed">
+</section>
+<section id="set-random-seed">
 <h2>Set random seed<a class="headerlink" href="#set-random-seed" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">is_cuda</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span>
 <span class="n">set_random_seed</span><span class="p">(</span><span class="mi">1111</span><span class="p">,</span> <span class="n">is_cuda</span><span class="p">)</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="retrieve-data">
+</section>
+<section id="retrieve-data">
 <h2>Retrieve data<a class="headerlink" href="#retrieve-data" title="Permalink to this headline">¶</a></h2>
 <p>To make a proper example, we will need some data, as well as some vocabulary(ies).</p>
 <p>Let’s take the same data as in the <a class="reference external" href="https://opennmt.net/OpenNMT-py/quickstart.html">quickstart</a>:</p>
@@ -275,8 +277,8 @@ toy-ende.tar.gz.5   100%[===================&gt;]   1,58M  2,33MB/s    in 0,7s
 [0m[01;34mrun[0m/         src-train.txt  tgt-test.txt  tgt-val.txt
 </pre></div>
 </div>
-</div>
-<div class="section" id="prepare-data-and-vocab">
+</section>
+<section id="prepare-data-and-vocab">
 <h2>Prepare data and vocab<a class="headerlink" href="#prepare-data-and-vocab" title="Permalink to this headline">¶</a></h2>
 <p>As for any use case of OpenNMT-py 2.0, we can start by creating a simple YAML configuration with our datasets. This is the easiest way to build the proper <code class="docutils literal notranslate"><span class="pre">opts</span></code> <code class="docutils literal notranslate"><span class="pre">Namespace</span></code> that will be used to create the vocabulary(ies).</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">yaml_config</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
@@ -341,8 +343,8 @@ toy-ende.tar.gz.5   100%[===================&gt;]   1,58M  2,33MB/s    in 0,7s
 </pre></div>
 </div>
 <p>We just created our source and target vocabularies, respectively <code class="docutils literal notranslate"><span class="pre">toy-ende/run/example.vocab.src</span></code> and <code class="docutils literal notranslate"><span class="pre">toy-ende/run/example.vocab.tgt</span></code>.</p>
-</div>
-<div class="section" id="build-fields">
+</section>
+<section id="build-fields">
 <h2>Build fields<a class="headerlink" href="#build-fields" title="Permalink to this headline">¶</a></h2>
 <p>We can build the fields from the text files that were just created.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">src_vocab_path</span> <span class="o">=</span> <span class="s2">&quot;toy-ende/run/example.vocab.src&quot;</span>
@@ -402,8 +404,8 @@ toy-ende.tar.gz.5   100%[===================&gt;]   1,58M  2,33MB/s    in 0,7s
 </pre></div>
 </div>
 <p>An alternative way of creating these fields is to run <code class="docutils literal notranslate"><span class="pre">onmt_train</span></code> without actually training, to just output the necessary files.</p>
-</div>
-<div class="section" id="prepare-for-training-model-and-optimizer-creation">
+</section>
+<section id="prepare-for-training-model-and-optimizer-creation">
 <h2>Prepare for training: model and optimizer creation<a class="headerlink" href="#prepare-for-training-model-and-optimizer-creation" title="Permalink to this headline">¶</a></h2>
 <p>Let’s get a few fields/vocab related variables to simplify the model creation a bit:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">src_text_field</span> <span class="o">=</span> <span class="n">vocab_fields</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">base_field</span>
@@ -454,8 +456,8 @@ toy-ende.tar.gz.5   100%[===================&gt;]   1,58M  2,33MB/s    in 0,7s
     <span class="n">torch_optimizer</span><span class="p">,</span> <span class="n">learning_rate</span><span class="o">=</span><span class="n">lr</span><span class="p">,</span> <span class="n">max_grad_norm</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="create-the-training-and-validation-data-iterators">
+</section>
+<section id="create-the-training-and-validation-data-iterators">
 <h2>Create the training and validation data iterators<a class="headerlink" href="#create-the-training-and-validation-data-iterators" title="Permalink to this headline">¶</a></h2>
 <p>Now we need to create the dynamic dataset iterator.</p>
 <p>This is not very ‘library-friendly’ for now because of the way the <code class="docutils literal notranslate"><span class="pre">DynamicDatasetIter</span></code> constructor is defined. It may evolve in the future.</p>
@@ -502,8 +504,8 @@ toy-ende.tar.gz.5   100%[===================&gt;]   1,58M  2,33MB/s    in 0,7s
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">valid_iter</span> <span class="o">=</span> <span class="n">IterOnDevice</span><span class="p">(</span><span class="n">valid_iter</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="training">
+</section>
+<section id="training">
 <h2>Training<a class="headerlink" href="#training" title="Permalink to this headline">¶</a></h2>
 <p>Finally we train.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">report_manager</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">ReportMgr</span><span class="p">(</span>
@@ -566,8 +568,8 @@ toy-ende.tar.gz.5   100%[===================&gt;]   1,58M  2,33MB/s    in 0,7s
 <span class="o">&lt;</span><span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">statistics</span><span class="o">.</span><span class="n">Statistics</span> <span class="n">at</span> <span class="mh">0x7fca934e8e80</span><span class="o">&gt;</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="translate">
+</section>
+<section id="translate">
 <h2>Translate<a class="headerlink" href="#translate" title="Permalink to this headline">¶</a></h2>
 <p>For translation, we can build a “traditional” (as opposed to dynamic) dataset for now.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">src_data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;reader&quot;</span><span class="p">:</span> <span class="n">onmt</span><span class="o">.</span><span class="n">inputters</span><span class="o">.</span><span class="n">str2reader</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">](),</span> <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="n">src_val</span><span class="p">}</span>
@@ -670,8 +672,8 @@ toy-ende.tar.gz.5   100%[===================&gt;]   1,58M  2,33MB/s    in 0,7s
 <span class="n">PRED</span> <span class="n">SCORE</span><span class="p">:</span> <span class="o">-</span><span class="mf">1.7885</span>
 </pre></div>
 </div>
-</div>
-</div>
+</section>
+</section>
 
 
            </div>

@@ -5,7 +5,8 @@
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  
+  <meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <title>Summarization &mdash; OpenNMT-py  documentation</title>
@@ -82,14 +83,14 @@
               
             
             
-              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <p><span class="caption-text">Getting Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../main.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../CONTRIBUTING.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ref.html">References</a></li>
 </ul>
-<p class="caption"><span class="caption-text">FAQ</span></p>
+<p><span class="caption-text">FAQ</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-do-i-use-the-transformer-model">How do I use the Transformer model?</a></li>
@@ -100,8 +101,9 @@
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Examples</span></p>
+<p><span class="caption-text">Examples</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="Library.html">Library</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Translation.html">Translation</a></li>
@@ -125,14 +127,14 @@
 <li class="toctree-l1"><a class="reference internal" href="LanguageModelGeneration.html">Language Model Generation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="GGNN.html">Gated Graph Sequence Neural Networks</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Scripts</span></p>
+<p><span class="caption-text">Scripts</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../options/build_vocab.html">Build Vocab</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../options/train.html">Train</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../options/translate.html">Translate</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../options/server.html">Server</a></li>
 </ul>
-<p class="caption"><span class="caption-text">API</span></p>
+<p><span class="caption-text">API</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../onmt.html">Framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../onmt.modules.html">Modules</a></li>
@@ -140,7 +142,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../onmt.translate.translation_server.html">Server</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../onmt.inputters.html">Data Loaders</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Legacy</span></p>
+<p><span class="caption-text">Legacy</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../legacy/FAQ.html">FAQ (Legacy version)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../legacy/im2text.html">Image to Text</a></li>
@@ -210,7 +212,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="summarization">
+  <section id="summarization">
 <h1>Summarization<a class="headerlink" href="#summarization" title="Permalink to this headline">¶</a></h1>
 <p>Note: The process and results below are presented in the paper <code class="docutils literal notranslate"><span class="pre">Bottom-Up</span> <span class="pre">Abstractive</span> <span class="pre">Summarization</span></code>. Please consider citing it if you follow these instructions.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@inproceedings</span><span class="p">{</span><span class="n">gehrmann2018bottom</span><span class="p">,</span>
@@ -229,7 +231,7 @@ In the following, we assume access to a tokenized form of the corpus split into 
 <em>australia ‘s current account deficit shrunk by a record #.## billion dollars -lrb- #.## billion us -rrb- in the june quarter due to soaring commodity prices , figures released monday showed .</em></p>
 <p><strong>Output</strong>
 <em>australian current account deficit narrows sharply</em></p>
-<div class="section" id="preparing-the-data-and-vocab">
+<section id="preparing-the-data-and-vocab">
 <h2>Preparing the data and vocab<a class="headerlink" href="#preparing-the-data-and-vocab" title="Permalink to this headline">¶</a></h2>
 <p>For CNN-DM we follow See et al. [2] and additionally truncate the source length at 400 tokens and the target at 100. We also note that in CNN-DM, we found models to work better if the target surrounds sentences with tags such that a sentence looks like <code class="docutils literal notranslate"><span class="pre">&lt;t&gt;</span> <span class="pre">w1</span> <span class="pre">w2</span> <span class="pre">w3</span> <span class="pre">.</span> <span class="pre">&lt;/t&gt;</span></code>. If you use this formatting, you can remove the tags after the inference step with the commands <code class="docutils literal notranslate"><span class="pre">sed</span> <span class="pre">-i</span> <span class="pre">'s/</span> <span class="pre">&lt;\/t&gt;//g'</span> <span class="pre">FILE.txt</span></code> and <code class="docutils literal notranslate"><span class="pre">sed</span> <span class="pre">-i</span> <span class="pre">'s/&lt;t&gt;</span> <span class="pre">//g'</span> <span class="pre">FILE.txt</span></code>.</p>
 <p><strong>YAML Configuration</strong>:</p>
@@ -266,8 +268,8 @@ In the following, we assume access to a tokenized form of the corpus split into 
 </pre></div>
 </div>
 <p>This command will have written source and target vocabulary to <code class="docutils literal notranslate"><span class="pre">cnndm/run/example.vocab.src</span></code> and <code class="docutils literal notranslate"><span class="pre">cnndm/run/example.vocab.tgt</span></code>. These two files should be the same, as <code class="docutils literal notranslate"><span class="pre">share_vocab</span></code> is set.</p>
-</div>
-<div class="section" id="training">
+</section>
+<section id="training">
 <h2>Training<a class="headerlink" href="#training" title="Permalink to this headline">¶</a></h2>
 <p>The training procedure described in this section for the most part follows parameter choices and implementation similar to that of See et al. [2].</p>
 <p>Most significant options are:</p>
@@ -384,8 +386,8 @@ In the following, we assume access to a tokenized form of the corpus split into 
 <span class="nn">...</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="inference">
+</section>
+<section id="inference">
 <h2>Inference<a class="headerlink" href="#inference" title="Permalink to this headline">¶</a></h2>
 <p>During inference, we use beam-search with a beam-size of 10. We also added specific penalties that we can use during decoding, described in the following.</p>
 <ul class="simple">
@@ -417,10 +419,10 @@ In the following, we assume access to a tokenized form of the corpus split into 
                <span class="o">-</span><span class="n">ignore_when_blocking</span> <span class="s2">&quot;.&quot;</span> <span class="s2">&quot;&lt;/t&gt;&quot;</span> <span class="s2">&quot;&lt;t&gt;&quot;</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="evaluation">
+</section>
+<section id="evaluation">
 <h2>Evaluation<a class="headerlink" href="#evaluation" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="cnn-dm">
+<section id="cnn-dm">
 <h3>CNN-DM<a class="headerlink" href="#cnn-dm" title="Permalink to this headline">¶</a></h3>
 <p>To evaluate the ROUGE scores on CNN-DM, we extended the <code class="docutils literal notranslate"><span class="pre">pyrouge</span></code> wrapper with additional evaluations such as the amount of repeated n-grams (typically found in models with copy attention), found <a class="reference external" href="https://github.com/sebastianGehrmann/rouge-baselines">here</a>. The repository includes a sub-repo called pyrouge. Make sure to clone the code with the <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">clone</span> <span class="pre">--recurse-submodules</span> <span class="pre">https://github.com/sebastianGehrmann/rouge-baselines</span></code> command to check this out as well and follow the installation instructions on the pyrouge repository before calling this script.
 The installation instructions can be found <a class="reference external" href="https://github.com/falcondai/pyrouge/tree/9cdbfbda8b8d96e7c2646ffd048743ddcf417ed9#installation">here</a>. Note that on MacOS, we found that the pointer to your perl installation in line 1 of <code class="docutils literal notranslate"><span class="pre">pyrouge/RELEASE-1.5.5/ROUGE-1.5.5.pl</span></code> might be different from the one you have installed. A simple fix is to change this line to <code class="docutils literal notranslate"><span class="pre">#!/usr/local/bin/perl</span> <span class="pre">-w</span></code> if it fails.</p>
@@ -429,17 +431,17 @@ The installation instructions can be found <a class="reference external" href="h
 </pre></div>
 </div>
 <p>The <code class="docutils literal notranslate"><span class="pre">sent_tag_verbatim</span></code> option strips <code class="docutils literal notranslate"><span class="pre">&lt;t&gt;</span></code> and <code class="docutils literal notranslate"><span class="pre">&lt;/t&gt;</span></code> tags around sentences - when a sentence previously was <code class="docutils literal notranslate"><span class="pre">&lt;t&gt;</span> <span class="pre">w</span> <span class="pre">w</span> <span class="pre">w</span> <span class="pre">w</span> <span class="pre">.</span> <span class="pre">&lt;/t&gt;</span></code>, it becomes <code class="docutils literal notranslate"><span class="pre">w</span> <span class="pre">w</span> <span class="pre">w</span> <span class="pre">w</span> <span class="pre">.</span></code>.</p>
-</div>
-<div class="section" id="gigaword">
+</section>
+<section id="gigaword">
 <h3>Gigaword<a class="headerlink" href="#gigaword" title="Permalink to this headline">¶</a></h3>
 <p>For evaluation of large test sets such as Gigaword, we use the a parallel python wrapper around ROUGE, found <a class="reference external" href="https://github.com/pltrdy/files2rouge">here</a>.</p>
 <p><strong>Command used</strong>:
 <code class="docutils literal notranslate"><span class="pre">files2rouge</span> <span class="pre">giga.out</span> <span class="pre">test.title.txt</span> <span class="pre">--verbose</span></code></p>
-</div>
-</div>
-<div class="section" id="scores-and-models">
+</section>
+</section>
+<section id="scores-and-models">
 <h2>Scores and Models<a class="headerlink" href="#scores-and-models" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="id1">
+<section id="id1">
 <h3>CNN-DM<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
 <table border="1" class="docutils">
 <thead>
@@ -537,8 +539,8 @@ The installation instructions can be found <a class="reference external" href="h
 <td align="right">36.45</td>
 </tr>
 </tbody>
-</table></div>
-<div class="section" id="id2">
+</table></section>
+<section id="id2">
 <h3>Gigaword<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
 <table border="1" class="docutils">
 <thead>
@@ -571,16 +573,16 @@ The installation instructions can be found <a class="reference external" href="h
 <td align="right">33.17</td>
 </tr>
 </tbody>
-</table></div>
-</div>
-<div class="section" id="references">
+</table></section>
+</section>
+<section id="references">
 <h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
 <p>[1] Vinyals, O., Fortunato, M. and Jaitly, N., 2015. Pointer Network. NIPS</p>
 <p>[2] See, A., Liu, P.J. and Manning, C.D., 2017. Get To The Point: Summarization with Pointer-Generator Networks. ACL</p>
 <p>[3] Bahdanau, D., Cho, K. and Bengio, Y., 2014. Neural machine translation by jointly learning to align and translate. ICLR</p>
 <p>[4] Luong, M.T., Pham, H. and Manning, C.D., 2015. Effective approaches to attention-based neural machine translation. EMNLP</p>
-</div>
-</div>
+</section>
+</section>
 
 
            </div>

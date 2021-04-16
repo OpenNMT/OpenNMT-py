@@ -5,7 +5,8 @@
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  
+  <meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <title>Speech to Text &mdash; OpenNMT-py  documentation</title>
@@ -82,14 +83,14 @@
               
             
             
-              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <p><span class="caption-text">Getting Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../main.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../CONTRIBUTING.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ref.html">References</a></li>
 </ul>
-<p class="caption"><span class="caption-text">FAQ</span></p>
+<p><span class="caption-text">FAQ</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-do-i-use-the-transformer-model">How do I use the Transformer model?</a></li>
@@ -100,8 +101,9 @@
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Examples</span></p>
+<p><span class="caption-text">Examples</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../examples/Library.html">Library</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../examples/Translation.html">Translation</a></li>
@@ -109,14 +111,14 @@
 <li class="toctree-l1"><a class="reference internal" href="../examples/LanguageModelGeneration.html">Language Model Generation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../examples/GGNN.html">Gated Graph Sequence Neural Networks</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Scripts</span></p>
+<p><span class="caption-text">Scripts</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../options/build_vocab.html">Build Vocab</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../options/train.html">Train</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../options/translate.html">Translate</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../options/server.html">Server</a></li>
 </ul>
-<p class="caption"><span class="caption-text">API</span></p>
+<p><span class="caption-text">API</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../onmt.html">Framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../onmt.modules.html">Modules</a></li>
@@ -124,7 +126,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../onmt.translate.translation_server.html">Server</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../onmt.inputters.html">Data Loaders</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Legacy</span></p>
+<p><span class="caption-text">Legacy</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html">FAQ (Legacy version)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="im2text.html">Image to Text</a></li>
@@ -200,21 +202,21 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="speech-to-text">
+  <section id="speech-to-text">
 <h1>Speech to Text<a class="headerlink" href="#speech-to-text" title="Permalink to this headline">¶</a></h1>
 <hr class="docutils" />
 <p><strong>WARNING</strong>: This example is based on the <a class="reference external" href="https://github.com/OpenNMT/OpenNMT-py/tree/legacy">legacy version of OpenNMT-py</a>!</p>
 <hr class="docutils" />
 <p>A deep learning-based approach to learning the speech-to-text conversion, built on top of the <a href="http://opennmt.net/">OpenNMT</a> system.</p>
 <p>Given raw audio, we first apply short-time Fourier transform (STFT), then apply Convolutional Neural Networks to get the source features. Based on this source representation, we use an LSTM decoder with attention to produce the text character by character.</p>
-<div class="section" id="dependencies">
+<section id="dependencies">
 <h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">torchaudio</span></code>: <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">apt-get</span> <span class="pre">install</span> <span class="pre">-y</span> <span class="pre">sox</span> <span class="pre">libsox-dev</span> <span class="pre">libsox-fmt-all;</span> <span class="pre">pip</span> <span class="pre">install</span> <span class="pre">git+https://github.com/pytorch/audio</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">librosa</span></code>: <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">librosa</span></code></p></li>
 </ul>
-</div>
-<div class="section" id="quick-start">
+</section>
+<section id="quick-start">
 <h2>Quick Start<a class="headerlink" href="#quick-start" title="Permalink to this headline">¶</a></h2>
 <p>To get started, we provide a toy speech-to-text example. We assume that the working directory is <code class="docutils literal notranslate"><span class="pre">OpenNMT-py</span></code> throughout this document.</p>
 <ol class="simple">
@@ -241,8 +243,8 @@
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">onmt_translate</span> <span class="o">-</span><span class="n">data_type</span> <span class="n">audio</span> <span class="o">-</span><span class="n">model</span> <span class="n">demo</span><span class="o">-</span><span class="n">model_acc_x_ppl_x_e13</span><span class="o">.</span><span class="n">pt</span> <span class="o">-</span><span class="n">src_dir</span> <span class="n">data</span><span class="o">/</span><span class="n">speech</span><span class="o">/</span><span class="n">an4_dataset</span> <span class="o">-</span><span class="n">src</span> <span class="n">data</span><span class="o">/</span><span class="n">speech</span><span class="o">/</span><span class="n">src</span><span class="o">-</span><span class="n">val</span><span class="o">.</span><span class="n">txt</span> <span class="o">-</span><span class="n">output</span> <span class="n">pred</span><span class="o">.</span><span class="n">txt</span> <span class="o">-</span><span class="n">gpu</span> <span class="mi">0</span> <span class="o">-</span><span class="n">verbose</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="options">
+</section>
+<section id="options">
 <h2>Options<a class="headerlink" href="#options" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">-src_dir</span></code>: The directory containing the audio files.</p></li>
@@ -269,12 +271,12 @@
 <li><p><code class="docutils literal notranslate"><span class="pre">window_stride</span></code>: Window stride for spectrogram in seconds. Default: 0.01.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">window</span></code>: Window type for spectrogram generation. Default: hamming.</p></li>
 </ul>
-</div>
-<div class="section" id="acknowledgement">
+</section>
+<section id="acknowledgement">
 <h2>Acknowledgement<a class="headerlink" href="#acknowledgement" title="Permalink to this headline">¶</a></h2>
 <p>Our preprocessing and CNN encoder is adapted from <a class="reference external" href="https://github.com/SeanNaren/deepspeech.pytorch">deepspeech.pytorch</a>.</p>
-</div>
-</div>
+</section>
+</section>
 
 
            </div>

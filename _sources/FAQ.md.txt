@@ -464,3 +464,16 @@ Training options to learn such alignments are:
 * `-alignment_layer`: indicate the index of the decoder layer;
 * `-alignment_heads`:  number of alignment heads for the alignment task - should be set to 1 for the supervised task, and preferably kept to default (or same as `num_heads`) for the average task;
 * `-full_context_alignment`: do full context decoder pass (no future mask) when computing alignments. This will slow down the training (~12% in terms of tok/s) but will be beneficial to generate better alignment.
+
+
+## How can I update a checkpoint's vocabulary?
+
+New vocabulary can be used to continue training from a checkpoint. Existing vocabulary embeddings will be mapped to the new vocabulary, and new vocabulary tokens will be initialized as usual.
+
+Run `onmt_build_vocab` as usual with the new dataset. New vocabulary files will be created.
+
+Training options to perform vocabulary update are:
+
+* `-update_vocab`: set this option
+* `-reset_optim`: set the value to "states"
+* `-train_from`: checkpoint path

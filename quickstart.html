@@ -5,7 +5,8 @@
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  
+  <meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <title>Quickstart &mdash; OpenNMT-py  documentation</title>
@@ -83,7 +84,7 @@
               
             
             
-              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <p><span class="caption-text">Getting Started</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="main.html">Overview</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Quickstart</a><ul>
@@ -96,7 +97,7 @@
 <li class="toctree-l1"><a class="reference internal" href="CONTRIBUTING.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ref.html">References</a></li>
 </ul>
-<p class="caption"><span class="caption-text">FAQ</span></p>
+<p><span class="caption-text">FAQ</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-do-i-use-the-transformer-model">How do I use the Transformer model?</a></li>
@@ -107,8 +108,9 @@
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Examples</span></p>
+<p><span class="caption-text">Examples</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="examples/Library.html">Library</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/Translation.html">Translation</a></li>
@@ -116,14 +118,14 @@
 <li class="toctree-l1"><a class="reference internal" href="examples/LanguageModelGeneration.html">Language Model Generation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/GGNN.html">Gated Graph Sequence Neural Networks</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Scripts</span></p>
+<p><span class="caption-text">Scripts</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="options/build_vocab.html">Build Vocab</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/train.html">Train</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/translate.html">Translate</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/server.html">Server</a></li>
 </ul>
-<p class="caption"><span class="caption-text">API</span></p>
+<p><span class="caption-text">API</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="onmt.html">Framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="onmt.modules.html">Modules</a></li>
@@ -131,7 +133,7 @@
 <li class="toctree-l1"><a class="reference internal" href="onmt.translate.translation_server.html">Server</a></li>
 <li class="toctree-l1"><a class="reference internal" href="onmt.inputters.html">Data Loaders</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Legacy</span></p>
+<p><span class="caption-text">Legacy</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="legacy/FAQ.html">FAQ (Legacy version)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="legacy/im2text.html">Image to Text</a></li>
@@ -201,16 +203,16 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="quickstart">
+  <section id="quickstart">
 <h1>Quickstart<a class="headerlink" href="#quickstart" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="step-0-install-opennmt-py">
+<section id="step-0-install-opennmt-py">
 <h2>Step 0: Install OpenNMT-py<a class="headerlink" href="#step-0-install-opennmt-py" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install --upgrade pip
 pip install OpenNMT-py
 </pre></div>
 </div>
-</div>
-<div class="section" id="step-1-prepare-the-data">
+</section>
+<section id="step-1-prepare-the-data">
 <h2>Step 1: Prepare the data<a class="headerlink" href="#step-1-prepare-the-data" title="Permalink to this headline">¶</a></h2>
 <p>To get started, we propose to download a toy English-German dataset for machine translation containing 10k tokenized sentences:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>wget https://s3.amazonaws.com/opennmt-trainingdata/toy-ende.tar.gz
@@ -263,8 +265,8 @@ Federal Master Trainer and Senior Instructor of the Italian Federation of Aerobi
 <li><p><code class="docutils literal notranslate"><span class="pre">-n_sample</span></code> is required here – it represents the number of lines sampled from each corpus to build the vocab.</p></li>
 <li><p>This configuration is the simplest possible, without any tokenization or other <em>transforms</em>. See <a class="reference external" href="https://github.com/OpenNMT/OpenNMT-py/tree/master/config">other example configurations</a> for more complex pipelines.</p></li>
 </ul>
-</div>
-<div class="section" id="step-2-train-the-model">
+</section>
+<section id="step-2-train-the-model">
 <h2>Step 2: Train the model<a class="headerlink" href="#step-2-train-the-model" title="Permalink to this headline">¶</a></h2>
 <p>To train a model, we need to <strong>add the following to the YAML configuration file</strong>:</p>
 <ul class="simple">
@@ -297,8 +299,8 @@ Federal Master Trainer and Senior Instructor of the Italian Federation of Aerobi
 <p>This configuration will run the default model, which consists of a 2-layer LSTM with 500 hidden units on both the encoder and decoder. It will run on a single GPU (<code class="docutils literal notranslate"><span class="pre">world_size</span> <span class="pre">1</span></code> &amp; <code class="docutils literal notranslate"><span class="pre">gpu_ranks</span> <span class="pre">[0]</span></code>).</p>
 <p>Before the training process actually starts, the <code class="docutils literal notranslate"><span class="pre">*.vocab.pt</span></code> together with <code class="docutils literal notranslate"><span class="pre">*.transforms.pt</span></code> can be dumped to <code class="docutils literal notranslate"><span class="pre">-save_data</span></code> with configurations specified in <code class="docutils literal notranslate"><span class="pre">-config</span></code> yaml file by enabling the <code class="docutils literal notranslate"><span class="pre">-dump_fields</span></code> and <code class="docutils literal notranslate"><span class="pre">-dump_transforms</span></code> flags. It is also possible to generate transformed samples to simplify any potentially required visual inspection. The number of sample lines to dump per corpus is set with the <code class="docutils literal notranslate"><span class="pre">-n_sample</span></code> flag.</p>
 <p>For more advanded models and parameters, see <a class="reference external" href="https://github.com/OpenNMT/OpenNMT-py/tree/master/config">other example configurations</a> or the <a class="reference internal" href="FAQ.html"><span class="doc">FAQ</span></a>.</p>
-</div>
-<div class="section" id="step-3-translate">
+</section>
+<section id="step-3-translate">
 <h2>Step 3: Translate<a class="headerlink" href="#step-3-translate" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_translate -model toy-ende/run/model_step_1000.pt -src toy-ende/src-test.txt -output toy-ende/pred_1000.txt -gpu <span class="m">0</span> -verbose
 </pre></div>
@@ -306,8 +308,8 @@ Federal Master Trainer and Senior Instructor of the Italian Federation of Aerobi
 <p>Now you have a model which you can use to predict on new data. We do this by running beam search. This will output predictions into <code class="docutils literal notranslate"><span class="pre">toy-ende/pred_1000.txt</span></code>.</p>
 <p><strong>Note</strong>:</p>
 <p>The predictions are going to be quite terrible, as the demo dataset is small. Try running on some larger datasets! For example you can download millions of parallel sentences for <a class="reference external" href="http://www.statmt.org/wmt16/translation-task.html">translation</a> or <a class="reference external" href="https://github.com/harvardnlp/sent-summary">summarization</a>.</p>
-</div>
-</div>
+</section>
+</section>
 
 
            </div>

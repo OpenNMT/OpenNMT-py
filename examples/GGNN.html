@@ -5,7 +5,8 @@
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  
+  <meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <title>Gated Graph Sequence Neural Networks &mdash; OpenNMT-py  documentation</title>
@@ -82,14 +83,14 @@
               
             
             
-              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <p><span class="caption-text">Getting Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../main.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../CONTRIBUTING.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ref.html">References</a></li>
 </ul>
-<p class="caption"><span class="caption-text">FAQ</span></p>
+<p><span class="caption-text">FAQ</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-do-i-use-the-transformer-model">How do I use the Transformer model?</a></li>
@@ -100,8 +101,9 @@
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Examples</span></p>
+<p><span class="caption-text">Examples</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="Library.html">Library</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Translation.html">Translation</a></li>
@@ -117,14 +119,14 @@
 </ul>
 </li>
 </ul>
-<p class="caption"><span class="caption-text">Scripts</span></p>
+<p><span class="caption-text">Scripts</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../options/build_vocab.html">Build Vocab</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../options/train.html">Train</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../options/translate.html">Translate</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../options/server.html">Server</a></li>
 </ul>
-<p class="caption"><span class="caption-text">API</span></p>
+<p><span class="caption-text">API</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../onmt.html">Framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../onmt.modules.html">Modules</a></li>
@@ -132,7 +134,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../onmt.translate.translation_server.html">Server</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../onmt.inputters.html">Data Loaders</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Legacy</span></p>
+<p><span class="caption-text">Legacy</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../legacy/FAQ.html">FAQ (Legacy version)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../legacy/im2text.html">Image to Text</a></li>
@@ -202,18 +204,18 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="gated-graph-sequence-neural-networks">
+  <section id="gated-graph-sequence-neural-networks">
 <h1>Gated Graph Sequence Neural Networks<a class="headerlink" href="#gated-graph-sequence-neural-networks" title="Permalink to this headline">¶</a></h1>
 <p>Graph-to-sequence networks allow information representable as a graph (such as an annotated NLP sentence or computer code structured as an AST) to be connected to a sequence generator to produce output which can benefit from the graph structure of the input.</p>
 <p>The training option <code class="docutils literal notranslate"><span class="pre">-encoder_type</span> <span class="pre">ggnn</span></code> implements a GGNN (Gated Graph Neural Network) based on github.com/JamesChuanggg/ggnn.pytorch.git which is based on the paper “Gated Graph Sequence Neural Networks” by Y. Li, D. Tarlow, M. Brockschmidt, and R. Zemel.</p>
 <p>The ggnn encoder is used for program equivalence proof generation in the paper <a class="reference external" href="https://arxiv.org/abs/2002.06799">Equivalence of Dataflow Graphs via Rewrite Rules Using a Graph-to-Sequence Neural Model</a>. That paper shows the benefit of the graph-to-sequence model over a sequence-to-sequence model for this problem which can be well represented with graphical input. The integration of the ggnn network into the OpenNMT-py system supports attention on the nodes as well as a copy mechanism.</p>
-<div class="section" id="dependencies">
+<section id="dependencies">
 <h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><p>There are no additional dependencies beyond the rnn-to-rnn sequence2sequence requirements.</p></li>
 </ul>
-</div>
-<div class="section" id="quick-start">
+</section>
+<section id="quick-start">
 <h2>Quick Start<a class="headerlink" href="#quick-start" title="Permalink to this headline">¶</a></h2>
 <p>To get started, we provide a toy graph-to-sequence example. We assume that the working directory is <code class="docutils literal notranslate"><span class="pre">OpenNMT-py</span></code> throughout this document.</p>
 <ol class="simple">
@@ -296,8 +298,8 @@
     <span class="o">&gt;</span> <span class="o">../</span><span class="n">OpenNMT</span><span class="o">-</span><span class="n">py</span><span class="o">-</span><span class="n">ggnn</span><span class="o">-</span><span class="n">example</span><span class="o">/</span><span class="n">run</span><span class="o">/</span><span class="n">translate5</span><span class="o">.</span><span class="n">out</span> <span class="mi">2</span><span class="o">&gt;&amp;</span><span class="mi">1</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="graph-data-format">
+</section>
+<section id="graph-data-format">
 <h2>Graph data format<a class="headerlink" href="#graph-data-format" title="Permalink to this headline">¶</a></h2>
 <p>The GGNN implementation leverages the sequence processing and vocabulary
 interface of OpenNMT. Each graph is provided on an input line, much like
@@ -328,13 +330,13 @@ second <code class="docutils literal notranslate"><span class="pre">&lt;EOT&gt;<
 <p>Note that the source vocabulary file needs to include the ‘<EOT>’ token,
 the ‘,’ token, and all of the numbers used for feature flags and node
 identifiers in the edge list.</p>
-</div>
-<div class="section" id="vocabulary-notes">
+</section>
+<section id="vocabulary-notes">
 <h2>Vocabulary notes<a class="headerlink" href="#vocabulary-notes" title="Permalink to this headline">¶</a></h2>
 <p>Because edge information and feature data is provided through tokens in the source files, the <code class="docutils literal notranslate"><span class="pre">-src_vocab</span></code> file requires a certain format. The <code class="docutils literal notranslate"><span class="pre">&lt;EOT&gt;</span></code> token should occur in the vocab files after all tokens which are part of the <code class="docutils literal notranslate"><span class="pre">sentence</span> <span class="pre">tokens</span></code> shown above. After the <code class="docutils literal notranslate"><span class="pre">&lt;EOT&gt;</span></code> token, any remaining numerical tokens appropriate for node numbers or feature values can be included too (it is OK for integers to occur in the <code class="docutils literal notranslate"><span class="pre">sentence</span> <span class="pre">tokens</span></code> and such tokens should not be duplicated after the <code class="docutils literal notranslate"><span class="pre">&lt;EOT&gt;</span></code> token). The full size of the vector used as input per node is the number of tokens up to and including <code class="docutils literal notranslate"><span class="pre">&lt;EOT&gt;</span></code> plus the largest feature number used in the input. If the optional <code class="docutils literal notranslate"><span class="pre">src_ggnn_size</span></code> parameter is used to create an embedding layer, then its value must be at or above the full node input vector size; the embedding initializes the lower <code class="docutils literal notranslate"><span class="pre">src_word_vec_size</span></code> dimensions of the node value. If <code class="docutils literal notranslate"><span class="pre">src_ggnn_size</span></code> is not used, then <code class="docutils literal notranslate"><span class="pre">state_dim</span></code> must bet at or above the full node input vector size; as there is no embedding layer in this case, the initial value of the node is set directly.
 Generally, one can use <code class="docutils literal notranslate"><span class="pre">onmt_build_vocab</span></code> to process GGNN input data to create vocab files and then adjust the source vocab appropriately. For an example of generating and adjusting a vocabulary for GGNN, please refer to <a class="reference external" href="https://github.com/SteveKommrusch/OpenNMT-py-ggnn-example#graph-input-processing-end-to-end-example">GGNN end-to-end example</a>.</p>
-</div>
-<div class="section" id="options">
+</section>
+<section id="options">
 <h2>Options<a class="headerlink" href="#options" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">-rnn_type</span> <span class="pre">(str)</span></code>: style of recurrent unit to use, one of [LSTM]</p></li>
@@ -348,12 +350,12 @@ Generally, one can use <code class="docutils literal notranslate"><span class="p
 <li><p><code class="docutils literal notranslate"><span class="pre">-n_steps</span> <span class="pre">(int)</span></code>: Steps to advance graph encoder for stabilization</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">-src_vocab</span> <span class="pre">(int)</span></code>: Path to source vocabulary</p></li>
 </ul>
-</div>
-<div class="section" id="acknowledgement">
+</section>
+<section id="acknowledgement">
 <h2>Acknowledgement<a class="headerlink" href="#acknowledgement" title="Permalink to this headline">¶</a></h2>
 <p>This gated graph neural network is leveraged from https://github.com/JamesChuanggg/ggnn.pytorch.git which is based on the paper <a class="reference external" href="https://arxiv.org/abs/1511.05493">Gated Graph Sequence Neural Networks</a> by Y. Li, D. Tarlow, M. Brockschmidt, and R. Zemel.</p>
-</div>
-</div>
+</section>
+</section>
 
 
            </div>

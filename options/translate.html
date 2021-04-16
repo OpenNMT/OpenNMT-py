@@ -5,7 +5,8 @@
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  
+  <meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <title>Translate &mdash; OpenNMT-py  documentation</title>
@@ -83,14 +84,14 @@
               
             
             
-              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <p><span class="caption-text">Getting Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../main.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../CONTRIBUTING.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ref.html">References</a></li>
 </ul>
-<p class="caption"><span class="caption-text">FAQ</span></p>
+<p><span class="caption-text">FAQ</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-do-i-use-the-transformer-model">How do I use the Transformer model?</a></li>
@@ -101,8 +102,9 @@
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Examples</span></p>
+<p><span class="caption-text">Examples</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../examples/Library.html">Library</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../examples/Translation.html">Translation</a></li>
@@ -110,7 +112,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../examples/LanguageModelGeneration.html">Language Model Generation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../examples/GGNN.html">Gated Graph Sequence Neural Networks</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Scripts</span></p>
+<p><span class="caption-text">Scripts</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="build_vocab.html">Build Vocab</a></li>
 <li class="toctree-l1"><a class="reference internal" href="train.html">Train</a></li>
@@ -129,7 +131,7 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="server.html">Server</a></li>
 </ul>
-<p class="caption"><span class="caption-text">API</span></p>
+<p><span class="caption-text">API</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../onmt.html">Framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../onmt.modules.html">Modules</a></li>
@@ -137,7 +139,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../onmt.translate.translation_server.html">Server</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../onmt.inputters.html">Data Loaders</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Legacy</span></p>
+<p><span class="caption-text">Legacy</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../legacy/FAQ.html">FAQ (Legacy version)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../legacy/im2text.html">Image to Text</a></li>
@@ -207,7 +209,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="translate">
+  <section id="translate">
 <h1>Translate<a class="headerlink" href="#translate" title="Permalink to this headline">¶</a></h1>
 <p><p>translate.py</p>
 </p>
@@ -236,7 +238,7 @@
                     <span class="p">[</span><span class="o">--</span><span class="n">gpu</span> <span class="n">GPU</span><span class="p">]</span>
 </pre></div>
 </div>
-<div class="section" id="Configuration">
+<section id="Configuration">
 <h2>Configuration<a class="headerlink" href="#Configuration" title="Permalink to this headline">¶</a></h2>
 <dl class="option-list">
 <dt><kbd>-config, --config</kbd></dt>
@@ -246,8 +248,8 @@
 <dd><p>Path where to save the config.</p>
 </dd>
 </dl>
-</div>
-<div class="section" id="Model">
+</section>
+<section id="Model">
 <h2>Model<a class="headerlink" href="#Model" title="Permalink to this headline">¶</a></h2>
 <dl class="option-list">
 <dt><kbd>--model, -model</kbd></dt>
@@ -267,8 +269,8 @@
 <p>Default: False</p>
 </dd>
 </dl>
-</div>
-<div class="section" id="Data">
+</section>
+<section id="Data">
 <h2>Data<a class="headerlink" href="#Data" title="Permalink to this headline">¶</a></h2>
 <dl class="option-list">
 <dt><kbd>--data_type, -data_type</kbd></dt>
@@ -302,8 +304,8 @@
 <p>Default: False</p>
 </dd>
 </dl>
-</div>
-<div class="section" id="Beam Search">
+</section>
+<section id="Beam Search">
 <h2>Beam Search<a class="headerlink" href="#Beam Search" title="Permalink to this headline">¶</a></h2>
 <dl class="option-list">
 <dt><kbd>--beam_size, -beam_size</kbd></dt>
@@ -315,8 +317,8 @@
 <p>Default: -0.0</p>
 </dd>
 </dl>
-</div>
-<div class="section" id="Random Sampling">
+</section>
+<section id="Random Sampling">
 <h2>Random Sampling<a class="headerlink" href="#Random Sampling" title="Permalink to this headline">¶</a></h2>
 <dl class="option-list">
 <dt><kbd>--random_sampling_topk, -random_sampling_topk</kbd></dt>
@@ -336,8 +338,8 @@
 <p>Default: 5</p>
 </dd>
 </dl>
-</div>
-<div class="section" id="Reproducibility">
+</section>
+<section id="Reproducibility">
 <h2>Reproducibility<a class="headerlink" href="#Reproducibility" title="Permalink to this headline">¶</a></h2>
 <dl class="option-list">
 <dt><kbd>--seed, -seed</kbd></dt>
@@ -345,8 +347,8 @@
 <p>Default: -1</p>
 </dd>
 </dl>
-</div>
-<div class="section" id="Penalties">
+</section>
+<section id="Penalties">
 <h2>Penalties<a class="headerlink" href="#Penalties" title="Permalink to this headline">¶</a></h2>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -376,8 +378,8 @@
 <p>Default: False</p>
 </dd>
 </dl>
-</div>
-<div class="section" id="Decoding tricks">
+</section>
+<section id="Decoding tricks">
 <h2>Decoding tricks<a class="headerlink" href="#Decoding tricks" title="Permalink to this headline">¶</a></h2>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
@@ -416,8 +418,8 @@
 <p>Default: “”</p>
 </dd>
 </dl>
-</div>
-<div class="section" id="Logging">
+</section>
+<section id="Logging">
 <h2>Logging<a class="headerlink" href="#Logging" title="Permalink to this headline">¶</a></h2>
 <dl class="option-list">
 <dt><kbd>--log_file, -log_file</kbd></dt>
@@ -449,8 +451,8 @@
 <p>Default: 1</p>
 </dd>
 </dl>
-</div>
-<div class="section" id="Efficiency">
+</section>
+<section id="Efficiency">
 <h2>Efficiency<a class="headerlink" href="#Efficiency" title="Permalink to this headline">¶</a></h2>
 <dl class="option-list">
 <dt><kbd>--batch_size, -batch_size</kbd></dt>
@@ -467,8 +469,8 @@
 <p>Default: -1</p>
 </dd>
 </dl>
-</div>
-</div>
+</section>
+</section>
 
 
            </div>
