@@ -5,8 +5,7 @@
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
-
+  
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <title>Modules &mdash; OpenNMT-py  documentation</title>
@@ -84,14 +83,14 @@
               
             
             
-              <p><span class="caption-text">Getting Started</span></p>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="main.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
 <li class="toctree-l1"><a class="reference internal" href="CONTRIBUTING.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ref.html">References</a></li>
 </ul>
-<p><span class="caption-text">FAQ</span></p>
+<p class="caption"><span class="caption-text">FAQ</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-do-i-use-the-transformer-model">How do I use the Transformer model?</a></li>
@@ -104,7 +103,7 @@
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 </ul>
-<p><span class="caption-text">Examples</span></p>
+<p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="examples/Library.html">Library</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/Translation.html">Translation</a></li>
@@ -112,14 +111,14 @@
 <li class="toctree-l1"><a class="reference internal" href="examples/LanguageModelGeneration.html">Language Model Generation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/GGNN.html">Gated Graph Sequence Neural Networks</a></li>
 </ul>
-<p><span class="caption-text">Scripts</span></p>
+<p class="caption"><span class="caption-text">Scripts</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="options/build_vocab.html">Build Vocab</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/train.html">Train</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/translate.html">Translate</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/server.html">Server</a></li>
 </ul>
-<p><span class="caption-text">API</span></p>
+<p class="caption"><span class="caption-text">API</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="onmt.html">Framework</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Modules</a><ul>
@@ -138,7 +137,7 @@
 <li class="toctree-l1"><a class="reference internal" href="onmt.translate.translation_server.html">Server</a></li>
 <li class="toctree-l1"><a class="reference internal" href="onmt.inputters.html">Data Loaders</a></li>
 </ul>
-<p><span class="caption-text">Legacy</span></p>
+<p class="caption"><span class="caption-text">Legacy</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="legacy/FAQ.html">FAQ (Legacy version)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="legacy/im2text.html">Image to Text</a></li>
@@ -208,9 +207,9 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <section id="modules">
+  <div class="section" id="modules">
 <h1>Modules<a class="headerlink" href="#modules" title="Permalink to this headline">¶</a></h1>
-<section id="core-modules">
+<div class="section" id="core-modules">
 <h2>Core Modules<a class="headerlink" href="#core-modules" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.modules.Embeddings">
@@ -296,8 +295,8 @@ number of values the feature takes.</p></li>
 
 </dd></dl>
 
-</section>
-<section id="encoders">
+</div>
+<div class="section" id="encoders">
 <h2>Encoders<a class="headerlink" href="#encoders" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.encoders.EncoderBase">
@@ -406,8 +405,8 @@ and required by <code class="xref py py-class docutils literal notranslate"><spa
 
 </dd></dl>
 
-</section>
-<section id="decoders">
+</div>
+<div class="section" id="decoders">
 <h2>Decoders<a class="headerlink" href="#decoders" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.decoders.DecoderBase">
@@ -562,8 +561,8 @@ or <cite>copy_attn</cite> support.</p>
    G --&gt; H
         </div></dd></dl>
 
-</section>
-<section id="attention">
+</div>
+<div class="section" id="attention">
 <h2>Attention<a class="headerlink" href="#attention" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.modules.AverageAttention">
@@ -768,8 +767,8 @@ differ on how they compute the attention score.</p>
 
 </dd></dl>
 
-</section>
-<section id="architecture-transformer">
+</div>
+<div class="section" id="architecture-transformer">
 <h2>Architecture: Transformer<a class="headerlink" href="#architecture-transformer" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.modules.PositionalEncoding">
@@ -1022,8 +1021,8 @@ zero / non-zero attention <code class="docutils literal notranslate"><span class
 
 </dd></dl>
 
-</section>
-<section id="architecture-conv2conv">
+</div>
+<div class="section" id="architecture-conv2conv">
 <h2>Architecture: Conv2Conv<a class="headerlink" href="#architecture-conv2conv" title="Permalink to this headline">¶</a></h2>
 <p>(These methods are from a user contribution
 and have not been thoroughly tested.)</p>
@@ -1113,8 +1112,8 @@ which is the combination of base emb and top output of encode</p></li>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.conv.Conv2d</span></code></p>
 </dd></dl>
 
-</section>
-<section id="architecture-sru">
+</div>
+<div class="section" id="architecture-sru">
 <h2>Architecture: SRU<a class="headerlink" href="#architecture-sru" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.models.sru.SRU">
@@ -1141,8 +1140,8 @@ which is the combination of base emb and top output of encode</p></li>
 </dl>
 </dd></dl>
 
-</section>
-<section id="copy-attention">
+</div>
+<div class="section" id="copy-attention">
 <h2>Copy Attention<a class="headerlink" href="#copy-attention" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.modules.CopyGenerator">
@@ -1210,8 +1209,8 @@ its index in the “extended” vocab containing.
 
 </dd></dl>
 
-</section>
-<section id="structured-attention">
+</div>
+<div class="section" id="structured-attention">
 <h2>Structured Attention<a class="headerlink" href="#structured-attention" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.modules.structured_attention.MatrixTree">
@@ -1223,8 +1222,8 @@ in the paper “Learning Structured Text Representations”
 <a class="bibtex reference internal" href="ref.html#dblp-journals-corr-liul17d" id="id15">[LL17]</a>.</p>
 </dd></dl>
 
-</section>
-</section>
+</div>
+</div>
 
 
            </div>

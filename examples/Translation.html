@@ -5,8 +5,7 @@
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
-
+  
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <title>Translation &mdash; OpenNMT-py  documentation</title>
@@ -83,14 +82,14 @@
               
             
             
-              <p><span class="caption-text">Getting Started</span></p>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../main.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../CONTRIBUTING.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ref.html">References</a></li>
 </ul>
-<p><span class="caption-text">FAQ</span></p>
+<p class="caption"><span class="caption-text">FAQ</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-do-i-use-the-transformer-model">How do I use the Transformer model?</a></li>
@@ -103,7 +102,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 </ul>
-<p><span class="caption-text">Examples</span></p>
+<p class="caption"><span class="caption-text">Examples</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="Library.html">Library</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Translation</a><ul>
@@ -117,14 +116,14 @@
 <li class="toctree-l1"><a class="reference internal" href="LanguageModelGeneration.html">Language Model Generation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="GGNN.html">Gated Graph Sequence Neural Networks</a></li>
 </ul>
-<p><span class="caption-text">Scripts</span></p>
+<p class="caption"><span class="caption-text">Scripts</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../options/build_vocab.html">Build Vocab</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../options/train.html">Train</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../options/translate.html">Translate</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../options/server.html">Server</a></li>
 </ul>
-<p><span class="caption-text">API</span></p>
+<p class="caption"><span class="caption-text">API</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../onmt.html">Framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../onmt.modules.html">Modules</a></li>
@@ -132,7 +131,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../onmt.translate.translation_server.html">Server</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../onmt.inputters.html">Data Loaders</a></li>
 </ul>
-<p><span class="caption-text">Legacy</span></p>
+<p class="caption"><span class="caption-text">Legacy</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../legacy/FAQ.html">FAQ (Legacy version)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../legacy/im2text.html">Image to Text</a></li>
@@ -202,10 +201,10 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <section id="translation">
+  <div class="section" id="translation">
 <h1>Translation<a class="headerlink" href="#translation" title="Permalink to this headline">¶</a></h1>
 <p>This example is for training for the <a class="reference external" href="https://www.statmt.org/wmt14/translation-task.html">WMT’14 English to German news translation task</a>. It will use on the fly tokenization with <a class="reference external" href="https://github.com/google/sentencepiece">sentencepiece</a> and <a class="reference external" href="https://github.com/mjpost/sacrebleu">sacrebleu</a> for evaluation.</p>
-<section id="step-0-download-the-data-and-prepare-the-subwords-model">
+<div class="section" id="step-0-download-the-data-and-prepare-the-subwords-model">
 <h2>Step 0: Download the data and prepare the subwords model<a class="headerlink" href="#step-0-download-the-data-and-prepare-the-subwords-model" title="Permalink to this headline">¶</a></h2>
 <p>Preliminary steps are defined in the <a class="reference external" href="https://github.com/OpenNMT/OpenNMT-py/tree/master/examples/scripts/prepare_wmt_data.sh"><code class="docutils literal notranslate"><span class="pre">examples/scripts/prepare_wmt_data.sh</span></code></a>. The following command will download the necessary datasets, and prepare a sentencepiece model:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>chmod u+x prepare_wmt_data.sh
@@ -213,8 +212,8 @@
 </pre></div>
 </div>
 <p>Note: you should have installed <a class="reference external" href="https://github.com/google/sentencepiece">sentencepiece</a> binaries before running this script.</p>
-</section>
-<section id="step-1-build-the-vocabulary">
+</div>
+<div class="section" id="step-1-build-the-vocabulary">
 <h2>Step 1. Build the vocabulary.<a class="headerlink" href="#step-1-build-the-vocabulary" title="Permalink to this headline">¶</a></h2>
 <p>We need to setup the desired configuration with 1. the data 2. the tokenization options:</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># wmt14_en_de.yaml</span>
@@ -265,8 +264,8 @@
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_build_vocab -config wmt14_en_de.yaml -n_sample -1
 </pre></div>
 </div>
-</section>
-<section id="step-2-train-the-model">
+</div>
+<div class="section" id="step-2-train-the-model">
 <h2>Step 2: Train the model<a class="headerlink" href="#step-2-train-the-model" title="Permalink to this headline">¶</a></h2>
 <p>We need to add the following parameters to the YAML configuration:</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nn">...</span>
@@ -323,8 +322,8 @@
 <span class="nt">share_embeddings</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
 </pre></div>
 </div>
-</section>
-<section id="step-3-translate-and-evaluate">
+</div>
+<div class="section" id="step-3-translate-and-evaluate">
 <h2>Step 3: Translate and evaluate<a class="headerlink" href="#step-3-translate-and-evaluate" title="Permalink to this headline">¶</a></h2>
 <p>We need to tokenize the testset with the same sentencepiece model as used in training:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>spm_encode --model<span class="o">=</span>data/wmt/wmtende.model <span class="se">\</span>
@@ -369,8 +368,8 @@ spm_encode --model<span class="o">=</span>data/wmt/wmtende.model <span class="se
 <span class="k">done</span>
 </pre></div>
 </div>
-</section>
-</section>
+</div>
+</div>
 
 
            </div>
