@@ -249,8 +249,10 @@ def build_corpora_iters(corpora, transforms, corpora_info, is_train=False,
     """Return `ParallelCorpusIterator` for all corpora defined in opts."""
     corpora_iters = dict()
     for c_id, corpus in corpora.items():
-        c_transform_names = corpora_info[c_id].get('transforms', [])
-        corpus_transform = [transforms[name] for name in c_transform_names]
+        transform_names = corpora_info[c_id].get('transforms', [])
+        corpus_transform = [
+            transforms[name] for name in transform_names if name in transforms
+        ]
         transform_pipe = TransformPipe.build_from(corpus_transform)
         logger.info(f"{c_id}'s transforms: {str(transform_pipe)}")
         corpus_iter = ParallelCorpusIterator(

@@ -31,7 +31,7 @@ class Transform(object):
         """
         if self.opts.seed > 0:
             self._set_seed(self.opts.seed)
-        if self.require_vocab:
+        if self.require_vocab():
             if vocabs is None:
                 raise ValueError(f"{type(self).__name__} requires vocabs!")
             self.vocabs = vocabs
