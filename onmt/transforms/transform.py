@@ -17,6 +17,11 @@ class Transform(object):
         """Reproducibility: Set seed for non-deterministic transform."""
         pass
 
+    @classmethod
+    def require_vocab(cls):
+        """Override this method to inform it need vocab to start."""
+        return False
+
     def warm_up(self, vocabs=None):
         """Procedure needed after initialize and before apply.
 
@@ -26,6 +31,10 @@ class Transform(object):
         """
         if self.opts.seed > 0:
             self._set_seed(self.opts.seed)
+        if self.require_vocab():
+            if vocabs is None:
+                raise ValueError(f"{type(self).__name__} requires vocabs!")
+            self.vocabs = vocabs
 
     @classmethod
     def add_options(cls, parser):
@@ -217,6 +226,11 @@ def make_transforms(opts, transforms_cls, fields):
     vocabs = get_vocabs(fields) if fields is not None else None
     transforms = {}
     for name, transform_cls in transforms_cls.items():
+        if transform_cls.require_vocab() and vocabs is None:
+            logger.warning(
+                f"{transform_cls.__name__} require vocab to apply, skip it."
+            )
+            continue
         transform_obj = transform_cls(opts)
         transform_obj.warm_up(vocabs)
         transforms[name] = transform_obj

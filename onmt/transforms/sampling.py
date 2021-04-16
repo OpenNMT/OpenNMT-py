@@ -55,12 +55,10 @@ class SwitchOutTransform(HammingDistanceSamplingTransform):
     def __init__(self, opts):
         super().__init__(opts)
 
-    def warm_up(self, vocabs):
-        super().warm_up(None)
-        self.vocabs = vocabs
-        if vocabs is None:
-            logger.warning(
-                "Switchout disable as no vocab, shouldn't happen in training!")
+    @classmethod
+    def require_vocab(cls):
+        """Override this method to inform it need vocab to start."""
+        return True
 
     @classmethod
     def add_options(cls, parser):
@@ -76,7 +74,6 @@ class SwitchOutTransform(HammingDistanceSamplingTransform):
         self.temperature = self.opts.switchout_temperature
 
     def _switchout(self, tokens, vocab, stats=None):
-        assert vocab is not None, "vocab can not be None for SwitchOut."
         # 1. sample number of tokens to corrupt
         n_chosen = self._sample_distance(tokens, self.temperature)
         # 2. sample positions to corrput
@@ -95,7 +92,7 @@ class SwitchOutTransform(HammingDistanceSamplingTransform):
 
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Apply switchout to both src and tgt side tokens."""
-        if is_train and self.vocabs is not None:
+        if is_train:
             src = self._switchout(
                 example['src'], self.vocabs['src'].itos, stats)
             tgt = self._switchout(
