@@ -1,3 +1,4 @@
+docutils==0.16
 sphinx==2.4.*
 sphinxcontrib.bibtex==1.0.0
 sphinxcontrib.mermaid==0.5.0
