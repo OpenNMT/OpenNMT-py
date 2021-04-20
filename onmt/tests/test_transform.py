@@ -10,15 +10,6 @@ from onmt.transforms import get_transforms_cls, get_specials, make_transforms
 
 class TestTransform(unittest.TestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        cls.base_corpora = yaml.safe_load('''
-            trainset:
-                path_src: data/src-train.txt
-                path_tgt: data/tgt-train.txt
-                weight: 1
-        ''')
-
     def test_transform_register(self):
         builtin_transform = [
             'filtertoolong',
@@ -35,9 +26,7 @@ class TestTransform(unittest.TestCase):
 
     def test_vocab_required_transform(self):
         transforms_cls = get_transforms_cls(["bart", "switchout"])
-        corpora = copy.deepcopy(self.base_corpora)
-        corpora["trainset"]["transforms"] = ["bart", "switchout"]
-        opt = Namespace(data=corpora, seed=-1, switchout_temperature=1.0)
+        opt = Namespace(seed=-1, switchout_temperature=1.0)
         # transforms that require vocab will not create if not provide vocab
         transforms = make_transforms(opt, transforms_cls, fields=None)
         self.assertEqual(len(transforms), 0)
@@ -47,10 +36,15 @@ class TestTransform(unittest.TestCase):
 
     def test_transform_specials(self):
         transforms_cls = get_transforms_cls(["prefix"])
-        corpora = copy.deepcopy(self.base_corpora)
-        corpora["trainset"]["transforms"] = ["prefix"]
-        corpora["trainset"]["src_prefix"] = "｟_pf_src｠"
-        corpora["trainset"]["tgt_prefix"] = "｟_pf_tgt｠"
+        corpora = yaml.safe_load('''
+            trainset:
+                path_src: data/src-train.txt
+                path_tgt: data/tgt-train.txt
+                transforms: ["prefix"]
+                weight: 1
+                src_prefix: "｟_pf_src｠"
+                tgt_prefix: "｟_pf_tgt｠"
+        ''')
         opt = Namespace(data=corpora)
         specials = get_specials(opt, transforms_cls)
         specials_expected = {
@@ -62,21 +56,18 @@ class TestTransform(unittest.TestCase):
 
 class TestMiscTransform(unittest.TestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        cls.base_corpora = yaml.safe_load('''
+    def test_prefix(self):
+        prefix_cls = get_transforms_cls(["prefix"])["prefix"]
+        corpora = yaml.safe_load('''
             trainset:
                 path_src: data/src-train.txt
                 path_tgt: data/tgt-train.txt
-                transforms: [prefix, filtertoolong]
+                transforms: [prefix]
                 weight: 1
                 src_prefix: "｟_pf_src｠"
                 tgt_prefix: "｟_pf_tgt｠"
         ''')
-
-    def test_prefix(self):
-        prefix_cls = get_transforms_cls(["prefix"])["prefix"]
-        opt = Namespace(data=self.base_corpora, seed=-1)
+        opt = Namespace(data=corpora, seed=-1)
         prefix_transform = prefix_cls(opt)
         prefix_transform.warm_up()
         self.assertIn("trainset", prefix_transform.prefix_dict)
@@ -94,11 +85,7 @@ class TestMiscTransform(unittest.TestCase):
 
     def test_filter_too_long(self):
         filter_cls = get_transforms_cls(["filtertoolong"])["filtertoolong"]
-        opt = Namespace(
-            data=self.base_corpora,
-            src_seq_length=100,
-            tgt_seq_length=100
-        )
+        opt = Namespace(src_seq_length=100, tgt_seq_length=100)
         filter_transform = filter_cls(opt)
         # filter_transform.warm_up()
         ex_in = {
