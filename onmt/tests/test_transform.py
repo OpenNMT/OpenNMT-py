@@ -226,3 +226,61 @@ class TestSubwordTransform(unittest.TestCase):
             "tgt": ['▁B', 'on', 'j', 'o', 'ur', '▁le', '▁m', 'on', 'de', '▁.']
         }
         self.assertEqual(ex, ex_gold)
+
+
+class TestSamplingTransform(unittest.TestCase):
+
+    def test_tokendrop(self):
+        tokendrop_cls = get_transforms_cls(["tokendrop"])["tokendrop"]
+        opt = Namespace(seed=3434, tokendrop_temperature=0.1)
+        tokendrop_transform = tokendrop_cls(opt)
+        tokendrop_transform.warm_up()
+        ex = {
+            "src": ["Hello", ",", "world", "."],
+            "tgt": ["Bonjour", "le", "monde", "."],
+        }
+        # Not apply token drop for not training example
+        ex_after = tokendrop_transform.apply(copy.deepcopy(ex), is_train=False)
+        self.assertEqual(ex_after, ex)
+        # apply token drop for training example
+        ex_after = tokendrop_transform.apply(copy.deepcopy(ex), is_train=True)
+        self.assertNotEqual(ex_after, ex)
+
+    def test_tokenmask(self):
+        tokenmask_cls = get_transforms_cls(["tokenmask"])["tokenmask"]
+        opt = Namespace(seed=3434, tokenmask_temperature=0.1)
+        tokenmask_transform = tokenmask_cls(opt)
+        tokenmask_transform.warm_up()
+        ex = {
+            "src": ["Hello", ",", "world", "."],
+            "tgt": ["Bonjour", "le", "monde", "."],
+        }
+        # Not apply token mask for not training example
+        ex_after = tokenmask_transform.apply(copy.deepcopy(ex), is_train=False)
+        self.assertEqual(ex_after, ex)
+        # apply token mask for training example
+        ex_after = tokenmask_transform.apply(copy.deepcopy(ex), is_train=True)
+        self.assertNotEqual(ex_after, ex)
+
+    def test_switchout(self):
+        switchout_cls = get_transforms_cls(["switchout"])["switchout"]
+        opt = Namespace(seed=3434, switchout_temperature=0.1)
+        switchout_transform = switchout_cls(opt)
+        with self.assertRaises(ValueError):
+            # require vocabs to warm_up
+            switchout_transform.warm_up(vocabs=None)
+        vocabs = {
+            "src": Namespace(itos=["A", "Fake", "vocab"]),
+            "tgt": Namespace(itos=["A", "Fake", "vocab"]),
+        }
+        switchout_transform.warm_up(vocabs=vocabs)
+        ex = {
+            "src": ["Hello", ",", "world", "."],
+            "tgt": ["Bonjour", "le", "monde", "."],
+        }
+        # Not apply token mask for not training example
+        ex_after = switchout_transform.apply(copy.deepcopy(ex), is_train=False)
+        self.assertEqual(ex_after, ex)
+        # apply token mask for training example
+        ex_after = switchout_transform.apply(copy.deepcopy(ex), is_train=True)
+        self.assertNotEqual(ex_after, ex)
