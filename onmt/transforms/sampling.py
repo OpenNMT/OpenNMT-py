@@ -1,7 +1,6 @@
 """Transforms relate to hamming distance sampling."""
 import random
 import numpy as np
-from onmt.utils.logging import logger
 from onmt.constants import DefaultTokens
 from onmt.transforms import register_transform
 from .transform import Transform

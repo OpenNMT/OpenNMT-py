@@ -1,7 +1,6 @@
 """Here come the tests for implemented transform."""
 import unittest
 
-import os
 import copy
 import yaml
 import math
@@ -459,8 +458,8 @@ class TestBARTNoising(unittest.TestCase):
         # start token of word are identified using subword marker
         token_starts = [True, False, False, True, True, True, False, True]
         self.assertEqual(bart_noise._is_word_start(tokens), token_starts)
-        infillied = bart_noise.apply(copy.copy(tokens))
-        n_words = sum(token_starts)
-        n_masked = math.ceil(n_words * bart_noise.mask_ratio)
+        bart_noise.apply(copy.copy(tokens))
+        # n_words = sum(token_starts)
+        # n_masked = math.ceil(n_words * bart_noise.mask_ratio)
         # print(f"Text Span Infilling: {infillied} / {tokens}")
         # print(n_words, n_masked)
