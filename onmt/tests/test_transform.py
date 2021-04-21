@@ -11,18 +11,17 @@ from onmt.transforms.bart import BARTNoising
 
 
 class TestTransform(unittest.TestCase):
-
     def test_transform_register(self):
         builtin_transform = [
-            'filtertoolong',
-            'prefix',
-            'sentencepiece',
-            'bpe',
-            'onmt_tokenize',
-            'bart',
-            'switchout',
-            'tokendrop',
-            'tokenmask'
+            "filtertoolong",
+            "prefix",
+            "sentencepiece",
+            "bpe",
+            "onmt_tokenize",
+            "bart",
+            "switchout",
+            "tokendrop",
+            "tokenmask",
         ]
         get_transforms_cls(builtin_transform)
 
@@ -38,7 +37,7 @@ class TestTransform(unittest.TestCase):
 
     def test_transform_specials(self):
         transforms_cls = get_transforms_cls(["prefix"])
-        corpora = yaml.safe_load('''
+        corpora = yaml.safe_load("""
             trainset:
                 path_src: data/src-train.txt
                 path_tgt: data/tgt-train.txt
@@ -46,21 +45,17 @@ class TestTransform(unittest.TestCase):
                 weight: 1
                 src_prefix: "｟_pf_src｠"
                 tgt_prefix: "｟_pf_tgt｠"
-        ''')
+        """)
         opt = Namespace(data=corpora)
         specials = get_specials(opt, transforms_cls)
-        specials_expected = {
-            "src": {"｟_pf_src｠"},
-            "tgt": {"｟_pf_tgt｠"}
-        }
+        specials_expected = {"src": {"｟_pf_src｠"}, "tgt": {"｟_pf_tgt｠"}}
         self.assertEqual(specials, specials_expected)
 
 
 class TestMiscTransform(unittest.TestCase):
-
     def test_prefix(self):
         prefix_cls = get_transforms_cls(["prefix"])["prefix"]
-        corpora = yaml.safe_load('''
+        corpora = yaml.safe_load("""
             trainset:
                 path_src: data/src-train.txt
                 path_tgt: data/tgt-train.txt
@@ -68,7 +63,7 @@ class TestMiscTransform(unittest.TestCase):
                 weight: 1
                 src_prefix: "｟_pf_src｠"
                 tgt_prefix: "｟_pf_tgt｠"
-        ''')
+        """)
         opt = Namespace(data=corpora, seed=-1)
         prefix_transform = prefix_cls(opt)
         prefix_transform.warm_up()
@@ -102,14 +97,13 @@ class TestMiscTransform(unittest.TestCase):
 
 
 class TestSubwordTransform(unittest.TestCase):
-
     @classmethod
     def setUpClass(cls):
         cls.base_opts = {
             "seed": 3431,
             "share_vocab": False,
-            "src_subword_model" : "data/sample.bpe",
-            "tgt_subword_model" : "data/sample.bpe",
+            "src_subword_model": "data/sample.bpe",
+            "tgt_subword_model": "data/sample.bpe",
             "src_subword_nbest": 1,
             "tgt_subword_nbest": 1,
             "src_subword_alpha": 0.0,
@@ -132,15 +126,18 @@ class TestSubwordTransform(unittest.TestCase):
         }
         bpe_transform.apply(ex, is_train=True)
         ex_gold = {
-            "src": ['H@@', 'ell@@', 'o', 'world', '.'],
-            "tgt": ['B@@', 'on@@', 'j@@', 'our', 'le', 'mon@@', 'de', '.']
+            "src": ["H@@", "ell@@", "o", "world", "."],
+            "tgt": ["B@@", "on@@", "j@@", "our", "le", "mon@@", "de", "."],
         }
         self.assertEqual(ex, ex_gold)
         # test BPE-dropout:
-        bpe_transform.dropout['src'] = 1.0
+        bpe_transform.dropout["src"] = 1.0
         tokens = ["Another", "world", "."]
-        gold_bpe = ['A@@', 'no@@', 'ther', 'world', '.']
-        gold_dropout = ['A@@', 'n@@', 'o@@', 't@@', 'h@@', 'e@@', 'r', 'w@@', 'o@@', 'r@@', 'l@@', 'd', '.']
+        gold_bpe = ["A@@", "no@@", "ther", "world", "."]
+        gold_dropout = [
+            "A@@", "n@@", "o@@", "t@@", "h@@", "e@@", "r",
+            "w@@", "o@@", "r@@", "l@@", "d", ".",
+        ]
         # 1. disable bpe dropout for not training example
         after_bpe = bpe_transform._tokenize(tokens, is_train=False)
         self.assertEqual(after_bpe, gold_bpe)
@@ -168,17 +165,17 @@ class TestSubwordTransform(unittest.TestCase):
         }
         sp_transform.apply(ex, is_train=True)
         ex_gold = {
-            "src": ['▁H', 'el', 'lo', '▁world', '▁.'],
-            "tgt": ['▁B', 'on', 'j', 'o', 'ur', '▁le', '▁m', 'on', 'de', '▁.']
+            "src": ["▁H", "el", "lo", "▁world", "▁."],
+            "tgt": ["▁B", "on", "j", "o", "ur", "▁le", "▁m", "on", "de", "▁."],
         }
         self.assertEqual(ex, ex_gold)
         # test SP regularization:
         sp_transform.src_subword_nbest = 4
         tokens = ["Another", "world", "."]
-        gold_sp = ['▁An', 'other', '▁world', '▁.']
+        gold_sp = ["▁An", "other", "▁world", "▁."]
         # 1. enable regularization for training example
         after_sp = sp_transform._tokenize(tokens, is_train=True)
-        self.assertEqual(after_sp, ['▁An', 'o', 'ther', '▁world', '▁.'])
+        self.assertEqual(after_sp, ["▁An", "o", "ther", "▁world", "▁."])
         # 2. disable regularization for not training example
         after_sp = sp_transform._tokenize(tokens, is_train=False)
         self.assertEqual(after_sp, gold_sp)
@@ -188,8 +185,9 @@ class TestSubwordTransform(unittest.TestCase):
         base_opt = copy.copy(self.base_opts)
         base_opt["src_subword_type"] = "bpe"
         base_opt["tgt_subword_type"] = "bpe"
-        base_opt["src_onmttok_kwargs"] = "{'mode': 'space', 'joiner_annotate': True}"
-        base_opt["tgt_onmttok_kwargs"] = "{'mode': 'space', 'joiner_annotate': True}"
+        onmt_args = "{'mode': 'space', 'joiner_annotate': True}"
+        base_opt["src_onmttok_kwargs"] = onmt_args
+        base_opt["tgt_onmttok_kwargs"] = onmt_args
         opt = Namespace(**base_opt)
         onmttok_cls._validate_options(opt)
         onmttok_transform = onmttok_cls(opt)
@@ -201,7 +199,7 @@ class TestSubwordTransform(unittest.TestCase):
         onmttok_transform.apply(ex, is_train=True)
         ex_gold = {
             "src": ["H￭", "ell￭", "o", "world", "."],
-            "tgt": ["B￭", "on￭", "j￭", "our", "le", "mon￭", "de", "."]
+            "tgt": ["B￭", "on￭", "j￭", "our", "le", "mon￭", "de", "."],
         }
         self.assertEqual(ex, ex_gold)
 
@@ -212,8 +210,9 @@ class TestSubwordTransform(unittest.TestCase):
         base_opt["tgt_subword_type"] = "sentencepiece"
         base_opt["src_subword_model"] = "data/sample.sp.model"
         base_opt["tgt_subword_model"] = "data/sample.sp.model"
-        base_opt["src_onmttok_kwargs"] = "{'mode': 'none', 'spacer_annotate': True}"
-        base_opt["tgt_onmttok_kwargs"] = "{'mode': 'none', 'spacer_annotate': True}"
+        onmt_args = "{'mode': 'none', 'spacer_annotate': True}"
+        base_opt["src_onmttok_kwargs"] = onmt_args
+        base_opt["tgt_onmttok_kwargs"] = onmt_args
         opt = Namespace(**base_opt)
         onmttok_cls._validate_options(opt)
         onmttok_transform = onmttok_cls(opt)
@@ -225,13 +224,12 @@ class TestSubwordTransform(unittest.TestCase):
         onmttok_transform.apply(ex, is_train=True)
         ex_gold = {
             "src": ["▁H", "el", "lo", "▁world", "▁."],
-            "tgt": ["▁B", "on", "j", "o", "ur", "▁le", "▁m", "on", "de", "▁."]
+            "tgt": ["▁B", "on", "j", "o", "ur", "▁le", "▁m", "on", "de", "▁."],
         }
         self.assertEqual(ex, ex_gold)
 
 
 class TestSamplingTransform(unittest.TestCase):
-
     def test_tokendrop(self):
         tokendrop_cls = get_transforms_cls(["tokendrop"])["tokendrop"]
         opt = Namespace(seed=3434, tokendrop_temperature=0.1)
@@ -289,7 +287,6 @@ class TestSamplingTransform(unittest.TestCase):
 
 
 class TestBARTNoising(unittest.TestCase):
-
     def setUp(self):
         BARTNoising.set_random_seed(1234)
         self.MASK_TOK = "[MASK]"
@@ -344,12 +341,12 @@ class TestBARTNoising(unittest.TestCase):
         n_random = math.ceil(n_insert * bart_noise.random_ratio)
         self.assertEqual(
             sum(1 if tok == self.FAKE_VOCAB else 0 for tok in inserted),
-            n_random
+            n_random,
         )
         # others are MASK_TOK
         self.assertEqual(
             sum(1 if tok == self.MASK_TOK else 0 for tok in inserted),
-            n_insert - n_random
+            n_insert - n_random,
         )
 
     def test_token_mask(self):
@@ -358,7 +355,7 @@ class TestBARTNoising(unittest.TestCase):
         Condition:
         * `mask_length` == subword;
         * or not specify subword marker (joiner/spacer) by `is_joiner`.
-        """ 
+        """
         bart_noise = BARTNoising(
             vocab=[self.FAKE_VOCAB],
             mask_tok=self.MASK_TOK,
@@ -387,8 +384,7 @@ class TestBARTNoising(unittest.TestCase):
         # print(f"token mask: {masked} / {tokens}")
         self.assertEqual(len(masked), n_tokens)
         self.assertEqual(
-            sum([1 if tok == self.MASK_TOK else 0 for tok in masked]),
-            n_masked
+            sum([1 if tok == self.MASK_TOK else 0 for tok in masked]), n_masked
         )
 
     def test_whole_word_mask(self):
@@ -429,8 +425,7 @@ class TestBARTNoising(unittest.TestCase):
         n_words = sum(token_starts)
         n_masked = math.ceil(n_words * bart_noise.mask_ratio)
         self.assertEqual(
-            sum(1 if tok == self.MASK_TOK else 0 for tok in masked),
-            n_masked
+            sum(1 if tok == self.MASK_TOK else 0 for tok in masked), n_masked
         )
 
         # 3. replace_length -1: all tokens in "words" are replaced with MASK
