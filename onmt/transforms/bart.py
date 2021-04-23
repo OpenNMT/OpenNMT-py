@@ -108,7 +108,7 @@ class BARTNoising(object):
         ps = torch.FloatTensor(ps)
         return torch.distributions.Categorical(ps)
 
-    def _get_sentence_lengths(self, tokens):
+    def _get_sentence_borders(self, tokens):
         """Return lengths of each sentence in the token sequence."""
         full_stops = np.array(
             [
@@ -125,7 +125,7 @@ class BARTNoising(object):
     def permute_sentences(self, tokens, p=1.0):
         if len(tokens) == 1:
             return tokens
-        sentence_lens = self._get_sentence_lengths(tokens)
+        sentence_lens = self._get_sentence_borders(tokens)
         n_sentences = sentence_lens.size
         if n_sentences == 1:
             return tokens

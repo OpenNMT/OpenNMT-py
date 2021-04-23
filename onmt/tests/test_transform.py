@@ -304,7 +304,7 @@ class TestBARTNoising(unittest.TestCase):
             # Defalt: full_stop_token=[".", "?", "!"]
         )
         tokens = sent1 + sent2 + sent3 + sent4
-        ends = bart_noise._get_sentence_lengths(tokens).tolist()
+        ends = bart_noise._get_sentence_borders(tokens).tolist()
         self.assertEqual(ends, [3, 6, 9, 12])
         tokens_perm = bart_noise.apply(tokens)
         expected_tokens = sent2 + sent1 + sent3 + sent4
