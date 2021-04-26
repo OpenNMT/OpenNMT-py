@@ -153,14 +153,14 @@ class SentencePieceTransform(TokenizerTransform):
         sentence = ' '.join(tokens)
         nbest_size = self.tgt_subword_nbest if side == 'tgt' else \
             self.src_subword_nbest
-        alpha = self.tgt_subword_alpha if side == 'tgt' else \
-            self.src_subword_alpha
         if is_train is False or nbest_size in [0, 1]:
             # derterministic subwording
             segmented = sp_model.encode(sentence, out_type=str)
         else:
             # subword sampling when nbest_size > 1 or -1
             # alpha should be 0.0 < alpha < 1.0
+            alpha = self.tgt_subword_alpha if side == 'tgt' else \
+                self.src_subword_alpha
             segmented = sp_model.encode(
                 sentence, out_type=str, enable_sampling=True,
                 alpha=alpha, nbest_size=nbest_size)
@@ -208,26 +208,25 @@ class BPETransform(TokenizerTransform):
         """Load subword models."""
         super().warm_up(None)
         from subword_nmt.apply_bpe import BPE, read_vocabulary
-        import codecs
-        src_codes = codecs.open(self.src_subword_model, encoding='utf-8')
+        # Load vocabulary file if provided and set threshold
         src_vocabulary, tgt_vocabulary = None, None
         if self.src_subword_vocab != "" and self.src_vocab_threshold > 0:
-            src_vocabulary = read_vocabulary(
-                codecs.open(self.src_subword_vocab, encoding='utf-8'),
-                self.src_vocab_threshold)
+            with open(self.src_subword_vocab, encoding='utf-8') as _sv:
+                src_vocabulary = read_vocabulary(_sv, self.src_vocab_threshold)
         if self.tgt_subword_vocab != "" and self.tgt_vocab_threshold > 0:
-            tgt_vocabulary = read_vocabulary(
-                codecs.open(self.tgt_subword_vocab, encoding='utf-8'),
-                self.tgt_vocab_threshold)
-        load_src_model = BPE(codes=src_codes, vocab=src_vocabulary)
+            with open(self.tgt_subword_vocab, encoding='utf-8') as _tv:
+                tgt_vocabulary = read_vocabulary(_tv, self.tgt_vocab_threshold)
+        # Load Subword Model
+        with open(self.src_subword_model, encoding='utf-8') as src_codes:
+            load_src_model = BPE(codes=src_codes, vocab=src_vocabulary)
         if self.share_vocab and (src_vocabulary == tgt_vocabulary):
             self.load_models = {
                 'src': load_src_model,
                 'tgt': load_src_model
             }
         else:
-            tgt_codes = codecs.open(self.tgt_subword_model, encoding='utf-8')
-            load_tgt_model = BPE(codes=tgt_codes, vocab=tgt_vocabulary)
+            with open(self.tgt_subword_model, encoding='utf-8') as tgt_codes:
+                load_tgt_model = BPE(codes=tgt_codes, vocab=tgt_vocabulary)
             self.load_models = {
                 'src': load_src_model,
                 'tgt': load_tgt_model
@@ -236,7 +235,7 @@ class BPETransform(TokenizerTransform):
     def _tokenize(self, tokens, side='src', is_train=False):
         """Do bpe subword tokenize."""
         bpe_model = self.load_models[side]
-        dropout = self.dropout[side] if is_train else 0
+        dropout = self.dropout[side] if is_train else 0.0
         segmented = bpe_model.segment_tokens(tokens, dropout=dropout)
         return segmented
 
