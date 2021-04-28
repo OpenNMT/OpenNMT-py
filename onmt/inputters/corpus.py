@@ -269,18 +269,20 @@ def write_files_from_queues(sample_path, queues):
     """
     os.makedirs(sample_path, exist_ok=True)
     for c_name in queues.keys():
-        dest_base = dest_base = os.path.join(
+        dest_base = os.path.join(
             sample_path, "{}.{}".format(c_name, CorpusName.SAMPLE))
         with open(dest_base + ".src", 'w', encoding="utf-8") as f_src,\
                 open(dest_base + ".tgt", 'w', encoding="utf-8") as f_tgt:
             while True:
                 _next = False
-                for i, q in enumerate(queues[c_name]):
+                for q in queues[c_name]:
                     item = q.get()
+                    if item == "blank":
+                        continue
                     if item == "break":
                         _next = True
                         break
-                    j, src_line, tgt_line = item
+                    _, src_line, tgt_line = item
                     f_src.write(src_line + '\n')
                     f_tgt.write(tgt_line + '\n')
                 if _next:
@@ -299,6 +301,8 @@ def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
         for i, item in enumerate(c_iter):
             maybe_example = DatasetAdapter._process(item, is_train=True)
             if maybe_example is None:
+                if opts.dump_samples:
+                    build_sub_vocab.queues[c_name][offset].put("blank")
                 continue
             src_line, tgt_line = maybe_example['src'], maybe_example['tgt']
             sub_counter_src.update(src_line.split(' '))
