@@ -4,6 +4,11 @@
 
 ## [Unreleased]
 
+## [2.1.2](https://github.com/OpenNMT/OpenNMT-py/tree/2.1.2) (2021-04-30)
+
+### Fixes and improvements
+*  Fix update_vocab for LM (#2056)
+
 ## [2.1.1](https://github.com/OpenNMT/OpenNMT-py/tree/2.1.1) (2021-04-30)
 
 ### Fixes and improvements
