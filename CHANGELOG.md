@@ -4,6 +4,12 @@
 
 ## [Unreleased]
 
+## [2.1.1](https://github.com/OpenNMT/OpenNMT-py/tree/2.1.1) (2021-04-30)
+
+### Fixes and improvements
+* Fix potential deadlock (b1a4615)
+* Add more CT2 conversion checks (e4ab06c)
+
 ## [2.1.0](https://github.com/OpenNMT/OpenNMT-py/tree/2.1.0) (2021-04-16)
 
 ### New features
@@ -14,7 +20,7 @@
 * Fix beam warning and buffers reuse
 * Handle invalid lines in vocab file gracefully
 
-## [2.0.1](https://github.com/OpenNMT/OpenNMT-py/tree/2.0.1) (2021-01-20)
+## [2.0.1](https://github.com/OpenNMT/OpenNMT-py/tree/2.0.1) (2021-01-27)
 
 ### Fixes and improvements
 * Support embedding layer for larger vocabularies with GGNN (e8065b7)
