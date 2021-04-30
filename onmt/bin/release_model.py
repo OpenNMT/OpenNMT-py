@@ -2,14 +2,19 @@
 import argparse
 import torch
 
+from onmt.modules.position_ffn import ActivationFunction
+
 
 def get_ctranslate2_model_spec(opt):
     """Creates a CTranslate2 model specification from the model options."""
     with_relative_position = getattr(opt, "max_relative_positions", 0) > 0
+    relu = ActivationFunction.relu
     is_ct2_compatible = (
         opt.encoder_type == "transformer"
         and opt.decoder_type == "transformer"
+        and not getattr(opt, "aan_useffn", False)
         and getattr(opt, "self_attn_type", "scaled-dot") == "scaled-dot"
+        and getattr(opt, "pos_ffn_activation_fn", relu) == relu
         and ((opt.position_encoding and not with_relative_position)
              or (with_relative_position and not opt.position_encoding)))
     if not is_ct2_compatible:
