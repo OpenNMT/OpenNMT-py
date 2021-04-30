@@ -45,10 +45,10 @@ error_exit()
 # }
 
 # flake8 check
-# echo -n "[+] Doing flake8 check..."
-# ${PYTHON} -m flake8 >> ${LOG_FILE} 2>&1
-# [ "$?" -eq 0 ] || error_exit
-# echo "Succeeded" | tee -a ${LOG_FILE}
+echo -n "[+] Doing flake8 check..."
+${PYTHON} -m flake8 >> ${LOG_FILE} 2>&1
+[ "$?" -eq 0 ] || error_exit
+echo "Succeeded" | tee -a ${LOG_FILE}
 
 
 # unittest
