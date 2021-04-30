@@ -180,7 +180,66 @@ ${PYTHON} onmt/bin/train.py \
             -copy_attn >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}*
-rm $TMP_OUT_DIR/onmt.vocab*
+
+echo -n "  [+] Testing Checkpoint Vocabulary Update..."
+${PYTHON} onmt/bin/train.py \
+            -config ${DATA_DIR}/data.yaml \
+            -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
+            -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
+            -src_vocab_size 1000 -tgt_vocab_size 1000 \
+            -rnn_size 2 -batch_size 10 \
+            -word_vec_size 5 -rnn_size 10 \
+            -report_every 5 -train_steps 10 \
+            -save_model $TMP_OUT_DIR/onmt.model \
+            -save_checkpoint_steps 10 >> ${LOG_FILE} 2>&1
+sed -i '1s/^/new_tok\t100000000\n/' $TMP_OUT_DIR/onmt.vocab.src >> ${LOG_FILE} 2>&1
+${PYTHON} onmt/bin/train.py \
+            -config ${DATA_DIR}/data.yaml \
+            -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
+            -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
+            -src_vocab_size 1000 -tgt_vocab_size 1000 \
+            -rnn_size 2 -batch_size 10 \
+            -word_vec_size 5 -rnn_size 10 \
+            -report_every 5 -train_steps 20 \
+            -update_vocab -reset_optim "states" \
+            -train_from $TMP_OUT_DIR/onmt.model_step_10.pt >> ${LOG_FILE} 2>&1
+[ "$?" -eq 0 ] || error_exit
+echo "Succeeded" | tee -a ${LOG_FILE}
+
+echo -n "  [+] Testing Checkpoint Vocabulary Update with LM..."
+${PYTHON} onmt/bin/train.py \
+            -config ${DATA_DIR}/lm_data.yaml \
+            -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
+            -tgt_vocab $TMP_OUT_DIR/onmt.vocab.src \
+            -model_task lm \
+            -encoder_type transformer_lm \
+            -decoder_type transformer_lm \
+            -src_vocab_size 1000 \
+            -tgt_vocab_size 1000 \
+            -dec_layers 2 -batch_size 10 \
+            -heads 4 -transformer_ff 64 \
+            -word_vec_size 16 -report_every 5 \
+            -save_model $TMP_OUT_DIR/lm.onmt.model \
+            -save_checkpoint_steps 10 \
+            -rnn_size 16 -train_steps 10 >> ${LOG_FILE} 2>&1
+sed -i '1s/^/new_tok\t100000000\n/' $TMP_OUT_DIR/onmt.vocab.src >> ${LOG_FILE} 2>&1
+${PYTHON} onmt/bin/train.py \
+            -config ${DATA_DIR}/lm_data.yaml \
+            -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
+            -tgt_vocab $TMP_OUT_DIR/onmt.vocab.src \
+            -model_task lm \
+            -encoder_type transformer_lm \
+            -decoder_type transformer_lm \
+            -src_vocab_size 1000 \
+            -tgt_vocab_size 1000 \
+            -dec_layers 2 -batch_size 10 \
+            -heads 4 -transformer_ff 64 \
+            -word_vec_size 16 -report_every 5 \
+            -rnn_size 16  -train_steps 20 \
+            -update_vocab -reset_optim "states" \
+            -train_from $TMP_OUT_DIR/lm.onmt.model_step_10.pt >> ${LOG_FILE} 2>&1
+[ "$?" -eq 0 ] || error_exit
+echo "Succeeded" | tee -a ${LOG_FILE}
 
 echo -n "  [+] Testing Graph Neural Network training..."
 ${PYTHON} onmt/bin/train.py \
@@ -195,30 +254,6 @@ ${PYTHON} onmt/bin/train.py \
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 
-echo -n "  [+] Testing checkpoint vocabulary update..."
-${PYTHON} onmt/bin/train.py \
-            -config ${DATA_DIR}/data.yaml \
-            -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
-            -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
-            -src_vocab_size 1000 -tgt_vocab_size 1000 \
-            -rnn_size 2 -batch_size 10 \
-            -word_vec_size 5 -rnn_size 10 \
-            -report_every 5 -train_steps 10 \
-            -save_model $TMP_OUT_DIR/onmt.model \
-            -save_checkpoint_steps: 10 >> ${LOG_FILE} 2>&1
-sed -i '1s/^/new_tok\t100000000\n/' $TMP_OUT_DIR/onmt.vocab.src >> ${LOG_FILE} 2>&1
-${PYTHON} onmt/bin/train.py \
-            -config ${DATA_DIR}/data.yaml \
-            -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
-            -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
-            -src_vocab_size 1000 -tgt_vocab_size 1000 \
-            -rnn_size 2 -batch_size 10 \
-            -word_vec_size 5 -rnn_size 10 \
-            -report_every 5 -train_steps 20 \
-            -update_vocab -reset_optim "states" \
-            -train_from $TMP_OUT_DIR/onmt.model_step_10.pt >> ${LOG_FILE} 2>&1
-[ "$?" -eq 0 ] || error_exit
-echo "Succeeded" | tee -a ${LOG_FILE}
 rm $TMP_OUT_DIR/onmt.vocab*
 rm $TMP_OUT_DIR/onmt.model*
 
