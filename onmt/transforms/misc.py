@@ -1,6 +1,8 @@
 from onmt.utils.logging import logger
 from onmt.transforms import register_transform
 from .transform import Transform
+import random
+from onmt.constants import ModelTask, SubwordMarker
 
 
 @register_transform(name='filtertoolong')
@@ -38,6 +40,81 @@ class FilterTooLongTransform(Transform):
         return '{}={}, {}={}'.format(
             'src_seq_length', self.src_seq_length,
             'tgt_seq_length', self.tgt_seq_length
+        )
+
+
+@register_transform(name="joiner_dropout")
+class JoinerDropoutTransform(Transform):
+    """Disjoin joiner with probability dropout"""
+
+    def __init__(self, opts):
+        super().__init__(opts)
+
+    @classmethod
+    def add_options(cls, parser):
+        """Avalilable options relate to this Transform."""
+        group = parser.add_argument_group("Transform/JoinerDropout")
+        group.add(
+            "--src_joiner_dropout",
+            "-src_joiner_dropout",
+            type=float,
+            default=0.0,
+            help="Source dropout probability.",
+        )
+        group.add(
+            "--tgt_joiner_dropout",
+            "-tgt_joiner_dropout",
+            type=float,
+            default=0.0,
+            help="Target dropout probability.",
+        )
+
+    def _parse_opts(self):
+        self.src_joiner_dropout = self.opts.src_joiner_dropout
+        self.tgt_joiner_dropout = self.opts.tgt_joiner_dropout
+        self.model_task = getattr(self.opts, "model_task", None)
+
+    def dropout_separate_joiner(self, seq, side="src"):
+        out_seq = []
+        dropout = (
+            self.src_joiner_dropout
+            if side == "src"
+            else self.tgt_joiner_dropout
+        )
+        for elem in seq:
+            if len(elem) > 1 and elem.startswith(SubwordMarker.JOINER):
+                if random.random() < dropout:
+                    out_seq.append(SubwordMarker.JOINER)
+                    elem = elem[1:]
+            if len(elem) > 1 and elem.endswith(SubwordMarker.JOINER):
+                if random.random() < dropout:
+                    out_seq.append(elem[:-1])
+                    elem = elem[-1:]
+            out_seq.append(elem)
+
+        return out_seq
+
+    def apply(self, example, is_train=False, stats=None, **kwargs):
+        """Return None if too long else return as is."""
+        if not is_train:
+            return example
+        else:
+            src_out = self.dropout_separate_joiner(example["src"], "src")
+            example["src"] = src_out
+            if self.model_task == ModelTask.LANGUAGE_MODEL:
+                example["tgt"] = src_out
+            else:
+                tgt_out = self.dropout_separate_joiner(example["tgt"], "tgt")
+                example["tgt"] = tgt_out
+            return example
+
+    def _repr_args(self):
+        """Return str represent key arguments for class."""
+        return "{}={}, {}={}".format(
+            "src_joiner_dropout",
+            self.src_joiner_dropout,
+            "tgt_joiner_dropout",
+            self.tgt_joiner_dropout,
         )
 
 

@@ -2,6 +2,7 @@
 from onmt.utils.logging import logger
 from onmt.transforms import register_transform
 from .transform import Transform
+from onmt.constants import ModelTask
 
 
 class TokenizerTransform(Transform):
@@ -90,6 +91,7 @@ class TokenizerTransform(Transform):
         self.tgt_subword_vocab = self.opts.tgt_subword_vocab
         self.src_vocab_threshold = self.opts.src_vocab_threshold
         self.tgt_vocab_threshold = self.opts.tgt_vocab_threshold
+        self.model_task = getattr(self.opts, "model_task", None)
 
     def _repr_args(self):
         """Return str represent key arguments for TokenizerTransform."""
@@ -169,7 +171,10 @@ class SentencePieceTransform(TokenizerTransform):
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Apply sentencepiece subword encode to src & tgt."""
         src_out = self._tokenize(example['src'], 'src', is_train)
-        tgt_out = self._tokenize(example['tgt'], 'tgt', is_train)
+        if self.model_task == ModelTask.LANGUAGE_MODEL:
+            tgt_out = src_out
+        else:
+            tgt_out = self._tokenize(example['tgt'], 'tgt', is_train)
         if stats is not None:
             n_words = len(example['src']) + len(example['tgt'])
             n_subwords = len(src_out) + len(tgt_out)
@@ -242,7 +247,10 @@ class BPETransform(TokenizerTransform):
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Apply bpe subword encode to src & tgt."""
         src_out = self._tokenize(example['src'], 'src', is_train)
-        tgt_out = self._tokenize(example['tgt'], 'tgt', is_train)
+        if self.model_task == ModelTask.LANGUAGE_MODEL:
+            tgt_out = src_out
+        else:
+            tgt_out = self._tokenize(example['tgt'], 'tgt', is_train)
         if stats is not None:
             n_words = len(example['src']) + len(example['tgt'])
             n_subwords = len(src_out) + len(tgt_out)
@@ -326,7 +334,7 @@ class ONMTTokenizerTransform(TokenizerTransform):
             tgt_specials.update(_case_specials)
         return (set(), set())
 
-    def _get_subword_kwargs(self, side='src'):
+    def _get_subword_kwargs(self, side='src', is_train=False):
         """Return a dict containing kwargs relate to `side` subwords."""
         subword_type = self.tgt_subword_type if side == 'tgt' \
             else self.src_subword_type
@@ -337,6 +345,10 @@ class ONMTTokenizerTransform(TokenizerTransform):
         subword_alpha = self.tgt_subword_alpha if side == 'tgt' \
             else self.src_subword_alpha
         kwopts = dict()
+        if not is_train:
+            # disable random aspects during validation
+            subword_alpha = 0
+            subword_nbest = 1
         if subword_type == 'bpe':
             kwopts['bpe_model_path'] = subword_model
             kwopts['bpe_dropout'] = subword_alpha
@@ -359,42 +371,65 @@ class ONMTTokenizerTransform(TokenizerTransform):
         """Initialize Tokenizer models."""
         super().warm_up(None)
         import pyonmttok
-        src_subword_kwargs = self._get_subword_kwargs(side='src')
+
+        src_subword_kwargs = self._get_subword_kwargs(
+            side="src", is_train=True
+        )
+        valid_src_subword_kwargs = self._get_subword_kwargs(
+            side="src", is_train=False
+        )
         src_tokenizer = pyonmttok.Tokenizer(
             **src_subword_kwargs, **self.src_other_kwargs
         )
-        tgt_subword_kwargs = self._get_subword_kwargs(side='tgt')
-        _diff_vocab = (
-            src_subword_kwargs.get('vocabulary_path', '') !=
-            tgt_subword_kwargs.get('vocabulary_path', '') or
-            src_subword_kwargs.get('vocabulary_threshold', 0) !=
-            tgt_subword_kwargs.get('vocabulary_threshold', 0))
+        valid_src_tokenizer = pyonmttok.Tokenizer(
+            **valid_src_subword_kwargs, **self.src_other_kwargs
+        )
+        tgt_subword_kwargs = self._get_subword_kwargs(
+            side="tgt", is_train=True
+        )
+        _diff_vocab = src_subword_kwargs.get(
+            "vocabulary_path", ""
+        ) != tgt_subword_kwargs.get(
+            "vocabulary_path", ""
+        ) or src_subword_kwargs.get(
+            "vocabulary_threshold", 0
+        ) != tgt_subword_kwargs.get(
+            "vocabulary_threshold", 0
+        )
         if self.share_vocab and not _diff_vocab:
             self.load_models = {
-                'src': src_tokenizer,
-                'tgt': src_tokenizer
+                "src": {"train": src_tokenizer, "valid": valid_src_tokenizer},
+                "tgt": {"train": src_tokenizer, "valid": valid_src_tokenizer},
             }
         else:
-            tgt_subword_kwargs = self._get_subword_kwargs(side='tgt')
             tgt_tokenizer = pyonmttok.Tokenizer(
                 **tgt_subword_kwargs, **self.tgt_other_kwargs
             )
+            valid_tgt_subword_kwargs = self._get_subword_kwargs(
+                side="tgt", is_train=False
+            )
+            valid_tgt_tokenizer = pyonmttok.Tokenizer(
+                **valid_tgt_subword_kwargs, **self.tgt_other_kwargs
+            )
             self.load_models = {
-                'src': src_tokenizer,
-                'tgt': tgt_tokenizer
+                "src": {"train": src_tokenizer, "valid": valid_src_tokenizer},
+                "tgt": {"train": tgt_tokenizer, "valid": valid_tgt_tokenizer},
             }
 
     def _tokenize(self, tokens, side='src', is_train=False):
         """Do OpenNMT Tokenizer's tokenize."""
-        tokenizer = self.load_models[side]
+        tokenizer = self.load_models[side]['train' if is_train else 'valid']
         sentence = ' '.join(tokens)
         segmented, _ = tokenizer.tokenize(sentence)
         return segmented
 
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Apply OpenNMT Tokenizer to src & tgt."""
-        src_out = self._tokenize(example['src'], 'src')
-        tgt_out = self._tokenize(example['tgt'], 'tgt')
+        src_out = self._tokenize(example['src'], 'src', is_train)
+        if self.model_task == ModelTask.LANGUAGE_MODEL:
+            tgt_out = src_out
+        else:
+            tgt_out = self._tokenize(example['tgt'], 'tgt', is_train)
         if stats is not None:
             n_words = len(example['src']) + len(example['tgt'])
             n_subwords = len(src_out) + len(tgt_out)
