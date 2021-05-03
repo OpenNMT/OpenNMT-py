@@ -228,3 +228,14 @@ class MultiHeadedAttention(nn.Module):
 
     def update_dropout(self, dropout):
         self.dropout.p = dropout
+
+
+class MultiHeadedPseudoSelfAttention(MultiHeadedAttention):
+    def __init__(self, head_count, model_dim, dropout=0.1,
+                 max_relative_positions=0):
+        super().__init__(head_count, model_dim, dropout=0.1,
+                 max_relative_positions=0)
+        self.linear_keys = nn.Linear(model_dim,
+                                     head_count * self.dim_per_head, 2)
+        self.linear_values = nn.Linear(model_dim,
+                                       head_count * self.dim_per_head, 2)
