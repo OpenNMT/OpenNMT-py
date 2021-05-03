@@ -1,6 +1,17 @@
 from onmt.utils.logging import logger
 from onmt.transforms import register_transform
-from .transform import Transform
+from .transform import Transform, ObservableStats
+
+
+class FilterTooLongStats(ObservableStats):
+    """Runing statistics for FilterTooLongTransform."""
+    __slots__ = ["filtered"]
+
+    def __init__(self):
+        self.filtered = 1
+
+    def update(self, other: "FilterTooLongStats"):
+        self.filtered += other.filtered
 
 
 @register_transform(name='filtertoolong')
@@ -28,7 +39,7 @@ class FilterTooLongTransform(Transform):
         if (len(example['src']) > self.src_seq_length or
                 len(example['tgt']) > self.tgt_seq_length):
             if stats is not None:
-                stats.filter_too_long()
+                stats.update(FilterTooLongStats())
             return None
         else:
             return example

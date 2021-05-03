@@ -1,7 +1,7 @@
 """Transforms relate to tokenization/subword."""
 from onmt.utils.logging import logger
 from onmt.transforms import register_transform
-from .transform import Transform
+from .transform import Transform, ObservableStats
 
 
 class TokenizerTransform(Transform):
@@ -107,6 +107,25 @@ class TokenizerTransform(Transform):
         return ', '.join([f'{kw}={arg}' for kw, arg in kwargs.items()])
 
 
+class SubwordStats(ObservableStats):
+    """Runing statistics for counting tokens before/after subword transform."""
+
+    __slots__ = ["subwords", "words"]
+
+    def __init__(self, subwords: int, words: int):
+        self.subwords = subwords
+        self.words = words
+
+    def update(self, other: "SubwordStats"):
+        self.subwords += other.subwords
+        self.words += other.words
+
+    def __str__(self) -> str:
+        return "{}: {} -> {} tokens".format(
+            self.name(), self.words, self.subwords
+        )
+
+
 @register_transform(name='sentencepiece')
 class SentencePieceTransform(TokenizerTransform):
     """SentencePiece subword transform class."""
@@ -173,7 +192,7 @@ class SentencePieceTransform(TokenizerTransform):
         if stats is not None:
             n_words = len(example['src']) + len(example['tgt'])
             n_subwords = len(src_out) + len(tgt_out)
-            stats.subword(n_subwords, n_words)
+            stats.update(SubwordStats(n_subwords, n_words))
         example['src'], example['tgt'] = src_out, tgt_out
         return example
 
@@ -246,7 +265,7 @@ class BPETransform(TokenizerTransform):
         if stats is not None:
             n_words = len(example['src']) + len(example['tgt'])
             n_subwords = len(src_out) + len(tgt_out)
-            stats.subword(n_subwords, n_words)
+            stats.update(SubwordStats(n_subwords, n_words))
         example['src'], example['tgt'] = src_out, tgt_out
         return example
 
@@ -398,7 +417,7 @@ class ONMTTokenizerTransform(TokenizerTransform):
         if stats is not None:
             n_words = len(example['src']) + len(example['tgt'])
             n_subwords = len(src_out) + len(tgt_out)
-            stats.subword(n_subwords, n_words)
+            stats.update(SubwordStats(n_subwords, n_words))
         example['src'], example['tgt'] = src_out, tgt_out
         return example
 
