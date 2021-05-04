@@ -28,6 +28,7 @@ def get_default_opts():
     opt = parser.parse_known_args(default_opts)[0]
     # Inject some dummy training options that may needed when build fields
     opt.copy_attn = False
+    opt.verbose = False
     ArgumentParser.validate_prepare_opts(opt)
     return opt
 
