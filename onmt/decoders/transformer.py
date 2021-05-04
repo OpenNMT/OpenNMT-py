@@ -7,7 +7,8 @@ import torch
 import torch.nn as nn
 
 from onmt.decoders.decoder import DecoderBase
-from onmt.modules import MultiHeadedAttention, AverageAttention, MultiHeadedPseudoSelfAttention
+from onmt.modules import MultiHeadedAttention, AverageAttention
+from onmt.modules import MultiHeadedPseudoSelfAttention
 from onmt.modules.position_ffn import PositionwiseFeedForward
 from onmt.modules.position_ffn import ActivationFunction
 from onmt.utils.misc import sequence_mask
@@ -126,7 +127,8 @@ class TransformerDecoderLayerBase(nn.Module):
     def _forward(self, *args, **kwargs):
         raise NotImplementedError
 
-    def _compute_dec_mask(self, tgt_pad_mask, future):
+    @staticmethod
+    def _compute_dec_mask(tgt_pad_mask, future):
         tgt_len = tgt_pad_mask.size(-1)
         if not future:  # apply future_mask, result mask in (B, T, T)
             future_mask = torch.ones(
@@ -700,7 +702,10 @@ class TransformerLMDecoder(TransformerDecoderBase):
                 raise NotImplementedError
             self.state["cache"]["layer_{}".format(i)] = layer_cache
 
-class TransformerLMPseudoSelfAttentionDecoderLayer(TransformerDecoderLayerBase):
+
+class TransformerLMPseudoSelfAttentionDecoderLayer(
+    TransformerDecoderLayerBase
+):
     """Transformer Decoder only layer block in GPT style.
 
     .. mermaid::
@@ -720,10 +725,14 @@ class TransformerLMPseudoSelfAttentionDecoderLayer(TransformerDecoderLayerBase):
     """
 
     def _forward(
-        self, inputs,
-                src_memory_bank,
-                src_pad_mask,
-                tgt_pad_mask, layer_cache=None, step=None, future=False
+        self,
+        inputs,
+        src_memory_bank,
+        src_pad_mask,
+        tgt_pad_mask,
+        layer_cache=None,
+        step=None,
+        future=False,
     ):
         """A naive forward pass for transformer decoder.
 
@@ -751,8 +760,12 @@ class TransformerLMPseudoSelfAttentionDecoderLayer(TransformerDecoderLayerBase):
 
         inputs_norm = self.layer_norm_1(inputs)
 
-        pseudo_key_value = torch.cat([src_memory_bank.transpose(0, 1), inputs], axis=1)
-        pseudo_mask = torch.cat([src_pad_mask.repeat(1, dec_mask.size(1), 1), dec_mask], axis=-1)
+        pseudo_key_value = torch.cat(
+            [src_memory_bank.transpose(0, 1), inputs],
+            axis=1,
+        )
+        pseudo_mask = torch.cat([src_pad_mask.repeat(1, dec_mask.size(1), 1),
+                                dec_mask], axis=-1)
         query, attns = self.self_attn(
                 pseudo_key_value,
                 pseudo_key_value,
@@ -767,6 +780,7 @@ class TransformerLMPseudoSelfAttentionDecoderLayer(TransformerDecoderLayerBase):
         output_feedforward = self.feed_forward(output)
 
         return output_feedforward, attns
+
 
 class TransformerLMPseudoSelfAttentionDecoder(TransformerDecoderBase):
     """The Transformer decoder from GPT-2 with pseudo self attention
