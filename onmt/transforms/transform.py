@@ -139,7 +139,7 @@ class TransformStatistics:
         report_ids = list(self.observables.keys())
         for name in report_ids:
             observable = self.observables.pop(name)
-            msgs.append(str(observable))
+            msgs.append(f"\t* {str(observable)}")
         if len(msgs) != 0:
             return "\n".join(msgs)
         else:

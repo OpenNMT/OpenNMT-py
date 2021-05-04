@@ -208,7 +208,7 @@ class ParallelCorpusIterator(object):
                 yield item
         report_msg = self.transform.stats()
         if report_msg != '':
-            logger.info("Transform statistics for {}:\n{}".format(
+            logger.info("* Transform statistics for {}:\n{}\n".format(
                 self.cid, report_msg))
 
     def _add_index(self, stream):
