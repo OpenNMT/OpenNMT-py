@@ -107,15 +107,14 @@ class DatasetAdapter(object):
 class ParallelCorpus(object):
     """A parallel corpus file pair that can be loaded to iterate."""
 
-    def __init__(self, name, src, tgt, align=None, verbose=False):
+    def __init__(self, name, src, tgt, align=None):
         """Initialize src & tgt side file path."""
         self.id = name
         self.src = src
         self.tgt = tgt
         self.align = align
-        self.verbose = verbose
 
-    def load(self, offset=0, stride=1):
+    def load(self, offset=0, stride=1, log_level="warning"):
         """
         Load file and iterate by lines.
         `offset` and `stride` allow to iterate only on every
@@ -124,7 +123,10 @@ class ParallelCorpus(object):
         with exfile_open(self.src, mode='rb') as fs,\
                 exfile_open(self.tgt, mode='rb') as ft,\
                 exfile_open(self.align, mode='rb') as fa:
-            logger.info(f"Loading {str(self)}...")
+            if log_level == "error":
+                logger.info(f"Loading {str(self)}...")
+            elif log_level == "warning":
+                logger.info(f"Loading {self.id}...")
             for i, (sline, tline, align) in enumerate(zip(fs, ft, fa)):
                 if (i % stride) == offset:
                     sline = sline.decode('utf-8')
@@ -139,14 +141,8 @@ class ParallelCorpus(object):
 
     def __str__(self):
         cls_name = type(self).__name__
-        src_name, tgt_name, align_name = self.src, self.tgt, self.align
-        if not self.verbose:
-            src_name = os.path.basename(src_name)
-            tgt_name = os.path.basename(tgt_name)
-            if align_name is not None:
-                align_name = os.path.basename(align_name)
         return '{}({}, {}, align={})'.format(
-            cls_name, src_name, tgt_name, align_name)
+            cls_name, self.src, self.tgt, self.align)
 
 
 def get_corpora(opts, is_train=False):
@@ -158,9 +154,7 @@ def get_corpora(opts, is_train=False):
                     corpus_id,
                     corpus_dict["path_src"],
                     corpus_dict["path_tgt"],
-                    corpus_dict["path_align"],
-                    verbose=opts.verbose,
-                )
+                    corpus_dict["path_align"])
     else:
         if CorpusName.VALID in opts.data.keys():
             corpora_dict[CorpusName.VALID] = ParallelCorpus(
@@ -238,7 +232,9 @@ class ParallelCorpusIterator(object):
 
     def _iter_corpus(self):
         corpus_stream = self.corpus.load(
-            stride=self.stride, offset=self.offset)
+            stride=self.stride, offset=self.offset,
+            log_level=self.skip_empty_level
+        )
         tokenized_corpus = self._tokenize(corpus_stream)
         transformed_corpus = self._transform(tokenized_corpus)
         indexed_corpus = self._add_index(transformed_corpus)

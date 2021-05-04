@@ -77,7 +77,7 @@ def _add_dynamic_corpus_opts(parser, build_vocab_only=False):
               help="Security level when encounter empty examples."
                    "silent: silently ignore/skip empty example;"
                    "warning: warning when ignore/skip empty example;"
-                   "error: raise error & stop excution when encouter empty.)")
+                   "error: raise error & stop execution when encouter empty.")
     group.add("-transforms", "--transforms", default=[], nargs="+",
               choices=AVAILABLE_TRANSFORMS.keys(),
               help="Default transform pipeline to apply to data. "
