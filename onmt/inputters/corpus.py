@@ -107,12 +107,13 @@ class DatasetAdapter(object):
 class ParallelCorpus(object):
     """A parallel corpus file pair that can be loaded to iterate."""
 
-    def __init__(self, name, src, tgt, align=None):
+    def __init__(self, name, src, tgt, align=None, verbose=False):
         """Initialize src & tgt side file path."""
         self.id = name
         self.src = src
         self.tgt = tgt
         self.align = align
+        self.verbose = verbose
 
     def load(self, offset=0, stride=1):
         """
@@ -123,7 +124,7 @@ class ParallelCorpus(object):
         with exfile_open(self.src, mode='rb') as fs,\
                 exfile_open(self.tgt, mode='rb') as ft,\
                 exfile_open(self.align, mode='rb') as fa:
-            logger.info(f"Loading {repr(self)}...")
+            logger.info(f"Loading {str(self)}...")
             for i, (sline, tline, align) in enumerate(zip(fs, ft, fa)):
                 if (i % stride) == offset:
                     sline = sline.decode('utf-8')
@@ -136,10 +137,16 @@ class ParallelCorpus(object):
                         example['align'] = align.decode('utf-8')
                     yield example
 
-    def __repr__(self):
+    def __str__(self):
         cls_name = type(self).__name__
+        src_name, tgt_name, align_name = self.src, self.tgt, self.align
+        if not self.verbose:
+            src_name = os.path.basename(src_name)
+            tgt_name = os.path.basename(tgt_name)
+            if align_name is not None:
+                align_name = os.path.basename(align_name)
         return '{}({}, {}, align={})'.format(
-            cls_name, self.src, self.tgt, self.align)
+            cls_name, src_name, tgt_name, align_name)
 
 
 def get_corpora(opts, is_train=False):
@@ -151,7 +158,9 @@ def get_corpora(opts, is_train=False):
                     corpus_id,
                     corpus_dict["path_src"],
                     corpus_dict["path_tgt"],
-                    corpus_dict["path_align"])
+                    corpus_dict["path_align"],
+                    verbose=opts.verbose,
+                )
     else:
         if CorpusName.VALID in opts.data.keys():
             corpora_dict[CorpusName.VALID] = ParallelCorpus(
