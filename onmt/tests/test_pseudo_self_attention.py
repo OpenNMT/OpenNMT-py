@@ -59,17 +59,16 @@ class TestPseudoSelfAttention(unittest.TestCase):
         torch.nn.init.constant_(cls.self_attention.final_linear.weight, 1)
         torch.nn.init.constant_(cls.self_attention.final_linear.bias, 1)
 
-    def test_pseudo_self_attention_is_self_attention_without_encoding(self):
+    def test_pseudo_self_attention_equals_self_attention_without_encoding(
+        self,
+    ):
         X = torch.zeros(
             (3, 5, self.d_model)
         )  # (batch_size, seq_len, dim_model)
         Y = torch.ones((3, 8, self.d_model))
-        pseudo_key_value = torch.cat([X, Y], axis=1)
 
         output_self_attn, _ = self.self_attention(Y, Y, Y, attn_type="self")
-        output_pseudo_self_attn, _ = self.pseudo_self_attention(
-            pseudo_key_value, pseudo_key_value, Y, attn_type="self"
-        )
+        output_pseudo_self_attn, _ = self.pseudo_self_attention(X, Y)
         self.assertTrue(output_self_attn.equal(output_pseudo_self_attn))
 
     def test_masked_pseudo_self_attention_equals_premasked_encoder(self):
@@ -87,7 +86,6 @@ class TestPseudoSelfAttention(unittest.TestCase):
 
         Y = torch.ones((4, 8, self.d_model))
 
-        pseudo_key_value = torch.cat([X, Y], axis=1)
         masked_pseudo_key_value = torch.cat([X_premasked, Y], axis=1)
 
         src_pad_mask = ~sequence_mask(torch.tensor([4, 3, 1, 5]), 5).unsqueeze(
@@ -113,16 +111,14 @@ class TestPseudoSelfAttention(unittest.TestCase):
         )
 
         output, _ = self.pseudo_self_attention(
-            pseudo_key_value,
-            pseudo_key_value,
+            X,
             Y,
             mask=pseudo_mask,
             attn_type="self",
         )
 
         output_masked, _ = self.pseudo_self_attention(
-            masked_pseudo_key_value,
-            masked_pseudo_key_value,
+            X_premasked,
             Y,
             mask=no_mask_pseudo_mask,
             attn_type="self",

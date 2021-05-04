@@ -76,9 +76,9 @@ class TransformerDecoderLayerBase(nn.Module):
                 dropout=attention_dropout,
                 max_relative_positions=max_relative_positions,
             )
-        self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout,
-                                                    pos_ffn_activation_fn
-                                                    )
+        self.feed_forward = PositionwiseFeedForward(
+            d_model, d_ff, dropout, pos_ffn_activation_fn
+        )
         self.layer_norm_1 = nn.LayerNorm(d_model, eps=1e-6)
         self.drop = nn.Dropout(dropout)
         self.full_context_alignment = full_context_alignment
@@ -760,20 +760,16 @@ class TransformerLMPseudoSelfAttentionDecoderLayer(
 
         inputs_norm = self.layer_norm_1(inputs)
 
-        pseudo_key_value = torch.cat(
-            [src_memory_bank.transpose(0, 1), inputs],
-            axis=1,
+        pseudo_mask = torch.cat(
+            [src_pad_mask.repeat(1, dec_mask.size(1), 1), dec_mask], axis=-1
         )
-        pseudo_mask = torch.cat([src_pad_mask.repeat(1, dec_mask.size(1), 1),
-                                dec_mask], axis=-1)
         query, attns = self.self_attn(
-                pseudo_key_value,
-                pseudo_key_value,
-                inputs_norm,
-                mask=pseudo_mask,
-                layer_cache=layer_cache,
-                attn_type="self",
-            )
+            src_memory_bank.transpose(0, 1),
+            inputs_norm,
+            mask=pseudo_mask,
+            layer_cache=layer_cache,
+            attn_type="self",
+        )
 
         output = self.drop(query) + inputs
 
