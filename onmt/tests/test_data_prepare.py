@@ -46,7 +46,7 @@ class TestData(unittest.TestCase):
         except SystemExit as err:
             print(err)
         except IOError as err:
-            if opt.skip_empty_level != 'error':
+            if opt.data_log_level != 'error':
                 raise err
             else:
                 print(f"Catched IOError: {err}")
@@ -110,7 +110,7 @@ test_databuild = [[],
                    ('save_data', SAVE_DATA_PREFIX)],
                   [('n_sample', 30),
                    ('save_data', SAVE_DATA_PREFIX),
-                   ('skip_empty_level', 'error')]
+                   ('data_log_level', 'error')]
                   ]
 
 for p in test_databuild:

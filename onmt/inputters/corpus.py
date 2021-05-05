@@ -174,21 +174,21 @@ class ParallelCorpusIterator(object):
         corpus (ParallelCorpus): corpus to iterate;
         transform (Transform): transforms to be applied to corpus;
         infinitely (bool): True to iterate endlessly;
-        skip_empty_level (str): security level when encouter empty line;
+        data_log_level (str): security level when encouter empty line;
         stride (int): iterate corpus with this line stride;
         offset (int): iterate corpus with this line offset.
     """
 
     def __init__(self, corpus, transform, infinitely=False,
-                 skip_empty_level='warning', stride=1, offset=0):
+                 data_log_level='warning', stride=1, offset=0):
         self.cid = corpus.id
         self.corpus = corpus
         self.transform = transform
         self.infinitely = infinitely
-        if skip_empty_level not in ['silent', 'warning', 'error']:
+        if data_log_level not in ['silent', 'warning', 'error']:
             raise ValueError(
-                f"Invalid argument skip_empty_level={skip_empty_level}")
-        self.skip_empty_level = skip_empty_level
+                f"Invalid argument data_log_level={data_log_level}")
+        self.data_log_level = data_log_level
         self.stride = stride
         self.offset = offset
 
@@ -223,9 +223,9 @@ class ParallelCorpusIterator(object):
                     ('align' in example and example['align'] == 0)):
                 # empty example: skip
                 empty_msg = f"Empty line exists in {self.cid}#{line_number}."
-                if self.skip_empty_level == 'error':
+                if self.data_log_level == 'error':
                     raise IOError(empty_msg)
-                elif self.skip_empty_level == 'warning':
+                elif self.data_log_level == 'warning':
                     logger.warning(empty_msg)
                 continue
             yield item
@@ -233,7 +233,7 @@ class ParallelCorpusIterator(object):
     def _iter_corpus(self):
         corpus_stream = self.corpus.load(
             stride=self.stride, offset=self.offset,
-            log_level=self.skip_empty_level
+            log_level=self.data_log_level
         )
         tokenized_corpus = self._tokenize(corpus_stream)
         transformed_corpus = self._transform(tokenized_corpus)
@@ -250,7 +250,7 @@ class ParallelCorpusIterator(object):
 
 
 def build_corpora_iters(corpora, transforms, corpora_info, is_train=False,
-                        skip_empty_level='warning', stride=1, offset=0):
+                        data_log_level='warning', stride=1, offset=0):
     """Return `ParallelCorpusIterator` for all corpora defined in opts."""
     corpora_iters = dict()
     for c_id, corpus in corpora.items():
@@ -262,7 +262,7 @@ def build_corpora_iters(corpora, transforms, corpora_info, is_train=False,
         logger.info(f"{c_id}'s transforms: {str(transform_pipe)}")
         corpus_iter = ParallelCorpusIterator(
             corpus, transform_pipe, infinitely=is_train,
-            skip_empty_level=skip_empty_level, stride=stride, offset=offset)
+            data_log_level=data_log_level, stride=stride, offset=offset)
         corpora_iters[c_id] = corpus_iter
     return corpora_iters
 
@@ -300,7 +300,7 @@ def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
     sub_counter_tgt = Counter()
     datasets_iterables = build_corpora_iters(
         corpora, transforms, opts.data, is_train=False,
-        skip_empty_level=opts.skip_empty_level,
+        data_log_level=opts.data_log_level,
         stride=stride, offset=offset)
     for c_name, c_iter in datasets_iterables.items():
         for i, item in enumerate(c_iter):
@@ -386,7 +386,7 @@ def save_transformed_sample(opts, transforms, n_sample=3):
     corpora = get_corpora(opts, is_train=True)
     datasets_iterables = build_corpora_iters(
         corpora, transforms, opts.data, is_train=False,
-        skip_empty_level=opts.skip_empty_level)
+        data_log_level=opts.data_log_level)
     sample_path = os.path.join(
         os.path.dirname(opts.save_data), CorpusName.SAMPLE)
     os.makedirs(sample_path, exist_ok=True)

@@ -72,12 +72,15 @@ def _add_dynamic_corpus_opts(parser, build_vocab_only=False):
     group.add("-data", "--data", required=True,
               help="List of datasets and their specifications. "
                    "See examples/*.yaml for further details.")
-    group.add("-skip_empty_level", "--skip_empty_level", default="warning",
+    group.add("-data_log_level", "--data_log_level", default="warning",
               choices=["silent", "warning", "error"],
-              help="Security level when encounter empty examples."
-                   "silent: silently ignore/skip empty example;"
-                   "warning: warning when ignore/skip empty example;"
-                   "error: raise error & stop execution when encouter empty.")
+              help="Log level when load data or encounter empty examples."
+                   "silent: silent skip empty example or load data;"
+                   "warning: warning when skip empty example or load data;"
+                   "error: raise error & stop when encouter empty.")
+    group.add("-skip_empty_level", "--skip_empty_level",
+              action=DeprecateAction,
+              help="Deprecated, use `-data_log_level` instead.")
     group.add("-transforms", "--transforms", default=[], nargs="+",
               choices=AVAILABLE_TRANSFORMS.keys(),
               help="Default transform pipeline to apply to data. "
