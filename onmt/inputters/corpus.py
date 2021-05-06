@@ -168,7 +168,7 @@ class ParallelCorpusIterator(object):
 
     Args:
         corpus (ParallelCorpus): corpus to iterate;
-        transform (Transform): transforms to be applied to corpus;
+        transform (TransformPipe): transforms to be applied to corpus;
         data_log_level (str): security level when encouter empty line;
         stride (int): iterate corpus with this line stride;
         offset (int): iterate corpus with this line offset.
@@ -205,8 +205,11 @@ class ParallelCorpusIterator(object):
                 yield item
         report_msg = self.transform.stats()
         if report_msg != '':
-            logger.info("* Transform statistics for {}:\n{}\n".format(
-                self.cid, report_msg))
+            logger.info(
+                "* Transform statistics for {}({:.2f}%):\n{}\n".format(
+                    self.cid, 100/self.stride, report_msg
+                )
+            )
 
     def _add_index(self, stream):
         for i, item in enumerate(stream):
