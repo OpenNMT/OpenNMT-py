@@ -114,7 +114,7 @@ class ParallelCorpus(object):
         self.tgt = tgt
         self.align = align
 
-    def load(self, offset=0, stride=1, log_level="warning"):
+    def load(self, offset=0, stride=1):
         """
         Load file and iterate by lines.
         `offset` and `stride` allow to iterate only on every
@@ -123,10 +123,6 @@ class ParallelCorpus(object):
         with exfile_open(self.src, mode='rb') as fs,\
                 exfile_open(self.tgt, mode='rb') as ft,\
                 exfile_open(self.align, mode='rb') as fa:
-            # if log_level == "error":
-            #     logger.info(f"Loading {str(self)}...")
-            # elif log_level == "warning":
-            #     logger.info(f"Loading {self.id}...")
             for i, (sline, tline, align) in enumerate(zip(fs, ft, fa)):
                 if (i % stride) == offset:
                     sline = sline.decode('utf-8')
@@ -230,8 +226,7 @@ class ParallelCorpusIterator(object):
 
     def __iter__(self):
         corpus_stream = self.corpus.load(
-            stride=self.stride, offset=self.offset,
-            log_level=self.data_log_level
+            stride=self.stride, offset=self.offset
         )
         tokenized_corpus = self._tokenize(corpus_stream)
         transformed_corpus = self._transform(tokenized_corpus)

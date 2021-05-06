@@ -48,14 +48,10 @@ class WeightedMixer(MixingStrategy):
 
     def __init__(self, iterables, weights):
         super().__init__(iterables, weights)
-        self._iterators = {
-            ds_name: iter(generator)
-            for ds_name, generator in self.iterables.items()
-        }
-        self._counts = {
-            ds_name: 1
-            for ds_name, generator in self.iterables.items()
-        }
+        self._iterators = {}
+        self._counts = {}
+        for ds_name in self.iterables.keys():
+            self._reset_iter(ds_name)
 
     def _logging(self):
         """Report corpora loading statistics."""
@@ -66,7 +62,7 @@ class WeightedMixer(MixingStrategy):
 
     def _reset_iter(self, ds_name):
         self._iterators[ds_name] = iter(self.iterables[ds_name])
-        self._counts[ds_name] += 1
+        self._counts[ds_name] = self._counts.get(ds_name, 0) + 1
         self._logging()
 
     def _iter_datasets(self):
