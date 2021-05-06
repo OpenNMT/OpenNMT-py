@@ -60,7 +60,7 @@ src_seq_length: 150
 tgt_seq_length: 150
 
 # silently ignore empty lines in the data
-data_log_level: silent
+skip_empty_level: silent
 
 ```
 

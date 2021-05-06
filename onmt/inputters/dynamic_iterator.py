@@ -98,7 +98,7 @@ class DynamicDatasetIter(object):
         data_type (str): input data type, currently only text;
         bucket_size (int): accum this number of examples in a dynamic dataset;
         pool_factor (int): accum this number of batch before sorting;
-        data_log_level (str): security level when encouter empty line;
+        skip_empty_level (str): security level when encouter empty line;
         stride (int): iterate data files with this stride;
         offset (int): iterate data files with this offset.
 
@@ -112,7 +112,7 @@ class DynamicDatasetIter(object):
     def __init__(self, corpora, corpora_info, transforms, fields, is_train,
                  batch_type, batch_size, batch_size_multiple, data_type="text",
                  bucket_size=2048, pool_factor=8192,
-                 data_log_level='warning', stride=1, offset=0):
+                 skip_empty_level='warning', stride=1, offset=0):
         self.corpora = corpora
         self.transforms = transforms
         self.fields = fields
@@ -130,10 +130,10 @@ class DynamicDatasetIter(object):
             raise ValueError(f"Invalid argument for stride={stride}.")
         self.stride = stride
         self.offset = offset
-        if data_log_level not in ['silent', 'warning', 'error']:
+        if skip_empty_level not in ['silent', 'warning', 'error']:
             raise ValueError(
-                f"Invalid argument data_log_level={data_log_level}")
-        self.data_log_level = data_log_level
+                f"Invalid argument skip_empty_level={skip_empty_level}")
+        self.skip_empty_level = skip_empty_level
 
     @classmethod
     def from_opts(cls, corpora, transforms, fields, opts, is_train,
@@ -148,14 +148,14 @@ class DynamicDatasetIter(object):
             corpora, opts.data, transforms, fields, is_train, opts.batch_type,
             batch_size, batch_size_multiple, data_type=opts.data_type,
             bucket_size=opts.bucket_size, pool_factor=opts.pool_factor,
-            data_log_level=opts.data_log_level,
+            skip_empty_level=opts.skip_empty_level,
             stride=stride, offset=offset
         )
 
     def _init_datasets(self):
         datasets_iterables = build_corpora_iters(
             self.corpora, self.transforms, self.corpora_info,
-            data_log_level=self.data_log_level,
+            skip_empty_level=self.skip_empty_level,
             stride=self.stride, offset=self.offset)
         self.dataset_adapter = DatasetAdapter(self.fields, self.is_train)
         datasets_weights = {
