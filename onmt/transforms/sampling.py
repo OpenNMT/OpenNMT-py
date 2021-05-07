@@ -3,7 +3,7 @@ import random
 import numpy as np
 from onmt.constants import DefaultTokens
 from onmt.transforms import register_transform
-from .transform import Transform
+from .transform import Transform, ObservableStats
 
 
 class HammingDistanceSampling(object):
@@ -44,6 +44,20 @@ class HammingDistanceSamplingTransform(Transform, HammingDistanceSampling):
         random.seed(seed)
 
 
+class SwitchOutStats(ObservableStats):
+    """Runing statistics for counting tokens being switched out."""
+
+    __slots__ = ["changed", "total"]
+
+    def __init__(self, changed: int, total: int):
+        self.changed = changed
+        self.total = total
+
+    def update(self, other: "SwitchOutStats"):
+        self.changed += other.changed
+        self.total += other.total
+
+
 @register_transform(name='switchout')
 class SwitchOutTransform(HammingDistanceSamplingTransform):
     """
@@ -81,7 +95,7 @@ class SwitchOutTransform(HammingDistanceSamplingTransform):
         for i in chosen_indices:
             tokens[i] = self._sample_replace(vocab, reject=tokens[i])
         if stats is not None:
-            stats.switchout(n_switchout=n_chosen, n_total=len(tokens))
+            stats.update(SwitchOutStats(n_chosen, len(tokens)))
         return tokens
 
     def apply(self, example, is_train=False, stats=None, **kwargs):
@@ -96,6 +110,20 @@ class SwitchOutTransform(HammingDistanceSamplingTransform):
     def _repr_args(self):
         """Return str represent key arguments for class."""
         return '{}={}'.format('switchout_temperature', self.temperature)
+
+
+class TokenDropStats(ObservableStats):
+    """Runing statistics for counting tokens being switched out."""
+
+    __slots__ = ["dropped", "total"]
+
+    def __init__(self, dropped: int, total: int):
+        self.dropped = dropped
+        self.total = total
+
+    def update(self, other: "TokenDropStats"):
+        self.dropped += other.dropped
+        self.total += other.total
 
 
 @register_transform(name='tokendrop')
@@ -126,7 +154,7 @@ class TokenDropTransform(HammingDistanceSamplingTransform):
         out = [tok for (i, tok) in enumerate(tokens)
                if i not in chosen_indices]
         if stats is not None:
-            stats.token_drop(n_dropped=n_chosen, n_total=n_items)
+            stats.update(TokenDropStats(n_chosen, n_items))
         return out
 
     def apply(self, example, is_train=False, stats=None, **kwargs):
@@ -139,6 +167,20 @@ class TokenDropTransform(HammingDistanceSamplingTransform):
     def _repr_args(self):
         """Return str represent key arguments for class."""
         return '{}={}'.format('tokendrop_temperature', self.temperature)
+
+
+class TokenMaskStats(ObservableStats):
+    """Runing statistics for counting tokens being switched out."""
+
+    __slots__ = ["masked", "total"]
+
+    def __init__(self, masked: int, total: int):
+        self.masked = masked
+        self.total = total
+
+    def update(self, other: "TokenMaskStats"):
+        self.masked += other.masked
+        self.total += other.total
 
 
 @register_transform(name='tokenmask')
@@ -175,7 +217,7 @@ class TokenMaskTransform(HammingDistanceSamplingTransform):
         for i in chosen_indices:
             tokens[i] = self.MASK_TOK
         if stats is not None:
-            stats.token_mask(n_masked=n_chosen, n_total=len(tokens))
+            stats.update(TokenDropStats(n_chosen, len(tokens)))
         return tokens
 
     def apply(self, example, is_train=False, stats=None, **kwargs):

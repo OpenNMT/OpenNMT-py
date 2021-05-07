@@ -158,9 +158,10 @@ class ErrorHandler(object):
         raise Exception(msg)
 
 
-def batch_producer(generator_to_serve, queue, semaphore, opt):
+def batch_producer(generator_to_serve, queue, semaphore, opt, device_id):
     """Produce batches to `queues` from `generator_to_serve`."""
-    init_logger(opt.log_file)
+    log_level = "INFO" if opt.verbose or device_id == 0 else "WARNING"
+    init_logger(opt.log_file, log_level=log_level)
     set_random_seed(opt.seed, False)
 
     def pred(x):

@@ -4,10 +4,15 @@ from logging.handlers import RotatingFileHandler
 logger = logging.getLogger()
 
 
-def init_logger(log_file=None, log_file_level=logging.NOTSET, rotate=False):
+def init_logger(
+    log_file=None,
+    log_file_level=logging.NOTSET,
+    rotate=False,
+    log_level=logging.INFO,
+):
     log_format = logging.Formatter("[%(asctime)s %(levelname)s] %(message)s")
     logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
+    logger.setLevel(log_level)
 
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(log_format)

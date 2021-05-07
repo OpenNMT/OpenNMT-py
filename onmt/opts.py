@@ -26,6 +26,10 @@ def _add_logging_opts(parser, is_train=True):
               action=StoreLoggingLevelAction,
               choices=StoreLoggingLevelAction.CHOICES,
               default="0")
+    group.add('--verbose', '-verbose', action="store_true",
+              help='Print data loading and statistics for all process'
+              '(default only log the first process shard)' if is_train
+              else 'Print scores and predictions for each sentence')
 
     if is_train:
         group.add('--report_every', '-report_every', type=int, default=50,
@@ -44,8 +48,6 @@ def _add_logging_opts(parser, is_train=True):
                        "This is also the name of the run.")
     else:
         # Options only during inference
-        group.add('--verbose', '-verbose', action="store_true",
-                  help='Print scores and predictions for each sentence')
         group.add('--attn_debug', '-attn_debug', action="store_true",
                   help='Print best attn for each word')
         group.add('--align_debug', '-align_debug', action="store_true",
@@ -75,7 +77,7 @@ def _add_dynamic_corpus_opts(parser, build_vocab_only=False):
               help="Security level when encounter empty examples."
                    "silent: silently ignore/skip empty example;"
                    "warning: warning when ignore/skip empty example;"
-                   "error: raise error & stop excution when encouter empty.)")
+                   "error: raise error & stop execution when encouter empty.")
     group.add("-transforms", "--transforms", default=[], nargs="+",
               choices=AVAILABLE_TRANSFORMS.keys(),
               help="Default transform pipeline to apply to data. "

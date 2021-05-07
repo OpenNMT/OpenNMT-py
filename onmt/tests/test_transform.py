@@ -5,7 +5,12 @@ import copy
 import yaml
 import math
 from argparse import Namespace
-from onmt.transforms import get_transforms_cls, get_specials, make_transforms
+from onmt.transforms import (
+    get_transforms_cls,
+    get_specials,
+    make_transforms,
+    TransformPipe,
+)
 from onmt.transforms.bart import BARTNoising
 
 
@@ -49,6 +54,47 @@ class TestTransform(unittest.TestCase):
         specials = get_specials(opt, transforms_cls)
         specials_expected = {"src": {"｟_pf_src｠"}, "tgt": {"｟_pf_tgt｠"}}
         self.assertEqual(specials, specials_expected)
+
+
+    def test_transform_pipe(self):
+        # 1. Init first transform in the pipe
+        prefix_cls = get_transforms_cls(["prefix"])["prefix"]
+        corpora = yaml.safe_load("""
+            trainset:
+                path_src: data/src-train.txt
+                path_tgt: data/tgt-train.txt
+                transforms: [prefix, filtertoolong]
+                weight: 1
+                src_prefix: "｟_pf_src｠"
+                tgt_prefix: "｟_pf_tgt｠"
+        """)
+        opt = Namespace(data=corpora, seed=-1)
+        prefix_transform = prefix_cls(opt)
+        prefix_transform.warm_up()
+        # 2. Init second transform in the pipe
+        filter_cls = get_transforms_cls(["filtertoolong"])["filtertoolong"]
+        opt = Namespace(src_seq_length=4, tgt_seq_length=4)
+        filter_transform = filter_cls(opt)
+        # 3. Sequential combine them into a transform pipe
+        transform_pipe = TransformPipe.build_from(
+            [prefix_transform, filter_transform]
+        )
+        ex = {
+            "src": ["Hello", ",", "world", "."],
+            "tgt": ["Bonjour", "le", "monde", "."],
+        }
+        # 4. apply transform pipe for example
+        ex_after = transform_pipe.apply(
+            copy.deepcopy(ex), corpus_name="trainset"
+        )
+        # 5. example after the pipe exceed the length limit, thus filtered
+        self.assertIsNone(ex_after)
+        # 6. Transform statistics registed (here for filtertoolong)
+        self.assertTrue(len(transform_pipe.statistics.observables) > 0)
+        msg = transform_pipe.statistics.report()
+        self.assertIsNotNone(msg)
+        # 7. after report, statistics become empty as a fresh start
+        self.assertTrue(len(transform_pipe.statistics.observables) == 0)
 
 
 class TestMiscTransform(unittest.TestCase):

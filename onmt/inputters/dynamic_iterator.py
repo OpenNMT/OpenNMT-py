@@ -6,6 +6,7 @@ from onmt.inputters import str2sortkey, max_tok_len, OrderedIterator
 from onmt.inputters.corpus import get_corpora, build_corpora_iters,\
     DatasetAdapter
 from onmt.transforms import make_transforms
+from onmt.utils.logging import logger
 
 
 class MixingStrategy(object):
@@ -47,13 +48,22 @@ class WeightedMixer(MixingStrategy):
 
     def __init__(self, iterables, weights):
         super().__init__(iterables, weights)
-        self._iterators = {
-            ds_name: iter(generator)
-            for ds_name, generator in self.iterables.items()
-        }
+        self._iterators = {}
+        self._counts = {}
+        for ds_name in self.iterables.keys():
+            self._reset_iter(ds_name)
+
+    def _logging(self):
+        """Report corpora loading statistics."""
+        msgs = []
+        for ds_name, ds_count in self._counts.items():
+            msgs.append(f"\t\t\t* {ds_name}: {ds_count}")
+        logger.info("Weighted corpora loaded so far:\n"+"\n".join(msgs))
 
     def _reset_iter(self, ds_name):
         self._iterators[ds_name] = iter(self.iterables[ds_name])
+        self._counts[ds_name] = self._counts.get(ds_name, 0) + 1
+        self._logging()
 
     def _iter_datasets(self):
         for ds_name, ds_weight in self.weights.items():
@@ -144,8 +154,7 @@ class DynamicDatasetIter(object):
 
     def _init_datasets(self):
         datasets_iterables = build_corpora_iters(
-            self.corpora, self.transforms,
-            self.corpora_info, self.is_train,
+            self.corpora, self.transforms, self.corpora_info,
             skip_empty_level=self.skip_empty_level,
             stride=self.stride, offset=self.offset)
         self.dataset_adapter = DatasetAdapter(self.fields, self.is_train)

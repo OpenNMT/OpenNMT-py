@@ -123,7 +123,6 @@ class ParallelCorpus(object):
         with exfile_open(self.src, mode='rb') as fs,\
                 exfile_open(self.tgt, mode='rb') as ft,\
                 exfile_open(self.align, mode='rb') as fa:
-            logger.info(f"Loading {repr(self)}...")
             for i, (sline, tline, align) in enumerate(zip(fs, ft, fa)):
                 if (i % stride) == offset:
                     sline = sline.decode('utf-8')
@@ -136,7 +135,7 @@ class ParallelCorpus(object):
                         example['align'] = align.decode('utf-8')
                     yield example
 
-    def __repr__(self):
+    def __str__(self):
         cls_name = type(self).__name__
         return '{}({}, {}, align={})'.format(
             cls_name, self.src, self.tgt, self.align)
@@ -169,19 +168,17 @@ class ParallelCorpusIterator(object):
 
     Args:
         corpus (ParallelCorpus): corpus to iterate;
-        transform (Transform): transforms to be applied to corpus;
-        infinitely (bool): True to iterate endlessly;
+        transform (TransformPipe): transforms to be applied to corpus;
         skip_empty_level (str): security level when encouter empty line;
         stride (int): iterate corpus with this line stride;
         offset (int): iterate corpus with this line offset.
     """
 
-    def __init__(self, corpus, transform, infinitely=False,
+    def __init__(self, corpus, transform,
                  skip_empty_level='warning', stride=1, offset=0):
         self.cid = corpus.id
         self.corpus = corpus
         self.transform = transform
-        self.infinitely = infinitely
         if skip_empty_level not in ['silent', 'warning', 'error']:
             raise ValueError(
                 f"Invalid argument skip_empty_level={skip_empty_level}")
@@ -208,8 +205,11 @@ class ParallelCorpusIterator(object):
                 yield item
         report_msg = self.transform.stats()
         if report_msg != '':
-            logger.info("Transform statistics for {}:\n{}".format(
-                self.cid, report_msg))
+            logger.info(
+                "* Transform statistics for {}({:.2f}%):\n{}\n".format(
+                    self.cid, 100/self.stride, report_msg
+                )
+            )
 
     def _add_index(self, stream):
         for i, item in enumerate(stream):
@@ -227,24 +227,17 @@ class ParallelCorpusIterator(object):
                 continue
             yield item
 
-    def _iter_corpus(self):
+    def __iter__(self):
         corpus_stream = self.corpus.load(
-            stride=self.stride, offset=self.offset)
+            stride=self.stride, offset=self.offset
+        )
         tokenized_corpus = self._tokenize(corpus_stream)
         transformed_corpus = self._transform(tokenized_corpus)
         indexed_corpus = self._add_index(transformed_corpus)
         yield from indexed_corpus
 
-    def __iter__(self):
-        if self.infinitely:
-            while True:
-                _iter = self._iter_corpus()
-                yield from _iter
-        else:
-            yield from self._iter_corpus()
 
-
-def build_corpora_iters(corpora, transforms, corpora_info, is_train=False,
+def build_corpora_iters(corpora, transforms, corpora_info,
                         skip_empty_level='warning', stride=1, offset=0):
     """Return `ParallelCorpusIterator` for all corpora defined in opts."""
     corpora_iters = dict()
@@ -256,7 +249,7 @@ def build_corpora_iters(corpora, transforms, corpora_info, is_train=False,
         transform_pipe = TransformPipe.build_from(corpus_transform)
         logger.info(f"{c_id}'s transforms: {str(transform_pipe)}")
         corpus_iter = ParallelCorpusIterator(
-            corpus, transform_pipe, infinitely=is_train,
+            corpus, transform_pipe,
             skip_empty_level=skip_empty_level, stride=stride, offset=offset)
         corpora_iters[c_id] = corpus_iter
     return corpora_iters
@@ -294,7 +287,7 @@ def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
     sub_counter_src = Counter()
     sub_counter_tgt = Counter()
     datasets_iterables = build_corpora_iters(
-        corpora, transforms, opts.data, is_train=False,
+        corpora, transforms, opts.data,
         skip_empty_level=opts.skip_empty_level,
         stride=stride, offset=offset)
     for c_name, c_iter in datasets_iterables.items():
@@ -380,7 +373,7 @@ def save_transformed_sample(opts, transforms, n_sample=3):
 
     corpora = get_corpora(opts, is_train=True)
     datasets_iterables = build_corpora_iters(
-        corpora, transforms, opts.data, is_train=False,
+        corpora, transforms, opts.data,
         skip_empty_level=opts.skip_empty_level)
     sample_path = os.path.join(
         os.path.dirname(opts.save_data), CorpusName.SAMPLE)

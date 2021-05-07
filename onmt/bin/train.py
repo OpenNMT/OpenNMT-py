@@ -139,7 +139,7 @@ def train(opt):
                 opt, fields, transforms_cls, stride=nb_gpu, offset=device_id)
             producer = mp.Process(target=batch_producer,
                                   args=(train_iter, queues[device_id],
-                                        semaphore, opt,),
+                                        semaphore, opt, device_id),
                                   daemon=True)
             producers.append(producer)
             producers[device_id].start()
