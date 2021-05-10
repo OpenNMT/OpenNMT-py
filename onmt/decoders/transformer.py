@@ -261,7 +261,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
         """
         dec_mask = None
 
-        if inputs.size(1) > 1:
+        if step is None:
             # masking is necessary when sequence length is greater than one
             dec_mask = self._compute_dec_mask(tgt_pad_mask, future)
 
@@ -556,7 +556,7 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
         """
         dec_mask = None
 
-        if inputs.size(1) > 1:
+        if step is None:
             # masking is necessary when sequence length is greater than one
             dec_mask = self._compute_dec_mask(tgt_pad_mask, future)
 
@@ -753,16 +753,27 @@ class TransformerLMPseudoSelfAttentionDecoderLayer(
 
         """
         dec_mask = None
-
-        if inputs.size(1) > 1:
+        pseudo_mask = None
+        if step is None:
             # masking is necessary when sequence length is greater than one
             dec_mask = self._compute_dec_mask(tgt_pad_mask, future)
-
+            pseudo_mask = torch.cat(
+                [src_pad_mask.repeat(1, inputs.size(1), 1), dec_mask], axis=-1
+            )
+        else:
+            pseudo_mask = torch.cat(
+                (
+                    src_pad_mask.repeat(1, inputs.size(1), 1),
+                    torch.zeros(
+                        (inputs.size(0), inputs.size(1), step + 1),
+                        dtype=torch.bool,
+                        device=src_pad_mask.device,
+                    ),
+                ),
+                axis=-1,
+            )
         inputs_norm = self.layer_norm_1(inputs)
 
-        pseudo_mask = torch.cat(
-            [src_pad_mask.repeat(1, dec_mask.size(1), 1), dec_mask], axis=-1
-        )
         query, attns = self.self_attn(
             src_memory_bank.transpose(0, 1),
             inputs_norm,
@@ -904,7 +915,8 @@ class TransformerLMPseudoSelfAttentionDecoder(TransformerDecoderBase):
         self.state["cache"] = {}
 
         for i, layer in enumerate(self.transformer_layers):
-            layer_cache = {"self_keys": None, "self_values": None}
+            layer_cache = {"self_keys": None, "self_values": None,
+                           "src_keys": None, "src_values": None}
             if isinstance(layer.self_attn, AverageAttention):
                 raise NotImplementedError
             self.state["cache"]["layer_{}".format(i)] = layer_cache

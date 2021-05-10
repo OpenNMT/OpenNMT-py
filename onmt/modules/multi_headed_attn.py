@@ -257,8 +257,12 @@ class MultiHeadedPseudoSelfAttention(nn.Module):
         self.linear_values = nn.Linear(
             model_dim, head_count * self.dim_per_head
         )
-        self.linear_keys_src = nn.Linear(model_dim, head_count * self.dim_per_head)
-        self.linear_values_src = nn.Linear( model_dim, head_count * self.dim_per_head)
+        self.linear_keys_src = nn.Linear(
+            model_dim, head_count * self.dim_per_head
+        )
+        self.linear_values_src = nn.Linear(
+            model_dim, head_count * self.dim_per_head
+        )
         self.linear_query = nn.Linear(
             model_dim, head_count * self.dim_per_head
         )
@@ -295,45 +299,43 @@ class MultiHeadedPseudoSelfAttention(nn.Module):
                 .view(batch_size, -1, head_count * dim_per_head)
             )
 
-        # 1) Project key, value, and query.
-        # if layer_cache is not None:
-        #     if attn_type == "self":
-        #         query, key, value = (
-        #             self.linear_query(query),
-        #             self.linear_keys(query),
-        #             self.linear_values(query),
-        #         )
-        #         key = shape(key)
-        #         value = shape(value)
-        #         if layer_cache["self_keys"] is not None:
-        #             key = torch.cat((layer_cache["self_keys"], key), dim=2)
-        #         if layer_cache["self_values"] is not None:
-        #             value = torch.cat(
-        #                 (layer_cache["self_values"], value), dim=2
-        #             )
-        #         layer_cache["self_keys"] = key
-        #         layer_cache["self_values"] = value
-        #     elif attn_type == "context":
-        #         query = self.linear_query(query)
-        #         if layer_cache["memory_keys"] is None:
-        #             key, value = self.linear_keys(key), self.linear_values(
-        #                 value
-        #             )
-        #             key = shape(key)
-        #             value = shape(value)
-        #         else:
-        #             key, value = (
-        #                 layer_cache["memory_keys"],
-        #                 layer_cache["memory_values"],
-        #             )
-        #         layer_cache["memory_keys"] = key
-        #         layer_cache["memory_values"] = value
-        # else:
-        key = torch.cat((self.linear_keys_src(src), self.linear_keys(tgt)),dim=1)
-        value = torch.cat((self.linear_values_src(src), self.linear_values(tgt)), dim=1)
-        query = self.linear_query(tgt)
-        key = shape(key)
-        value = shape(value)
+        if layer_cache is not None:
+            query, self_key, self_value = (
+                self.linear_query(tgt),
+                self.linear_keys(tgt),
+                self.linear_values(tgt),
+            )
+            self_key = shape(self_key)
+            self_value = shape(self_value)
+            if layer_cache["self_keys"] is not None:
+                self_key = torch.cat(
+                    (layer_cache["self_keys"], self_key), dim=2
+                )
+            if layer_cache["self_values"] is not None:
+                self_value = torch.cat(
+                    (layer_cache["self_values"], self_value), dim=2
+                )
+            if layer_cache["src_keys"] is None:
+                layer_cache["src_keys"] = shape(self.linear_keys_src(src))
+                layer_cache["src_values"] = shape(self.linear_values_src(src))
+            layer_cache["self_keys"] = self_key
+            layer_cache["self_values"] = self_value
+            key = torch.cat(
+                (layer_cache["src_keys"], layer_cache["self_keys"]), dim=2
+            )
+            value = torch.cat(
+                (layer_cache["src_values"], layer_cache["self_values"]), dim=2
+            )
+        else:
+            key = torch.cat(
+                (self.linear_keys_src(src), self.linear_keys(tgt)), dim=1
+            )
+            value = torch.cat(
+                (self.linear_values_src(src), self.linear_values(tgt)), dim=1
+            )
+            query = self.linear_query(tgt)
+            key = shape(key)
+            value = shape(value)
 
         if self.max_relative_positions > 0 and attn_type == "self":
             key_len = key.size(2)

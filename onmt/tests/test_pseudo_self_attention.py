@@ -12,7 +12,7 @@ from onmt.utils.misc import sequence_mask
 from onmt.decoders.transformer import TransformerDecoderLayerBase
 
 
-class TestPseudoSelfAttention(unittest.TestCase):
+class TestMultiHeadedPseudoSelfAttention(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         max_relative_positions = 0
@@ -85,8 +85,6 @@ class TestPseudoSelfAttention(unittest.TestCase):
         X_premasked[1, 3:, :] = 0
 
         Y = torch.ones((4, 8, self.d_model))
-
-        masked_pseudo_key_value = torch.cat([X_premasked, Y], axis=1)
 
         src_pad_mask = ~sequence_mask(torch.tensor([4, 3, 1, 5]), 5).unsqueeze(
             1
