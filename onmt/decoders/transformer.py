@@ -556,7 +556,7 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
         """
         dec_mask = None
 
-        if step is None:
+        if step is None or inputs.size(1) > 1:
             # masking is necessary when sequence length is greater than one
             dec_mask = self._compute_dec_mask(tgt_pad_mask, future)
 
