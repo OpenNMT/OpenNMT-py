@@ -111,7 +111,8 @@ class CTranslate2Translator(object):
             target_prefix=tgt if self.target_prefix else None,
             max_batch_size=self.batch_size,
             beam_size=self.beam_size,
-            num_hypotheses=self.n_best
+            num_hypotheses=self.n_best,
+            return_scores=True,
         )
         scores = [[item["score"] for item in ex] for ex in preds]
         predictions = [[" ".join(item["tokens"]) for item in ex]
