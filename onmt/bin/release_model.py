@@ -2,30 +2,6 @@
 import argparse
 import torch
 
-from onmt.modules.position_ffn import ActivationFunction
-
-
-def get_ctranslate2_model_spec(opt):
-    """Creates a CTranslate2 model specification from the model options."""
-    with_relative_position = getattr(opt, "max_relative_positions", 0) > 0
-    relu = ActivationFunction.relu
-    is_ct2_compatible = (
-        opt.encoder_type == "transformer"
-        and opt.decoder_type == "transformer"
-        and not getattr(opt, "aan_useffn", False)
-        and getattr(opt, "self_attn_type", "scaled-dot") == "scaled-dot"
-        and getattr(opt, "pos_ffn_activation_fn", relu) == relu
-        and ((opt.position_encoding and not with_relative_position)
-             or (with_relative_position and not opt.position_encoding)))
-    if not is_ct2_compatible:
-        return None
-    import ctranslate2
-    num_heads = getattr(opt, "heads", 8)
-    return ctranslate2.specs.TransformerSpec(
-        (opt.enc_layers, opt.dec_layers),
-        num_heads,
-        with_relative_position=with_relative_position)
-
 
 def main():
     parser = argparse.ArgumentParser(
@@ -49,14 +25,13 @@ def main():
         model["optim"] = None
         torch.save(model, opt.output)
     elif opt.format == "ctranslate2":
-        model_spec = get_ctranslate2_model_spec(model["opt"])
-        if model_spec is None:
-            raise ValueError("This model is not supported by CTranslate2. Go "
-                             "to https://github.com/OpenNMT/CTranslate2 for "
-                             "more information on supported models.")
         import ctranslate2
+        if not hasattr(ctranslate2, "__version__"):
+            raise RuntimeError(
+                "onmt_release_model script requires ctranslate2 >= 2.0.0"
+            )
         converter = ctranslate2.converters.OpenNMTPyConverter(opt.model)
-        converter.convert(opt.output, model_spec, force=True,
+        converter.convert(opt.output, force=True,
                           quantization=opt.quantization)
 
 
