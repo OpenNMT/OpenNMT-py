@@ -21,7 +21,6 @@ setup(
     },
     python_requires=">=3.5",
     install_requires=[
-        "tqdm",
         "torch>=1.6.0",
         "torchtext==0.5.0",
         "configargparse",
