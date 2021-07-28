@@ -1,8 +1,4 @@
-cffi==1.14.3
-joblib==0.17.0
-numba==0.43.0
-llvmlite==0.32.1
-pyrouge==0.1.3
+pyrouge
 git+git://github.com/NVIDIA/apex.git@700d6825e205732c1d6be511306ca4e595297070
-sentencepiece==0.1.94
-subword-nmt==0.3.7
+sentencepiece>=0.1.94
+subword-nmt>=0.3.7

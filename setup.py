@@ -21,15 +21,14 @@ setup(
     },
     python_requires=">=3.5",
     install_requires=[
-        "tqdm>=4.51,<5",
-        "torch==1.6.0",
+        "torch>=1.6.0",
         "torchtext==0.5.0",
-        "configargparse>=1.2.3,<2",
-        "tensorboard>=2.3,<3",
-        "flask==1.1.2",
-        "waitress==1.4.4",
+        "configargparse",
+        "tensorboard>=2.3",
+        "flask",
+        "waitress",
         "pyonmttok>=1.23,<2;platform_system=='Linux' or platform_system=='Darwin'",
-        "pyyaml==5.4",
+        "pyyaml",
     ],
     entry_points={
         "console_scripts": [
