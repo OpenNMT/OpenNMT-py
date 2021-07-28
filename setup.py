@@ -22,7 +22,7 @@ setup(
     python_requires=">=3.5",
     install_requires=[
         "tqdm>=4.51,<5",
-        "torch==1.6.0",
+        "torch>=1.6.0",
         "torchtext==0.5.0",
         "configargparse>=1.2.3,<2",
         "tensorboard>=2.3,<3",
