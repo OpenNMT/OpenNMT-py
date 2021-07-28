@@ -83,9 +83,8 @@ def sample_with_temperature(logits, sampling_temp, keep_topk, keep_topp):
             logits = sample_topp(logits, keep_topp)
         if keep_topk > 0:
             logits = sample_topk(logits, keep_topk)
-        dist = torch.distributions.Multinomial(
-            logits=logits, total_count=1)
-        topk_ids = torch.argmax(dist.sample(), dim=1, keepdim=True)
+        dist = torch.distributions.Categorical(logits=logits)
+        topk_ids = dist.sample().view(-1, 1)
         topk_scores = logits.gather(dim=1, index=topk_ids)
     return topk_ids, topk_scores
 
