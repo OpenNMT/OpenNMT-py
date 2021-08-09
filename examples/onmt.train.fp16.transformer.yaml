@@ -100,3 +100,4 @@ dropout: [0.1]
 attention_dropout: [0.1]
 share_decoder_embeddings: true
 share_embeddings: true
+position_encoding: true
