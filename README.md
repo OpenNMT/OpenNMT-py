@@ -168,7 +168,7 @@ data:
 From this configuration, we can build the vocab(s) that will be necessary to train the model:
 
 ```bash
-onmt_build_vocab -config toy_en_de.yaml -n_sample 10000
+onmt-build-vocab -config toy_en_de.yaml -n_sample 10000
 ```
 
 **Notes**:
