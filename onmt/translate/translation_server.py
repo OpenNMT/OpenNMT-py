@@ -262,6 +262,10 @@ class ServerModel(object):
             timeout (see :func:`do_timeout()`.)
         model_root (str): Path to the model directory
             it must contain the model and tokenizer file
+        ct2_model (str): Path to the CTranslate2 model directory
+        inter_threads (int): Maximum number of CPU translations executed in parallel
+        intra_threads (int): Number of OpenMP threads that is used per translation
+        compute_type (str): The type used for computation
     """
 
     def __init__(self, opt, model_id, preprocess_opt=None, tokenizer_opt=None,
