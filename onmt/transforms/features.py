@@ -56,9 +56,6 @@ class InferFeatsTransform(Transform):
             # Do nothing
             return example
 
-        import pdb
-        pdb.set_trace()
-
         feats_i = 0
         inferred_feats = defaultdict(list)   
         for subword in example["src"]:
@@ -94,7 +91,6 @@ class InferFeatsTransform(Transform):
 
         for k, v in inferred_feats.items():
             example["src_feats"][k] = inferred_feats[k]
-        pdb.set_trace()
         return example
 
     def _repr_args(self):
