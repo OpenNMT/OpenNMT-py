@@ -171,20 +171,37 @@ def text_fields(**kwargs):
     eos = kwargs.get("eos", DefaultTokens.EOS)
     truncate = kwargs.get("truncate", None)
     fields_ = []
-    feat_delim = u"￨" if n_feats > 0 else None
-    for i in range(n_feats + 1):
-        name = base_name + "_feat_" + str(i - 1) if i > 0 else base_name
-        tokenize = partial(
-            _feature_tokenize,
-            layer=i,
-            truncate=truncate,
-            feat_delim=feat_delim)
-        use_len = i == 0 and include_lengths
-        feat = Field(
-            init_token=bos, eos_token=eos,
-            pad_token=pad, tokenize=tokenize,
-            include_lengths=use_len)
-        fields_.append((name, feat))
+
+    feat_delim = None #u"￨" if n_feats > 0 else None
+
+    # Base field
+    tokenize = partial(
+        _feature_tokenize,
+        layer=None,
+        truncate=truncate,
+        feat_delim=feat_delim)
+    feat = Field(
+        init_token=bos, eos_token=eos,
+        pad_token=pad, tokenize=tokenize,
+        include_lengths=include_lengths)
+    fields_.append((base_name, feat))
+
+    # Feats fields
+    #for i in range(n_feats + 1):
+    if n_feats:
+        for feat_name in n_feats.keys():
+            #name = base_name + "_feat_" + str(i - 1) if i > 0 else base_name
+            tokenize = partial(
+                _feature_tokenize,
+                layer=None,
+                truncate=truncate,
+                feat_delim=feat_delim)
+            feat = Field(
+                init_token=bos, eos_token=eos,
+                pad_token=pad, tokenize=tokenize,
+                include_lengths=False)
+            fields_.append((feat_name, feat))
+
     assert fields_[0][0] == base_name  # sanity check
     field = TextMultiField(fields_[0][0], fields_[0][1], fields_[1:])
     return field

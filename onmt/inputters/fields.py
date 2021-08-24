@@ -9,10 +9,10 @@ from onmt.inputters.inputter import get_fields, _load_vocab, \
 
 def _get_dynamic_fields(opts):
     # NOTE: not support nfeats > 0 yet
-    src_nfeats = 0
-    tgt_nfeats = 0
+    #src_nfeats = 0
+    tgt_nfeats = None #0
     with_align = hasattr(opts, 'lambda_align') and opts.lambda_align > 0.0
-    fields = get_fields('text', src_nfeats, tgt_nfeats,
+    fields = get_fields('text', opts.src_feats_vocab, tgt_nfeats,
                         dynamic_dict=opts.copy_attn,
                         src_truncate=opts.src_seq_length_trunc,
                         tgt_truncate=opts.tgt_seq_length_trunc,
@@ -32,6 +32,12 @@ def build_dynamic_fields(opts, src_specials=None, tgt_specials=None):
     _src_vocab, _src_vocab_size = _load_vocab(
         opts.src_vocab, 'src', counters,
         min_freq=opts.src_words_min_frequency)
+
+    if opts.src_feats_vocab:
+        for feat_name, filepath in opts.src_feats_vocab.items():
+            _, _ = _load_vocab(
+                filepath, feat_name, counters,
+                min_freq=0)
 
     if opts.tgt_vocab:
         _tgt_vocab, _tgt_vocab_size = _load_vocab(

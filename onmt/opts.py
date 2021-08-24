@@ -132,6 +132,11 @@ def _add_dynamic_fields_opts(parser, build_vocab_only=False):
     group.add("-share_vocab", "--share_vocab", action="store_true",
               help="Share source and target vocabulary.")
 
+    group.add("-src_feats_vocab", "--src_feats_vocab",
+              help=("List of paths to save" if build_vocab_only else "List of paths to")
+              + " src features vocabulary files. "
+              "Files format: one <word> or <word>\t<count> per line.")
+
     if not build_vocab_only:
         group.add("-src_vocab_size", "--src_vocab_size",
                   type=int, default=50000,

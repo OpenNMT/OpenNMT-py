@@ -1,6 +1,7 @@
 from onmt.utils.logging import logger
 from onmt.transforms import register_transform
 from .transform import Transform, ObservableStats
+import re
 
 
 class FilterTooLongStats(ObservableStats):
@@ -50,6 +51,74 @@ class FilterTooLongTransform(Transform):
             'src_seq_length', self.src_seq_length,
             'tgt_seq_length', self.tgt_seq_length
         )
+
+
+@register_transform(name='inferfeats')
+class InferFeatsTransform(Transform):
+    """Filter out sentence that are too long."""
+
+    def __init__(self, opts):
+        super().__init__(opts)
+
+    @classmethod
+    def add_options(cls, parser):
+        """Avalilable options relate to this Transform."""
+        #group = parser.add_argument_group("Transform/Filter")
+        #group.add("--src_seq_length", "-src_seq_length", type=int, default=200,
+        #          help="Maximum source sequence length.")
+        #group.add("--tgt_seq_length", "-tgt_seq_length", type=int, default=200,
+        #          help="Maximum target sequence length.")
+        pass
+
+    def _parse_opts(self):
+        pass
+        #self.src_seq_length = self.opts.src_seq_length
+        #self.tgt_seq_length = self.opts.tgt_seq_length
+
+    def apply(self, example, is_train=False, stats=None, **kwargs):
+        """Return None if too long else return as is."""
+
+        if "src_feats" not in example:
+            # Do nothing
+            return example
+
+        inferred_feats = []
+        feats_i = 0
+        n_feats = len(example["src_feats"])
+        inferred_feats = dict()
+        #import pdb
+        #pdb.set_trace()
+        for subword in example["src"]:
+            none = True
+            for k, v in example["src_feats"].items():
+                # TODO: what about custom placeholders??
+                if re.match(r'｟\w+｠', subword):
+                    inferred_feat = "N"
+                elif not re.sub(r'(\W)+', '', subword).strip():
+                    inferred_feat = "N"
+                else:
+                    inferred_feat = v[feats_i]
+                    none = False
+            
+                if k in inferred_feats:
+                    inferred_feats[k].append(inferred_feat)
+                else:
+                    inferred_feats[k] = [inferred_feat]
+            if subword.find('￭') < 0 and not none:
+                feats_i += 1
+        #import pdb
+        #pdb.set_trace()
+        for k, v in inferred_feats.items():
+            example["src_feats"][k] = inferred_feats[k]
+        return example
+
+    def _repr_args(self):
+        """Return str represent key arguments for class."""
+        #return '{}={}, {}={}'.format(
+        #    'src_seq_length', self.src_seq_length,
+        #    'tgt_seq_length', self.tgt_seq_length
+        #)
+        return "INFERFEATS"
 
 
 @register_transform(name='prefix')
