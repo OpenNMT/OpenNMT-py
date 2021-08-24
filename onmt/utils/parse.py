@@ -83,6 +83,8 @@ class DataOptsCheckerMixin(object):
                     cls._validate_file(feature_file, info=f'{cname}/path_{feature_name}')
                 if 'inferfeats' not in corpus["transforms"]:
                     raise ValueError(f"'inferfeats' transform is required when setting source features")
+                if 'filterfeats' not in corpus["transforms"]:
+                    raise ValueError(f"'filterfeats' transform is required when setting source features")
             else:
                 corpus["src_feats"] = None
 
