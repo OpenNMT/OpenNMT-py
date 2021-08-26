@@ -37,8 +37,8 @@ def build_vocab_main(opts):
 
     logger.info(f"Counters src:{len(src_counter)}")
     logger.info(f"Counters tgt:{len(tgt_counter)}")
-    for k, v in src_feats_counter["src_feats"].items():
-        logger.info(f"Counters {k}:{len(v)}")
+    for feat_name, feat_counter in src_feats_counter.items():
+        logger.info(f"Counters {feat_name}:{len(feat_counter)}")
 
     def save_counter(counter, save_path):
         check_path(save_path, exist_ok=opts.overwrite, log=logger.warning)
@@ -55,7 +55,7 @@ def build_vocab_main(opts):
         save_counter(src_counter, opts.src_vocab)
         save_counter(tgt_counter, opts.tgt_vocab)
     
-    for k, v in src_feats_counter["src_feats"].items():
+    for k, v in src_feats_counter.items():
         save_counter(v, opts.src_feats_vocab[k])
 
 

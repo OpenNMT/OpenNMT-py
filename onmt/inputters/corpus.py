@@ -124,10 +124,12 @@ class ParallelCorpus(object):
         `offset` and `stride` allow to iterate only on every
         `stride` example, starting from `offset`.
         """
-        #import pdb
-        #pdb.set_trace()
         if self.src_feats:
-            features_files = [open(feat_path, mode='rb') for feat_name, feat_path in self.src_feats.items()]
+            features_names = []
+            features_files = []
+            for feat_name, feat_path in self.src_feats.items():
+                features_names.append(feat_name)
+                features_files.append(open(feat_path, mode='rb'))
         else:
             features_files = []
         with exfile_open(self.src, mode='rb') as fs,\
@@ -146,7 +148,7 @@ class ParallelCorpus(object):
                     if features:
                         example["src_feats"] = dict()
                         for j, feat in enumerate(features):
-                            example["src_feats"][list(self.src_feats.keys())[j]] = feat.decode("utf-8")
+                            example["src_feats"][features_names[j]] = feat.decode("utf-8")
                     yield example
         for f in features_files:
             f.close()
@@ -304,11 +306,9 @@ def write_files_from_queues(sample_path, queues):
 
 def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
     """Build vocab on (strided) subpart of the data."""
-    #import pdb
-    #pdb.set_trace()
     sub_counter_src = Counter()
     sub_counter_tgt = Counter()
-    sub_counter_src_feats =  {'src_feats': defaultdict(Counter)}
+    sub_counter_src_feats =  defaultdict(Counter)
     datasets_iterables = build_corpora_iters(
         corpora, transforms, opts.data,
         skip_empty_level=opts.skip_empty_level,
@@ -323,7 +323,7 @@ def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
             src_line, tgt_line = maybe_example['src'], maybe_example['tgt']
             if 'src_feats' in maybe_example:
                 for feat_name, feat_line in maybe_example["src_feats"].items():
-                    sub_counter_src_feats['src_feats'][feat_name].update(feat_line.split(' '))
+                    sub_counter_src_feats[feat_name].update(feat_line.split(' '))
             sub_counter_src.update(src_line.split(' '))
             sub_counter_tgt.update(tgt_line.split(' '))
             if opts.dump_samples:
@@ -359,7 +359,7 @@ def build_vocab(opts, transforms, n_sample=3):
     corpora = get_corpora(opts, is_train=True)
     counter_src = Counter()
     counter_tgt = Counter()
-    counter_src_feats =  {'src_feats': defaultdict(Counter)}
+    counter_src_feats =  defaultdict(Counter)
     from functools import partial
     queues = {c_name: [mp.Queue(opts.vocab_sample_queue_size)
                        for i in range(opts.num_threads)]
@@ -372,16 +372,15 @@ def build_vocab(opts, transforms, n_sample=3):
             args=(sample_path, queues),
             daemon=True)
         write_process.start()
-    #with mp.Pool(opts.num_threads, init_pool, [queues]) as p:
-    func = partial(
-        build_sub_vocab, corpora, transforms,
-        opts, n_sample, opts.num_threads)
-    sub_counter_src, sub_counter_tgt, sub_counter_src_feats = func(0)
-    #    for sub_counter_src, sub_counter_tgt in p.imap(
-    #            func, range(0, opts.num_threads)):
-    counter_src.update(sub_counter_src)
-    counter_tgt.update(sub_counter_tgt)
-    counter_src_feats.update(sub_counter_src_feats)
+    with mp.Pool(opts.num_threads, init_pool, [queues]) as p:
+        func = partial(
+            build_sub_vocab, corpora, transforms,
+            opts, n_sample, opts.num_threads)
+        for sub_counter_src, sub_counter_tgt, sub_counter_src_feats in p.imap(
+                func, range(0, opts.num_threads)):
+            counter_src.update(sub_counter_src)
+            counter_tgt.update(sub_counter_tgt)
+            counter_src_feats.update(sub_counter_src_feats)
     if opts.dump_samples:
         write_process.join()
     return counter_src, counter_tgt, counter_src_feats

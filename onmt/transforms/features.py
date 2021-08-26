@@ -1,8 +1,11 @@
 from onmt.utils.logging import logger
 from onmt.transforms import register_transform
 from .transform import Transform, ObservableStats
+from onmt.constants import DefaultTokens, SubwordMarker
+from onmt.utils.alignment import subword_map_by_joiner, subword_map_by_spacer
 import re
 from collections import defaultdict
+
 
 
 @register_transform(name='filterfeats')
@@ -48,7 +51,10 @@ class InferFeatsTransform(Transform):
         pass
 
     def _parse_opts(self):
-        pass
+        super()._parse_opts()
+        logger.info("Parsed pyonmttok kwargs for src: {}".format(
+            self.opts.src_onmttok_kwargs))
+        self.src_onmttok_kwargs = self.opts.src_onmttok_kwargs
 
     def apply(self, example, is_train=False, stats=None, **kwargs):
 
@@ -56,41 +62,39 @@ class InferFeatsTransform(Transform):
             # Do nothing
             return example
 
-        feats_i = 0
-        inferred_feats = defaultdict(list)   
-        for subword in example["src"]:
-            next_ = False
-            for k, v in example["src_feats"].items():
-                # TODO: what about custom placeholders??
+        joiner = self.src_onmttok_kwargs["joiner"] if "joiner" in self.src_onmttok_kwargs else SubwordMarker.JOINER
+        case_markup = SubwordMarker.CASE_MARKUP if "case_markup" in self.src_onmttok_kwargs else []
+        # TODO: support joiner_new or spacer_new options. Consistency not ensured currently
 
-                # Placeholders
-                if re.match(r'｟\w+｠', subword):
-                    inferred_feat = "N"
+        if "joiner_annotate" in self.src_onmttok_kwargs:
+        	word_to_subword_mapping = subword_map_by_joiner(example["src"], marker=joiner, case_markup=case_markup)
+        elif "spacer_annotate" in self.src_onmttok_kwargs:
+        	# TODO: case markup
+        	word_to_subword_mapping = subword_map_by_spacer(example["src"], marker=joiner)
+       	else:
+       		# TODO: support not reversible tokenization
+       		raise Exception("InferFeats transform does not currently work without either joiner_annotate or spacer_annotate")
 
-                # Punctuation only
+        inferred_feats = defaultdict(list)
+        for subword, word_id in zip(example["src"], word_to_subword_mapping):
+            for feat_name, feat_values in example["src_feats"].items():
+
+                # If case markup placeholder
+                if subword in case_markup:
+                    inferred_feat = "<null>"
+
+                # Punctuation only (assumes joiner is also some punctuation token)
                 elif not re.sub(r'(\W)+', '', subword).strip():
-                    inferred_feat = "N"
+                    inferred_feat = "<null>"
 
-                # Joiner annotate
-                elif re.search("￭", subword):
-                    inferred_feat = v[feats_i]
-
-                # Whole word
                 else:
-                    inferred_feat = v[feats_i]
-                    next_ = True
+                    inferred_feat = feat_values[word_id]
 
-                inferred_feats[k].append(inferred_feat)
-            
-            if next_:
-                feats_i += 1
+                inferred_feats[feat_name].append(inferred_feat)
 
-        # Check all features have been consumed
-        for k, v in example["src_feats"].items(): 
-        	assert feats_i == len(v), f'Not all features consumed for {k}'
+        for feat_name, feat_values in inferred_feats.items():
+            example["src_feats"][feat_name] = inferred_feats[feat_name]
 
-        for k, v in inferred_feats.items():
-            example["src_feats"][k] = inferred_feats[k]
         return example
 
     def _repr_args(self):

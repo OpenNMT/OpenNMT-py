@@ -120,11 +120,11 @@ def to_word_align(src, tgt, subword_align, m_src='joiner', m_tgt='joiner'):
     return " ".join(word_align)
 
 
-def subword_map_by_joiner(subwords, marker=SubwordMarker.JOINER):
+def subword_map_by_joiner(subwords, marker=SubwordMarker.JOINER, case_markup=[]):
     """Return word id for each subword token (annotate by joiner)."""
     flags = [0] * len(subwords)
     for i, tok in enumerate(subwords):
-        if tok.endswith(marker):
+        if tok.endswith(marker) or tok in case_markup:
             flags[i] = 1
         if tok.startswith(marker):
             assert i >= 1 and flags[i-1] != 1, \

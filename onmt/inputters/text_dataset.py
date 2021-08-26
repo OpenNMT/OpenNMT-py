@@ -152,7 +152,7 @@ def text_fields(**kwargs):
 
     Args:
         base_name (str): Name associated with the field.
-        n_feats (int): Number of word level feats (not counting the tokens)
+        feats (int): Word level feats
         include_lengths (bool): Optionally return the sequence lengths.
         pad (str, optional): Defaults to ``"<blank>"``.
         bos (str or NoneType, optional): Defaults to ``"<s>"``.
@@ -163,7 +163,7 @@ def text_fields(**kwargs):
         TextMultiField
     """
 
-    n_feats = kwargs["n_feats"]
+    feats = kwargs["feats"]
     include_lengths = kwargs["include_lengths"]
     base_name = kwargs["base_name"]
     pad = kwargs.get("pad", DefaultTokens.PAD)
@@ -187,10 +187,9 @@ def text_fields(**kwargs):
     fields_.append((base_name, feat))
 
     # Feats fields
-    #for i in range(n_feats + 1):
-    if n_feats:
-        for feat_name in n_feats.keys():
-            #name = base_name + "_feat_" + str(i - 1) if i > 0 else base_name
+    if feats:
+        for feat_name in feats.keys():
+            # Legacy function, it is not really necessary
             tokenize = partial(
                 _feature_tokenize,
                 layer=None,
