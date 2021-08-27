@@ -48,13 +48,14 @@ class InferFeatsTransform(Transform):
 
     @classmethod
     def add_options(cls, parser):
-        pass
+        """Avalilable options related to this Transform."""
+        group = parser.add_argument_group("Transform/InferFeats")
+        group.add("--reversible_tokenization", "-reversible_tokenization", default="joiner",
+                  choices=["joiner", "spacer"], help="Type of reversible tokenization applied on the tokenizer.")
 
     def _parse_opts(self):
         super()._parse_opts()
-        logger.info("Parsed pyonmttok kwargs for src: {}".format(
-            self.opts.src_onmttok_kwargs))
-        self.src_onmttok_kwargs = self.opts.src_onmttok_kwargs
+        self.reversible_tokenization = self.opts.reversible_tokenization
 
     def apply(self, example, is_train=False, stats=None, **kwargs):
 
@@ -62,24 +63,19 @@ class InferFeatsTransform(Transform):
             # Do nothing
             return example
 
-        joiner = self.src_onmttok_kwargs["joiner"] if "joiner" in self.src_onmttok_kwargs else SubwordMarker.JOINER
-        case_markup = SubwordMarker.CASE_MARKUP if "case_markup" in self.src_onmttok_kwargs else []
         # TODO: support joiner_new or spacer_new options. Consistency not ensured currently
 
-        if "joiner_annotate" in self.src_onmttok_kwargs:
-            word_to_subword_mapping = subword_map_by_joiner(example["src"], marker=joiner, case_markup=case_markup)
-        elif "spacer_annotate" in self.src_onmttok_kwargs:
+        if self.reversible_tokenization == "joiner":
+            word_to_subword_mapping = subword_map_by_joiner(example["src"])
+        else: #Spacer
             # TODO: case markup
-            word_to_subword_mapping = subword_map_by_spacer(example["src"], marker=joiner)
-        else:
-            # TODO: support not reversible tokenization
-            raise Exception("InferFeats transform does not currently work without either joiner_annotate or spacer_annotate")
+            word_to_subword_mapping = subword_map_by_spacer(example["src"])
 
         inferred_feats = defaultdict(list)
         for subword, word_id in zip(example["src"], word_to_subword_mapping):
             for feat_name, feat_values in example["src_feats"].items():
                 # If case markup placeholder
-                if subword in case_markup:
+                if subword in SubwordMarker.CASE_MARKUP:
                     inferred_feat = "<null>"
                 # Punctuation only (assumes joiner is also some punctuation token)
                 elif not re.sub(r'(\W)+', '', subword).strip():

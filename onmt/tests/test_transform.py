@@ -513,7 +513,7 @@ class TestBARTNoising(unittest.TestCase):
 class TestFeaturesTransform(unittest.TestCase):
     def test_inferfeats(self):
         inferfeats_cls = get_transforms_cls(["inferfeats"])["inferfeats"]
-        opt = Namespace(src_onmttok_kwargs={"mode": "conservative", "joiner": "￭", "joiner_annotate": True, "case_markup": True})
+        opt = Namespace(reversible_tokenization="joiner")
         inferfeats_transform = inferfeats_cls(opt)
 
         ex_in = {

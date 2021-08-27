@@ -120,7 +120,7 @@ def to_word_align(src, tgt, subword_align, m_src='joiner', m_tgt='joiner'):
     return " ".join(word_align)
 
 
-def subword_map_by_joiner(subwords, marker=SubwordMarker.JOINER, case_markup=[]):
+def subword_map_by_joiner(subwords, marker=SubwordMarker.JOINER, case_markup=SubwordMarker.CASE_MARKUP):
     """Return word id for each subword token (annotate by joiner)."""
     flags = [1] * len(subwords)
     for i, tok in enumerate(subwords):
