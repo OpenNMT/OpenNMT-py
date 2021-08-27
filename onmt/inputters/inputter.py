@@ -125,11 +125,11 @@ def get_fields(
     """
     Args:
         src_data_type: type of the source input. Options are [text].
-        src_feats (int): source features dict containing their names
+        src_feats (Optional[Dict]): source features dict containing their names
             to create a :class:`torchtext.data.Field` for. (If
             ``src_data_type=="text"``, these fields are stored together
             as a ``TextMultiField``).
-        tgt_feats (int): See above.
+        tgt_feats (Optional[Dict]): See above.
         pad (str): Special pad symbol. Used on src and tgt side.
         bos (str): Special beginning of sequence symbol. Only relevant
             for tgt.

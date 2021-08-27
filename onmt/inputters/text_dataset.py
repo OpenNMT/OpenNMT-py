@@ -152,7 +152,7 @@ def text_fields(**kwargs):
 
     Args:
         base_name (str): Name associated with the field.
-        feats (int): Word level feats
+        feats (Optional[Dict]): Word level feats
         include_lengths (bool): Optionally return the sequence lengths.
         pad (str, optional): Defaults to ``"<blank>"``.
         bos (str or NoneType, optional): Defaults to ``"<s>"``.
