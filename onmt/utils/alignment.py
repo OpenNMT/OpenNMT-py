@@ -122,17 +122,15 @@ def to_word_align(src, tgt, subword_align, m_src='joiner', m_tgt='joiner'):
 
 def subword_map_by_joiner(subwords, marker=SubwordMarker.JOINER, case_markup=[]):
     """Return word id for each subword token (annotate by joiner)."""
-    flags = [0] * len(subwords)
+    flags = [1] * len(subwords)
     for i, tok in enumerate(subwords):
-        if tok.endswith(marker) or tok in case_markup:
-            flags[i] = 1
-        if tok.startswith(marker):
-            assert i >= 1 and flags[i-1] != 1, \
+        if tok.endswith(marker) or (tok in case_markup and tok.find("end")<0):
+            flags[i] = 0
+        if tok.startswith(marker) or (tok in case_markup and tok.find("end")>=0):
+            assert i >= 1 and flags[i-1] != 0, \
                 "Sentence `{}` not correct!".format(" ".join(subwords))
-            flags[i-1] = 1
-    marker_acc = list(accumulate([0] + flags[:-1]))
-    word_group = [(i - maker_sofar) for i, maker_sofar
-                  in enumerate(marker_acc)]
+            flags[i-1] = 0
+    word_group = list(accumulate([0] + flags[:-1]))
     return word_group
 
 
