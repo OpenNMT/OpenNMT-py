@@ -11,6 +11,7 @@ from collections import Counter, defaultdict
 from contextlib import contextmanager
 
 import multiprocessing as mp
+from collections import defaultdict
 
 
 @contextmanager
@@ -70,13 +71,19 @@ class DatasetAdapter(object):
             example, is_train=is_train, corpus_name=cid)
         if maybe_example is None:
             return None
-        maybe_example['src'] = ' '.join(maybe_example['src'])
-        maybe_example['tgt'] = ' '.join(maybe_example['tgt'])
+
+        maybe_example['src'] = {"src": ' '.join(maybe_example['src'])}
+
+        # Make features part of src as in MultiTextField
+        if 'src_feats' in maybe_example:
+            for feat_name, feat_value in maybe_example['src_feats'].items():
+                maybe_example['src'][feat_name] = ' '.join(feat_value)
+            del maybe_example["src_feats"]
+
+        maybe_example['tgt'] = {"tgt": ' '.join(maybe_example['tgt'])}
         if 'align' in maybe_example:
             maybe_example['align'] = ' '.join(maybe_example['align'])
-        if 'src_feats' in maybe_example:
-            for k in maybe_example['src_feats'].keys():
-                maybe_example['src_feats'][k] = ' '.join(maybe_example['src_feats'][k])
+
         return maybe_example
 
     def _maybe_add_dynamic_dict(self, example, fields):
@@ -176,7 +183,8 @@ def get_corpora(opts, is_train=False):
                 CorpusName.VALID,
                 opts.data[CorpusName.VALID]["path_src"],
                 opts.data[CorpusName.VALID]["path_tgt"],
-                opts.data[CorpusName.VALID]["path_align"])
+                opts.data[CorpusName.VALID]["path_align"],
+                opts.data[CorpusName.VALID]["src_feats"])
         else:
             return None
     return corpora_dict
@@ -321,11 +329,11 @@ def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
                     build_sub_vocab.queues[c_name][offset].put("blank")
                 continue
             src_line, tgt_line = maybe_example['src'], maybe_example['tgt']
-            if 'src_feats' in maybe_example:
-                for feat_name, feat_line in maybe_example["src_feats"].items():
+            for feat_name, feat_line in maybe_example["src"].items():
+                if feat_name != "src":
                     sub_counter_src_feats[feat_name].update(feat_line.split(' '))
-            sub_counter_src.update(src_line.split(' '))
-            sub_counter_tgt.update(tgt_line.split(' '))
+            sub_counter_src.update(src_line["src"].split(' '))
+            sub_counter_tgt.update(tgt_line["tgt"].split(' '))
             if opts.dump_samples:
                 build_sub_vocab.queues[c_name][offset].put(
                     (i, src_line, tgt_line))
