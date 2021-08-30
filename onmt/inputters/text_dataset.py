@@ -43,8 +43,7 @@ class TextDataReader(DataReaderBase):
                 if isinstance(f, bytes):
                     f = f.decode("utf-8")
                 ex_dict[features_names[i]] = f
-            ex_dict["indices"] = i
-            yield {side: ex_dict}
+            yield {side: ex_dict, "indices": i}
 
 
 def text_sort_key(ex):
