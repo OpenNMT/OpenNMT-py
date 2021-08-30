@@ -333,6 +333,7 @@ class Inference(object):
     def translate(
         self,
         src,
+        src_feats={},
         tgt=None,
         batch_size=None,
         batch_type="sents",
@@ -363,8 +364,8 @@ class Inference(object):
         if self.tgt_prefix and tgt is None:
             raise ValueError("Prefix should be feed to tgt if -tgt_prefix.")
 
-        src_data = {"reader": self.src_reader, "data": src}
-        tgt_data = {"reader": self.tgt_reader, "data": tgt}
+        src_data = {"reader": self.src_reader, "data": src, "features": src_feats}
+        tgt_data = {"reader": self.tgt_reader, "data": tgt, "features": {}}
         _readers, _data = inputters.Dataset.config(
             [("src", src_data), ("tgt", tgt_data)]
         )

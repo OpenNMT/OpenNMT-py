@@ -9,7 +9,7 @@ from onmt.inputters.datareader_base import DataReaderBase
 
 
 class TextDataReader(DataReaderBase):
-    def read(self, sequences, side):
+    def read(self, sequences, side, features={}):
         """Read text data from disk.
 
         Args:
@@ -25,10 +25,26 @@ class TextDataReader(DataReaderBase):
         """
         if isinstance(sequences, str):
             sequences = DataReaderBase._read_file(sequences)
-        for i, seq in enumerate(sequences):
+
+        features_names = []
+        features_values = []
+        for feat_name, v in features.items():
+            features_names.append(feat_name)
+            if isinstance(v, str):
+                features_values.append(DataReaderBase._read_file(features))
+            else:
+                features_values.append(v)  
+        for i, (seq, *feats) in enumerate(zip(sequences, *features_values)):
+            ex_dict = {}
             if isinstance(seq, bytes):
                 seq = seq.decode("utf-8")
-            yield {side: seq, "indices": i}
+            ex_dict[side] = seq
+            for i, f in enumerate(feats):
+                if isinstance(f, bytes):
+                    f = f.decode("utf-8")
+                ex_dict[features_names[i]] = f
+            ex_dict["indices"] = i
+            yield {side: ex_dict}
 
 
 def text_sort_key(ex):
@@ -140,8 +156,7 @@ class TextMultiField(RawField):
                 lists of tokens/feature tags for the sentence. The output
                 is ordered like ``self.fields``.
         """
-
-        return [f.preprocess(x) for _, f in self.fields]
+        return [f.preprocess(x[fn]) for fn, f in self.fields]
 
     def __getitem__(self, item):
         return self.fields[item]

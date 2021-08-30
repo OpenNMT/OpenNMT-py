@@ -760,6 +760,9 @@ def translate_opts(parser):
     group.add('--src', '-src', required=True,
               help="Source sequence to decode (one line per "
                    "sequence)")
+    group.add("-src_feats", "--src_feats", required=False,
+              help="Source sequence features (one line per "
+                    "sequence)")
     group.add('--tgt', '-tgt',
               help='True target sequence (optional)')
     group.add('--tgt_prefix', '-tgt_prefix', action='store_true',

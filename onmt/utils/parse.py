@@ -320,4 +320,4 @@ class ArgumentParser(cfargparse.ArgumentParser, DataOptsCheckerMixin):
 
     @classmethod
     def validate_translate_opts(cls, opt):
-        pass
+        opt.src_feats = eval(opt.src_feats) if opt.src_feats else {}
