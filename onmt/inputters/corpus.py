@@ -423,7 +423,7 @@ def save_transformed_sample(opts, transforms, n_sample=3):
                 maybe_example = DatasetAdapter._process(item, is_train=True)
                 if maybe_example is None:
                     continue
-                src_line, tgt_line = maybe_example['src'], maybe_example['tgt']
+                src_line, tgt_line = maybe_example['src']['src'], maybe_example['tgt']['tgt']
                 f_src.write(src_line + '\n')
                 f_tgt.write(tgt_line + '\n')
                 if n_sample > 0 and i >= n_sample:
