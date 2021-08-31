@@ -926,6 +926,7 @@ class GeneratorLM(Inference):
     def translate(
         self,
         src,
+        src_feats={},
         tgt=None,
         batch_size=None,
         batch_type="sents",
@@ -946,6 +947,7 @@ class GeneratorLM(Inference):
 
         return super(GeneratorLM, self).translate(
             src,
+            src_feats,
             tgt,
             batch_size=1,
             batch_type=batch_type,
