@@ -192,6 +192,13 @@ jobs:
           -report_every 5 -train_steps 10 \
           -save_model /tmp/onmt.model \
           -save_checkpoint_steps 10
+    - name: Testing translation with features
+      run: |
+        python translate.py \
+            -model /tmp/onmt.model_step_10.pt \
+            -src data/data_features/src-test.txt \
+            -src_feats "{'feat0': 'data/data_features/src-test.feat0'}" \
+            -verbose
     - name: Test RNN translation
       run: |
         head data/src-test.txt > /tmp/src-test.txt

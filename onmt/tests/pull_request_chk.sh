@@ -276,7 +276,7 @@ ${PYTHON} onmt/bin/train.py \
             -rnn_size 2 -batch_size 10 \
             -word_vec_size 5 -rnn_size 10 \
             -report_every 5 -train_steps 10 \
-            -save_model $TMP_OUT_DIR/onmt.model \
+            -save_model $TMP_OUT_DIR/onmt.features.model \
             -save_checkpoint_steps 10 >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
@@ -296,6 +296,16 @@ ${PYTHON} translate.py -model ${TEST_DIR}/test_model.pt -src $TMP_OUT_DIR/src-te
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 rm $TMP_OUT_DIR/src-test.txt
+
+echo -n "  [+] Testing NMT translation with features..."
+${PYTHON} translate.py \
+            -model ${TMP_OUT_DIR}/onmt.features.model_step_10.pt \
+            -src ${DATA_DIR}/data_features/src-test.txt \
+            -src_feats "{'feat0': '${DATA_DIR}/data_features/src-test.feat0'}" \
+            -verbose >> ${LOG_FILE} 2>&1
+[ "$?" -eq 0 ] || error_exit
+echo "Succeeded" | tee -a ${LOG_FILE}
+rm -f $TMP_OUT_DIR/onmt.features.model*
 
 echo -n "  [+] Testing NMT ensemble translation..."
 head ${DATA_DIR}/src-test.txt > $TMP_OUT_DIR/src-test.txt
