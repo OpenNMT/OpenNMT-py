@@ -7,7 +7,6 @@ import re
 from collections import defaultdict
 
 
-
 @register_transform(name='filterfeats')
 class FilterFeatsTransform(Transform):
     """Filter out examples with a mismatch between source and features."""
