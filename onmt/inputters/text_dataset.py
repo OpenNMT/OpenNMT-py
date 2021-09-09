@@ -18,7 +18,7 @@ class TextDataReader(DataReaderBase):
             side (str): Prefix used in return dict. Usually
                 ``"src"`` or ``"tgt"``.
             features: (Dict[str or Iterable[str]]):
-                dictionary mapping feature names with th path to feature
+                dictionary mapping feature names with the path to feature
                 file or iterable of the actual feature data.
 
         Yields:
