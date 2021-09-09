@@ -346,6 +346,7 @@ class Inference(object):
         Args:
             src: See :func:`self.src_reader.read()`.
             tgt: See :func:`self.tgt_reader.read()`.
+            src_feats: See :func`self.src_reader.read()`.
             batch_size (int): size of examples per mini-batch
             attn_debug (bool): enables the attention logging
             align_debug (bool): enables the word alignment logging

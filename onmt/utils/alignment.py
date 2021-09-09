@@ -134,9 +134,29 @@ def subword_map_by_joiner(subwords, marker=SubwordMarker.JOINER, case_markup=Sub
     return word_group
 
 
-def subword_map_by_spacer(subwords, marker=SubwordMarker.SPACER):
+def subword_map_by_spacer(subwords, marker=SubwordMarker.SPACER, case_markup=SubwordMarker.CASE_MARKUP):
     """Return word id for each subword token (annotate by spacer)."""
-    word_group = list(accumulate([int(marker in x) for x in subwords]))
+    flags = [0] * len(subwords)
+    for i, tok in enumerate(subwords):
+        if marker in tok:
+            if tok.replace(marker, "") in case_markup:
+                if i < len(subwords)-1: 
+                    flags[i] = 1
+            else:
+                if i > 0:
+                    previous = subwords[i-1].replace(marker, "")
+                    if previous not in case_markup:
+                        flags[i] = 1
+
+    # In case there is a final case_markup when new_spacer is on
+    for i in range(1,len(subwords)-1):
+        if subwords[-i] in case_markup:
+            flags[-i] = 0
+        elif subwords[-i] == marker:
+            flags[-i] = 0
+            break
+
+    word_group = list(accumulate(flags))
     if word_group[0] == 1:  # when dummy prefix is set
         word_group = [item - 1 for item in word_group]
     return word_group

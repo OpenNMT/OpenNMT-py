@@ -17,6 +17,9 @@ class TextDataReader(DataReaderBase):
                 path to text file or iterable of the actual text data.
             side (str): Prefix used in return dict. Usually
                 ``"src"`` or ``"tgt"``.
+            features: (Dict[str or Iterable[str]]):
+                dictionary mapping feature names with th path to feature
+                file or iterable of the actual feature data.
 
         Yields:
             dictionaries whose keys are the names of fields and whose
@@ -53,6 +56,7 @@ def text_sort_key(ex):
     return len(ex.src[0])
 
 
+# Legacy function. Currently it only truncates input if truncate is set.
 # mix this with partial
 def _feature_tokenize(
         string, layer=0, tok_delim=None, feat_delim=None, truncate=None):

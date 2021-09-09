@@ -63,12 +63,9 @@ class InferFeatsTransform(Transform):
             # Do nothing
             return example
 
-        # TODO: support joiner_new or spacer_new options. Consistency not ensured currently
-
         if self.reversible_tokenization == "joiner":
             word_to_subword_mapping = subword_map_by_joiner(example["src"])
         else: #Spacer
-            # TODO: case markup
             word_to_subword_mapping = subword_map_by_spacer(example["src"])
 
         inferred_feats = defaultdict(list)

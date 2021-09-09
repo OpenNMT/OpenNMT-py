@@ -75,6 +75,7 @@ class DatasetAdapter(object):
         maybe_example['src'] = {"src": ' '.join(maybe_example['src'])}
 
         # Make features part of src as in MultiTextField
+        # {'src': {'src': ..., 'feat1': ...., 'feat2': ....}}
         if 'src_feats' in maybe_example:
             for feat_name, feat_value in maybe_example['src_feats'].items():
                 maybe_example['src'][feat_name] = ' '.join(feat_value)
@@ -328,12 +329,12 @@ def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
                 if opts.dump_samples:
                     build_sub_vocab.queues[c_name][offset].put("blank")
                 continue
-            src_line, tgt_line = maybe_example['src'], maybe_example['tgt']
+            src_line, tgt_line = maybe_example['src']['src'], maybe_example['tgt']['tgt']
             for feat_name, feat_line in maybe_example["src"].items():
                 if feat_name != "src":
                     sub_counter_src_feats[feat_name].update(feat_line.split(' '))
-            sub_counter_src.update(src_line["src"].split(' '))
-            sub_counter_tgt.update(tgt_line["tgt"].split(' '))
+            sub_counter_src.update(src_line.split(' '))
+            sub_counter_tgt.update(tgt_line.split(' '))
             if opts.dump_samples:
                 build_sub_vocab.queues[c_name][offset].put(
                     (i, src_line, tgt_line))

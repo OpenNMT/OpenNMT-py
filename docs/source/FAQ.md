@@ -498,6 +498,7 @@ A C C C C A A B
 **Notes**
 - Prior tokenization is not necessary, features will be inferred by using the `FeatInferTransform` transform.
 - `FilterFeatsTransform` and `FeatInferTransform` are required in order to ensure the functionality.
+- Not possible to do shared embeddings (at least with `feat_merge: concat` method)
 
 Sample config file:
 
@@ -529,10 +530,20 @@ feat_merge: "sum"
 
 ```
 
-During inference you can pass features by using the `--src_feats` argument. 
+During inference you can pass features by using the `--src_feats` argument. `src_feats` is expected to be a Python like dict, mapping feature name with its data file.
+
+```
+{'feat_0': '../data.txt.feats0', 'feat_1': '../data.txt.feats1'}
+```
 
 **Important note!** During inference, input sentence is expected to be tokenized. Therefore feature inferring should be handled prior to running the translate command. Example:
 
 ```bash
 python translate.py -model model_step_10.pt -src ../data.txt.tok -output ../data.out --src_feats "{'feat_0': '../data.txt.feats0', 'feat_1': '../data.txt.feats1'}"
 ```
+
+When using the Transformer arquitechture make sure the following options are appropiately set:
+
+- `src_word_vec_size` and `tgt_word_vec_size` or `word_vec_size`
+- `feat_merge`: how to handle features vecs
+- `feat_vec_size` and maybe `feat_vec_exponent`

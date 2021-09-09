@@ -761,8 +761,8 @@ def translate_opts(parser):
               help="Source sequence to decode (one line per "
                    "sequence)")
     group.add("-src_feats", "--src_feats", required=False,
-              help="Source sequence features (one line per "
-                    "sequence)")
+              help="Source sequence features (dict format). "
+                    "Ex: {'feat_0': '../data.txt.feats0', 'feat_1': '../data.txt.feats1'}")
     group.add('--tgt', '-tgt',
               help='True target sequence (optional)')
     group.add('--tgt_prefix', '-tgt_prefix', action='store_true',
