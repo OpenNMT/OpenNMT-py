@@ -542,7 +542,7 @@ During inference you can pass features by using the `--src_feats` argument. `src
 python translate.py -model model_step_10.pt -src ../data.txt.tok -output ../data.out --src_feats "{'feat_0': '../data.txt.feats0', 'feat_1': '../data.txt.feats1'}"
 ```
 
-When using the Transformer architechture make sure the following options are appropriately set:
+When using the Transformer architecture make sure the following options are appropriately set:
 
 - `src_word_vec_size` and `tgt_word_vec_size` or `word_vec_size`
 - `feat_merge`: how to handle features vecs
