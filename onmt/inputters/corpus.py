@@ -74,7 +74,7 @@ class DatasetAdapter(object):
 
         maybe_example['src'] = {"src": ' '.join(maybe_example['src'])}
 
-        # Make features part of src as in MultiTextField
+        # Make features part of src as in TextMultiField
         # {'src': {'src': ..., 'feat1': ...., 'feat2': ....}}
         if 'src_feats' in maybe_example:
             for feat_name, feat_value in maybe_example['src_feats'].items():
