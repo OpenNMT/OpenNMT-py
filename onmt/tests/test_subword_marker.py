@@ -2,6 +2,7 @@ import unittest
 
 from onmt.transforms.bart import word_start_finder
 from onmt.utils.alignment import subword_map_by_joiner, subword_map_by_spacer
+from onmt.constants import DefaultTokens, SubwordMarker
 
 
 class TestWordStartFinder(unittest.TestCase):
@@ -37,7 +38,25 @@ class TestSubwordGroup(unittest.TestCase):
     def test_subword_group_joiner(self):
         data_in = ['however', '￭,', 'according', 'to', 'the', 'logs', '￭,', 'she', 'is', 'hard', '￭-￭', 'working', '￭.']  # noqa: E501
         true_out = [0, 0, 1, 2, 3, 4, 4, 5, 6, 7, 7, 7, 7]
-        out = subword_map_by_joiner(data_in)
+        out = subword_map_by_joiner(data_in, marker=SubwordMarker.JOINER, case_markup=SubwordMarker.CASE_MARKUP)
+        self.assertEqual(out, true_out)
+
+    def test_subword_group_joiner_with_case_markup(self):
+        data_in = ['｟mrk_case_modifier_C｠', 'however', '￭,', 'according', 'to', 'the', 'logs', '￭,', '｟mrk_begin_case_region_U｠', 'she', 'is', 'hard', '￭-￭', 'working', '￭.', '｟mrk_end_case_region_U｠']  # noqa: E501
+        true_out = [0, 0, 0, 1, 2, 3, 4, 4, 5, 5, 6, 7, 7, 7, 7, 7]
+        out = subword_map_by_joiner(data_in, marker=SubwordMarker.JOINER, case_markup=SubwordMarker.CASE_MARKUP)
+        self.assertEqual(out, true_out)
+
+    def test_subword_group_joiner_with_new_joiner(self):
+        data_in = ['｟mrk_case_modifier_C｠', 'however', '￭', ',', 'according', 'to', 'the', 'logs', '￭', ',', '｟mrk_begin_case_region_U｠', 'she', 'is', 'hard', '￭', '-', '￭', 'working', '￭', '.', '｟mrk_end_case_region_U｠']  # noqa: E501
+        true_out = [0, 0, 0, 0, 1, 2, 3, 4, 4, 4, 5, 5, 6, 7, 7, 7, 7, 7, 7, 7, 7]
+        out = subword_map_by_joiner(data_in, marker=SubwordMarker.JOINER, case_markup=SubwordMarker.CASE_MARKUP)
+        self.assertEqual(out, true_out)
+
+    def test_subword_group_naive(self):
+        data_in = ['however', ',', 'according', 'to', 'the', 'logs', ',', 'she', 'is', 'hard', '-', 'working', '.']  # noqa: E501
+        true_out = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+        out = subword_map_by_joiner(data_in, marker=SubwordMarker.JOINER, case_markup=SubwordMarker.CASE_MARKUP)
         self.assertEqual(out, true_out)
 
     def test_subword_group_spacer(self):
@@ -49,6 +68,18 @@ class TestSubwordGroup(unittest.TestCase):
         no_dummy = ['however', ',', '▁according', '▁to', '▁the', '▁logs', ',', '▁she', '▁is', '▁hard', '-', 'working', '.']  # noqa: E501
         no_dummy_out = subword_map_by_spacer(no_dummy)
         self.assertEqual(no_dummy_out, true_out)
+
+    def test_subword_group_spacer_with_case_markup(self):
+        data_in = ['｟mrk_case_modifier_C｠', '▁however', ',', '▁according', '▁to', '▁the', '▁logs', ',', '▁｟mrk_begin_case_region_U｠', '▁she', '▁is', '▁hard', '-', 'working', '.', '▁｟mrk_end_case_region_U｠']  # noqa: E501
+        true_out = [0, 0, 0, 1, 2, 3, 4, 4, 5, 5, 6, 7, 7, 7, 7, 7]
+        out = subword_map_by_spacer(data_in)
+        self.assertEqual(out, true_out)
+
+    def test_subword_group_spacer_with_spacer_new(self):
+        data_in = ['｟mrk_case_modifier_C｠', '▁', 'however', ',', '▁', 'according', '▁', 'to', '▁', 'the', '▁', 'logs', ',', '▁', '｟mrk_begin_case_region_U｠', '▁', 'she', '▁', 'is', '▁', 'hard', '-', 'working', '.', '▁', '｟mrk_end_case_region_U｠']  # noqa: E501
+        true_out = [0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 4, 5, 5, 5, 5, 6, 6, 7, 7, 7, 7, 7, 7, 7]
+        out = subword_map_by_spacer(data_in)
+        self.assertEqual(out, true_out)
 
 
 if __name__ == '__main__':

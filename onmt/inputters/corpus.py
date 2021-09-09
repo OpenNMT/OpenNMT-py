@@ -7,10 +7,11 @@ from onmt.inputters.dataset_base import _dynamic_dict
 from torchtext.data import Dataset as TorchtextDataset, \
     Example as TorchtextExample
 
-from collections import Counter
+from collections import Counter, defaultdict
 from contextlib import contextmanager
 
 import multiprocessing as mp
+from collections import defaultdict
 
 
 @contextmanager
@@ -70,10 +71,20 @@ class DatasetAdapter(object):
             example, is_train=is_train, corpus_name=cid)
         if maybe_example is None:
             return None
-        maybe_example['src'] = ' '.join(maybe_example['src'])
-        maybe_example['tgt'] = ' '.join(maybe_example['tgt'])
+
+        maybe_example['src'] = {"src": ' '.join(maybe_example['src'])}
+
+        # Make features part of src as in TextMultiField
+        # {'src': {'src': ..., 'feat1': ...., 'feat2': ....}}
+        if 'src_feats' in maybe_example:
+            for feat_name, feat_value in maybe_example['src_feats'].items():
+                maybe_example['src'][feat_name] = ' '.join(feat_value)
+            del maybe_example["src_feats"]
+
+        maybe_example['tgt'] = {"tgt": ' '.join(maybe_example['tgt'])}
         if 'align' in maybe_example:
             maybe_example['align'] = ' '.join(maybe_example['align'])
+
         return maybe_example
 
     def _maybe_add_dynamic_dict(self, example, fields):
@@ -107,12 +118,13 @@ class DatasetAdapter(object):
 class ParallelCorpus(object):
     """A parallel corpus file pair that can be loaded to iterate."""
 
-    def __init__(self, name, src, tgt, align=None):
+    def __init__(self, name, src, tgt, align=None, src_feats=None):
         """Initialize src & tgt side file path."""
         self.id = name
         self.src = src
         self.tgt = tgt
         self.align = align
+        self.src_feats = src_feats
 
     def load(self, offset=0, stride=1):
         """
@@ -120,10 +132,18 @@ class ParallelCorpus(object):
         `offset` and `stride` allow to iterate only on every
         `stride` example, starting from `offset`.
         """
+        if self.src_feats:
+            features_names = []
+            features_files = []
+            for feat_name, feat_path in self.src_feats.items():
+                features_names.append(feat_name)
+                features_files.append(open(feat_path, mode='rb'))
+        else:
+            features_files = []
         with exfile_open(self.src, mode='rb') as fs,\
                 exfile_open(self.tgt, mode='rb') as ft,\
                 exfile_open(self.align, mode='rb') as fa:
-            for i, (sline, tline, align) in enumerate(zip(fs, ft, fa)):
+            for i, (sline, tline, align, *features) in enumerate(zip(fs, ft, fa, *features_files)):
                 if (i % stride) == offset:
                     sline = sline.decode('utf-8')
                     tline = tline.decode('utf-8')
@@ -133,12 +153,18 @@ class ParallelCorpus(object):
                     }
                     if align is not None:
                         example['align'] = align.decode('utf-8')
+                    if features:
+                        example["src_feats"] = dict()
+                        for j, feat in enumerate(features):
+                            example["src_feats"][features_names[j]] = feat.decode("utf-8")
                     yield example
+        for f in features_files:
+            f.close()
 
     def __str__(self):
         cls_name = type(self).__name__
-        return '{}({}, {}, align={})'.format(
-            cls_name, self.src, self.tgt, self.align)
+        return '{}({}, {}, align={}, src_feats={})'.format(
+            cls_name, self.src, self.tgt, self.align, self.src_feats)
 
 
 def get_corpora(opts, is_train=False):
@@ -150,14 +176,16 @@ def get_corpora(opts, is_train=False):
                     corpus_id,
                     corpus_dict["path_src"],
                     corpus_dict["path_tgt"],
-                    corpus_dict["path_align"])
+                    corpus_dict["path_align"],
+                    corpus_dict["src_feats"])
     else:
         if CorpusName.VALID in opts.data.keys():
             corpora_dict[CorpusName.VALID] = ParallelCorpus(
                 CorpusName.VALID,
                 opts.data[CorpusName.VALID]["path_src"],
                 opts.data[CorpusName.VALID]["path_tgt"],
-                opts.data[CorpusName.VALID]["path_align"])
+                opts.data[CorpusName.VALID]["path_align"],
+                opts.data[CorpusName.VALID]["src_feats"])
         else:
             return None
     return corpora_dict
@@ -193,6 +221,9 @@ class ParallelCorpusIterator(object):
             example['src'], example['tgt'] = src, tgt
             if 'align' in example:
                 example['align'] = example['align'].strip('\n').split()
+            if 'src_feats' in example:
+                for k in example['src_feats'].keys():
+                    example['src_feats'][k] = example['src_feats'][k].strip('\n').split()
             yield example
 
     def _transform(self, stream):
@@ -286,6 +317,7 @@ def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
     """Build vocab on (strided) subpart of the data."""
     sub_counter_src = Counter()
     sub_counter_tgt = Counter()
+    sub_counter_src_feats =  defaultdict(Counter)
     datasets_iterables = build_corpora_iters(
         corpora, transforms, opts.data,
         skip_empty_level=opts.skip_empty_level,
@@ -297,7 +329,10 @@ def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
                 if opts.dump_samples:
                     build_sub_vocab.queues[c_name][offset].put("blank")
                 continue
-            src_line, tgt_line = maybe_example['src'], maybe_example['tgt']
+            src_line, tgt_line = maybe_example['src']['src'], maybe_example['tgt']['tgt']
+            for feat_name, feat_line in maybe_example["src"].items():
+                if feat_name != "src":
+                    sub_counter_src_feats[feat_name].update(feat_line.split(' '))
             sub_counter_src.update(src_line.split(' '))
             sub_counter_tgt.update(tgt_line.split(' '))
             if opts.dump_samples:
@@ -309,7 +344,7 @@ def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
                 break
         if opts.dump_samples:
             build_sub_vocab.queues[c_name][offset].put("break")
-    return sub_counter_src, sub_counter_tgt
+    return sub_counter_src, sub_counter_tgt, sub_counter_src_feats
 
 
 def init_pool(queues):
@@ -333,6 +368,7 @@ def build_vocab(opts, transforms, n_sample=3):
     corpora = get_corpora(opts, is_train=True)
     counter_src = Counter()
     counter_tgt = Counter()
+    counter_src_feats =  defaultdict(Counter)
     from functools import partial
     queues = {c_name: [mp.Queue(opts.vocab_sample_queue_size)
                        for i in range(opts.num_threads)]
@@ -349,13 +385,14 @@ def build_vocab(opts, transforms, n_sample=3):
         func = partial(
             build_sub_vocab, corpora, transforms,
             opts, n_sample, opts.num_threads)
-        for sub_counter_src, sub_counter_tgt in p.imap(
+        for sub_counter_src, sub_counter_tgt, sub_counter_src_feats in p.imap(
                 func, range(0, opts.num_threads)):
             counter_src.update(sub_counter_src)
             counter_tgt.update(sub_counter_tgt)
+            counter_src_feats.update(sub_counter_src_feats)
     if opts.dump_samples:
         write_process.join()
-    return counter_src, counter_tgt
+    return counter_src, counter_tgt, counter_src_feats
 
 
 def save_transformed_sample(opts, transforms, n_sample=3):
@@ -387,7 +424,7 @@ def save_transformed_sample(opts, transforms, n_sample=3):
                 maybe_example = DatasetAdapter._process(item, is_train=True)
                 if maybe_example is None:
                     continue
-                src_line, tgt_line = maybe_example['src'], maybe_example['tgt']
+                src_line, tgt_line = maybe_example['src']['src'], maybe_example['tgt']['tgt']
                 f_src.write(src_line + '\n')
                 f_tgt.write(tgt_line + '\n')
                 if n_sample > 0 and i >= n_sample:

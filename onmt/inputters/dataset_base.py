@@ -41,7 +41,7 @@ def _dynamic_dict(example, src_field, tgt_field):
         ``example``, changed as described.
     """
 
-    src = src_field.tokenize(example["src"])
+    src = src_field.tokenize(example["src"]["src"])
     # make a small vocab containing just the tokens in the source sequence
     unk = src_field.unk_token
     pad = src_field.pad_token
@@ -60,7 +60,7 @@ def _dynamic_dict(example, src_field, tgt_field):
     example["src_ex_vocab"] = src_ex_vocab
 
     if "tgt" in example:
-        tgt = tgt_field.tokenize(example["tgt"])
+        tgt = tgt_field.tokenize(example["tgt"]["tgt"])
         mask = torch.LongTensor(
             [unk_idx] + [src_ex_vocab.stoi[w] for w in tgt] + [unk_idx])
         example["alignment"] = mask
@@ -116,7 +116,7 @@ class Dataset(TorchtextDataset):
         self.sort_key = sort_key
         can_copy = 'src_map' in fields and 'alignment' in fields
 
-        read_iters = [r.read(dat[1], dat[0]) for r, dat in zip(readers, data)]
+        read_iters = [r.read(dat, name, feats) for r, (name, dat, feats) in zip(readers, data)]
 
         # self.src_vocabs is used in collapse_copy_scores and Translator.py
         self.src_vocabs = []
@@ -162,5 +162,5 @@ class Dataset(TorchtextDataset):
         for name, field in fields:
             if field["data"] is not None:
                 readers.append(field["reader"])
-                data.append((name, field["data"]))
+                data.append((name, field["data"], field["features"]))
         return readers, data

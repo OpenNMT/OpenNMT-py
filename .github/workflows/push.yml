@@ -42,6 +42,16 @@ jobs:
           -src_vocab /tmp/onmt.vocab.src \
           -tgt_vocab /tmp/onmt.vocab.tgt \
           && rm -rf /tmp/sample
+    - name: Test vocabulary build with features
+      run: |
+        python onmt/bin/build_vocab.py \
+          -config data/features_data.yaml \
+          -save_data /tmp/onmt_feat \
+          -src_vocab /tmp/onmt_feat.vocab.src \
+          -tgt_vocab /tmp/onmt_feat.vocab.tgt \
+          -src_feats_vocab '{"feat0": "/tmp/onmt_feat.vocab.feat0"}' \
+          -n_sample -1 \
+          && rm -rf /tmp/sample
     - name: Test field/transform dump
       run: |
         # The dumped fields are used later when testing tools
@@ -169,6 +179,26 @@ jobs:
           -state_dim 256 \
           -n_steps 10 \
           -n_node 64
+    - name: Testing training with features
+      run: |
+        python onmt/bin/train.py \
+          -config data/features_data.yaml \
+          -src_vocab /tmp/onmt_feat.vocab.src \
+          -tgt_vocab /tmp/onmt_feat.vocab.tgt \
+          -src_feats_vocab '{"feat0": "/tmp/onmt_feat.vocab.feat0"}' \
+          -src_vocab_size 1000 -tgt_vocab_size 1000 \
+          -rnn_size 2 -batch_size 10 \
+          -word_vec_size 5 -rnn_size 10 \
+          -report_every 5 -train_steps 10 \
+          -save_model /tmp/onmt.model \
+          -save_checkpoint_steps 10
+    - name: Testing translation with features
+      run: |
+        python translate.py \
+            -model /tmp/onmt.model_step_10.pt \
+            -src data/data_features/src-test.txt \
+            -src_feats "{'feat0': 'data/data_features/src-test.feat0'}" \
+            -verbose
     - name: Test RNN translation
       run: |
         head data/src-test.txt > /tmp/src-test.txt

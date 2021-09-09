@@ -333,6 +333,7 @@ class Inference(object):
     def translate(
         self,
         src,
+        src_feats={},
         tgt=None,
         batch_size=None,
         batch_type="sents",
@@ -345,6 +346,7 @@ class Inference(object):
         Args:
             src: See :func:`self.src_reader.read()`.
             tgt: See :func:`self.tgt_reader.read()`.
+            src_feats: See :func`self.src_reader.read()`.
             batch_size (int): size of examples per mini-batch
             attn_debug (bool): enables the attention logging
             align_debug (bool): enables the word alignment logging
@@ -363,8 +365,8 @@ class Inference(object):
         if self.tgt_prefix and tgt is None:
             raise ValueError("Prefix should be feed to tgt if -tgt_prefix.")
 
-        src_data = {"reader": self.src_reader, "data": src}
-        tgt_data = {"reader": self.tgt_reader, "data": tgt}
+        src_data = {"reader": self.src_reader, "data": src, "features": src_feats}
+        tgt_data = {"reader": self.tgt_reader, "data": tgt, "features": {}}
         _readers, _data = inputters.Dataset.config(
             [("src", src_data), ("tgt", tgt_data)]
         )
@@ -925,6 +927,7 @@ class GeneratorLM(Inference):
     def translate(
         self,
         src,
+        src_feats={},
         tgt=None,
         batch_size=None,
         batch_type="sents",
@@ -945,6 +948,7 @@ class GeneratorLM(Inference):
 
         return super(GeneratorLM, self).translate(
             src,
+            src_feats,
             tgt,
             batch_size=1,
             batch_type=batch_type,

@@ -32,11 +32,13 @@ def build_vocab_main(opts):
     transforms = make_transforms(opts, transforms_cls, fields)
 
     logger.info(f"Counter vocab from {opts.n_sample} samples.")
-    src_counter, tgt_counter = build_vocab(
+    src_counter, tgt_counter, src_feats_counter = build_vocab(
         opts, transforms, n_sample=opts.n_sample)
 
     logger.info(f"Counters src:{len(src_counter)}")
     logger.info(f"Counters tgt:{len(tgt_counter)}")
+    for feat_name, feat_counter in src_feats_counter.items():
+        logger.info(f"Counters {feat_name}:{len(feat_counter)}")
 
     def save_counter(counter, save_path):
         check_path(save_path, exist_ok=opts.overwrite, log=logger.warning)
@@ -52,6 +54,9 @@ def build_vocab_main(opts):
     else:
         save_counter(src_counter, opts.src_vocab)
         save_counter(tgt_counter, opts.tgt_vocab)
+    
+    for k, v in src_feats_counter.items():
+        save_counter(v, opts.src_feats_vocab[k])
 
 
 def _get_parser():

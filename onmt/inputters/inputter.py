@@ -111,8 +111,8 @@ def get_task_spec_tokens(data_task, pad, bos, eos):
 
 def get_fields(
     src_data_type,
-    n_src_feats,
-    n_tgt_feats,
+    src_feats,
+    tgt_feats,
     pad=DefaultTokens.PAD,
     bos=DefaultTokens.BOS,
     eos=DefaultTokens.EOS,
@@ -125,11 +125,11 @@ def get_fields(
     """
     Args:
         src_data_type: type of the source input. Options are [text].
-        n_src_feats (int): the number of source features (not counting tokens)
+        src_feats (Optional[Dict]): source features dict containing their names
             to create a :class:`torchtext.data.Field` for. (If
             ``src_data_type=="text"``, these fields are stored together
             as a ``TextMultiField``).
-        n_tgt_feats (int): See above.
+        tgt_feats (Optional[Dict]): See above.
         pad (str): Special pad symbol. Used on src and tgt side.
         bos (str): Special beginning of sequence symbol. Only relevant
             for tgt.
@@ -158,7 +158,7 @@ def get_fields(
     task_spec_tokens = get_task_spec_tokens(data_task, pad, bos, eos)
 
     src_field_kwargs = {
-        "n_feats": n_src_feats,
+        "feats": src_feats,
         "include_lengths": True,
         "pad": task_spec_tokens["src"]["pad"],
         "bos": task_spec_tokens["src"]["bos"],
@@ -169,7 +169,7 @@ def get_fields(
     fields["src"] = fields_getters[src_data_type](**src_field_kwargs)
 
     tgt_field_kwargs = {
-        "n_feats": n_tgt_feats,
+        "feats": tgt_feats,
         "include_lengths": False,
         "pad": task_spec_tokens["tgt"]["pad"],
         "bos": task_spec_tokens["tgt"]["bos"],
