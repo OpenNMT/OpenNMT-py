@@ -120,37 +120,73 @@ def to_word_align(src, tgt, subword_align, m_src='joiner', m_tgt='joiner'):
     return " ".join(word_align)
 
 
-def subword_map_by_joiner(subwords, marker=SubwordMarker.JOINER, case_markup=SubwordMarker.CASE_MARKUP):
+# Helper functions
+def begin_uppercase(token):
+    return token == "｟mrk_begin_case_region_U｠"
+
+def end_uppercase(token):
+    return token == "｟mrk_end_case_region_U｠"
+
+def begin_case(token):
+    return token == "｟mrk_case_modifier_C｠"
+
+def case_markup(token):
+    return token in ["｟mrk_begin_case_region_U｠", "｟mrk_end_case_region_U｠", "｟mrk_case_modifier_C｠"]
+
+
+def subword_map_by_joiner(subwords, original_subwords=None, marker=SubwordMarker.JOINER):
     """Return word id for each subword token (annotate by joiner)."""
-    flags = [1] * len(subwords)
+    flags = [0] * len(subwords)
     for i, tok in enumerate(subwords):
-        if tok.endswith(marker) or (tok in case_markup and tok.find("end")<0):
-            flags[i] = 0
-        if tok.startswith(marker) or (tok in case_markup and tok.find("end")>=0):
-            assert i >= 1 and flags[i-1] != 0, \
-                "Sentence `{}` not correct!".format(" ".join(subwords))
-            flags[i-1] = 0
-    word_group = list(accumulate([0] + flags[:-1]))
+
+        # 'original_subwords' should be set if prior tokenization was made
+        # with 'support_prior_joiners' flag
+        if original_subwords:
+            new_words_so_far = sum(flags)+1
+            if new_words_so_far < len(original_subwords):
+                # If not original subword tokenization happened
+                if tok == original_subwords[new_words_so_far]:
+                    flags[i] = 1
+                    continue
+
+        # New word starts with its case, if any
+        if begin_case(tok) or begin_uppercase(tok):
+            if i:
+                flags[i] = 1
+        elif end_uppercase(tok):
+            pass # Do nothing
+
+        # Any token without marker and not preceded by a marker or case_markeup is new word            
+        elif marker not in tok:
+            if i and not subwords[i-1].endswith(marker) and not case_markup(subwords[i-1]):
+                flags[i] = 1
+
+        # Any token with a marker at the end and not preceded by a marker or case_markeup is new word
+        else:
+            if i and tok.endswith(marker) and not tok.startswith(marker) and not subwords[i-1].endswith(marker) and not case_markup(subwords[i-1]):
+                flags[i] = 1
+                
+    word_group = list(accumulate(flags))
     return word_group
 
 
-def subword_map_by_spacer(subwords, marker=SubwordMarker.SPACER, case_markup=SubwordMarker.CASE_MARKUP):
+def subword_map_by_spacer(subwords, marker=SubwordMarker.SPACER):
     """Return word id for each subword token (annotate by spacer)."""
     flags = [0] * len(subwords)
     for i, tok in enumerate(subwords):
         if marker in tok:
-            if tok.replace(marker, "") in case_markup:
+            if case_markup(tok.replace(marker, "")):
                 if i < len(subwords)-1: 
                     flags[i] = 1
             else:
                 if i > 0:
                     previous = subwords[i-1].replace(marker, "")
-                    if previous not in case_markup:
+                    if not case_markup(previous):
                         flags[i] = 1
 
     # In case there is a final case_markup when new_spacer is on
     for i in range(1,len(subwords)-1):
-        if subwords[-i] in case_markup:
+        if case_markup(subwords[-i]):
             flags[-i] = 0
         elif subwords[-i] == marker:
             flags[-i] = 0

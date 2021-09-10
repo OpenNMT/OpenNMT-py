@@ -149,7 +149,9 @@ class ParallelCorpus(object):
                     tline = tline.decode('utf-8')
                     example = {
                         'src': sline,
-                        'tgt': tline
+                        'tgt': tline,
+                        'src_original': sline,
+                        'tgt_original': tline
                     }
                     if align is not None:
                         example['align'] = align.decode('utf-8')
@@ -216,9 +218,10 @@ class ParallelCorpusIterator(object):
 
     def _tokenize(self, stream):
         for example in stream:
-            src = example['src'].strip('\n').split()
-            tgt = example['tgt'].strip('\n').split()
-            example['src'], example['tgt'] = src, tgt
+            example['src'] = example['src'].strip('\n').split()
+            example['tgt'] = example['tgt'].strip('\n').split()
+            example['src_original'] = example['src_original'].strip("\n").split()
+            example['tgt_original'] = example['tgt_original'].strip("\n").split()
             if 'align' in example:
                 example['align'] = example['align'].strip('\n').split()
             if 'src_feats' in example:
@@ -331,7 +334,7 @@ def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
                 continue
             src_line, tgt_line = maybe_example['src']['src'], maybe_example['tgt']['tgt']
             for feat_name, feat_line in maybe_example["src"].items():
-                if feat_name != "src":
+                if feat_name not in ["src", "src_original"]:
                     sub_counter_src_feats[feat_name].update(feat_line.split(' '))
             sub_counter_src.update(src_line.split(' '))
             sub_counter_tgt.update(tgt_line.split(' '))
