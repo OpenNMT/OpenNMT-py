@@ -477,3 +477,73 @@ Training options to perform vocabulary update are:
 * `-update_vocab`: set this option
 * `-reset_optim`: set the value to "states"
 * `-train_from`: checkpoint path
+
+
+## How can I use source word features?
+
+Extra information can be added to the words in the source sentences by defining word features. 
+
+Features should be defined in a separate file using blank spaces as a separator and with each row corresponding to a source sentence. An example of the input files:
+
+data.src
+```
+however, according to the logs, she is hard-working.
+```
+
+feat0.txt
+```
+A C C C C A A B
+```
+
+**Notes**
+- Prior tokenization is not necessary, features will be inferred by using the `FeatInferTransform` transform.
+- `FilterFeatsTransform` and `FeatInferTransform` are required in order to ensure the functionality.
+- Not possible to do shared embeddings (at least with `feat_merge: concat` method)
+
+Sample config file:
+
+```
+data:
+    dummy:
+        path_src: data/train/data.src
+        path_tgt: data/train/data.tgt
+        src_feats:
+            feat_0: data/train/data.src.feat_0
+            feat_1: data/train/data.src.feat_1
+        transforms: [filterfeats, onmt_tokenize, inferfeats, filtertoolong]
+        weight: 1
+    valid:
+        path_src: data/valid/data.src
+        path_tgt: data/valid/data.tgt
+        src_feats:
+            feat_0: data/valid/data.src.feat_0
+            feat_1: data/valid/data.src.feat_1
+        transforms: [filterfeats, onmt_tokenize, inferfeats]
+
+# # Vocab opts
+src_vocab: exp/data.vocab.src
+tgt_vocab: exp/data.vocab.tgt
+src_feats_vocab: 
+    feat_0: exp/data.vocab.feat_0
+    feat_1: exp/data.vocab.feat_1
+feat_merge: "sum"
+
+```
+
+During inference you can pass features by using the `--src_feats` argument. `src_feats` is expected to be a Python like dict, mapping feature name with its data file.
+
+```
+{'feat_0': '../data.txt.feats0', 'feat_1': '../data.txt.feats1'}
+```
+
+**Important note!** During inference, input sentence is expected to be tokenized. Therefore feature inferring should be handled prior to running the translate command. Example:
+
+```bash
+python translate.py -model model_step_10.pt -src ../data.txt.tok -output ../data.out --src_feats "{'feat_0': '../data.txt.feats0', 'feat_1': '../data.txt.feats1'}"
+```
+
+When using the Transformer architecture make sure the following options are appropriately set:
+
+- `src_word_vec_size` and `tgt_word_vec_size` or `word_vec_size`
+- `feat_merge`: how to handle features vecs
+- `feat_vec_size` and maybe `feat_vec_exponent`

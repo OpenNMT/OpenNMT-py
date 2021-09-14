@@ -100,6 +100,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
@@ -528,6 +529,7 @@
     <span class="k">def</span> <span class="nf">translate</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">src</span><span class="p">,</span>
+        <span class="n">src_feats</span><span class="o">=</span><span class="p">{},</span>
         <span class="n">tgt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">batch_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">batch_type</span><span class="o">=</span><span class="s2">&quot;sents&quot;</span><span class="p">,</span>
@@ -540,6 +542,7 @@
 <span class="sd">        Args:</span>
 <span class="sd">            src: See :func:`self.src_reader.read()`.</span>
 <span class="sd">            tgt: See :func:`self.tgt_reader.read()`.</span>
+<span class="sd">            src_feats: See :func`self.src_reader.read()`.</span>
 <span class="sd">            batch_size (int): size of examples per mini-batch</span>
 <span class="sd">            attn_debug (bool): enables the attention logging</span>
 <span class="sd">            align_debug (bool): enables the word alignment logging</span>
@@ -558,8 +561,8 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tgt_prefix</span> <span class="ow">and</span> <span class="n">tgt</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Prefix should be feed to tgt if -tgt_prefix.&quot;</span><span class="p">)</span>
 
-        <span class="n">src_data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;reader&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_reader</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="n">src</span><span class="p">}</span>
-        <span class="n">tgt_data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;reader&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">tgt_reader</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="n">tgt</span><span class="p">}</span>
+        <span class="n">src_data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;reader&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_reader</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="n">src</span><span class="p">,</span> <span class="s2">&quot;features&quot;</span><span class="p">:</span> <span class="n">src_feats</span><span class="p">}</span>
+        <span class="n">tgt_data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;reader&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">tgt_reader</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="n">tgt</span><span class="p">,</span> <span class="s2">&quot;features&quot;</span><span class="p">:</span> <span class="p">{}}</span>
         <span class="n">_readers</span><span class="p">,</span> <span class="n">_data</span> <span class="o">=</span> <span class="n">inputters</span><span class="o">.</span><span class="n">Dataset</span><span class="o">.</span><span class="n">config</span><span class="p">(</span>
             <span class="p">[(</span><span class="s2">&quot;src&quot;</span><span class="p">,</span> <span class="n">src_data</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;tgt&quot;</span><span class="p">,</span> <span class="n">tgt_data</span><span class="p">)]</span>
         <span class="p">)</span>
@@ -1120,6 +1123,7 @@
     <span class="k">def</span> <span class="nf">translate</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">src</span><span class="p">,</span>
+        <span class="n">src_feats</span><span class="o">=</span><span class="p">{},</span>
         <span class="n">tgt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">batch_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">batch_type</span><span class="o">=</span><span class="s2">&quot;sents&quot;</span><span class="p">,</span>
@@ -1140,6 +1144,7 @@
 
         <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">GeneratorLM</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span>
             <span class="n">src</span><span class="p">,</span>
+            <span class="n">src_feats</span><span class="p">,</span>
             <span class="n">tgt</span><span class="p">,</span>
             <span class="n">batch_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
             <span class="n">batch_type</span><span class="o">=</span><span class="n">batch_type</span><span class="p">,</span>

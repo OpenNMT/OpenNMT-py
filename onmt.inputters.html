@@ -101,6 +101,7 @@
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
@@ -246,7 +247,7 @@
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.inputters.datareader_base.DataReaderBase</span></code></p>
 <dl class="method">
 <dt id="onmt.inputters.TextDataReader.read">
-<code class="sig-name descname">read</code><span class="sig-paren">(</span><em class="sig-param">sequences</em>, <em class="sig-param">side</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/text_dataset.html#TextDataReader.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.TextDataReader.read" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">read</code><span class="sig-paren">(</span><em class="sig-param">sequences</em>, <em class="sig-param">side</em>, <em class="sig-param">features={}</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/text_dataset.html#TextDataReader.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.TextDataReader.read" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read text data from disk.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -254,6 +255,9 @@
 <li><p><strong>sequences</strong> (<em>str</em><em> or </em><em>Iterable</em><em>[</em><em>str</em><em>]</em>) – path to text file or iterable of the actual text data.</p></li>
 <li><p><strong>side</strong> (<em>str</em>) – Prefix used in return dict. Usually
 <code class="docutils literal notranslate"><span class="pre">&quot;src&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;tgt&quot;</span></code>.</p></li>
+<li><p><strong>features</strong> – (Dict[str or Iterable[str]]):
+dictionary mapping feature names with the path to feature
+file or iterable of the actual feature data.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Yields</dt>

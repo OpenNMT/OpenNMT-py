@@ -100,6 +100,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
@@ -204,7 +205,7 @@
 
 
 <div class="viewcode-block" id="TextDataReader"><a class="viewcode-back" href="../../../onmt.inputters.html#onmt.inputters.TextDataReader">[docs]</a><span class="k">class</span> <span class="nc">TextDataReader</span><span class="p">(</span><span class="n">DataReaderBase</span><span class="p">):</span>
-<div class="viewcode-block" id="TextDataReader.read"><a class="viewcode-back" href="../../../onmt.inputters.html#onmt.inputters.TextDataReader.read">[docs]</a>    <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequences</span><span class="p">,</span> <span class="n">side</span><span class="p">):</span>
+<div class="viewcode-block" id="TextDataReader.read"><a class="viewcode-back" href="../../../onmt.inputters.html#onmt.inputters.TextDataReader.read">[docs]</a>    <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequences</span><span class="p">,</span> <span class="n">side</span><span class="p">,</span> <span class="n">features</span><span class="o">=</span><span class="p">{}):</span>
         <span class="sd">&quot;&quot;&quot;Read text data from disk.</span>
 
 <span class="sd">        Args:</span>
@@ -212,6 +213,9 @@
 <span class="sd">                path to text file or iterable of the actual text data.</span>
 <span class="sd">            side (str): Prefix used in return dict. Usually</span>
 <span class="sd">                ``&quot;src&quot;`` or ``&quot;tgt&quot;``.</span>
+<span class="sd">            features: (Dict[str or Iterable[str]]):</span>
+<span class="sd">                dictionary mapping feature names with the path to feature</span>
+<span class="sd">                file or iterable of the actual feature data.</span>
 
 <span class="sd">        Yields:</span>
 <span class="sd">            dictionaries whose keys are the names of fields and whose</span>
@@ -220,10 +224,25 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sequences</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="n">sequences</span> <span class="o">=</span> <span class="n">DataReaderBase</span><span class="o">.</span><span class="n">_read_file</span><span class="p">(</span><span class="n">sequences</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">seq</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sequences</span><span class="p">):</span>
+
+        <span class="n">features_names</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">features_values</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">feat_name</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">features</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">features_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">feat_name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">features_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">DataReaderBase</span><span class="o">.</span><span class="n">_read_file</span><span class="p">(</span><span class="n">features</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">features_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>  
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">seq</span><span class="p">,</span> <span class="o">*</span><span class="n">feats</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">sequences</span><span class="p">,</span> <span class="o">*</span><span class="n">features_values</span><span class="p">)):</span>
+            <span class="n">ex_dict</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">seq</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
                 <span class="n">seq</span> <span class="o">=</span> <span class="n">seq</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
-            <span class="k">yield</span> <span class="p">{</span><span class="n">side</span><span class="p">:</span> <span class="n">seq</span><span class="p">,</span> <span class="s2">&quot;indices&quot;</span><span class="p">:</span> <span class="n">i</span><span class="p">}</span></div></div>
+            <span class="n">ex_dict</span><span class="p">[</span><span class="n">side</span><span class="p">]</span> <span class="o">=</span> <span class="n">seq</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">feats</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+                    <span class="n">f</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+                <span class="n">ex_dict</span><span class="p">[</span><span class="n">features_names</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="n">f</span>
+            <span class="k">yield</span> <span class="p">{</span><span class="n">side</span><span class="p">:</span> <span class="n">ex_dict</span><span class="p">,</span> <span class="s2">&quot;indices&quot;</span><span class="p">:</span> <span class="n">i</span><span class="p">}</span></div></div>
 
 
 <span class="k">def</span> <span class="nf">text_sort_key</span><span class="p">(</span><span class="n">ex</span><span class="p">):</span>
@@ -233,6 +252,7 @@
     <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">ex</span><span class="o">.</span><span class="n">src</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 
 
+<span class="c1"># Legacy function. Currently it only truncates input if truncate is set.</span>
 <span class="c1"># mix this with partial</span>
 <span class="k">def</span> <span class="nf">_feature_tokenize</span><span class="p">(</span>
         <span class="n">string</span><span class="p">,</span> <span class="n">layer</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">tok_delim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">feat_delim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">truncate</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -335,8 +355,7 @@
 <span class="sd">                lists of tokens/feature tags for the sentence. The output</span>
 <span class="sd">                is ordered like ``self.fields``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="k">return</span> <span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">preprocess</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">]</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">preprocess</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">fn</span><span class="p">])</span> <span class="k">for</span> <span class="n">fn</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">]</span>
 
     <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="n">item</span><span class="p">]</span>
@@ -347,7 +366,7 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        base_name (str): Name associated with the field.</span>
-<span class="sd">        n_feats (int): Number of word level feats (not counting the tokens)</span>
+<span class="sd">        feats (Optional[Dict]): Word level feats</span>
 <span class="sd">        include_lengths (bool): Optionally return the sequence lengths.</span>
 <span class="sd">        pad (str, optional): Defaults to ``&quot;&lt;blank&gt;&quot;``.</span>
 <span class="sd">        bos (str or NoneType, optional): Defaults to ``&quot;&lt;s&gt;&quot;``.</span>
@@ -358,7 +377,7 @@
 <span class="sd">        TextMultiField</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">n_feats</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;n_feats&quot;</span><span class="p">]</span>
+    <span class="n">feats</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;feats&quot;</span><span class="p">]</span>
     <span class="n">include_lengths</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;include_lengths&quot;</span><span class="p">]</span>
     <span class="n">base_name</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;base_name&quot;</span><span class="p">]</span>
     <span class="n">pad</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pad&quot;</span><span class="p">,</span> <span class="n">DefaultTokens</span><span class="o">.</span><span class="n">PAD</span><span class="p">)</span>
@@ -366,20 +385,36 @@
     <span class="n">eos</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;eos&quot;</span><span class="p">,</span> <span class="n">DefaultTokens</span><span class="o">.</span><span class="n">EOS</span><span class="p">)</span>
     <span class="n">truncate</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;truncate&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
     <span class="n">fields_</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">feat_delim</span> <span class="o">=</span> <span class="sa">u</span><span class="s2">&quot;￨&quot;</span> <span class="k">if</span> <span class="n">n_feats</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_feats</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
-        <span class="n">name</span> <span class="o">=</span> <span class="n">base_name</span> <span class="o">+</span> <span class="s2">&quot;_feat_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">base_name</span>
-        <span class="n">tokenize</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span>
-            <span class="n">_feature_tokenize</span><span class="p">,</span>
-            <span class="n">layer</span><span class="o">=</span><span class="n">i</span><span class="p">,</span>
-            <span class="n">truncate</span><span class="o">=</span><span class="n">truncate</span><span class="p">,</span>
-            <span class="n">feat_delim</span><span class="o">=</span><span class="n">feat_delim</span><span class="p">)</span>
-        <span class="n">use_len</span> <span class="o">=</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">include_lengths</span>
-        <span class="n">feat</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-            <span class="n">init_token</span><span class="o">=</span><span class="n">bos</span><span class="p">,</span> <span class="n">eos_token</span><span class="o">=</span><span class="n">eos</span><span class="p">,</span>
-            <span class="n">pad_token</span><span class="o">=</span><span class="n">pad</span><span class="p">,</span> <span class="n">tokenize</span><span class="o">=</span><span class="n">tokenize</span><span class="p">,</span>
-            <span class="n">include_lengths</span><span class="o">=</span><span class="n">use_len</span><span class="p">)</span>
-        <span class="n">fields_</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">name</span><span class="p">,</span> <span class="n">feat</span><span class="p">))</span>
+
+    <span class="n">feat_delim</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1">#u&quot;￨&quot; if n_feats &gt; 0 else None</span>
+
+    <span class="c1"># Base field</span>
+    <span class="n">tokenize</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span>
+        <span class="n">_feature_tokenize</span><span class="p">,</span>
+        <span class="n">layer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">truncate</span><span class="o">=</span><span class="n">truncate</span><span class="p">,</span>
+        <span class="n">feat_delim</span><span class="o">=</span><span class="n">feat_delim</span><span class="p">)</span>
+    <span class="n">feat</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">init_token</span><span class="o">=</span><span class="n">bos</span><span class="p">,</span> <span class="n">eos_token</span><span class="o">=</span><span class="n">eos</span><span class="p">,</span>
+        <span class="n">pad_token</span><span class="o">=</span><span class="n">pad</span><span class="p">,</span> <span class="n">tokenize</span><span class="o">=</span><span class="n">tokenize</span><span class="p">,</span>
+        <span class="n">include_lengths</span><span class="o">=</span><span class="n">include_lengths</span><span class="p">)</span>
+    <span class="n">fields_</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">base_name</span><span class="p">,</span> <span class="n">feat</span><span class="p">))</span>
+
+    <span class="c1"># Feats fields</span>
+    <span class="k">if</span> <span class="n">feats</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">feat_name</span> <span class="ow">in</span> <span class="n">feats</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="c1"># Legacy function, it is not really necessary</span>
+            <span class="n">tokenize</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span>
+                <span class="n">_feature_tokenize</span><span class="p">,</span>
+                <span class="n">layer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">truncate</span><span class="o">=</span><span class="n">truncate</span><span class="p">,</span>
+                <span class="n">feat_delim</span><span class="o">=</span><span class="n">feat_delim</span><span class="p">)</span>
+            <span class="n">feat</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+                <span class="n">init_token</span><span class="o">=</span><span class="n">bos</span><span class="p">,</span> <span class="n">eos_token</span><span class="o">=</span><span class="n">eos</span><span class="p">,</span>
+                <span class="n">pad_token</span><span class="o">=</span><span class="n">pad</span><span class="p">,</span> <span class="n">tokenize</span><span class="o">=</span><span class="n">tokenize</span><span class="p">,</span>
+                <span class="n">include_lengths</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">fields_</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">feat_name</span><span class="p">,</span> <span class="n">feat</span><span class="p">))</span>
+
     <span class="k">assert</span> <span class="n">fields_</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">base_name</span>  <span class="c1"># sanity check</span>
     <span class="n">field</span> <span class="o">=</span> <span class="n">TextMultiField</span><span class="p">(</span><span class="n">fields_</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">fields_</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">fields_</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
     <span class="k">return</span> <span class="n">field</span>

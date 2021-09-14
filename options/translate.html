@@ -102,6 +102,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
@@ -214,10 +215,10 @@
 </p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">translate</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">config</span> <span class="n">CONFIG</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">save_config</span> <span class="n">SAVE_CONFIG</span><span class="p">]</span> <span class="o">--</span><span class="n">model</span>
                     <span class="n">MODEL</span> <span class="p">[</span><span class="n">MODEL</span> <span class="o">...</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">fp32</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">int8</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">avg_raw_probs</span><span class="p">]</span>
-                    <span class="p">[</span><span class="o">--</span><span class="n">data_type</span> <span class="n">DATA_TYPE</span><span class="p">]</span> <span class="o">--</span><span class="n">src</span> <span class="n">SRC</span> <span class="p">[</span><span class="o">--</span><span class="n">tgt</span> <span class="n">TGT</span><span class="p">]</span>
-                    <span class="p">[</span><span class="o">--</span><span class="n">tgt_prefix</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">shard_size</span> <span class="n">SHARD_SIZE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">output</span> <span class="n">OUTPUT</span><span class="p">]</span>
-                    <span class="p">[</span><span class="o">--</span><span class="n">report_align</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">report_time</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">beam_size</span> <span class="n">BEAM_SIZE</span><span class="p">]</span>
-                    <span class="p">[</span><span class="o">--</span><span class="n">ratio</span> <span class="n">RATIO</span><span class="p">]</span>
+                    <span class="p">[</span><span class="o">--</span><span class="n">data_type</span> <span class="n">DATA_TYPE</span><span class="p">]</span> <span class="o">--</span><span class="n">src</span> <span class="n">SRC</span> <span class="p">[</span><span class="o">-</span><span class="n">src_feats</span> <span class="n">SRC_FEATS</span><span class="p">]</span>
+                    <span class="p">[</span><span class="o">--</span><span class="n">tgt</span> <span class="n">TGT</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">tgt_prefix</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">shard_size</span> <span class="n">SHARD_SIZE</span><span class="p">]</span>
+                    <span class="p">[</span><span class="o">--</span><span class="n">output</span> <span class="n">OUTPUT</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">report_align</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">report_time</span><span class="p">]</span>
+                    <span class="p">[</span><span class="o">--</span><span class="n">beam_size</span> <span class="n">BEAM_SIZE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">ratio</span> <span class="n">RATIO</span><span class="p">]</span>
                     <span class="p">[</span><span class="o">--</span><span class="n">random_sampling_topk</span> <span class="n">RANDOM_SAMPLING_TOPK</span><span class="p">]</span>
                     <span class="p">[</span><span class="o">--</span><span class="n">random_sampling_topp</span> <span class="n">RANDOM_SAMPLING_TOPP</span><span class="p">]</span>
                     <span class="p">[</span><span class="o">--</span><span class="n">random_sampling_temp</span> <span class="n">RANDOM_SAMPLING_TEMP</span><span class="p">]</span>
@@ -278,6 +279,9 @@
 </dd>
 <dt><kbd>--src, -src</kbd></dt>
 <dd><p>Source sequence to decode (one line per sequence)</p>
+</dd>
+<dt><kbd>-src_feats, --src_feats</kbd></dt>
+<dd><p>Source sequence features (dict format). Ex: {‘feat_0’: ‘../data.txt.feats0’, ‘feat_1’: ‘../data.txt.feats1’}</p>
 </dd>
 <dt><kbd>--tgt, -tgt</kbd></dt>
 <dd><p>True target sequence (optional)</p>
