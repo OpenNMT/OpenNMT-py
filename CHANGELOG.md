@@ -4,6 +4,16 @@
 
 ## [Unreleased]
 
+## [2.2.0](https://github.com/OpenNMT/OpenNMT-py/tree/2.2.0) (2021-09-14)
+
+### New features
+* Support source features (thanks @anderleich !)
+
+### Fixes and improvements
+* Adaptations to relax torch version
+* Customizable transform statistics (#2059)
+* Adapt release code for ctranslate2 2.0
+
 ## [2.1.2](https://github.com/OpenNMT/OpenNMT-py/tree/2.1.2) (2021-04-30)
 
 ### Fixes and improvements
