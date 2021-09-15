@@ -1004,16 +1004,12 @@ class GeneratorLM(Inference):
                 batch, src_vocabs, decode_strategy
             )
 
-    def split_src_to_prevent_padding(self, src, src_lengths):
+    @classmethod
+    def split_src_to_prevent_padding(cls, src, src_lengths):
         min_len_batch = torch.min(src_lengths).item()
         target_prefix = None
-        if min_len_batch > 0 and min_len_batch <= src.size(0):
-            # hack [min_len_batch-1:] because expect <bos>
-            target_prefix = (
-                src[min_len_batch - 1:]
-                if min_len_batch > 0 and min_len_batch <= src.size(0)
-                else None
-            )
+        if min_len_batch > 0 and min_len_batch < src.size(0):
+            target_prefix = src[min_len_batch:]
             src = src[:min_len_batch]
             src_lengths[:] = min_len_batch
         return src, src_lengths, target_prefix
@@ -1090,7 +1086,7 @@ class GeneratorLM(Inference):
                 src_vocabs,
                 memory_lengths=memory_lengths.clone(),
                 src_map=src_map,
-                step=step,
+                step=step if step == 0 else step + src_lengths[0].item(),
                 batch_offset=decode_strategy.batch_offset,
             )
 
