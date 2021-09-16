@@ -274,6 +274,5 @@ class GreedySearchLM(GreedySearch):
         (fn_map_state, _, self.memory_lengths,
             src_map) = super(GreedySearchLM, self).initialize(
                 None, src_lengths, src_map, device, target_prefix)
-        src = fn_map_state(src, dim=1)
 
         return fn_map_state, src, self.memory_lengths, src_map

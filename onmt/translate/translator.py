@@ -1091,6 +1091,9 @@ class GeneratorLM(Inference):
             )
 
             if step == 0:
+                log_probs = fn_map_state(log_probs, dim=1)
+                if fn_map_state is not None:
+                    self.model.decoder.map_state(fn_map_state)
                 log_probs = log_probs[-1]
 
             decode_strategy.advance(log_probs, attn)
