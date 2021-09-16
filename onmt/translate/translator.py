@@ -1068,8 +1068,6 @@ class GeneratorLM(Inference):
             src_map,
             target_prefix=target_prefix,
         )
-        if fn_map_state is not None:
-            self.model.decoder.map_state(fn_map_state)
 
         # (4) Begin decoding step by step:
         for step in range(decode_strategy.max_length):
@@ -1091,8 +1089,8 @@ class GeneratorLM(Inference):
             )
 
             if step == 0:
-                log_probs = fn_map_state(log_probs, dim=1)
                 if fn_map_state is not None:
+                    log_probs = fn_map_state(log_probs, dim=1)
                     self.model.decoder.map_state(fn_map_state)
                 log_probs = log_probs[-1]
 
