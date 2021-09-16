@@ -36,16 +36,16 @@ class TextDataReader(DataReaderBase):
             if isinstance(v, str):
                 features_values.append(DataReaderBase._read_file(features))
             else:
-                features_values.append(v)  
+                features_values.append(v)
         for i, (seq, *feats) in enumerate(zip(sequences, *features_values)):
             ex_dict = {}
             if isinstance(seq, bytes):
                 seq = seq.decode("utf-8")
             ex_dict[side] = seq
-            for i, f in enumerate(feats):
+            for j, f in enumerate(feats):
                 if isinstance(f, bytes):
                     f = f.decode("utf-8")
-                ex_dict[features_names[i]] = f
+                ex_dict[features_names[j]] = f
             yield {side: ex_dict, "indices": i}
 
 
