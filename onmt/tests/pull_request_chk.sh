@@ -397,7 +397,7 @@ ${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
             -src ${DATA_DIR}/data_lm/src-gen.txt   \
             -verbose -batch_size 10     \
             -beam_size 10                \
-            -seed 1                     \
+            -seed 2                     \
             -random_sampling_topk 50    \
             -random_sampling_topp 0.95    \
             -random_sampling_temp 1    \

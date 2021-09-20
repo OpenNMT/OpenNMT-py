@@ -357,7 +357,6 @@ class BeamSearchLM(BeamSearchBase):
         (fn_map_state, _, src_map,
             target_prefix) = self.initialize_tile(
                 None, src_lengths, src_map, target_prefix)
-        src = fn_map_state(src, dim=1)
         if device is None:
             device = src.device
 

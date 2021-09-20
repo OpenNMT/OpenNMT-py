@@ -1004,19 +1004,22 @@ class GeneratorLM(Inference):
                 batch, src_vocabs, decode_strategy
             )
 
-    def split_src_to_prevent_padding(self, src, src_lengths):
+    @classmethod
+    def split_src_to_prevent_padding(cls, src, src_lengths):
         min_len_batch = torch.min(src_lengths).item()
         target_prefix = None
-        if min_len_batch > 0 and min_len_batch <= src.size(0):
-            # hack [min_len_batch-1:] because expect <bos>
-            target_prefix = (
-                src[min_len_batch - 1:]
-                if min_len_batch > 0 and min_len_batch <= src.size(0)
-                else None
-            )
+        if min_len_batch > 0 and min_len_batch < src.size(0):
+            target_prefix = src[min_len_batch:]
             src = src[:min_len_batch]
             src_lengths[:] = min_len_batch
         return src, src_lengths, target_prefix
+
+    def tile_to_beam_size_after_initial_step(self, fn_map_state, log_probs):
+        if fn_map_state is not None:
+            log_probs = fn_map_state(log_probs, dim=1)
+            self.model.decoder.map_state(fn_map_state)
+            log_probs = log_probs[-1]
+        return log_probs
 
     def _translate_batch_with_strategy(
         self, batch, src_vocabs, decode_strategy
@@ -1072,8 +1075,6 @@ class GeneratorLM(Inference):
             src_map,
             target_prefix=target_prefix,
         )
-        if fn_map_state is not None:
-            self.model.decoder.map_state(fn_map_state)
 
         # (4) Begin decoding step by step:
         for step in range(decode_strategy.max_length):
@@ -1090,12 +1091,13 @@ class GeneratorLM(Inference):
                 src_vocabs,
                 memory_lengths=memory_lengths.clone(),
                 src_map=src_map,
-                step=step,
+                step=step if step == 0 else step + src_lengths[0].item(),
                 batch_offset=decode_strategy.batch_offset,
             )
 
             if step == 0:
-                log_probs = log_probs[-1]
+                log_probs = self.tile_to_beam_size_after_initial_step(
+                    fn_map_state, log_probs)
 
             decode_strategy.advance(log_probs, attn)
             any_finished = decode_strategy.is_finished.any()
