@@ -1014,6 +1014,13 @@ class GeneratorLM(Inference):
             src_lengths[:] = min_len_batch
         return src, src_lengths, target_prefix
 
+    def tile_to_beam_size_after_initial_step(fn_map_state, log_probs):
+        if fn_map_state is not None:
+            log_probs = fn_map_state(log_probs, dim=1)
+            self.model.decoder.map_state(fn_map_state)
+            log_probs = log_probs[-1]
+        return log_probs
+
     def _translate_batch_with_strategy(
         self, batch, src_vocabs, decode_strategy
     ):
@@ -1089,10 +1096,8 @@ class GeneratorLM(Inference):
             )
 
             if step == 0:
-                if fn_map_state is not None:
-                    log_probs = fn_map_state(log_probs, dim=1)
-                    self.model.decoder.map_state(fn_map_state)
-                log_probs = log_probs[-1]
+                log_probs = self.tile_to_beam_size_after_initial_step(
+                    fn_map_state, log_probs)
 
             decode_strategy.advance(log_probs, attn)
             any_finished = decode_strategy.is_finished.any()
