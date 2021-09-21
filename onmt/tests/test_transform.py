@@ -513,7 +513,7 @@ class TestBARTNoising(unittest.TestCase):
 class TestFeaturesTransform(unittest.TestCase):
     def test_inferfeats(self):
         inferfeats_cls = get_transforms_cls(["inferfeats"])["inferfeats"]
-        opt = Namespace(reversible_tokenization="joiner")
+        opt = Namespace(reversible_tokenization="joiner", prior_tokenization=False)
         inferfeats_transform = inferfeats_cls(opt)
 
         ex_in = {
@@ -527,7 +527,7 @@ class TestFeaturesTransform(unittest.TestCase):
         ex_out = inferfeats_transform.apply(ex_in)
         self.assertEqual(ex_out["src_feats"]["feat_0"], ["A", "<null>", "A", "A", "A", "B", "<null>", "A", "A", "C", "<null>", "C", "<null>"])
 
-        ex_in["src"] = ['｟mrk_case_modifier_C｠', 'however', '￭,', 'according', 'to', 'the', 'logs', '￭,', '｟mrk_begin_case_region_U｠', 'she', 'is', 'hard', '￭-￭', 'working', '￭.', '｟mrk_end_case_region_U｠']
+        ex_in["src"] = ['｟mrk_case_modifier_C｠', 'however', '￭,', 'according', 'to', 'the', 'logs', '￭,', '｟mrk_begin_case_region_U｠', 'she', 'is', 'hard', '￭-￭', 'working', '｟mrk_end_case_region_U｠', '￭.']
         ex_in["src_feats"] = {"feat_0": ["A", "A", "A", "A", "B", "A", "A", "C"]}
         ex_out = inferfeats_transform.apply(ex_in)
-        self.assertEqual(ex_out["src_feats"]["feat_0"], ["<null>", "A", "<null>", "A", "A", "A", "B", "<null>", "<null>", "A", "A", "C", "<null>", "C", "<null>", "<null>"])
+        self.assertEqual(ex_out["src_feats"]["feat_0"], ["A", "A", "<null>", "A", "A", "A", "B", "<null>", "A", "A", "A", "C", "<null>", "C", "C", "<null>"])
