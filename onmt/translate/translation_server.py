@@ -420,7 +420,7 @@ class ServerModel(object):
                 self.translator = CTranslate2Translator(
                     self.ct2_model,
                     ct2_translator_args=self.ct2_translator_args,
-                    ct2_translate_batch_args=self.ct2_translate_batch_arg,
+                    ct2_translate_batch_args=self.ct2_translate_batch_args,
                     target_prefix=self.opt.tgt_prefix,
                     preload=preload)
             else:
