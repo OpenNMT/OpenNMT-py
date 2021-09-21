@@ -108,23 +108,33 @@ class CTranslate2Translator(object):
                     f" ({value} vs {obj[name]})"
             else:
                 obj.setdefault(name, value)
-        ct2_translator_args.setdefault("inter_threads", 1)
-        ct2_translator_args.setdefault("intra_threads", 1)
-        ct2_translator_args.setdefault("compute_type", "default")
-        setdefault_if_exists_must_match(ct2_translator_args, "device",
-                                        "cuda" if opt.cuda else "cpu")
-        setdefault_if_exists_must_match(
-            ct2_translator_args, "device_index", opt.gpu if opt.cuda else 0)
-        setdefault_if_exists_must_match(
-            ct2_translate_batch_args, "beam_size", opt.beam_size)
-        setdefault_if_exists_must_match(
-            ct2_translate_batch_args, "max_batch_size", opt.batch_size)
-        setdefault_if_exists_must_match(
-            ct2_translate_batch_args, "num_hypotheses", opt.n_best)
-        setdefault_if_exists_must_match(
-            ct2_translate_batch_args, "max_decoding_length", opt.max_length)
-        setdefault_if_exists_must_match(
-            ct2_translate_batch_args, "min_decoding_length", opt.min_length)
+
+        default_for_translator = {
+            "inter_threads": 1,
+            "intra_threads": 1,
+            "compute_type": "default",
+        }
+        for name, value in default_for_translator.items():
+            ct2_translator_args.setdefault(name, value)
+
+        onmt_for_translator = {
+            "device": "cuda" if opt.cuda else "cpu",
+            "device_index": opt.gpu if opt.cuda else 0,
+        }
+        for name, value in onmt_for_translator.items():
+            setdefault_if_exists_must_match(
+                ct2_translator_args, name, value)
+
+        onmt_for_translate_batch_enforce = {
+            "beam_size": opt.beam_size,
+            "max_batch_size": opt.batch_size,
+            "num_hypotheses": opt.n_best,
+            "max_decoding_length": opt.max_length,
+            "min_decoding_length": opt.min_length,
+        }
+        for name, value in onmt_for_translate_batch_enforce.items():
+            setdefault_if_exists_must_match(
+                ct2_translate_batch_args, name, value)
 
     def translate(self, texts_to_translate, batch_size=8, tgt=None):
         batch = [item.split(" ") for item in texts_to_translate]

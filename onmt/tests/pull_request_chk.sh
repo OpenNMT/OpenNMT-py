@@ -45,13 +45,8 @@ error_exit()
 # }
 
 # flake8 check
-echo -n "[+] Doing flake8 check 1/2..."
-flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics >> ${LOG_FILE} 2>&1
-[ "$?" -eq 0 ] || error_exit
-echo "Succeeded" | tee -a ${LOG_FILE}
-
-echo -n "[+] Doing flake8 check 2/2..."
-flake8 . --count --exit-zero --statistics >> ${LOG_FILE} 2>&1
+echo -n "[+] Doing flake8 check..."
+${PYTHON} -m flake8 >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 
@@ -402,7 +397,7 @@ ${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
             -src ${DATA_DIR}/data_lm/src-gen.txt   \
             -verbose -batch_size 10     \
             -beam_size 10                \
-            -seed 2                     \
+            -seed 1                     \
             -random_sampling_topk 50    \
             -random_sampling_topp 0.95    \
             -random_sampling_temp 1    \
