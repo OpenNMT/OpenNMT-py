@@ -122,9 +122,9 @@ class CTranslate2Translator(object):
         setdefault_if_exists_must_match(
             ct2_translate_batch_args, "num_hyphothesis", opt.n_best)
         setdefault_if_exists_must_match(
-            ct2_translate_batch_args, "max_decoding_length", opt.max_len)
+            ct2_translate_batch_args, "max_decoding_length", opt.max_length)
         setdefault_if_exists_must_match(
-            ct2_translate_batch_args, "min_decoding_length", opt.min_len)
+            ct2_translate_batch_args, "min_decoding_length", opt.min_length)
 
     def translate(self, texts_to_translate, batch_size=8, tgt=None):
         batch = [item.split(" ") for item in texts_to_translate]
