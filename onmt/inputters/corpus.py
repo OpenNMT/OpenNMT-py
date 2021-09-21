@@ -316,6 +316,13 @@ def write_files_from_queues(sample_path, queues):
                     break
 
 
+# Just for debugging purposes
+# It appends features to subwords when dumping to file
+def append_features_to_example(example, features):
+    ex_toks = example.split(' ')
+    feat_toks = features.split(' ')
+    return " ".join([f"{subword}￨{feat}" for subword, feat in zip(ex_toks, feat_toks)])
+
 def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
     """Build vocab on (strided) subpart of the data."""
     sub_counter_src = Counter()
@@ -333,14 +340,17 @@ def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
                     build_sub_vocab.queues[c_name][offset].put("blank")
                 continue
             src_line, tgt_line = maybe_example['src']['src'], maybe_example['tgt']['tgt']
+            src_line_pretty = src_line
             for feat_name, feat_line in maybe_example["src"].items():
                 if feat_name not in ["src", "src_original"]:
                     sub_counter_src_feats[feat_name].update(feat_line.split(' '))
+                    if opts.dump_samples:
+                        src_line_pretty = append_features_to_example(src_line_pretty, feat_line)
             sub_counter_src.update(src_line.split(' '))
             sub_counter_tgt.update(tgt_line.split(' '))
             if opts.dump_samples:
                 build_sub_vocab.queues[c_name][offset].put(
-                    (i, src_line, tgt_line))
+                    (i, src_line_pretty, tgt_line))
             if n_sample > 0 and ((i+1) * stride + offset) >= n_sample:
                 if opts.dump_samples:
                     build_sub_vocab.queues[c_name][offset].put("break")
