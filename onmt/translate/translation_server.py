@@ -120,7 +120,7 @@ class CTranslate2Translator(object):
         setdefault_if_exists_must_match(
             ct2_translate_batch_args, "max_batch_size", opt.batch_size)
         setdefault_if_exists_must_match(
-            ct2_translate_batch_args, "num_hyphothesis", opt.n_best)
+            ct2_translate_batch_args, "num_hypotheses", opt.n_best)
         setdefault_if_exists_must_match(
             ct2_translate_batch_args, "max_decoding_length", opt.max_length)
         setdefault_if_exists_must_match(
