@@ -221,8 +221,10 @@ class ParallelCorpusIterator(object):
         for example in stream:
             example['src'] = example['src'].strip('\n').split()
             example['tgt'] = example['tgt'].strip('\n').split()
-            example['src_original'] = example['src_original'].strip("\n").split()
-            example['tgt_original'] = example['tgt_original'].strip("\n").split()
+            example['src_original'] = \
+                example['src_original'].strip("\n").split()
+            example['tgt_original'] = \
+                example['tgt_original'].strip("\n").split()
             if 'align' in example:
                 example['align'] = example['align'].strip('\n').split()
             if 'src_feats' in example:
@@ -323,7 +325,10 @@ def write_files_from_queues(sample_path, queues):
 def append_features_to_example(example, features):
     ex_toks = example.split(' ')
     feat_toks = features.split(' ')
-    return " ".join([f"{subword}￨{feat}" for subword, feat in zip(ex_toks, feat_toks)])
+    toks = [f"{subword}￨{feat}" for subword, feat in
+            zip(ex_toks, feat_toks)]
+    return " ".join(toks)
+
 
 def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
     """Build vocab on (strided) subpart of the data."""
@@ -349,7 +354,8 @@ def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
                     sub_counter_src_feats[feat_name].update(
                         feat_line.split(' '))
                     if opts.dump_samples:
-                        src_line_pretty = append_features_to_example(src_line_pretty, feat_line)
+                        src_line_pretty = append_features_to_example(
+                            src_line_pretty, feat_line)
             sub_counter_src.update(src_line.split(' '))
             sub_counter_tgt.update(tgt_line.split(' '))
             if opts.dump_samples:

@@ -1,7 +1,6 @@
 from onmt.utils.logging import logger
 from onmt.transforms import register_transform
 from .transform import Transform
-from onmt.constants import SubwordMarker
 from onmt.utils.alignment import subword_map_by_joiner, subword_map_by_spacer
 import re
 from collections import defaultdict
@@ -51,11 +50,11 @@ class InferFeatsTransform(Transform):
     def add_options(cls, parser):
         """Avalilable options related to this Transform."""
         group = parser.add_argument_group("Transform/InferFeats")
-        group.add("--reversible_tokenization", "-reversible_tokenization", 
-                  default="joiner", choices=["joiner", "spacer"], 
+        group.add("--reversible_tokenization", "-reversible_tokenization",
+                  default="joiner", choices=["joiner", "spacer"],
                   help="Type of reversible tokenization "
                        "applied on the tokenizer.")
-        group.add("--prior_tokenization", "-prior_tokenization", 
+        group.add("--prior_tokenization", "-prior_tokenization",
                   default=False, action="store_true",
                   help="Whether the input has already been tokenized.")
 
@@ -71,16 +70,19 @@ class InferFeatsTransform(Transform):
             return example
 
         if self.reversible_tokenization == "joiner":
-            original_src = example["src_original"] if self.prior_tokenization else None
-            word_to_subword_mapping = subword_map_by_joiner(example["src"], original_subwords=original_src)
-        else: #Spacer
+            original_src = example["src_original"] \
+                if self.prior_tokenization else None
+            word_to_subword_mapping = subword_map_by_joiner(
+                example["src"], original_subwords=original_src)
+        else:  # Spacer
             word_to_subword_mapping = subword_map_by_spacer(example["src"])
 
         inferred_feats = defaultdict(list)
         for subword, word_id in zip(example["src"], word_to_subword_mapping):
             for feat_name, feat_values in example["src_feats"].items():
                 # Punctuation only
-                if not re.sub(r'(\W)+', '', subword).strip() and not self.prior_tokenization:
+                if not re.sub(r'(\W)+', '', subword).strip() \
+                        and not self.prior_tokenization:
                     inferred_feat = "<null>"
                 else:
                     inferred_feat = feat_values[word_id]

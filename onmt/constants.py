@@ -23,6 +23,7 @@ class SubwordMarker(object):
     SPACER = '▁'
     JOINER = '￭'
 
+
 class ModelTask(object):
     LANGUAGE_MODEL = 'lm'
     SEQ2SEQ = 'seq2seq'
