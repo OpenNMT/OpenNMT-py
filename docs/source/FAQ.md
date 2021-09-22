@@ -550,7 +550,7 @@ When using the Transformer architecture make sure the following options are appr
 
 
 ## How can I set up a translation server ?
-A REST server was implemented to serve OpenNMT-py models.
+A REST server was implemented to serve OpenNMT-py models. A discussion is opened on the OpenNMT forum: [discussion link](https://forum.opennmt.net/t/simple-opennmt-py-rest-server/1392).
 
 ### I. How it works?
 ---
