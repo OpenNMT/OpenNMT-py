@@ -1,7 +1,6 @@
 # OpenNMT-py: Open-Source Neural Machine Translation
 
 [![Build Status](https://github.com/OpenNMT/OpenNMT-py/workflows/Lint%20&%20Tests/badge.svg)](https://github.com/OpenNMT/OpenNMT-py/actions)
-[![Run on FH](https://img.shields.io/badge/Run%20on-FloydHub-blue.svg)](https://floydhub.com/run?template=https://github.com/OpenNMT/OpenNMT-py)
 [![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://opennmt.net/OpenNMT-py/)
 [![Gitter](https://badges.gitter.im/OpenNMT/OpenNMT-py.svg)](https://gitter.im/OpenNMT/OpenNMT-py?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![Forum](https://img.shields.io/badge/discourse-online-green.svg)](https://forum.opennmt.net/)
@@ -59,7 +58,6 @@ Table of Contents
   * [Setup](#setup)
   * [Features](#features)
   * [Quickstart](#quickstart)
-  * [Alternative: Run on FloydHub](#alternative-run-on-floydhub)
   * [Pretrained embeddings](#pretrained-embeddings-eg-glove)
   * [Pretrained models](#pretrained-models)
   * [Acknowledgements](#acknowledgements)
@@ -235,13 +233,6 @@ onmt_release_model -model toy-ende/run/model_step_1000.pt -output toy-ende/run/m
 ```
 
 The release script can also export checkpoints to [CTranslate2](https://github.com/OpenNMT/CTranslate2), a fast inference engine for Transformer models. See the `-format` command line option.
-
-## Alternative: Run on FloydHub
-
-[![Run on FloydHub](https://static.floydhub.com/button/button.svg)](https://floydhub.com/run?template=https://github.com/OpenNMT/OpenNMT-py)
-
-Click this button to open a Workspace on [FloydHub](https://www.floydhub.com/?utm_medium=readme&utm_source=opennmt-py&utm_campaign=jul_2018) for training/testing your code.
-
 
 ## Pretrained embeddings (e.g. GloVe)
 
