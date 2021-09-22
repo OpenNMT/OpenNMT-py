@@ -1,7 +1,7 @@
 from onmt.utils.logging import logger
 from onmt.transforms import register_transform
-from .transform import Transform, ObservableStats
-from onmt.constants import DefaultTokens, SubwordMarker
+from .transform import Transform
+from onmt.constants import SubwordMarker
 from onmt.utils.alignment import subword_map_by_joiner, subword_map_by_spacer
 import re
 from collections import defaultdict
@@ -30,7 +30,9 @@ class FilterFeatsTransform(Transform):
 
         for feat_name, feat_values in example['src_feats'].items():
             if len(example['src']) != len(feat_values):
-                logger.warning(f"Skipping example due to mismatch between source and feature {feat_name}")
+                logger.warning(
+                    f"Skipping example due to mismatch "
+                    f"between source and feature {feat_name}")
                 return None
         return example
 
@@ -49,8 +51,10 @@ class InferFeatsTransform(Transform):
     def add_options(cls, parser):
         """Avalilable options related to this Transform."""
         group = parser.add_argument_group("Transform/InferFeats")
-        group.add("--reversible_tokenization", "-reversible_tokenization", default="joiner",
-                  choices=["joiner", "spacer"], help="Type of reversible tokenization applied on the tokenizer.")
+        group.add("--reversible_tokenization", "-reversible_tokenization",
+                  default="joiner", choices=["joiner", "spacer"],
+                  help="Type of reversible tokenization "
+                       "applied on the tokenizer.")
 
     def _parse_opts(self):
         super()._parse_opts()
@@ -64,7 +68,7 @@ class InferFeatsTransform(Transform):
 
         if self.reversible_tokenization == "joiner":
             word_to_subword_mapping = subword_map_by_joiner(example["src"])
-        else: #Spacer
+        else:  # Spacer
             word_to_subword_mapping = subword_map_by_spacer(example["src"])
 
         inferred_feats = defaultdict(list)
@@ -73,7 +77,8 @@ class InferFeatsTransform(Transform):
                 # If case markup placeholder
                 if subword in SubwordMarker.CASE_MARKUP:
                     inferred_feat = "<null>"
-                # Punctuation only (assumes joiner is also some punctuation token)
+                # Punctuation only
+                # (assumes joiner is also some punctuation token)
                 elif not re.sub(r'(\W)+', '', subword).strip():
                     inferred_feat = "<null>"
                 else:

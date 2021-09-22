@@ -120,13 +120,17 @@ def to_word_align(src, tgt, subword_align, m_src='joiner', m_tgt='joiner'):
     return " ".join(word_align)
 
 
-def subword_map_by_joiner(subwords, marker=SubwordMarker.JOINER, case_markup=SubwordMarker.CASE_MARKUP):
+def subword_map_by_joiner(subwords,
+                          marker=SubwordMarker.JOINER,
+                          case_markup=SubwordMarker.CASE_MARKUP):
     """Return word id for each subword token (annotate by joiner)."""
     flags = [1] * len(subwords)
     for i, tok in enumerate(subwords):
-        if tok.endswith(marker) or (tok in case_markup and tok.find("end")<0):
+        if (tok.endswith(marker) or
+                (tok in case_markup and tok.find("end") < 0)):
             flags[i] = 0
-        if tok.startswith(marker) or (tok in case_markup and tok.find("end")>=0):
+        if (tok.startswith(marker) or
+                (tok in case_markup and tok.find("end") >= 0)):
             assert i >= 1 and flags[i-1] != 0, \
                 "Sentence `{}` not correct!".format(" ".join(subwords))
             flags[i-1] = 0
@@ -134,13 +138,15 @@ def subword_map_by_joiner(subwords, marker=SubwordMarker.JOINER, case_markup=Sub
     return word_group
 
 
-def subword_map_by_spacer(subwords, marker=SubwordMarker.SPACER, case_markup=SubwordMarker.CASE_MARKUP):
+def subword_map_by_spacer(subwords,
+                          marker=SubwordMarker.SPACER,
+                          case_markup=SubwordMarker.CASE_MARKUP):
     """Return word id for each subword token (annotate by spacer)."""
     flags = [0] * len(subwords)
     for i, tok in enumerate(subwords):
         if marker in tok:
             if tok.replace(marker, "") in case_markup:
-                if i < len(subwords)-1: 
+                if i < len(subwords)-1:
                     flags[i] = 1
             else:
                 if i > 0:
@@ -149,7 +155,7 @@ def subword_map_by_spacer(subwords, marker=SubwordMarker.SPACER, case_markup=Sub
                         flags[i] = 1
 
     # In case there is a final case_markup when new_spacer is on
-    for i in range(1,len(subwords)-1):
+    for i in range(1, len(subwords)-1):
         if subwords[-i] in case_markup:
             flags[-i] = 0
         elif subwords[-i] == marker:

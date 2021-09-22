@@ -55,7 +55,6 @@ class TestTransform(unittest.TestCase):
         specials_expected = {"src": {"｟_pf_src｠"}, "tgt": {"｟_pf_tgt｠"}}
         self.assertEqual(specials, specials_expected)
 
-
     def test_transform_pipe(self):
         # 1. Init first transform in the pipe
         prefix_cls = get_transforms_cls(["prefix"])["prefix"]
@@ -510,6 +509,7 @@ class TestBARTNoising(unittest.TestCase):
         # print(f"Text Span Infilling: {infillied} / {tokens}")
         # print(n_words, n_masked)
 
+
 class TestFeaturesTransform(unittest.TestCase):
     def test_inferfeats(self):
         inferfeats_cls = get_transforms_cls(["inferfeats"])["inferfeats"]
@@ -517,17 +517,32 @@ class TestFeaturesTransform(unittest.TestCase):
         inferfeats_transform = inferfeats_cls(opt)
 
         ex_in = {
-            "src": ['however', '￭,', 'according', 'to', 'the', 'logs', '￭,', 'she', 'is', 'hard', '￭-￭', 'working', '￭.'],
-            "tgt": ['however', '￭,', 'according', 'to', 'the', 'logs', '￭,', 'she', 'is', 'hard', '￭-￭', 'working', '￭.']
+            "src": ['however', '￭,', 'according', 'to', 'the', 'logs',
+                    '￭,', 'she', 'is', 'hard', '￭-￭', 'working', '￭.'],
+            "tgt": ['however', '￭,', 'according', 'to', 'the', 'logs',
+                    '￭,', 'she', 'is', 'hard', '￭-￭', 'working', '￭.']
         }
         ex_out = inferfeats_transform.apply(ex_in)
         self.assertIs(ex_out, ex_in)
 
-        ex_in["src_feats"] = {"feat_0": ["A", "A", "A", "A", "B", "A", "A", "C"]}
+        ex_in["src_feats"] = {
+            "feat_0": ["A", "A", "A", "A", "B", "A", "A", "C"]
+        }
         ex_out = inferfeats_transform.apply(ex_in)
-        self.assertEqual(ex_out["src_feats"]["feat_0"], ["A", "<null>", "A", "A", "A", "B", "<null>", "A", "A", "C", "<null>", "C", "<null>"])
+        self.assertEqual(
+            ex_out["src_feats"]["feat_0"],
+            ["A", "<null>", "A", "A", "A", "B", "<null>", "A",
+             "A", "C", "<null>", "C", "<null>"])
 
-        ex_in["src"] = ['｟mrk_case_modifier_C｠', 'however', '￭,', 'according', 'to', 'the', 'logs', '￭,', '｟mrk_begin_case_region_U｠', 'she', 'is', 'hard', '￭-￭', 'working', '￭.', '｟mrk_end_case_region_U｠']
-        ex_in["src_feats"] = {"feat_0": ["A", "A", "A", "A", "B", "A", "A", "C"]}
+        ex_in["src"] = ['｟mrk_case_modifier_C｠', 'however', '￭,',
+                        'according', 'to', 'the', 'logs', '￭,',
+                        '｟mrk_begin_case_region_U｠', 'she', 'is', 'hard',
+                        '￭-￭', 'working', '￭.', '｟mrk_end_case_region_U｠']
+        ex_in["src_feats"] = {
+            "feat_0": ["A", "A", "A", "A", "B", "A", "A", "C"]
+        }
         ex_out = inferfeats_transform.apply(ex_in)
-        self.assertEqual(ex_out["src_feats"]["feat_0"], ["<null>", "A", "<null>", "A", "A", "A", "B", "<null>", "<null>", "A", "A", "C", "<null>", "C", "<null>", "<null>"])
+        self.assertEqual(
+            ex_out["src_feats"]["feat_0"],
+            ["<null>", "A", "<null>", "A", "A", "A", "B", "<null>", "<null>",
+             "A", "A", "C", "<null>", "C", "<null>", "<null>"])
