@@ -4,7 +4,7 @@ import torch
 
 
 class TestGeneratorLM(unittest.TestCase):
-    def test_split_src_to_prevent_padding_target_prefix_is_none_when_equal_size(
+    def test_split_src_to_prevent_padding_target_prefix_is_none_when_equal_size(  # noqa: E501
         self,
     ):
         src = torch.randint(0, 10, (5, 6))
@@ -16,7 +16,7 @@ class TestGeneratorLM(unittest.TestCase):
         ) = GeneratorLM.split_src_to_prevent_padding(src, src_lengths)
         self.assertIsNone(target_prefix)
 
-    def test_split_src_to_prevent_padding_target_prefix_is_ok_when_different_size(
+    def test_split_src_to_prevent_padding_target_prefix_is_ok_when_different_size(  # noqa: E501
         self,
     ):
         default_length = 5

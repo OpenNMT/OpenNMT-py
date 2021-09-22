@@ -133,7 +133,9 @@ def _add_dynamic_fields_opts(parser, build_vocab_only=False):
               help="Share source and target vocabulary.")
 
     group.add("-src_feats_vocab", "--src_feats_vocab",
-              help=("List of paths to save" if build_vocab_only else "List of paths to")
+              help=("List of paths to save"
+                    if build_vocab_only
+                    else "List of paths to")
               + " src features vocabulary files. "
               "Files format: one <word> or <word>\t<count> per line.")
 
@@ -762,7 +764,7 @@ def translate_opts(parser):
                    "sequence)")
     group.add("-src_feats", "--src_feats", required=False,
               help="Source sequence features (dict format). "
-                    "Ex: {'feat_0': '../data.txt.feats0', 'feat_1': '../data.txt.feats1'}")
+                   "Ex: {'feat_0': '../data.txt.feats0', 'feat_1': '../data.txt.feats1'}")  # noqa: E501
     group.add('--tgt', '-tgt',
               help='True target sequence (optional)')
     group.add('--tgt_prefix', '-tgt_prefix', action='store_true',
