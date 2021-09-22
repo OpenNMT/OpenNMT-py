@@ -130,8 +130,9 @@ class DataOptsCheckerMixin(object):
             if cname != CorpusName.VALID and corpus["src_feats"] is not None:
                 assert opt.src_feats_vocab, \
                     "-src_feats_vocab is required if using source features."
-                import yaml
-                opt.src_feats_vocab = yaml.safe_load(opt.src_feats_vocab)
+                if isinstance(opt.src_feats_vocab, str):
+                    import yaml
+                    opt.src_feats_vocab = yaml.safe_load(opt.src_feats_vocab)
 
                 for feature in corpus["src_feats"].keys():
                     assert feature in opt.src_feats_vocab, \
