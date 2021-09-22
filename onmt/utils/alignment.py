@@ -134,7 +134,9 @@ def case_markup(token):
     return token in ["｟mrk_begin_case_region_U｠", "｟mrk_end_case_region_U｠", "｟mrk_case_modifier_C｠"]
 
 
-def subword_map_by_joiner(subwords, original_subwords=None, marker=SubwordMarker.JOINER):
+def subword_map_by_joiner(subwords, 
+                          original_subwords=None, 
+                          marker=SubwordMarker.JOINER):
     """Return word id for each subword token (annotate by joiner)."""
     flags = [0] * len(subwords)
     for i, tok in enumerate(subwords):

@@ -11,7 +11,6 @@ from collections import Counter, defaultdict
 from contextlib import contextmanager
 
 import multiprocessing as mp
-from collections import defaultdict
 
 
 @contextmanager
@@ -143,7 +142,8 @@ class ParallelCorpus(object):
         with exfile_open(self.src, mode='rb') as fs,\
                 exfile_open(self.tgt, mode='rb') as ft,\
                 exfile_open(self.align, mode='rb') as fa:
-            for i, (sline, tline, align, *features) in enumerate(zip(fs, ft, fa, *features_files)):
+            for i, (sline, tline, align, *features) in \
+                    enumerate(zip(fs, ft, fa, *features_files)):
                 if (i % stride) == offset:
                     sline = sline.decode('utf-8')
                     tline = tline.decode('utf-8')
@@ -158,7 +158,8 @@ class ParallelCorpus(object):
                     if features:
                         example["src_feats"] = dict()
                         for j, feat in enumerate(features):
-                            example["src_feats"][features_names[j]] = feat.decode("utf-8")
+                            example["src_feats"][features_names[j]] = \
+                                feat.decode("utf-8")
                     yield example
         for f in features_files:
             f.close()
@@ -226,7 +227,8 @@ class ParallelCorpusIterator(object):
                 example['align'] = example['align'].strip('\n').split()
             if 'src_feats' in example:
                 for k in example['src_feats'].keys():
-                    example['src_feats'][k] = example['src_feats'][k].strip('\n').split()
+                    example['src_feats'][k] = \
+                        example['src_feats'][k].strip('\n').split()
             yield example
 
     def _transform(self, stream):
@@ -327,7 +329,7 @@ def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
     """Build vocab on (strided) subpart of the data."""
     sub_counter_src = Counter()
     sub_counter_tgt = Counter()
-    sub_counter_src_feats =  defaultdict(Counter)
+    sub_counter_src_feats = defaultdict(Counter)
     datasets_iterables = build_corpora_iters(
         corpora, transforms, opts.data,
         skip_empty_level=opts.skip_empty_level,
@@ -339,11 +341,13 @@ def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
                 if opts.dump_samples:
                     build_sub_vocab.queues[c_name][offset].put("blank")
                 continue
-            src_line, tgt_line = maybe_example['src']['src'], maybe_example['tgt']['tgt']
+            src_line, tgt_line = (maybe_example['src']['src'],
+                                  maybe_example['tgt']['tgt'])
             src_line_pretty = src_line
             for feat_name, feat_line in maybe_example["src"].items():
                 if feat_name not in ["src", "src_original"]:
-                    sub_counter_src_feats[feat_name].update(feat_line.split(' '))
+                    sub_counter_src_feats[feat_name].update(
+                        feat_line.split(' '))
                     if opts.dump_samples:
                         src_line_pretty = append_features_to_example(src_line_pretty, feat_line)
             sub_counter_src.update(src_line.split(' '))
@@ -381,7 +385,7 @@ def build_vocab(opts, transforms, n_sample=3):
     corpora = get_corpora(opts, is_train=True)
     counter_src = Counter()
     counter_tgt = Counter()
-    counter_src_feats =  defaultdict(Counter)
+    counter_src_feats = defaultdict(Counter)
     from functools import partial
     queues = {c_name: [mp.Queue(opts.vocab_sample_queue_size)
                        for i in range(opts.num_threads)]
@@ -437,7 +441,8 @@ def save_transformed_sample(opts, transforms, n_sample=3):
                 maybe_example = DatasetAdapter._process(item, is_train=True)
                 if maybe_example is None:
                     continue
-                src_line, tgt_line = maybe_example['src']['src'], maybe_example['tgt']['tgt']
+                src_line, tgt_line = (maybe_example['src']['src'],
+                                      maybe_example['tgt']['tgt'])
                 f_src.write(src_line + '\n')
                 f_tgt.write(tgt_line + '\n')
                 if n_sample > 0 and i >= n_sample:

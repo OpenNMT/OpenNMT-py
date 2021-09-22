@@ -80,19 +80,14 @@ class CTranslate2Translator(object):
     reproduce the onmt.translate.translator API.
     """
 
-    def __init__(self, model_path, device, device_index, batch_size,
-                 beam_size, n_best, target_prefix=False, preload=False):
+    def __init__(self, model_path, ct2_translator_args,
+                 ct2_translate_batch_args, target_prefix=False,
+                 preload=False):
         import ctranslate2
         self.translator = ctranslate2.Translator(
             model_path,
-            device=device,
-            device_index=device_index,
-            inter_threads=1,
-            intra_threads=1,
-            compute_type="default")
-        self.batch_size = batch_size
-        self.beam_size = beam_size
-        self.n_best = n_best
+            **ct2_translator_args)
+        self.ct2_translate_batch_args = ct2_translate_batch_args
         self.target_prefix = target_prefix
         if preload:
             # perform a first request to initialize everything
@@ -102,6 +97,45 @@ class CTranslate2Translator(object):
             time.sleep(1)
             self.translator.unload_model(to_cpu=True)
 
+    @staticmethod
+    def convert_onmt_to_ct2_opts(ct2_translator_args,
+                                 ct2_translate_batch_args, opt):
+
+        def setdefault_if_exists_must_match(obj, name, value):
+            if name in obj:
+                assert value == obj[name], f"{name} is different in"\
+                    " OpenNMT-py config and in CTranslate2 config"\
+                    f" ({value} vs {obj[name]})"
+            else:
+                obj.setdefault(name, value)
+
+        default_for_translator = {
+            "inter_threads": 1,
+            "intra_threads": 1,
+            "compute_type": "default",
+        }
+        for name, value in default_for_translator.items():
+            ct2_translator_args.setdefault(name, value)
+
+        onmt_for_translator = {
+            "device": "cuda" if opt.cuda else "cpu",
+            "device_index": opt.gpu if opt.cuda else 0,
+        }
+        for name, value in onmt_for_translator.items():
+            setdefault_if_exists_must_match(
+                ct2_translator_args, name, value)
+
+        onmt_for_translate_batch_enforce = {
+            "beam_size": opt.beam_size,
+            "max_batch_size": opt.batch_size,
+            "num_hypotheses": opt.n_best,
+            "max_decoding_length": opt.max_length,
+            "min_decoding_length": opt.min_length,
+        }
+        for name, value in onmt_for_translate_batch_enforce.items():
+            setdefault_if_exists_must_match(
+                ct2_translate_batch_args, name, value)
+
     def translate(self, texts_to_translate, batch_size=8, tgt=None):
         batch = [item.split(" ") for item in texts_to_translate]
         if tgt is not None:
@@ -109,10 +143,8 @@ class CTranslate2Translator(object):
         preds = self.translator.translate_batch(
             batch,
             target_prefix=tgt if self.target_prefix else None,
-            max_batch_size=self.batch_size,
-            beam_size=self.beam_size,
-            num_hypotheses=self.n_best,
             return_scores=True,
+            **self.ct2_translate_batch_args
         )
         scores = [[item["score"] for item in ex] for ex in preds]
         predictions = [[" ".join(item["tokens"]) for item in ex]
@@ -155,7 +187,11 @@ class TranslationServer(object):
                       'custom_opt': conf.get('custom_opt', None),
                       'on_timeout': conf.get('on_timeout', None),
                       'model_root': conf.get('model_root', self.models_root),
-                      'ct2_model': conf.get('ct2_model', None)
+                      'ct2_model': conf.get('ct2_model', None),
+                      'ct2_translator_args': conf.get('ct2_translator_args',
+                                                      None),
+                      'ct2_translate_batch_args': conf.get(
+                          'ct2_translate_batch_args', None),
                       }
             kwargs = {k: v for (k, v) in kwargs.items() if v is not None}
             model_id = conf.get("id", None)
@@ -262,7 +298,8 @@ class ServerModel(object):
 
     def __init__(self, opt, model_id, preprocess_opt=None, tokenizer_opt=None,
                  postprocess_opt=None, custom_opt=None, load=False, timeout=-1,
-                 on_timeout="to_cpu", model_root="./", ct2_model=None):
+                 on_timeout="to_cpu", model_root="./", ct2_model=None,
+                 ct2_translator_args=None, ct2_translate_batch_args=None):
         self.model_root = model_root
         self.opt = self.parse_opt(opt)
         self.custom_opt = custom_opt
@@ -276,6 +313,8 @@ class ServerModel(object):
 
         self.ct2_model = os.path.join(model_root, ct2_model) \
             if ct2_model is not None else None
+        self.ct2_translator_args = ct2_translator_args
+        self.ct2_translate_batch_args = ct2_translate_batch_args
 
         self.unload_timer = None
         self.user_opt = opt
@@ -385,13 +424,13 @@ class ServerModel(object):
 
         try:
             if self.ct2_model is not None:
+                CTranslate2Translator.convert_onmt_to_ct2_opts(
+                    self.ct2_translator_args, self.ct2_translate_batch_args,
+                    self.opt)
                 self.translator = CTranslate2Translator(
                     self.ct2_model,
-                    device="cuda" if self.opt.cuda else "cpu",
-                    device_index=self.opt.gpu if self.opt.cuda else 0,
-                    batch_size=self.opt.batch_size,
-                    beam_size=self.opt.beam_size,
-                    n_best=self.opt.n_best,
+                    ct2_translator_args=self.ct2_translator_args,
+                    ct2_translate_batch_args=self.ct2_translate_batch_args,
                     target_prefix=self.opt.tgt_prefix,
                     preload=preload)
             else:

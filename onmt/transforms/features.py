@@ -1,7 +1,7 @@
 from onmt.utils.logging import logger
 from onmt.transforms import register_transform
-from .transform import Transform, ObservableStats
-from onmt.constants import DefaultTokens, SubwordMarker
+from .transform import Transform
+from onmt.constants import SubwordMarker
 from onmt.utils.alignment import subword_map_by_joiner, subword_map_by_spacer
 import re
 from collections import defaultdict
@@ -30,7 +30,9 @@ class FilterFeatsTransform(Transform):
 
         for feat_name, feat_values in example['src_feats'].items():
             if len(example['src']) != len(feat_values):
-                logger.warning(f"Skipping example due to mismatch between source and feature {feat_name}")
+                logger.warning(
+                    f"Skipping example due to mismatch "
+                    f"between source and feature {feat_name}")
                 return None
         return example
 
@@ -49,10 +51,13 @@ class InferFeatsTransform(Transform):
     def add_options(cls, parser):
         """Avalilable options related to this Transform."""
         group = parser.add_argument_group("Transform/InferFeats")
-        group.add("--reversible_tokenization", "-reversible_tokenization", default="joiner",
-                  choices=["joiner", "spacer"], help="Type of reversible tokenization applied on the tokenizer.")
-        group.add("--prior_tokenization", "-prior_tokenization", default=False,
-                    action="store_true", help="Whether the input has already been tokenized.")
+        group.add("--reversible_tokenization", "-reversible_tokenization", 
+                  default="joiner", choices=["joiner", "spacer"], 
+                  help="Type of reversible tokenization "
+                       "applied on the tokenizer.")
+        group.add("--prior_tokenization", "-prior_tokenization", 
+                  default=False, action="store_true",
+                  help="Whether the input has already been tokenized.")
 
     def _parse_opts(self):
         super()._parse_opts()

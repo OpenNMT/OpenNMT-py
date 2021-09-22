@@ -261,8 +261,6 @@ data:
         tgt_prefix: __some_tgt_prefix__
 ```
 
-
-
 ### Tokenization
 
 Common options for the tokenization transforms are the following:
@@ -278,7 +276,7 @@ Common options for the tokenization transforms are the following:
 
 Transform name: `onmt_tokenize`
 
-Class: `onmt.transforms.misc.ONMTTokenizerTransform`
+Class: `onmt.transforms.tokenize.ONMTTokenizerTransform`
 
 Additional options are available:
 - `src_subword_type`: type of subword model for source side (from `["none", "sentencepiece", "bpe"]`);
@@ -290,7 +288,7 @@ Additional options are available:
 
 Transform name: `sentencepiece`
 
-Class: `onmt.transforms.misc.SentencePieceTransform`
+Class: `onmt.transforms.tokenize.SentencePieceTransform`
 
 The `src_subword_model` and `tgt_subword_model` should be valid sentencepiece models.
 
@@ -298,7 +296,7 @@ The `src_subword_model` and `tgt_subword_model` should be valid sentencepiece mo
 
 Transform name: `bpe`
 
-Class: `onmt.transforms.misc.BPETransform`
+Class: `onmt.transforms.tokenize.BPETransform`
 
 The `src_subword_model` and `tgt_subword_model` should be valid BPE models.
 
@@ -323,7 +321,7 @@ These different types of noise can be controlled with the following options:
 
 Transform name: `switchout`
 
-Class: `onmt.transforms.misc.SwitchOutTransform`
+Class: `onmt.transforms.sampling.SwitchOutTransform`
 
 Options:
 
@@ -333,7 +331,7 @@ Options:
 
 Transform name: `tokendrop`
 
-Class: `onmt.transforms.misc.TokenDropTransform`
+Class: `onmt.transforms.sampling.TokenDropTransform`
 
 Options:
 
@@ -343,7 +341,7 @@ Options:
 
 Transform name: `tokenmask`
 
-Class: `onmt.transforms.misc.TokenMaskTransform`
+Class: `onmt.transforms.sampling.TokenMaskTransform`
 
 Options:
 
@@ -360,11 +358,6 @@ You can for instance have a look at the `FilterTooLongTransform` class as a temp
 class FilterTooLongTransform(Transform):
     """Filter out sentence that are too long."""
 
-    def __init__(self, opts):
-        super().__init__(opts)
-        self.src_seq_length = opts.src_seq_length
-        self.tgt_seq_length = opts.tgt_seq_length
-
     @classmethod
     def add_options(cls, parser):
         """Avalilable options relate to this Transform."""
@@ -374,12 +367,16 @@ class FilterTooLongTransform(Transform):
         group.add("--tgt_seq_length", "-tgt_seq_length", type=int, default=200,
                   help="Maximum target sequence length.")
 
+    def _parse_opts(self):
+        self.src_seq_length = self.opts.src_seq_length
+        self.tgt_seq_length = self.opts.tgt_seq_length
+
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Return None if too long else return as is."""
         if (len(example['src']) > self.src_seq_length or
                 len(example['tgt']) > self.tgt_seq_length):
             if stats is not None:
-                stats.filter_too_long()
+                stats.update(FilterTooLongStats())
             return None
         else:
             return example
@@ -394,10 +391,32 @@ class FilterTooLongTransform(Transform):
 
 Methods:
 - `add_options` allows to add custom options that would be necessary for the transform configuration;
+- `_parse_opts` allows to parse options introduced in `add_options` when initialize;
 - `apply` is where the transform happens;
 - `_repr_args` is for clean logging purposes.
 
 As you can see, there is the `@register_transform` wrapper before the class definition. This will allow for the class to be automatically detected (if put in the proper `transforms` folder) and usable in your training configurations through its `name` argument.
+
+You could also collect statistics for your custom transform by creating a class inheriting `ObservableStats`:
+
+```python
+class FilterTooLongStats(ObservableStats):
+    """Runing statistics for FilterTooLongTransform."""
+    __slots__ = ["filtered"]
+
+    def __init__(self):
+        self.filtered = 1
+
+    def update(self, other: "FilterTooLongStats"):
+        self.filtered += other.filtered
+```
+
+NOTE:
+- Add elements to keep track in the `__init__` and also `__slot__` to make it lightweight;
+- Supply update logic in `update` method;
+- (Optional) override `__str__` to change default log message format;
+- Instantiate and passing the statistic object in the `apply` method of the corresponding transform class;
+- statistics will be gathered per corpus per worker, but only first worker will report for its shard by default.
 
 The `example` argument of `apply` is a `dict` of the form:
 ```
@@ -547,3 +566,172 @@ When using the Transformer architecture make sure the following options are appr
 - `src_word_vec_size` and `tgt_word_vec_size` or `word_vec_size`
 - `feat_merge`: how to handle features vecs
 - `feat_vec_size` and maybe `feat_vec_exponent`
+
+
+## How can I set up a translation server ?
+A REST server was implemented to serve OpenNMT-py models. A discussion is opened on the OpenNMT forum: [discussion link](https://forum.opennmt.net/t/simple-opennmt-py-rest-server/1392).
+
+### I. How it works?
+---
+The idea behind the translation server is to make a entry point for translation with multiple models. The server will receive natural text input, tokenize it, translate it following the decoding parameters, detokenize the result and return natural text output.
+
+A server configuration file (`./available_models/conf.json`) is required. It contains the path of the model checkpoint, the path of tokenizer's data along with other inference parameters.
+
+##### Configuration:
+- `models_root`: (opt) folder containing model checkpoints, [default: `./available_models`]
+- `models`: list of objects such as :
+  - `id`: (opt) manually assign an id (int), [default: value from counter]
+  - `name`: (opt) assing a name (str)
+  - `model`: (required) path to checkpoint file i.e. `*.pt`
+  - `timeout`: (opt) interval (seconds) before unloading, reset at each translation using the model
+  - `load`: (opt) whether to load the model at start [default: False]
+  - `on_timeout`: (opt) what to do on timeout: `unload` removes everything; `to_cpu` transfer the model to RAM (from GPU memory) this is faster to reload but takes RAM.
+  - `opt`: (opt) dict of translation options (see method `translate_opts` in `./opts.py`)
+  - `tokenizer`: (opt) set tokenizer options (if any), such as:
+    - `type`: (str) value in `{sentencepiece, pyonmttok}`.
+    - `model`: (str) path to tokenizer model
+  - `ct2_translator_args` and `ct2_translate_batch_args`: (opt) [CTranslate2](https://github.com/OpenNMT/CTranslate2) parameters to use CTranslate2 inference engine. Parameters appearing simultaneously in `opt` and `ct2_(...)_args` must be identical.
+  - `ct2_model`: (opt) CTranslate2 model path.
+
+
+##### Example
+```json
+{
+    "models_root": "./available_models",
+    "models": [
+        {   
+            "id": 100,
+            "model": "model_0.pt",
+            "timeout": 600,
+            "on_timeout": "to_cpu",
+            "load": true,
+            "opt": {
+                "gpu": 0,
+                "beam_size": 5
+            },  
+            "tokenizer": {
+                "type": "sentencepiece",
+                "model": "wmtenfr.model"
+            }   
+        },{ 
+            "model": "model_0.light.pt",
+            "timeout": -1, 
+            "on_timeout": "unload",
+            "model_root": "../other_models",
+            "opt": {
+                "batch_size": 1,
+                "beam_size": 10
+            }   
+        }   
+    ]   
+}
+```
+
+### II. How to start the server without Docker ?
+---
+##### 0. Get the code
+The translation server has been merged into onmt-py `master` branch.   
+Keep in line with master for last fix / improvements.
+##### 1. Install `flask`
+```bash
+pip install flask
+```
+
+##### 2. Put some models
+```bash
+mkdir available_models/
+cp $path_to_my_model available_models
+```
+
+##### 3. Start the server
+```bash
+export IP="0.0.0.0"
+export PORT=5000
+export URL_ROOT="/translator"
+export CONFIG="./available_models/conf.json"
+
+# NOTE that these parameters are optionnal
+# here, we explicitely set to default values
+python server.py --ip $IP --port $PORT --url_root $URL_ROOT --config $CONFIG
+```
+
+### III. How to start the server with Docker ?
+---
+
+1. Add the following libraries a requirement file `requirements.docker.txt`.
+```
+ConfigArgParse==1.2.3
+Flask==1.1.2
+Flask-Cors==3.0.10
+pyonmttok==1.22.1
+torchtext==0.4.0
+waitress==1.4.4
+```
+
+2. Create a `Dockerfile`
+```docker
+FROM pytorch/pytorch:1.6.0-cuda10.1-cudnn7-runtime
+WORKDIR /usr/src/app
+
+COPY requirements.docker.txt ./requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# You can copy or use a docker volume, especially for the model and config data
+COPY server.py ./
+COPY tools ./tools
+COPY available_models ./available_models
+COPY onmt ./onmt
+
+CMD ["python", "./server.py"]
+```
+
+3. Build the image and run container
+```bash
+docker build -t opennmt_server .
+docker run -it --rm -p 5000:5000 opennmt_server
+```
+
+### IV. How to use the API ?
+----
+This section contains a fex examples of the API. For details on all routes, see `./bin/server.py`.
+##### 0. Set the hostname
+```bash
+export HOST="127.0.0.1"
+```
+##### 1. List models
+
+```bash
+curl http://$HOST:$PORT$URL_ROOT/models
+```
+
+**Result (example):**
+```json
+{
+  "available": [
+    "wmt14.en-de_acc_69.22_ppl_4.33_e9.pt",
+    "wmt14.en-de_acc_69.22_ppl_4.33_e9.light.pt"
+  ],
+  "loaded": []
+}
+```
+##### 2. Translate
+(this example involves subwords)
+```bash
+curl -i -X POST -H "Content-Type: application/json" \
+    -d '[{"src": "this is a test for model 0", "id": 0}]' \
+    http://$HOST:$PORT$URL_ROOT/translate
+
+```
+**Result:**
+```json
+{
+  "model_id": 0,
+  "result": "\u2581die \u2581Formen kant en \u2581( K \u00f6r ner ) \u2581des \u2581Stahl g u\u00df form .\n",
+  "status": "ok",
+  "time": {
+    "total": 8.510261535644531,
+    "translation": 8.509992599487305,
+    "writing_src": 0.0002689361572265625
+  }
+}
+```
