@@ -54,7 +54,7 @@ def build_vocab_main(opts):
     else:
         save_counter(src_counter, opts.src_vocab)
         save_counter(tgt_counter, opts.tgt_vocab)
-    
+
     for k, v in src_feats_counter.items():
         save_counter(v, opts.src_feats_vocab[k])
 

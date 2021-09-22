@@ -190,7 +190,7 @@ def text_fields(**kwargs):
     truncate = kwargs.get("truncate", None)
     fields_ = []
 
-    feat_delim = None #u"￨" if n_feats > 0 else None
+    feat_delim = None  # u"￨" if n_feats > 0 else None
 
     # Base field
     tokenize = partial(

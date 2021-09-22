@@ -116,7 +116,8 @@ class Dataset(TorchtextDataset):
         self.sort_key = sort_key
         can_copy = 'src_map' in fields and 'alignment' in fields
 
-        read_iters = [r.read(dat, name, feats) for r, (name, dat, feats) in zip(readers, data)]
+        read_iters = [r.read(dat, name, feats)
+                      for r, (name, dat, feats) in zip(readers, data)]
 
         # self.src_vocabs is used in collapse_copy_scores and Translator.py
         self.src_vocabs = []

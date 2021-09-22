@@ -80,7 +80,13 @@ class TestTextMultiField(unittest.TestCase):
             init_case = self.initialize_case(init_case, params)
             mf = TextMultiField(**init_case)
 
-            sample_str = {"base_field": "dummy input here .", "a": "A A B D", "r": "C C C C", "b": "D F E D", "zbase_field": "another dummy input ."}
+            sample_str = {
+                "base_field": "dummy input here .",
+                "a": "A A B D",
+                "r": "C C C C",
+                "b": "D F E D",
+                "zbase_field": "another dummy input ."
+            }
             proc = mf.preprocess(sample_str)
             self.assertEqual(len(proc), len(init_case["feats_fields"]) + 1)
 
@@ -175,7 +181,9 @@ class TestTextDataReaderFromFS(unittest.TestCase):
     def test_read(self):
         rdr = TextDataReader()
         for i, ex in enumerate(rdr.read(self.FILE_NAME, "src")):
-            self.assertEqual(ex["src"], {"src": self.STRINGS[i].decode("utf-8")})
+            self.assertEqual(
+                ex["src"], {"src": self.STRINGS[i].decode("utf-8")})
+
 
 class TestTextDataReaderWithFeatures(unittest.TestCase):
     def test_read(self):
@@ -191,7 +199,10 @@ class TestTextDataReaderWithFeatures(unittest.TestCase):
                 "A A D D E E".encode("utf-8")
                 ]
             }
-    
+
         rdr = TextDataReader()
         for i, ex in enumerate(rdr.read(strings, "src", features)):
-            self.assertEqual(ex["src"], {"src": strings[i].decode("utf-8"), "feat_0": features["feat_0"][i].decode("utf-8")})
+            self.assertEqual(
+                ex["src"],
+                {"src": strings[i].decode("utf-8"),
+                 "feat_0": features["feat_0"][i].decode("utf-8")})
