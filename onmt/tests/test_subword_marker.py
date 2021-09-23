@@ -47,6 +47,14 @@ class TestSubwordGroup(unittest.TestCase):
         out = subword_map_by_joiner(data_in, marker=SubwordMarker.JOINER)
         self.assertEqual(out, true_out)
 
+    def test_subword_group_joiner_with_case_markup_advanced(self):
+        data_in = ['｟mrk_case_modifier_C｠', 'dummy', 'text', '｟mrk_case_modifier_C｠', '1￭', 'h￭', 'k', '｟mrk_begin_case_region_U｠', 'th￭', '｟mrk_end_case_region_U｠', 'n', 'more', 'dummy', 'text']  # noqa: E501
+        true_out = [0, 0, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 5, 6]
+        out = subword_map_by_joiner(
+            data_in,
+            marker=SubwordMarker.JOINER)
+        self.assertEqual(out, true_out)
+
     def test_subword_group_joiner_prior_tokenization(self):
         data_in = ['｟mrk_case_modifier_C｠', 'how￭', 'ever', '￭,', 'according', 'to', 'the', 'logs', '￭,', '｟mrk_begin_case_region_U｠', 'she', 'is', 'hard', '￭-￭', 'working', '｟mrk_end_case_region_U｠', '￭.']  # noqa: E501
         original_data_in = ['However', '￭,', 'according', 'to', 'the', 'logs', '￭,', 'SHE', 'IS', 'HARD-WORKING', '￭.']  # noqa: E501

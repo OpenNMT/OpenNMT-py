@@ -144,43 +144,41 @@ def subword_map_by_joiner(subwords,
                           original_subwords=None,
                           marker=SubwordMarker.JOINER):
     """Return word id for each subword token (annotate by joiner)."""
-    flags = [0] * len(subwords)
+
+    flags = [1] * len(subwords)
+    j = 0
+    finished = False
     for i, tok in enumerate(subwords):
 
-        # 'original_subwords' should be set if prior tokenization was made
-        # with 'support_prior_joiners' flag
-        if original_subwords:
-            new_words_so_far = sum(flags)+1
-            if new_words_so_far < len(original_subwords):
-                # If not original subword tokenization happened
-                if tok == original_subwords[new_words_so_far]:
-                    flags[i] = 1
-                    continue
+        previous_tok = subwords[i-1] if i else ""
+        previous_tok_2 = subwords[i-2] if i > 1 else ""
+        current_original_subword = "" if not original_subwords \
+            else original_subwords[j] if j < len(original_subwords) else ""
 
-        # New word starts with its case, if any
-        if begin_case(tok) or begin_uppercase(tok):
-            if i:
-                flags[i] = 1
-        elif end_uppercase(tok):
-            pass  # Do nothing
-
-        # Any token without marker and not preceded by
-        # a marker or case_markeup is new word
-        elif marker not in tok:
-            if i and not subwords[i-1].endswith(marker) \
-                    and not case_markup(subwords[i-1]):
-                flags[i] = 1
-
-        # Any token with a marker at the end and not
-        # preceded by a marker or case_markeup is new word
+        if tok.startswith(marker) and tok != current_original_subword:
+            flags[i] = 0
+        elif (previous_tok.endswith(marker)
+                or begin_case(previous_tok)
+                or begin_uppercase(previous_tok)) \
+                and not finished:
+            flags[i] = 0
+        elif previous_tok_2.endswith(marker) \
+                and case_markup(previous_tok) \
+                and not finished:
+            flags[i] = 0
+        elif end_uppercase(tok) and tok != current_original_subword:
+            flags[i] = 0
         else:
-            if i and tok.endswith(marker) \
-                    and not tok.startswith(marker) \
-                    and not subwords[i-1].endswith(marker) \
-                    and not case_markup(subwords[i-1]):
-                flags[i] = 1
+            finished = False
+            if tok == current_original_subword:
+                finished = True
+            j += 1
 
+    flags[0] = 0
     word_group = list(accumulate(flags))
+
+    if original_subwords:
+        assert max(word_group) < len(original_subwords)
     return word_group
 
 
