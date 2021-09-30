@@ -122,22 +122,21 @@ def to_word_align(src, tgt, subword_align, m_src='joiner', m_tgt='joiner'):
 
 # Helper functions
 def begin_uppercase(token):
-    return token == "｟mrk_begin_case_region_U｠"
+    return token == SubwordMarker.BEGIN_UPPERCASE
 
 
 def end_uppercase(token):
-    return token == "｟mrk_end_case_region_U｠"
+    return token == SubwordMarker.END_UPPERCASE
 
 
 def begin_case(token):
-    return token == "｟mrk_case_modifier_C｠"
+    return token == SubwordMarker.BEGIN_CASED
 
 
 def case_markup(token):
-    return token in [
-        "｟mrk_begin_case_region_U｠",
-        "｟mrk_end_case_region_U｠",
-        "｟mrk_case_modifier_C｠"]
+    return begin_uppercase(token) \
+        or end_uppercase(token) \
+        or begin_case(token)
 
 
 def subword_map_by_joiner(subwords,

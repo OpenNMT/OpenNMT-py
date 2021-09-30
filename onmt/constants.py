@@ -22,6 +22,9 @@ class CorpusName(object):
 class SubwordMarker(object):
     SPACER = '▁'
     JOINER = '￭'
+    BEGIN_UPPERCASE = "｟mrk_begin_case_region_U｠"
+    END_UPPERCASE = "｟mrk_end_case_region_U｠"
+    BEGIN_CASED = "｟mrk_case_modifier_C｠"
 
 
 class ModelTask(object):
