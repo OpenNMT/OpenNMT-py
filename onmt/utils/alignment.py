@@ -146,11 +146,13 @@ def subword_map_by_joiner(subwords,
 
     flags = [1] * len(subwords)
     j = 0
-    finished = False
+    finished = True
     for i, tok in enumerate(subwords):
 
-        previous_tok = subwords[i-1] if i else ""
-        previous_tok_2 = subwords[i-2] if i > 1 else ""
+        previous_tok = subwords[i-1] if i else ""  # Previous N-1 token
+        previous_tok_2 = subwords[i-2] if i > 1 else ""  # Previous N-2 token
+        # Keeps track of the original words/subwords
+        # ('prior_tokenization' option)
         current_original_subword = "" if not original_subwords \
             else original_subwords[j] if j < len(original_subwords) else ""
 

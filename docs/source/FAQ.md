@@ -509,13 +509,29 @@ data.src
 however, according to the logs, she is hard-working.
 ```
 
-feat0.txt
+feat.txt
 ```
 A C C C C A A B
 ```
 
+Prior tokenization is not necessary, features will be inferred by using the `FeatInferTransform` transform if tokenization has been applied.
+
+No previous tokenization:
+```
+SRC: this is a test.
+FEATS: A A A B
+TOKENIZED SRC: this is a test ￭.
+RESULT: A A A B <null>
+```
+
+Previously tokenized:
+```
+SRC: this is a test ￭.
+FEATS: A A A B A
+RESULT: A A A B A
+```
+
 **Notes**
-- Prior tokenization is not necessary, features will be inferred by using the `FeatInferTransform` transform.
 - `FilterFeatsTransform` and `FeatInferTransform` are required in order to ensure the functionality.
 - Not possible to do shared embeddings (at least with `feat_merge: concat` method)
 
@@ -539,17 +555,20 @@ data:
             feat_1: data/valid/data.src.feat_1
         transforms: [filterfeats, onmt_tokenize, inferfeats]
 
-# # Vocab opts
+# Transform options
+reversible_tokenization: "joiner"
+prior_tokenization: true
+
+# Vocab opts
 src_vocab: exp/data.vocab.src
 tgt_vocab: exp/data.vocab.tgt
 src_feats_vocab: 
     feat_0: exp/data.vocab.feat_0
     feat_1: exp/data.vocab.feat_1
 feat_merge: "sum"
-
 ```
 
-During inference you can pass features by using the `--src_feats` argument. `src_feats` is expected to be a Python like dict, mapping feature name with its data file.
+During inference you can pass features by using the `--src_feats` argument. `src_feats` is expected to be a Python like dict, mapping feature names with their data file.
 
 ```
 {'feat_0': '../data.txt.feats0', 'feat_1': '../data.txt.feats1'}

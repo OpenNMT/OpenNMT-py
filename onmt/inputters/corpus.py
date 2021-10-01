@@ -147,6 +147,10 @@ class ParallelCorpus(object):
                 if (i % stride) == offset:
                     sline = sline.decode('utf-8')
                     tline = tline.decode('utf-8')
+                    # 'src_original' and 'tgt_original' store the
+                    # original line before tokenization. These
+                    # fields are used later on in the feature
+                    # transforms.
                     example = {
                         'src': sline,
                         'tgt': tline,
