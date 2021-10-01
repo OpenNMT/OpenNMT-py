@@ -369,7 +369,8 @@ class ServerModel(object):
                 }
 
         if self.features_opt is not None:
-            self.feats_transform = InferFeatsTransform(Namespace(**self.features_opt))
+            self.feats_transform = InferFeatsTransform(
+                Namespace(**self.features_opt))
 
         if self.postprocess_opt is not None:
             self.logger.info("Loading postprocessor")
@@ -507,7 +508,9 @@ class ServerModel(object):
             # every segment becomes a dict for flexibility purposes
             seg_dict = self.maybe_preprocess(inp)
             all_preprocessed.append(seg_dict)
-            for seg, ref, feats in zip_longest(seg_dict["seg"], seg_dict["ref"], seg_dict["src_feats"]):
+            for seg, ref, feats in zip_longest(
+                    seg_dict["seg"], seg_dict["ref"],
+                    seg_dict["src_feats"]):
                 tok = self.maybe_tokenize(seg)
                 if ref is not None:
                     ref = self.maybe_tokenize(ref, side='tgt')
@@ -718,7 +721,6 @@ class ServerModel(object):
             sequence = function(sequence, self)
         return sequence
 
-
     def transform_feats(self, raw_src, tok_src, feats):
         """Apply InferFeatsTransform to features"""
         ex = {
@@ -733,7 +735,6 @@ class ServerModel(object):
         for feat_name, feat_values in transformed_ex["src_feats"].items():
             transformed_feats[feat_name] = " ".join(feat_values)
         return transformed_feats
-
 
     def build_tokenizer(self, tokenizer_opt):
         """Build tokenizer described by `tokenizer_opt`."""
