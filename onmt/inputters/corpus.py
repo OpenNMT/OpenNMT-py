@@ -147,9 +147,15 @@ class ParallelCorpus(object):
                 if (i % stride) == offset:
                     sline = sline.decode('utf-8')
                     tline = tline.decode('utf-8')
+                    # 'src_original' and 'tgt_original' store the
+                    # original line before tokenization. These
+                    # fields are used later on in the feature
+                    # transforms.
                     example = {
                         'src': sline,
-                        'tgt': tline
+                        'tgt': tline,
+                        'src_original': sline,
+                        'tgt_original': tline
                     }
                     if align is not None:
                         example['align'] = align.decode('utf-8')
@@ -217,9 +223,12 @@ class ParallelCorpusIterator(object):
 
     def _tokenize(self, stream):
         for example in stream:
-            src = example['src'].strip('\n').split()
-            tgt = example['tgt'].strip('\n').split()
-            example['src'], example['tgt'] = src, tgt
+            example['src'] = example['src'].strip('\n').split()
+            example['tgt'] = example['tgt'].strip('\n').split()
+            example['src_original'] = \
+                example['src_original'].strip("\n").split()
+            example['tgt_original'] = \
+                example['tgt_original'].strip("\n").split()
             if 'align' in example:
                 example['align'] = example['align'].strip('\n').split()
             if 'src_feats' in example:
@@ -315,6 +324,16 @@ def write_files_from_queues(sample_path, queues):
                     break
 
 
+# Just for debugging purposes
+# It appends features to subwords when dumping to file
+def append_features_to_example(example, features):
+    ex_toks = example.split(' ')
+    feat_toks = features.split(' ')
+    toks = [f"{subword}￨{feat}" for subword, feat in
+            zip(ex_toks, feat_toks)]
+    return " ".join(toks)
+
+
 def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
     """Build vocab on (strided) subpart of the data."""
     sub_counter_src = Counter()
@@ -333,15 +352,19 @@ def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
                 continue
             src_line, tgt_line = (maybe_example['src']['src'],
                                   maybe_example['tgt']['tgt'])
+            src_line_pretty = src_line
             for feat_name, feat_line in maybe_example["src"].items():
-                if feat_name != "src":
+                if feat_name not in ["src", "src_original"]:
                     sub_counter_src_feats[feat_name].update(
                         feat_line.split(' '))
+                    if opts.dump_samples:
+                        src_line_pretty = append_features_to_example(
+                            src_line_pretty, feat_line)
             sub_counter_src.update(src_line.split(' '))
             sub_counter_tgt.update(tgt_line.split(' '))
             if opts.dump_samples:
                 build_sub_vocab.queues[c_name][offset].put(
-                    (i, src_line, tgt_line))
+                    (i, src_line_pretty, tgt_line))
             if n_sample > 0 and ((i+1) * stride + offset) >= n_sample:
                 if opts.dump_samples:
                     build_sub_vocab.queues[c_name][offset].put("break")
