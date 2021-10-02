@@ -723,6 +723,8 @@ class ServerModel(object):
 
     def transform_feats(self, raw_src, tok_src, feats):
         """Apply InferFeatsTransform to features"""
+        if self.feats_transform is None:
+            return feats
         ex = {
             "src": tok_src.split(' '),
             "src_original": raw_src.split(' '),
