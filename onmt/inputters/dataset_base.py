@@ -163,5 +163,5 @@ class Dataset(TorchtextDataset):
         for name, field in fields:
             if field["data"] is not None:
                 readers.append(field["reader"])
-                data.append((name, field["data"], field["features"]))
+                data.append((name, field["data"], field.get("features", {})))
         return readers, data
