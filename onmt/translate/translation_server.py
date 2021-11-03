@@ -114,7 +114,7 @@ class CTranslate2Translator(object):
 
         default_for_translator = {
             "inter_threads": 1,
-            "intra_threads": 1,
+            "intra_threads": torch.get_num_threads(),
             "compute_type": "default",
         }
         for name, value in default_for_translator.items():
@@ -192,9 +192,9 @@ class TranslationServer(object):
                       'model_root': conf.get('model_root', self.models_root),
                       'ct2_model': conf.get('ct2_model', None),
                       'ct2_translator_args': conf.get('ct2_translator_args',
-                                                      None),
+                                                      {}),
                       'ct2_translate_batch_args': conf.get(
-                          'ct2_translate_batch_args', None),
+                          'ct2_translate_batch_args', {}),
                       'features_opt': conf.get('features', None)
                       }
             kwargs = {k: v for (k, v) in kwargs.items() if v is not None}
