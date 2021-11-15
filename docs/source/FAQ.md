@@ -557,7 +557,7 @@ data:
 
 # Transform options
 reversible_tokenization: "joiner"
-prior_tokenization: true
+prior_tokenization: true or false
 
 # Vocab opts
 src_vocab: exp/data.vocab.src
@@ -566,6 +566,7 @@ src_feats_vocab:
     feat_0: exp/data.vocab.feat_0
     feat_1: exp/data.vocab.feat_1
 feat_merge: "sum"
+apply_terminology: true
 ```
 
 During inference you can pass features by using the `--src_feats` argument. `src_feats` is expected to be a Python like dict, mapping feature names with their data file.
