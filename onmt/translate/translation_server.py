@@ -139,7 +139,10 @@ class CTranslate2Translator(object):
             setdefault_if_exists_must_match(
                 ct2_translate_batch_args, name, value)
 
-    def translate(self, texts_to_translate, batch_size=8, tgt=None):
+    def translate(self, texts_to_translate, batch_size=8,
+                  tgt=None, src_feats=None):
+        assert (src_feats is None) or (src_feats == {}), \
+            "CTranslate2 does not support source features"
         batch = [item.split(" ") for item in texts_to_translate]
         if tgt is not None:
             tgt = [item.split(" ") for item in tgt]
