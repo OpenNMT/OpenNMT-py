@@ -112,17 +112,14 @@ class Dataset(TorchtextDataset):
             predict to copy them.
     """
 
-    def __init__(self, fields, readers, data, sort_key, filter_pred=None):
+    def __init__(self, fields, data, sort_key, filter_pred=None):
         self.sort_key = sort_key
         can_copy = 'src_map' in fields and 'alignment' in fields
-
-        read_iters = [r.read(dat, name, feats)
-                      for r, (name, dat, feats) in zip(readers, data)]
 
         # self.src_vocabs is used in collapse_copy_scores and Translator.py
         self.src_vocabs = []
         examples = []
-        for ex_dict in starmap(_join_dicts, zip(*read_iters)):
+        for ex_dict in data:
             if can_copy:
                 src_field = fields['src']
                 tgt_field = fields['tgt']
@@ -156,12 +153,3 @@ class Dataset(TorchtextDataset):
         if remove_fields:
             self.fields = []
         torch.save(self, path)
-
-    @staticmethod
-    def config(fields):
-        readers, data = [], []
-        for name, field in fields:
-            if field["data"] is not None:
-                readers.append(field["reader"])
-                data.append((name, field["data"], field.get("features", {})))
-        return readers, data

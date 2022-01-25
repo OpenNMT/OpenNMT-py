@@ -767,6 +767,9 @@ def translate_opts(parser):
                    "Ex: {'feat_0': '../data.txt.feats0', 'feat_1': '../data.txt.feats1'}")  # noqa: E501
     group.add('--tgt', '-tgt',
               help='True target sequence (optional)')
+    group.add("-transforms", "--transforms", default=[], nargs="+",
+              choices=AVAILABLE_TRANSFORMS.keys(),
+              help="Default transform pipeline to apply to data.")
     group.add('--tgt_prefix', '-tgt_prefix', action='store_true',
               help='Generate predictions using provided `-tgt` as prefix.')
     group.add('--shard_size', '-shard_size', type=int, default=10000,
@@ -784,6 +787,9 @@ def translate_opts(parser):
               help="Report alignment for each translation.")
     group.add('--report_time', '-report_time', action='store_true',
               help="Report some translation time metrics")
+
+    # Adding options related to Transforms
+    _add_dynamic_transform_opts(parser)
 
     # Adding options relate to decoding strategy
     _add_decoding_opts(parser)

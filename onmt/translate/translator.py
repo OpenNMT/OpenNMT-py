@@ -12,12 +12,14 @@ from onmt.constants import DefaultTokens
 import onmt.model_builder
 import onmt.inputters as inputters
 import onmt.decoders.ensemble
+from onmt.inputters.text_dataset import InferenceDataIterator
 from onmt.translate.beam_search import BeamSearch, BeamSearchLM
 from onmt.translate.greedy_search import GreedySearch, GreedySearchLM
 from onmt.utils.misc import tile, set_random_seed, report_matrix
 from onmt.utils.alignment import extract_alignment, build_align_pharaoh
 from onmt.modules.copy_generator import collapse_copy_scores
 from onmt.constants import ModelTask
+from onmt.transforms import TransformPipe, get_transforms_cls, make_transforms
 
 
 def build_translator(opt, report_score=True, logger=None, out_file=None):
@@ -333,6 +335,7 @@ class Inference(object):
     def translate(
         self,
         src,
+        transform,
         src_feats={},
         tgt=None,
         batch_size=None,
@@ -365,24 +368,11 @@ class Inference(object):
         if self.tgt_prefix and tgt is None:
             raise ValueError("Prefix should be feed to tgt if -tgt_prefix.")
 
-        src_data = {
-            "reader": self.src_reader,
-            "data": src,
-            "features": src_feats
-        }
-        tgt_data = {
-            "reader": self.tgt_reader,
-            "data": tgt,
-            "features": {}
-        }
-        _readers, _data = inputters.Dataset.config(
-            [("src", src_data), ("tgt", tgt_data)]
-        )
+        data_iter = InferenceDataIterator(src, tgt, src_feats, transform)
 
         data = inputters.Dataset(
             self.fields,
-            readers=_readers,
-            data=_data,
+            data=data_iter,
             sort_key=inputters.str2sortkey[self.data_type],
             filter_pred=self._filter_pred,
         )
@@ -448,6 +438,8 @@ class Inference(object):
                             n_best_preds, n_best_preds_align
                         )
                     ]
+
+                n_best_preds = [transform.apply_reverse(x) for x in n_best_preds]
                 all_predictions += [n_best_preds]
                 self.out_file.write("\n".join(n_best_preds) + "\n")
                 self.out_file.flush()
