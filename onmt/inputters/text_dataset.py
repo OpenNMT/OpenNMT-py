@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 from functools import partial
 from itertools import islice, repeat
-from collections import defaultdict
 
 import torch
 from torchtext.data import Field, RawField
 
 from onmt.constants import DefaultTokens
-from onmt.inputters.datareader_base import DataReaderBase
 
 
 def split_corpus(path, shard_size, default=None):
@@ -56,7 +54,8 @@ class InferenceDataReader(object):
                 features_names.append(feat_name)
 
         shard_pairs = zip(src_shards, tgt_shards, *features_shards)
-        for i, (src_shard, tgt_shard, *features_shard) in enumerate(shard_pairs):
+        for i, shard in enumerate(shard_pairs):
+            src_shard, tgt_shard, *features_shard = shard
             if features_shard[0] is not None:
                 features_shard_ = dict()
                 for j, x in enumerate(features_shard):
@@ -76,20 +75,23 @@ class InferenceDataIterator(object):
 
     def _tokenize(self, example):
         example['src'] = example['src'].decode("utf-8").strip('\n').split()
-        example['tgt'] = example['tgt'].decode("utf-8").strip('\n').split() if example["tgt"] is not None else None
+        example['tgt'] = example['tgt'].decode("utf-8").strip('\n').split() \
+            if example["tgt"] is not None else None
         example['src_original'] = example['src']
         example['tgt_original'] = example['tgt']
         if 'src_feats' in example:
             for k in example['src_feats'].keys():
-                example['src_feats'][k] = \
-                    example['src_feats'][k].decode("utf-8").strip('\n').split() if example['src_feats'][k] is not None else None
+                example['src_feats'][k] = example['src_feats'][k] \
+                    .decode("utf-8").strip('\n').split() \
+                    if example['src_feats'][k] is not None else None
         return example
 
     def _transform(self, example, remove_tgt=False):
         maybe_example = self.transform.apply(
                 example, is_train=False, corpus_name="translate")
         assert maybe_example is not None, \
-            "Transformation on example skipped the example. Please check the transforms."
+            "Transformation on example skipped the example. " \
+            "Please check the transforms."
         return maybe_example
 
     def _process(self, example, remove_tgt=False):
@@ -111,7 +113,6 @@ class InferenceDataIterator(object):
 
         return example
 
-
     def __iter__(self):
         tgt = self.tgt if self.tgt is not None else repeat(None)
 
@@ -124,7 +125,8 @@ class InferenceDataIterator(object):
         else:
             features_values = [repeat(None)]
 
-        for i, (src, tgt, *src_feats) in enumerate(zip(self.src, tgt, *features_values)):
+        for i, (src, tgt, *src_feats) in enumerate(zip(
+                self.src, tgt, *features_values)):
             ex = {
                 "src": src,
                 "tgt": tgt if tgt is not None else b""
@@ -132,8 +134,8 @@ class InferenceDataIterator(object):
             if src_feats[0] is not None:
                 src_feats_ = {}
                 for j, x in enumerate(src_feats):
-                    src_feats[features_names[j]] = x
-                ex["src_feats"] = src_feats
+                    src_feats_[features_names[j]] = x
+                ex["src_feats"] = src_feats_
             ex = self._tokenize(ex)
             ex = self._transform(ex)
             ex = self._process(ex, remove_tgt=self.tgt is None)

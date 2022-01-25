@@ -19,7 +19,6 @@ from onmt.utils.misc import tile, set_random_seed, report_matrix
 from onmt.utils.alignment import extract_alignment, build_align_pharaoh
 from onmt.modules.copy_generator import collapse_copy_scores
 from onmt.constants import ModelTask
-from onmt.transforms import TransformPipe, get_transforms_cls, make_transforms
 
 
 def build_translator(opt, report_score=True, logger=None, out_file=None):
@@ -439,7 +438,8 @@ class Inference(object):
                         )
                     ]
 
-                n_best_preds = [transform.apply_reverse(x) for x in n_best_preds]
+                n_best_preds = [transform.apply_reverse(x)
+                                for x in n_best_preds]
                 all_predictions += [n_best_preds]
                 self.out_file.write("\n".join(n_best_preds) + "\n")
                 self.out_file.flush()

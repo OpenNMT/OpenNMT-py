@@ -61,7 +61,7 @@ class Transform(object):
         raise NotImplementedError
 
     def apply_reverse(self, translated):
-        return example
+        return translated
 
     def __getstate__(self):
         """Pickling following for rebuild."""

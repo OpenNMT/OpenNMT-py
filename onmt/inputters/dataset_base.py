@@ -1,6 +1,6 @@
 # coding: utf-8
 
-from itertools import chain, starmap
+from itertools import chain
 from collections import Counter
 
 import torch

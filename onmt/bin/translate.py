@@ -6,7 +6,6 @@ from onmt.inputters.text_dataset import InferenceDataReader
 
 import onmt.opts as opts
 from onmt.utils.parse import ArgumentParser
-from collections import defaultdict
 
 
 def translate(opt):
@@ -21,7 +20,8 @@ def translate(opt):
 
     transform = build_transforms(opt, translator.fields)
 
-    for i, (src_shard, tgt_shard, features_shard) in enumerate(data_reader.read(opt.shard_size)):
+    for i, (src_shard, tgt_shard, features_shard) \
+            in enumerate(data_reader.read(opt.shard_size)):
         logger.info("Translating shard %d." % i)
         translator.translate(
             src=src_shard,
