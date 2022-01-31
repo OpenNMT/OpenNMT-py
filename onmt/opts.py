@@ -803,8 +803,8 @@ def translate_opts(parser, dynamic=False):
 
     if dynamic:
         group.add("-transforms", "--transforms", default=[], nargs="+",
-            choices=AVAILABLE_TRANSFORMS.keys(),
-            help="Default transform pipeline to apply to data.")
+                  choices=AVAILABLE_TRANSFORMS.keys(),
+                  help="Default transform pipeline to apply to data.")
 
         # Adding options related to Transforms
         _add_dynamic_transform_opts(parser)

@@ -373,7 +373,6 @@ class Inference(object):
     def translate(
         self,
         src,
-        transform,
         src_feats={},
         tgt=None,
         batch_size=None,

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from functools import partial
-from itertools import islice, repeat
+from itertools import repeat
 
 import torch
 from torchtext.data import Field, RawField
@@ -170,47 +170,6 @@ class InferenceDataIterator(object):
             ex = self._process(ex, remove_tgt=self.tgt is None)
             ex["indices"] = i
             yield ex
-
-
-class TextDataReader(DataReaderBase):
-    def read(self, sequences, side, features={}):
-        """Read text data from disk.
-
-        Args:
-            sequences (str or Iterable[str]):
-                path to text file or iterable of the actual text data.
-            side (str): Prefix used in return dict. Usually
-                ``"src"`` or ``"tgt"``.
-            features: (Dict[str or Iterable[str]]):
-                dictionary mapping feature names with the path to feature
-                file or iterable of the actual feature data.
-
-        Yields:
-            dictionaries whose keys are the names of fields and whose
-            values are more or less the result of tokenizing with those
-            fields.
-        """
-        if isinstance(sequences, str):
-            sequences = DataReaderBase._read_file(sequences)
-
-        features_names = []
-        features_values = []
-        for feat_name, v in features.items():
-            features_names.append(feat_name)
-            if isinstance(v, str):
-                features_values.append(DataReaderBase._read_file(features))
-            else:
-                features_values.append(v)
-        for i, (seq, *feats) in enumerate(zip(sequences, *features_values)):
-            ex_dict = {}
-            if isinstance(seq, bytes):
-                seq = seq.decode("utf-8")
-            ex_dict[side] = seq
-            for j, f in enumerate(feats):
-                if isinstance(f, bytes):
-                    f = f.decode("utf-8")
-                ex_dict[features_names[j]] = f
-            yield {side: ex_dict, "indices": i}
 
 
 def text_sort_key(ex):
