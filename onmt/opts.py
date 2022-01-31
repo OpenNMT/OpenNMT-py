@@ -734,7 +734,7 @@ def _add_decoding_opts(parser):
                    "the table), then it will copy the source token.")
 
 
-def translate_opts(parser):
+def translate_opts(parser, dynamic=False):
     """ Translation / inference options """
     group = parser.add_argument_group('Model')
     group.add('--model', '-model', dest='models', metavar='MODEL',
@@ -767,9 +767,6 @@ def translate_opts(parser):
                    "Ex: {'feat_0': '../data.txt.feats0', 'feat_1': '../data.txt.feats1'}")  # noqa: E501
     group.add('--tgt', '-tgt',
               help='True target sequence (optional)')
-    group.add("-transforms", "--transforms", default=[], nargs="+",
-              choices=AVAILABLE_TRANSFORMS.keys(),
-              help="Default transform pipeline to apply to data.")
     group.add('--tgt_prefix', '-tgt_prefix', action='store_true',
               help='Generate predictions using provided `-tgt` as prefix.')
     group.add('--shard_size', '-shard_size', type=int, default=10000,
@@ -788,9 +785,6 @@ def translate_opts(parser):
     group.add('--report_time', '-report_time', action='store_true',
               help="Report some translation time metrics")
 
-    # Adding options related to Transforms
-    _add_dynamic_transform_opts(parser)
-
     # Adding options relate to decoding strategy
     _add_decoding_opts(parser)
 
@@ -806,6 +800,14 @@ def translate_opts(parser):
                    "is sents. Tokens will do dynamic batching")
     group.add('--gpu', '-gpu', type=int, default=-1,
               help="Device to run on")
+
+    if dynamic:
+        group.add("-transforms", "--transforms", default=[], nargs="+",
+            choices=AVAILABLE_TRANSFORMS.keys(),
+            help="Default transform pipeline to apply to data.")
+
+        # Adding options related to Transforms
+        _add_dynamic_transform_opts(parser)
 
 
 # Copyright 2016 The Chromium Authors. All rights reserved.

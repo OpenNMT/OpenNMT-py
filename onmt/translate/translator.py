@@ -331,6 +331,45 @@ class Inference(object):
             gs = [0] * batch_size
         return gs
 
+    def translate_dynamic(
+        self,
+        src,
+        transform,
+        src_feats={},
+        tgt=None,
+        batch_size=None,
+        batch_type="sents",
+        attn_debug=False,
+        align_debug=False,
+        phrase_table=""
+    ):
+
+        if batch_size is None:
+            raise ValueError("batch_size must be set")
+
+        if self.tgt_prefix and tgt is None:
+            raise ValueError("Prefix should be feed to tgt if -tgt_prefix.")
+
+        data_iter = InferenceDataIterator(src, tgt, src_feats, transform)
+
+        data = inputters.DynamicDataset(
+            self.fields,
+            data=data_iter,
+            sort_key=inputters.str2sortkey[self.data_type],
+            filter_pred=self._filter_pred,
+        )
+
+        return self._translate(
+            data,
+            tgt=tgt,
+            batch_size=batch_size,
+            batch_type=batch_type,
+            attn_debug=attn_debug,
+            align_debug=align_debug,
+            phrase_table=phrase_table,
+            dynamic=True,
+            transform=transform)
+
     def translate(
         self,
         src,
@@ -367,14 +406,49 @@ class Inference(object):
         if self.tgt_prefix and tgt is None:
             raise ValueError("Prefix should be feed to tgt if -tgt_prefix.")
 
-        data_iter = InferenceDataIterator(src, tgt, src_feats, transform)
+        src_data = {
+            "reader": self.src_reader,
+            "data": src,
+            "features": src_feats
+        }
+        tgt_data = {
+            "reader": self.tgt_reader,
+            "data": tgt,
+            "features": {}
+        }
+        _readers, _data = inputters.Dataset.config(
+            [("src", src_data), ("tgt", tgt_data)]
+        )
 
         data = inputters.Dataset(
             self.fields,
-            data=data_iter,
+            readers=_readers,
+            data=_data,
             sort_key=inputters.str2sortkey[self.data_type],
             filter_pred=self._filter_pred,
         )
+
+        return self._translate(
+            data,
+            tgt=tgt,
+            batch_size=batch_size,
+            batch_type=batch_type,
+            attn_debug=attn_debug,
+            align_debug=align_debug,
+            phrase_table=phrase_table)
+
+    def _translate(
+        self,
+        data,
+        tgt=None,
+        batch_size=None,
+        batch_type="sents",
+        attn_debug=False,
+        align_debug=False,
+        phrase_table="",
+        dynamic=False,
+        transform=None
+    ):
 
         data_iter = inputters.OrderedIterator(
             dataset=data,
@@ -438,8 +512,9 @@ class Inference(object):
                         )
                     ]
 
-                n_best_preds = [transform.apply_reverse(x)
-                                for x in n_best_preds]
+                if dynamic:
+                    n_best_preds = [transform.apply_reverse(x)
+                                    for x in n_best_preds]
                 all_predictions += [n_best_preds]
                 self.out_file.write("\n".join(n_best_preds) + "\n")
                 self.out_file.flush()

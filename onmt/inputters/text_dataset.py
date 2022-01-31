@@ -6,43 +6,71 @@ import torch
 from torchtext.data import Field, RawField
 
 from onmt.constants import DefaultTokens
+from onmt.inputters.datareader_base import DataReaderBase
+from onmt.utils.misc import split_corpus
 
 
-def split_corpus(path, shard_size, default=None):
-    """yield a `list` containing `shard_size` line of `path`,
-    or repeatly generate `default` if `path` is None.
-    """
-    if path is not None:
-        return _split_corpus(path, shard_size)
-    else:
-        return repeat(default)
+class TextDataReader(DataReaderBase):
+    def read(self, sequences, side, features={}):
+        """Read text data from disk.
+            Args:
+            sequences (str or Iterable[str]):
+                path to text file or iterable of the actual text data.
+            side (str): Prefix used in return dict. Usually
+                ``"src"`` or ``"tgt"``.
+            features: (Dict[str or Iterable[str]]):
+                dictionary mapping feature names with the path to feature
+                file or iterable of the actual feature data.
+        Yields:
+            dictionaries whose keys are the names of fields and whose
+            values are more or less the result of tokenizing with those
+            fields.
+        """
+        if isinstance(sequences, str):
+            sequences = DataReaderBase._read_file(sequences)
 
-
-def _split_corpus(path, shard_size):
-    """Yield a `list` containing `shard_size` line of `path`.
-    """
-    with open(path, "rb") as f:
-        if shard_size <= 0:
-            yield f.readlines()
-        else:
-            while True:
-                shard = list(islice(f, shard_size))
-                if not shard:
-                    break
-                yield shard
+        features_names = []
+        features_values = []
+        for feat_name, v in features.items():
+            features_names.append(feat_name)
+            if isinstance(v, str):
+                features_values.append(DataReaderBase._read_file(features))
+            else:
+                features_values.append(v)
+        for i, (seq, *feats) in enumerate(zip(sequences, *features_values)):
+            ex_dict = {}
+            if isinstance(seq, bytes):
+                seq = seq.decode("utf-8")
+            ex_dict[side] = seq
+            for j, f in enumerate(feats):
+                if isinstance(f, bytes):
+                    f = f.decode("utf-8")
+                ex_dict[features_names[j]] = f
+            yield {side: ex_dict, "indices": i}
 
 
 class InferenceDataReader(object):
+    """It handles inference data reading from disk in shards.
 
-    def __init__(self, src, tgt, src_feats={}):
+    Args:
+        src (str): path to the source file
+        tgt (str or NoneType): path to the target file
+        src_feats (Dict[str]): paths to the features files
+        shard_size (int): divides files into smaller files of size shard_size
+
+    Returns:
+        Tuple[List[str], List[str], Dict[List[str]]]
+    """
+
+    def __init__(self, src, tgt, src_feats={}, shard_size=10000):
         self.src = src
         self.tgt = tgt
         self.src_feats = src_feats
+        self.shard_size = shard_size
 
-    def read(self, shard_size):
-
-        src_shards = split_corpus(self.src, shard_size)
-        tgt_shards = split_corpus(self.tgt, shard_size)
+    def __iter__(self):
+        src_shards = split_corpus(self.src, self.shard_size)
+        tgt_shards = split_corpus(self.tgt, self.shard_size)
 
         if not self.src_feats:
             features_shards = [repeat(None)]
@@ -50,7 +78,8 @@ class InferenceDataReader(object):
             features_shards = []
             features_names = []
             for feat_name, feat_path in self.src_feats.items():
-                features_shards.append(split_corpus(feat_path, shard_size))
+                features_shards.append(
+                    split_corpus(feat_path, self.shard_size))
                 features_names.append(feat_name)
 
         shard_pairs = zip(src_shards, tgt_shards, *features_shards)
@@ -141,6 +170,47 @@ class InferenceDataIterator(object):
             ex = self._process(ex, remove_tgt=self.tgt is None)
             ex["indices"] = i
             yield ex
+
+
+class TextDataReader(DataReaderBase):
+    def read(self, sequences, side, features={}):
+        """Read text data from disk.
+
+        Args:
+            sequences (str or Iterable[str]):
+                path to text file or iterable of the actual text data.
+            side (str): Prefix used in return dict. Usually
+                ``"src"`` or ``"tgt"``.
+            features: (Dict[str or Iterable[str]]):
+                dictionary mapping feature names with the path to feature
+                file or iterable of the actual feature data.
+
+        Yields:
+            dictionaries whose keys are the names of fields and whose
+            values are more or less the result of tokenizing with those
+            fields.
+        """
+        if isinstance(sequences, str):
+            sequences = DataReaderBase._read_file(sequences)
+
+        features_names = []
+        features_values = []
+        for feat_name, v in features.items():
+            features_names.append(feat_name)
+            if isinstance(v, str):
+                features_values.append(DataReaderBase._read_file(features))
+            else:
+                features_values.append(v)
+        for i, (seq, *feats) in enumerate(zip(sequences, *features_values)):
+            ex_dict = {}
+            if isinstance(seq, bytes):
+                seq = seq.decode("utf-8")
+            ex_dict[side] = seq
+            for j, f in enumerate(feats):
+                if isinstance(f, bytes):
+                    f = f.decode("utf-8")
+                ex_dict[features_names[j]] = f
+            yield {side: ex_dict, "indices": i}
 
 
 def text_sort_key(ex):

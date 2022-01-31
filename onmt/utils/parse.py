@@ -331,6 +331,9 @@ class ArgumentParser(cfargparse.ArgumentParser, DataOptsCheckerMixin):
     @classmethod
     def validate_translate_opts(cls, opt):
         opt.src_feats = eval(opt.src_feats) if opt.src_feats else {}
-        # It comes form training
+
+    @classmethod
+    def validate_translate_opts_dynamic(cls, opt):
+        # It comes from training
         # TODO: needs to be added as inference opt
         opt.share_vocab = False
