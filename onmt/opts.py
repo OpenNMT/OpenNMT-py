@@ -734,7 +734,7 @@ def _add_decoding_opts(parser):
                    "the table), then it will copy the source token.")
 
 
-def translate_opts(parser):
+def translate_opts(parser, dynamic=False):
     """ Translation / inference options """
     group = parser.add_argument_group('Model')
     group.add('--model', '-model', dest='models', metavar='MODEL',
@@ -800,6 +800,14 @@ def translate_opts(parser):
                    "is sents. Tokens will do dynamic batching")
     group.add('--gpu', '-gpu', type=int, default=-1,
               help="Device to run on")
+
+    if dynamic:
+        group.add("-transforms", "--transforms", default=[], nargs="+",
+                  choices=AVAILABLE_TRANSFORMS.keys(),
+                  help="Default transform pipeline to apply to data.")
+
+        # Adding options related to Transforms
+        _add_dynamic_transform_opts(parser)
 
 
 # Copyright 2016 The Chromium Authors. All rights reserved.

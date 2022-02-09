@@ -165,3 +165,57 @@ class Dataset(TorchtextDataset):
                 readers.append(field["reader"])
                 data.append((name, field["data"], field.get("features", {})))
         return readers, data
+
+
+class DynamicDataset(Dataset):
+
+    def __init__(self, fields, data, sort_key, filter_pred=None):
+        self.sort_key = sort_key
+        can_copy = 'src_map' in fields and 'alignment' in fields
+
+        # self.src_vocabs is used in collapse_copy_scores and Translator.py
+        self.src_vocabs = []
+        examples = []
+        for ex_dict in data:
+            if can_copy:
+                src_field = fields['src']
+                tgt_field = fields['tgt']
+                # this assumes src_field and tgt_field are both text
+                ex_dict = _dynamic_dict(
+                    ex_dict, src_field.base_field, tgt_field.base_field)
+                self.src_vocabs.append(ex_dict["src_ex_vocab"])
+            ex_fields = {k: [(k, v)] for k, v in fields.items() if
+                         k in ex_dict}
+            ex = Example.fromdict(ex_dict, ex_fields)
+            examples.append(ex)
+
+        # fields needs to have only keys that examples have as attrs
+        fields = []
+        for _, nf_list in ex_fields.items():
+            assert len(nf_list) == 1
+            fields.append(nf_list[0])
+
+        super(Dataset, self).__init__(examples, fields, filter_pred)
+
+    def __getattr__(self, attr):
+        # avoid infinite recursion when fields isn't defined
+        if 'fields' not in vars(self):
+            raise AttributeError
+        if attr in self.fields:
+            return (getattr(x, attr) for x in self.examples)
+        else:
+            raise AttributeError
+
+    def save(self, path, remove_fields=True):
+        if remove_fields:
+            self.fields = []
+        torch.save(self, path)
+
+    @staticmethod
+    def config(fields):
+        readers, data = [], []
+        for name, field in fields:
+            if field["data"] is not None:
+                readers.append(field["reader"])
+                data.append((name, field["data"], field.get("features", {})))
+        return readers, data

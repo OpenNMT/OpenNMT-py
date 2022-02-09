@@ -123,6 +123,10 @@ class DataOptsCheckerMixin(object):
         opt._all_transform = all_transforms
 
     @classmethod
+    def _get_all_transform_translate(cls, opt):
+        opt._all_transform = opt.transforms
+
+    @classmethod
     def _validate_fields_opts(cls, opt, build_vocab_only=False):
         """Check options relate to vocab and fields."""
 
@@ -327,3 +331,9 @@ class ArgumentParser(cfargparse.ArgumentParser, DataOptsCheckerMixin):
     @classmethod
     def validate_translate_opts(cls, opt):
         opt.src_feats = eval(opt.src_feats) if opt.src_feats else {}
+
+    @classmethod
+    def validate_translate_opts_dynamic(cls, opt):
+        # It comes from training
+        # TODO: needs to be added as inference opt
+        opt.share_vocab = False

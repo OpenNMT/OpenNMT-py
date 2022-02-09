@@ -410,6 +410,12 @@ class ONMTTokenizerTransform(TokenizerTransform):
         segmented, _ = tokenizer.tokenize(sentence)
         return segmented
 
+    def _detokenize(self, tokens, side='src', is_train=False):
+        """Do OpenNMT Tokenizer's detokenize."""
+        tokenizer = self.load_models[side]
+        detokenized = tokenizer.detokenize(tokens)
+        return detokenized
+
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Apply OpenNMT Tokenizer to src & tgt."""
         src_out = self._tokenize(example['src'], 'src')
@@ -420,6 +426,10 @@ class ONMTTokenizerTransform(TokenizerTransform):
             stats.update(SubwordStats(n_subwords, n_words))
         example['src'], example['tgt'] = src_out, tgt_out
         return example
+
+    def apply_reverse(self, translated):
+        """Apply OpenNMT Tokenizer to src & tgt."""
+        return self._detokenize(translated.split(), 'tgt')
 
     def _repr_args(self):
         """Return str represent key arguments for class."""

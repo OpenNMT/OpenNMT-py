@@ -60,6 +60,9 @@ class Transform(object):
         """
         raise NotImplementedError
 
+    def apply_reverse(self, translated):
+        return translated
+
     def __getstate__(self):
         """Pickling following for rebuild."""
         state = {"opts": self.opts}
@@ -192,6 +195,11 @@ class TransformPipe(Transform):
             if example is None:
                 break
         return example
+
+    def apply_reverse(self, translated):
+        for transform in self.transforms:
+            translated = transform.apply_reverse(translated)
+        return translated
 
     def __getstate__(self):
         """Pickling following for rebuild."""
