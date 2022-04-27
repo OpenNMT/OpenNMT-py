@@ -70,7 +70,11 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
                            model_dtype=opt.model_dtype,
                            earlystopper=earlystopper,
                            dropout=dropout,
-                           dropout_steps=dropout_steps)
+                           dropout_steps=dropout_steps,
+                           valid_post_batch_handler=(opt.valid_post_batch_handler
+                                                     if "valid_post_batch_handler" in opt else None),
+                           valid_post_epoch_handler=(opt.valid_post_epoch_handler
+                                                     if "valid_post_epoch_handler" in opt else None))
     return trainer
 
 
@@ -107,7 +111,8 @@ class Trainer(object):
                  n_gpu=1, gpu_rank=1, gpu_verbose_level=0,
                  report_manager=None, with_align=False, model_saver=None,
                  average_decay=0, average_every=1, model_dtype='fp32',
-                 earlystopper=None, dropout=[0.3], dropout_steps=[0]):
+                 earlystopper=None, dropout=[0.3], dropout_steps=[0],
+                 valid_post_batch_handler=None, valid_post_epoch_handler=None):
         # Basic attributes.
         self.model = model
         self.train_loss = train_loss
@@ -132,6 +137,8 @@ class Trainer(object):
         self.earlystopper = earlystopper
         self.dropout = dropout
         self.dropout_steps = dropout_steps
+        self.valid_post_batch_handler = valid_post_batch_handler
+        self.valid_post_epoch_handler = valid_post_epoch_handler
 
         for i in range(len(self.accum_count_l)):
             assert self.accum_count_l[i] > 0
@@ -305,6 +312,8 @@ class Trainer(object):
         # Set model in validating mode.
         valid_model.eval()
 
+        valid_post_batch_results = []
+
         with torch.no_grad():
             stats = onmt.utils.Statistics()
 
@@ -321,12 +330,19 @@ class Trainer(object):
                     # Compute loss.
                     _, batch_stats = self.valid_loss(batch, outputs, attns)
 
+                    if self.valid_post_batch_handler is not None:
+                        valid_post_batch_results.append(self.valid_post_batch_handler(valid_model, batch,
+                                                                                      outputs, attns))
+
                 # Update statistics.
                 stats.update(batch_stats)
         if moving_average:
             for param_data, param in zip(model_params_data,
                                          self.model.parameters()):
                 param.data = param_data
+
+        if self.valid_post_epoch_handler is not None:
+            self.valid_post_epoch_handler(valid_post_batch_results)
 
         # Set model back to training mode.
         valid_model.train()
