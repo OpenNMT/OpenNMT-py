@@ -9,11 +9,20 @@
           users of this library) for the strategy things we do.
 """
 
+import typing as T
+
 import torch
 import traceback
 
+from torchtext.data import Batch
+
+from onmt.models import NMTModel
 import onmt.utils
 from onmt.utils.logging import logger
+
+PostBatchHandler = T.Callable[[NMTModel, Batch, torch.Tensor,
+                               T.Dict[str, torch.Tensor]], T.Any]
+PostEpochHandler = T.Callable[[T.List[T.Any]], None]
 
 
 def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
@@ -58,12 +67,12 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
         if opt.early_stopping > 0 else None
 
     report_manager = onmt.utils.build_report_manager(opt, gpu_rank)
-    valid_post_batch_handler = (opt.valid_post_batch_handler
-                                if "valid_post_batch_handler" in opt
-                                else None)
-    valid_post_epoch_handler = (opt.valid_post_epoch_handler
-                                if "valid_post_epoch_handler" in opt
-                                else None)
+    valid_post_batch_handler: PostBatchHandler = (
+        opt.valid_post_batch_handler if "valid_post_batch_handler" in opt
+        else None)
+    valid_post_epoch_handler: PostEpochHandler = (
+        opt.valid_post_epoch_handler if "valid_post_epoch_handler" in opt
+        else None)
     trainer = onmt.Trainer(model, train_loss, valid_loss, optim, trunc_size,
                            shard_size, norm_method,
                            accum_count, accum_steps,
@@ -116,7 +125,8 @@ class Trainer(object):
                  report_manager=None, with_align=False, model_saver=None,
                  average_decay=0, average_every=1, model_dtype='fp32',
                  earlystopper=None, dropout=[0.3], dropout_steps=[0],
-                 valid_post_batch_handler=None, valid_post_epoch_handler=None):
+                 valid_post_batch_handler: PostBatchHandler = None,
+                 valid_post_epoch_handler: PostEpochHandler = None):
         # Basic attributes.
         self.model = model
         self.train_loss = train_loss
@@ -316,7 +326,7 @@ class Trainer(object):
         # Set model in validating mode.
         valid_model.eval()
 
-        valid_post_batch_results = []
+        valid_post_batch_results: T.List[T.Any] = []
 
         with torch.no_grad():
             stats = onmt.utils.Statistics()
