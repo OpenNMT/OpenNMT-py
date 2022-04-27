@@ -58,6 +58,12 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
         if opt.early_stopping > 0 else None
 
     report_manager = onmt.utils.build_report_manager(opt, gpu_rank)
+    valid_post_batch_handler = (opt.valid_post_batch_handler
+                                if "valid_post_batch_handler" in opt
+                                else None)
+    valid_post_epoch_handler = (opt.valid_post_epoch_handler
+                                if "valid_post_epoch_handler" in opt
+                                else None)
     trainer = onmt.Trainer(model, train_loss, valid_loss, optim, trunc_size,
                            shard_size, norm_method,
                            accum_count, accum_steps,
@@ -71,10 +77,8 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
                            earlystopper=earlystopper,
                            dropout=dropout,
                            dropout_steps=dropout_steps,
-                           valid_post_batch_handler=(opt.valid_post_batch_handler
-                                                     if "valid_post_batch_handler" in opt else None),
-                           valid_post_epoch_handler=(opt.valid_post_epoch_handler
-                                                     if "valid_post_epoch_handler" in opt else None))
+                           valid_post_batch_handler=valid_post_batch_handler,
+                           valid_post_epoch_handler=valid_post_epoch_handler)
     return trainer
 
 
@@ -331,8 +335,10 @@ class Trainer(object):
                     _, batch_stats = self.valid_loss(batch, outputs, attns)
 
                     if self.valid_post_batch_handler is not None:
-                        valid_post_batch_results.append(self.valid_post_batch_handler(valid_model, batch,
-                                                                                      outputs, attns))
+                        result = self.valid_post_batch_handler(valid_model,
+                                                               batch, outputs,
+                                                               attns)
+                        valid_post_batch_results.append(result)
 
                 # Update statistics.
                 stats.update(batch_stats)
