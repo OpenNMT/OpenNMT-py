@@ -20,8 +20,7 @@ from onmt.models import NMTModel
 import onmt.utils
 from onmt.utils.logging import logger
 
-PostBatchHandler = T.Callable[[NMTModel, Batch, torch.Tensor,
-                               T.Dict[str, torch.Tensor]], T.Any]
+PostBatchHandler = T.Callable[[NMTModel, Batch], T.Any]
 PostEpochHandler = T.Callable[[T.List[T.Any]], None]
 
 
@@ -346,8 +345,7 @@ class Trainer(object):
 
                     if self.valid_post_batch_handler is not None:
                         result = self.valid_post_batch_handler(valid_model,
-                                                               batch, outputs,
-                                                               attns)
+                                                               batch)
                         valid_post_batch_results.append(result)
 
                 # Update statistics.
