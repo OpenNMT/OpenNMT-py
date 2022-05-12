@@ -18,10 +18,11 @@ from torchtext.data import Batch
 
 from onmt.models import NMTModel
 import onmt.utils
+from onmt.utils import ReportMgr
 from onmt.utils.logging import logger
 
 PostBatchHandler = T.Callable[[NMTModel, Batch], T.Any]
-PostEpochHandler = T.Callable[[T.List[T.Any]], None]
+PostEpochHandler = T.Callable[[NMTModel, T.List[T.Any], int, ReportMgr], None]
 
 
 def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
@@ -356,7 +357,10 @@ class Trainer(object):
                 param.data = param_data
 
         if self.valid_post_epoch_handler is not None:
-            self.valid_post_epoch_handler(valid_post_batch_results)
+            self.valid_post_epoch_handler(valid_model,
+                                          valid_post_batch_results,
+                                          self.optim.training_step,
+                                          self.report_manager)
 
         # Set model back to training mode.
         valid_model.train()
