@@ -14,7 +14,28 @@ import traceback
 
 import onmt.utils
 from onmt.utils.logging import logger
+from onmt.translate.translator import BLEUCompute, my_build_translator
+from argparse import ArgumentParser
+from onmt.opts import translate_opts
 
+
+def my_translate_opts(parser, dynamic=False):
+    import onmt.opts as onmt_opts
+    onmt_opts.translate_opts(parser)
+    base_args = (["-model", "dummy"] + ["-src", "dummy"])
+    opt = parser.parse_args(base_args)
+
+    translate_opts = {
+        "beam_size": 1,
+        "random_sampling_topk": 10,
+        "batch_size": 65536,
+        "length_penalty": "avg",
+        "batch_type": "tokens",
+        "report_time": True,
+        "shard_size": 50000
+    }
+    opt.__dict__.update(translate_opts)
+    return opt
 
 def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
     """
@@ -36,6 +57,15 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
     valid_loss = onmt.utils.loss.build_loss_compute(
         model, tgt_field, opt, train=False)
 
+    from onmt.utils.parse import ArgumentParser as OnmtArgParse
+    parser = OnmtArgParse(description='translate.py')
+    translate_opt = my_translate_opts(parser)
+    model_opt = opt
+    # logger.info("##########################")
+    # logger.info(fields)
+    # logger.info(model.__dict__)
+    translator = my_build_translator(model, fields, translate_opt, model_opt)
+    bleu_score = BLEUCompute(translator, fields)
     trunc_size = opt.truncated_decoder  # Badly named...
     shard_size = opt.max_generator_batches if opt.model_dtype == 'fp32' else 0
     norm_method = opt.normalization
@@ -58,7 +88,8 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
         if opt.early_stopping > 0 else None
 
     report_manager = onmt.utils.build_report_manager(opt, gpu_rank)
-    trainer = onmt.Trainer(model, train_loss, valid_loss, optim, trunc_size,
+    trainer = onmt.Trainer(model, train_loss, valid_loss, bleu_score,
+                           optim, trunc_size,
                            shard_size, norm_method,
                            accum_count, accum_steps,
                            n_gpu, gpu_rank,
@@ -100,7 +131,8 @@ class Trainer(object):
                 Thus nothing will be saved if this parameter is None
     """
 
-    def __init__(self, model, train_loss, valid_loss, optim,
+    def __init__(self, model, train_loss, valid_loss,
+                 bleu_score, optim,
                  trunc_size=0, shard_size=32,
                  norm_method="sents", accum_count=[1],
                  accum_steps=[0],
@@ -112,6 +144,7 @@ class Trainer(object):
         self.model = model
         self.train_loss = train_loss
         self.valid_loss = valid_loss
+        self.bleu_score = bleu_score
         self.optim = optim
         self.trunc_size = trunc_size
         self.shard_size = shard_size
@@ -319,10 +352,19 @@ class Trainer(object):
                                                  with_align=self.with_align)
 
                     # Compute loss.
+                    logger.info("#########################")
+                    logger.info(type(batch))
+                    logger.info(type(batch.tgt))
+                    logger.info(batch.tgt.shape)
+                    #logger.info(batch.src.shape)
                     _, batch_stats = self.valid_loss(batch, outputs, attns)
 
+                    # Compute BLEU
+                    batch_bleu = self.bleu_score._compute_BLEU(batch)
+                    batch_stats_with_bleu = onmt.utils.Statistics(batch_stats.loss, batch_stats.n_words, batch_stats. n_correct,  batch_bleu)
                 # Update statistics.
-                stats.update(batch_stats)
+                stats.update(batch_stats_with_bleu)
+
         if moving_average:
             for param_data, param in zip(model_params_data,
                                          self.model.parameters()):

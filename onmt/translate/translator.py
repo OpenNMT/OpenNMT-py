@@ -7,6 +7,7 @@ import numpy as np
 from itertools import count, zip_longest
 
 import torch
+import torch.nn as nn
 
 from onmt.constants import DefaultTokens
 import onmt.model_builder
@@ -19,9 +20,40 @@ from onmt.utils.misc import tile, set_random_seed, report_matrix
 from onmt.utils.alignment import extract_alignment, build_align_pharaoh
 from onmt.modules.copy_generator import collapse_copy_scores
 from onmt.constants import ModelTask
+from sacrebleu import corpus_bleu
+from onmt.utils.logging import logger
+
+def my_build_translator(model, fields, translate_opt, model_opt, report_score=True, logger=None, out_file=None):
+    translate_opt.model = model
+    scorer = onmt.translate.GNMTGlobalScorer.from_opt(translate_opt)
+    if model_opt.model_task == ModelTask.LANGUAGE_MODEL:
+        translator = GeneratorLM.from_opt(
+            model,
+            fields,
+            translate_opt,
+            model_opt,
+            global_scorer=scorer,
+            out_file=out_file,
+            report_align=translate_opt.report_align,
+            report_score=report_score,
+            logger=logger,
+        )
+    else:
+        translator = Translator.from_opt(
+            model,
+            fields,
+            translate_opt,
+            model_opt,
+            global_scorer=scorer,
+            out_file=out_file,
+            report_align=translate_opt.report_align,
+            report_score=report_score,
+            logger=logger,
+        )
+    return translator
 
 
-def build_translator(opt, report_score=True, logger=None, out_file=None):
+def build_translator(opt, report_score=True, logger=None, out_file=None): 
     if out_file is None:
         out_file = codecs.open(opt.output, "w+", "utf-8")
 
@@ -1228,3 +1260,54 @@ class GeneratorLM(Inference):
         gold_scores = gold_scores.sum(dim=0).view(-1)
 
         return gold_scores
+
+class BLEUCompute(nn.Module):
+    import torch.nn as nn
+    from sacrebleu import corpus_bleu
+    def __init__(self, translator, field):
+        self.translator = translator
+        self.field = field
+
+    def detokenize_batch(self, batch, side):
+        sentences = []
+        for i in range(batch.shape[1]):
+            tokens = ""
+            for t in range(batch.shape[0]):
+                token = self.field[side][0][1].vocab.itos[batch[t, i, 0]].replace("▁", " ")
+                if token == self.field[side][0][1].pad_token or token == self.field[side][0][1].eos_token:
+                    break
+                if token != self.field[side][0][1].init_token:
+                    tokens += token
+            sentences.append(tokens.lstrip())
+        return sentences
+    
+    def detokenize_batch_translation(self, inf_tensor, side):
+        tokens = ""
+        for t in range(inf_tensor.shape[0]):
+            token = self.field[side][0][1].vocab.itos[inf_tensor[t]].replace("▁", " ")
+            if token == self.field[side][0][1].pad_token or token == self.field[side][0][1].eos_token:
+                break
+            if token != self.field[side][0][1].init_token:
+                tokens += token
+        inf_sentence = tokens.lstrip()
+        return inf_sentence     
+
+    def _compute_BLEU(self, batch):
+        refs = self.detokenize_batch(batch.tgt, 'tgt')
+        logger.info("######### refs ######## {}".format(refs))
+        logger.info("nb refs: {}".format(len(refs)))
+        batch_translation = self.translator.translate_batch(batch, [self.field['src'][0][1].vocab], False)['predictions']
+        logger.info(type(batch_translation))
+        logger.info(type(batch_translation[0][0]))
+        logger.info(batch_translation[0][0].shape)
+        infs = []
+        for x in batch_translation:
+            infs.append(self.detokenize_batch_translation(x[0], 'src'))
+        logger.info("nb infs: {}".format(len(batch_translation)))
+        logger.info("######### infs ######## {}".format(infs))
+        score = corpus_bleu(infs, [refs]).score
+        logger.info("score {}".format(score))
+        return score
+
+    # def _stats(self, score):
+    #     return onmt.utils.Statistics(0, 0, 0, score)

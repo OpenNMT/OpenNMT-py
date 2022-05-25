@@ -16,11 +16,12 @@ class Statistics(object):
     * elapsed time
     """
 
-    def __init__(self, loss=0, n_words=0, n_correct=0):
+    def __init__(self, loss=0, n_words=0, n_correct=0, bleu=0):
         self.loss = loss
         self.n_words = n_words
         self.n_correct = n_correct
         self.n_src_words = 0
+        self.bleu = bleu
         self.start_time = time.time()
 
     @staticmethod
@@ -80,6 +81,7 @@ class Statistics(object):
         self.loss += stat.loss
         self.n_words += stat.n_words
         self.n_correct += stat.n_correct
+        self.bleu += stat.bleu
 
         if update_n_src_words:
             self.n_src_words += stat.n_src_words
@@ -118,6 +120,7 @@ class Statistics(object):
             % (step_fmt,
                self.accuracy(),
                self.ppl(),
+               self.bleu(),
                self.xent(),
                learning_rate,
                self.n_src_words / (t + 1e-5),
@@ -130,6 +133,7 @@ class Statistics(object):
         t = self.elapsed_time()
         writer.add_scalar(prefix + "/xent", self.xent(), step)
         writer.add_scalar(prefix + "/ppl", self.ppl(), step)
+        writer.add_scalar(prefix + "/bleu", self.bleu, step)
         writer.add_scalar(prefix + "/accuracy", self.accuracy(), step)
         writer.add_scalar(prefix + "/tgtper", self.n_words / t, step)
         writer.add_scalar(prefix + "/lr", learning_rate, step)
