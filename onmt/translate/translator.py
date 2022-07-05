@@ -23,8 +23,13 @@ from onmt.constants import ModelTask
 from sacrebleu import corpus_bleu
 from onmt.utils.logging import logger
 
+
 def my_build_translator(model, fields, translate_opt, model_opt, report_score=True, logger=None, out_file=None):
-    translate_opt.model = model
+    if out_file is None:
+        out_file = codecs.open(translate_opt.output, "w+", "utf-8")
+
+    #translate_opt.model = model
+    # fields.to(device)
     scorer = onmt.translate.GNMTGlobalScorer.from_opt(translate_opt)
     if model_opt.model_task == ModelTask.LANGUAGE_MODEL:
         translator = GeneratorLM.from_opt(
@@ -52,45 +57,62 @@ def my_build_translator(model, fields, translate_opt, model_opt, report_score=Tr
         )
     return translator
 
+from onmt.utils.logging import init_logger
+from onmt.utils.misc import split_corpus
+from onmt.utils.parse import ArgumentParser
+from collections import defaultdict
+import torch
+import codecs
+def my_translate(valid_model, fields, translate_opt, model_opt, batch):
+    with open('model_opt.txt', "w") as file:
+        file.write(str(model_opt))
+    # ArgumentParser.validate_translate_opts(translate_opt)
+    # translate_opt.log_file = "translate.log"
+    # translate_opt.gpu = 0
+    logger = init_logger()
+    translator = my_build_translator(valid_model, fields, translate_opt, model_opt, logger=logger)
+    texts_to_translate = []
+    texts_ref = []
+    for example in batch.dataset.examples:
+        texts_to_translate.append(example.src[0])
+        texts_ref.append(example.tgt[0])
+    with open('texts_to_translate.txt', "w") as file:
+        file.write(str(len(texts_to_translate)) +'\n')
+        file.write(str(texts_to_translate))
+    with open('texts_ref.txt', "w") as file:
+        file.write(str(texts_ref))
 
-def build_translator(opt, report_score=True, logger=None, out_file=None): 
-    if out_file is None:
-        out_file = codecs.open(opt.output, "w+", "utf-8")
 
-    load_test_model = (
-        onmt.decoders.ensemble.load_test_model
-        if len(opt.models) > 1
-        else onmt.model_builder.load_test_model
-    )
-    fields, model, model_opt = load_test_model(opt)
+    scores = []
+    predictions = []
 
-    scorer = onmt.translate.GNMTGlobalScorer.from_opt(opt)
-
-    if model_opt.model_task == ModelTask.LANGUAGE_MODEL:
-        translator = GeneratorLM.from_opt(
-            model,
-            fields,
-            opt,
-            model_opt,
-            global_scorer=scorer,
-            out_file=out_file,
-            report_align=opt.report_align,
-            report_score=report_score,
-            logger=logger,
+    if len(texts_to_translate) > 0:
+        scores, predictions = translator.translate(
+            texts_to_translate,
+            src_feats=defaultdict(list),
+            tgt=texts_ref,
+            batch_size=1, batch_type="sents" # len(texts_to_translate)
         )
-    else:
-        translator = Translator.from_opt(
-            model,
-            fields,
-            opt,
-            model_opt,
-            global_scorer=scorer,
-            out_file=out_file,
-            report_align=opt.report_align,
-            report_score=report_score,
-            logger=logger,
-        )
-    return translator
+    with open('predictions.txt', "w") as file:
+        file.write(str(predictions))
+    with open('scores.txt', "w") as file:
+        file.write(str(scores))
+    import pyonmttok
+    tokenizer = pyonmttok.Tokenizer(
+        "aggressive",
+        joiner_annotate=True,
+        case_markup=True, 
+        soft_case_regions=True,
+        preserve_segmented_tokens=True,
+        preserve_placeholders=True)
+    preds = []
+    refs = []
+    for i in range(len(predictions)):
+        preds.append(tokenizer.detokenize(predictions[i]))
+        refs.append(tokenizer.detokenize(texts_ref[i]))
+    return preds, refs
+
+
 
 
 def max_tok_len(new, count, sofar):
@@ -450,7 +472,6 @@ class Inference(object):
         _readers, _data = inputters.Dataset.config(
             [("src", src_data), ("tgt", tgt_data)]
         )
-
         data = inputters.Dataset(
             self.fields,
             readers=_readers,
@@ -458,6 +479,7 @@ class Inference(object):
             sort_key=inputters.str2sortkey[self.data_type],
             filter_pred=self._filter_pred,
         )
+        
 
         return self._translate(
             data,
@@ -831,7 +853,7 @@ class Translator(Inference):
                     bos=self._tgt_bos_idx,
                     eos=self._tgt_eos_idx,
                     unk=self._tgt_unk_idx,
-                    batch_size=batch.batch_size,
+                    #batch_size=batch.batch_size,
                     global_scorer=self.global_scorer,
                     min_length=self.min_length,
                     max_length=self.max_length,
@@ -873,7 +895,6 @@ class Translator(Inference):
         src, src_lengths = (
             batch.src if isinstance(batch.src, tuple) else (batch.src, None)
         )
-
         enc_states, memory_bank, src_lengths = self.model.encoder(
             src, src_lengths
         )
@@ -1063,7 +1084,7 @@ class GeneratorLM(Inference):
             phrase_table=phrase_table,
         )
 
-    def translate_batch(self, batch, src_vocabs, attn_debug):
+    def translate_batch(self, batch, batch_size, src_vocabs, attn_debug):
         """Translate a batch of sentences."""
         with torch.no_grad():
             if self.sample_from_topk != 0 or self.sample_from_topp != 0:
@@ -1072,7 +1093,7 @@ class GeneratorLM(Inference):
                     bos=self._tgt_bos_idx,
                     eos=self._tgt_eos_idx,
                     unk=self._tgt_unk_idx,
-                    batch_size=batch.batch_size,
+                    batch_size=self.batch_size,
                     global_scorer=self.global_scorer,
                     min_length=self.min_length,
                     max_length=self.max_length,
@@ -1264,50 +1285,83 @@ class GeneratorLM(Inference):
 class BLEUCompute(nn.Module):
     import torch.nn as nn
     from sacrebleu import corpus_bleu
-    def __init__(self, translator, field):
-        self.translator = translator
-        self.field = field
+    def __init__(self, fields, opt):
+        #super(BLEUCompute, self).__init__()
+        self.fields = fields
+        self.opt = opt
 
-    def detokenize_batch(self, batch, side):
-        sentences = []
-        for i in range(batch.shape[1]):
-            tokens = ""
-            for t in range(batch.shape[0]):
-                token = self.field[side][0][1].vocab.itos[batch[t, i, 0]].replace("▁", " ")
-                if token == self.field[side][0][1].pad_token or token == self.field[side][0][1].eos_token:
-                    break
-                if token != self.field[side][0][1].init_token:
-                    tokens += token
-            sentences.append(tokens.lstrip())
-        return sentences
-    
-    def detokenize_batch_translation(self, inf_tensor, side):
-        tokens = ""
-        for t in range(inf_tensor.shape[0]):
-            token = self.field[side][0][1].vocab.itos[inf_tensor[t]].replace("▁", " ")
-            if token == self.field[side][0][1].pad_token or token == self.field[side][0][1].eos_token:
-                break
-            if token != self.field[side][0][1].init_token:
-                tokens += token
-        inf_sentence = tokens.lstrip()
-        return inf_sentence     
 
-    def _compute_BLEU(self, batch):
-        refs = self.detokenize_batch(batch.tgt, 'tgt')
-        logger.info("######### refs ######## {}".format(refs))
-        logger.info("nb refs: {}".format(len(refs)))
-        batch_translation = self.translator.translate_batch(batch, [self.field['src'][0][1].vocab], False)['predictions']
-        logger.info(type(batch_translation))
-        logger.info(type(batch_translation[0][0]))
-        logger.info(batch_translation[0][0].shape)
-        infs = []
-        for x in batch_translation:
-            infs.append(self.detokenize_batch_translation(x[0], 'src'))
-        logger.info("nb infs: {}".format(len(batch_translation)))
-        logger.info("######### infs ######## {}".format(infs))
-        score = corpus_bleu(infs, [refs]).score
-        logger.info("score {}".format(score))
+    # def translate(self, valid_model, batch):
+    #     from onmt.translate.translation_server import TranslationServer
+    #     preds, refs = my_translate(valid_model, self.fields, self.translate_opt, self.model_opt, batch)
+    #     return preds, refs
+    # def detokenize_batch_translation(self, inf_tensor, src_vocabs):
+    #     tokens = ""
+    #     for t in range(inf_tensor.shape[0]):
+    #         token = self.field[side][0][1].vocab.itos[inf_tensor[t]].replace("▁", " ")
+    #         if token == self.field[side][0][1].pad_token or token == self.field[side][0][1].eos_token:
+    #             break
+    #         if token != self.field[side][0][1].init_token:
+    #             tokens += token
+    #     inf_sentence = tokens.lstrip()
+    #     return inf_sentence
+
+    def _compute_BLEU(self, valid_model, batch):
+        from onmt.translate.translator import Translator
+        model_opt = self.opt
+        fields = self.fields
+        from onmt.utils.parse import ArgumentParser
+        parser = ArgumentParser()
+        onmt.opts.translate_opts(parser)
+        base_args = (["-model", "dummy"] + ["-src", "dummy"])
+        opt = parser.parse_args(base_args)
+        ArgumentParser.validate_translate_opts(opt)
+        ArgumentParser.update_model_opts(model_opt)
+        ArgumentParser.validate_model_opts(model_opt)
+        opt.gpu = 0
+        scorer = onmt.translate.GNMTGlobalScorer.from_opt(opt)
+        report_score=True
+        report_align=False
+        logger = None
+        import os
+        import codecs
+        out_file = codecs.open(os.devnull, "w", "utf-8")
+        translator = Translator.from_opt(
+            valid_model,
+            fields,
+            opt,
+            model_opt,
+            global_scorer=scorer,
+            out_file=out_file,
+            report_align=opt.report_align,
+            report_score=report_score,
+            logger=logger) 
+        texts_to_translate = []
+        texts_ref = []
+        for example in batch.dataset.examples:
+            texts_to_translate.append(example.src[0])
+            texts_ref.append(example.tgt[0])
+        scores, preds = translator.translate(
+            texts_to_translate,
+            batch_size = 1000,
+            #batch_size=len(texts_to_translate),
+            batch_type="tokens")
+        import pyonmttok
+        tokenizer = pyonmttok.Tokenizer(
+            "aggressive",
+            joiner_annotate=True,
+            case_markup=True, 
+            soft_case_regions=True,
+            preserve_segmented_tokens=True,
+            preserve_placeholders=True)
+        for i in range(len(preds)):
+            preds[i] = tokenizer.detokenize(preds[i])
+            texts_ref[i] = tokenizer.detokenize(texts_ref[i])
+        try:
+            score = corpus_bleu(preds, [texts_ref]).score
+            print("### bleu:", score)
+        except Exception as e:
+            score = 0
         return score
 
-    # def _stats(self, score):
-    #     return onmt.utils.Statistics(0, 0, 0, score)
+
