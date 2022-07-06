@@ -1286,39 +1286,58 @@ class BLEUCompute(nn.Module):
     import torch.nn as nn
     from sacrebleu import corpus_bleu
     def __init__(self, fields, opt):
-        #super(BLEUCompute, self).__init__()
         self.fields = fields
         self.opt = opt
+        x = torch.load("05_train_multi_gpu/onmt_run.vocab.pt")
+        self.src_fields = x["src"].fields[0][1]
+        self.tgt_fields = x["tgt"].fields[0][1]
 
 
-    # def translate(self, valid_model, batch):
-    #     from onmt.translate.translation_server import TranslationServer
-    #     preds, refs = my_translate(valid_model, self.fields, self.translate_opt, self.model_opt, batch)
-    #     return preds, refs
-    # def detokenize_batch_translation(self, inf_tensor, src_vocabs):
-    #     tokens = ""
-    #     for t in range(inf_tensor.shape[0]):
-    #         token = self.field[side][0][1].vocab.itos[inf_tensor[t]].replace("▁", " ")
-    #         if token == self.field[side][0][1].pad_token or token == self.field[side][0][1].eos_token:
-    #             break
-    #         if token != self.field[side][0][1].init_token:
-    #             tokens += token
-    #     inf_sentence = tokens.lstrip()
-    #     return inf_sentence
+    def tokenize_batch(self, batch_side, side):
+        if side == 'src':
+            field = self.src_fields
+        elif side == 'tgt':
+            field = self.tgt_fields
+        tokenized_stences = []        
+        for i in range(batch_side.shape[1]):
+            tokens = []
+            for t in range(batch_side.shape[0]):
+                token = field.vocab.itos[batch_side[t, i, 0]]
+                if token == field.pad_token or token == field.eos_token:
+                    break
+                if token != field.init_token:
+                    tokens.append(token)
+            tokenized_stences.append(tokens)
+        return tokenized_stences
 
-    def _compute_BLEU(self, valid_model, batch):
+
+    def build_sources_and_refs(self, batch, mode):
+        if mode == 'valid':
+            sources = []
+            refs = []
+            for example in batch.dataset.examples:
+                sources.append(example.src[0])
+                refs.append(example.tgt[0])
+        elif mode == 'train':
+            sources = self.tokenize_batch(batch.src[0], 'src') 
+            refs = self.tokenize_batch(batch.tgt, 'tgt')
+        return sources, refs
+
+
+    def _compute_BLEU(self, valid_model, batch, gpu_rank, mode):
         from onmt.translate.translator import Translator
         model_opt = self.opt
-        fields = self.fields
+        with open('model_opt', "w") as file:
+            file.write(str(model_opt.__dict__))
         from onmt.utils.parse import ArgumentParser
         parser = ArgumentParser()
         onmt.opts.translate_opts(parser)
         base_args = (["-model", "dummy"] + ["-src", "dummy"])
         opt = parser.parse_args(base_args)
+        opt.gpu = gpu_rank
         ArgumentParser.validate_translate_opts(opt)
         ArgumentParser.update_model_opts(model_opt)
         ArgumentParser.validate_model_opts(model_opt)
-        opt.gpu = 0
         scorer = onmt.translate.GNMTGlobalScorer.from_opt(opt)
         report_score=True
         report_align=False
@@ -1328,23 +1347,26 @@ class BLEUCompute(nn.Module):
         out_file = codecs.open(os.devnull, "w", "utf-8")
         translator = Translator.from_opt(
             valid_model,
-            fields,
+            self.fields,
             opt,
             model_opt,
             global_scorer=scorer,
             out_file=out_file,
             report_align=opt.report_align,
             report_score=report_score,
-            logger=logger) 
-        texts_to_translate = []
-        texts_ref = []
-        for example in batch.dataset.examples:
-            texts_to_translate.append(example.src[0])
-            texts_ref.append(example.tgt[0])
+            logger=logger)
+        sources, refs = self.build_sources_and_refs(batch, mode)
+        with open("sources", "w") as file:
+            if mode == 'train':
+                file.write(str(len(sources)))
+                file.write(str(sources))
+        with open("refs", "w") as file:
+            if mode == 'train':
+                file.write(str(len(refs)))
+                file.write(str(refs))
         scores, preds = translator.translate(
-            texts_to_translate,
+            sources,
             batch_size = 1000,
-            #batch_size=len(texts_to_translate),
             batch_type="tokens")
         import pyonmttok
         tokenizer = pyonmttok.Tokenizer(
@@ -1354,12 +1376,14 @@ class BLEUCompute(nn.Module):
             soft_case_regions=True,
             preserve_segmented_tokens=True,
             preserve_placeholders=True)
+        texts_ref = []
         for i in range(len(preds)):
             preds[i] = tokenizer.detokenize(preds[i])
-            texts_ref[i] = tokenizer.detokenize(texts_ref[i])
+            texts_ref.append(tokenizer.detokenize(refs[i]))
         try:
             score = corpus_bleu(preds, [texts_ref]).score
-            print("### bleu:", score)
+            print(preds[0])
+            print(texts_ref[0])
         except Exception as e:
             score = 0
         return score
