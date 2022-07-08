@@ -23,7 +23,7 @@ from onmt.utils.misc import set_random_seed
 from onmt.utils.misc import check_model_config
 from onmt.utils.alignment import to_word_align
 from onmt.utils.parse import ArgumentParser
-from onmt.translate.translator import my_build_translator
+from onmt.translate.translator import build_translator
 from onmt.transforms.features import InferFeatsTransform
 
 
@@ -448,7 +448,7 @@ class ServerModel(object):
                     target_prefix=self.opt.tgt_prefix,
                     preload=preload)
             else:
-                self.translator = my_build_translator(
+                self.translator = build_translator(
                     self.opt, report_score=False,
                     out_file=codecs.open(os.devnull, "w", "utf-8"))
         except RuntimeError as e:

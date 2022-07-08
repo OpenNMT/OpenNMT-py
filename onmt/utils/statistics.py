@@ -37,7 +37,6 @@ class Statistics(object):
         Returns:
             `Statistics`, the update stats object
         """
-        print("# stat il all_gather_stats", stat)
         stats = Statistics.all_gather_stats_list([stat], max_size=max_size)
         return stats[0]
 
@@ -60,7 +59,6 @@ class Statistics(object):
         all_stats = all_gather_list(stat_list, max_size=max_size)
         our_rank = get_rank()
         our_stats = all_stats[our_rank]
-        print("# all_stats in all_gather_stats_list", all_stats)
         for other_rank, stats in enumerate(all_stats):
             if other_rank == our_rank:
                 continue

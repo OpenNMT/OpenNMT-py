@@ -11,30 +11,10 @@
 
 import torch
 import traceback
-
 import onmt.utils
 from onmt.utils.logging import logger
-from onmt.translate.translator import BLEUCompute, my_build_translator
-from argparse import ArgumentParser
-from onmt.opts import translate_opts
+from onmt.translate.translator import BLEUCompute
 
-
-def my_translate_opts(parser, dynamic=False):
-    import onmt.opts as onmt_opts
-    onmt_opts.translate_opts(parser)
-    base_args = (["-model", "dummy"] + ["-src", "dummy"])
-    opt = parser.parse_args(base_args)
-
-    translate_opts = {
-        "beam_size": 5,
-        "length_penalty": "avg",
-        "batch_type": "sents",
-        "report_time": True,
-        "shard_size": 50000
-        #"gpu_rank":0
-    }
-    opt.__dict__.update(translate_opts)
-    return opt
 
 def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
     """
@@ -55,14 +35,8 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
     train_loss = onmt.utils.loss.build_loss_compute(model, tgt_field, opt)
     valid_loss = onmt.utils.loss.build_loss_compute(
         model, tgt_field, opt, train=False)
-
-    with open('fields.tgt', "w") as file:
-        file.write(str(fields['tgt']))
-        file.write(str(fields['tgt'].__dict__))
-
-    
-    
     bleu_scorer = BLEUCompute(fields, opt)
+
     trunc_size = opt.truncated_decoder  # Badly named...
     shard_size = opt.max_generator_batches if opt.model_dtype == 'fp32' else 0
     norm_method = opt.normalization
@@ -83,18 +57,15 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
     earlystopper = onmt.utils.EarlyStopping(
         opt.early_stopping, scorers=onmt.utils.scorers_from_opts(opt)) \
         if opt.early_stopping > 0 else None
-    with open('opts.txt', "w") as file:
-              file.write(str(opt))
-    #opt.tensorboard = True
-    #opt.report_every = 1
+    train_eval_steps = opt.train_eval_steps
     report_manager = onmt.utils.build_report_manager(opt, gpu_rank)
-    trainer = onmt.Trainer(model
-                         , train_loss, valid_loss, bleu_scorer,
+    trainer = onmt.Trainer(model,
+                           train_loss, valid_loss, bleu_scorer,
                            optim, trunc_size,
                            shard_size, norm_method,
                            accum_count, accum_steps,
                            n_gpu, gpu_rank,
-                           gpu_verbose_level, report_manager,
+                           gpu_verbose_level, train_eval_steps, report_manager,
                            with_align=True if opt.lambda_align > 0 else False,
                            model_saver=model_saver if gpu_rank <= 0 else None,
                            average_decay=average_decay,
@@ -138,6 +109,7 @@ class Trainer(object):
                  norm_method="sents", accum_count=[1],
                  accum_steps=[0],
                  n_gpu=1, gpu_rank=1, gpu_verbose_level=0,
+                 train_eval_steps=200,
                  report_manager=None, with_align=False, model_saver=None,
                  average_decay=0, average_every=1, model_dtype='fp32',
                  earlystopper=None, dropout=[0.3], dropout_steps=[0]):
@@ -160,6 +132,7 @@ class Trainer(object):
         self.gpu_rank = gpu_rank
         self.gpu_verbose_level = gpu_verbose_level
         self.report_manager = report_manager
+        self.train_eval_steps = train_eval_steps
         self.with_align = with_align
         self.model_saver = model_saver
         self.average_decay = average_decay
@@ -291,13 +264,13 @@ class Trainer(object):
                 self.optim.learning_rate(),
                 report_stats)
 
-            self.gpu_verbose_level = 1
-            if valid_iter is not None and step % valid_steps == 0 and self.gpu_rank == 0:
+            if (valid_iter is not None and step % valid_steps == 0 and
+                    self.gpu_rank == 0):
                 logger.info("### validation ")
                 if self.gpu_verbose_level > 0:
                     logger.info('GpuRank %d: validate step %d'
                                 % (self.gpu_rank, step))
-                        
+
                 valid_stats = self.validate(
                     valid_iter, moving_average=self.moving_average)
                 logger.info("valid_stats computed")
@@ -306,12 +279,11 @@ class Trainer(object):
                                 step %d' % (self.gpu_rank, step))
                 # gather stats unuseful on a single gpu
                 # valid_stats = self._maybe_gather_stats(valid_stats)
-                logger.info("valid_stats maybe gathered")
                 if self.gpu_verbose_level > 0:
                     logger.info('GpuRank %d: report stat step %d'
                                 % (self.gpu_rank, step))
                 self._report_step(self.optim.learning_rate(),
-                                step, valid_stats=valid_stats)
+                                  step, valid_stats=valid_stats)
                 logger.info("step reported")
                 # Run patience mechanism
                 if self.earlystopper is not None:
@@ -348,7 +320,7 @@ class Trainer(object):
             # (and keep the original parameters)
             model_params_data = []
             for avg, param in zip(self.moving_average,
-                                valid_model.parameters()):
+                                  valid_model.parameters()):
                 model_params_data.append(param.data)
                 param.data = avg.data.half() if self.optim._fp16 == "legacy" \
                     else avg.data
@@ -364,7 +336,7 @@ class Trainer(object):
                 if i == 0:
                     logger.info("UPDATING VALIDATION BLEU")
                     self.valid_bleu = self.bleu_scorer._compute_BLEU(
-                        valid_model=valid_model,
+                        model=valid_model,
                         batch=batch,
                         gpu_rank=self.gpu_rank,
                         mode="valid")
@@ -377,7 +349,7 @@ class Trainer(object):
                 with torch.cuda.amp.autocast(enabled=self.optim.amp):
                     # F-prop through the model.
                     outputs, attns = valid_model(src, tgt, src_lengths,
-                                                with_align=self.with_align)
+                                                 with_align=self.with_align)
                     # Compute loss.
                     _, batch_stats = self.valid_loss(batch, outputs, attns)
                     # Compute BLEU
@@ -389,17 +361,14 @@ class Trainer(object):
                 # Update statistics.
                 stats.update(batch_stats_with_bleu)
 
-
         if moving_average:
             for param_data, param in zip(model_params_data,
-                                        self.model.parameters()):
+                                         self.model.parameters()):
                 param.data = param_data
 
         # Set model back to training mode.
-        logger.info("#######")
         valid_model.train()
         return stats
-
 
     def _gradient_accumulation(self, true_batches, normalization, total_stats,
                                report_stats):
@@ -446,17 +415,17 @@ class Trainer(object):
                         trunc_start=j,
                         trunc_size=trunc_size)
                     # Compute bleu
-                
+
                 step = self.optim.training_step
-                if step % 200 == 0:
+                if step % self.train_eval_steps == 0:
                     # Compute bleu and save stats
                     logger.info("UPDATING train_bleu")
                     self.train_bleu = self.bleu_scorer._compute_BLEU(
-                        valid_model=self.model,
+                        model=self.model,
                         batch=batch,
                         gpu_rank=self.gpu_rank,
                         mode='train')
-                logger.info("train_bleu: {}".format(self.train_bleu))
+                    logger.info("train_bleu: {}".format(self.train_bleu))
                 batch_stats.bleu = self.train_bleu
                 total_stats.update(batch_stats)
                 report_stats.update(batch_stats)

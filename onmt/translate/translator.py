@@ -21,98 +21,6 @@ from onmt.utils.alignment import extract_alignment, build_align_pharaoh
 from onmt.modules.copy_generator import collapse_copy_scores
 from onmt.constants import ModelTask
 from sacrebleu import corpus_bleu
-from onmt.utils.logging import logger
-
-
-def my_build_translator(model, fields, translate_opt, model_opt, report_score=True, logger=None, out_file=None):
-    if out_file is None:
-        out_file = codecs.open(translate_opt.output, "w+", "utf-8")
-
-    #translate_opt.model = model
-    # fields.to(device)
-    scorer = onmt.translate.GNMTGlobalScorer.from_opt(translate_opt)
-    if model_opt.model_task == ModelTask.LANGUAGE_MODEL:
-        translator = GeneratorLM.from_opt(
-            model,
-            fields,
-            translate_opt,
-            model_opt,
-            global_scorer=scorer,
-            out_file=out_file,
-            report_align=translate_opt.report_align,
-            report_score=report_score,
-            logger=logger,
-        )
-    else:
-        translator = Translator.from_opt(
-            model,
-            fields,
-            translate_opt,
-            model_opt,
-            global_scorer=scorer,
-            out_file=out_file,
-            report_align=translate_opt.report_align,
-            report_score=report_score,
-            logger=logger,
-        )
-    return translator
-
-from onmt.utils.logging import init_logger
-from onmt.utils.misc import split_corpus
-from onmt.utils.parse import ArgumentParser
-from collections import defaultdict
-import torch
-import codecs
-def my_translate(valid_model, fields, translate_opt, model_opt, batch):
-    with open('model_opt.txt', "w") as file:
-        file.write(str(model_opt))
-    # ArgumentParser.validate_translate_opts(translate_opt)
-    # translate_opt.log_file = "translate.log"
-    # translate_opt.gpu = 0
-    logger = init_logger()
-    translator = my_build_translator(valid_model, fields, translate_opt, model_opt, logger=logger)
-    texts_to_translate = []
-    texts_ref = []
-    for example in batch.dataset.examples:
-        texts_to_translate.append(example.src[0])
-        texts_ref.append(example.tgt[0])
-    with open('texts_to_translate.txt', "w") as file:
-        file.write(str(len(texts_to_translate)) +'\n')
-        file.write(str(texts_to_translate))
-    with open('texts_ref.txt', "w") as file:
-        file.write(str(texts_ref))
-
-
-    scores = []
-    predictions = []
-
-    if len(texts_to_translate) > 0:
-        scores, predictions = translator.translate(
-            texts_to_translate,
-            src_feats=defaultdict(list),
-            tgt=texts_ref,
-            batch_size=1, batch_type="sents" # len(texts_to_translate)
-        )
-    with open('predictions.txt', "w") as file:
-        file.write(str(predictions))
-    with open('scores.txt', "w") as file:
-        file.write(str(scores))
-    import pyonmttok
-    tokenizer = pyonmttok.Tokenizer(
-        "aggressive",
-        joiner_annotate=True,
-        case_markup=True, 
-        soft_case_regions=True,
-        preserve_segmented_tokens=True,
-        preserve_placeholders=True)
-    preds = []
-    refs = []
-    for i in range(len(predictions)):
-        preds.append(tokenizer.detokenize(predictions[i]))
-        refs.append(tokenizer.detokenize(texts_ref[i]))
-    return preds, refs
-
-
 
 
 def max_tok_len(new, count, sofar):
@@ -479,7 +387,6 @@ class Inference(object):
             sort_key=inputters.str2sortkey[self.data_type],
             filter_pred=self._filter_pred,
         )
-        
 
         return self._translate(
             data,
@@ -853,7 +760,6 @@ class Translator(Inference):
                     bos=self._tgt_bos_idx,
                     eos=self._tgt_eos_idx,
                     unk=self._tgt_unk_idx,
-                    #batch_size=batch.batch_size,
                     global_scorer=self.global_scorer,
                     min_length=self.min_length,
                     max_length=self.max_length,
@@ -1282,23 +1188,21 @@ class GeneratorLM(Inference):
 
         return gold_scores
 
+
 class BLEUCompute(nn.Module):
     import torch.nn as nn
     from sacrebleu import corpus_bleu
+
     def __init__(self, fields, opt):
         self.fields = fields
         self.opt = opt
-        x = torch.load("05_train_multi_gpu/onmt_run.vocab.pt")
-        self.src_fields = x["src"].fields[0][1]
-        self.tgt_fields = x["tgt"].fields[0][1]
-
+        import pyonmttok
+        self.tgt_tokenizer = pyonmttok.Tokenizer(
+            **self.opt.tgt_onmttok_kwargs)
 
     def tokenize_batch(self, batch_side, side):
-        if side == 'src':
-            field = self.src_fields
-        elif side == 'tgt':
-            field = self.tgt_fields
-        tokenized_stences = []        
+        field = dict(self.fields)[side].base_field
+        tokenized_sentences = []
         for i in range(batch_side.shape[1]):
             tokens = []
             for t in range(batch_side.shape[0]):
@@ -1307,9 +1211,8 @@ class BLEUCompute(nn.Module):
                     break
                 if token != field.init_token:
                     tokens.append(token)
-            tokenized_stences.append(tokens)
-        return tokenized_stences
-
+            tokenized_sentences.append(tokens)
+        return tokenized_sentences
 
     def build_sources_and_refs(self, batch, mode):
         if mode == 'valid':
@@ -1319,12 +1222,11 @@ class BLEUCompute(nn.Module):
                 sources.append(example.src[0])
                 refs.append(example.tgt[0])
         elif mode == 'train':
-            sources = self.tokenize_batch(batch.src[0], 'src') 
+            sources = self.tokenize_batch(batch.src[0], 'src')
             refs = self.tokenize_batch(batch.tgt, 'tgt')
         return sources, refs
 
-
-    def _compute_BLEU(self, valid_model, batch, gpu_rank, mode):
+    def _compute_BLEU(self, model, batch, gpu_rank, mode):
         from onmt.translate.translator import Translator
         model_opt = self.opt
         with open('model_opt', "w") as file:
@@ -1339,22 +1241,19 @@ class BLEUCompute(nn.Module):
         ArgumentParser.update_model_opts(model_opt)
         ArgumentParser.validate_model_opts(model_opt)
         scorer = onmt.translate.GNMTGlobalScorer.from_opt(opt)
-        report_score=True
-        report_align=False
-        logger = None
         import os
         import codecs
         out_file = codecs.open(os.devnull, "w", "utf-8")
         translator = Translator.from_opt(
-            valid_model,
+            model,
             self.fields,
             opt,
             model_opt,
             global_scorer=scorer,
             out_file=out_file,
             report_align=opt.report_align,
-            report_score=report_score,
-            logger=logger)
+            report_score=True,
+            logger=None)
         sources, refs = self.build_sources_and_refs(batch, mode)
         with open("sources", "w") as file:
             if mode == 'train':
@@ -1366,26 +1265,18 @@ class BLEUCompute(nn.Module):
                 file.write(str(refs))
         scores, preds = translator.translate(
             sources,
-            batch_size = 1000,
-            batch_type="tokens")
-        import pyonmttok
-        tokenizer = pyonmttok.Tokenizer(
-            "aggressive",
-            joiner_annotate=True,
-            case_markup=True, 
-            soft_case_regions=True,
-            preserve_segmented_tokens=True,
-            preserve_placeholders=True)
+            batch_size=model_opt.valid_batch_size,
+            batch_type=model_opt.batch_type)
         texts_ref = []
+
         for i in range(len(preds)):
-            preds[i] = tokenizer.detokenize(preds[i])
-            texts_ref.append(tokenizer.detokenize(refs[i]))
+            preds[i] = self.tgt_tokenizer.detokenize(preds[i][0].split())
+            texts_ref.append(self.tgt_tokenizer.detokenize(refs[i]))
         try:
             score = corpus_bleu(preds, [texts_ref]).score
-            print(preds[0])
-            print(texts_ref[0])
-        except Exception as e:
+            print("first source: ", sources[0])
+            print("first detok prediction: ", preds[0])
+            print("first ref: ", texts_ref[0])
+        except Exception:
             score = 0
         return score
-
-

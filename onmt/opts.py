@@ -32,6 +32,9 @@ def _add_logging_opts(parser, is_train=True):
               else 'Print scores and predictions for each sentence')
 
     if is_train:
+        group.add('--train_eval_steps', '-train_eval_steps',
+                  type=int, default=200,
+                  help="Print stats at this interval.")
         group.add('--report_every', '-report_every', type=int, default=50,
                   help="Print stats at this interval.")
         group.add('--exp_host', '-exp_host', type=str, default="",
