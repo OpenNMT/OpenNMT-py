@@ -39,9 +39,7 @@ Given sufficient CPU resources according to GPU computing power, most of the tra
 
 ### Breaking changes
 
-For now, the new data loading paradigm does not support Audio, Video and Image inputs.
-
-A few features are also dropped, at least for now:
+For now, the new data loading paradigm does not support a few features, at least for now:
 
 - audio, image and video inputs;
 - source word features.
