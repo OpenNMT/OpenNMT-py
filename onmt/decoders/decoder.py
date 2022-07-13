@@ -438,3 +438,97 @@ class InputFeedRNNDecoder(RNNDecoderBase):
         self.dropout.p = dropout
         self.rnn.dropout.p = dropout
         self.embeddings.update_dropout(dropout)
+
+class PoincareRNNDecoder(InputFeedRNNDecoder):
+
+    poincare_map = PoincareReparametrize(10)
+
+    def _run_forward_pass(self, tgt, memory_bank, memory_lengths=None):
+        """
+        See StdRNNDecoder._run_forward_pass() for description
+        of arguments and return values.
+        """
+        # Additional args check.
+        input_feed = self.state["input_feed"].squeeze(0)
+        input_feed_batch, _ = input_feed.size()
+        _, tgt_batch, _ = tgt.size()
+        aeq(tgt_batch, input_feed_batch)
+        # END Additional args check.
+
+        dec_outs = []
+        attns = {}
+        if self.attn is not None:
+            attns["std"] = []
+        if self.copy_attn is not None or self._reuse_copy_attn:
+            attns["copy"] = []
+        if self._coverage:
+            attns["coverage"] = []
+
+        emb = self.embeddings(tgt)
+        assert emb.dim() == 3  # len x batch x embedding_dim
+
+        dec_state = self.state["hidden"]
+        coverage = self.state["coverage"].squeeze(0) \
+            if self.state["coverage"] is not None else None
+
+        # Input feed concatenates hidden state with
+        # input at every time step.
+        for emb_t in emb.split(1):
+            decoder_input = torch.cat([emb_t.squeeze(0), input_feed], 1)
+            rnn_output, dec_state = self.rnn(decoder_input, dec_state)
+            if self.attentional:
+                decoder_output, p_attn = self.attn(
+                    rnn_output,
+                    memory_bank.transpose(0, 1),
+                    memory_lengths=memory_lengths)
+                attns["std"].append(p_attn)
+            else:
+                decoder_output = rnn_output
+            if self.context_gate is not None:
+                # TODO: context gate should be employed
+                # instead of second RNN transform.
+                decoder_output = self.context_gate(
+                    decoder_input, rnn_output, decoder_output
+                )
+            decoder_output = self.dropout(decoder_output)
+            input_feed = decoder_output
+
+            dec_outs += [decoder_output]
+
+            # Update the coverage attention.
+            if self._coverage:
+                coverage = p_attn if coverage is None else p_attn + coverage
+                attns["coverage"] += [coverage]
+
+            if self.copy_attn is not None:
+                _, copy_attn = self.copy_attn(
+                    decoder_output, memory_bank.transpose(0, 1))
+                attns["copy"] += [copy_attn]
+            elif self._reuse_copy_attn:
+                attns["copy"] = attns["std"]
+
+        return dec_state, dec_outs, attns
+
+    def poincare_dist(self, u, v):
+        #euclidean norm
+        squnorm = th.sum(u * u, dim=-1)
+        sqvnorm = th.sum(v * v, dim=-1)
+        sqdist = th.sum(th.pow(u - v, 2), dim=-1)
+        #fraction
+        x = sqdist / ((1 - squnorm) * (1 - sqvnorm)) * 2 + 1
+        # arcosh
+        z = th.sqrt(th.pow(x, 2) - 1)
+        return th.log(x + z)
+
+
+class PoincareReparametrize(nn.Module):
+    def __init__(self, dim):
+        self.phi_dir = nn.Linear(dim,dim)
+        self.phi_norm = nn.Linear(dim,dim)
+    def forward(x):
+        v_bar  = self.phi_dir(x)
+        p_bar = self.phi_norm(x)
+        v = v_bar / torch.norm(v_bar, dim = 0) 
+        p = nn.functional.sigmoid(p_bar)
+
+        return p*v
