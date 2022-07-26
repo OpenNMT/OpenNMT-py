@@ -496,6 +496,14 @@ def _add_train_general_opts(parser):
               action='store_true',
               help="Freeze word embeddings on the decoder side.")
 
+    # Freeze Encoder and/or Decoder
+    group.add('--freeze_encoder', '-freeze_encoder',
+              action='store_true',
+              help="Freeze parameters in encoder.")
+    group.add('--freeze_decoder', '-freeze_decoder',
+              action='store_true',
+              help="Freeze parameters in decoder.")
+
     # Optimization options
     group = parser.add_argument_group('Optimization- Type')
     group.add('--batch_size', '-batch_size', type=int, default=64,

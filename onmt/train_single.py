@@ -33,6 +33,9 @@ def _get_model_opts(opt, checkpoint=None):
             opt.tensorboard_log_dir_dated = model_opt.tensorboard_log_dir_dated
         # Override checkpoint's update_embeddings as it defaults to false
         model_opt.update_vocab = opt.update_vocab
+        # Override checkpoint's freezing settings as it defaults to false
+        model_opt.freeze_encoder = opt.freeze_encoder
+        model_opt.freeze_decoder = opt.freeze_decoder
     else:
         model_opt = opt
     return model_opt
