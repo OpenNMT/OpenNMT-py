@@ -285,6 +285,14 @@ def model_opts(parser):
                    "are experimental. Options are "
                    "[rnn|transformer|cnn|transformer].")
 
+    # Freeze Encoder and/or Decoder
+    group.add('--freeze_encoder', '-freeze_encoder',
+              action='store_true',
+              help="Freeze parameters in encoder.")
+    group.add('--freeze_decoder', '-freeze_decoder',
+              action='store_true',
+              help="Freeze parameters in decoder.")
+
     group.add('--layers', '-layers', type=int, default=-1,
               help='Number of layers in enc/dec.')
     group.add('--enc_layers', '-enc_layers', type=int, default=2,
@@ -495,14 +503,6 @@ def _add_train_general_opts(parser):
     group.add('--freeze_word_vecs_dec', '-freeze_word_vecs_dec',
               action='store_true',
               help="Freeze word embeddings on the decoder side.")
-
-    # Freeze Encoder and/or Decoder
-    group.add('--freeze_encoder', '-freeze_encoder',
-              action='store_true',
-              help="Freeze parameters in encoder.")
-    group.add('--freeze_decoder', '-freeze_decoder',
-              action='store_true',
-              help="Freeze parameters in decoder.")
 
     # Optimization options
     group = parser.add_argument_group('Optimization- Type')
