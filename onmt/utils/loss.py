@@ -93,6 +93,7 @@ def build_loss_compute(model, tgt_field, opt, train=True):
 
     return compute
 
+
 class LossComputeBase(nn.Module):
     """
     Class for managing efficient loss computation. Handles

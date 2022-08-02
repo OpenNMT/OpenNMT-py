@@ -20,7 +20,46 @@ from onmt.utils.misc import tile, set_random_seed, report_matrix
 from onmt.utils.alignment import extract_alignment, build_align_pharaoh
 from onmt.modules.copy_generator import collapse_copy_scores
 from onmt.constants import ModelTask
-from sacrebleu import corpus_bleu
+
+
+def build_translator(opt, report_score=True, logger=None, out_file=None):
+    if out_file is None:
+        out_file = codecs.open(opt.output, "w+", "utf-8")
+
+    load_test_model = (
+        onmt.decoders.ensemble.load_test_model
+        if len(opt.models) > 1
+        else onmt.model_builder.load_test_model
+    )
+    fields, model, model_opt = load_test_model(opt)
+
+    scorer = onmt.translate.GNMTGlobalScorer.from_opt(opt)
+
+    if model_opt.model_task == ModelTask.LANGUAGE_MODEL:
+        translator = GeneratorLM.from_opt(
+            model,
+            fields,
+            opt,
+            model_opt,
+            global_scorer=scorer,
+            out_file=out_file,
+            report_align=opt.report_align,
+            report_score=report_score,
+            logger=logger,
+        )
+    else:
+        translator = Translator.from_opt(
+            model,
+            fields,
+            opt,
+            model_opt,
+            global_scorer=scorer,
+            out_file=out_file,
+            report_align=opt.report_align,
+            report_score=report_score,
+            logger=logger,
+        )
+    return translator
 
 
 def max_tok_len(new, count, sofar):
@@ -380,6 +419,7 @@ class Inference(object):
         _readers, _data = inputters.Dataset.config(
             [("src", src_data), ("tgt", tgt_data)]
         )
+
         data = inputters.Dataset(
             self.fields,
             readers=_readers,
@@ -760,6 +800,7 @@ class Translator(Inference):
                     bos=self._tgt_bos_idx,
                     eos=self._tgt_eos_idx,
                     unk=self._tgt_unk_idx,
+                    batch_size=batch.batch_size,
                     global_scorer=self.global_scorer,
                     min_length=self.min_length,
                     max_length=self.max_length,
@@ -801,6 +842,7 @@ class Translator(Inference):
         src, src_lengths = (
             batch.src if isinstance(batch.src, tuple) else (batch.src, None)
         )
+
         enc_states, memory_bank, src_lengths = self.model.encoder(
             src, src_lengths
         )
@@ -1189,7 +1231,7 @@ class GeneratorLM(Inference):
         return gold_scores
 
 
-class BLEUCompute(nn.Module):
+class ScoringPreparator(nn.Module):
     import torch.nn as nn
     from sacrebleu import corpus_bleu
 
@@ -1226,11 +1268,9 @@ class BLEUCompute(nn.Module):
             refs = self.tokenize_batch(batch.tgt, 'tgt')
         return sources, refs
 
-    def _compute_BLEU(self, model, batch, gpu_rank, mode):
+    def translate(self, model, batch, gpu_rank, mode):
         from onmt.translate.translator import Translator
         model_opt = self.opt
-        with open('model_opt', "w") as file:
-            file.write(str(model_opt.__dict__))
         from onmt.utils.parse import ArgumentParser
         parser = ArgumentParser()
         onmt.opts.translate_opts(parser)
@@ -1255,15 +1295,7 @@ class BLEUCompute(nn.Module):
             report_score=True,
             logger=None)
         sources, refs = self.build_sources_and_refs(batch, mode)
-        with open("sources", "w") as file:
-            if mode == 'train':
-                file.write(str(len(sources)))
-                file.write(str(sources))
-        with open("refs", "w") as file:
-            if mode == 'train':
-                file.write(str(len(refs)))
-                file.write(str(refs))
-        scores, preds = translator.translate(
+        _, preds = translator.translate(
             sources,
             batch_size=model_opt.valid_batch_size,
             batch_type=model_opt.batch_type)
@@ -1273,10 +1305,18 @@ class BLEUCompute(nn.Module):
             preds[i] = self.tgt_tokenizer.detokenize(preds[i][0].split())
             texts_ref.append(self.tgt_tokenizer.detokenize(refs[i]))
         try:
-            score = corpus_bleu(preds, [texts_ref]).score
             print("first source: ", sources[0])
             print("first detok prediction: ", preds[0])
             print("first ref: ", texts_ref[0])
         except Exception:
-            score = 0
-        return score
+            pass
+        return preds, texts_ref
+
+
+def bleu_scorer(preds, texts_ref):
+    from sacrebleu import corpus_bleu
+    try:
+        score = corpus_bleu(preds, [texts_ref]).score
+    except Exception:
+        score = 0
+    return score

@@ -11,9 +11,10 @@
 
 import torch
 import traceback
+
 import onmt.utils
 from onmt.utils.logging import logger
-from onmt.translate.translator import BLEUCompute
+from onmt.translate.translator import ScoringPreparator, bleu_scorer
 
 
 def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
@@ -35,7 +36,13 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
     train_loss = onmt.utils.loss.build_loss_compute(model, tgt_field, opt)
     valid_loss = onmt.utils.loss.build_loss_compute(
         model, tgt_field, opt, train=False)
-    bleu_scorer = BLEUCompute(fields, opt)
+
+    scores = []
+    scoring_preparator = ScoringPreparator(fields, opt)
+    if "BLEU" in opt.scores:
+        scores.append(
+            ["BLEU", [bleu_scorer, 0, 0]]
+        )
 
     trunc_size = opt.truncated_decoder  # Badly named...
     shard_size = opt.max_generator_batches if opt.model_dtype == 'fp32' else 0
@@ -57,10 +64,12 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
     earlystopper = onmt.utils.EarlyStopping(
         opt.early_stopping, scorers=onmt.utils.scorers_from_opts(opt)) \
         if opt.early_stopping > 0 else None
+
     train_eval_steps = opt.train_eval_steps
     report_manager = onmt.utils.build_report_manager(opt, gpu_rank)
     trainer = onmt.Trainer(model,
-                           train_loss, valid_loss, bleu_scorer,
+                           train_loss, valid_loss,
+                           scoring_preparator, scores,
                            optim, trunc_size,
                            shard_size, norm_method,
                            accum_count, accum_steps,
@@ -104,7 +113,8 @@ class Trainer(object):
     """
 
     def __init__(self, model, train_loss, valid_loss,
-                 bleu_scorer, optim,
+                 scoring_preparator, scores,
+                 optim,
                  trunc_size=0, shard_size=32,
                  norm_method="sents", accum_count=[1],
                  accum_steps=[0],
@@ -118,9 +128,8 @@ class Trainer(object):
         self.model = model
         self.train_loss = train_loss
         self.valid_loss = valid_loss
-        self.bleu_scorer = bleu_scorer
-        self.valid_bleu = 0
-        self.train_bleu = 0
+        self.scoring_preparator = scoring_preparator
+        self.scores = scores
         self.optim = optim
         self.trunc_size = trunc_size
         self.shard_size = shard_size
@@ -152,6 +161,14 @@ class Trainer(object):
 
         # Set model in training mode.
         self.model.train()
+
+    def training_eval_handler(self, scorer, batch, mode="train"):
+        preds, texts_ref = self.scoring_preparator.translate(
+            model=self.model,
+            batch=batch,
+            gpu_rank=self.gpu_rank,
+            mode=mode)
+        return scorer(preds, texts_ref)
 
     def _accum_count(self, step):
         for i in range(len(self.accum_steps)):
@@ -207,7 +224,7 @@ class Trainer(object):
               train_steps,
               save_checkpoint_steps=5000,
               valid_iter=None,
-              valid_steps=200):
+              valid_steps=10000):
         """
         The main training loop by iterating over `train_iter` and possibly
         running validation on `valid_iter`.
@@ -232,8 +249,7 @@ class Trainer(object):
         total_stats = onmt.utils.Statistics()
         report_stats = onmt.utils.Statistics()
         self._start_report_manager(start_time=total_stats.start_time)
-        with open('train_iter', "w") as file:
-            file.write(str(train_iter))
+
         for i, (batches, normalization) in enumerate(
                 self._accum_batches(train_iter)):
             step = self.optim.training_step
@@ -266,14 +282,12 @@ class Trainer(object):
 
             if (valid_iter is not None and step % valid_steps == 0 and
                     self.gpu_rank == 0):
-                logger.info("### validation ")
                 if self.gpu_verbose_level > 0:
                     logger.info('GpuRank %d: validate step %d'
                                 % (self.gpu_rank, step))
 
                 valid_stats = self.validate(
                     valid_iter, moving_average=self.moving_average)
-                logger.info("valid_stats computed")
                 if self.gpu_verbose_level > 0:
                     logger.info('GpuRank %d: gather valid stat \
                                 step %d' % (self.gpu_rank, step))
@@ -284,17 +298,13 @@ class Trainer(object):
                                 % (self.gpu_rank, step))
                 self._report_step(self.optim.learning_rate(),
                                   step, valid_stats=valid_stats)
-                logger.info("step reported")
                 # Run patience mechanism
                 if self.earlystopper is not None:
-                    logger.info("#")
                     self.earlystopper(valid_stats, step)
-                    logger.info("##")
                     # If the patience has reached the limit, stop training
                     if self.earlystopper.has_stopped():
                         logger.info("earlystopper has_stopped!")
                         break
-                logger.info("validation is finished")
 
             if (self.model_saver is not None
                     and (save_checkpoint_steps != 0
@@ -327,20 +337,22 @@ class Trainer(object):
 
         # Set model in validating mode.
         valid_model.eval()
-        logger.info("# model in validating mode")
+
         with torch.no_grad():
             stats = onmt.utils.Statistics()
             i = 0
-            logger.info("# iter beginning")
+            computed_stats = {}
             for batch in valid_iter:
                 if i == 0:
-                    logger.info("UPDATING VALIDATION BLEU")
-                    self.valid_bleu = self.bleu_scorer._compute_BLEU(
-                        model=valid_model,
-                        batch=batch,
-                        gpu_rank=self.gpu_rank,
-                        mode="valid")
-                    logger.info("validation bleu: {}".format(self.valid_bleu))
+                    for i, s in enumerate(self.scores):
+                        logger.info("UPDATING VALIDATION {}".format(s[0]))
+                        s[1][2] = self.training_eval_handler(
+                            scorer=s[1][0], batch=batch, mode="valid")
+                        computed_stats[s[0]] = s[1][2]
+                        logger.info(
+                            "validation {}: {}".format(
+                                s[0], s[1][2])
+                            )
                 i += 1
                 src, src_lengths = batch.src if isinstance(batch.src, tuple) \
                     else (batch.src, None)
@@ -350,16 +362,19 @@ class Trainer(object):
                     # F-prop through the model.
                     outputs, attns = valid_model(src, tgt, src_lengths,
                                                  with_align=self.with_align)
+
                     # Compute loss.
                     _, batch_stats = self.valid_loss(batch, outputs, attns)
-                    # Compute BLEU
-                    batch_stats_with_bleu = onmt.utils.Statistics(
+
+                    # Compute stats
+                    batch_stats = onmt.utils.Statistics(
                         batch_stats.loss,
                         batch_stats.n_words,
                         batch_stats.n_correct,
-                        self.valid_bleu)
+                        computed_stats)
+
                 # Update statistics.
-                stats.update(batch_stats_with_bleu)
+                stats.update(batch_stats)
 
         if moving_average:
             for param_data, param in zip(model_params_data,
@@ -368,6 +383,7 @@ class Trainer(object):
 
         # Set model back to training mode.
         valid_model.train()
+
         return stats
 
     def _gradient_accumulation(self, true_batches, normalization, total_stats,
@@ -414,19 +430,21 @@ class Trainer(object):
                         shard_size=self.shard_size,
                         trunc_start=j,
                         trunc_size=trunc_size)
-                    # Compute bleu
 
                 step = self.optim.training_step
                 if step % self.train_eval_steps == 0:
-                    # Compute bleu and save stats
-                    logger.info("UPDATING train_bleu")
-                    self.train_bleu = self.bleu_scorer._compute_BLEU(
-                        model=self.model,
-                        batch=batch,
-                        gpu_rank=self.gpu_rank,
-                        mode='train')
-                    logger.info("train_bleu: {}".format(self.train_bleu))
-                batch_stats.bleu = self.train_bleu
+                    # Compute and save stats
+                    for i, s in enumerate(self.scores):
+                        logger.info("UPDATING TRAINING {}".format(s[0]))
+                        s[1][1] = self.training_eval_handler(
+                            scorer=s[1][0], batch=batch, mode="train")
+                        logger.info(
+                            "training {}: {}".format(s[0], s[1][1]))
+                computed_stats = {}
+                for i, s in enumerate(self.scores):
+                    computed_stats[s[0]] = s[1][1]
+
+                batch_stats.computed_stats = computed_stats
                 total_stats.update(batch_stats)
                 report_stats.update(batch_stats)
 
