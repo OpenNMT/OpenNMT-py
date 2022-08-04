@@ -14,7 +14,7 @@ import traceback
 
 import onmt.utils
 from onmt.utils.logging import logger
-from onmt.translate.translator import ScoringPreparator, bleu_scorer
+from onmt.translate.translator import ScoringPreparator, build_scorers
 
 
 def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
@@ -37,12 +37,9 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
     valid_loss = onmt.utils.loss.build_loss_compute(
         model, tgt_field, opt, train=False)
 
-    scores = []
     scoring_preparator = ScoringPreparator(fields, opt)
-    if "BLEU" in opt.scores:
-        scores.append(
-            ["BLEU", [bleu_scorer, 0, 0]]
-        )
+    train_scorers = build_scorers(opt.train_metrics)
+    valid_scorers = build_scorers(opt.valid_metrics)
 
     trunc_size = opt.truncated_decoder  # Badly named...
     shard_size = opt.max_generator_batches if opt.model_dtype == 'fp32' else 0
@@ -65,16 +62,15 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
         opt.early_stopping, scorers=onmt.utils.scorers_from_opts(opt)) \
         if opt.early_stopping > 0 else None
 
-    train_eval_steps = opt.train_eval_steps
     report_manager = onmt.utils.build_report_manager(opt, gpu_rank)
     trainer = onmt.Trainer(model,
                            train_loss, valid_loss,
-                           scoring_preparator, scores,
+                           scoring_preparator, train_scorers, valid_scorers,
                            optim, trunc_size,
                            shard_size, norm_method,
                            accum_count, accum_steps,
-                           n_gpu, gpu_rank,
-                           gpu_verbose_level, train_eval_steps, report_manager,
+                           n_gpu, gpu_rank, gpu_verbose_level,
+                           opt.train_eval_steps, report_manager,
                            with_align=True if opt.lambda_align > 0 else False,
                            model_saver=model_saver if gpu_rank <= 0 else None,
                            average_decay=average_decay,
@@ -113,7 +109,7 @@ class Trainer(object):
     """
 
     def __init__(self, model, train_loss, valid_loss,
-                 scoring_preparator, scores,
+                 scoring_preparator, train_scorers, valid_scorers,
                  optim,
                  trunc_size=0, shard_size=32,
                  norm_method="sents", accum_count=[1],
@@ -128,8 +124,10 @@ class Trainer(object):
         self.model = model
         self.train_loss = train_loss
         self.valid_loss = valid_loss
+
         self.scoring_preparator = scoring_preparator
-        self.scores = scores
+        self.train_scorers = train_scorers
+        self.valid_scorers = valid_scorers
         self.optim = optim
         self.trunc_size = trunc_size
         self.shard_size = shard_size
@@ -163,10 +161,12 @@ class Trainer(object):
         self.model.train()
 
     def training_eval_handler(self, scorer, batch, mode="train"):
+        """Trigger metrics calculations"""
         preds, texts_ref = self.scoring_preparator.translate(
             model=self.model,
             batch=batch,
             gpu_rank=self.gpu_rank,
+            step=self.optim.training_step,
             mode=mode)
         return scorer(preds, texts_ref)
 
@@ -188,8 +188,6 @@ class Trainer(object):
         normalization = 0
         self.accum_count = self._accum_count(self.optim.training_step)
         for batch in iterator:
-            with open('batch', "w") as file:
-                file.write(str(batch))
             batches.append(batch)
             if self.norm_method == "tokens":
                 num_tokens = batch.tgt[1:, :, 0].ne(
@@ -281,7 +279,7 @@ class Trainer(object):
                 report_stats)
 
             if (valid_iter is not None and step % valid_steps == 0 and
-                    self.gpu_rank == 0):
+                    self.n_gpu > 0 and self.gpu_rank == 0):
                 if self.gpu_verbose_level > 0:
                     logger.info('GpuRank %d: validate step %d'
                                 % (self.gpu_rank, step))
@@ -340,20 +338,7 @@ class Trainer(object):
 
         with torch.no_grad():
             stats = onmt.utils.Statistics()
-            i = 0
-            computed_stats = {}
             for batch in valid_iter:
-                if i == 0:
-                    for i, s in enumerate(self.scores):
-                        logger.info("UPDATING VALIDATION {}".format(s[0]))
-                        s[1][2] = self.training_eval_handler(
-                            scorer=s[1][0], batch=batch, mode="valid")
-                        computed_stats[s[0]] = s[1][2]
-                        logger.info(
-                            "validation {}: {}".format(
-                                s[0], s[1][2])
-                            )
-                i += 1
                 src, src_lengths = batch.src if isinstance(batch.src, tuple) \
                     else (batch.src, None)
                 tgt = batch.tgt
@@ -366,12 +351,29 @@ class Trainer(object):
                     # Compute loss.
                     _, batch_stats = self.valid_loss(batch, outputs, attns)
 
-                    # Compute stats
-                    batch_stats = onmt.utils.Statistics(
-                        batch_stats.loss,
-                        batch_stats.n_words,
-                        batch_stats.n_correct,
-                        computed_stats)
+                    stats.update(batch_stats)
+
+            # Compute validation metrics (at batch.dataset level)
+            computed_metrics = {}
+            for i, metric in enumerate(self.valid_scorers):
+                logger.info("UPDATING VALIDATION {}".format(metric))
+                self.valid_scorers[
+                    metric]["value"] = self.training_eval_handler(
+                        scorer=self.valid_scorers[metric]["scorer"],
+                        batch=batch,
+                        mode="valid")
+                computed_metrics[
+                    metric] = self.valid_scorers[metric]["value"]
+                logger.info(
+                    "validation {}: {}".format(
+                        metric, self.valid_scorers[metric]["value"])
+                        )
+                # Compute stats
+                batch_stats = onmt.utils.Statistics(
+                    batch_stats.loss,
+                    batch_stats.n_words,
+                    batch_stats.n_correct,
+                    computed_metrics)
 
                 # Update statistics.
                 stats.update(batch_stats)
@@ -432,19 +434,30 @@ class Trainer(object):
                         trunc_size=trunc_size)
 
                 step = self.optim.training_step
-                if step % self.train_eval_steps == 0:
+                if (
+                        step % self.train_eval_steps == 0 and
+                        self.n_gpu > 0 and
+                        self.gpu_rank == 0
+                ):
                     # Compute and save stats
-                    for i, s in enumerate(self.scores):
-                        logger.info("UPDATING TRAINING {}".format(s[0]))
-                        s[1][1] = self.training_eval_handler(
-                            scorer=s[1][0], batch=batch, mode="train")
+                    for i, metric in enumerate(self.train_scorers):
+                        logger.info("UPDATING TRAINING {}".format(metric))
+                        self.train_scorers[
+                            metric]["value"] = self.training_eval_handler(
+                            scorer=self.train_scorers[
+                                metric]["scorer"],
+                            batch=batch,
+                            mode="train")
                         logger.info(
-                            "training {}: {}".format(s[0], s[1][1]))
-                computed_stats = {}
-                for i, s in enumerate(self.scores):
-                    computed_stats[s[0]] = s[1][1]
+                            "training {}: {}".format(
+                                metric, self.train_scorers[metric]["value"]))
+                computed_metrics = {}
+                # Take the last saved metric values before updating the stats
+                for i, metric in enumerate(self.train_scorers):
+                    computed_metrics[
+                        metric] = self.train_scorers[metric]["value"]
 
-                batch_stats.computed_stats = computed_stats
+                batch_stats.computed_metrics = computed_metrics
                 total_stats.update(batch_stats)
                 report_stats.update(batch_stats)
 
