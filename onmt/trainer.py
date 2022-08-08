@@ -279,7 +279,7 @@ class Trainer(object):
                 report_stats)
 
             if (valid_iter is not None and step % valid_steps == 0 and
-                    self.n_gpu > 0 and self.gpu_rank == 0):
+                    self.n_gpu > 0):
                 if self.gpu_verbose_level > 0:
                     logger.info('GpuRank %d: validate step %d'
                                 % (self.gpu_rank, step))
@@ -436,10 +436,10 @@ class Trainer(object):
                 step = self.optim.training_step
                 if (
                         step % self.train_eval_steps == 0 and
-                        self.n_gpu > 0 and
-                        self.gpu_rank == 0
+                        self.n_gpu > 0
                 ):
                     # Compute and save stats
+                    computed_metrics = {}
                     for i, metric in enumerate(self.train_scorers):
                         logger.info("UPDATING TRAINING {}".format(metric))
                         self.train_scorers[
@@ -451,19 +451,17 @@ class Trainer(object):
                         logger.info(
                             "training {}: {}".format(
                                 metric, self.train_scorers[metric]["value"]))
-                computed_metrics = {}
-                # Take the last saved metric values before updating the stats
-                for i, metric in enumerate(self.train_scorers):
-                    computed_metrics[
-                        metric] = self.train_scorers[metric]["value"]
-
-                batch_stats.computed_metrics = computed_metrics
-                total_stats.update(batch_stats)
-                report_stats.update(batch_stats)
+                        computed_metrics[
+                            metric] = self.train_scorers[metric]["value"]
+                    batch_stats.computed_metrics = computed_metrics
 
                 try:
                     if loss is not None:
                         self.optim.backward(loss)
+
+                    total_stats.update(batch_stats)
+                    report_stats.update(batch_stats)
+
                 except Exception:
                     traceback.print_exc()
                     logger.info("At step %d, we removed a batch - accum %d",
