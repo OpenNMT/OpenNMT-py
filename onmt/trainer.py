@@ -10,10 +10,11 @@
 """
 
 import torch
+import torch.nn.functional as F
 import traceback
-
 import onmt.utils
 from onmt.utils.logging import logger
+from onmt.model_builder import load_test_model
 
 
 def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
@@ -58,6 +59,21 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
         if opt.early_stopping > 0 else None
 
     report_manager = onmt.utils.build_report_manager(opt, gpu_rank)
+    if opt.lm_prior_model:
+        opt.gpu = 0
+        opt.fp32 = False
+        opt.int8 = False
+        _, lm_prior_model, lm_model_opt \
+            = load_test_model(opt, model_path=opt.lm_prior_model)
+        lm_prior_model.to(torch.device("cuda", gpu_rank))
+        lm_prior_model.eval()
+        vocab = tgt_field.vocab
+    else:
+        lm_prior_model = None
+        lm_prior_lambda = 0
+        lm_prior_tau = 1
+        vocab = tgt_field.vocab
+
     trainer = onmt.Trainer(model, train_loss, valid_loss, optim, trunc_size,
                            shard_size, norm_method,
                            accum_count, accum_steps,
@@ -70,7 +86,11 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
                            model_dtype=opt.model_dtype,
                            earlystopper=earlystopper,
                            dropout=dropout,
-                           dropout_steps=dropout_steps)
+                           dropout_steps=dropout_steps,
+                           lm_prior_model=lm_prior_model,
+                           vocab=vocab,
+                           lm_prior_lambda=lm_prior_lambda,
+                           lm_prior_tau=lm_prior_tau)
     return trainer
 
 
@@ -107,7 +127,9 @@ class Trainer(object):
                  n_gpu=1, gpu_rank=1, gpu_verbose_level=0,
                  report_manager=None, with_align=False, model_saver=None,
                  average_decay=0, average_every=1, model_dtype='fp32',
-                 earlystopper=None, dropout=[0.3], dropout_steps=[0]):
+                 earlystopper=None, dropout=[0.3], dropout_steps=[0],
+                 lm_prior_model=None, vocab=None,
+                 lm_prior_lambda=None, lm_prior_tau=None):
         # Basic attributes.
         self.model = model
         self.train_loss = train_loss
@@ -132,6 +154,10 @@ class Trainer(object):
         self.earlystopper = earlystopper
         self.dropout = dropout
         self.dropout_steps = dropout_steps
+        self.lm_prior_model = lm_prior_model
+        self.vocab = vocab
+        self.lm_prior_lambda = lm_prior_lambda
+        self.lm_prior_tau = lm_prior_tau
 
         for i in range(len(self.accum_count_l)):
             assert self.accum_count_l[i] > 0
@@ -378,9 +404,60 @@ class Trainer(object):
                         trunc_start=j,
                         trunc_size=trunc_size)
 
+                if self.lm_prior_model is not None:
+                    # https://github.com/cbaziotis/lm-prior-for-nmt/blob/master
+                    # /fairseq_extension/user/lm_prior/lm_prior.py#L131-L133
+
+                    scores = self.model.generator(outputs.view(-1,
+                                                  outputs.size(2)) /
+                                                  self.lm_prior_tau)
+                    # <--- important to make this independant
+                    lm_src = tgt.detach().clone()
+
+                    # using here the onmt-py model but very slow for a good
+                    # model - ct2 not usable at the moment
+                    lm_src = torch.where((lm_src == 2) | (lm_src == 0), 0,
+                                         torch.where(lm_src == 1,
+                                         1, lm_src - 1))
+                    lm_tgt = lm_src[1:, :, :]
+                    lm_src = lm_src[:-1, :, :]
+                    # lm_src is [max_length, batch_size, 1]
+                    lm_src_lengths = lm_src[:, :, 0].\
+                        ne(self.train_loss.padding_idx).sum(0).int()
+                    lm_outs, _ = self.lm_prior_model(lm_src,
+                                                     lm_tgt,
+                                                     lm_src_lengths,
+                                                     with_align=False)
+                    # lm_outs is [max_length, batch_size, rnn size]
+                    lm_scores = self.lm_prior_model.\
+                        generator(lm_outs.view(-1, lm_outs.size(2))
+                                  / self.lm_prior_tau)
+                    # lm_scores is [max_length x batch_size, vocab_size]
+
+                    # below is a dirty patch to align LM and TM vocab
+
+                    add_vocab_lm = torch.zeros(lm_scores.size(0), 1).\
+                        to(lm_scores.get_device())
+                    add_vocab_lm[:, 0] = -100
+                    lm_scores = torch.cat((add_vocab_lm, lm_scores), dim=1)
+                    bos_scores = lm_scores[:, 1]
+                    pad_scores = lm_scores[:, 2]
+                    eos_scores = lm_scores[:, 3] - 20
+                    lm_scores[:, 1] = pad_scores
+                    lm_scores[:, 2] = bos_scores
+                    lm_scores[:, 3] = eos_scores
+                    lm_loss = F.kl_div(scores, lm_scores,
+                                       reduction='batchmean',
+                                       log_target=True) * self.lm_prior_tau *\
+                        self.lm_prior_tau
+
+                else:
+                    lm_loss = 0
+
                 try:
                     if loss is not None:
-                        self.optim.backward(loss)
+                        total_loss = loss + self.lm_prior_lambda * lm_loss
+                        self.optim.backward(total_loss)
 
                     total_stats.update(batch_stats)
                     report_stats.update(batch_stats)
