@@ -57,6 +57,8 @@ def _add_logging_opts(parser, is_train=True):
         group.add('--n_best', '-n_best', type=int, default=1,
                   help="If verbose is set, will output the n_best "
                        "decoded sentences")
+        group.add('--with_score', '-with_score', action="store_true",
+                  help='add a tab separated score to the translation')
 
 
 def _add_reproducibility_opts(parser):
