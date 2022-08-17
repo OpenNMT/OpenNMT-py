@@ -29,7 +29,7 @@ The data consists of parallel source (`src`) and target (`tgt`) data containing 
 Validation files are used to evaluate the convergence of the training. It usually contains no more than 5k sentences.
 
 ```text
-$ head -n 2 toy_ende/src-train.txt
+$ head -n 2 toy-ende/src-train.txt
 It is not acceptable that , with the help of the national bureaucracies , Parliament &apos;s legislative prerogative should be made null and void by means of implementing provisions whose content , purpose and extent are not laid down in advance .
 Federal Master Trainer and Senior Instructor of the Italian Federation of Aerobic Fitness , Group Fitness , Postural Gym , Stretching and Pilates; from 2004 , he has been collaborating with Antiche Terme as personal Trainer and Instructor of Stretching , Pilates and Postural Gym .
 ```
