@@ -65,7 +65,7 @@ class TranslationBuilder(object):
 
     def from_batch(self, translation_batch):
         batch = translation_batch["batch"]
-        assert(len(translation_batch["gold_score"]) ==
+        assert (len(translation_batch["gold_score"]) ==
                len(translation_batch["predictions"]))
         batch_size = batch.batch_size
 
