@@ -68,6 +68,8 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
         lm_prior_model.to(torch.device("cuda", gpu_rank))
         lm_prior_model.eval()
         vocab = tgt_field.vocab
+        lm_prior_lambda = opt.lm_prior_lambda
+        lm_prior_tau = opt.lm_prior_tau
     else:
         lm_prior_model = None
         lm_prior_lambda = 0
