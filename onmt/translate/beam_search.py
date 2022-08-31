@@ -279,7 +279,7 @@ class BeamSearchBase(DecodeStrategy):
         torch.mul(self.topk_scores, length_penalty, out=self.topk_log_probs)
 
         # Resolve beam origin and map to batch index flat representation.
-        self._batch_index = torch.div(self.topk_ids, vocab_size, 
+        self._batch_index = torch.div(self.topk_ids, vocab_size,
                                       rounding_mode='trunc')
         self._batch_index += self._beam_offset[:_B].unsqueeze(1)
         self.select_indices = self._batch_index.view(_B * self.beam_size)
