@@ -557,24 +557,24 @@ class Inference(object):
 
         if self.report_score:
             msg = self._report_score(
-                "PRED", pred_score_total, pred_words_total
+                "PRED", pred_score_total, len(all_scores)
             )
             self._log(msg)
             if tgt is not None:
                 msg = self._report_score(
-                    "GOLD", gold_score_total, gold_words_total
+                    "GOLD", gold_score_total, len(all_scores)
                 )
                 self._log(msg)
 
         if self.report_time:
             total_time = end_time - start_time
-            self._log("Total translation time (s): %f" % total_time)
+            self._log("Total translation time (s): %.1f" % total_time)
             self._log(
-                "Average translation time (s): %f"
-                % (total_time / len(all_predictions))
+                "Average translation time (ms): %.1f"
+                % (total_time / len(all_predictions) * 1000)
             )
             self._log(
-                "Tokens per second: %f" % (pred_words_total / total_time)
+                "Tokens per second: %.1f" % (pred_words_total / total_time)
             )
 
         if self.dump_beam:
@@ -618,17 +618,18 @@ class Inference(object):
         )  # (batch, n_best, tgt_l)
         return batched_nbest_predict
 
-    def _report_score(self, name, score_total, words_total):
-        if words_total == 0:
-            msg = "%s No words predicted" % (name,)
+    def _report_score(self, name, score_total, lines):
+        if lines == 0:
+            msg = "%s No translations" % (name,)
         else:
-            avg_score = score_total / words_total
-            ppl = np.exp(-score_total.item() / words_total)
-            msg = "%s AVG SCORE: %.4f, %s PPL: %.4f" % (
+            score = score_total / lines
+            ppl = np.exp(-score_total.item() / lines)
+            msg = "%s SCORE: %.4f, %s PPL: %.2f LINES: %d" % (
                 name,
-                avg_score,
+                score,
                 name,
                 ppl,
+                lines
             )
         return msg
 

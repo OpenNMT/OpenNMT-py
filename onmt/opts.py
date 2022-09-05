@@ -687,11 +687,11 @@ def _add_decoding_opts(parser):
     # Alpha and Beta values for Google Length + Coverage penalty
     # Described here: https://arxiv.org/pdf/1609.08144.pdf, Section 7
     # Length penalty options
-    group.add('--length_penalty', '-length_penalty', default='none',
+    group.add('--length_penalty', '-length_penalty', default='avg',
               choices=['none', 'wu', 'avg'],
               help="Length Penalty to use.")
-    group.add('--alpha', '-alpha', type=float, default=0.,
-              help="Google NMT length penalty parameter "
+    group.add('--alpha', '-alpha', type=float, default=1.0,
+              help="Length penalty hyper-parameter "
                    "(higher = longer generation)")
     # Coverage penalty options
     group.add('--coverage_penalty', '-coverage_penalty', default='none',
