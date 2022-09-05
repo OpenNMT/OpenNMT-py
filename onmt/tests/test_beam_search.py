@@ -538,7 +538,7 @@ class TestBeamSearchAgainstReferenceCase(unittest.TestCase):
         self.assertTrue(expected_bptr_3[:, 1].eq(4).all())
         beam.update_finished()
         self.assertTrue(beam.top_beam_finished.all())
-        #self.assertTrue(beam.done)
+        # self.assertTrue(beam.done)
         return expected_beam_scores
 
     def test_beam_advance_against_known_reference(self):
@@ -621,6 +621,6 @@ class TestBeamSearchLM(TestBeamSearchAgainstReferenceCase):
         self.init_step(beam, 1)
         self.finish_first_beam_step(beam)
 
-        n_steps = beam.alive_seq.shape[-1] - 1
-        #self.assertTrue(beam.memory_lengths.equal(
+        # n_steps = beam.alive_seq.shape[-1] - 1
+        # self.assertTrue(beam.memory_lengths.equal(
         #    n_steps+fn_map_state(src_lengths[1:], dim=0)))
