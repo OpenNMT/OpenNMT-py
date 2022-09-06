@@ -622,6 +622,6 @@ class TestBeamSearchLM(TestBeamSearchAgainstReferenceCase):
         self.finish_first_beam_step(beam)
 
         n_steps = beam.alive_seq.shape[-1] - 1
-
+        beam.update_finished()
         self.assertTrue(beam.memory_lengths.equal(
-            n_steps+fn_map_state(src_lengths, dim=0)))
+            n_steps+fn_map_state(src_lengths[1:], dim=0)))
