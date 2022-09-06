@@ -189,18 +189,18 @@ class BeamSearchBase(DecodeStrategy):
                     self.is_finished[i].all()
             else:
                 finish_flag = self.top_beam_finished[i] != 0
-            if finish_flag and len(self.hypotheses[b]) >= self.n_best:
+            if finish_flag and len(self.hypotheses[b]) >= self.beam_size:
                 best_hyp = sorted(
-                    self.hypotheses[b], key=lambda x: x[0], reverse=True)
+                    self.hypotheses[b], key=lambda x: x[0],
+                    reverse=True)[:self.n_best]
                 for n, (score, pred, attn) in enumerate(best_hyp):
-                    if n >= self.n_best:
-                        break
                     self.scores[b].append(score)
                     self.predictions[b].append(pred)  # ``(batch, n_best,)``
                     self.attention[b].append(
                         attn if attn is not None else [])
             else:
                 non_finished_batch.append(i)
+
         non_finished = torch.tensor(non_finished_batch)
         # If all sentences are translated, no need to go further.
         if len(non_finished) == 0:

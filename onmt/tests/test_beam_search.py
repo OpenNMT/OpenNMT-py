@@ -255,8 +255,9 @@ class TestBeamSearch(unittest.TestCase):
     def test_beam_is_done_when_n_best_beams_eos_using_min_length(self):
         # this is also a test that when block_ngram_repeat=0,
         # repeating is acceptable
-        beam_sz = 5
+        beam_sz = 3
         batch_sz = 3
+        n_best = 2
         n_words = 100
         _non_eos_idxs = [47, 51, 13, 88, 99]
         valid_score_dist = torch.log_softmax(torch.tensor(
@@ -264,7 +265,7 @@ class TestBeamSearch(unittest.TestCase):
         min_length = 5
         eos_idx = 2
         beam = BeamSearch(
-            beam_sz, batch_sz, 0, 1, 2, 3, 2,
+            beam_sz, batch_sz, 0, 1, 2, 3, n_best,
             GlobalScorerStub(),
             min_length, 30, False, 0, set(),
             False, 0., False)
@@ -292,10 +293,11 @@ class TestBeamSearch(unittest.TestCase):
             else:
                 word_probs[0::beam_sz, eos_idx] = valid_score_dist[0]
                 word_probs[1::beam_sz, eos_idx] = valid_score_dist[0]
+                word_probs[2::beam_sz, eos_idx] = valid_score_dist[0]
                 # provide beam_sz other good predictions in other beams
                 for k, (j, score) in enumerate(
                         zip(_non_eos_idxs, valid_score_dist[1:])):
-                    beam_idx = min(beam_sz - 1, k)
+                    beam_idx = min(beam_sz - 2, k)
                     word_probs[beam_idx::beam_sz, j] = score
 
             attns = torch.randn(1, batch_sz * beam_sz, 53)
@@ -314,7 +316,7 @@ class TestBeamSearch(unittest.TestCase):
                 self.assertTrue(beam.done)
 
     def test_beam_returns_attn_with_correct_length(self):
-        beam_sz = 5
+        beam_sz = 3
         batch_sz = 3
         n_words = 100
         _non_eos_idxs = [47, 51, 13, 88, 99]
@@ -353,10 +355,11 @@ class TestBeamSearch(unittest.TestCase):
             else:
                 word_probs[0::beam_sz, eos_idx] = valid_score_dist[0]
                 word_probs[1::beam_sz, eos_idx] = valid_score_dist[0]
+                word_probs[2::beam_sz, eos_idx] = valid_score_dist[0]
                 # provide beam_sz other good predictions in other beams
                 for k, (j, score) in enumerate(
                         zip(_non_eos_idxs, valid_score_dist[1:])):
-                    beam_idx = min(beam_sz - 1, k)
+                    beam_idx = min(beam_sz - 2, k)
                     word_probs[beam_idx::beam_sz, j] = score
 
             attns = torch.randn(1, batch_sz * beam_sz, 53)
@@ -402,7 +405,7 @@ class TestBeamSearchAgainstReferenceCase(unittest.TestCase):
     BEAM_SZ = 5
     EOS_IDX = 2  # don't change this - all the scores would need updated
     N_WORDS = 8  # also don't change for same reason
-    N_BEST = 3
+    N_BEST = 2
     DEAD_SCORE = -1e20
     BATCH_SZ = 3
     INP_SEQ_LEN = 53
@@ -533,6 +536,8 @@ class TestBeamSearchAgainstReferenceCase(unittest.TestCase):
         self.assertTrue(expected_bptr_3[:, 1].eq(4).all())
         beam.update_finished()
         self.assertTrue(beam.top_beam_finished.all())
+        beam.update_finished()
+        beam.update_finished()
         self.assertTrue(beam.done)
         return expected_beam_scores
 
@@ -617,5 +622,6 @@ class TestBeamSearchLM(TestBeamSearchAgainstReferenceCase):
         self.finish_first_beam_step(beam)
 
         n_steps = beam.alive_seq.shape[-1] - 1
+
         self.assertTrue(beam.memory_lengths.equal(
-            n_steps+fn_map_state(src_lengths[1:], dim=0)))
+            n_steps+fn_map_state(src_lengths, dim=0)))
