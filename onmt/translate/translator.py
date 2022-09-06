@@ -19,6 +19,7 @@ from onmt.utils.misc import tile, set_random_seed, report_matrix
 from onmt.utils.alignment import extract_alignment, build_align_pharaoh
 from onmt.modules.copy_generator import collapse_copy_scores
 from onmt.constants import ModelTask
+from onmt.utils.parse import ArgumentParser
 
 
 def build_translator(opt, report_score=True, logger=None, out_file=None):
@@ -1031,7 +1032,7 @@ class GeneratorLM(Inference):
             phrase_table=phrase_table,
         )
 
-    def translate_batch(self, batch, batch_size, src_vocabs, attn_debug):
+    def translate_batch(self, batch, src_vocabs, attn_debug):
         """Translate a batch of sentences."""
         with torch.no_grad():
             if self.sample_from_topk != 0 or self.sample_from_topp != 0:
@@ -1040,7 +1041,7 @@ class GeneratorLM(Inference):
                     bos=self._tgt_bos_idx,
                     eos=self._tgt_eos_idx,
                     unk=self._tgt_unk_idx,
-                    batch_size=self.batch_size,
+                    batch_size=batch.batch_size,
                     global_scorer=self.global_scorer,
                     min_length=self.min_length,
                     max_length=self.max_length,
@@ -1313,10 +1314,6 @@ class ScoringPreparator():
     def translate(self, model, batch, gpu_rank, step, mode):
         """Compute the sentences predicted by the current model's state
         related to a batch"""
-        import os
-        import codecs
-        from onmt.translate.translator import Translator
-        from onmt.utils.parse import ArgumentParser
         model_opt = self.opt
         parser = ArgumentParser()
         onmt.opts.translate_opts(parser)
