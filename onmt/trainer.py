@@ -406,11 +406,13 @@ class Trainer(object):
                         trunc_start=j,
                         trunc_size=trunc_size)
 
-                if self.lm_prior_model is not None:
-                    lm_loss = lm_prior_loss(self.model, self.lm_prior_model,
-                                            outputs, tgt, self.lm_prior_tau)
-                else:
-                    lm_loss = 0
+                    if self.lm_prior_model is not None:
+                        lm_loss = lm_prior_loss(self.model,
+                                                self.lm_prior_model,
+                                                outputs, tgt,
+                                                self.lm_prior_tau)
+                    else:
+                        lm_loss = 0
 
                 try:
                     if loss is not None:
