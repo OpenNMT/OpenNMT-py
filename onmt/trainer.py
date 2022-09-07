@@ -10,11 +10,11 @@
 """
 
 import torch
-import torch.nn.functional as F
 import traceback
 import onmt.utils
 from onmt.utils.logging import logger
 from onmt.model_builder import load_test_model
+from onmt.utils.lm_prior_loss import lm_prior_loss
 
 
 def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
@@ -407,52 +407,8 @@ class Trainer(object):
                         trunc_size=trunc_size)
 
                 if self.lm_prior_model is not None:
-                    # https://github.com/cbaziotis/lm-prior-for-nmt/blob/master
-                    # /fairseq_extension/user/lm_prior/lm_prior.py#L131-L133
-
-                    scores = self.model.generator(outputs.view(-1,
-                                                  outputs.size(2)) /
-                                                  self.lm_prior_tau)
-                    # <--- important to make this independant
-                    lm_src = tgt.detach().clone()
-
-                    # using here the onmt-py model but very slow for a good
-                    # model - ct2 not usable at the moment
-                    lm_src = torch.where((lm_src == 2) | (lm_src == 0), 0,
-                                         torch.where(lm_src == 1,
-                                         1, lm_src - 1))
-                    lm_tgt = lm_src[1:, :, :]
-                    lm_src = lm_src[:-1, :, :]
-                    # lm_src is [max_length, batch_size, 1]
-                    lm_src_lengths = lm_src[:, :, 0].\
-                        ne(self.train_loss.padding_idx).sum(0).int()
-                    lm_outs, _ = self.lm_prior_model(lm_src,
-                                                     lm_tgt,
-                                                     lm_src_lengths,
-                                                     with_align=False)
-                    # lm_outs is [max_length, batch_size, rnn size]
-                    lm_scores = self.lm_prior_model.\
-                        generator(lm_outs.view(-1, lm_outs.size(2))
-                                  / self.lm_prior_tau)
-                    # lm_scores is [max_length x batch_size, vocab_size]
-
-                    # below is a dirty patch to align LM and TM vocab
-
-                    add_vocab_lm = torch.zeros(lm_scores.size(0), 1).\
-                        to(lm_scores.get_device())
-                    add_vocab_lm[:, 0] = -100
-                    lm_scores = torch.cat((add_vocab_lm, lm_scores), dim=1)
-                    bos_scores = lm_scores[:, 1]
-                    pad_scores = lm_scores[:, 2]
-                    eos_scores = lm_scores[:, 3] - 20
-                    lm_scores[:, 1] = pad_scores
-                    lm_scores[:, 2] = bos_scores
-                    lm_scores[:, 3] = eos_scores
-                    lm_loss = F.kl_div(scores, lm_scores,
-                                       reduction='batchmean',
-                                       log_target=True) * self.lm_prior_tau *\
-                        self.lm_prior_tau
-
+                    lm_loss = lm_prior_loss(self.model, self.lm_prior_model,
+                                            outputs, tgt, self.lm_prior_tau)
                 else:
                     lm_loss = 0
 
