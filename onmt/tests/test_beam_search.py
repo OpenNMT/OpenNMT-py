@@ -255,9 +255,8 @@ class TestBeamSearch(unittest.TestCase):
     def test_beam_is_done_when_n_best_beams_eos_using_min_length(self):
         # this is also a test that when block_ngram_repeat=0,
         # repeating is acceptable
-        beam_sz = 3
+        beam_sz = 5
         batch_sz = 3
-        n_best = 2
         n_words = 100
         _non_eos_idxs = [47, 51, 13, 88, 99]
         valid_score_dist = torch.log_softmax(torch.tensor(
@@ -265,7 +264,7 @@ class TestBeamSearch(unittest.TestCase):
         min_length = 5
         eos_idx = 2
         beam = BeamSearch(
-            beam_sz, batch_sz, 0, 1, 2, 3, n_best,
+            beam_sz, batch_sz, 0, 1, 2, 3, 2,
             GlobalScorerStub(),
             min_length, 30, False, 0, set(),
             False, 0., False)
@@ -291,14 +290,8 @@ class TestBeamSearch(unittest.TestCase):
                     beam_idx = min(beam_sz - 1, k)
                     word_probs[beam_idx::beam_sz, j] = score
             else:
-                word_probs[0::beam_sz, eos_idx] = valid_score_dist[0]
-                word_probs[1::beam_sz, eos_idx] = valid_score_dist[0]
-                word_probs[2::beam_sz, eos_idx] = valid_score_dist[0]
-                # provide beam_sz other good predictions in other beams
-                for k, (j, score) in enumerate(
-                        zip(_non_eos_idxs, valid_score_dist[1:])):
-                    beam_idx = min(beam_sz - 2, k)
-                    word_probs[beam_idx::beam_sz, j] = score
+                for j in range(beam_sz):
+                    word_probs[j::beam_sz, eos_idx] = valid_score_dist[0]
 
             attns = torch.randn(1, batch_sz * beam_sz, 53)
             beam.advance(word_probs, attns)
@@ -316,7 +309,7 @@ class TestBeamSearch(unittest.TestCase):
                 self.assertTrue(beam.done)
 
     def test_beam_returns_attn_with_correct_length(self):
-        beam_sz = 3
+        beam_sz = 5
         batch_sz = 3
         n_words = 100
         _non_eos_idxs = [47, 51, 13, 88, 99]
@@ -353,14 +346,8 @@ class TestBeamSearch(unittest.TestCase):
                     beam_idx = min(beam_sz - 1, k)
                     word_probs[beam_idx::beam_sz, j] = score
             else:
-                word_probs[0::beam_sz, eos_idx] = valid_score_dist[0]
-                word_probs[1::beam_sz, eos_idx] = valid_score_dist[0]
-                word_probs[2::beam_sz, eos_idx] = valid_score_dist[0]
-                # provide beam_sz other good predictions in other beams
-                for k, (j, score) in enumerate(
-                        zip(_non_eos_idxs, valid_score_dist[1:])):
-                    beam_idx = min(beam_sz - 2, k)
-                    word_probs[beam_idx::beam_sz, j] = score
+                for j in range(beam_sz):
+                    word_probs[j::beam_sz, eos_idx] = valid_score_dist[0]
 
             attns = torch.randn(1, batch_sz * beam_sz, 53)
             beam.advance(word_probs, attns)
@@ -405,7 +392,7 @@ class TestBeamSearchAgainstReferenceCase(unittest.TestCase):
     BEAM_SZ = 5
     EOS_IDX = 2  # don't change this - all the scores would need updated
     N_WORDS = 8  # also don't change for same reason
-    N_BEST = 2
+    N_BEST = 3
     DEAD_SCORE = -1e20
     BATCH_SZ = 3
     INP_SEQ_LEN = 53
@@ -505,11 +492,11 @@ class TestBeamSearchAgainstReferenceCase(unittest.TestCase):
     def third_step(self, beam, expected_beam_scores, expected_len_pen):
         # assumes beam 0 finished on last step
         scores_3 = torch.log_softmax(torch.tensor(
-            [[0, 0, 5000, 0, 5000, .51, .2, 0],  # beam 0 shouldn't cont
+            [[0, 0, 10000, 0, 5000, .51, .2, 0],  # beam 0 shouldn't cont
              [0, 0, 0, 0, 0, 0, 0, 0],
-             [0, 0, 0, 0, 0, 5000, 0, 0],
-             [0, 0, 0, .2, .2, .2, .2, .2],
-             [0, 0, 50, 0, .2, .2, .2, .2]]  # beam 4 -> beam 1 should die
+             [0, 0, 10000, 0, 0, 5000, 0, 0],
+             [0, 0, 50, .2, .2, .2, .2, .2],  # beam 3 -> beam 1 should die
+             [0, 0, 50, 0, .2, .2, .2, .2]]
         ), dim=1)
         scores_3 = scores_3.repeat(self.BATCH_SZ, 1)
 
@@ -529,15 +516,12 @@ class TestBeamSearchAgainstReferenceCase(unittest.TestCase):
             expected_beam_scores / expected_len_pen))
         self.assertTrue(beam.topk_ids.equal(expected_preds_3))
         self.assertTrue(beam.current_backptr.equal(expected_bptr_3))
-        self.assertEqual(beam.is_finished.sum(), self.BATCH_SZ)
-        # new beam 1 finished
-        self.assertTrue(beam.is_finished[:, 1].all())
-        # new beam 1 is old beam 4
-        self.assertTrue(expected_bptr_3[:, 1].eq(4).all())
+        # we finish 3 hyps per example in this step
+        self.assertEqual(beam.is_finished.sum(), self.BATCH_SZ * 3)
+        # new beam 1 is old beam 3
+        self.assertTrue(expected_bptr_3[:, 1].eq(3).all())
         beam.update_finished()
         self.assertTrue(beam.top_beam_finished.all())
-        beam.update_finished()
-        beam.update_finished()
         self.assertTrue(beam.done)
         return expected_beam_scores
 
@@ -584,7 +568,7 @@ class TestBeamSearchLM(TestBeamSearchAgainstReferenceCase):
              [0, 0, 0, 0, .2, .2, .2, .2]]  # beam 4 -> beam 1 should die
         ), dim=1)
         scores_finish = scores_finish.repeat(self.BATCH_SZ, 1)
-        scores_finish[:self.BEAM_SZ, beam.eos] = 0
+        scores_finish[:self.BEAM_SZ, beam.eos] = 100
         beam.advance(scores_finish, None)
 
         any_finished = beam.is_finished.any()
@@ -622,6 +606,5 @@ class TestBeamSearchLM(TestBeamSearchAgainstReferenceCase):
         self.finish_first_beam_step(beam)
 
         n_steps = beam.alive_seq.shape[-1] - 1
-        beam.update_finished()
         self.assertTrue(beam.memory_lengths.equal(
             n_steps+fn_map_state(src_lengths[1:], dim=0)))
