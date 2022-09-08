@@ -20,6 +20,7 @@ def chunks(lgth, n):
     for i in range(0, len(lgth), n):
         yield lgth[i:i + n]
 
+
 with codecs.open(args.nbest_hyp, encoding="utf-8") as file:
     nbests = file.readlines()
     nbests = [item.strip() for item in nbests]

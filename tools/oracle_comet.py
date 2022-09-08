@@ -69,14 +69,14 @@ with codecs.open(args.output, "w", encoding="utf-8") as output_file:
                     "mt": nbest[i],
                     "ref": nref[i],
                     })
-                seg_scores,
+                seg_scores, \
                     sys_score = model.predict(data,
                                               batch_size=args.nbest_order,
                                               gpus=1)
                 max_index = seg_scores.index(max(seg_scores))
                 output_file.write(data[max_index]["mt"] + "\n")
-                best_indices.append(max_index)        
-    else:    
+                best_indices.append(max_index)
+    else:
         for nsrc, nbest in zip(nsrcs, nbests):
             texts = []
             scores = []
@@ -86,7 +86,7 @@ with codecs.open(args.output, "w", encoding="utf-8") as output_file:
                     "src": nsrc[i],
                     "mt": nbest[i],
                     })
-                seg_scores,
+                seg_scores, \
                     sys_score = model.predict(data,
                                               batch_size=args.nbest_order,
                                               gpus=1)
