@@ -368,23 +368,23 @@ class Trainer(object):
                 if self.accum_count == 1:
                     self.optim.zero_grad()
 
-                with torch.cuda.amp.autocast(enabled=self.optim.amp):
-                    outputs, attns = self.model(
-                        src, tgt, src_lengths, bptt=bptt,
-                        with_align=self.with_align)
-                    bptt = True
-
-                    # 3. Compute loss.
-                    loss, batch_stats = self.train_loss(
-                        batch,
-                        outputs,
-                        attns,
-                        normalization=normalization,
-                        shard_size=self.shard_size,
-                        trunc_start=j,
-                        trunc_size=trunc_size)
-
                 try:
+                    with torch.cuda.amp.autocast(enabled=self.optim.amp):
+                        outputs, attns = self.model(
+                            src, tgt, src_lengths, bptt=bptt,
+                            with_align=self.with_align)
+                        bptt = True
+
+                        # 3. Compute loss.
+                        loss, batch_stats = self.train_loss(
+                            batch,
+                            outputs,
+                            attns,
+                            normalization=normalization,
+                            shard_size=self.shard_size,
+                            trunc_start=j,
+                            trunc_size=trunc_size)
+
                     if loss is not None:
                         self.optim.backward(loss)
 
