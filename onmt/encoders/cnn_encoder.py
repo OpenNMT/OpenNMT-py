@@ -51,5 +51,5 @@ class CNNEncoder(EncoderBase):
         return emb_remap.squeeze(3).transpose(0, 1).contiguous(), \
             out.squeeze(3).transpose(0, 1).contiguous(), lengths
 
-    def update_dropout(self, dropout):
+    def update_dropout(self, dropout, attention_dropout=None):
         self.cnn.dropout.p = dropout

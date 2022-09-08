@@ -114,5 +114,5 @@ class RNNEncoder(EncoderBase):
             outs = bottle_hidden(self.bridge[0], hidden)
         return outs
 
-    def update_dropout(self, dropout):
+    def update_dropout(self, dropout, attention_dropout=None):
         self.rnn.dropout = dropout
