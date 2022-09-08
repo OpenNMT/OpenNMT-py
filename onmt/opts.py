@@ -593,13 +593,23 @@ def _add_train_general_opts(parser):
                    'suggested a value of 0.98 for beta2, this parameter may '
                    'not work well for normal models / default '
                    'baselines.')
-    group.add('--label_smoothing', '-label_smoothing', type=float, default=0.0,
-              help="Label smoothing value epsilon. "
-                   "Probabilities of all non-true labels "
-                   "will be smoothed by epsilon / (vocab_size - 1). "
-                   "Set to zero to turn off label smoothing. "
-                   "For more detailed information, see: "
-                   "https://arxiv.org/abs/1512.00567")
+    subgroup = group.add_mutually_exclusive_group()
+    subgroup.add('--label_smoothing', '-label_smoothing', type=float,
+                 default=0.0,
+                 help="Label smoothing value epsilon. "
+                      "Probabilities of all non-true labels "
+                      "will be smoothed by epsilon / (vocab_size - 1). "
+                      "Set to zero to turn off label smoothing. "
+                      "For more detailed information, see: "
+                      "https://arxiv.org/abs/1512.00567")
+    subgroup.add('--unlikelihood_coeff', '-unlikelihood_coeff', type=float,
+                 default=0.0,
+                 help="Loss coefficient for token unlikelihood loss. "
+                      "Usually set to 1. max_generator_batches option will "
+                      "limit the neighbourhood size of the unlikelihood loss."
+                      " For more detailed information, see: "
+                      "https://arxiv.org/abs/1908.04319 and "
+                      "https://openreview.net/forum?id=SJeYe0NtvH")
     group.add('--average_decay', '-average_decay', type=float, default=0,
               help="Moving average decay. "
                    "Set to other than 0 (e.g. 1e-4) to activate. "

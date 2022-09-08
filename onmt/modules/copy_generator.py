@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 from onmt.utils.misc import aeq
-from onmt.utils.loss import CommonLossCompute
+from onmt.utils.loss import LossComputeBase
 
 
 def collapse_copy_scores(scores, batch, tgt_vocab, src_vocabs=None,
@@ -177,7 +177,7 @@ class CopyGeneratorLoss(nn.Module):
         return loss
 
 
-class CommonCopyGeneratorLossCompute(CommonLossCompute):
+class CommonCopyGeneratorLossCompute(LossComputeBase):
     """Common Copy Generator Loss Computation."""
     def __init__(self, criterion, generator, tgt_vocab, normalize_by_length,
                  lambda_coverage=0.0, tgt_shift_index=1):
@@ -231,7 +231,8 @@ class CommonCopyGeneratorLossCompute(CommonLossCompute):
         target_data[correct_mask] += offset_align
 
         # Compute sum of perplexities for stats
-        stats = self._stats(loss.sum().clone(), scores_data, target_data)
+        stats = self._stats(loss.sum().clone(), loss.sum().clone(),
+                            scores_data, target_data)
 
         # this part looks like it belongs in CopyGeneratorLoss
         if self.normalize_by_length:

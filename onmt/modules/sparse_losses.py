@@ -77,3 +77,9 @@ class SparsemaxLoss(nn.Module):
         elif self.reduction == 'elementwise_mean':
             loss = loss.sum() / size
         return loss
+
+
+class ExpandedSparsemaxLoss(SparsemaxLoss):
+    def forward(self, input, target):
+        gtruth = target.view(-1)
+        return super(ExpandedSparsemaxLoss, self).forward(input, gtruth)
