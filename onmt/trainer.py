@@ -45,6 +45,7 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
     average_decay = opt.average_decay
     average_every = opt.average_every
     dropout = opt.dropout
+    attention_dropout = opt.attention_dropout
     dropout_steps = opt.dropout_steps
     if device_id >= 0:
         gpu_rank = opt.gpu_ranks[device_id]
@@ -70,6 +71,7 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
                            model_dtype=opt.model_dtype,
                            earlystopper=earlystopper,
                            dropout=dropout,
+                           attention_dropout=attention_dropout,
                            dropout_steps=dropout_steps)
     return trainer
 
@@ -107,7 +109,8 @@ class Trainer(object):
                  n_gpu=1, gpu_rank=1, gpu_verbose_level=0,
                  report_manager=None, with_align=False, model_saver=None,
                  average_decay=0, average_every=1, model_dtype='fp32',
-                 earlystopper=None, dropout=[0.3], dropout_steps=[0]):
+                 earlystopper=None, dropout=[0.3], attention_dropout=[0.1],
+                 dropout_steps=[0]):
         # Basic attributes.
         self.model = model
         self.train_loss = train_loss
@@ -131,6 +134,7 @@ class Trainer(object):
         self.model_dtype = model_dtype
         self.earlystopper = earlystopper
         self.dropout = dropout
+        self.attention_dropout = attention_dropout
         self.dropout_steps = dropout_steps
 
         for i in range(len(self.accum_count_l)):
@@ -152,9 +156,11 @@ class Trainer(object):
     def _maybe_update_dropout(self, step):
         for i in range(len(self.dropout_steps)):
             if step > 1 and step == self.dropout_steps[i] + 1:
-                self.model.update_dropout(self.dropout[i])
-                logger.info("Updated dropout to %f from step %d"
-                            % (self.dropout[i], step))
+                self.model.update_dropout(self.dropout[i],
+                                          self.attention_dropout[i])
+                logger.info("Updated dropout/attn dropout to %f %f at step %d"
+                            % (self.dropout[i],
+                               self.attention_dropout[i], step))
 
     def _accum_batches(self, iterator):
         batches = []
@@ -362,33 +368,37 @@ class Trainer(object):
                 if self.accum_count == 1:
                     self.optim.zero_grad()
 
-                with torch.cuda.amp.autocast(enabled=self.optim.amp):
-                    outputs, attns = self.model(
-                        src, tgt, src_lengths, bptt=bptt,
-                        with_align=self.with_align)
-                    bptt = True
-
-                    # 3. Compute loss.
-                    loss, batch_stats = self.train_loss(
-                        batch,
-                        outputs,
-                        attns,
-                        normalization=normalization,
-                        shard_size=self.shard_size,
-                        trunc_start=j,
-                        trunc_size=trunc_size)
-
                 try:
+                    with torch.cuda.amp.autocast(enabled=self.optim.amp):
+                        outputs, attns = self.model(
+                            src, tgt, src_lengths, bptt=bptt,
+                            with_align=self.with_align)
+                        bptt = True
+
+                        # 3. Compute loss.
+                        loss, batch_stats = self.train_loss(
+                            batch,
+                            outputs,
+                            attns,
+                            normalization=normalization,
+                            shard_size=self.shard_size,
+                            trunc_start=j,
+                            trunc_size=trunc_size)
+
                     if loss is not None:
                         self.optim.backward(loss)
 
                     total_stats.update(batch_stats)
                     report_stats.update(batch_stats)
 
-                except Exception:
-                    traceback.print_exc()
-                    logger.info("At step %d, we removed a batch - accum %d",
-                                self.optim.training_step, k)
+                except Exception as exc:
+                    trace_content = traceback.format_exc()
+                    if "CUDA out of memory" in trace_content:
+                        logger.info("Step %d, cuda OOM - batch removed",
+                                    self.optim.training_step)
+                    else:
+                        traceback.print_exc()
+                        raise exc
 
                 # 4. Update the parameters and statistics.
                 if self.accum_count == 1:
