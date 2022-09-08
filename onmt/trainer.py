@@ -391,8 +391,11 @@ class Trainer(object):
                     total_stats.update(batch_stats)
                     report_stats.update(batch_stats)
 
-                except Exception:
-                    traceback.print_exc()
+                except Exception as exc:
+                    trace_content = traceback.format_exc()
+                    if trace_content.find("CUDA out of memory") < 0:
+                        print(exc)
+                        raise exc
                     logger.info("At step %d, we removed a batch - accum %d",
                                 self.optim.training_step, k)
 
