@@ -14,9 +14,6 @@ from onmt.model_builder import load_test_model
 """This script computes the ppl of a file using dynamic data."""
 """For this purpose we use the same pipeline as the validation of a file"""
 
-# Set sharing strategy manually instead of default based on the OS.
-torch.multiprocessing.set_sharing_strategy('file_system')
-
 
 def _get_parser():
     parser = ArgumentParser(description='corpus_ppl.py')
