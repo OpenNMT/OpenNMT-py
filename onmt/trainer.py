@@ -14,7 +14,8 @@ import traceback
 
 import onmt.utils
 from onmt.utils.logging import logger
-from onmt.translate.translator import ScoringPreparator, build_scorers
+from onmt.translate.translator import ScoringPreparator
+from onmt.scorers import get_scorers_cls, build_scorers
 
 
 def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
@@ -38,8 +39,10 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
         model, tgt_field, opt, train=False)
 
     scoring_preparator = ScoringPreparator(fields, opt)
-    train_scorers = build_scorers(opt.train_metrics)
-    valid_scorers = build_scorers(opt.valid_metrics)
+    scorers_cls = get_scorers_cls(opt.train_metrics)
+    train_scorers = build_scorers(opt, scorers_cls)
+    scorers_cls = get_scorers_cls(opt.valid_metrics)
+    valid_scorers = build_scorers(opt, scorers_cls)
 
     trunc_size = opt.truncated_decoder  # Badly named...
     shard_size = opt.max_generator_batches if opt.model_dtype == 'fp32' else 0
@@ -168,7 +171,7 @@ class Trainer(object):
             gpu_rank=self.gpu_rank,
             step=self.optim.training_step,
             mode=mode)
-        return scorer(preds, texts_ref)
+        return scorer.compute_score(preds, texts_ref)
 
     def _accum_count(self, step):
         for i in range(len(self.accum_steps)):

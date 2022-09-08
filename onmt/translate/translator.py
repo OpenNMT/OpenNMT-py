@@ -1359,34 +1359,34 @@ class ScoringPreparator():
         return preds, texts_ref
 
 
-def build_scorers(metrics):
-    scorers = {}
-    if "BLEU" in metrics:
-        scorers["BLEU"] = {
-            "scorer": bleu_scorer,
-            "value": 0
-        }
-    if "BLEU" in metrics:
-        scorers["TER"] = {
-            "scorer": ter_scorer,
-            "value": 0
-        }
-    return scorers
+# def build_scorers(metrics):
+#     scorers = {}
+#     if "BLEU" in metrics:
+#         scorers["BLEU"] = {
+#             "scorer": bleu_scorer,
+#             "value": 0
+#         }
+#     if "BLEU" in metrics:
+#         scorers["TER"] = {
+#             "scorer": ter_scorer,
+#             "value": 0
+#         }
+#     return scorers
 
 
-def bleu_scorer(preds, texts_ref):
-    from sacrebleu import corpus_bleu
-    try:
-        score = corpus_bleu(preds, [texts_ref]).score
-    except Exception:
-        score = 0
-    return score
+# def bleu_scorer(preds, texts_ref):
+#     from sacrebleu import corpus_bleu
+#     try:
+#         score = corpus_bleu(preds, [texts_ref]).score
+#     except Exception:
+#         score = 0
+#     return score
 
 
-def ter_scorer(preds, texts_ref):
-    from sacrebleu import corpus_ter
-    try:
-        score = corpus_ter(preds, [texts_ref]).score
-    except Exception:
-        score = 0
-    return score
+# def ter_scorer(preds, texts_ref):
+#     from sacrebleu import corpus_ter
+#     try:
+#         score = corpus_ter(preds, [texts_ref]).score
+#     except Exception:
+#         score = 0
+#     return score
