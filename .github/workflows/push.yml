@@ -122,6 +122,9 @@ jobs:
           -lambda_align 0.05 \
           -alignment_layer 2 \
           -alignment_heads 0 \
+          -dropout_steps 0 3 7 \
+          -dropout 0.3 0.2 0.1 \
+          -attention_dropout 0.2 0.1 0.1 \
           -report_every 5 \
           -train_steps 10
     - name: Test LM training

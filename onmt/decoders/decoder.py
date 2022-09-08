@@ -235,7 +235,7 @@ class RNNDecoderBase(DecoderBase):
                     attns[k] = torch.stack(attns[k])
         return dec_outs, attns
 
-    def update_dropout(self, dropout):
+    def update_dropout(self, dropout, attention_dropout=None):
         self.dropout.p = dropout
         self.embeddings.update_dropout(dropout)
 
@@ -434,7 +434,7 @@ class InputFeedRNNDecoder(RNNDecoderBase):
         """Using input feed by concatenating input with attention vectors."""
         return self.embeddings.embedding_size + self.hidden_size
 
-    def update_dropout(self, dropout):
+    def update_dropout(self, dropout, attention_dropout=None):
         self.dropout.p = dropout
         self.rnn.dropout.p = dropout
         self.embeddings.update_dropout(dropout)

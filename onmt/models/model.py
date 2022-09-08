@@ -36,7 +36,7 @@ class BaseModel(nn.Module):
         """
         raise NotImplementedError
 
-    def update_dropout(self, dropout):
+    def update_dropout(self, dropout, attention_dropout):
         raise NotImplementedError
 
     def count_parameters(self, log=print):
@@ -69,9 +69,9 @@ class NMTModel(BaseModel):
                                       with_align=with_align)
         return dec_out, attns
 
-    def update_dropout(self, dropout):
-        self.encoder.update_dropout(dropout)
-        self.decoder.update_dropout(dropout)
+    def update_dropout(self, dropout, attention_dropout):
+        self.encoder.update_dropout(dropout, attention_dropout)
+        self.decoder.update_dropout(dropout, attention_dropout)
 
     def count_parameters(self, log=print):
         """Count number of parameters in model (& print with `log` callback).
@@ -140,8 +140,8 @@ class LanguageModel(BaseModel):
         )
         return dec_out, attns
 
-    def update_dropout(self, dropout):
-        self.decoder.update_dropout(dropout)
+    def update_dropout(self, dropout, attention_dropout):
+        self.decoder.update_dropout(dropout, attention_dropout)
 
     def count_parameters(self, log=print):
         """Count number of parameters in model (& print with `log` callback).
