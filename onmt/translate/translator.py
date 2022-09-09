@@ -153,6 +153,7 @@ class Inference(object):
         report_score=True,
         logger=None,
         seed=-1,
+        with_score=False
     ):
         self.model = model
         self.fields = fields
@@ -231,6 +232,7 @@ class Inference(object):
             }
 
         set_random_seed(seed, self._use_cuda)
+        self.with_score = with_score
 
     @classmethod
     def from_opt(
@@ -299,6 +301,7 @@ class Inference(object):
             report_score=report_score,
             logger=logger,
             seed=opt.seed,
+            with_score=opt.with_score
         )
 
     def _log(self, msg):
@@ -496,6 +499,11 @@ class Inference(object):
                 n_best_preds = [
                     " ".join(pred) for pred in trans.pred_sents[: self.n_best]
                 ]
+
+                n_best_scores = [
+                    score.item() for score in trans.pred_scores[: self.n_best]
+                ]
+
                 if self.report_align:
                     align_pharaohs = [
                         build_align_pharaoh(align)
@@ -515,7 +523,16 @@ class Inference(object):
                     n_best_preds = [transform.apply_reverse(x)
                                     for x in n_best_preds]
                 all_predictions += [n_best_preds]
-                self.out_file.write("\n".join(n_best_preds) + "\n")
+
+                out_all = [
+                    pred + "\t" + str(score) for (pred, score) in
+                    zip(n_best_preds, n_best_scores)
+                ]
+
+                if self.with_score:
+                    self.out_file.write("\n".join(out_all) + "\n")
+                else:
+                    self.out_file.write("\n".join(n_best_preds) + "\n")
                 self.out_file.flush()
 
                 if self.verbose:
