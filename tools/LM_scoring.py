@@ -11,10 +11,11 @@ from onmt.inputters.text_dataset import InferenceDataIterator, \
 from onmt.transforms import make_transforms, get_transforms_cls, TransformPipe
 from onmt.model_builder import load_test_model
 
-"""This script scores all sentences of a file using dynamic data."""
-"""For this purpose we use the same pipeline as the validation of a file"""
-"""Below is an example of settings of a config.yaml file"""
 """
+This script scores all sentences of a file using dynamic data.
+For this purpose we use the same pipeline as the validation of a file
+Below is an example of settings of a config.yaml file
+
 model: lm-de.news2021_step_100000.pt
 src: newstest2014-ref.de
 tgt: newstest2014-ref.de
@@ -27,10 +28,10 @@ src_onmttok_kwargs: '{"mode": "aggressive"}'
 tgt_subword_type: bpe
 tgt_subword_model: subwords.en_de.bpe
 tgt_onmttok_kwargs: '{"mode": "aggressive"}'
-"""
-"""Output is the data and tab separated score"""
-"""Corpus PPL is in the logger.info"""
 
+Output is the data and tab separated score
+Corpus PPL is in the logger.info
+"""
 
 def _get_parser():
     parser = ArgumentParser(description='LM_scoring.py')
