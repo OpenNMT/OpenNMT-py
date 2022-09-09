@@ -12,8 +12,8 @@ class BleuScorer(Scorer):
         super().__init__(opts)
 
     def compute_score(self, preds, texts_refs):
-        try:
+        if len(preds) > 0:
             score = corpus_bleu(preds, [texts_refs]).score
-        except Exception:
+        else:
             score = 0
         return score
