@@ -31,6 +31,7 @@ tgt_onmttok_kwargs: '{"mode": "aggressive"}'
 """Output is the data and tab separated score"""
 """Corpus PPL is in the logger.info"""
 
+
 def _get_parser():
     parser = ArgumentParser(description='LM_scoring.py')
     opts.config_opts(parser)
