@@ -4,9 +4,19 @@
 # In order to use this tool, please install comet first
 # https://github.com/Unbabel/COMET
 
-# This tool enables to compute the "Best possible"
-# Comet score given n_best hypothesis
-
+# Let's say you have a source file with N sentences in SL - eg: source.sl
+# and the corresponding references (N sentences) reference.tl
+# Translate your file in TL with the -n_best nbest options nbest being
+# then number of hypotheses and output the target to -output target.nbest.tl
+# Then you need to duplicate source and reference sentences nbest times
+# for this script.
+# for instance using awk '{for(i=1; i<=n; i++) print}' n=5 reference.tl \
+#                          > reference.5.tl
+# same for source.
+# This script can be run (for instance with nbest = 5) as follows:
+# python oracle_bleu.py --nbest-src source.5.sl --nbest-hyp target.5.tl \
+#  --nbest-ref reference.5.tl --nbest-order 5 --output target.maxbleu.tl
+# It will search in all hyp the best comet score
 
 import codecs
 from argparse import ArgumentParser

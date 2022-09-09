@@ -500,8 +500,9 @@ class Inference(object):
                     " ".join(pred) for pred in trans.pred_sents[: self.n_best]
                 ]
 
-                n_best_scores = list(map(lambda x: x.item(),
-                                         trans.pred_scores[: self.n_best]))
+                n_best_scores = [
+                    score.item() for score in trans.pred_scores[: self.n_best]
+                ]
 
                 if self.report_align:
                     align_pharaohs = [
@@ -523,8 +524,10 @@ class Inference(object):
                                     for x in n_best_preds]
                 all_predictions += [n_best_preds]
 
-                out_all = list(map(lambda x: x[0] + "\t" + str(x[1]),
-                                   zip(n_best_preds, n_best_scores)))
+                out_all = [
+                    pred + "\t" + str(score) for (pred, score) in
+                    zip(n_best_preds, n_best_scores)
+                ]
 
                 if self.with_score:
                     self.out_file.write("\n".join(out_all) + "\n")

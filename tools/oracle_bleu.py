@@ -6,6 +6,19 @@ import codecs
 from argparse import ArgumentParser
 parser = ArgumentParser()
 
+# Let's say you have a source file with N sentences in SL - eg: source.sl
+# and the corresponding references (N sentences) reference.tl
+# Translate your file in TL with the -n_best nbest options nbest being
+# then number of hypotheses and output the target to -output target.nbest.tl
+# Then you need to duplicate reference sentences nbest times for this script.
+# for instance using awk '{for(i=1; i<=n; i++) print}' n=5 reference.tl \
+#                          > reference.5.tl
+# This script can be run (for instance with nbest = 5) as follows:
+# python oracle_bleu.py --nbest-hyp target.5.tl --nbest-ref reference.5.tl \
+#                             --nbest-order 5 --output target.maxbleu.tl
+# It will search in all hyp the best bleu wrt reference
+# and output the max bleu
+
 parser.add_argument("--nbest-hyp", type=str, help="file with nbest to rerank",
                     required=True)
 parser.add_argument("--nbest-ref", type=str, help="ref repeated n times",

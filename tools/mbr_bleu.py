@@ -4,6 +4,16 @@
 import sacrebleu
 import codecs
 from argparse import ArgumentParser
+
+
+# Let's say you have a source file with N sentences in SL - eg: source.sl
+# Translate your file in TL with the -n_best nbest options nbest being
+# then number of hypotheses and output the target to -output target.nbest.tl
+# This script can be run (for instance with nbest = 5) as follows:
+# python mbr_bleu.py --nbest-hyp target.5.tl \
+#       --nbest-order 5 --output target.mbr.tl
+# It will compare all hyp with eachother and output the max bleu
+
 parser = ArgumentParser()
 
 parser.add_argument("--nbest-hyp", type=str, help="file with nbest to rerank",
