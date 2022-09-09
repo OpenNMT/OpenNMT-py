@@ -252,7 +252,7 @@ class TestBeamSearch(unittest.TestCase):
                     # since only beam 0 terminates and n_best = 2
                     pass
 
-    def test_beam_is_done_when_n_best_beams_eos_using_min_length(self):
+    def test_beam_is_done_when_X_beams_eos_using_min_length(self):
         # this is also a test that when block_ngram_repeat=0,
         # repeating is acceptable
         beam_sz = 5
