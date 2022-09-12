@@ -1,8 +1,8 @@
+
 """
     This is the loadable seq2seq trainer library that is
     in charge of training details, loss compute, and statistics.
     See train.py for a use case of this library.
-
     Note: To make this a general library, we implement *only*
           mechanism things here(i.e. what to do), and leave the strategy
           things to users(i.e. how to do it). Also see train.py(one of the
@@ -21,7 +21,6 @@ from onmt.scorers import get_scorers_cls, build_scorers
 def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
     """
     Simplify `Trainer` creation based on user `opt`s*
-
     Args:
         opt (:obj:`Namespace`): user options (usually from argument parsing)
         model (:obj:`onmt.models.NMTModel`): the model to train
@@ -88,7 +87,6 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
 class Trainer(object):
     """
     Class that controls the training process.
-
     Args:
             model(:py:class:`onmt.models.model.NMTModel`): translation model
                 to train
@@ -229,7 +227,6 @@ class Trainer(object):
         """
         The main training loop by iterating over `train_iter` and possibly
         running validation on `valid_iter`.
-
         Args:
             train_iter: A generator that returns the next training batch.
             train_steps: Run training for this many iterations.
@@ -237,7 +234,6 @@ class Trainer(object):
               iterations.
             valid_iter: A generator that returns the next validation batch.
             valid_steps: Run evaluation every this many iterations.
-
         Returns:
             The gathered statistics.
         """
@@ -420,45 +416,46 @@ class Trainer(object):
                 if self.accum_count == 1:
                     self.optim.zero_grad()
 
-                with torch.cuda.amp.autocast(enabled=self.optim.amp):
-                    outputs, attns = self.model(
-                        src, tgt, src_lengths, bptt=bptt,
-                        with_align=self.with_align)
-                    bptt = True
-
-                    # 3. Compute loss.
-                    loss, batch_stats = self.train_loss(
-                        batch,
-                        outputs,
-                        attns,
-                        normalization=normalization,
-                        shard_size=self.shard_size,
-                        trunc_start=j,
-                        trunc_size=trunc_size)
-
-                step = self.optim.training_step
-                if (
-                        step % self.train_eval_steps == 0 and
-                        self.n_gpu > 0
-                ):
-                    # Compute and save stats
-                    computed_metrics = {}
-                    for i, metric in enumerate(self.train_scorers):
-                        logger.info("UPDATING TRAINING {}".format(metric))
-                        self.train_scorers[
-                            metric]["value"] = self.training_eval_handler(
-                            scorer=self.train_scorers[
-                                metric]["scorer"],
-                            batch=batch,
-                            mode="train")
-                        logger.info(
-                            "training {}: {}".format(
-                                metric, self.train_scorers[metric]["value"]))
-                        computed_metrics[
-                            metric] = self.train_scorers[metric]["value"]
-                    batch_stats.computed_metrics = computed_metrics
-
                 try:
+                    with torch.cuda.amp.autocast(enabled=self.optim.amp):
+                        outputs, attns = self.model(
+                            src, tgt, src_lengths, bptt=bptt,
+                            with_align=self.with_align)
+                        bptt = True
+
+                        # 3. Compute loss.
+                        loss, batch_stats = self.train_loss(
+                            batch,
+                            outputs,
+                            attns,
+                            normalization=normalization,
+                            shard_size=self.shard_size,
+                            trunc_start=j,
+                            trunc_size=trunc_size)
+
+                    step = self.optim.training_step
+                    if (
+                            step % self.train_eval_steps == 0 and
+                            self.n_gpu > 0
+                    ):
+                        # Compute and save stats
+                        computed_metrics = {}
+                        for i, metric in enumerate(self.train_scorers):
+                            logger.info("UPDATING TRAINING {}".format(metric))
+                            self.train_scorers[
+                                metric]["value"] = self.training_eval_handler(
+                                scorer=self.train_scorers[
+                                    metric]["scorer"],
+                                batch=batch,
+                                mode="train")
+                            logger.info(
+                                "training {}: {}".format(
+                                    metric, self.train_scorers[
+                                        metric]["value"]))
+                            computed_metrics[
+                                metric] = self.train_scorers[metric]["value"]
+                        batch_stats.computed_metrics = computed_metrics
+
                     if loss is not None:
                         self.optim.backward(loss)
 
@@ -512,11 +509,9 @@ class Trainer(object):
     def _maybe_gather_stats(self, stat):
         """
         Gather statistics in multi-processes cases
-
         Args:
             stat(:obj:onmt.utils.Statistics): a Statistics object to gather
                 or None (it returns None in this case)
-
         Returns:
             stat: the updated (or unchanged) stat object
         """

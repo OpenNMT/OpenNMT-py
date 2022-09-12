@@ -153,6 +153,7 @@ class Inference(object):
         report_score=True,
         logger=None,
         seed=-1,
+        with_score=False
     ):
         self.model = model
         self.fields = fields
@@ -231,6 +232,7 @@ class Inference(object):
             }
 
         set_random_seed(seed, self._use_cuda)
+        self.with_score = with_score
 
     @classmethod
     def from_opt(
@@ -299,6 +301,7 @@ class Inference(object):
             report_score=report_score,
             logger=logger,
             seed=opt.seed,
+            with_score=opt.with_score
         )
 
     def _log(self, msg):
@@ -496,6 +499,11 @@ class Inference(object):
                 n_best_preds = [
                     " ".join(pred) for pred in trans.pred_sents[: self.n_best]
                 ]
+
+                n_best_scores = [
+                    score.item() for score in trans.pred_scores[: self.n_best]
+                ]
+
                 if self.report_align:
                     align_pharaohs = [
                         build_align_pharaoh(align)
@@ -515,7 +523,16 @@ class Inference(object):
                     n_best_preds = [transform.apply_reverse(x)
                                     for x in n_best_preds]
                 all_predictions += [n_best_preds]
-                self.out_file.write("\n".join(n_best_preds) + "\n")
+
+                out_all = [
+                    pred + "\t" + str(score) for (pred, score) in
+                    zip(n_best_preds, n_best_scores)
+                ]
+
+                if self.with_score:
+                    self.out_file.write("\n".join(out_all) + "\n")
+                else:
+                    self.out_file.write("\n".join(n_best_preds) + "\n")
                 self.out_file.flush()
 
                 if self.verbose:
@@ -557,24 +574,24 @@ class Inference(object):
 
         if self.report_score:
             msg = self._report_score(
-                "PRED", pred_score_total, pred_words_total
+                "PRED", pred_score_total, len(all_scores)
             )
             self._log(msg)
             if tgt is not None:
                 msg = self._report_score(
-                    "GOLD", gold_score_total, gold_words_total
+                    "GOLD", gold_score_total, len(all_scores)
                 )
                 self._log(msg)
 
         if self.report_time:
             total_time = end_time - start_time
-            self._log("Total translation time (s): %f" % total_time)
+            self._log("Total translation time (s): %.1f" % total_time)
             self._log(
-                "Average translation time (s): %f"
-                % (total_time / len(all_predictions))
+                "Average translation time (ms): %.1f"
+                % (total_time / len(all_predictions) * 1000)
             )
             self._log(
-                "Tokens per second: %f" % (pred_words_total / total_time)
+                "Tokens per second: %.1f" % (pred_words_total / total_time)
             )
 
         if self.dump_beam:
@@ -618,17 +635,24 @@ class Inference(object):
         )  # (batch, n_best, tgt_l)
         return batched_nbest_predict
 
-    def _report_score(self, name, score_total, words_total):
-        if words_total == 0:
-            msg = "%s No words predicted" % (name,)
+    def _report_score(self, name, score_total, nb_sentences):
+        # In the case of length_penalty = none we report the total logprobs
+        # divided by the number of sentence to get an approximation of the
+        # per sentence logprob. We also return the corresponding ppl
+        # When a length_penalty is used eg: "avg" or "wu" since logprobs
+        # are normalized per token we report the per line per token logprob
+        # and the corresponding "per word perplexity"
+        if nb_sentences == 0:
+            msg = "%s No translations" % (name,)
         else:
-            avg_score = score_total / words_total
-            ppl = np.exp(-score_total.item() / words_total)
-            msg = "%s AVG SCORE: %.4f, %s PPL: %.4f" % (
+            score = score_total / nb_sentences
+            ppl = np.exp(-score_total.item() / nb_sentences)
+            msg = "%s SCORE: %.4f, %s PPL: %.2f NB SENTENCES: %d" % (
                 name,
-                avg_score,
+                score,
                 name,
                 ppl,
+                nb_sentences
             )
         return msg
 
