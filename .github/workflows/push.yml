@@ -22,6 +22,7 @@ jobs:
         pip install --upgrade setuptools
         pip install -e .
         pip install -r requirements.opt.txt
+        pip install sacrebleu
         pip install flake8
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Lint with flake8
