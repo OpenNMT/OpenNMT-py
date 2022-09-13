@@ -8,19 +8,19 @@ from onmt.opts import translate_opts
 class Detokenizer():
     """ Allow detokenizing sequences in batchs"""
     def __init__(self, opt):
-        if 'onmt_tokenize' in opt.transforms:
+        if 'bpe' in opt.transforms and 'onmt_tokenize' not in opt.transforms:
+            self.type = "subword-nmt"
+        elif 'sentencepiece' in opt.transforms:
+            self.type = "sentencepiece"
+        else:
             self.type = "pyonmttok"
             self.tgt_onmttok_kwargs = opt.tgt_onmttok_kwargs
-        else:
+        if self.type != "pyonmttok":
             if opt.tgt_subword_model is None:
                 raise ValueError(
-                    "Missing mandatory tokenizer option'tgt_subword_model'")
+                    "Missing mandatory tokenizer option 'tgt_subword_model'")
             else:
                 self.model_path = opt.tgt_subword_model
-            if 'sentencepiece' in opt.transforms:
-                self.type = "sentencepiece"
-            elif 'bpe' in opt.transforms:
-                self.type = "subword-nmt"
 
     def build_detokenizer(self):
         if self.type == "pyonmttok":
