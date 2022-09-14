@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+import codecs
 import onmt.opts as opts
 from onmt.utils.misc import set_random_seed
 from onmt.utils.logging import init_logger, logger
@@ -30,6 +31,7 @@ tgt_subword_model: subwords.en_de.bpe
 tgt_onmttok_kwargs: '{"mode": "aggressive"}'
 
 Output is the data and tab separated score
+use the -output setting for preds + scores
 Corpus PPL is in the logger.info
 """
 
@@ -51,7 +53,8 @@ def main():
 
     init_logger(opt.log_file)
     set_random_seed(opt.seed, False)
-
+    out_file = codecs.open(opt.output, "w+", "utf-8")
+    
     # Load model for inference
     fields, model, model_opt = load_test_model(opt)
 
@@ -130,8 +133,8 @@ def main():
                 sent_ppl_orig = sent_ppl.gather(0, batch.indices.argsort(0))
                 for j in range(batch_size):
                     srctxt = src_shard[i * opt.batch_size + j]
-                    print(srctxt.strip().decode("UTF-8"),
-                          "\t", sent_ppl_orig[j].item())
+                    out_file.write(srctxt.strip().decode("UTF-8") +
+                                   "\t" + str(sent_ppl_orig[j].item()) + "\n")
         logger.info("Loss: %.2f Tokens: %d Corpus PPL: %.2f" %
                     (cumul_loss, cumul_length,
                      np.exp(cumul_loss / cumul_length)))
