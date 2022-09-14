@@ -212,7 +212,10 @@ class LossComputeBase(nn.Module):
         non_padding = target.ne(self.padding_idx)
         num_correct = pred.eq(target).masked_select(non_padding).sum().item()
         num_non_padding = non_padding.sum().item()
-        return onmt.utils.Statistics(loss.item(), num_non_padding, num_correct)
+        # in the case criterion reduction is None then we need
+        # to sum the loss of each sentence in the batch
+        return onmt.utils.Statistics(loss.sum().item(),
+                                     num_non_padding, num_correct)
 
     def _bottle(self, _v):
         return _v.view(-1, _v.size(2))
