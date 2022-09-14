@@ -138,7 +138,7 @@ def main():
         logger.info("Loss: %.2f Tokens: %d Corpus PPL: %.2f" %
                     (cumul_loss, cumul_length,
                      np.exp(cumul_loss / cumul_length)))
-
+        out_file.close()
 
 if __name__ == "__main__":
     main()
