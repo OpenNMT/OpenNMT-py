@@ -3,6 +3,7 @@
     This is the loadable seq2seq trainer library that is
     in charge of training details, loss compute, and statistics.
     See train.py for a use case of this library.
+
     Note: To make this a general library, we implement *only*
           mechanism things here(i.e. what to do), and leave the strategy
           things to users(i.e. how to do it). Also see train.py(one of the
@@ -21,6 +22,7 @@ from onmt.scorers import get_scorers_cls, build_scorers
 def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
     """
     Simplify `Trainer` creation based on user `opt`s*
+
     Args:
         opt (:obj:`Namespace`): user options (usually from argument parsing)
         model (:obj:`onmt.models.NMTModel`): the model to train
@@ -52,6 +54,7 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
     average_decay = opt.average_decay
     average_every = opt.average_every
     dropout = opt.dropout
+    attention_dropout = opt.attention_dropout
     dropout_steps = opt.dropout_steps
     if device_id >= 0:
         gpu_rank = opt.gpu_ranks[device_id]
@@ -80,6 +83,7 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
                            model_dtype=opt.model_dtype,
                            earlystopper=earlystopper,
                            dropout=dropout,
+                           attention_dropout=attention_dropout,
                            dropout_steps=dropout_steps)
     return trainer
 
@@ -119,7 +123,8 @@ class Trainer(object):
                  train_eval_steps=200,
                  report_manager=None, with_align=False, model_saver=None,
                  average_decay=0, average_every=1, model_dtype='fp32',
-                 earlystopper=None, dropout=[0.3], dropout_steps=[0]):
+                 earlystopper=None, dropout=[0.3], attention_dropout=[0.1],
+                 dropout_steps=[0]):
         # Basic attributes.
 
         self.model = model
@@ -149,6 +154,7 @@ class Trainer(object):
         self.model_dtype = model_dtype
         self.earlystopper = earlystopper
         self.dropout = dropout
+        self.attention_dropout = attention_dropout
         self.dropout_steps = dropout_steps
 
         for i in range(len(self.accum_count_l)):
@@ -180,9 +186,11 @@ class Trainer(object):
     def _maybe_update_dropout(self, step):
         for i in range(len(self.dropout_steps)):
             if step > 1 and step == self.dropout_steps[i] + 1:
-                self.model.update_dropout(self.dropout[i])
-                logger.info("Updated dropout to %f from step %d"
-                            % (self.dropout[i], step))
+                self.model.update_dropout(self.dropout[i],
+                                          self.attention_dropout[i])
+                logger.info("Updated dropout/attn dropout to %f %f at step %d"
+                            % (self.dropout[i],
+                               self.attention_dropout[i], step))
 
     def _accum_batches(self, iterator):
         batches = []
@@ -227,6 +235,7 @@ class Trainer(object):
         """
         The main training loop by iterating over `train_iter` and possibly
         running validation on `valid_iter`.
+
         Args:
             train_iter: A generator that returns the next training batch.
             train_steps: Run training for this many iterations.
@@ -337,6 +346,7 @@ class Trainer(object):
 
         with torch.no_grad():
             stats = onmt.utils.Statistics()
+
             for batch in valid_iter:
                 src, src_lengths = batch.src if isinstance(batch.src, tuple) \
                     else (batch.src, None)
@@ -462,10 +472,14 @@ class Trainer(object):
                     total_stats.update(batch_stats)
                     report_stats.update(batch_stats)
 
-                except Exception:
-                    traceback.print_exc()
-                    logger.info("At step %d, we removed a batch - accum %d",
-                                self.optim.training_step, k)
+                except Exception as exc:
+                    trace_content = traceback.format_exc()
+                    if "CUDA out of memory" in trace_content:
+                        logger.info("Step %d, cuda OOM - batch removed",
+                                    self.optim.training_step)
+                    else:
+                        traceback.print_exc()
+                        raise exc
 
                 # 4. Update the parameters and statistics.
                 if self.accum_count == 1:
@@ -509,9 +523,11 @@ class Trainer(object):
     def _maybe_gather_stats(self, stat):
         """
         Gather statistics in multi-processes cases
+
         Args:
             stat(:obj:onmt.utils.Statistics): a Statistics object to gather
                 or None (it returns None in this case)
+
         Returns:
             stat: the updated (or unchanged) stat object
         """
