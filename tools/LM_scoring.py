@@ -54,7 +54,7 @@ def main():
     init_logger(opt.log_file)
     set_random_seed(opt.seed, False)
     out_file = codecs.open(opt.output, "w+", "utf-8")
-    
+
     # Load model for inference
     fields, model, model_opt = load_test_model(opt)
 
