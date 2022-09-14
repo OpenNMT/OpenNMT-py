@@ -29,6 +29,7 @@ setup(
         "waitress",
         "pyonmttok>=1.23,<2",
         "pyyaml",
+        "sacrebleu"
     ],
     entry_points={
         "console_scripts": [
