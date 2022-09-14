@@ -140,5 +140,6 @@ def main():
                      np.exp(cumul_loss / cumul_length)))
         out_file.close()
 
+
 if __name__ == "__main__":
     main()
