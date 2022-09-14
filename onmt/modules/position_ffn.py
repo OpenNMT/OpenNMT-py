@@ -27,7 +27,7 @@ class PositionwiseFeedForward(nn.Module):
     """
 
     def __init__(self, d_model, d_ff, dropout=0.1,
-                 activation_fn=ActivationFunction.relu):
+                 activation_fn=ActivationFunction.relu, normalize_after=False):
         super(PositionwiseFeedForward, self).__init__()
         self.w_1 = nn.Linear(d_model, d_ff)
         self.w_2 = nn.Linear(d_ff, d_model)
@@ -35,6 +35,7 @@ class PositionwiseFeedForward(nn.Module):
         self.dropout_1 = nn.Dropout(dropout)
         self.activation = ACTIVATION_FUNCTIONS[activation_fn]
         self.dropout_2 = nn.Dropout(dropout)
+        self.normalize_after = normalize_after
 
     def forward(self, x):
         """Layer definition.
@@ -45,10 +46,14 @@ class PositionwiseFeedForward(nn.Module):
         Returns:
             (FloatTensor): Output ``(batch_size, input_len, model_dim)``.
         """
-
-        inter = self.dropout_1(self.activation(self.w_1(self.layer_norm(x))))
+        if not self.normalize_after:
+            x = self.layer_norm(x)
+        inter = self.dropout_1(self.activation(self.w_1(x)))
         output = self.dropout_2(self.w_2(inter))
-        return output + x
+        output += x
+        if self.normalize_after:
+            output = self.layer_norm(output)
+        return output
 
     def update_dropout(self, dropout):
         self.dropout_1.p = dropout

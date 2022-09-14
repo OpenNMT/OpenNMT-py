@@ -384,6 +384,8 @@ def model_opts(parser):
               help='Size of hidden transformer feed-forward')
     group.add('--aan_useffn', '-aan_useffn', action="store_true",
               help='Turn on the FFN layer in the AAN decoder')
+    group.add('--normalize_after', '-normalize_after', action="store_true", default=False,
+              help='pre/post normalize')
 
     # Alignement options
     group = parser.add_argument_group('Model - Alignement')

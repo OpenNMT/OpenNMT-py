@@ -27,6 +27,7 @@ class TransformerDecoderLayerBase(nn.Module):
         full_context_alignment=False,
         alignment_heads=0,
         pos_ffn_activation_fn=ActivationFunction.relu,
+        normalize_after=False,
     ):
         """
         Args:
@@ -53,6 +54,7 @@ class TransformerDecoderLayerBase(nn.Module):
                 N. of cross attention heads to use for alignment guiding
             pos_ffn_activation_fn (ActivationFunction):
                 activation function choice for PositionwiseFeedForward layer
+            normalize_after (bool): turn on the post-normalization
 
         """
         super(TransformerDecoderLayerBase, self).__init__()
@@ -70,12 +72,14 @@ class TransformerDecoderLayerBase(nn.Module):
             )
 
         self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout,
-                                                    pos_ffn_activation_fn
+                                                    pos_ffn_activation_fn,
+                                                    normalize_after=normalize_after
                                                     )
         self.layer_norm_1 = nn.LayerNorm(d_model, eps=1e-6)
         self.drop = nn.Dropout(dropout)
         self.full_context_alignment = full_context_alignment
         self.alignment_heads = alignment_heads
+        self.normalize_after = normalize_after
 
     def forward(self, *args, **kwargs):
         """Extend `_forward` for (possibly) multiple decoder pass:
@@ -192,6 +196,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
         full_context_alignment=False,
         alignment_heads=0,
         pos_ffn_activation_fn=ActivationFunction.relu,
+        normalize_after=False
     ):
         """
         Args:
@@ -209,10 +214,12 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
             full_context_alignment,
             alignment_heads,
             pos_ffn_activation_fn=pos_ffn_activation_fn,
+            normalize_after=normalize_after,
         )
         self.context_attn = MultiHeadedAttention(
             heads, d_model, dropout=attention_dropout
         )
+        self.normalize_after = normalize_after
         self.layer_norm_2 = nn.LayerNorm(d_model, eps=1e-6)
 
     def update_dropout(self, dropout, attention_dropout):
@@ -257,7 +264,9 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
             # masking is necessary when sequence length is greater than one
             dec_mask = self._compute_dec_mask(tgt_pad_mask, future)
 
-        inputs_norm = self.layer_norm_1(inputs)
+        inputs_norm = inputs
+        if not self.normalize_after:
+            inputs_norm = self.layer_norm_1(inputs)
 
         query, _ = self._forward_self_attn(
             inputs_norm, dec_mask, layer_cache, step
@@ -265,7 +274,12 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
 
         query = self.drop(query) + inputs
 
-        query_norm = self.layer_norm_2(query)
+        if self.normalize_after:
+            query = self.layer_norm_1(query)
+
+        query_norm = query
+        if not self.normalize_after:
+            query_norm = self.layer_norm_2(query)
         mid, attns = self.context_attn(
             memory_bank,
             memory_bank,
@@ -274,13 +288,16 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
             layer_cache=layer_cache,
             attn_type="context",
         )
-        output = self.feed_forward(self.drop(mid) + query)
+        mid = self.drop(mid) + query
+        if self.normalize_after:
+            mid = self.layer_norm_2(mid)
+        output = self.feed_forward(mid)
 
         return output, attns
 
 
 class TransformerDecoderBase(DecoderBase):
-    def __init__(self, d_model, copy_attn, embeddings, alignment_layer):
+    def __init__(self, d_model, copy_attn, embeddings, alignment_layer, normalize_after=False):
         super(TransformerDecoderBase, self).__init__()
 
         self.embeddings = embeddings
@@ -295,6 +312,7 @@ class TransformerDecoderBase(DecoderBase):
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
 
         self.alignment_layer = alignment_layer
+        self.normalize_after = normalize_after
 
     @classmethod
     def from_opt(cls, opt, embeddings):
@@ -317,6 +335,7 @@ class TransformerDecoderBase(DecoderBase):
             opt.alignment_layer,
             alignment_heads=opt.alignment_heads,
             pos_ffn_activation_fn=opt.pos_ffn_activation_fn,
+            normalize_after=opt.normalize_after,
         )
 
     def init_state(self, src, memory_bank, enc_hidden):
@@ -406,10 +425,12 @@ class TransformerDecoder(TransformerDecoderBase):
         alignment_layer,
         alignment_heads,
         pos_ffn_activation_fn=ActivationFunction.relu,
+        normalize_after=False,
     ):
         super(TransformerDecoder, self).__init__(
-            d_model, copy_attn, embeddings, alignment_layer
+            d_model, copy_attn, embeddings, alignment_layer, normalize_after=normalize_after
         )
+        self.normalize_after = normalize_after
 
         self.transformer_layers = nn.ModuleList(
             [
@@ -425,6 +446,7 @@ class TransformerDecoder(TransformerDecoderBase):
                     full_context_alignment=full_context_alignment,
                     alignment_heads=alignment_heads,
                     pos_ffn_activation_fn=pos_ffn_activation_fn,
+                    normalize_after=normalize_after,
                 )
                 for i in range(num_layers)
             ]
@@ -474,8 +496,8 @@ class TransformerDecoder(TransformerDecoderBase):
             )
             if attn_align is not None:
                 attn_aligns.append(attn_align)
-
-        output = self.layer_norm(output)
+        if not self.normalize_after:
+            output = self.layer_norm(output)
         dec_outs = output.transpose(0, 1).contiguous()
         attn = attn.transpose(0, 1).contiguous()
 
