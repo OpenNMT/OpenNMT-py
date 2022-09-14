@@ -102,6 +102,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul class="current">
@@ -255,9 +256,9 @@ BPE and language modeling specificities are explained in the following sections.
 <div class="section" id="language-model-specificities">
 <h3>Language Model specificities<a class="headerlink" href="#language-model-specificities" title="Permalink to this headline">¶</a></h3>
 <p>In LM tasks we expect a single source, therefore path_tgt is not required for LM tasks.</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">data</span><span class="p">:</span>
-    <span class="nt">corpus_1</span><span class="p">:</span>
-        <span class="nt">path_src</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">data/wikitext-103-raw/wiki.train.raw</span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">data</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="nt">corpus_1</span><span class="p">:</span><span class="w"></span>
+<span class="w">        </span><span class="nt">path_src</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">data/wikitext-103-raw/wiki.train.raw</span><span class="w"></span>
 </pre></div>
 </div>
 </div>
@@ -265,12 +266,12 @@ BPE and language modeling specificities are explained in the following sections.
 <h3>BPE specificities<a class="headerlink" href="#bpe-specificities" title="Permalink to this headline">¶</a></h3>
 <p>To use BPE tokenization on the fly, the following parameters must be in the config file.
 Slight differences between on the fly tokenization and outputed tokenized files from step 1 can be observed.</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">src_subword_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">bpe</span>
-<span class="nt">src_subword_model</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">data/wikitext-103-raw/subwords.bpe</span>
-<span class="nt">src_onmttok_kwargs</span><span class="p">:</span> <span class="s">&#39;{&quot;mode&quot;:</span><span class="nv"> </span><span class="s">&quot;aggressive&quot;,</span><span class="nv"> </span><span class="s">&quot;joiner_annotate&quot;:</span><span class="nv"> </span><span class="s">True,</span><span class="nv"> </span><span class="s">&quot;preserve_placeholders&quot;:</span>
-  <span class="s">True,</span><span class="nv"> </span><span class="s">&quot;case_markup&quot;:</span><span class="nv"> </span><span class="s">True,</span><span class="nv"> </span><span class="s">&quot;soft_case_regions&quot;:</span><span class="nv"> </span><span class="s">True,</span><span class="nv"> </span><span class="s">&quot;preserve_segmented_tokens&quot;:</span>
-  <span class="s">True}&#39;</span>
-<span class="nt">transforms</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">onmt_tokenize</span><span class="p p-Indicator">]</span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">src_subword_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bpe</span><span class="w"></span>
+<span class="nt">src_subword_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">data/wikitext-103-raw/subwords.bpe</span><span class="w"></span>
+<span class="nt">src_onmttok_kwargs</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;{&quot;mode&quot;:</span><span class="nv"> </span><span class="s">&quot;aggressive&quot;,</span><span class="nv"> </span><span class="s">&quot;joiner_annotate&quot;:</span><span class="nv"> </span><span class="s">True,</span><span class="nv"> </span><span class="s">&quot;preserve_placeholders&quot;:</span><span class="w"></span>
+<span class="w">  </span><span class="s">True,</span><span class="nv"> </span><span class="s">&quot;case_markup&quot;:</span><span class="nv"> </span><span class="s">True,</span><span class="nv"> </span><span class="s">&quot;soft_case_regions&quot;:</span><span class="nv"> </span><span class="s">True,</span><span class="nv"> </span><span class="s">&quot;preserve_segmented_tokens&quot;:</span><span class="w"></span>
+<span class="w">  </span><span class="s">True}&#39;</span><span class="w"></span>
+<span class="nt">transforms</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">onmt_tokenize</span><span class="p p-Indicator">]</span><span class="w"></span>
 </pre></div>
 </div>
 </div>
@@ -291,11 +292,11 @@ Slight differences between on the fly tokenization and outputed tokenized files 
 <li><p><em>encoder_type</em> is not useful but need to be mentionned</p></li>
 <li><p><em>share_vocab</em> must be true. The slided source will play the role of the target hence vocabulary must be shared.</p></li>
 </ul>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">model_task</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">lm</span>
-<span class="nt">encoder_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">transformer_lm</span>
-<span class="nt">decoder_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">transformer_lm</span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">model_task</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">lm</span><span class="w"></span>
+<span class="nt">encoder_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">transformer_lm</span><span class="w"></span>
+<span class="nt">decoder_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">transformer_lm</span><span class="w"></span>
 
-<span class="nt">share_vocab</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="nt">share_vocab</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w"></span>
 </pre></div>
 </div>
 <p>The training is launched using:</p>

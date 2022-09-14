@@ -109,6 +109,7 @@
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
@@ -228,31 +229,31 @@ tar xf toy-ende.tar.gz
 <li><p><code class="docutils literal notranslate"><span class="pre">tgt-val.txt</span></code></p></li>
 </ul>
 <p>Validation files are used to evaluate the convergence of the training. It usually contains no more than 5k sentences.</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>$ head -n 2 toy_ende/src-train.txt
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>$ head -n 2 toy-ende/src-train.txt
 It is not acceptable that , with the help of the national bureaucracies , Parliament &amp;apos;s legislative prerogative should be made null and void by means of implementing provisions whose content , purpose and extent are not laid down in advance .
 Federal Master Trainer and Senior Instructor of the Italian Federation of Aerobic Fitness , Group Fitness , Postural Gym , Stretching and Pilates; from 2004 , he has been collaborating with Antiche Terme as personal Trainer and Instructor of Stretching , Pilates and Postural Gym .
 </pre></div>
 </div>
 <p>We need to build a <strong>YAML configuration file</strong> to specify the data that will be used:</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># toy_en_de.yaml</span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># toy_en_de.yaml</span><span class="w"></span>
 
-<span class="c1">## Where the samples will be written</span>
-<span class="nt">save_data</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">toy-ende/run/example</span>
-<span class="c1">## Where the vocab(s) will be written</span>
-<span class="nt">src_vocab</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">toy-ende/run/example.vocab.src</span>
-<span class="nt">tgt_vocab</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">toy-ende/run/example.vocab.tgt</span>
-<span class="c1"># Prevent overwriting existing files in the folder</span>
-<span class="nt">overwrite</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="c1">## Where the samples will be written</span><span class="w"></span>
+<span class="nt">save_data</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/run/example</span><span class="w"></span>
+<span class="c1">## Where the vocab(s) will be written</span><span class="w"></span>
+<span class="nt">src_vocab</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/run/example.vocab.src</span><span class="w"></span>
+<span class="nt">tgt_vocab</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/run/example.vocab.tgt</span><span class="w"></span>
+<span class="c1"># Prevent overwriting existing files in the folder</span><span class="w"></span>
+<span class="nt">overwrite</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span><span class="w"></span>
 
-<span class="c1"># Corpus opts:</span>
-<span class="nt">data</span><span class="p">:</span>
-    <span class="nt">corpus_1</span><span class="p">:</span>
-        <span class="nt">path_src</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">toy-ende/src-train.txt</span>
-        <span class="nt">path_tgt</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">toy-ende/tgt-train.txt</span>
-    <span class="nt">valid</span><span class="p">:</span>
-        <span class="nt">path_src</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">toy-ende/src-val.txt</span>
-        <span class="nt">path_tgt</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">toy-ende/tgt-val.txt</span>
-<span class="nn">...</span>
+<span class="c1"># Corpus opts:</span><span class="w"></span>
+<span class="nt">data</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="nt">corpus_1</span><span class="p">:</span><span class="w"></span>
+<span class="w">        </span><span class="nt">path_src</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/src-train.txt</span><span class="w"></span>
+<span class="w">        </span><span class="nt">path_tgt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/tgt-train.txt</span><span class="w"></span>
+<span class="w">    </span><span class="nt">valid</span><span class="p">:</span><span class="w"></span>
+<span class="w">        </span><span class="nt">path_src</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/src-val.txt</span><span class="w"></span>
+<span class="w">        </span><span class="nt">path_tgt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/tgt-val.txt</span><span class="w"></span>
+<span class="nn">...</span><span class="w"></span>
 </pre></div>
 </div>
 <p>From this configuration, we can build the vocab(s), that will be necessary to train the model:</p>
@@ -272,23 +273,23 @@ Federal Master Trainer and Senior Instructor of the Italian Federation of Aerobi
 <li><p>the vocabulary path(s) that will be used: can be that generated by onmt_build_vocab;</p></li>
 <li><p>training specific parameters.</p></li>
 </ul>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># toy_en_de.yaml</span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># toy_en_de.yaml</span><span class="w"></span>
 
-<span class="nn">...</span>
+<span class="nn">...</span><span class="w"></span>
 
-<span class="c1"># Vocabulary files that were just created</span>
-<span class="nt">src_vocab</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">toy-ende/run/example.vocab.src</span>
-<span class="nt">tgt_vocab</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">toy-ende/run/example.vocab.tgt</span>
+<span class="c1"># Vocabulary files that were just created</span><span class="w"></span>
+<span class="nt">src_vocab</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/run/example.vocab.src</span><span class="w"></span>
+<span class="nt">tgt_vocab</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/run/example.vocab.tgt</span><span class="w"></span>
 
-<span class="c1"># Train on a single GPU</span>
-<span class="nt">world_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
-<span class="nt">gpu_ranks</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">0</span><span class="p p-Indicator">]</span>
+<span class="c1"># Train on a single GPU</span><span class="w"></span>
+<span class="nt">world_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span><span class="w"></span>
+<span class="nt">gpu_ranks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0</span><span class="p p-Indicator">]</span><span class="w"></span>
 
-<span class="c1"># Where to save the checkpoints</span>
-<span class="nt">save_model</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">toy-ende/run/model</span>
-<span class="nt">save_checkpoint_steps</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">500</span>
-<span class="nt">train_steps</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1000</span>
-<span class="nt">valid_steps</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">500</span>
+<span class="c1"># Where to save the checkpoints</span><span class="w"></span>
+<span class="nt">save_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/run/model</span><span class="w"></span>
+<span class="nt">save_checkpoint_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">500</span><span class="w"></span>
+<span class="nt">train_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1000</span><span class="w"></span>
+<span class="nt">valid_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">500</span><span class="w"></span>
 </pre></div>
 </div>
 <p>Then you can simply run:</p>

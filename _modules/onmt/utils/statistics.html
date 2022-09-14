@@ -101,6 +101,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
@@ -212,11 +213,12 @@
 <span class="sd">    * elapsed time</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_words</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_correct</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_words</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_correct</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">computed_metrics</span><span class="o">=</span><span class="p">{}):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">loss</span> <span class="o">=</span> <span class="n">loss</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_words</span> <span class="o">=</span> <span class="n">n_words</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_correct</span> <span class="o">=</span> <span class="n">n_correct</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_src_words</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">computed_metrics</span> <span class="o">=</span> <span class="n">computed_metrics</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 
 <div class="viewcode-block" id="Statistics.all_gather_stats"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.Statistics.all_gather_stats">[docs]</a>    <span class="nd">@staticmethod</span>
@@ -276,6 +278,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">loss</span> <span class="o">+=</span> <span class="n">stat</span><span class="o">.</span><span class="n">loss</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_words</span> <span class="o">+=</span> <span class="n">stat</span><span class="o">.</span><span class="n">n_words</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_correct</span> <span class="o">+=</span> <span class="n">stat</span><span class="o">.</span><span class="n">n_correct</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">computed_metrics</span> <span class="o">=</span> <span class="n">stat</span><span class="o">.</span><span class="n">computed_metrics</span>
 
         <span class="k">if</span> <span class="n">update_n_src_words</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">n_src_words</span> <span class="o">+=</span> <span class="n">stat</span><span class="o">.</span><span class="n">n_src_words</span></div>
@@ -310,7 +313,7 @@
             <span class="n">step_fmt</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">/</span><span class="si">%5d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">step_fmt</span><span class="p">,</span> <span class="n">num_steps</span><span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
             <span class="p">(</span><span class="s2">&quot;Step </span><span class="si">%s</span><span class="s2">; acc: </span><span class="si">%6.2f</span><span class="s2">; ppl: </span><span class="si">%5.2f</span><span class="s2">; xent: </span><span class="si">%4.2f</span><span class="s2">; &quot;</span> <span class="o">+</span>
-             <span class="s2">&quot;lr: </span><span class="si">%7.5f</span><span class="s2">; </span><span class="si">%3.0f</span><span class="s2">/</span><span class="si">%3.0f</span><span class="s2"> tok/s; </span><span class="si">%6.0f</span><span class="s2"> sec&quot;</span><span class="p">)</span>
+             <span class="s2">&quot;lr: </span><span class="si">%7.5f</span><span class="s2">; </span><span class="si">%3.0f</span><span class="s2">/</span><span class="si">%3.0f</span><span class="s2"> tok/s; </span><span class="si">%6.0f</span><span class="s2"> sec;&quot;</span><span class="p">)</span>
             <span class="o">%</span> <span class="p">(</span><span class="n">step_fmt</span><span class="p">,</span>
                <span class="bp">self</span><span class="o">.</span><span class="n">accuracy</span><span class="p">(),</span>
                <span class="bp">self</span><span class="o">.</span><span class="n">ppl</span><span class="p">(),</span>
@@ -318,7 +321,9 @@
                <span class="n">learning_rate</span><span class="p">,</span>
                <span class="bp">self</span><span class="o">.</span><span class="n">n_src_words</span> <span class="o">/</span> <span class="p">(</span><span class="n">t</span> <span class="o">+</span> <span class="mf">1e-5</span><span class="p">),</span>
                <span class="bp">self</span><span class="o">.</span><span class="n">n_words</span> <span class="o">/</span> <span class="p">(</span><span class="n">t</span> <span class="o">+</span> <span class="mf">1e-5</span><span class="p">),</span>
-               <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span><span class="p">))</span>
+               <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span> <span class="o">+</span>
+            <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s2">&quot; </span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="nb">round</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+                     <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">computed_metrics</span><span class="o">.</span><span class="n">items</span><span class="p">()]))</span>
         <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="Statistics.log_tensorboard"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.Statistics.log_tensorboard">[docs]</a>    <span class="k">def</span> <span class="nf">log_tensorboard</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">writer</span><span class="p">,</span> <span class="n">learning_rate</span><span class="p">,</span> <span class="n">patience</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
@@ -326,6 +331,8 @@
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">elapsed_time</span><span class="p">()</span>
         <span class="n">writer</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="n">prefix</span> <span class="o">+</span> <span class="s2">&quot;/xent&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">xent</span><span class="p">(),</span> <span class="n">step</span><span class="p">)</span>
         <span class="n">writer</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="n">prefix</span> <span class="o">+</span> <span class="s2">&quot;/ppl&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ppl</span><span class="p">(),</span> <span class="n">step</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">computed_metrics</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">writer</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="n">prefix</span> <span class="o">+</span> <span class="s2">&quot;/&quot;</span> <span class="o">+</span> <span class="n">k</span><span class="p">,</span> <span class="nb">round</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="n">step</span><span class="p">)</span>
         <span class="n">writer</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="n">prefix</span> <span class="o">+</span> <span class="s2">&quot;/accuracy&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">accuracy</span><span class="p">(),</span> <span class="n">step</span><span class="p">)</span>
         <span class="n">writer</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="n">prefix</span> <span class="o">+</span> <span class="s2">&quot;/tgtper&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_words</span> <span class="o">/</span> <span class="n">t</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
         <span class="n">writer</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="n">prefix</span> <span class="o">+</span> <span class="s2">&quot;/lr&quot;</span><span class="p">,</span> <span class="n">learning_rate</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>

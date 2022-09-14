@@ -102,6 +102,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul class="current">
@@ -217,48 +218,48 @@
 <div class="section" id="step-1-build-the-vocabulary">
 <h2>Step 1. Build the vocabulary.<a class="headerlink" href="#step-1-build-the-vocabulary" title="Permalink to this headline">¶</a></h2>
 <p>We need to setup the desired configuration with 1. the data 2. the tokenization options:</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># wmt14_en_de.yaml</span>
-<span class="nt">save_data</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">data/wmt/run/example</span>
-<span class="c1">## Where the vocab(s) will be written</span>
-<span class="nt">src_vocab</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">data/wmt/run/example.vocab.src</span>
-<span class="nt">tgt_vocab</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">data/wmt/run/example.vocab.tgt</span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># wmt14_en_de.yaml</span><span class="w"></span>
+<span class="nt">save_data</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">data/wmt/run/example</span><span class="w"></span>
+<span class="c1">## Where the vocab(s) will be written</span><span class="w"></span>
+<span class="nt">src_vocab</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">data/wmt/run/example.vocab.src</span><span class="w"></span>
+<span class="nt">tgt_vocab</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">data/wmt/run/example.vocab.tgt</span><span class="w"></span>
 
-<span class="c1"># Corpus opts:</span>
-<span class="nt">data</span><span class="p">:</span>
-    <span class="nt">commoncrawl</span><span class="p">:</span>
-        <span class="nt">path_src</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">data/wmt/commoncrawl.de-en.en</span>
-        <span class="nt">path_tgt</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">data/wmt/commoncrawl.de-en.de</span>
-        <span class="nt">transforms</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">sentencepiece</span><span class="p p-Indicator">,</span> <span class="nv">filtertoolong</span><span class="p p-Indicator">]</span>
-        <span class="nt">weight</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">23</span>
-    <span class="nt">europarl</span><span class="p">:</span>
-        <span class="nt">path_src</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">data/wmt/europarl-v7.de-en.en</span>
-        <span class="nt">path_tgt</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">data/wmt/europarl-v7.de-en.de</span>
-        <span class="nt">transforms</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">sentencepiece</span><span class="p p-Indicator">,</span> <span class="nv">filtertoolong</span><span class="p p-Indicator">]</span>
-        <span class="nt">weight</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">19</span>
-    <span class="nt">news_commentary</span><span class="p">:</span>
-        <span class="nt">path_src</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">data/wmt/news-commentary-v11.de-en.en</span>
-        <span class="nt">path_tgt</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">data/wmt/news-commentary-v11.de-en.de</span>
-        <span class="nt">transforms</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">sentencepiece</span><span class="p p-Indicator">,</span> <span class="nv">filtertoolong</span><span class="p p-Indicator">]</span>
-        <span class="nt">weight</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">3</span>
-    <span class="nt">valid</span><span class="p">:</span>
-        <span class="nt">path_src</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">data/wmt/valid.en</span>
-        <span class="nt">path_tgt</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">data/wmt/valid.de</span>
-        <span class="nt">transforms</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">sentencepiece</span><span class="p p-Indicator">]</span>
+<span class="c1"># Corpus opts:</span><span class="w"></span>
+<span class="nt">data</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="nt">commoncrawl</span><span class="p">:</span><span class="w"></span>
+<span class="w">        </span><span class="nt">path_src</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">data/wmt/commoncrawl.de-en.en</span><span class="w"></span>
+<span class="w">        </span><span class="nt">path_tgt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">data/wmt/commoncrawl.de-en.de</span><span class="w"></span>
+<span class="w">        </span><span class="nt">transforms</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">sentencepiece</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">filtertoolong</span><span class="p p-Indicator">]</span><span class="w"></span>
+<span class="w">        </span><span class="nt">weight</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">23</span><span class="w"></span>
+<span class="w">    </span><span class="nt">europarl</span><span class="p">:</span><span class="w"></span>
+<span class="w">        </span><span class="nt">path_src</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">data/wmt/europarl-v7.de-en.en</span><span class="w"></span>
+<span class="w">        </span><span class="nt">path_tgt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">data/wmt/europarl-v7.de-en.de</span><span class="w"></span>
+<span class="w">        </span><span class="nt">transforms</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">sentencepiece</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">filtertoolong</span><span class="p p-Indicator">]</span><span class="w"></span>
+<span class="w">        </span><span class="nt">weight</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">19</span><span class="w"></span>
+<span class="w">    </span><span class="nt">news_commentary</span><span class="p">:</span><span class="w"></span>
+<span class="w">        </span><span class="nt">path_src</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">data/wmt/news-commentary-v11.de-en.en</span><span class="w"></span>
+<span class="w">        </span><span class="nt">path_tgt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">data/wmt/news-commentary-v11.de-en.de</span><span class="w"></span>
+<span class="w">        </span><span class="nt">transforms</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">sentencepiece</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">filtertoolong</span><span class="p p-Indicator">]</span><span class="w"></span>
+<span class="w">        </span><span class="nt">weight</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span><span class="w"></span>
+<span class="w">    </span><span class="nt">valid</span><span class="p">:</span><span class="w"></span>
+<span class="w">        </span><span class="nt">path_src</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">data/wmt/valid.en</span><span class="w"></span>
+<span class="w">        </span><span class="nt">path_tgt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">data/wmt/valid.de</span><span class="w"></span>
+<span class="w">        </span><span class="nt">transforms</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">sentencepiece</span><span class="p p-Indicator">]</span><span class="w"></span>
 
-<span class="c1">### Transform related opts:</span>
-<span class="c1">#### Subword</span>
-<span class="nt">src_subword_model</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">data/wmt/wmtende.model</span>
-<span class="nt">tgt_subword_model</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">data/wmt/wmtende.model</span>
-<span class="nt">src_subword_nbest</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
-<span class="nt">src_subword_alpha</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0.0</span>
-<span class="nt">tgt_subword_nbest</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
-<span class="nt">tgt_subword_alpha</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0.0</span>
-<span class="c1">#### Filter</span>
-<span class="nt">src_seq_length</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">150</span>
-<span class="nt">tgt_seq_length</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">150</span>
+<span class="c1">### Transform related opts:</span><span class="w"></span>
+<span class="c1">#### Subword</span><span class="w"></span>
+<span class="nt">src_subword_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">data/wmt/wmtende.model</span><span class="w"></span>
+<span class="nt">tgt_subword_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">data/wmt/wmtende.model</span><span class="w"></span>
+<span class="nt">src_subword_nbest</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span><span class="w"></span>
+<span class="nt">src_subword_alpha</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0</span><span class="w"></span>
+<span class="nt">tgt_subword_nbest</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span><span class="w"></span>
+<span class="nt">tgt_subword_alpha</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0</span><span class="w"></span>
+<span class="c1">#### Filter</span><span class="w"></span>
+<span class="nt">src_seq_length</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">150</span><span class="w"></span>
+<span class="nt">tgt_seq_length</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">150</span><span class="w"></span>
 
-<span class="c1"># silently ignore empty lines in the data</span>
-<span class="nt">skip_empty_level</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">silent</span>
+<span class="c1"># silently ignore empty lines in the data</span><span class="w"></span>
+<span class="nt">skip_empty_level</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">silent</span><span class="w"></span>
 </pre></div>
 </div>
 <p>Then we can execute the vocabulary building script. Let’s set <code class="docutils literal notranslate"><span class="pre">-n_sample</span></code> to <code class="docutils literal notranslate"><span class="pre">-1</span></code> to compute the vocabulary over the whole corpora:</p>
@@ -269,58 +270,58 @@
 <div class="section" id="step-2-train-the-model">
 <h2>Step 2: Train the model<a class="headerlink" href="#step-2-train-the-model" title="Permalink to this headline">¶</a></h2>
 <p>We need to add the following parameters to the YAML configuration:</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nn">...</span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nn">...</span><span class="w"></span>
 
-<span class="c1"># General opts</span>
-<span class="nt">save_model</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">data/wmt/run/model</span>
-<span class="nt">keep_checkpoint</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">50</span>
-<span class="nt">save_checkpoint_steps</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">5000</span>
-<span class="nt">average_decay</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0.0005</span>
-<span class="nt">seed</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1234</span>
-<span class="nt">report_every</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">100</span>
-<span class="nt">train_steps</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">100000</span>
-<span class="nt">valid_steps</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">5000</span>
+<span class="c1"># General opts</span><span class="w"></span>
+<span class="nt">save_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">data/wmt/run/model</span><span class="w"></span>
+<span class="nt">keep_checkpoint</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">50</span><span class="w"></span>
+<span class="nt">save_checkpoint_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5000</span><span class="w"></span>
+<span class="nt">average_decay</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0005</span><span class="w"></span>
+<span class="nt">seed</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1234</span><span class="w"></span>
+<span class="nt">report_every</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span><span class="w"></span>
+<span class="nt">train_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100000</span><span class="w"></span>
+<span class="nt">valid_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5000</span><span class="w"></span>
 
-<span class="c1"># Batching</span>
-<span class="nt">queue_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">10000</span>
-<span class="nt">bucket_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">32768</span>
-<span class="nt">world_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">2</span>
-<span class="nt">gpu_ranks</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">0</span><span class="p p-Indicator">,</span> <span class="nv">1</span><span class="p p-Indicator">]</span>
-<span class="nt">batch_type</span><span class="p">:</span> <span class="s">&quot;tokens&quot;</span>
-<span class="nt">batch_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">4096</span>
-<span class="nt">valid_batch_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">16</span>
-<span class="nt">batch_size_multiple</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
-<span class="nt">max_generator_batches</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-<span class="nt">accum_count</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">3</span><span class="p p-Indicator">]</span>
-<span class="nt">accum_steps</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">0</span><span class="p p-Indicator">]</span>
+<span class="c1"># Batching</span><span class="w"></span>
+<span class="nt">queue_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10000</span><span class="w"></span>
+<span class="nt">bucket_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">32768</span><span class="w"></span>
+<span class="nt">world_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span><span class="w"></span>
+<span class="nt">gpu_ranks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">1</span><span class="p p-Indicator">]</span><span class="w"></span>
+<span class="nt">batch_type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;tokens&quot;</span><span class="w"></span>
+<span class="nt">batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4096</span><span class="w"></span>
+<span class="nt">valid_batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">16</span><span class="w"></span>
+<span class="nt">batch_size_multiple</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span><span class="w"></span>
+<span class="nt">max_generator_batches</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span><span class="w"></span>
+<span class="nt">accum_count</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">3</span><span class="p p-Indicator">]</span><span class="w"></span>
+<span class="nt">accum_steps</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0</span><span class="p p-Indicator">]</span><span class="w"></span>
 
-<span class="c1"># Optimization</span>
-<span class="nt">model_dtype</span><span class="p">:</span> <span class="s">&quot;fp32&quot;</span>
-<span class="nt">optim</span><span class="p">:</span> <span class="s">&quot;adam&quot;</span>
-<span class="nt">learning_rate</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">2</span>
-<span class="nt">warmup_steps</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">8000</span>
-<span class="nt">decay_method</span><span class="p">:</span> <span class="s">&quot;noam&quot;</span>
-<span class="nt">adam_beta2</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0.998</span>
-<span class="nt">max_grad_norm</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-<span class="nt">label_smoothing</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0.1</span>
-<span class="nt">param_init</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-<span class="nt">param_init_glorot</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="nt">normalization</span><span class="p">:</span> <span class="s">&quot;tokens&quot;</span>
+<span class="c1"># Optimization</span><span class="w"></span>
+<span class="nt">model_dtype</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;fp32&quot;</span><span class="w"></span>
+<span class="nt">optim</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;adam&quot;</span><span class="w"></span>
+<span class="nt">learning_rate</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span><span class="w"></span>
+<span class="nt">warmup_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8000</span><span class="w"></span>
+<span class="nt">decay_method</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;noam&quot;</span><span class="w"></span>
+<span class="nt">adam_beta2</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.998</span><span class="w"></span>
+<span class="nt">max_grad_norm</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span><span class="w"></span>
+<span class="nt">label_smoothing</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1</span><span class="w"></span>
+<span class="nt">param_init</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span><span class="w"></span>
+<span class="nt">param_init_glorot</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w"></span>
+<span class="nt">normalization</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;tokens&quot;</span><span class="w"></span>
 
-<span class="c1"># Model</span>
-<span class="nt">encoder_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">transformer</span>
-<span class="nt">decoder_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">transformer</span>
-<span class="nt">enc_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">6</span>
-<span class="nt">dec_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">6</span>
-<span class="nt">heads</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">8</span>
-<span class="nt">rnn_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">512</span>
-<span class="nt">word_vec_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">512</span>
-<span class="nt">transformer_ff</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">2048</span>
-<span class="nt">dropout_steps</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">0</span><span class="p p-Indicator">]</span>
-<span class="nt">dropout</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">0.1</span><span class="p p-Indicator">]</span>
-<span class="nt">attention_dropout</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">0.1</span><span class="p p-Indicator">]</span>
-<span class="nt">share_decoder_embeddings</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="nt">share_embeddings</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="c1"># Model</span><span class="w"></span>
+<span class="nt">encoder_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">transformer</span><span class="w"></span>
+<span class="nt">decoder_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">transformer</span><span class="w"></span>
+<span class="nt">enc_layers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">6</span><span class="w"></span>
+<span class="nt">dec_layers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">6</span><span class="w"></span>
+<span class="nt">heads</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8</span><span class="w"></span>
+<span class="nt">rnn_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">512</span><span class="w"></span>
+<span class="nt">word_vec_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">512</span><span class="w"></span>
+<span class="nt">transformer_ff</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2048</span><span class="w"></span>
+<span class="nt">dropout_steps</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0</span><span class="p p-Indicator">]</span><span class="w"></span>
+<span class="nt">dropout</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0.1</span><span class="p p-Indicator">]</span><span class="w"></span>
+<span class="nt">attention_dropout</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0.1</span><span class="p p-Indicator">]</span><span class="w"></span>
+<span class="nt">share_decoder_embeddings</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w"></span>
+<span class="nt">share_embeddings</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w"></span>
 </pre></div>
 </div>
 </div>

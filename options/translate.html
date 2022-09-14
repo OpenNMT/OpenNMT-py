@@ -103,6 +103,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
@@ -233,7 +234,7 @@
                     <span class="p">[</span><span class="o">--</span><span class="n">phrase_table</span> <span class="n">PHRASE_TABLE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">log_file</span> <span class="n">LOG_FILE</span><span class="p">]</span>
                     <span class="p">[</span><span class="o">--</span><span class="n">log_file_level</span> <span class="p">{</span><span class="n">CRITICAL</span><span class="p">,</span><span class="n">ERROR</span><span class="p">,</span><span class="n">WARNING</span><span class="p">,</span><span class="n">INFO</span><span class="p">,</span><span class="n">DEBUG</span><span class="p">,</span><span class="n">NOTSET</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="mi">40</span><span class="p">,</span><span class="mi">30</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">0</span><span class="p">}]</span>
                     <span class="p">[</span><span class="o">--</span><span class="n">verbose</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">attn_debug</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">align_debug</span><span class="p">]</span>
-                    <span class="p">[</span><span class="o">--</span><span class="n">dump_beam</span> <span class="n">DUMP_BEAM</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">n_best</span> <span class="n">N_BEST</span><span class="p">]</span>
+                    <span class="p">[</span><span class="o">--</span><span class="n">dump_beam</span> <span class="n">DUMP_BEAM</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">n_best</span> <span class="n">N_BEST</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">with_score</span><span class="p">]</span>
                     <span class="p">[</span><span class="o">--</span><span class="n">batch_size</span> <span class="n">BATCH_SIZE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">batch_type</span> <span class="p">{</span><span class="n">sents</span><span class="p">,</span><span class="n">tokens</span><span class="p">}]</span>
                     <span class="p">[</span><span class="o">--</span><span class="n">gpu</span> <span class="n">GPU</span><span class="p">]</span>
 </pre></div>
@@ -452,6 +453,10 @@
 <dt><kbd>--n_best, -n_best</kbd></dt>
 <dd><p>If verbose is set, will output the n_best decoded sentences</p>
 <p>Default: 1</p>
+</dd>
+<dt><kbd>--with_score, -with_score</kbd></dt>
+<dd><p>add a tab separated score to the translation</p>
+<p>Default: False</p>
 </dd>
 </dl>
 </div>

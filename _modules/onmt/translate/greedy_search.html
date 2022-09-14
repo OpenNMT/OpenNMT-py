@@ -101,6 +101,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
@@ -470,7 +471,6 @@
         <span class="p">(</span><span class="n">fn_map_state</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory_lengths</span><span class="p">,</span>
             <span class="n">src_map</span><span class="p">)</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">GreedySearchLM</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span>
                 <span class="kc">None</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">,</span> <span class="n">src_map</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">target_prefix</span><span class="p">)</span>
-        <span class="n">src</span> <span class="o">=</span> <span class="n">fn_map_state</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">fn_map_state</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory_lengths</span><span class="p">,</span> <span class="n">src_map</span>
 </pre></div>

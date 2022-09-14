@@ -101,6 +101,7 @@
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
@@ -253,6 +254,13 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="FAQ.html#i-how-it-works">I. How it works?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="FAQ.html#ii-how-to-start-the-server-without-docker">II. How to start the server without Docker ?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="FAQ.html#iii-how-to-start-the-server-with-docker">III. How to start the server with Docker ?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="FAQ.html#iv-how-to-use-the-api">IV. How to use the API ?</a></li>
+</ul>
+</li>
 </ul>
 </div>
 <div class="toctree-wrapper compound">
@@ -313,14 +321,14 @@
 <li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Configuration">Configuration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Data">Data</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Vocab">Vocab</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/Filter">Transform/Filter</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/Subword/Common">Transform/Subword/Common</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/Subword/ONMTTOK">Transform/Subword/ONMTTOK</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/BART">Transform/BART</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/InferFeats">Transform/InferFeats</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/SwitchOut">Transform/SwitchOut</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/Token_Drop">Transform/Token_Drop</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/Token_Mask">Transform/Token_Mask</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/Filter">Transform/Filter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/BART">Transform/BART</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/Subword/Common">Transform/Subword/Common</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/Subword/ONMTTOK">Transform/Subword/ONMTTOK</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/InferFeats">Transform/InferFeats</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Reproducibility">Reproducibility</a></li>
 </ul>
 </li>
@@ -330,14 +338,14 @@
 <li class="toctree-l2"><a class="reference internal" href="options/train.html#Vocab">Vocab</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/train.html#Pruning">Pruning</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/train.html#Embeddings">Embeddings</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/Filter">Transform/Filter</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/Subword/Common">Transform/Subword/Common</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/Subword/ONMTTOK">Transform/Subword/ONMTTOK</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/BART">Transform/BART</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/InferFeats">Transform/InferFeats</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/SwitchOut">Transform/SwitchOut</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/Token_Drop">Transform/Token_Drop</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/Token_Mask">Transform/Token_Mask</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/Filter">Transform/Filter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/BART">Transform/BART</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/Subword/Common">Transform/Subword/Common</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/Subword/ONMTTOK">Transform/Subword/ONMTTOK</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/InferFeats">Transform/InferFeats</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/train.html#Model-Embeddings">Model-Embeddings</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/train.html#Model-Embedding Features">Model-Embedding Features</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/train.html#Model- Task">Model- Task</a></li>

@@ -102,6 +102,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul class="current">
@@ -228,56 +229,56 @@
 </pre></div>
 </div>
 <p>The YAML configuration for this example is the following:</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># save_data is where the necessary objects will be written</span>
-<span class="nt">save_data</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">OpenNMT-py-ggnn-example/run/example</span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># save_data is where the necessary objects will be written</span><span class="w"></span>
+<span class="nt">save_data</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OpenNMT-py-ggnn-example/run/example</span><span class="w"></span>
 
-<span class="c1"># Filter long examples</span>
-<span class="nt">src_seq_length</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1000</span>
-<span class="nt">tgt_seq_length</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">30</span>
+<span class="c1"># Filter long examples</span><span class="w"></span>
+<span class="nt">src_seq_length</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1000</span><span class="w"></span>
+<span class="nt">tgt_seq_length</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">30</span><span class="w"></span>
 
-<span class="c1"># Data definition</span>
-<span class="nt">data</span><span class="p">:</span>
-    <span class="nt">cnndm</span><span class="p">:</span>
-        <span class="nt">path_src</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">OpenNMT-py-ggnn-example/src-train.txt</span>
-        <span class="nt">path_tgt</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">OpenNMT-py-ggnn-example/tgt-train.txt</span>
-        <span class="nt">transforms</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">filtertoolong</span><span class="p p-Indicator">]</span>
-        <span class="nt">weight</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
-    <span class="nt">valid</span><span class="p">:</span>
-        <span class="nt">path_src</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">OpenNMT-py-ggnn-example/src-val.txt</span>
-        <span class="nt">path_tgt</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">OpenNMT-py-ggnn-example/tgt-val.txt</span>
+<span class="c1"># Data definition</span><span class="w"></span>
+<span class="nt">data</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="nt">cnndm</span><span class="p">:</span><span class="w"></span>
+<span class="w">        </span><span class="nt">path_src</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OpenNMT-py-ggnn-example/src-train.txt</span><span class="w"></span>
+<span class="w">        </span><span class="nt">path_tgt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OpenNMT-py-ggnn-example/tgt-train.txt</span><span class="w"></span>
+<span class="w">        </span><span class="nt">transforms</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">filtertoolong</span><span class="p p-Indicator">]</span><span class="w"></span>
+<span class="w">        </span><span class="nt">weight</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span><span class="w"></span>
+<span class="w">    </span><span class="nt">valid</span><span class="p">:</span><span class="w"></span>
+<span class="w">        </span><span class="nt">path_src</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OpenNMT-py-ggnn-example/src-val.txt</span><span class="w"></span>
+<span class="w">        </span><span class="nt">path_tgt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OpenNMT-py-ggnn-example/tgt-val.txt</span><span class="w"></span>
 
-<span class="nt">src_vocab</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">OpenNMT-py-ggnn-example/srcvocab.txt</span>
-<span class="nt">tgt_vocab</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">OpenNMT-py-ggnn-example/tgtvocab.txt</span>
+<span class="nt">src_vocab</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OpenNMT-py-ggnn-example/srcvocab.txt</span><span class="w"></span>
+<span class="nt">tgt_vocab</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OpenNMT-py-ggnn-example/tgtvocab.txt</span><span class="w"></span>
 
-<span class="nt">save_model</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">OpenNMT-py-ggnn-example/run/model</span>
+<span class="nt">save_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OpenNMT-py-ggnn-example/run/model</span><span class="w"></span>
 
-<span class="c1"># Model options</span>
-<span class="nt">train_steps</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">10000</span>
-<span class="nt">save_checkpoint_steps</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">5000</span>
-<span class="nt">encoder_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">ggnn</span>
-<span class="nt">layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">2</span>
-<span class="nt">decoder_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">rnn</span>
-<span class="nt">learning_rate</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0.1</span>
-<span class="nt">start_decay_steps</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">5000</span>
-<span class="nt">learning_rate_decay</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0.8</span>
-<span class="nt">global_attention</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">general</span>
-<span class="nt">batch_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">32</span>
-<span class="c1"># src_ggnn_size is larger than vocab plus features to allow one-hot settings</span>
-<span class="nt">src_ggnn_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">100</span>
-<span class="c1"># src_word_vec_size less than rnn_size allows rnn learning during GGNN steps</span>
-<span class="nt">src_word_vec_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">16</span>
-<span class="c1"># Increase tgt_word_vec_size, rnn_size, and state_dim together</span>
-<span class="c1"># to provide larger GGNN embeddings and larger decoder RNN</span>
-<span class="nt">tgt_word_vec_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">64</span>
-<span class="nt">rnn_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">64</span>
-<span class="nt">state_dim</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">64</span>
-<span class="nt">bridge</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="nt">gpu_ranks</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-<span class="nt">n_edge_types</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">9</span>
-<span class="c1"># Increasing n_steps slows model computation but allows information</span>
-<span class="c1"># to be aggregated over more node hops</span>
-<span class="nt">n_steps</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">5</span>
-<span class="nt">n_node</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">70</span>
+<span class="c1"># Model options</span><span class="w"></span>
+<span class="nt">train_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10000</span><span class="w"></span>
+<span class="nt">save_checkpoint_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5000</span><span class="w"></span>
+<span class="nt">encoder_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ggnn</span><span class="w"></span>
+<span class="nt">layers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span><span class="w"></span>
+<span class="nt">decoder_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rnn</span><span class="w"></span>
+<span class="nt">learning_rate</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1</span><span class="w"></span>
+<span class="nt">start_decay_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5000</span><span class="w"></span>
+<span class="nt">learning_rate_decay</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.8</span><span class="w"></span>
+<span class="nt">global_attention</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">general</span><span class="w"></span>
+<span class="nt">batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">32</span><span class="w"></span>
+<span class="c1"># src_ggnn_size is larger than vocab plus features to allow one-hot settings</span><span class="w"></span>
+<span class="nt">src_ggnn_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span><span class="w"></span>
+<span class="c1"># src_word_vec_size less than rnn_size allows rnn learning during GGNN steps</span><span class="w"></span>
+<span class="nt">src_word_vec_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">16</span><span class="w"></span>
+<span class="c1"># Increase tgt_word_vec_size, rnn_size, and state_dim together</span><span class="w"></span>
+<span class="c1"># to provide larger GGNN embeddings and larger decoder RNN</span><span class="w"></span>
+<span class="nt">tgt_word_vec_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">64</span><span class="w"></span>
+<span class="nt">rnn_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">64</span><span class="w"></span>
+<span class="nt">state_dim</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">64</span><span class="w"></span>
+<span class="nt">bridge</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w"></span>
+<span class="nt">gpu_ranks</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span><span class="w"></span>
+<span class="nt">n_edge_types</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">9</span><span class="w"></span>
+<span class="c1"># Increasing n_steps slows model computation but allows information</span><span class="w"></span>
+<span class="c1"># to be aggregated over more node hops</span><span class="w"></span>
+<span class="nt">n_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span><span class="w"></span>
+<span class="nt">n_node</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">70</span><span class="w"></span>
 </pre></div>
 </div>
 <ol class="simple">

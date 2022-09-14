@@ -101,6 +101,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
@@ -312,7 +313,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">sort_key</span> <span class="o">=</span> <span class="n">sort_key</span>
         <span class="n">can_copy</span> <span class="o">=</span> <span class="s1">&#39;src_map&#39;</span> <span class="ow">in</span> <span class="n">fields</span> <span class="ow">and</span> <span class="s1">&#39;alignment&#39;</span> <span class="ow">in</span> <span class="n">fields</span>
 
-        <span class="n">read_iters</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">dat</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">feats</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span><span class="p">,</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">dat</span><span class="p">,</span> <span class="n">feats</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">readers</span><span class="p">,</span> <span class="n">data</span><span class="p">)]</span>
+        <span class="n">read_iters</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">dat</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">feats</span><span class="p">)</span>
+                      <span class="k">for</span> <span class="n">r</span><span class="p">,</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">dat</span><span class="p">,</span> <span class="n">feats</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">readers</span><span class="p">,</span> <span class="n">data</span><span class="p">)]</span>
 
         <span class="c1"># self.src_vocabs is used in collapse_copy_scores and Translator.py</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">src_vocabs</span> <span class="o">=</span> <span class="p">[]</span>
@@ -358,8 +360,62 @@
         <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">field</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">readers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">field</span><span class="p">[</span><span class="s2">&quot;reader&quot;</span><span class="p">])</span>
-                <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">name</span><span class="p">,</span> <span class="n">field</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">],</span> <span class="n">field</span><span class="p">[</span><span class="s2">&quot;features&quot;</span><span class="p">]))</span>
+                <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">name</span><span class="p">,</span> <span class="n">field</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">],</span> <span class="n">field</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;features&quot;</span><span class="p">,</span> <span class="p">{})))</span>
         <span class="k">return</span> <span class="n">readers</span><span class="p">,</span> <span class="n">data</span></div>
+
+
+<span class="k">class</span> <span class="nc">DynamicDataset</span><span class="p">(</span><span class="n">Dataset</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">sort_key</span><span class="p">,</span> <span class="n">filter_pred</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sort_key</span> <span class="o">=</span> <span class="n">sort_key</span>
+        <span class="n">can_copy</span> <span class="o">=</span> <span class="s1">&#39;src_map&#39;</span> <span class="ow">in</span> <span class="n">fields</span> <span class="ow">and</span> <span class="s1">&#39;alignment&#39;</span> <span class="ow">in</span> <span class="n">fields</span>
+
+        <span class="c1"># self.src_vocabs is used in collapse_copy_scores and Translator.py</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">src_vocabs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">examples</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">ex_dict</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">can_copy</span><span class="p">:</span>
+                <span class="n">src_field</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">]</span>
+                <span class="n">tgt_field</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span>
+                <span class="c1"># this assumes src_field and tgt_field are both text</span>
+                <span class="n">ex_dict</span> <span class="o">=</span> <span class="n">_dynamic_dict</span><span class="p">(</span>
+                    <span class="n">ex_dict</span><span class="p">,</span> <span class="n">src_field</span><span class="o">.</span><span class="n">base_field</span><span class="p">,</span> <span class="n">tgt_field</span><span class="o">.</span><span class="n">base_field</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">src_vocabs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ex_dict</span><span class="p">[</span><span class="s2">&quot;src_ex_vocab&quot;</span><span class="p">])</span>
+            <span class="n">ex_fields</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="p">[(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)]</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">fields</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span>
+                         <span class="n">k</span> <span class="ow">in</span> <span class="n">ex_dict</span><span class="p">}</span>
+            <span class="n">ex</span> <span class="o">=</span> <span class="n">Example</span><span class="o">.</span><span class="n">fromdict</span><span class="p">(</span><span class="n">ex_dict</span><span class="p">,</span> <span class="n">ex_fields</span><span class="p">)</span>
+            <span class="n">examples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span>
+
+        <span class="c1"># fields needs to have only keys that examples have as attrs</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">nf_list</span> <span class="ow">in</span> <span class="n">ex_fields</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">nf_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+            <span class="n">fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nf_list</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">Dataset</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">examples</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">filter_pred</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
+        <span class="c1"># avoid infinite recursion when fields isn&#39;t defined</span>
+        <span class="k">if</span> <span class="s1">&#39;fields&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span>
+        <span class="k">if</span> <span class="n">attr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">examples</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span>
+
+    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">remove_fields</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">remove_fields</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fields</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">config</span><span class="p">(</span><span class="n">fields</span><span class="p">):</span>
+        <span class="n">readers</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">field</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">readers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">field</span><span class="p">[</span><span class="s2">&quot;reader&quot;</span><span class="p">])</span>
+                <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">name</span><span class="p">,</span> <span class="n">field</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">],</span> <span class="n">field</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;features&quot;</span><span class="p">,</span> <span class="p">{})))</span>
+        <span class="k">return</span> <span class="n">readers</span><span class="p">,</span> <span class="n">data</span>
 </pre></div>
 
            </div>

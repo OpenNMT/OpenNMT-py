@@ -103,6 +103,7 @@
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
@@ -207,7 +208,7 @@
 <h2>Models<a class="headerlink" href="#models" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.translate.translation_server.ServerModel">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.translate.translation_server.</code><code class="sig-name descname">ServerModel</code><span class="sig-paren">(</span><em class="sig-param">opt</em>, <em class="sig-param">model_id</em>, <em class="sig-param">preprocess_opt=None</em>, <em class="sig-param">tokenizer_opt=None</em>, <em class="sig-param">postprocess_opt=None</em>, <em class="sig-param">custom_opt=None</em>, <em class="sig-param">load=False</em>, <em class="sig-param">timeout=-1</em>, <em class="sig-param">on_timeout='to_cpu'</em>, <em class="sig-param">model_root='./'</em>, <em class="sig-param">ct2_model=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.translate.translation_server.</code><code class="sig-name descname">ServerModel</code><span class="sig-paren">(</span><em class="sig-param">opt</em>, <em class="sig-param">model_id</em>, <em class="sig-param">preprocess_opt=None</em>, <em class="sig-param">tokenizer_opt=None</em>, <em class="sig-param">postprocess_opt=None</em>, <em class="sig-param">custom_opt=None</em>, <em class="sig-param">load=False</em>, <em class="sig-param">timeout=-1</em>, <em class="sig-param">on_timeout='to_cpu'</em>, <em class="sig-param">model_root='./'</em>, <em class="sig-param">ct2_model=None</em>, <em class="sig-param">ct2_translator_args=None</em>, <em class="sig-param">ct2_translate_batch_args=None</em>, <em class="sig-param">features_opt=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Wrap a model with server functionality.</p>
 <dl class="field-list simple">
@@ -405,6 +406,12 @@ align (str): The alignment correspand to detokenized src/tgt</p>
 <dt id="onmt.translate.translation_server.ServerModel.tokenizer_marker">
 <code class="sig-name descname">tokenizer_marker</code><span class="sig-paren">(</span><em class="sig-param">side='src'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel.tokenizer_marker"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel.tokenizer_marker" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return marker used in <cite>side</cite> tokenizer.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="onmt.translate.translation_server.ServerModel.transform_feats">
+<code class="sig-name descname">transform_feats</code><span class="sig-paren">(</span><em class="sig-param">raw_src</em>, <em class="sig-param">tok_src</em>, <em class="sig-param">feats</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel.transform_feats"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel.transform_feats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply InferFeatsTransform to features</p>
 </dd></dl>
 
 </dd></dl>

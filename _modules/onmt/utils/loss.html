@@ -101,6 +101,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
@@ -408,7 +409,10 @@
         <span class="n">non_padding</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">ne</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">padding_idx</span><span class="p">)</span>
         <span class="n">num_correct</span> <span class="o">=</span> <span class="n">pred</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">target</span><span class="p">)</span><span class="o">.</span><span class="n">masked_select</span><span class="p">(</span><span class="n">non_padding</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
         <span class="n">num_non_padding</span> <span class="o">=</span> <span class="n">non_padding</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-        <span class="k">return</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">Statistics</span><span class="p">(</span><span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span> <span class="n">num_non_padding</span><span class="p">,</span> <span class="n">num_correct</span><span class="p">)</span>
+        <span class="c1"># in the case criterion reduction is None then we need</span>
+        <span class="c1"># to sum the loss of each sentence in the batch</span>
+        <span class="k">return</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">Statistics</span><span class="p">(</span><span class="n">loss</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
+                                     <span class="n">num_non_padding</span><span class="p">,</span> <span class="n">num_correct</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_bottle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_v</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">_v</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">_v</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
@@ -649,8 +653,10 @@
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="ow">and</span> <span class="n">state</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
                 <span class="n">variables</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">shard_size</span><span class="p">),</span>
                                      <span class="p">[</span><span class="n">v_chunk</span><span class="o">.</span><span class="n">grad</span> <span class="k">for</span> <span class="n">v_chunk</span> <span class="ow">in</span> <span class="n">v_split</span><span class="p">]))</span>
-        <span class="n">inputs</span><span class="p">,</span> <span class="n">grads</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">variables</span><span class="p">)</span>
-        <span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">grads</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">variables</span><span class="p">:</span>
+            <span class="n">inputs</span><span class="p">,</span> <span class="n">grads</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">variables</span><span class="p">)</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">grads</span><span class="p">)</span>
 </pre></div>
 
            </div>

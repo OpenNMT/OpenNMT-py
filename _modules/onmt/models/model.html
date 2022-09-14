@@ -101,6 +101,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
@@ -232,7 +233,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 
-    <span class="k">def</span> <span class="nf">update_dropout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dropout</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">update_dropout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">attention_dropout</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 
     <span class="k">def</span> <span class="nf">count_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="nb">print</span><span class="p">):</span>
@@ -265,9 +266,9 @@
                                       <span class="n">with_align</span><span class="o">=</span><span class="n">with_align</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">dec_out</span><span class="p">,</span> <span class="n">attns</span></div>
 
-    <span class="k">def</span> <span class="nf">update_dropout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dropout</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="o">.</span><span class="n">update_dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">update_dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">update_dropout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">attention_dropout</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="o">.</span><span class="n">update_dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">,</span> <span class="n">attention_dropout</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">update_dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">,</span> <span class="n">attention_dropout</span><span class="p">)</span>
 
 <div class="viewcode-block" id="NMTModel.count_parameters"><a class="viewcode-back" href="../../../onmt.html#onmt.models.NMTModel.count_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">count_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="nb">print</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Count number of parameters in model (&amp; print with `log` callback).</span>
@@ -336,8 +337,8 @@
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">dec_out</span><span class="p">,</span> <span class="n">attns</span>
 
-    <span class="k">def</span> <span class="nf">update_dropout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dropout</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">update_dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">update_dropout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">attention_dropout</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">update_dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">,</span> <span class="n">attention_dropout</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">count_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="nb">print</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Count number of parameters in model (&amp; print with `log` callback).</span>

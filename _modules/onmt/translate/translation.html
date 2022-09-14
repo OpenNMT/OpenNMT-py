@@ -101,6 +101,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
@@ -261,7 +262,7 @@
 
     <span class="k">def</span> <span class="nf">from_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">translation_batch</span><span class="p">):</span>
         <span class="n">batch</span> <span class="o">=</span> <span class="n">translation_batch</span><span class="p">[</span><span class="s2">&quot;batch&quot;</span><span class="p">]</span>
-        <span class="k">assert</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">translation_batch</span><span class="p">[</span><span class="s2">&quot;gold_score&quot;</span><span class="p">])</span> <span class="o">==</span>
+        <span class="k">assert</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">translation_batch</span><span class="p">[</span><span class="s2">&quot;gold_score&quot;</span><span class="p">])</span> <span class="o">==</span>
                <span class="nb">len</span><span class="p">(</span><span class="n">translation_batch</span><span class="p">[</span><span class="s2">&quot;predictions&quot;</span><span class="p">]))</span>
         <span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">batch_size</span>
 

@@ -102,6 +102,7 @@
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
@@ -275,14 +276,16 @@ Only valid for transformer decoder.</p></li>
 <h2>Trainer<a class="headerlink" href="#trainer" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.Trainer">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.</code><code class="sig-name descname">Trainer</code><span class="sig-paren">(</span><em class="sig-param">model, train_loss, valid_loss, optim, trunc_size=0, shard_size=32, norm_method='sents', accum_count=[1], accum_steps=[0], n_gpu=1, gpu_rank=1, gpu_verbose_level=0, report_manager=None, with_align=False, model_saver=None, average_decay=0, average_every=1, model_dtype='fp32', earlystopper=None, dropout=[0.3], dropout_steps=[0]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.</code><code class="sig-name descname">Trainer</code><span class="sig-paren">(</span><em class="sig-param">model, train_loss, valid_loss, scoring_preparator, train_scorers, valid_scorers, optim, trunc_size=0, shard_size=32, norm_method='sents', accum_count=[1], accum_steps=[0], n_gpu=1, gpu_rank=1, gpu_verbose_level=0, train_eval_steps=200, report_manager=None, with_align=False, model_saver=None, average_decay=0, average_every=1, model_dtype='fp32', earlystopper=None, dropout=[0.3], attention_dropout=[0.1], dropout_steps=[0]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Class that controls the training process.</p>
+<p>Class that controls the training process.
+:param model: translation model</p>
+<blockquote>
+<div><p>to train</p>
+</div></blockquote>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>model</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.models.model.NMTModel</span></code>) – translation model
-to train</p></li>
 <li><p><strong>train_loss</strong> (<a class="reference internal" href="#onmt.utils.loss.LossComputeBase" title="onmt.utils.loss.LossComputeBase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.utils.loss.LossComputeBase</span></code></a>) – training loss computation</p></li>
 <li><p><strong>valid_loss</strong> (<a class="reference internal" href="#onmt.utils.loss.LossComputeBase" title="onmt.utils.loss.LossComputeBase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.utils.loss.LossComputeBase</span></code></a>) – training loss computation</p></li>
 <li><p><strong>optim</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.utils.optimizers.Optimizer</span></code>) – the optimizer responsible for update</p></li>
@@ -322,6 +325,12 @@ iterations.</p></li>
 </dd></dl>
 
 <dl class="method">
+<dt id="onmt.Trainer.training_eval_handler">
+<code class="sig-name descname">training_eval_handler</code><span class="sig-paren">(</span><em class="sig-param">scorer</em>, <em class="sig-param">batch</em>, <em class="sig-param">mode='train'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer.training_eval_handler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer.training_eval_handler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Trigger metrics calculations</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="onmt.Trainer.validate">
 <code class="sig-name descname">validate</code><span class="sig-paren">(</span><em class="sig-param">valid_iter</em>, <em class="sig-param">moving_average=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer.validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer.validate" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="simple">
@@ -342,7 +351,7 @@ iterations.</p></li>
 
 <dl class="class">
 <dt id="onmt.utils.Statistics">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.utils.</code><code class="sig-name descname">Statistics</code><span class="sig-paren">(</span><em class="sig-param">loss=0</em>, <em class="sig-param">n_words=0</em>, <em class="sig-param">n_correct=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/statistics.html#Statistics"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.Statistics" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.utils.</code><code class="sig-name descname">Statistics</code><span class="sig-paren">(</span><em class="sig-param">loss=0</em>, <em class="sig-param">n_words=0</em>, <em class="sig-param">n_correct=0</em>, <em class="sig-param">computed_metrics={}</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/statistics.html#Statistics"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.Statistics" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Accumulator for loss statistics.
 Currently calculates:</p>

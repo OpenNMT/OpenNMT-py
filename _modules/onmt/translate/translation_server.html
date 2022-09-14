@@ -101,6 +101,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
@@ -210,6 +211,8 @@
 
 <span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">islice</span><span class="p">,</span> <span class="n">zip_longest</span>
 <span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">Namespace</span>
 
 <span class="kn">from</span> <span class="nn">onmt.constants</span> <span class="kn">import</span> <span class="n">DefaultTokens</span>
 <span class="kn">from</span> <span class="nn">onmt.utils.logging</span> <span class="kn">import</span> <span class="n">init_logger</span>
@@ -218,6 +221,7 @@
 <span class="kn">from</span> <span class="nn">onmt.utils.alignment</span> <span class="kn">import</span> <span class="n">to_word_align</span>
 <span class="kn">from</span> <span class="nn">onmt.utils.parse</span> <span class="kn">import</span> <span class="n">ArgumentParser</span>
 <span class="kn">from</span> <span class="nn">onmt.translate.translator</span> <span class="kn">import</span> <span class="n">build_translator</span>
+<span class="kn">from</span> <span class="nn">onmt.transforms.features</span> <span class="kn">import</span> <span class="n">InferFeatsTransform</span>
 
 
 <span class="k">def</span> <span class="nf">critical</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
@@ -276,19 +280,14 @@
 <span class="sd">    reproduce the onmt.translate.translator API.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_path</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">device_index</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span>
-                 <span class="n">beam_size</span><span class="p">,</span> <span class="n">n_best</span><span class="p">,</span> <span class="n">target_prefix</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">preload</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_path</span><span class="p">,</span> <span class="n">ct2_translator_args</span><span class="p">,</span>
+                 <span class="n">ct2_translate_batch_args</span><span class="p">,</span> <span class="n">target_prefix</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">preload</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="kn">import</span> <span class="nn">ctranslate2</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">translator</span> <span class="o">=</span> <span class="n">ctranslate2</span><span class="o">.</span><span class="n">Translator</span><span class="p">(</span>
             <span class="n">model_path</span><span class="p">,</span>
-            <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
-            <span class="n">device_index</span><span class="o">=</span><span class="n">device_index</span><span class="p">,</span>
-            <span class="n">inter_threads</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-            <span class="n">intra_threads</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-            <span class="n">compute_type</span><span class="o">=</span><span class="s2">&quot;default&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch_size</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span> <span class="o">=</span> <span class="n">beam_size</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">n_best</span> <span class="o">=</span> <span class="n">n_best</span>
+            <span class="o">**</span><span class="n">ct2_translator_args</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ct2_translate_batch_args</span> <span class="o">=</span> <span class="n">ct2_translate_batch_args</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">target_prefix</span> <span class="o">=</span> <span class="n">target_prefix</span>
         <span class="k">if</span> <span class="n">preload</span><span class="p">:</span>
             <span class="c1"># perform a first request to initialize everything</span>
@@ -298,17 +297,57 @@
             <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">unload_model</span><span class="p">(</span><span class="n">to_cpu</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">translate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">texts_to_translate</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">tgt</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">convert_onmt_to_ct2_opts</span><span class="p">(</span><span class="n">ct2_translator_args</span><span class="p">,</span>
+                                 <span class="n">ct2_translate_batch_args</span><span class="p">,</span> <span class="n">opt</span><span class="p">):</span>
+
+        <span class="k">def</span> <span class="nf">setdefault_if_exists_must_match</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">obj</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="n">value</span> <span class="o">==</span> <span class="n">obj</span><span class="p">[</span><span class="n">name</span><span class="p">],</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> is different in&quot;</span>\
+                    <span class="s2">&quot; OpenNMT-py config and in CTranslate2 config&quot;</span>\
+                    <span class="sa">f</span><span class="s2">&quot; (</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2"> vs </span><span class="si">{</span><span class="n">obj</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">obj</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+        <span class="n">default_for_translator</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;inter_threads&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">&quot;intra_threads&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">get_num_threads</span><span class="p">(),</span>
+            <span class="s2">&quot;compute_type&quot;</span><span class="p">:</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">default_for_translator</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">ct2_translator_args</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+        <span class="n">onmt_for_translator</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;device&quot;</span><span class="p">:</span> <span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">cuda</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;device_index&quot;</span><span class="p">:</span> <span class="n">opt</span><span class="o">.</span><span class="n">gpu</span> <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">cuda</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">onmt_for_translator</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">setdefault_if_exists_must_match</span><span class="p">(</span>
+                <span class="n">ct2_translator_args</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+        <span class="n">onmt_for_translate_batch_enforce</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;beam_size&quot;</span><span class="p">:</span> <span class="n">opt</span><span class="o">.</span><span class="n">beam_size</span><span class="p">,</span>
+            <span class="s2">&quot;max_batch_size&quot;</span><span class="p">:</span> <span class="n">opt</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span>
+            <span class="s2">&quot;num_hypotheses&quot;</span><span class="p">:</span> <span class="n">opt</span><span class="o">.</span><span class="n">n_best</span><span class="p">,</span>
+            <span class="s2">&quot;max_decoding_length&quot;</span><span class="p">:</span> <span class="n">opt</span><span class="o">.</span><span class="n">max_length</span><span class="p">,</span>
+            <span class="s2">&quot;min_decoding_length&quot;</span><span class="p">:</span> <span class="n">opt</span><span class="o">.</span><span class="n">min_length</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">onmt_for_translate_batch_enforce</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">setdefault_if_exists_must_match</span><span class="p">(</span>
+                <span class="n">ct2_translate_batch_args</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">translate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">texts_to_translate</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+                  <span class="n">tgt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">src_feats</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="p">(</span><span class="n">src_feats</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">src_feats</span> <span class="o">==</span> <span class="p">{}),</span> \
+            <span class="s2">&quot;CTranslate2 does not support source features&quot;</span>
         <span class="n">batch</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">texts_to_translate</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">tgt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">tgt</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">tgt</span><span class="p">]</span>
         <span class="n">preds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">translate_batch</span><span class="p">(</span>
             <span class="n">batch</span><span class="p">,</span>
             <span class="n">target_prefix</span><span class="o">=</span><span class="n">tgt</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_prefix</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="n">max_batch_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span>
-            <span class="n">beam_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span><span class="p">,</span>
-            <span class="n">num_hypotheses</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_best</span><span class="p">,</span>
             <span class="n">return_scores</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">ct2_translate_batch_args</span>
         <span class="p">)</span>
         <span class="n">scores</span> <span class="o">=</span> <span class="p">[[</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;score&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">ex</span><span class="p">]</span> <span class="k">for</span> <span class="n">ex</span> <span class="ow">in</span> <span class="n">preds</span><span class="p">]</span>
         <span class="n">predictions</span> <span class="o">=</span> <span class="p">[[</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;tokens&quot;</span><span class="p">])</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">ex</span><span class="p">]</span>
@@ -351,7 +390,12 @@
                       <span class="s1">&#39;custom_opt&#39;</span><span class="p">:</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;custom_opt&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
                       <span class="s1">&#39;on_timeout&#39;</span><span class="p">:</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;on_timeout&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
                       <span class="s1">&#39;model_root&#39;</span><span class="p">:</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;model_root&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">models_root</span><span class="p">),</span>
-                      <span class="s1">&#39;ct2_model&#39;</span><span class="p">:</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ct2_model&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                      <span class="s1">&#39;ct2_model&#39;</span><span class="p">:</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ct2_model&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+                      <span class="s1">&#39;ct2_translator_args&#39;</span><span class="p">:</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ct2_translator_args&#39;</span><span class="p">,</span>
+                                                      <span class="p">{}),</span>
+                      <span class="s1">&#39;ct2_translate_batch_args&#39;</span><span class="p">:</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                          <span class="s1">&#39;ct2_translate_batch_args&#39;</span><span class="p">,</span> <span class="p">{}),</span>
+                      <span class="s1">&#39;features_opt&#39;</span><span class="p">:</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;features&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
                       <span class="p">}</span>
             <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">}</span>
             <span class="n">model_id</span> <span class="o">=</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
@@ -458,7 +502,9 @@
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">model_id</span><span class="p">,</span> <span class="n">preprocess_opt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tokenizer_opt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">postprocess_opt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_opt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">load</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
-                 <span class="n">on_timeout</span><span class="o">=</span><span class="s2">&quot;to_cpu&quot;</span><span class="p">,</span> <span class="n">model_root</span><span class="o">=</span><span class="s2">&quot;./&quot;</span><span class="p">,</span> <span class="n">ct2_model</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+                 <span class="n">on_timeout</span><span class="o">=</span><span class="s2">&quot;to_cpu&quot;</span><span class="p">,</span> <span class="n">model_root</span><span class="o">=</span><span class="s2">&quot;./&quot;</span><span class="p">,</span> <span class="n">ct2_model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">ct2_translator_args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ct2_translate_batch_args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">features_opt</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model_root</span> <span class="o">=</span> <span class="n">model_root</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">opt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_opt</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">custom_opt</span> <span class="o">=</span> <span class="n">custom_opt</span>
@@ -466,16 +512,20 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">model_id</span> <span class="o">=</span> <span class="n">model_id</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">preprocess_opt</span> <span class="o">=</span> <span class="n">preprocess_opt</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tokenizers_opt</span> <span class="o">=</span> <span class="n">tokenizer_opt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">features_opt</span> <span class="o">=</span> <span class="n">features_opt</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">postprocess_opt</span> <span class="o">=</span> <span class="n">postprocess_opt</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">on_timeout</span> <span class="o">=</span> <span class="n">on_timeout</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">ct2_model</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">model_root</span><span class="p">,</span> <span class="n">ct2_model</span><span class="p">)</span> \
             <span class="k">if</span> <span class="n">ct2_model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ct2_translator_args</span> <span class="o">=</span> <span class="n">ct2_translator_args</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ct2_translate_batch_args</span> <span class="o">=</span> <span class="n">ct2_translate_batch_args</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">unload_timer</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">user_opt</span> <span class="o">=</span> <span class="n">opt</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tokenizers</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">feats_transform</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">log_file</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">log_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">model_root</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">log_file</span><span class="p">)</span>
@@ -517,6 +567,10 @@
                     <span class="s1">&#39;src&#39;</span><span class="p">:</span> <span class="n">tokenizer</span><span class="p">,</span>
                     <span class="s1">&#39;tgt&#39;</span><span class="p">:</span> <span class="n">tokenizer</span>
                 <span class="p">}</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">features_opt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">feats_transform</span> <span class="o">=</span> <span class="n">InferFeatsTransform</span><span class="p">(</span>
+                <span class="n">Namespace</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">features_opt</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">postprocess_opt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading postprocessor&quot;</span><span class="p">)</span>
@@ -581,13 +635,13 @@
 
         <span class="k">try</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ct2_model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">CTranslate2Translator</span><span class="o">.</span><span class="n">convert_onmt_to_ct2_opts</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">ct2_translator_args</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ct2_translate_batch_args</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">translator</span> <span class="o">=</span> <span class="n">CTranslate2Translator</span><span class="p">(</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">ct2_model</span><span class="p">,</span>
-                    <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">cuda</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span><span class="p">,</span>
-                    <span class="n">device_index</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">gpu</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">cuda</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
-                    <span class="n">batch_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span>
-                    <span class="n">beam_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">beam_size</span><span class="p">,</span>
-                    <span class="n">n_best</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">n_best</span><span class="p">,</span>
+                    <span class="n">ct2_translator_args</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ct2_translator_args</span><span class="p">,</span>
+                    <span class="n">ct2_translate_batch_args</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ct2_translate_batch_args</span><span class="p">,</span>
                     <span class="n">target_prefix</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">tgt_prefix</span><span class="p">,</span>
                     <span class="n">preload</span><span class="o">=</span><span class="n">preload</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
@@ -654,21 +708,27 @@
             <span class="c1"># every segment becomes a dict for flexibility purposes</span>
             <span class="n">seg_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maybe_preprocess</span><span class="p">(</span><span class="n">inp</span><span class="p">)</span>
             <span class="n">all_preprocessed</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">seg_dict</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">seg</span><span class="p">,</span> <span class="n">ref</span> <span class="ow">in</span> <span class="n">zip_longest</span><span class="p">(</span><span class="n">seg_dict</span><span class="p">[</span><span class="s2">&quot;seg&quot;</span><span class="p">],</span> <span class="n">seg_dict</span><span class="p">[</span><span class="s2">&quot;ref&quot;</span><span class="p">]):</span>
+            <span class="k">for</span> <span class="n">seg</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="n">feats</span> <span class="ow">in</span> <span class="n">zip_longest</span><span class="p">(</span>
+                    <span class="n">seg_dict</span><span class="p">[</span><span class="s2">&quot;seg&quot;</span><span class="p">],</span> <span class="n">seg_dict</span><span class="p">[</span><span class="s2">&quot;ref&quot;</span><span class="p">],</span>
+                    <span class="n">seg_dict</span><span class="p">[</span><span class="s2">&quot;src_feats&quot;</span><span class="p">]):</span>
                 <span class="n">tok</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maybe_tokenize</span><span class="p">(</span><span class="n">seg</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">ref</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maybe_tokenize</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">&#39;tgt&#39;</span><span class="p">)</span>
-                <span class="n">texts</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">tok</span><span class="p">,</span> <span class="n">ref</span><span class="p">))</span>
+                <span class="n">inferred_feats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform_feats</span><span class="p">(</span><span class="n">seg</span><span class="p">,</span> <span class="n">tok</span><span class="p">,</span> <span class="n">feats</span><span class="p">)</span>
+                <span class="n">texts</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">tok</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="n">inferred_feats</span><span class="p">))</span>
             <span class="n">tail_spaces</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">whitespaces_after</span><span class="p">)</span>
 
         <span class="n">empty_indices</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">texts_to_translate</span><span class="p">,</span> <span class="n">texts_ref</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">tok</span><span class="p">,</span> <span class="n">ref_tok</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">texts</span><span class="p">):</span>
+        <span class="n">texts_features</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">tok</span><span class="p">,</span> <span class="n">ref_tok</span><span class="p">,</span> <span class="n">feats</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">texts</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">tok</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
                 <span class="n">empty_indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">texts_to_translate</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tok</span><span class="p">)</span>
                 <span class="n">texts_ref</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ref_tok</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">feat_name</span><span class="p">,</span> <span class="n">feat_values</span> <span class="ow">in</span> <span class="n">feats</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="n">texts_features</span><span class="p">[</span><span class="n">feat_name</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">feat_values</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">any</span><span class="p">([</span><span class="n">item</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">texts_ref</span><span class="p">]):</span>
             <span class="n">texts_ref</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -679,6 +739,7 @@
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">scores</span><span class="p">,</span> <span class="n">predictions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span>
                     <span class="n">texts_to_translate</span><span class="p">,</span>
+                    <span class="n">src_feats</span><span class="o">=</span><span class="n">texts_features</span><span class="p">,</span>
                     <span class="n">tgt</span><span class="o">=</span><span class="n">texts_ref</span><span class="p">,</span>
                     <span class="n">batch_size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">texts_to_translate</span><span class="p">)</span>
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">==</span> <span class="mi">0</span>
@@ -839,6 +900,7 @@
             <span class="n">sequence</span><span class="p">[</span><span class="s2">&quot;seg&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">sequence</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
             <span class="n">sequence</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;src&quot;</span><span class="p">)</span>
             <span class="n">sequence</span><span class="p">[</span><span class="s2">&quot;ref&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">sequence</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ref&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)]</span>
+            <span class="n">sequence</span><span class="p">[</span><span class="s2">&quot;src_feats&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">sequence</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;src_feats&#39;</span><span class="p">,</span> <span class="p">{})]</span>
             <span class="n">sequence</span><span class="p">[</span><span class="s2">&quot;n_seg&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">preprocess_opt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">preprocess</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span>
@@ -858,6 +920,23 @@
         <span class="k">for</span> <span class="n">function</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">preprocessor</span><span class="p">:</span>
             <span class="n">sequence</span> <span class="o">=</span> <span class="n">function</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">sequence</span></div>
+
+<div class="viewcode-block" id="ServerModel.transform_feats"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.transform_feats">[docs]</a>    <span class="k">def</span> <span class="nf">transform_feats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw_src</span><span class="p">,</span> <span class="n">tok_src</span><span class="p">,</span> <span class="n">feats</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Apply InferFeatsTransform to features&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">feats_transform</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">feats</span>
+        <span class="n">ex</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;src&quot;</span><span class="p">:</span> <span class="n">tok_src</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">),</span>
+            <span class="s2">&quot;src_original&quot;</span><span class="p">:</span> <span class="n">raw_src</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">),</span>
+            <span class="s2">&quot;src_feats&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span>  <span class="n">v</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">feats</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="p">}</span>
+        <span class="n">transformed_ex</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">feats_transform</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">transformed_ex</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Error inferring feats&quot;</span><span class="p">)</span>
+        <span class="n">transformed_feats</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">feat_name</span><span class="p">,</span> <span class="n">feat_values</span> <span class="ow">in</span> <span class="n">transformed_ex</span><span class="p">[</span><span class="s2">&quot;src_feats&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">transformed_feats</span><span class="p">[</span><span class="n">feat_name</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">feat_values</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">transformed_feats</span></div>
 
 <div class="viewcode-block" id="ServerModel.build_tokenizer"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.build_tokenizer">[docs]</a>    <span class="k">def</span> <span class="nf">build_tokenizer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tokenizer_opt</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Build tokenizer described by `tokenizer_opt`.&quot;&quot;&quot;</span>
