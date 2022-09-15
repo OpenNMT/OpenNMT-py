@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 
 from onmt.utils.misc import aeq
+from onmt.utils import use_gpu
 from onmt.utils.loss import CommonLossCompute
 
 
@@ -186,6 +187,33 @@ class CommonCopyGeneratorLossCompute(CommonLossCompute):
             tgt_shift_index=tgt_shift_index)
         self.tgt_vocab = tgt_vocab
         self.normalize_by_length = normalize_by_length
+
+    @classmethod
+    def from_opt(cls, opt, model, tgt_field, train=True):
+
+        device = torch.device("cuda" if use_gpu(opt) else "cpu")
+
+        padding_idx = tgt_field.vocab.stoi[tgt_field.pad_token]
+        unk_idx = tgt_field.vocab.stoi[tgt_field.unk_token]
+
+        if opt.lambda_coverage != 0:
+            assert opt.coverage_attn, "--coverage_attn needs to be set in " \
+                "order to use --lambda_coverage != 0"
+
+        criterion = CopyGeneratorLoss(
+                len(tgt_field.vocab), opt.copy_attn_force,
+                unk_index=unk_idx, ignore_index=padding_idx
+            )
+
+        loss_gen = model.generator
+        compute = cls(
+                    criterion, loss_gen, tgt_field.vocab,
+                    opt.copy_loss_by_seqlength,
+                    lambda_coverage=opt.lambda_coverage
+        )
+        compute.to(device)
+
+        return compute
 
     def _compute_loss(self, batch, output, target, copy_attn, align,
                       std_attn=None, coverage_attn=None):

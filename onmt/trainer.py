@@ -14,6 +14,8 @@ import torch
 import traceback
 
 import onmt.utils
+from onmt.utils.loss import CommonLossCompute
+from onmt.modules.copy_generator import CommonCopyGeneratorLossCompute
 from onmt.utils.logging import logger
 from onmt.translate.utils import ScoringPreparator
 from onmt.scorers import get_scorers_cls, build_scorers
@@ -35,9 +37,16 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
     """
 
     tgt_field = dict(fields)["tgt"].base_field
-    train_loss = onmt.utils.loss.build_loss_compute(model, tgt_field, opt)
-    valid_loss = onmt.utils.loss.build_loss_compute(
-        model, tgt_field, opt, train=False)
+    if opt.copy_attn:
+        train_loss = CommonCopyGeneratorLossCompute.from_opt(
+            opt, model, tgt_field)
+        valid_loss = CommonCopyGeneratorLossCompute.from_opt(
+            opt, model, tgt_field, train=False)
+    else:
+        train_loss = CommonLossCompute.from_opt(
+            opt, model, tgt_field)
+        valid_loss = CommonLossCompute.from_opt(
+            opt, model, tgt_field, train=False)
 
     scoring_preparator = ScoringPreparator(fields, opt)
     scorers_cls = get_scorers_cls(opt.train_metrics)
@@ -94,9 +103,9 @@ class Trainer(object):
     Args:
             model(:py:class:`onmt.models.model.NMTModel`): translation model
                 to train
-            train_loss(:obj:`onmt.utils.loss.LossComputeBase`):
+            train_loss(:obj:`CommonLossComputeBase`):
                training loss computation
-            valid_loss(:obj:`onmt.utils.loss.LossComputeBase`):
+            valid_loss(:obj:`CommonLossComputeBase`):
                training loss computation
             optim(:obj:`onmt.utils.optimizers.Optimizer`):
                the optimizer responsible for update

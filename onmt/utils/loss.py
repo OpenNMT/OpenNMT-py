@@ -7,91 +7,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 import onmt
+from onmt.utils import Statistics
+from onmt.utils import use_gpu
 from onmt.modules.sparse_losses import SparsemaxLoss
 from onmt.modules.sparse_activations import LogSparsemax
-from onmt.constants import ModelTask
-
-
-def build_loss_compute(model, tgt_field, opt, train=True):
-    """
-    Returns a LossCompute subclass which wraps around an nn.Module subclass
-    (such as nn.NLLLoss) which defines the loss criterion. The LossCompute
-    object allows this loss to be computed in shards and passes the relevant
-    data to a Statistics object which handles training/validation logging.
-    Currently, the NMTLossCompute class handles all loss computation except
-    for when using a copy mechanism.
-    """
-    device = torch.device("cuda" if onmt.utils.misc.use_gpu(opt) else "cpu")
-
-    padding_idx = tgt_field.vocab.stoi[tgt_field.pad_token]
-    unk_idx = tgt_field.vocab.stoi[tgt_field.unk_token]
-
-    if opt.lambda_coverage != 0:
-        assert opt.coverage_attn, "--coverage_attn needs to be set in " \
-            "order to use --lambda_coverage != 0"
-
-    if opt.copy_attn:
-        criterion = onmt.modules.CopyGeneratorLoss(
-            len(tgt_field.vocab), opt.copy_attn_force,
-            unk_index=unk_idx, ignore_index=padding_idx
-        )
-    elif opt.label_smoothing > 0 and train:
-        criterion = LabelSmoothingLoss(
-            opt.label_smoothing, len(tgt_field.vocab), ignore_index=padding_idx
-        )
-    elif isinstance(model.generator[-1], LogSparsemax):
-        criterion = SparsemaxLoss(ignore_index=padding_idx, reduction='sum')
-    else:
-        criterion = nn.NLLLoss(ignore_index=padding_idx, reduction='sum')
-
-    # if the loss function operates on vectors of raw logits instead of
-    # probabilities, only the first part of the generator needs to be
-    # passed to the NMTLossCompute. At the moment, the only supported
-    # loss function of this kind is the sparsemax loss.
-    use_raw_logits = isinstance(criterion, SparsemaxLoss)
-    loss_gen = model.generator[0] if use_raw_logits else model.generator
-    if opt.copy_attn:
-        if opt.model_task == ModelTask.SEQ2SEQ:
-            compute = onmt.modules.CopyGeneratorLossCompute(
-                criterion, loss_gen, tgt_field.vocab,
-                opt.copy_loss_by_seqlength,
-                lambda_coverage=opt.lambda_coverage
-            )
-        elif opt.model_task == ModelTask.LANGUAGE_MODEL:
-            compute = onmt.modules.CopyGeneratorLMLossCompute(
-                criterion, loss_gen, tgt_field.vocab,
-                opt.copy_loss_by_seqlength,
-                lambda_coverage=opt.lambda_coverage
-            )
-        else:
-            raise ValueError(
-                f"No copy generator loss defined for task {opt.model_task}"
-            )
-    else:
-        if opt.model_task == ModelTask.SEQ2SEQ:
-            compute = NMTLossCompute(
-                criterion,
-                loss_gen,
-                lambda_coverage=opt.lambda_coverage,
-                lambda_align=opt.lambda_align,
-            )
-        elif opt.model_task == ModelTask.LANGUAGE_MODEL:
-            assert (
-                opt.lambda_align == 0.0
-            ), "lamdba_align not supported in LM loss"
-            compute = LMLossCompute(
-                criterion,
-                loss_gen,
-                lambda_coverage=opt.lambda_coverage,
-                lambda_align=opt.lambda_align,
-            )
-        else:
-            raise ValueError(
-                f"No compute loss defined for task {opt.model_task}"
-            )
-    compute.to(device)
-
-    return compute
 
 
 class LossComputeBase(nn.Module):
@@ -182,7 +101,7 @@ class LossComputeBase(nn.Module):
           trunc_size (int) : length of truncation window
 
         Returns:
-            A tuple with the loss and a :obj:`onmt.utils.Statistics` instance.
+            A tuple with the loss and a :obj:`Statistics` instance.
         """
         if trunc_size is None:
             trunc_size = batch.tgt.size(0) - trunc_start
@@ -191,7 +110,7 @@ class LossComputeBase(nn.Module):
         if shard_size == 0:
             loss, stats = self._compute_loss(batch, **shard_state)
             return loss / float(normalization), stats
-        batch_stats = onmt.utils.Statistics()
+        batch_stats = Statistics()
         for shard in shards(shard_state, shard_size):
             loss, stats = self._compute_loss(batch, **shard)
             loss.div(float(normalization)).backward()
@@ -206,7 +125,7 @@ class LossComputeBase(nn.Module):
             target (:obj:`FloatTensor`): true targets
 
         Returns:
-            :obj:`onmt.utils.Statistics` : statistics for this batch.
+            :obj:`Statistics` : statistics for this batch.
         """
         pred = scores.max(1)[1]
         non_padding = target.ne(self.padding_idx)
@@ -214,8 +133,8 @@ class LossComputeBase(nn.Module):
         num_non_padding = non_padding.sum().item()
         # in the case criterion reduction is None then we need
         # to sum the loss of each sentence in the batch
-        return onmt.utils.Statistics(loss.sum().item(),
-                                     num_non_padding, num_correct)
+        return Statistics(loss.sum().item(),
+                          num_non_padding, num_correct)
 
     def _bottle(self, _v):
         return _v.view(-1, _v.size(2))
@@ -266,6 +185,48 @@ class CommonLossCompute(LossComputeBase):
         self.lambda_coverage = lambda_coverage
         self.lambda_align = lambda_align
         self.tgt_shift_index = tgt_shift_index
+
+    @classmethod
+    def from_opt(cls, opt, model, tgt_field, train=True):
+        """
+        Returns a subclass which wraps around an nn.Module subclass
+        (such as nn.NLLLoss) which defines the loss criterion. The LossCompute
+        object allows this loss to be computed in shards and passes relevant
+        data to a Statistics object which handles training/validation logging.
+        Currently, the NMTLossCompute class handles all loss computation except
+        for when using a copy mechanism.
+        """
+        device = torch.device("cuda" if use_gpu(opt) else "cpu")
+
+        padding_idx = tgt_field.vocab.stoi[tgt_field.pad_token]
+
+        if opt.lambda_coverage != 0:
+            assert opt.coverage_attn, "--coverage_attn needs to be set in " \
+                "order to use --lambda_coverage != 0"
+
+        if opt.label_smoothing > 0 and train:
+            criterion = LabelSmoothingLoss(
+                opt.label_smoothing, len(tgt_field.vocab),
+                ignore_index=padding_idx
+            )
+        elif isinstance(model.generator[-1], LogSparsemax):
+            criterion = SparsemaxLoss(ignore_index=padding_idx,
+                                      reduction='sum')
+        else:
+            criterion = nn.NLLLoss(ignore_index=padding_idx, reduction='sum')
+
+        # if the loss function operates on vectors of raw logits instead of
+        # probabilities, only the first part of the generator needs to be
+        # passed to the NMTLossCompute. At the moment, the only supported
+        # loss function of this kind is the sparsemax loss.
+        use_raw_logits = isinstance(criterion, SparsemaxLoss)
+        loss_gen = model.generator[0] if use_raw_logits else model.generator
+        compute = cls(criterion, loss_gen,
+                      lambda_coverage=opt.lambda_coverage,
+                      lambda_align=opt.lambda_align)
+        compute.to(device)
+
+        return compute
 
     def _add_coverage_shard_state(self, shard_state, attns):
         coverage = attns.get("coverage", None)
@@ -367,32 +328,6 @@ class CommonLossCompute(LossComputeBase):
                 shard_state, batch, range_start, range_end, attns
             )
         return shard_state
-
-
-class NMTLossCompute(CommonLossCompute):
-    """
-    Standard NMT Loss Computation.
-    """
-    def __init__(self, criterion, generator, normalization="sents",
-                 lambda_coverage=0.0, lambda_align=0.0):
-        super(NMTLossCompute, self).__init__(criterion, generator,
-                                             normalization=normalization,
-                                             lambda_coverage=lambda_coverage,
-                                             lambda_align=lambda_align,
-                                             tgt_shift_index=1)
-
-
-class LMLossCompute(CommonLossCompute):
-    """
-    Standard LM Loss Computation.
-    """
-    def __init__(self, criterion, generator, normalization="sents",
-                 lambda_coverage=0.0, lambda_align=0.0):
-        super(LMLossCompute, self).__init__(criterion, generator,
-                                            normalization=normalization,
-                                            lambda_coverage=lambda_coverage,
-                                            lambda_align=lambda_align,
-                                            tgt_shift_index=0)
 
 
 def filter_shard_state(state, shard_size=None):
