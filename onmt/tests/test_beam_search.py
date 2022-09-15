@@ -435,7 +435,8 @@ class TestBeamSearchAgainstReferenceCase(unittest.TestCase):
         expected_beam_scores, unreduced_preds = new_scores\
             .view(self.BATCH_SZ, self.BEAM_SZ * self.N_WORDS)\
             .topk(self.BEAM_SZ, -1)
-        expected_bptr_1 = unreduced_preds // self.N_WORDS
+        expected_bptr_1 = torch.div(unreduced_preds, self.N_WORDS,
+                                    rounding_mode='trunc')
         # [5, 3, 2, 6, 0], so beam 2 predicts EOS!
         expected_preds_1 = unreduced_preds - expected_bptr_1 * self.N_WORDS
         self.assertTrue(beam.topk_log_probs.allclose(expected_beam_scores))
@@ -469,7 +470,8 @@ class TestBeamSearchAgainstReferenceCase(unittest.TestCase):
         expected_beam_scores, unreduced_preds = new_scores\
             .view(self.BATCH_SZ, self.BEAM_SZ * self.N_WORDS)\
             .topk(self.BEAM_SZ, -1)
-        expected_bptr_2 = unreduced_preds // self.N_WORDS
+        expected_bptr_2 = torch.div(unreduced_preds, self.N_WORDS,
+                                    rounding_mode='trunc')
         # [2, 5, 3, 6, 0] repeat self.BATCH_SZ, so beam 0 predicts EOS!
         expected_preds_2 = unreduced_preds - expected_bptr_2 * self.N_WORDS
         # [-2.4879, -3.8910, -4.1010, -4.2010, -4.4010] repeat self.BATCH_SZ
@@ -507,7 +509,8 @@ class TestBeamSearchAgainstReferenceCase(unittest.TestCase):
         expected_beam_scores, unreduced_preds = new_scores\
             .view(self.BATCH_SZ, self.BEAM_SZ * self.N_WORDS)\
             .topk(self.BEAM_SZ, -1)
-        expected_bptr_3 = unreduced_preds // self.N_WORDS
+        expected_bptr_3 = torch.div(unreduced_preds, self.N_WORDS,
+                                    rounding_mode='trunc')
         # [5, 2, 6, 1, 0] repeat self.BATCH_SZ, so beam 1 predicts EOS!
         expected_preds_3 = unreduced_preds - expected_bptr_3 * self.N_WORDS
         self.assertTrue(beam.topk_log_probs.allclose(
@@ -544,7 +547,7 @@ class TestBeamWithLengthPenalty(TestBeamSearchAgainstReferenceCase):
     # interactions between the GNMT scorer and the beam
 
     def test_beam_advance_against_known_reference(self):
-        scorer = GNMTGlobalScorer(0.7, 0., "avg", "none")
+        scorer = GNMTGlobalScorer(1.0, 0., "avg", "none")
         beam = BeamSearch(
             self.BEAM_SZ, self.BATCH_SZ, 0, 1, 2, 3, self.N_BEST,
             scorer,

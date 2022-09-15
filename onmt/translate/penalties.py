@@ -92,9 +92,9 @@ class PenaltyBuilder(object):
 
         return ((5 + cur_len) / 6.0) ** alpha
 
-    def length_average(self, cur_len, alpha=0.):
+    def length_average(self, cur_len, alpha=1.):
         """Returns the current sequence length."""
-        return cur_len
+        return cur_len ** alpha
 
     def length_none(self, cur_len, alpha=0.):
         """Returns unmodified scores."""
