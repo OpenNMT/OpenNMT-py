@@ -164,7 +164,8 @@ Note1: the default value of length_penalty is "none". If you want to compare wit
 other toolkit, "avg" normalization is often the default value.
 
 Note2: when using "avg" length penalty, if you know the tokenized ratio between target
-language length divided by source language length (in average) you can set this flag.
+language length divided by source language length (in average) you can set it
+in the -ratio flag.
 
 
 Prior to evaluation, we need to detokenize the hypothesis:
