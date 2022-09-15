@@ -4,6 +4,7 @@ import torch.nn as nn
 from onmt.utils.misc import aeq
 from onmt.utils import use_gpu
 from onmt.utils.loss import CommonLossCompute
+from onmt.constants import ModelTask
 
 
 def collapse_copy_scores(scores, batch, tgt_vocab, src_vocabs=None,
@@ -206,10 +207,12 @@ class CommonCopyGeneratorLossCompute(CommonLossCompute):
             )
 
         loss_gen = model.generator
+        tgt_shift_idx = 1 if opt.model_task == ModelTask.SEQ2SEQ else 0
         compute = cls(
                     criterion, loss_gen, tgt_field.vocab,
                     opt.copy_loss_by_seqlength,
-                    lambda_coverage=opt.lambda_coverage
+                    lambda_coverage=opt.lambda_coverage,
+                    tgt_shift_index=tgt_shift_idx
         )
         compute.to(device)
 

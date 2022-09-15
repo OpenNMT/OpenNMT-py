@@ -11,6 +11,7 @@ from onmt.utils import Statistics
 from onmt.utils import use_gpu
 from onmt.modules.sparse_losses import SparsemaxLoss
 from onmt.modules.sparse_activations import LogSparsemax
+from onmt.constants import ModelTask
 
 
 class LossComputeBase(nn.Module):
@@ -221,9 +222,11 @@ class CommonLossCompute(LossComputeBase):
         # loss function of this kind is the sparsemax loss.
         use_raw_logits = isinstance(criterion, SparsemaxLoss)
         loss_gen = model.generator[0] if use_raw_logits else model.generator
+        tgt_shift_idx = 1 if opt.model_task == ModelTask.SEQ2SEQ else 0
         compute = cls(criterion, loss_gen,
                       lambda_coverage=opt.lambda_coverage,
-                      lambda_align=opt.lambda_align)
+                      lambda_align=opt.lambda_align,
+                      tgt_shift_index=tgt_shift_idx)
         compute.to(device)
 
         return compute
