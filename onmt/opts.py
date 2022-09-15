@@ -705,8 +705,8 @@ def _add_decoding_opts(parser):
     group.add('--length_penalty', '-length_penalty', default='none',
               choices=['none', 'wu', 'avg'],
               help="Length Penalty to use.")
-    group.add('--alpha', '-alpha', type=float, default=0.,
-              help="Google NMT length penalty parameter "
+    group.add('--alpha', '-alpha', type=float, default=1.,
+              help="Length penalty parameter"
                    "(higher = longer generation)")
     # Coverage penalty options
     group.add('--coverage_penalty', '-coverage_penalty', default='none',

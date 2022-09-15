@@ -152,12 +152,21 @@ for checkpoint in data/wmt/run/model_step*.pt; do
         -gpu 0 \
         -batch_size 16384 -batch_type tokens \
         -beam_size 5 \
+        -length_penalty avg \
         -model $checkpoint \
         -src data/wmt/test.en.sp \
         -tgt data/wmt/test.de.sp \
         -output data/wmt/test.de.hyp_${base%.*}.sp
 done
 ```
+
+Note1: the default value of length_penalty is "none". If you want to compare with some
+other toolkit, "avg" normalization is often the default value.
+
+Note2: when using "avg" length penalty, if you know the tokenized ratio between target
+language length divided by source language length (in average) you can set it
+in the -ratio flag.
+
 
 Prior to evaluation, we need to detokenize the hypothesis:
 
