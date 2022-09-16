@@ -287,7 +287,7 @@ class Trainer(object):
                 report_stats)
 
             if (valid_iter is not None and step % valid_steps == 0 and
-                    self.n_gpu > 0):
+                    self.gpu_rank == 0):
                 if self.gpu_verbose_level > 0:
                     logger.info('GpuRank %d: validate step %d'
                                 % (self.gpu_rank, step))
