@@ -9,34 +9,41 @@ from torch.nn.init import xavier_uniform_
 
 import onmt.modules
 from onmt.encoders import str2enc
-
 from onmt.decoders import str2dec
-
+from onmt.inputters.inputter import dict_to_vocabs
 from onmt.modules import Embeddings, CopyGenerator
 from onmt.modules.util_class import Cast
 from onmt.utils.misc import use_gpu
 from onmt.utils.logging import logger
 from onmt.utils.parse import ArgumentParser
-from onmt.constants import ModelTask
+from onmt.constants import DefaultTokens, ModelTask
 
 
-def build_embeddings(opt, text_field, for_encoder=True):
+def build_embeddings(opt, vocabs, for_encoder=True):
     """
     Args:
         opt: the option in current environment.
-        text_field(TextMultiField): word and feats field.
+        vocab.
         for_encoder(bool): build Embeddings for encoder or decoder?
     """
-    emb_dim = opt.src_word_vec_size if for_encoder else opt.tgt_word_vec_size
+    feat_pad_indices = []
+    num_feat_embeddings = []
+    if for_encoder:
+        emb_dim = opt.src_word_vec_size
+        word_padding_idx = vocabs['src'][DefaultTokens.PAD]
+        num_word_embeddings = len(vocabs['src'])
+        if 'src_feats' in vocabs.keys():
+            feat_pad_indices = [vocabs['src_feats'][feat][DefaultTokens.PAD]
+                                for feat in vocabs['src_feats'].keys()]
+            num_feat_embeddings = [len(vocabs['src_feats'][feat])
+                                   for feat in vocabs['src_feats'].keys()]
+        freeze_word_vecs = opt.freeze_word_vecs_enc
+    else:
 
-    pad_indices = [f.vocab.stoi[f.pad_token] for _, f in text_field]
-    word_padding_idx, feat_pad_indices = pad_indices[0], pad_indices[1:]
-
-    num_embs = [len(f.vocab) for _, f in text_field]
-    num_word_embeddings, num_feat_embeddings = num_embs[0], num_embs[1:]
-
-    freeze_word_vecs = opt.freeze_word_vecs_enc if for_encoder \
-        else opt.freeze_word_vecs_dec
+        emb_dim = opt.tgt_word_vec_size
+        word_padding_idx = vocabs['tgt'][DefaultTokens.PAD]
+        num_word_embeddings = len(vocabs['tgt'])
+        freeze_word_vecs = opt.freeze_word_vecs_dec
 
     emb = Embeddings(
         word_vec_size=emb_dim,
@@ -87,12 +94,12 @@ def load_test_model(opt, model_path=None):
     model_opt = ArgumentParser.ckpt_model_opts(checkpoint['opt'])
     ArgumentParser.update_model_opts(model_opt)
     ArgumentParser.validate_model_opts(model_opt)
-    fields = checkpoint['vocab']
+    vocabs = dict_to_vocabs(checkpoint['vocab'])
 
     # Avoid functionality on inference
     model_opt.update_vocab = False
 
-    model = build_base_model(model_opt, fields, use_gpu(opt), checkpoint,
+    model = build_base_model(model_opt, vocabs, use_gpu(opt), checkpoint,
                              opt.gpu)
     if opt.fp32:
         model.float()
@@ -103,32 +110,30 @@ def load_test_model(opt, model_path=None):
         torch.quantization.quantize_dynamic(model, inplace=True)
     model.eval()
     model.generator.eval()
-    return fields, model, model_opt
+    return vocabs, model, model_opt
 
 
-def build_src_emb(model_opt, fields):
+def build_src_emb(model_opt, vocabs):
     # Build embeddings.
     if model_opt.model_type == "text":
-        src_field = fields["src"]
-        src_emb = build_embeddings(model_opt, src_field)
+        src_emb = build_embeddings(model_opt, vocabs)
     else:
         src_emb = None
     return src_emb
 
 
-def build_encoder_with_embeddings(model_opt, fields):
+def build_encoder_with_embeddings(model_opt, vocabs):
     # Build encoder.
-    src_emb = build_src_emb(model_opt, fields)
+    src_emb = build_src_emb(model_opt, vocabs)
     encoder = build_encoder(model_opt, src_emb)
     return encoder, src_emb
 
 
 def build_decoder_with_embeddings(
-    model_opt, fields, share_embeddings=False, src_emb=None
+    model_opt, vocabs, share_embeddings=False, src_emb=None
 ):
     # Build embeddings.
-    tgt_field = fields["tgt"]
-    tgt_emb = build_embeddings(model_opt, tgt_field, for_encoder=False)
+    tgt_emb = build_embeddings(model_opt, vocabs, for_encoder=False)
 
     if share_embeddings:
         tgt_emb.word_lut.weight = src_emb.word_lut.weight
@@ -138,79 +143,75 @@ def build_decoder_with_embeddings(
     return decoder, tgt_emb
 
 
-def build_task_specific_model(model_opt, fields):
+def build_task_specific_model(model_opt, vocabs):
     # Share the embedding matrix - preprocess with share_vocab required.
     if model_opt.share_embeddings:
         # src/tgt vocab should be the same if `-share_vocab` is specified.
         assert (
-            fields["src"].base_field.vocab == fields["tgt"].base_field.vocab
+            vocabs['src'] == vocabs['tgt']
         ), "preprocess with -share_vocab if you use share_embeddings"
 
     if model_opt.model_task == ModelTask.SEQ2SEQ:
-        encoder, src_emb = build_encoder_with_embeddings(model_opt, fields)
+        encoder, src_emb = build_encoder_with_embeddings(model_opt, vocabs)
         decoder, _ = build_decoder_with_embeddings(
             model_opt,
-            fields,
+            vocabs,
             share_embeddings=model_opt.share_embeddings,
             src_emb=src_emb,
         )
         return onmt.models.NMTModel(encoder=encoder, decoder=decoder)
     elif model_opt.model_task == ModelTask.LANGUAGE_MODEL:
-        src_emb = build_src_emb(model_opt, fields)
+        src_emb = build_src_emb(model_opt, vocabs)
         decoder, _ = build_decoder_with_embeddings(
-            model_opt, fields, share_embeddings=True, src_emb=src_emb
+            model_opt, vocabs, share_embeddings=True, src_emb=src_emb
         )
         return onmt.models.LanguageModel(decoder=decoder)
     else:
         raise ValueError(f"No model defined for {model_opt.model_task} task")
 
 
-def use_embeddings_from_checkpoint(fields, model, generator, checkpoint):
+def use_embeddings_from_checkpoint(vocabs, model, generator, checkpoint):
     # Update vocabulary embeddings with checkpoint embeddings
     logger.info("Updating vocabulary embeddings with checkpoint embeddings")
     # Embedding layers
-    enc_emb_name = "encoder.embeddings.make_embedding.emb_luts.0.weight"
-    dec_emb_name = "decoder.embeddings.make_embedding.emb_luts.0.weight"
+    enc_emb_name = 'encoder.embeddings.make_embedding.emb_luts.0.weight'
+    dec_emb_name = 'decoder.embeddings.make_embedding.emb_luts.0.weight'
 
-    for field_name, emb_name in [("src", enc_emb_name), ("tgt", dec_emb_name)]:
-        if emb_name not in checkpoint["model"]:
+    for side, emb_name in [('src', enc_emb_name), ('tgt', dec_emb_name)]:
+        if emb_name not in checkpoint['model']:
             continue
-        multifield = fields[field_name]
-        checkpoint_multifield = checkpoint["vocab"][field_name]
-        for (name, field), (checkpoint_name, checkpoint_field) in zip(
-            multifield, checkpoint_multifield
-        ):
-            new_tokens = []
-            for i, tok in enumerate(field.vocab.itos):
-                if tok in checkpoint_field.vocab.stoi:
-                    old_i = checkpoint_field.vocab.stoi[tok]
-                    model.state_dict()[emb_name][i] = checkpoint["model"][
-                        emb_name
-                    ][old_i]
-                    if field_name == "tgt":
-                        generator.state_dict()["0.weight"][i] = checkpoint[
-                            "generator"
-                        ]["0.weight"][old_i]
-                        generator.state_dict()["0.bias"][i] = checkpoint[
-                            "generator"
-                        ]["0.bias"][old_i]
-                else:
-                    # Just for debugging purposes
-                    new_tokens.append(tok)
-            logger.info("%s: %d new tokens" % (name, len(new_tokens)))
+        new_tokens = []
+        ckp_vocabs = dict_to_vocabs(checkpoint['vocab'])
+        for i, tok in enumerate(vocabs[side].ids_to_tokens):
+            if tok in ckp_vocabs[side]:
+                old_i = ckp_vocabs[side].lookup_token(tok)
+                model.state_dict()[emb_name][i] = checkpoint['model'][
+                    emb_name
+                ][old_i]
+                if side == 'tgt':
+                    generator.state_dict()['0.weight'][i] = checkpoint[
+                        'generator'
+                    ]['0.weight'][old_i]
+                    generator.state_dict()['0.bias'][i] = checkpoint[
+                        'generator'
+                    ]['0.bias'][old_i]
+            else:
+                # Just for debugging purposes
+                new_tokens.append(tok)
+        logger.info("%s: %d new tokens" % (side, len(new_tokens)))
         # Remove old vocabulary associated embeddings
-        del checkpoint["model"][emb_name]
-    del checkpoint["generator"]["0.weight"], checkpoint["generator"]["0.bias"]
+        del checkpoint['model'][emb_name]
+    del checkpoint['generator']['0.weight'], checkpoint['generator']['0.bias']
 
 
-def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
+def build_base_model(model_opt, vocabs, gpu, checkpoint=None, gpu_id=None):
     """Build a model from opts.
 
     Args:
         model_opt: the option loaded from checkpoint. It's important that
             the opts have been updated and validated. See
             :class:`onmt.utils.parse.ArgumentParser`.
-        fields (dict[str, torchtext.data.Field]):
+        vocabs (dict[str, Vocab]):
             `Field` objects for the model.
         gpu (bool): whether to use gpu.
         checkpoint: the model gnerated by train phase, or a resumed snapshot
@@ -235,7 +236,7 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
     elif not gpu:
         device = torch.device("cpu")
 
-    model = build_task_specific_model(model_opt, fields)
+    model = build_task_specific_model(model_opt, vocabs)
 
     # Build Generator.
     if not model_opt.copy_attn:
@@ -245,16 +246,15 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
             gen_func = nn.LogSoftmax(dim=-1)
         generator = nn.Sequential(
             nn.Linear(model_opt.dec_rnn_size,
-                      len(fields["tgt"].base_field.vocab)),
+                      len(vocabs['tgt'])),
             Cast(torch.float32),
             gen_func
         )
         if model_opt.share_decoder_embeddings:
             generator[0].weight = model.decoder.embeddings.word_lut.weight
     else:
-        tgt_base_field = fields["tgt"].base_field
-        vocab_size = len(tgt_base_field.vocab)
-        pad_idx = tgt_base_field.vocab.stoi[tgt_base_field.pad_token]
+        vocab_size = len(vocabs['tgt'])
+        pad_idx = vocabs['tgt'][DefaultTokens.PAD]
         generator = CopyGenerator(model_opt.dec_rnn_size, vocab_size, pad_idx)
         if model_opt.share_decoder_embeddings:
             generator.linear.weight = model.decoder.embeddings.word_lut.weight
@@ -297,7 +297,7 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
         if model_opt.update_vocab:
             # Update model embeddings with those from the checkpoint
             # after initialization
-            use_embeddings_from_checkpoint(fields, model, generator,
+            use_embeddings_from_checkpoint(vocabs, model, generator,
                                            checkpoint)
 
         model.load_state_dict(checkpoint['model'], strict=False)
@@ -319,8 +319,8 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
     return model
 
 
-def build_model(model_opt, opt, fields, checkpoint):
+def build_model(model_opt, opt, vocabs, checkpoint):
     logger.info('Building model...')
-    model = build_base_model(model_opt, fields, use_gpu(opt), checkpoint)
+    model = build_base_model(model_opt, vocabs, use_gpu(opt), checkpoint)
     logger.info(model)
     return model

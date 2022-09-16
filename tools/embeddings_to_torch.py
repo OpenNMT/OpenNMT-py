@@ -5,19 +5,15 @@ import six
 import argparse
 import torch
 from onmt.utils.logging import init_logger, logger
+from onmt.inputters.inputter import dict_to_vocabs
 
 
 def get_vocabs(dict_path):
-    fields = torch.load(dict_path)
+    model = torch.load(dict_path, map_location=torch.device("cpu"))
+    vocabs = dict_to_vocabs(model['vocab'])
 
-    vocs = []
-    for side in ['src', 'tgt']:
-        try:
-            vocab = fields[side].base_field.vocab
-        except AttributeError:
-            vocab = fields[side].vocab
-        vocs.append(vocab)
-    enc_vocab, dec_vocab = vocs
+    enc_vocab = vocabs['src']
+    dec_vocab = vocabs['tgt']
 
     logger.info("From: %s" % dict_path)
     logger.info("\t* source vocab: %d words" % len(enc_vocab))
@@ -53,13 +49,13 @@ def convert_to_torch_tensor(word_to_float_list_dict, vocab):
     dim = len(six.next(six.itervalues(word_to_float_list_dict)))
     tensor = torch.zeros((len(vocab), dim))
     for word, values in word_to_float_list_dict.items():
-        tensor[vocab.stoi[word]] = torch.Tensor(values)
+        tensor[vocab[word]] = torch.Tensor(values)
     return tensor
 
 
 def calc_vocab_load_stats(vocab, loaded_embed_dict):
     matching_count = len(
-        set(vocab.stoi.keys()) & set(loaded_embed_dict.keys()))
+        set(vocab.tokens_to_ids.values()) & set(loaded_embed_dict.keys()))
     missing_count = len(vocab) - matching_count
     percent_matching = matching_count / len(vocab) * 100
     return matching_count, missing_count, percent_matching
@@ -97,7 +93,8 @@ def main():
             raise ValueError("If --emb_file_both is passed in, you should not"
                              "set --emb_file_dec.")
         set_of_src_and_tgt_vocab = \
-            set(enc_vocab.stoi.keys()) | set(dec_vocab.stoi.keys())
+            set(enc_vocab.ids_to_tokens) |\
+            set(dec_vocab.ids_to_tokens)
         logger.info("Reading encoder and decoder embeddings from {}".format(
             opt.emb_file_both))
         src_vectors, total_vec_count = \
@@ -118,7 +115,7 @@ def main():
             opt.emb_file_enc))
         src_vectors, total_vec_count = read_embeddings(
             opt.emb_file_enc, skip_lines,
-            filter_set=enc_vocab.stoi
+            filter_set=set(enc_vocab.ids_to_tokens)
         )
         logger.info("\tFound {} total vectors in file.".format(
             total_vec_count))
@@ -126,7 +123,7 @@ def main():
             opt.emb_file_dec))
         tgt_vectors, total_vec_count = read_embeddings(
             opt.emb_file_dec, skip_lines,
-            filter_set=dec_vocab.stoi
+            filter_set=set(dec_vocab.ids_to_tokens)
         )
         logger.info("\tFound {} total vectors in file".format(total_vec_count))
     logger.info("After filtering to vectors in vocab:")

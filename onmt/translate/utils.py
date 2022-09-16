@@ -3,6 +3,7 @@ import os
 from onmt.utils.parse import ArgumentParser
 from onmt.translate import GNMTGlobalScorer, Translator
 from onmt.opts import translate_opts
+from onmt.constants import DefaultTokens
 
 
 class Detokenizer():
@@ -56,23 +57,24 @@ class Detokenizer():
 class ScoringPreparator():
     """Allow the calculation of metrics via the Trainer's
      training_eval_handler method"""
-    def __init__(self, fields, opt):
-        self.fields = fields
+    def __init__(self, vocabs, opt):
+        self.vocabs = vocabs
         self.opt = opt
         self.tgt_detokenizer = Detokenizer(opt)
         self.tgt_detokenizer.build_detokenizer()
 
     def tokenize_batch(self, batch_side, side):
         """Convert a batch into a list of tokenized sentences"""
-        field = self.fields[side].base_field
+        vocab = self.vocabs[side]
         tokenized_sentences = []
         for i in range(batch_side.shape[1]):
             tokens = []
             for t in range(batch_side.shape[0]):
-                token = field.vocab.itos[batch_side[t, i, 0]]
-                if token == field.pad_token or token == field.eos_token:
+                token = vocab.get_itos()[batch_side[t, i, 0]]
+                if (token == DefaultTokens.PAD
+                        or token == DefaultTokens.EOS):
                     break
-                if token != field.init_token:
+                if token != DefaultTokens.BOS:
                     tokens.append(token)
             tokenized_sentences.append(tokens)
         return tokenized_sentences
@@ -107,7 +109,7 @@ class ScoringPreparator():
         out_file = codecs.open(os.devnull, "w", "utf-8")
         translator = Translator.from_opt(
             model,
-            self.fields,
+            self.vocabs,
             opt,
             model_opt,
             global_scorer=scorer,
