@@ -68,7 +68,7 @@ Table of Contents
 OpenNMT-py requires:
 
 - Python >= 3.6
-- PyTorch == 1.6.0
+- PyTorch >= 1.9.0
 
 Install `OpenNMT-py` from `pip`:
 ```bash
@@ -251,7 +251,7 @@ The original code was written by [Adam Lerer](http://github.com/adamlerer) (NYC)
 
 Major contributors are:
 * [Sasha Rush](https://github.com/srush) (Cambridge, MA)
-* [Vincent Nguyen](https://github.com/vince62s) (Ubiqus)
+* [Vincent Nguyen](https://github.com/vince62s) (ex-Ubiqus)
 * [Ben Peters](http://github.com/bpopeters) (Lisbon)
 * [Sebastian Gehrmann](https://github.com/sebastianGehrmann) (Harvard NLP)
 * [Yuntian Deng](https://github.com/da03) (Harvard NLP)
