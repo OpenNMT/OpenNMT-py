@@ -287,18 +287,13 @@ class Trainer(object):
                 report_stats)
 
             if (valid_iter is not None and step % valid_steps == 0 and
-                    self.n_gpu > 0):
+                    self.gpu_rank == 0):
                 if self.gpu_verbose_level > 0:
                     logger.info('GpuRank %d: validate step %d'
                                 % (self.gpu_rank, step))
 
                 valid_stats = self.validate(
                     valid_iter, moving_average=self.moving_average)
-                if self.gpu_verbose_level > 0:
-                    logger.info('GpuRank %d: gather valid stat \
-                                step %d' % (self.gpu_rank, step))
-                # gather stats unuseful on a single gpu
-                # valid_stats = self._maybe_gather_stats(valid_stats)
                 if self.gpu_verbose_level > 0:
                     logger.info('GpuRank %d: report stat step %d'
                                 % (self.gpu_rank, step))
