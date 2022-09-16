@@ -434,8 +434,8 @@ class GNMTGlobalScorer(object):
         # forces a penalty to be a no-op, or a penalty is a no-op but
         # the alpha/beta would suggest otherwise.
         if length_penalty is not None and alpha == 0.:
-                warnings.warn("Using length penalty with alpha==0 "
-                              "is equivalent to using length penalty none.")
+            warnings.warn("Using length penalty with alpha==0 "
+                          "is equivalent to using length penalty none.")
         if coverage_penalty is None or coverage_penalty == "none":
             if beta != 0:
                 warnings.warn("Non-default `beta` with no coverage penalty. "
