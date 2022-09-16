@@ -3,11 +3,11 @@ import torch
 
 from collections import deque
 from onmt.utils.logging import logger
-
+from onmt.inputters.inputter import vocabs_to_dict
 from copy import deepcopy
 
 
-def build_model_saver(model_opt, opt, model, fields, optim):
+def build_model_saver(model_opt, opt, model, vocabs, optim):
     # _check_save_model_path
     save_model_path = os.path.abspath(opt.save_model)
     os.makedirs(os.path.dirname(save_model_path), exist_ok=True)
@@ -15,7 +15,7 @@ def build_model_saver(model_opt, opt, model, fields, optim):
     model_saver = ModelSaver(opt.save_model,
                              model,
                              model_opt,
-                             fields,
+                             vocabs,
                              optim,
                              opt.keep_checkpoint)
     return model_saver
@@ -39,12 +39,12 @@ class ModelSaverBase(object):
     * `_rm_checkpoint
     """
 
-    def __init__(self, base_path, model, model_opt, fields, optim,
+    def __init__(self, base_path, model, model_opt, vocabs, optim,
                  keep_checkpoint=-1):
         self.base_path = base_path
         self.model = model
         self.model_opt = model_opt
-        self.fields = fields
+        self.vocabs = vocabs
         self.optim = optim
         self.last_saved_step = None
         self.keep_checkpoint = keep_checkpoint
@@ -121,21 +121,21 @@ class ModelSaver(ModelSaverBase):
         # NOTE: We need to trim the vocab to remove any unk tokens that
         # were not originally here.
 
-        vocab = deepcopy(self.fields)
-        for side in ["src", "tgt"]:
-            keys_to_pop = []
-            if hasattr(vocab[side], "fields"):
-                unk_token = vocab[side].fields[0][1].vocab.itos[0]
-                for key, value in vocab[side].fields[0][1].vocab.stoi.items():
-                    if value == 0 and key != unk_token:
-                        keys_to_pop.append(key)
-                for key in keys_to_pop:
-                    vocab[side].fields[0][1].vocab.stoi.pop(key, None)
+        vocabs = deepcopy(self.vocabs)
+        # for side in ["src", "tgt"]:
+        #    keys_to_pop = []
+        #    if hasattr(vocab[side], "fields"):
+        #        unk_token = vocab[side].fields[0][1].vocab.itos[0]
+        #        for key, value in vocab[side].fields[0][1].vocab.stoi.items():
+        #            if value == 0 and key != unk_token:
+        #                keys_to_pop.append(key)
+        #        for key in keys_to_pop:
+        #            vocab[side].fields[0][1].vocab.stoi.pop(key, None)
 
         checkpoint = {
             'model': model_state_dict,
             'generator': generator_state_dict,
-            'vocab': vocab,
+            'vocab': vocabs_to_dict(vocabs),
             'opt': self.model_opt,
             'optim': self.optim.state_dict(),
         }

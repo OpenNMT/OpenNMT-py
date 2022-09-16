@@ -25,6 +25,7 @@ from onmt.utils.alignment import to_word_align
 from onmt.utils.parse import ArgumentParser
 from onmt.translate.translator import build_translator
 from onmt.transforms.features import InferFeatsTransform
+from onmt.inputters.item import textbatch_to_tensor
 
 
 def critical(func):
@@ -448,7 +449,7 @@ class ServerModel(object):
                     target_prefix=self.opt.tgt_prefix,
                     preload=preload)
             else:
-                self.translator = build_translator(
+                self.translator, self.vocabs = build_translator(
                     self.opt, report_score=False,
                     out_file=codecs.open(os.devnull, "w", "utf-8"))
         except RuntimeError as e:
@@ -540,13 +541,11 @@ class ServerModel(object):
 
         if len(texts_to_translate) > 0:
             try:
-                scores, predictions = self.translator.translate(
-                    texts_to_translate,
-                    src_feats=texts_features,
-                    tgt=texts_ref,
-                    batch_size=len(texts_to_translate)
-                    if self.opt.batch_size == 0
-                    else self.opt.batch_size)
+                infer_iter = textbatch_to_tensor(self.vocabs,
+                                                 texts_to_translate)
+
+                scores, predictions = self.translator._translate(
+                    infer_iter)
             except (RuntimeError, Exception) as e:
                 err = "Error: %s" % str(e)
                 self.logger.error(err)

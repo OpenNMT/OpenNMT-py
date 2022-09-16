@@ -1,8 +1,9 @@
 import copy
 import unittest
-
 import torch
-
+import pyonmttok
+from onmt.constants import DefaultTokens
+from collections import Counter
 import onmt
 import onmt.inputters
 import onmt.opts
@@ -24,10 +25,27 @@ class TestModel(unittest.TestCase):
         super(TestModel, self).__init__(*args, **kwargs)
         self.opt = opt
 
-    def get_field(self):
-        src = onmt.inputters.get_fields("text", 0, 0)["src"]
-        src.base_field.build_vocab([])
-        return src
+    def get_vocabs(self):
+        src_vocab = pyonmttok.build_vocab_from_tokens(
+            Counter(),
+            maximum_size=0,
+            minimum_frequency=1,
+            special_tokens=[DefaultTokens.UNK,
+                            DefaultTokens.PAD,
+                            DefaultTokens.BOS,
+                            DefaultTokens.EOS])
+
+        tgt_vocab = pyonmttok.build_vocab_from_tokens(
+            Counter(),
+            maximum_size=0,
+            minimum_frequency=1,
+            special_tokens=[DefaultTokens.UNK,
+                            DefaultTokens.PAD,
+                            DefaultTokens.BOS,
+                            DefaultTokens.EOS])
+
+        vocabs = {'src': src_vocab, 'tgt': tgt_vocab}
+        return vocabs
 
     def get_batch(self, source_l=3, bsize=1):
         # len x batch x nfeat
@@ -45,8 +63,8 @@ class TestModel(unittest.TestCase):
             source_l: Length of generated input sentence
             bsize: Batchsize of generated input
         '''
-        word_field = self.get_field()
-        emb = build_embeddings(opt, word_field)
+        vocabs = self.get_vocabs()
+        emb = build_embeddings(opt, vocabs)
         test_src, _, __ = self.get_batch(source_l=source_l, bsize=bsize)
         if opt.decoder_type == 'transformer':
             input = torch.cat([test_src, test_src], 0)
@@ -70,8 +88,8 @@ class TestModel(unittest.TestCase):
         '''
         if opt.rnn_size > 0:
             opt.enc_rnn_size = opt.rnn_size
-        word_field = self.get_field()
-        embeddings = build_embeddings(opt, word_field)
+        vocabs = self.get_vocabs()
+        embeddings = build_embeddings(opt, vocabs)
         enc = build_encoder(opt, embeddings)
 
         test_src, test_tgt, test_length = self.get_batch(source_l=source_l,
@@ -103,12 +121,12 @@ class TestModel(unittest.TestCase):
         if opt.rnn_size > 0:
             opt.enc_rnn_size = opt.rnn_size
             opt.dec_rnn_size = opt.rnn_size
-        word_field = self.get_field()
+        vocabs = self.get_vocabs()
 
-        embeddings = build_embeddings(opt, word_field)
+        embeddings = build_embeddings(opt, vocabs)
         enc = build_encoder(opt, embeddings)
 
-        embeddings = build_embeddings(opt, word_field, for_encoder=False)
+        embeddings = build_embeddings(opt, vocabs, for_encoder=False)
         dec = build_decoder(opt, embeddings)
 
         model = onmt.models.model.NMTModel(enc, dec)

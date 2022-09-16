@@ -8,8 +8,9 @@ import os
 
 from onmt.utils.parse import ArgumentParser
 from onmt.opts import dynamic_prepare_opts
-from onmt.bin.train import prepare_fields_transforms
+from onmt.train_single import prepare_transforms
 from onmt.constants import CorpusName
+from onmt.inputters import build_vocab
 
 
 SAVE_DATA_PREFIX = 'data/test_data_prepare'
@@ -42,7 +43,8 @@ class TestData(unittest.TestCase):
 
     def dataset_build(self, opt):
         try:
-            prepare_fields_transforms(opt)
+            vocabs = build_vocab(opt)
+            prepare_transforms(opt, vocabs)
         except SystemExit as err:
             print(err)
         except IOError as err:

@@ -129,11 +129,9 @@ def _add_dynamic_corpus_opts(parser, build_vocab_only=False):
 
 
 def _add_dynamic_fields_opts(parser, build_vocab_only=False):
-    """Options related to vocabulary and fields.
+    """Options related to vocabulary and features.
 
-    Add all options relate to vocabulary or fields to parser.
-    If `build_vocab_only` set to True, do not contain fields
-    related options which won't be used in `bin/build_vocab.py`.
+    Add all options relate to vocabulary or features to parser.
     """
     group = parser.add_argument_group("Vocab")
     group.add("-src_vocab", "--src_vocab", required=True,
@@ -535,8 +533,7 @@ def _add_train_general_opts(parser):
               It will load the equivalent of `pool_factor` batches,
               sort them by the according `sort_key` to produce
               homogeneous batches and reduce padding, and yield
-              the produced batches in a shuffled way.
-              Inspired by torchtext's pool mechanism.""")
+              the produced batches in a shuffled way.""")
     group.add('--normalization', '-normalization', default='sents',
               choices=["sents", "tokens"],
               help='Normalization method of the gradient.')
@@ -656,7 +653,7 @@ def _add_train_general_opts(parser):
 def _add_train_dynamic_data(parser):
     group = parser.add_argument_group("Dynamic data")
     group.add("-bucket_size", "--bucket_size", type=int, default=2048,
-              help="Examples per dynamically generated torchtext Dataset.")
+              help="Examples to pick in order to shuffle batches.")
 
 
 def train_opts(parser):

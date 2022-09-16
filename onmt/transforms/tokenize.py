@@ -419,12 +419,20 @@ class ONMTTokenizerTransform(TokenizerTransform):
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Apply OpenNMT Tokenizer to src & tgt."""
         src_out = self._tokenize(example['src'], 'src')
-        tgt_out = self._tokenize(example['tgt'], 'tgt')
-        if stats is not None:
-            n_words = len(example['src']) + len(example['tgt'])
-            n_subwords = len(src_out) + len(tgt_out)
-            stats.update(SubwordStats(n_subwords, n_words))
-        example['src'], example['tgt'] = src_out, tgt_out
+        if example['tgt'] is not None:
+            tgt_out = self._tokenize(example['tgt'], 'tgt')
+            if stats is not None:
+                n_words = len(example['src']) + len(example['tgt'])
+                n_subwords = len(src_out) + len(tgt_out)
+                stats.update(SubwordStats(n_subwords, n_words))
+            example['src'], example['tgt'] = src_out, tgt_out
+        else:
+            tgt_out = None
+            if stats is not None:
+                n_words = len(example['src'])
+                n_subwords = len(src_out)
+                stats.update(SubwordStats(n_subwords, n_words))
+            example['src'], example['tgt'] = src_out, tgt_out
         return example
 
     def apply_reverse(self, translated):
