@@ -24,20 +24,23 @@ class TransformerEncoderLayer(nn.Module):
         dropout (float): dropout probability(0-1.0).
         pos_ffn_activation_fn (ActivationFunction):
             activation function choice for PositionwiseFeedForward layer
+        normalize_after (bool): turn on the post-normalization
     """
 
     def __init__(self, d_model, heads, d_ff, dropout, attention_dropout,
                  max_relative_positions=0,
-                 pos_ffn_activation_fn=ActivationFunction.relu):
+                 pos_ffn_activation_fn=ActivationFunction.relu,
+                 normalize_after=False):
         super(TransformerEncoderLayer, self).__init__()
 
         self.self_attn = MultiHeadedAttention(
             heads, d_model, dropout=attention_dropout,
             max_relative_positions=max_relative_positions)
         self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout,
-                                                    pos_ffn_activation_fn)
+                                                    pos_ffn_activation_fn, normalize_after=normalize_after)
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
         self.dropout = nn.Dropout(dropout)
+        self.normalize_after = normalize_after
 
     def forward(self, inputs, mask):
         """
@@ -50,10 +53,14 @@ class TransformerEncoderLayer(nn.Module):
 
             * outputs ``(batch_size, src_len, model_dim)``
         """
-        input_norm = self.layer_norm(inputs)
+        input_norm = inputs
+        if not self.normalize_after:
+            input_norm = self.layer_norm(inputs)
         context, _ = self.self_attn(input_norm, input_norm, input_norm,
                                     mask=mask, attn_type="self")
         out = self.dropout(context) + inputs
+        if self.normalize_after:
+            out = self.layer_norm(out)
         return self.feed_forward(out)
 
     def update_dropout(self, dropout, attention_dropout):
@@ -87,6 +94,7 @@ class TransformerEncoder(EncoderBase):
           embeddings to use, should have positional encodings
         pos_ffn_activation_fn (ActivationFunction):
             activation function choice for PositionwiseFeedForward layer
+        normalize_after (bool): turn on the post-normalization
 
     Returns:
         (torch.FloatTensor, torch.FloatTensor):
@@ -97,7 +105,7 @@ class TransformerEncoder(EncoderBase):
 
     def __init__(self, num_layers, d_model, heads, d_ff, dropout,
                  attention_dropout, embeddings, max_relative_positions,
-                 pos_ffn_activation_fn=ActivationFunction.relu):
+                 pos_ffn_activation_fn=ActivationFunction.relu, normalize_after=False):
         super(TransformerEncoder, self).__init__()
 
         self.embeddings = embeddings
@@ -105,9 +113,12 @@ class TransformerEncoder(EncoderBase):
             [TransformerEncoderLayer(
                 d_model, heads, d_ff, dropout, attention_dropout,
                 max_relative_positions=max_relative_positions,
-                pos_ffn_activation_fn=pos_ffn_activation_fn)
+                pos_ffn_activation_fn=pos_ffn_activation_fn,
+                normalize_after=normalize_after)
              for i in range(num_layers)])
-        self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
+        self.layer_norm = None
+        if not self.normalize_after:
+            self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
 
     @classmethod
     def from_opt(cls, opt, embeddings):
@@ -123,6 +134,7 @@ class TransformerEncoder(EncoderBase):
             embeddings,
             opt.max_relative_positions,
             pos_ffn_activation_fn=opt.pos_ffn_activation_fn,
+            normalize_after=opt.normalize_after,
         )
 
     def forward(self, src, lengths=None):
@@ -136,7 +148,8 @@ class TransformerEncoder(EncoderBase):
         # Run the forward pass of every layer of the tranformer.
         for layer in self.transformer:
             out = layer(out, mask)
-        out = self.layer_norm(out)
+        if self.layer_norm is not None:
+            out = self.layer_norm(out)
 
         return emb, out.transpose(0, 1).contiguous(), lengths
 
