@@ -32,6 +32,19 @@ def _add_logging_opts(parser, is_train=True):
               else 'Print scores and predictions for each sentence')
 
     if is_train:
+        group.add('--train_eval_steps', '-train_eval_steps',
+                  type=int, default=200,
+                  help="Print stats at this interval.")
+        group.add('--train_metrics', '-train_metrics',
+                  default=[], nargs="+",
+                  help='List of names of additional training metrics')
+        group.add('--valid_metrics', '-valid_metrics',
+                  default=[], nargs="+",
+                  help='List of names of additional validation metrics')
+        group.add('--scoring_debug', '-scoring_debug', action="store_true",
+                  help='Dump the src/ref/pred of the current batch')
+        group.add('--dump_preds', '-dump_preds',  type=str, default="",
+                  help='Folder to dump predictions to.')
         group.add('--report_every', '-report_every', type=int, default=50,
                   help="Print stats at this interval.")
         group.add('--exp_host', '-exp_host', type=str, default="",
@@ -57,6 +70,8 @@ def _add_logging_opts(parser, is_train=True):
         group.add('--n_best', '-n_best', type=int, default=1,
                   help="If verbose is set, will output the n_best "
                        "decoded sentences")
+        group.add('--with_score', '-with_score', action="store_true",
+                  help='add a tab separated score to the translation')
 
 
 def _add_reproducibility_opts(parser):
@@ -696,8 +711,8 @@ def _add_decoding_opts(parser):
     group.add('--length_penalty', '-length_penalty', default='none',
               choices=['none', 'wu', 'avg'],
               help="Length Penalty to use.")
-    group.add('--alpha', '-alpha', type=float, default=0.,
-              help="Google NMT length penalty parameter "
+    group.add('--alpha', '-alpha', type=float, default=1.,
+              help="Length penalty parameter"
                    "(higher = longer generation)")
     # Coverage penalty options
     group.add('--coverage_penalty', '-coverage_penalty', default='none',

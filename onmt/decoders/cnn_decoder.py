@@ -128,6 +128,6 @@ class CNNDecoder(DecoderBase):
         # TODO change the way attns is returned dict => list or tuple (onnx)
         return dec_outs, attns
 
-    def update_dropout(self, dropout):
+    def update_dropout(self, dropout, attention_dropout=None):
         for layer in self.conv_layers:
             layer.dropout.p = dropout

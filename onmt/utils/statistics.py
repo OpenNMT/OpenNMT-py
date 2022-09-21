@@ -16,11 +16,12 @@ class Statistics(object):
     * elapsed time
     """
 
-    def __init__(self, loss=0, n_words=0, n_correct=0):
+    def __init__(self, loss=0, n_words=0, n_correct=0, computed_metrics={}):
         self.loss = loss
         self.n_words = n_words
         self.n_correct = n_correct
         self.n_src_words = 0
+        self.computed_metrics = computed_metrics
         self.start_time = time.time()
 
     @staticmethod
@@ -80,6 +81,7 @@ class Statistics(object):
         self.loss += stat.loss
         self.n_words += stat.n_words
         self.n_correct += stat.n_correct
+        self.computed_metrics = stat.computed_metrics
 
         if update_n_src_words:
             self.n_src_words += stat.n_src_words
@@ -114,7 +116,7 @@ class Statistics(object):
             step_fmt = "%s/%5d" % (step_fmt, num_steps)
         logger.info(
             ("Step %s; acc: %6.2f; ppl: %5.2f; xent: %4.2f; " +
-             "lr: %7.5f; %3.0f/%3.0f tok/s; %6.0f sec")
+             "lr: %7.5f; %3.0f/%3.0f tok/s; %6.0f sec;")
             % (step_fmt,
                self.accuracy(),
                self.ppl(),
@@ -122,7 +124,9 @@ class Statistics(object):
                learning_rate,
                self.n_src_words / (t + 1e-5),
                self.n_words / (t + 1e-5),
-               time.time() - start))
+               time.time() - start) +
+            "".join([" {}: {}".format(k, round(v, 2))
+                     for k, v in self.computed_metrics.items()]))
         sys.stdout.flush()
 
     def log_tensorboard(self, prefix, writer, learning_rate, patience, step):
@@ -130,6 +134,8 @@ class Statistics(object):
         t = self.elapsed_time()
         writer.add_scalar(prefix + "/xent", self.xent(), step)
         writer.add_scalar(prefix + "/ppl", self.ppl(), step)
+        for k, v in self.computed_metrics.items():
+            writer.add_scalar(prefix + "/" + k, round(v, 4), step)
         writer.add_scalar(prefix + "/accuracy", self.accuracy(), step)
         writer.add_scalar(prefix + "/tgtper", self.n_words / t, step)
         writer.add_scalar(prefix + "/lr", learning_rate, step)

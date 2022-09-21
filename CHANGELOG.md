@@ -4,6 +4,25 @@
 
 ## [Unreleased]
 
+## [2.3.0](https://github.com/OpenNMT/OpenNMT-py/tree/2.3.0) (2022-09-14)
+
+### New features
+* BLEU/TER (& custom) scoring during training and validation (#2198)
+* LM related tools (#2197)
+* Allow encoder/decoder freezing (#2176)
+* Dynamic data loading for inference (#2145)
+* Sentence-level scores at inference (#2196)
+* MBR and oracle reranking scoring tools (#2196)
+
+### Fixes and improvements
+* Updated beam exit condition (#2190)
+* Improve scores reporting (#2191)
+* Fix dropout scheduling (#2194)
+* Better catch CUDA ooms when training (#2195)
+* Fix source features support in inference and REST server (#2109)
+* Make REST server more flexible with dictionaries (#2104)
+* Fix target prefixing in LM decoding (#2099)
+
 ## [2.2.0](https://github.com/OpenNMT/OpenNMT-py/tree/2.2.0) (2021-09-14)
 
 ### New features
