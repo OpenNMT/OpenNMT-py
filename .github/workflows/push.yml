@@ -104,6 +104,18 @@ jobs:
           -word_vec_size 5 -report_every 5        \
           -coverage_attn true -lambda_coverage 0.1 \
           -rnn_size 10 -train_steps 10
+    - name: Test Transformer training with pseudo self attention
+      run : |
+        python train.py \
+          -config data/align_data.yaml \
+          -src_vocab /tmp/onmt.vocab.src \
+          -tgt_vocab /tmp/onmt.vocab.tgt \
+          -src_vocab_size 1000 \
+          -tgt_vocab_size 1000 \
+          -max_generator_batches 0 \
+          -encoder_type transformer -decoder_type transformer_lm_psa \
+          -layers 4 -word_vec_size 16 -rnn_size 16 -heads 2 -transformer_ff 64 \
+          -report_every 5 -train_steps 10
     - name: Test Transformer training with align
       run: |
         python train.py \

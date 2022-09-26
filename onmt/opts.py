@@ -295,7 +295,8 @@ def model_opts(parser):
                    "are experimental. Options are "
                    "[rnn|brnn|ggnn|mean|transformer|cnn|transformer_lm].")
     group.add('--decoder_type', '-decoder_type', type=str, default='rnn',
-              choices=['rnn', 'transformer', 'cnn', 'transformer_lm'],
+              choices=['rnn', 'transformer', 'cnn', 'transformer_lm',
+                       'transformer_lm_psa'],
               help="Type of decoder layer to use. Non-RNN layers "
                    "are experimental. Options are "
                    "[rnn|transformer|cnn|transformer].")
