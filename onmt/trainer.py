@@ -14,13 +14,10 @@ import torch
 import traceback
 import onmt.utils
 from onmt.utils.logging import logger
-<<<<<<< HEAD
 from onmt.model_builder import load_test_model
 from onmt.utils.lm_prior_loss import lm_prior_loss
-=======
 from onmt.translate.utils import ScoringPreparator
 from onmt.scorers import get_scorers_cls, build_scorers
->>>>>>> 173e113b1220b32c1d03a0f8d3f9d44759c071de
 
 
 def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
@@ -72,7 +69,7 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
         if opt.early_stopping > 0 else None
 
     report_manager = onmt.utils.build_report_manager(opt, gpu_rank)
-<<<<<<< HEAD
+
     if opt.lm_prior_model:
         opt.gpu = 0
         opt.fp32 = False
@@ -90,13 +87,10 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
         lm_prior_tau = 1
         vocab = tgt_field.vocab
 
-    trainer = onmt.Trainer(model, train_loss, valid_loss, optim, trunc_size,
-=======
     trainer = onmt.Trainer(model,
                            train_loss, valid_loss,
                            scoring_preparator, train_scorers, valid_scorers,
                            optim, trunc_size,
->>>>>>> 173e113b1220b32c1d03a0f8d3f9d44759c071de
                            shard_size, norm_method,
                            accum_count, accum_steps,
                            n_gpu, gpu_rank, gpu_verbose_level,
@@ -108,16 +102,12 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
                            model_dtype=opt.model_dtype,
                            earlystopper=earlystopper,
                            dropout=dropout,
-<<<<<<< HEAD
+                           attention_dropout=attention_dropout,                           
                            dropout_steps=dropout_steps,
                            lm_prior_model=lm_prior_model,
                            vocab=vocab,
                            lm_prior_lambda=lm_prior_lambda,
                            lm_prior_tau=lm_prior_tau)
-=======
-                           attention_dropout=attention_dropout,
-                           dropout_steps=dropout_steps)
->>>>>>> 173e113b1220b32c1d03a0f8d3f9d44759c071de
     return trainer
 
 
@@ -156,14 +146,11 @@ class Trainer(object):
                  train_eval_steps=200,
                  report_manager=None, with_align=False, model_saver=None,
                  average_decay=0, average_every=1, model_dtype='fp32',
-<<<<<<< HEAD
-                 earlystopper=None, dropout=[0.3], dropout_steps=[0],
+                 earlystopper=None, dropout=[0.3], attention_dropout=[0.1],
+                 dropout_steps=[0],
                  lm_prior_model=None, vocab=None,
                  lm_prior_lambda=None, lm_prior_tau=None):
-=======
-                 earlystopper=None, dropout=[0.3], attention_dropout=[0.1],
-                 dropout_steps=[0]):
->>>>>>> 173e113b1220b32c1d03a0f8d3f9d44759c071de
+
         # Basic attributes.
 
         self.model = model
