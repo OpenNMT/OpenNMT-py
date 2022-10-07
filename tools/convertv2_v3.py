@@ -5,7 +5,6 @@ import argparse
 import pyonmttok
 from onmt.constants import DefaultTokens
 from onmt.inputters.inputter import vocabs_to_dict
-from collections import Counter
 
 
 def _feature_tokenize():
@@ -44,7 +43,7 @@ if __name__ == "__main__":
     multifields = multifield.fields
     _, fields = multifields[0]
     voc = dict(sorted(fields.vocab.__dict__['freqs'].items(),
-                      key = lambda x: (-x[1], x[0]))).keys()
+                      key=lambda x: (-x[1], x[0]))).keys()
     src_vocab = pyonmttok.build_vocab_from_tokens(
         voc,
         maximum_size=0,
@@ -60,7 +59,7 @@ if __name__ == "__main__":
     multifields = multifield.fields
     _, fields = multifields[0]
     voc = dict(sorted(fields.vocab.__dict__['freqs'].items(),
-                      key = lambda x: (-x[1], x[0]))).keys()
+                      key=lambda x: (-x[1], x[0]))).keys()
     tgt_vocab = pyonmttok.build_vocab_from_tokens(
         voc,
         maximum_size=0,
