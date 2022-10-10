@@ -36,6 +36,10 @@ def _get_model_opts(opt, checkpoint=None):
         # Override checkpoint's freezing settings as it defaults to false
         model_opt.freeze_encoder = opt.freeze_encoder
         model_opt.freeze_decoder = opt.freeze_decoder
+        if opt.override_opts:
+            # Override checkpoint's droupout settings
+            model_opt.dropout = opt.dropout
+            model_opt.attention_dropout = opt.attention_dropout
     else:
         model_opt = opt
     return model_opt
