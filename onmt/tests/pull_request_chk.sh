@@ -343,6 +343,7 @@ echo "Succeeded" | tee -a ${LOG_FILE}
 rm $TMP_OUT_DIR/trans_sampling
 
 echo -n "  [+] Testing LM generation..."
+echo "  [+] Testing LM generation..." | tee -a ${LOG_FILE}
 head ${DATA_DIR}/src-test.txt > $TMP_OUT_DIR/src-test.txt
 ${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt -src $TMP_OUT_DIR/src-test.txt -verbose >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
@@ -350,6 +351,7 @@ echo "Succeeded" | tee -a ${LOG_FILE}
 rm $TMP_OUT_DIR/src-test.txt
 
 echo -n "  [+] Testing LM generation w/ Beam search..."
+echo "  [+] Testing LM generation w/ Beam search..." | tee -a ${LOG_FILE}
 ${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
             -src ${DATA_DIR}/data_lm/src-gen.txt   \
             -verbose -batch_size 10     \
@@ -419,7 +421,7 @@ PYTHONPATH=${PROJECT_ROOT}:${PYTHONPATH} ${PYTHON} ./tools/extract_vocabulary.py
             -model ${TEST_DIR}/test_model.pt -side src \
             -out_file $TMP_OUT_DIR/vocab.txt >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
-if ! wc -l $TMP_OUT_DIR/vocab.txt | grep -qF  "35008"; then
+if ! wc -l $TMP_OUT_DIR/vocab.txt | grep -qF  "1002"; then
     echo -n "wrong word count\n" >> ${LOG_FILE}
     wc -l $TMP_OUT_DIR/vocab.txt >> ${LOG_FILE}
     error_exit

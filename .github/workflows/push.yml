@@ -303,7 +303,7 @@ jobs:
           -model onmt/tests/test_model.pt \
           -side src \
           -out_file /tmp/onmt.vocab.txt
-        if ! wc -l /tmp/onmt.vocab.txt | grep -qF  "35008"
+        if ! wc -l /tmp/onmt.vocab.txt | grep -qF  "1002"
           then echo "wrong word count" && exit 1
         else
           echo "create vocabulary pass"

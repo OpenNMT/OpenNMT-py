@@ -1,6 +1,6 @@
 """Module that contain iterator used for dynamic data."""
 from itertools import cycle
-from onmt.constants import CorpusTask
+from onmt.constants import CorpusTask, ModelTask
 from onmt.inputters.corpus import get_corpora, build_corpora_iters
 from onmt.inputters.item import text_sort_key, max_tok_len, process,\
     numericalize, tensorify, _addcopykeys
@@ -157,6 +157,11 @@ class DynamicDatasetIter(object):
             # bucket_size = batch_size
             bucket_size = 16384
             skip_empty_level = 'warning'
+        if task == CorpusTask.INFER and \
+           vocabs['data_task'] == ModelTask.LANGUAGE_MODEL:
+            # We only support
+            batch_size_multiple = 1
+            batch_size = 1
         return cls(
             corpora, corpora_info, transforms, vocabs, task, opt.batch_type,
             batch_size, batch_size_multiple, data_type=opt.data_type,

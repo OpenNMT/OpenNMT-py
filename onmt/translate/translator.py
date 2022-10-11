@@ -876,17 +876,9 @@ class GeneratorLM(Inference):
         """
         raise NotImplementedError
 
-    def translate(
-        self,
-        src,
-        src_feats={},
-        tgt=None,
-        batch_size=None,
-        batch_type="sents",
-        attn_debug=False,
-        align_debug=False,
-        phrase_table="",
-    ):
+    def translate_batch(self, batch, attn_debug):
+        """Translate a batch of sentences."""
+        batch_size = len(batch['srclen'])
         if batch_size != 1:
             warning_msg = ("GeneratorLM does not support batch_size != 1"
                            " nicely. You can remove this limitation here."
@@ -897,20 +889,6 @@ class GeneratorLM(Inference):
                 self.logger.info(warning_msg)
             else:
                 os.write(1, warning_msg.encode("utf-8"))
-
-        return super(GeneratorLM, self).translate(
-            src,
-            src_feats,
-            tgt,
-            batch_size=1,
-            batch_type=batch_type,
-            attn_debug=attn_debug,
-            align_debug=align_debug,
-            phrase_table=phrase_table,
-        )
-
-    def translate_batch(self, batch, attn_debug):
-        """Translate a batch of sentences."""
         with torch.no_grad():
             if self.sample_from_topk != 0 or self.sample_from_topp != 0:
                 decode_strategy = GreedySearchLM(
