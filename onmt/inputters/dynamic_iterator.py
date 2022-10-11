@@ -264,8 +264,8 @@ class DynamicDatasetIter(object):
                 # for specific case of rnn_packed need to be sorted
                 # within the batch
                 minibatch.sort(key=self.sort_key, reverse=True)
-                tbatch = tensorify(self.vocabs, minibatch)
-                yield tbatch
+                tensor_batch = tensorify(self.vocabs, minibatch)
+                yield tensor_batch
 
 
 def build_dynamic_dataset_iter(opt, transforms_cls, vocabs, copy=False,

@@ -147,7 +147,7 @@ def tensorify(vocabs, minibatch):
          'align': alignment sparse tensor
         }
     """
-    tbatch = {}
+    tensor_batch = {}
     tbatchsrc = [torch.LongTensor(ex['src']['src_ids']) for ex in minibatch]
     padidx = vocabs['src'][DefaultTokens.PAD]
     tbatchsrc = pad_sequence(tbatchsrc, padding_value=padidx)
@@ -165,10 +165,11 @@ def tensorify(vocabs, minibatch):
         tbatchsrc = tbatchsrc[:, :, None]
     # Need to add features in last dimensions
 
-    tbatch['src'] = tbatchsrc
-    tbatch['indices'] = torch.LongTensor([ex['indices'] for ex in minibatch])
-    tbatch['srclen'] = torch.LongTensor([len(ex['src']['src_ids'])
-                                         for ex in minibatch])
+    tensor_batch['src'] = tbatchsrc
+    tensor_batch['indices'] = torch.LongTensor([ex['indices']
+                                                for ex in minibatch])
+    tensor_batch['srclen'] = torch.LongTensor([len(ex['src']['src_ids'])
+                                               for ex in minibatch])
 
     if minibatch[0]['tgt'] is not None:
         tbatchtgt = [torch.LongTensor(ex['tgt']['tgt_ids'])
@@ -178,8 +179,8 @@ def tensorify(vocabs, minibatch):
         tbatchtgt = tbatchtgt[:, :, None]
         tbatchtgtlen = torch.LongTensor([len(ex['tgt']['tgt_ids'])
                                          for ex in minibatch])
-        tbatch['tgt'] = tbatchtgt
-        tbatch['tgtlen'] = tbatchtgtlen
+        tensor_batch['tgt'] = tbatchtgt
+        tensor_batch['tgtlen'] = tbatchtgtlen
 
     if 'align' in minibatch[0].keys() and minibatch[0]['align'] is not None:
         sparse_idx = []
@@ -187,30 +188,30 @@ def tensorify(vocabs, minibatch):
             for src, tgt in parse_align_idx(ex['align']):
                 sparse_idx.append([i, tgt + 1, src])
         tbatchalign = torch.LongTensor(sparse_idx)
-        tbatch['align'] = tbatchalign
+        tensor_batch['align'] = tbatchalign
 
     if 'src_map' in minibatch[0].keys():
         src_vocab_size = max([max(ex['src_map']) for ex in minibatch]) + 1
         src_map = torch.zeros(tbatchsrc.size(0),
-                              len(tbatch['srclen']),
+                              len(tensor_batch['srclen']),
                               src_vocab_size)
         for i, ex in enumerate(minibatch):
             for j, t in enumerate(ex['src_map']):
                 src_map[j, i, t] = 1
-        tbatch['src_map'] = src_map
+        tensor_batch['src_map'] = src_map
 
     if 'alignment' in minibatch[0].keys():
         alignment = torch.zeros(tbatchtgt.size(0),
-                                len(tbatch['srclen'])).long()
+                                len(tensor_batch['srclen'])).long()
         for i, ex in enumerate(minibatch):
             alignment[:len(ex['alignment']), i] = \
                 torch.LongTensor(ex['alignment'])
-        tbatch['alignment'] = alignment
+        tensor_batch['alignment'] = alignment
 
     if 'src_ex_vocab' in minibatch[0].keys():
-        tbatch['src_ex_vocab'] = [ex['src_ex_vocab']
-                                  for ex in minibatch]
-    return tbatch
+        tensor_batch['src_ex_vocab'] = [ex['src_ex_vocab']
+                                        for ex in minibatch]
+    return tensor_batch
 
 
 def textbatch_to_tensor(vocabs, batch):

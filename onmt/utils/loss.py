@@ -105,12 +105,10 @@ class LossComputeBase(nn.Module):
     and make_shard_state() methods.
 
     Args:
+        criterion (:obj:`nn. loss function`) : NLLoss or customed loss
         generator (:obj:`nn.Module`) :
              module that maps the output of the decoder to a
              distribution over the target vocabulary.
-        tgt_vocab (:obj:`Vocab`) :
-             vocab object representing the target output
-        normalzation (str): normalize by "sents" or "tokens"
     """
 
     def __init__(self, criterion, generator):

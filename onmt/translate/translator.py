@@ -56,7 +56,7 @@ def build_translator(opt, report_score=True, logger=None, out_file=None):
             report_score=report_score,
             logger=logger,
         )
-    return translator, vocabs
+    return translator
 
 
 class Inference(object):

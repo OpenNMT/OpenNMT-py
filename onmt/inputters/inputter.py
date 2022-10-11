@@ -15,18 +15,18 @@ class IterOnDevice(object):
         self.transforms = iterable.transforms
 
     @staticmethod
-    def batch_to_device(tbatch, device_id):
+    def batch_to_device(tensor_batch, device_id):
         """Move `batch` to `device_id`, cpu if `device_id` < 0."""
         device = torch.device(device_id) if device_id >= 0 \
             else torch.device('cpu')
-        for key in tbatch.keys():
+        for key in tensor_batch.keys():
             if key != 'src_ex_vocab':
-                tbatch[key] = tbatch[key].to(device)
+                tensor_batch[key] = tensor_batch[key].to(device)
 
     def __iter__(self):
-        for tbatch in self.iterable:
-            self.batch_to_device(tbatch, self.device_id)
-            yield tbatch
+        for tensor_batch in self.iterable:
+            self.batch_to_device(tensor_batch, self.device_id)
+            yield tensor_batch
 
 
 def build_vocab(opt):
@@ -96,6 +96,7 @@ def _read_vocab_file(vocab_path, min_count):
         vocab_path (str): Path to utf-8 text file containing vocabulary.
             Each token should be on a line, may followed with a count number
             seperate by space if `with_count`. No extra whitespace is allowed.
+        min_count (int): retains only tokens with min_count frequency.
     """
 
     if not os.path.exists(vocab_path):
@@ -117,6 +118,10 @@ def _read_vocab_file(vocab_path, min_count):
 
 
 def vocabs_to_dict(vocabs):
+    """
+    Convert a dict of pyonmttok vocabs
+    into a plain text dict to be saved in the checkpoint
+    """
     vocabs_dict = {}
     vocabs_dict['src'] = vocabs['src'].ids_to_tokens
     vocabs_dict['tgt'] = vocabs['tgt'].ids_to_tokens
@@ -130,6 +135,10 @@ def vocabs_to_dict(vocabs):
 
 
 def dict_to_vocabs(vocabs_dict):
+    """
+    Convert a dict formatted vocabs (as stored in a checkpoint)
+    into a dict of pyonmttok vocabs objects.
+    """
     vocabs = {}
     vocabs['data_task'] = vocabs_dict['data_task']
     vocabs['src'] = pyonmttok.build_vocab_from_tokens(vocabs_dict['src'])

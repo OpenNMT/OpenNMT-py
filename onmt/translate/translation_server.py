@@ -449,7 +449,7 @@ class ServerModel(object):
                     target_prefix=self.opt.tgt_prefix,
                     preload=preload)
             else:
-                self.translator, self.vocabs = build_translator(
+                self.translator = build_translator(
                     self.opt, report_score=False,
                     out_file=codecs.open(os.devnull, "w", "utf-8"))
         except RuntimeError as e:
@@ -541,7 +541,7 @@ class ServerModel(object):
 
         if len(texts_to_translate) > 0:
             try:
-                infer_iter = textbatch_to_tensor(self.vocabs,
+                infer_iter = textbatch_to_tensor(self.translator.vocabs,
                                                  texts_to_translate)
 
                 scores, predictions = self.translator._translate(

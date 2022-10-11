@@ -12,7 +12,8 @@ from copy import deepcopy
 
 class RandomShuffler(object):
     """Use random functions while keeping track of the random state to make it
-    reproducible and deterministic."""
+    reproducible and deterministic.
+    taken from the torchtext Library"""
 
     def __init__(self, random_state=None):
         self._random_state = random_state

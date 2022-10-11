@@ -19,7 +19,7 @@ from onmt.inputters.corpus import save_transformed_sample
 
 
 def prepare_transforms(opt, vocabs):
-    """Prepare or dump fields & transforms before training."""
+    """Prepare or dump transforms before training."""
     transforms_cls = get_transforms_cls(opt._all_transform)
     # specials = get_specials(opt, transforms_cls)
 
@@ -99,7 +99,8 @@ def main(opt, checkpoint, device_id,
     # Build model.
     model = build_model(model_opt, opt, vocabs, checkpoint)
     model.count_parameters(log=logger.info)
-
+    logger.info(' * src vocab size = %d' % len(vocabs['src']))
+    logger.info(' * tgt vocab size = %d' % len(vocabs['tgt']))
     # Build optimizer.
     optim = Optimizer.from_opt(model, opt, checkpoint=checkpoint)
 

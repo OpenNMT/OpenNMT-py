@@ -17,13 +17,13 @@ def translate(opt):
     ArgumentParser.validate_translate_opts_dynamic(opt)
     logger = init_logger(opt.log_file)
 
-    translator, vocabs = build_translator(opt, logger=logger,
-                                          report_score=True)
+    translator = build_translator(opt, logger=logger,
+                                  report_score=True)
 
     transforms_cls = get_transforms_cls(opt._all_transform)
 
     infer_iter = build_dynamic_dataset_iter(
-        opt, transforms_cls, vocabs, task=CorpusTask.INFER,
+        opt, transforms_cls, translator.vocabs, task=CorpusTask.INFER,
         copy=translator.copy_attn)
 
     if infer_iter is not None:

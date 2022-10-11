@@ -6,6 +6,11 @@ import pyonmttok
 from onmt.constants import DefaultTokens
 from onmt.inputters.inputter import vocabs_to_dict
 
+# with the two module = imp.load_source() below
+# we ghost the old torchtext.data.field and depercated
+# onmt.inputters.text_dataset
+# however this require some functions / classes to be
+# monkey patched for loading the old field/vocab objects.
 
 def _feature_tokenize():
     return 0
@@ -28,8 +33,12 @@ class Field(RawField):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('-v2model', type=str, required=True)
-    parser.add_argument('-v3model', type=str, required=True)
+    parser.add_argument('-v2model', type=str, required=True,
+                         help=="""Source OpenNMT-py v2.x model to
+                                 be converted in v3.x """)
+    parser.add_argument('-v3model', type=str, required=True,
+                         help="""Target model to be used by OpenNMT-py
+                                v3.x """)
 
     opt = parser.parse_args()
     print(opt)
