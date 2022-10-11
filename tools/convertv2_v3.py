@@ -42,32 +42,26 @@ if __name__ == "__main__":
     multifield = checkpoint['vocab']['src']
     multifields = multifield.fields
     _, fields = multifields[0]
-    voc = dict(sorted(fields.vocab.__dict__['freqs'].items(),
-                      key=lambda x: (-x[1], x[0]))).keys()
+    # voc = dict(sorted(fields.vocab.__dict__['freqs'].items(),
+    #                  key=lambda x: (-x[1], x[0]))).keys()
+    voc = fields.vocab.__dict__['itos']
     src_vocab = pyonmttok.build_vocab_from_tokens(
         voc,
         maximum_size=0,
-        minimum_frequency=1,
-        special_tokens=[DefaultTokens.UNK,
-                        DefaultTokens.PAD,
-                        DefaultTokens.BOS,
-                        DefaultTokens.EOS])
+        minimum_frequency=1)
     src_vocab.default_id = src_vocab[DefaultTokens.UNK]
     vocabs['src'] = src_vocab
     print("Source vocab size is:", len(src_vocab))
     multifield = checkpoint['vocab']['tgt']
     multifields = multifield.fields
     _, fields = multifields[0]
-    voc = dict(sorted(fields.vocab.__dict__['freqs'].items(),
-                      key=lambda x: (-x[1], x[0]))).keys()
+    # voc = dict(sorted(fields.vocab.__dict__['freqs'].items(),
+    #                  key=lambda x: (-x[1], x[0]))).keys()
+    voc = fields.vocab.__dict__['itos']
     tgt_vocab = pyonmttok.build_vocab_from_tokens(
         voc,
         maximum_size=0,
-        minimum_frequency=1,
-        special_tokens=[DefaultTokens.UNK,
-                        DefaultTokens.PAD,
-                        DefaultTokens.BOS,
-                        DefaultTokens.EOS])
+        minimum_frequency=1)
     tgt_vocab.default_id = src_vocab[DefaultTokens.UNK]
     vocabs['tgt'] = tgt_vocab
     print("Target vocab size is:", len(tgt_vocab))
