@@ -71,7 +71,10 @@ if __name__ == "__main__":
     tgt_vocab.default_id = src_vocab[DefaultTokens.UNK]
     vocabs['tgt'] = tgt_vocab
     print("Target vocab size is:", len(tgt_vocab))
-    print("Model is type:", checkpoint['opt'].data_task)
-    vocabs['data_task'] = checkpoint['opt'].data_task
+    if hasattr(checkpoint['opt'], 'data_task'):
+        print("Model is type:", checkpoint['opt'].data_task)
+        vocabs['data_task'] = checkpoint['opt'].data_task
+    else:
+        vocabs['data_task'] = "seq2seq"
     checkpoint['vocab'] = vocabs_to_dict(vocabs)
     torch.save(checkpoint, opt.v3model)
