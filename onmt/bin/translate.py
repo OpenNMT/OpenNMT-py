@@ -35,12 +35,14 @@ def translate(opt):
     ]
     transform = TransformPipe.build_from(data_transform)
 
-    translator._translate(
+    all_scores, all_preds = translator._translate(
         infer_iter,
         transform=transform,
         attn_debug=opt.attn_debug,
         align_debug=opt.align_debug
         )
+    print(all_scores)
+    print(all_preds)
 
 
 def _get_parser():
