@@ -15,7 +15,8 @@ from onmt.utils.parse import ArgumentParser
 from onmt.inputters.dynamic_iterator import build_dynamic_dataset_iter
 from onmt.transforms import make_transforms, save_transforms, \
     get_transforms_cls
-from onmt.inputters.corpus import save_transformed_sample
+from onmt.modules.embeddings import prepare_pretrained_embeddings
+from onmt.inputters.text_corpus import save_transformed_sample
 
 
 def prepare_transforms(opt, vocabs):
@@ -24,7 +25,7 @@ def prepare_transforms(opt, vocabs):
     # specials = get_specials(opt, transforms_cls)
 
     # maybe prepare pretrained embeddings, if any
-    # prepare_pretrained_embeddings(opt)
+    prepare_pretrained_embeddings(opt, vocabs)
 
     if opt.dump_transforms or opt.n_sample != 0:
         transforms = make_transforms(opt, transforms_cls, vocabs)

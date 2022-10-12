@@ -5,8 +5,8 @@ from onmt.utils.logging import init_logger, logger
 from onmt.utils.misc import set_random_seed, check_path
 from onmt.utils.parse import ArgumentParser
 from onmt.opts import dynamic_prepare_opts
-from onmt.inputters.corpus import build_corpora_iters, get_corpora
-from onmt.inputters.item import process
+from onmt.inputters.text_corpus import build_corpora_iters, get_corpora
+from onmt.inputters.text_utils import process
 from onmt.transforms import make_transforms, get_transforms_cls
 from onmt.constants import CorpusName, CorpusTask
 from collections import Counter, defaultdict

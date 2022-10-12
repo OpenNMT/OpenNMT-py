@@ -25,7 +25,7 @@ from onmt.utils.alignment import to_word_align
 from onmt.utils.parse import ArgumentParser
 from onmt.translate.translator import build_translator
 from onmt.transforms.features import InferFeatsTransform
-from onmt.inputters.item import textbatch_to_tensor
+from onmt.inputters.text_utils import textbatch_to_tensor
 
 
 def critical(func):

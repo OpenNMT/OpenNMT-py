@@ -133,8 +133,7 @@ def load_test_model(opt):
         else:
             assert shared_vocabs['src'].tokens_to_ids == \
                 vocabs['src'].tokens_to_ids, \
-                "Ensemble models must use the same " \
-                "preprocessed data"
+                "Ensemble models must use the same vocabs "
         models.append(model)
         if shared_model_opt is None:
             shared_model_opt = model_opt

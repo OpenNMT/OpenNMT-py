@@ -44,13 +44,13 @@ rm /tmp/tmp*.pt
 fi
 
 ################# MORPH DATA
-if true; then
+if false; then
 $my_python build_vocab.py \
     -config data/morph_data.yaml -save_data data/data \
     -src_vocab data/morph_data.vocab.src -tgt_vocab data/morph_data.vocab.tgt \
     -overwrite true -n_sample 10000
 fi
-if true; then
+if false; then
 $my_python train.py \
     -config data/morph_data.yaml -src_vocab data/morph_data.vocab.src -tgt_vocab data/morph_data.vocab.tgt \
     -save_model tmp -world_size 1 -gpu_ranks 0 \
@@ -66,7 +66,7 @@ fi
 
 
 ############### TEST TRANSFORMER
-if true; then
+if false; then
 $my_python build_vocab.py \
     -config data/data.yaml -save_data data/data \
     -src_vocab data/data.vocab.src -tgt_vocab data/data.vocab.tgt \
@@ -99,7 +99,7 @@ $my_python translate.py -gpu 0 -model onmt/tests/test_model.pt \
 fi
 
 ############### TEST LANGUAGE MODEL
-if true; then
+if false; then
 rm data/data_lm/*.python
 
 $my_python build_vocab.py \

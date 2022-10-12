@@ -314,8 +314,8 @@ class TestSamplingTransform(unittest.TestCase):
             # require vocabs to warm_up
             switchout_transform.warm_up(vocabs=None)
         vocabs = {
-            "src": Namespace(itos=["A", "Fake", "vocab"]),
-            "tgt": Namespace(itos=["A", "Fake", "vocab"]),
+            "src": Namespace(ids_to_tokens=["A", "Fake", "vocab"]),
+            "tgt": Namespace(ids_to_tokens=["A", "Fake", "vocab"]),
         }
         switchout_transform.warm_up(vocabs=vocabs)
         ex = {

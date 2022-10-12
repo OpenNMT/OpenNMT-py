@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import math
 import codecs
 import torch
 import pyonmttok
@@ -41,6 +42,16 @@ def build_vocab(opt):
                  'data_task': seq2seq or lm
                 }
     """
+    def _pad_vocab_to_multiple(vocab, multiple):
+        vocab_size = len(vocab)
+        if vocab_size % multiple == 0:
+            return vocab
+        target_size = int(math.ceil(vocab_size / multiple)) * multiple
+        padding_tokens = ["{}{}".format(DefaultTokens.VOCAB_PAD, i)
+                          for i in range(target_size - vocab_size)]
+        vocab.add_fromtext(padding_tokens)
+        return vocab
+
     vocabs = {}
     src_vocab = _read_vocab_file(opt.src_vocab, opt.src_words_min_frequency)
 
@@ -52,6 +63,8 @@ def build_vocab(opt):
                         DefaultTokens.BOS,
                         DefaultTokens.EOS])
     src_vocab.default_id = src_vocab[DefaultTokens.UNK]
+    if opt.vocab_size_multiple > 1:
+        src_vocab = _pad_vocab_to_multiple(src_vocab, opt.vocab_size_multiple)
     vocabs['src'] = src_vocab
     if opt.share_vocab:
         vocabs['tgt'] = src_vocab
@@ -66,6 +79,9 @@ def build_vocab(opt):
                             DefaultTokens.BOS,
                             DefaultTokens.EOS])
         tgt_vocab.default_id = tgt_vocab[DefaultTokens.UNK]
+        if opt.vocab_size_multiple > 1:
+            tgt_vocab = _pad_vocab_to_multiple(tgt_vocab,
+                                               opt.vocab_size_multiple)
         vocabs['tgt'] = tgt_vocab
 
     if opt.src_feats_vocab:
@@ -81,6 +97,9 @@ def build_vocab(opt):
                                 DefaultTokens.BOS,
                                 DefaultTokens.EOS])
             src_f_vocab.default_id = src_f_vocab[DefaultTokens.UNK]
+            if opt.vocab_size_multiple > 1:
+                src_f_vocab = _pad_vocab_to_multiple(src_f_vocab,
+                                                     opt.vocab_size_multiple)
             src_feats[feat_name] = src_f_vocab
         vocabs['src_feats'] = src_feats
 

@@ -1,8 +1,8 @@
 """Module that contain iterator used for dynamic data."""
 from itertools import cycle
 from onmt.constants import CorpusTask, ModelTask
-from onmt.inputters.corpus import get_corpora, build_corpora_iters
-from onmt.inputters.item import text_sort_key, max_tok_len, process,\
+from onmt.inputters.text_corpus import get_corpora, build_corpora_iters
+from onmt.inputters.text_utils import text_sort_key, max_tok_len, process,\
     numericalize, tensorify, _addcopykeys
 from onmt.transforms import make_transforms
 from onmt.utils.logging import logger
@@ -185,7 +185,7 @@ class DynamicDatasetIter(object):
             self.mixer = SequentialMixer(datasets_iterables, datasets_weights)
         self.init_iterators = True
 
-    def _adapt_bucket(self, tuple_bucket):
+    def _tuple_to_json_with_tokIDs(self, tuple_bucket):
         bucket = []
         for item in tuple_bucket:
             example = process(self.task, item)
@@ -196,14 +196,19 @@ class DynamicDatasetIter(object):
         return bucket
 
     def _bucketing(self):
+        """
+        Add up to bucket_size examples from the mixed corpora according
+        to the above strategy. example tuple is converted to json and
+        tokens numericalized.
+        """
         bucket = []
         for ex in self.mixer:
             bucket.append(ex)
             if len(bucket) == self.bucket_size:
-                yield self._adapt_bucket(bucket)
+                yield self._tuple_to_json_with_tokIDs(bucket)
                 bucket = []
         if bucket:
-            yield self._adapt_bucket(bucket)
+            yield self._tuple_to_json_with_tokIDs(bucket)
 
     def batch_iter(self, data, batch_size, batch_size_fn=None,
                    batch_size_multiple=1):
