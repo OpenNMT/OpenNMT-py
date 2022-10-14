@@ -14,15 +14,17 @@ from onmt.utils.logging import init_logger, logger
 from onmt.utils.parse import ArgumentParser
 from onmt.inputters.dynamic_iterator import build_dynamic_dataset_iter
 from onmt.transforms import make_transforms, save_transforms, \
-    get_transforms_cls
+    get_specials, get_transforms_cls
 from onmt.modules.embeddings import prepare_pretrained_embeddings
 from onmt.inputters.text_corpus import save_transformed_sample
 
 
-def prepare_transforms(opt, vocabs):
+def prepare_transforms_vocabs(opt):
     """Prepare or dump transforms before training."""
     transforms_cls = get_transforms_cls(opt._all_transform)
-    # specials = get_specials(opt, transforms_cls)
+    specials = get_specials(opt, transforms_cls)
+
+    vocabs = build_vocab(opt, specials)
 
     # maybe prepare pretrained embeddings, if any
     prepare_pretrained_embeddings(opt, vocabs)
@@ -39,7 +41,7 @@ def prepare_transforms(opt, vocabs):
         logger.info(
             "Sample saved, please check it before restart training.")
         sys.exit()
-    return transforms_cls
+    return vocabs, transforms_cls
 
 
 def configure_process(opt, device_id):
@@ -93,8 +95,8 @@ def main(opt, checkpoint, device_id,
     configure_process(opt, device_id)
     init_logger(opt.log_file)
 
-    vocabs = build_vocab(opt)
-    transforms_cls = prepare_transforms(opt, vocabs)
+    vocabs, transforms_cls = prepare_transforms_vocabs(opt)
+
     model_opt = _get_model_opts(opt, checkpoint=checkpoint)
 
     # Build model.

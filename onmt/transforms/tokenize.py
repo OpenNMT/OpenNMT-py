@@ -343,7 +343,7 @@ class ONMTTokenizerTransform(TokenizerTransform):
                               '｟mrk_begin_case_region_U｠',
                               '｟mrk_end_case_region_U｠']
             tgt_specials.update(_case_specials)
-        return (set(), set())
+        return (src_specials, tgt_specials)
 
     def _get_subword_kwargs(self, side='src'):
         """Return a dict containing kwargs relate to `side` subwords."""

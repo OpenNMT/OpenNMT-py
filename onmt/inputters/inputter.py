@@ -30,7 +30,7 @@ class IterOnDevice(object):
             yield tensor_batch
 
 
-def build_vocab(opt):
+def build_vocab(opt, specials):
     """ Build vocabs dict to be stored in the checkpoint
         based on vocab files having each line [token, count]
     Args:
@@ -54,14 +54,14 @@ def build_vocab(opt):
 
     vocabs = {}
     src_vocab = _read_vocab_file(opt.src_vocab, opt.src_words_min_frequency)
-
+    src_specials = list(specials['src'])
     src_vocab = pyonmttok.build_vocab_from_tokens(
         src_vocab,
         maximum_size=opt.src_vocab_size,
         special_tokens=[DefaultTokens.UNK,
                         DefaultTokens.PAD,
                         DefaultTokens.BOS,
-                        DefaultTokens.EOS])
+                        DefaultTokens.EOS] + src_specials)
     src_vocab.default_id = src_vocab[DefaultTokens.UNK]
     if opt.vocab_size_multiple > 1:
         src_vocab = _pad_vocab_to_multiple(src_vocab, opt.vocab_size_multiple)
@@ -71,13 +71,14 @@ def build_vocab(opt):
     else:
         tgt_vocab = _read_vocab_file(opt.tgt_vocab,
                                      opt.tgt_words_min_frequency)
+        tgt_specials = list(specials['tgt'])
         tgt_vocab = pyonmttok.build_vocab_from_tokens(
             tgt_vocab,
             maximum_size=opt.tgt_vocab_size,
             special_tokens=[DefaultTokens.UNK,
                             DefaultTokens.PAD,
                             DefaultTokens.BOS,
-                            DefaultTokens.EOS])
+                            DefaultTokens.EOS] + tgt_specials)
         tgt_vocab.default_id = tgt_vocab[DefaultTokens.UNK]
         if opt.vocab_size_multiple > 1:
             tgt_vocab = _pad_vocab_to_multiple(tgt_vocab,
