@@ -70,8 +70,8 @@ def unshape(x: Tensor) -> Tensor:
         .view(x.size(0), -1, x.size(1) * x.size(3))
 
 
-class MultiHeadedAttention(nn.Module):
-    # class MultiHeadedAttention(torch.jit.ScriptModule):
+# class MultiHeadedAttention(nn.Module):
+class MultiHeadedAttention(torch.jit.ScriptModule):
     """Multi-Head Attention module from "Attention is All You Need"
     :cite:`DBLP:journals/corr/VaswaniSPUJGKP17`.
 
@@ -118,9 +118,14 @@ class MultiHeadedAttention(nn.Module):
 
         assert model_dim % head_count == 0
         self.dim_per_head = model_dim // head_count
-        self.attn_type = attn_type
-        self.layer_cache = None
         super(MultiHeadedAttention, self).__init__()
+        if max_relative_positions > 0:
+            vocab_size = max_relative_positions * 2 + 1
+            self.relative_positions_embeddings = nn.Embedding(
+                vocab_size, self.dim_per_head)
+        else:
+            self.relative_positions_embeddings = None
+
 
         self.linear_keys = nn.Linear(model_dim, model_dim)
         self.linear_values = nn.Linear(model_dim, model_dim)
@@ -130,20 +135,13 @@ class MultiHeadedAttention(nn.Module):
         self.final_linear = nn.Linear(model_dim, model_dim)
 
         self.max_relative_positions = max_relative_positions
-        if max_relative_positions > 0:
-            vocab_size = max_relative_positions * 2 + 1
-            self.relative_positions_embeddings = nn.Embedding(
-                vocab_size, self.dim_per_head)
-        # else:
-            # just because torchscript does not like empty false branch
-            # carefull creates stupid params
-            # self.relative_positions_embeddings = nn.Embedding(
-            #    1, 1)
+        self.attn_type = attn_type
+        self.layer_cache = {"empty": True}
 
     def update_dropout(self, dropout: float) -> None:
         self.dropout.p = dropout
 
-    # @torch.jit.script_method
+    @torch.jit.script_method
     def forward(self, key: Tensor, value: Tensor,
                 query: Tensor, mask: Optional[Tensor] = None
                 ) -> Tuple[Tensor, Tensor]:
@@ -167,7 +165,8 @@ class MultiHeadedAttention(nn.Module):
         """
         # 1) Project key, value, and query.
         # as a reminder at training layer_cache is None
-        if self.layer_cache is not None:
+        print(self.layer_cache["empty"])
+        if not self.layer_cache["empty"]:
             if self.attn_type == "self":
                 query, key, value = self.linear_query(query),\
                                     self.linear_keys(query),\
@@ -204,7 +203,14 @@ class MultiHeadedAttention(nn.Module):
             key = shape(key, self.dim_per_head)
             value = shape(value, self.dim_per_head)
 
-        if self.max_relative_positions > 0 and self.attn_type == "self":
+        query = shape(query, self.dim_per_head)
+
+        # 2) Calculate and scale scores.
+        query = query / math.sqrt(self.dim_per_head)
+        # batch x num_heads x query_len x key_len
+        query_key = torch.matmul(query, key.transpose(2, 3))
+
+        if self.relative_positions_embeddings is not None:
             key_len = key.size(2)
             # 1 or key_len x key_len
             relative_positions_matrix = gen_relative_positions(
@@ -217,22 +223,10 @@ class MultiHeadedAttention(nn.Module):
             #  1 or key_len x key_len x dim_per_head
             relations_values = self.relative_positions_embeddings(
                 relative_positions_matrix)
-        else:
-            # just because torchscript does not like empty false branch
-            relations_keys = torch.zeros(1)
-            relations_values = torch.zeros(1)
-
-        query = shape(query, self.dim_per_head)
-
-        # 2) Calculate and scale scores.
-        query = query / math.sqrt(self.dim_per_head)
-        # batch x num_heads x query_len x key_len
-        query_key = torch.matmul(query, key.transpose(2, 3))
-
-        if self.max_relative_positions > 0 and self.attn_type == "self":
             scores = query_key + relative_matmul(query, relations_keys, True)
         else:
             scores = query_key
+
         scores = scores.float()
 
         if mask is not None:
@@ -245,7 +239,7 @@ class MultiHeadedAttention(nn.Module):
 
         context_original = torch.matmul(drop_attn, value)
 
-        if self.max_relative_positions > 0 and self.attn_type == "self":
+        if self.relative_positions_embeddings is not None:
             context = unshape(context_original
                               + relative_matmul(drop_attn,
                                                 relations_values,

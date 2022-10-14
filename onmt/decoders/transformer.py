@@ -499,10 +499,11 @@ class TransformerDecoder(TransformerDecoderBase):
         depth = memory_bank.size(-1)
 
         for i, layer in enumerate(self.transformer_layers):
-            layer.context_attn.layer_cache = {"memory_keys": None,
-                                              "memory_values": None,
-                                              "self_keys": None,
-                                              "self_values": None}
+            if layer.context_attn.layer_cache is None:
+                layer.context_attn.layer_cache = {"memory_keys": None,
+                                                  "memory_values": None,
+                                                  "self_keys": None,
+                                                  "self_values": None}
             if isinstance(layer.self_attn, AverageAttention):
                 layer.self_attn.layer_cache["prev_g"] = torch.zeros(
                     (batch_size, 1, depth), device=memory_bank.device
