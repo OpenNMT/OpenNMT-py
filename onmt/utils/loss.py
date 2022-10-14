@@ -199,7 +199,7 @@ class LossComputeBase(nn.Module):
     def _stats(self, loss, scores, target):
         """
         Args:
-            loss (:obj:`FloatTensor`): the loss computed by the loss criterion.
+            loss (int): the loss computed by the loss criterion.
             scores (:obj:`FloatTensor`): a score for each possible output
             target (:obj:`FloatTensor`): true targets
 
@@ -212,7 +212,7 @@ class LossComputeBase(nn.Module):
         num_non_padding = non_padding.sum().item()
         # in the case criterion reduction is None then we need
         # to sum the loss of each sentence in the batch
-        return onmt.utils.Statistics(loss.sum().item(),
+        return onmt.utils.Statistics(loss,
                                      num_non_padding, num_correct)
 
     def _bottle(self, _v):
@@ -302,7 +302,7 @@ class CommonLossCompute(LossComputeBase):
             align_loss = self._compute_alignement_loss(
                 align_head=align_head, ref_align=ref_align)
             loss += align_loss
-        stats = self._stats(loss.clone(), scores, gtruth)
+        stats = self._stats(loss.sum().item(), scores, gtruth)
 
         return loss, stats
 

@@ -96,6 +96,7 @@ def main(opt, checkpoint, device_id,
     init_logger(opt.log_file)
 
     vocabs, transforms_cls = prepare_transforms_vocabs(opt)
+
     model_opt = _get_model_opts(opt, checkpoint=checkpoint)
 
     # Build model.
