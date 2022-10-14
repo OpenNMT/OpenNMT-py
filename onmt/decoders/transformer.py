@@ -2,7 +2,6 @@
 Implementation of "Attention is All You Need" and of
 subsequent transformer based architectures
 """
-
 import torch
 import torch.nn as nn
 
@@ -499,11 +498,10 @@ class TransformerDecoder(TransformerDecoderBase):
         depth = memory_bank.size(-1)
 
         for i, layer in enumerate(self.transformer_layers):
-            if layer.context_attn.layer_cache is None:
-                layer.context_attn.layer_cache = {"memory_keys": None,
-                                                  "memory_values": None,
-                                                  "self_keys": None,
-                                                  "self_values": None}
+            layer.context_attn.layer_cache = {"memory_keys": None,
+                                              "memory_values": None,
+                                              "self_keys": None,
+                                              "self_values": None}
             if isinstance(layer.self_attn, AverageAttention):
                 layer.self_attn.layer_cache["prev_g"] = torch.zeros(
                     (batch_size, 1, depth), device=memory_bank.device

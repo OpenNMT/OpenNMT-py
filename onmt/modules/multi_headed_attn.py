@@ -70,8 +70,8 @@ def unshape(x: Tensor) -> Tensor:
         .view(x.size(0), -1, x.size(1) * x.size(3))
 
 
-# class MultiHeadedAttention(nn.Module):
-class MultiHeadedAttention(torch.jit.ScriptModule):
+class MultiHeadedAttention(nn.Module):
+    # class MultiHeadedAttention(torch.jit.ScriptModule):
     """Multi-Head Attention module from "Attention is All You Need"
     :cite:`DBLP:journals/corr/VaswaniSPUJGKP17`.
 
@@ -126,7 +126,6 @@ class MultiHeadedAttention(torch.jit.ScriptModule):
         else:
             self.relative_positions_embeddings = None
 
-
         self.linear_keys = nn.Linear(model_dim, model_dim)
         self.linear_values = nn.Linear(model_dim, model_dim)
         self.linear_query = nn.Linear(model_dim, model_dim)
@@ -136,12 +135,12 @@ class MultiHeadedAttention(torch.jit.ScriptModule):
 
         self.max_relative_positions = max_relative_positions
         self.attn_type = attn_type
-        self.layer_cache = {"empty": True}
+        self.layer_cache = None
 
     def update_dropout(self, dropout: float) -> None:
         self.dropout.p = dropout
 
-    @torch.jit.script_method
+    # @torch.jit.script_method
     def forward(self, key: Tensor, value: Tensor,
                 query: Tensor, mask: Optional[Tensor] = None
                 ) -> Tuple[Tensor, Tensor]:
@@ -149,24 +148,23 @@ class MultiHeadedAttention(torch.jit.ScriptModule):
         Compute the context vector and the attention vectors.
 
         Args:
-           key (FloatTensor): set of `key_len`
+           key (Tensor): set of `key_len`
                key vectors ``(batch, key_len, dim)``
-           value (FloatTensor): set of `key_len`
+           value (Tensor): set of `key_len`
                value vectors ``(batch, key_len, dim)``
-           query (FloatTensor): set of `query_len`
+           query (Tensor): set of `query_len`
                query vectors  ``(batch, query_len, dim)``
            mask: binary mask 1/0 indicating which keys have
                zero / non-zero attention ``(batch, query_len, key_len)``
         Returns:
-           (FloatTensor, FloatTensor):
+           (Tensor, Tensor):
 
            * output context vectors ``(batch, query_len, dim)``
            * Attention vector in heads ``(batch, head, query_len, key_len)``.
         """
         # 1) Project key, value, and query.
         # as a reminder at training layer_cache is None
-        print(self.layer_cache["empty"])
-        if not self.layer_cache["empty"]:
+        if self.layer_cache is not None:
             if self.attn_type == "self":
                 query, key, value = self.linear_query(query),\
                                     self.linear_keys(query),\
