@@ -25,7 +25,6 @@ clean_up()
         # delete all .pt's
         rm -f $TMP_OUT_DIR/*.pt
         rm -rf $TMP_OUT_DIR/sample
-        rm $TMP_OUT_DIR/onmt.vocab*
         rm -d $TMP_OUT_DIR
     fi
 }
@@ -78,7 +77,7 @@ PYTHONPATH=${PROJECT_ROOT}:${PYTHONPATH} ${PYTHON} onmt/bin/build_vocab.py \
             -save_data $TMP_OUT_DIR/onmt_feat \
             -src_vocab $TMP_OUT_DIR/onmt_feat.vocab.src \
             -tgt_vocab $TMP_OUT_DIR/onmt_feat.vocab.tgt \
-            -src_feats_vocab '{"feat0": "${TMP_OUT_DIR}/onmt_feat.vocab.feat0"}' \
+            -src_feats_vocab "{\"feat0\": \"${TMP_OUT_DIR}/onmt_feat.vocab.feat0\"}" \
             -n_sample -1  -overwrite>> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
@@ -87,11 +86,12 @@ rm -f -r $TMP_OUT_DIR/sample
 #
 # Training test
 #
-echo -n "[+] Testing NMT fields/transforms prepare..."
+echo -n "[+] Testing NMT vocab? /transforms prepare..."
 ${PYTHON} onmt/bin/train.py \
             -config ${DATA_DIR}/data.yaml \
             -save_data $TMP_OUT_DIR/onmt.train.check \
             -dump_fields -dump_transforms -n_sample 30 \
+            -overwrite \
             -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
             -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
             -src_vocab_size 1000 \
@@ -234,7 +234,7 @@ ${PYTHON} onmt/bin/train.py \
             -save_model $TMP_OUT_DIR/lm.onmt.model \
             -save_checkpoint_steps 10 \
             -rnn_size 16 -train_steps 10 >> ${LOG_FILE} 2>&1
-sed -i '1s/^/new_tok\t100000000\n/' $TMP_OUT_DIR/onmt.vocab.src >> ${LOG_FILE} 2>&1
+sed -i '1s/^/new_tok2\t100000000\n/' $TMP_OUT_DIR/onmt.vocab.src >> ${LOG_FILE} 2>&1
 ${PYTHON} onmt/bin/train.py \
             -config ${DATA_DIR}/lm_data.yaml \
             -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
@@ -271,7 +271,7 @@ ${PYTHON} onmt/bin/train.py \
             -config ${DATA_DIR}/features_data.yaml \
             -src_vocab $TMP_OUT_DIR/onmt_feat.vocab.src \
             -tgt_vocab $TMP_OUT_DIR/onmt_feat.vocab.tgt \
-            -src_feats_vocab '{"feat0": "${TMP_OUT_DIR}/onmt_feat.vocab.feat0"}' \
+            -src_feats_vocab "{\"feat0\": \"${TMP_OUT_DIR}/onmt_feat.vocab.feat0\"}" \
             -src_vocab_size 1000 -tgt_vocab_size 1000 \
             -rnn_size 2 -batch_size 10 \
             -word_vec_size 5 -rnn_size 10 \
@@ -343,6 +343,7 @@ echo "Succeeded" | tee -a ${LOG_FILE}
 rm $TMP_OUT_DIR/trans_sampling
 
 echo -n "  [+] Testing LM generation..."
+echo "  [+] Testing LM generation..." | tee -a ${LOG_FILE}
 head ${DATA_DIR}/src-test.txt > $TMP_OUT_DIR/src-test.txt
 ${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt -src $TMP_OUT_DIR/src-test.txt -verbose >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
@@ -350,6 +351,7 @@ echo "Succeeded" | tee -a ${LOG_FILE}
 rm $TMP_OUT_DIR/src-test.txt
 
 echo -n "  [+] Testing LM generation w/ Beam search..."
+echo "  [+] Testing LM generation w/ Beam search..." | tee -a ${LOG_FILE}
 ${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
             -src ${DATA_DIR}/data_lm/src-gen.txt   \
             -verbose -batch_size 10     \
@@ -416,7 +418,7 @@ rm $TMP_OUT_DIR/gen_sampling
 echo "[+] Doing tools test..."
 echo -n "  [+] Doing extract vocabulary test..."
 PYTHONPATH=${PROJECT_ROOT}:${PYTHONPATH} ${PYTHON} ./tools/extract_vocabulary.py \
-            -file $TMP_OUT_DIR/onmt.train.check.vocab.pt -file_type field -side src \
+            -model ${TEST_DIR}/test_model.pt -side src \
             -out_file $TMP_OUT_DIR/vocab.txt >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
 if ! wc -l $TMP_OUT_DIR/vocab.txt | grep -qF  "1002"; then
@@ -431,7 +433,7 @@ echo -n "  [+] Doing embeddings to torch test..."
 PYTHONPATH=${PROJECT_ROOT}:${PYTHONPATH} ${PYTHON} ./tools/embeddings_to_torch.py \
         -emb_file_enc ${TEST_DIR}/sample_glove.txt \
         -emb_file_dec ${TEST_DIR}/sample_glove.txt \
-        -dict_file $TMP_OUT_DIR/onmt.train.check.vocab.pt \
+        -dict_file ${TEST_DIR}/test_model.pt \
         -output_file $TMP_OUT_DIR/q_gloveembeddings        >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}

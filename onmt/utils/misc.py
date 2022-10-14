@@ -2,10 +2,41 @@
 
 import torch
 import random
+from contextlib import contextmanager
 import inspect
 import numpy as np
 from itertools import islice, repeat
 import os
+from copy import deepcopy
+
+
+class RandomShuffler(object):
+    """Use random functions while keeping track of the random state to make it
+    reproducible and deterministic.
+    taken from the torchtext Library"""
+
+    def __init__(self, random_state=None):
+        self._random_state = random_state
+        if self._random_state is None:
+            self._random_state = random.getstate()
+
+    @contextmanager
+    def use_internal_state(self):
+        """Use a specific RNG state."""
+        old_state = random.getstate()
+        random.setstate(self._random_state)
+        yield
+        self._random_state = random.getstate()
+        random.setstate(old_state)
+
+    @property
+    def random_state(self):
+        return deepcopy(self._random_state)
+
+    def __call__(self, data):
+        """Shuffle and return a new list."""
+        with self.use_internal_state():
+            return random.sample(data, len(data))
 
 
 def check_path(path, exist_ok=False, log=print):
@@ -99,7 +130,7 @@ def set_random_seed(seed, is_cuda):
     """Sets the random seed."""
     if seed > 0:
         torch.manual_seed(seed)
-        # this one is needed for torchtext random call (shuffled iterator)
+        # this one is needed for Random Shuffler of batches
         # in multi gpu it ensures datasets are read in the same order
         random.seed(seed)
         # some cudnn methods can be random even after fixing the seed

@@ -1,13 +1,12 @@
 import argparse
 
 import torch
-
 import onmt
 import onmt.model_builder
 
 from onmt.utils.parse import ArgumentParser
 import onmt.opts
-
+from onmt.inputters.inputter import dict_to_vocabs
 from onmt.utils.misc import use_gpu
 from onmt.utils.logging import init_logger, logger
 
@@ -21,10 +20,10 @@ parser.add_argument('-gpu', type=int, default=-1,
                     help="Device to run on")
 
 
-def write_embeddings(filename, dict, embeddings):
+def write_embeddings(filename, vocab, embeddings):
     with open(filename, 'wb') as file:
-        for i in range(min(len(embeddings), len(dict.itos))):
-            str = dict.itos[i].encode("utf-8")
+        for i in range(min(len(embeddings), len(vocab))):
+            str = vocab.lookup_index(i).encode("utf-8")
             for j in range(len(embeddings[0])):
                 str = str + (" %5f" % (embeddings[i][j])).encode("utf-8")
             file.write(str + b"\n")
@@ -44,9 +43,9 @@ def main():
                             map_location=lambda storage, loc: storage)
     model_opt = checkpoint['opt']
 
-    fields = checkpoint['vocab']
-    src_dict = fields['src'].base_field.vocab  # assumes src is text
-    tgt_dict = fields['tgt'].base_field.vocab
+    vocabs = dict_to_vocabs(checkpoint['vocab'])
+    src_vocab = vocabs['src']  # assumes src is text
+    tgt_vocab = vocabs['tgt']
 
     model_opt = checkpoint['opt']
     for arg in dummy_opt.__dict__:
@@ -58,7 +57,7 @@ def main():
     ArgumentParser.validate_model_opts(model_opt)
 
     model = onmt.model_builder.build_base_model(
-        model_opt, fields, use_gpu(opt), checkpoint)
+        model_opt, vocabs, use_gpu(opt), checkpoint)
     encoder = model.encoder  # no encoder for LM task
     decoder = model.decoder
 
@@ -66,11 +65,11 @@ def main():
     decoder_embeddings = decoder.embeddings.word_lut.weight.data.tolist()
 
     logger.info("Writing source embeddings")
-    write_embeddings(opt.output_dir + "/src_embeddings.txt", src_dict,
+    write_embeddings(opt.output_dir + "/src_embeddings.txt", src_vocab,
                      encoder_embeddings)
 
     logger.info("Writing target embeddings")
-    write_embeddings(opt.output_dir + "/tgt_embeddings.txt", tgt_dict,
+    write_embeddings(opt.output_dir + "/tgt_embeddings.txt", tgt_vocab,
                      decoder_embeddings)
 
     logger.info('... done.')

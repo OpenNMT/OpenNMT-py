@@ -33,7 +33,7 @@ class TestTransform(unittest.TestCase):
         transforms_cls = get_transforms_cls(["bart", "switchout"])
         opt = Namespace(seed=-1, switchout_temperature=1.0)
         # transforms that require vocab will not create if not provide vocab
-        transforms = make_transforms(opt, transforms_cls, fields=None)
+        transforms = make_transforms(opt, transforms_cls, vocabs=None)
         self.assertEqual(len(transforms), 0)
         with self.assertRaises(ValueError):
             transforms_cls["switchout"](opt).warm_up(vocabs=None)
@@ -314,8 +314,8 @@ class TestSamplingTransform(unittest.TestCase):
             # require vocabs to warm_up
             switchout_transform.warm_up(vocabs=None)
         vocabs = {
-            "src": Namespace(itos=["A", "Fake", "vocab"]),
-            "tgt": Namespace(itos=["A", "Fake", "vocab"]),
+            "src": Namespace(ids_to_tokens=["A", "Fake", "vocab"]),
+            "tgt": Namespace(ids_to_tokens=["A", "Fake", "vocab"]),
         }
         switchout_transform.warm_up(vocabs=vocabs)
         ex = {

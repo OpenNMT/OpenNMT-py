@@ -125,7 +125,7 @@ Both `-world_size` and `-gpu_ranks` need to be set. E.g. `-world_size 4 -gpu_ran
 
 **Warning - Deprecated**
 
-Multi-node distributed training is not properly implemented in OpenNMT-py 2.0 yet.
+Multi-node distributed training has not been properly re-implemented since OpenNMT-py 2.0.
 
 If you want to use 2 nodes with 2 GPU each, you need to set `-master_ip` and `-master_port`, and
 

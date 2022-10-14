@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 """Training on a single process."""
+import sys
 import torch
-
+from onmt.constants import CorpusTask
 from onmt.inputters.inputter import IterOnDevice
+from onmt.inputters import build_vocab
 from onmt.model_builder import build_model
 from onmt.utils.optimizers import Optimizer
 from onmt.utils.misc import set_random_seed
@@ -10,8 +12,36 @@ from onmt.trainer import build_trainer
 from onmt.models import build_model_saver
 from onmt.utils.logging import init_logger, logger
 from onmt.utils.parse import ArgumentParser
-
 from onmt.inputters.dynamic_iterator import build_dynamic_dataset_iter
+from onmt.transforms import make_transforms, save_transforms, \
+    get_specials, get_transforms_cls
+from onmt.modules.embeddings import prepare_pretrained_embeddings
+from onmt.inputters.text_corpus import save_transformed_sample
+
+
+def prepare_transforms_vocabs(opt):
+    """Prepare or dump transforms before training."""
+    transforms_cls = get_transforms_cls(opt._all_transform)
+    specials = get_specials(opt, transforms_cls)
+
+    vocabs = build_vocab(opt, specials)
+
+    # maybe prepare pretrained embeddings, if any
+    prepare_pretrained_embeddings(opt, vocabs)
+
+    if opt.dump_transforms or opt.n_sample != 0:
+        transforms = make_transforms(opt, transforms_cls, vocabs)
+    if opt.dump_transforms:
+        save_transforms(transforms, opt.save_data, overwrite=opt.overwrite)
+    if opt.n_sample != 0:
+        logger.warning(
+            "`-n_sample` != 0: Training will not be started. "
+            f"Stop after saving {opt.n_sample} samples/corpus.")
+        save_transformed_sample(opt, transforms, n_sample=opt.n_sample)
+        logger.info(
+            "Sample saved, please check it before restart training.")
+        sys.exit()
+    return vocabs, transforms_cls
 
 
 def configure_process(opt, device_id):
@@ -41,22 +71,23 @@ def _get_model_opts(opt, checkpoint=None):
     return model_opt
 
 
-def _build_valid_iter(opt, fields, transforms_cls):
+def _build_valid_iter(opt, transforms_cls, vocabs):
     """Build iterator used for validation."""
     valid_iter = build_dynamic_dataset_iter(
-        fields, transforms_cls, opt, is_train=False)
+        opt, transforms_cls, vocabs, task=CorpusTask.VALID,
+        copy=opt.copy_attn)
     return valid_iter
 
 
-def _build_train_iter(opt, fields, transforms_cls, stride=1, offset=0):
+def _build_train_iter(opt, transforms_cls, vocabs, stride=1, offset=0):
     """Build training iterator."""
     train_iter = build_dynamic_dataset_iter(
-        fields, transforms_cls, opt, is_train=True,
-        stride=stride, offset=offset)
+        opt, transforms_cls, vocabs, task=CorpusTask.TRAIN,
+        copy=opt.copy_attn, stride=stride, offset=offset)
     return train_iter
 
 
-def main(opt, fields, transforms_cls, checkpoint, device_id,
+def main(opt, checkpoint, device_id,
          batch_queue=None, semaphore=None):
     """Start training on `device_id`."""
     # NOTE: It's important that ``opt`` has been validated and updated
@@ -64,23 +95,25 @@ def main(opt, fields, transforms_cls, checkpoint, device_id,
     configure_process(opt, device_id)
     init_logger(opt.log_file)
 
+    vocabs, transforms_cls = prepare_transforms_vocabs(opt)
     model_opt = _get_model_opts(opt, checkpoint=checkpoint)
 
     # Build model.
-    model = build_model(model_opt, opt, fields, checkpoint)
+    model = build_model(model_opt, opt, vocabs, checkpoint)
     model.count_parameters(log=logger.info)
-
+    logger.info(' * src vocab size = %d' % len(vocabs['src']))
+    logger.info(' * tgt vocab size = %d' % len(vocabs['tgt']))
     # Build optimizer.
     optim = Optimizer.from_opt(model, opt, checkpoint=checkpoint)
 
     # Build model saver
-    model_saver = build_model_saver(model_opt, opt, model, fields, optim)
+    model_saver = build_model_saver(model_opt, opt, model, vocabs, optim)
 
     trainer = build_trainer(
-        opt, device_id, model, fields, optim, model_saver=model_saver)
+        opt, device_id, model, vocabs, optim, model_saver=model_saver)
 
     if batch_queue is None:
-        _train_iter = _build_train_iter(opt, fields, transforms_cls)
+        _train_iter = _build_train_iter(opt, transforms_cls, vocabs)
         train_iter = IterOnDevice(_train_iter, device_id)
     else:
         assert semaphore is not None, \
@@ -96,7 +129,7 @@ def main(opt, fields, transforms_cls, checkpoint, device_id,
 
         train_iter = _train_iter()
 
-    valid_iter = _build_valid_iter(opt, fields, transforms_cls)
+    valid_iter = _build_valid_iter(opt, transforms_cls, vocabs)
     if valid_iter is not None:
         valid_iter = IterOnDevice(valid_iter, device_id)
 

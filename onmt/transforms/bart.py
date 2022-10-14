@@ -391,7 +391,7 @@ class BARTNoiseTransform(Transform):
                     f'mask_length={self.opts.mask_length}!')
         is_joiner = (subword_type == 'bpe') if subword_type != 'none' else None
         self.bart_noise = BARTNoising(
-            self.vocabs['src'].itos,
+            self.vocabs['src'].ids_to_tokens,
             mask_tok=DefaultTokens.MASK,
             mask_ratio=self.opts.mask_ratio,
             insert_ratio=self.opts.insert_ratio,
