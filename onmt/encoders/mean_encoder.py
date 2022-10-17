@@ -26,7 +26,6 @@ class MeanEncoder(EncoderBase):
 
     def forward(self, src, lengths=None):
         """See :func:`EncoderBase.forward()`"""
-        self._check_args(src, lengths)
 
         emb = self.embeddings(src)
         _, batch, emb_dim = emb.size()

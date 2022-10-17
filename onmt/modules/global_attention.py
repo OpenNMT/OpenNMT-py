@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from onmt.modules.sparse_activations import sparsemax
-from onmt.utils.misc import aeq, sequence_mask
+from onmt.utils.misc import sequence_mask
 
 # This class is mainly used by decoder.py for RNNs but also
 # by the CNN / transformer decoder when copy attention is used
@@ -108,9 +108,6 @@ class GlobalAttention(nn.Module):
         # Check input sizes
         src_batch, src_len, src_dim = h_s.size()
         tgt_batch, tgt_len, tgt_dim = h_t.size()
-        aeq(src_batch, tgt_batch)
-        aeq(src_dim, tgt_dim)
-        aeq(self.dim, src_dim)
 
         if self.attn_type in ["general", "dot"]:
             if self.attn_type == "general":
@@ -161,13 +158,8 @@ class GlobalAttention(nn.Module):
 
         batch, source_l, dim = memory_bank.size()
         batch_, target_l, dim_ = source.size()
-        aeq(batch, batch_)
-        aeq(dim, dim_)
-        aeq(self.dim, dim)
         if coverage is not None:
             batch_, source_l_ = coverage.size()
-            aeq(batch, batch_)
-            aeq(source_l, source_l_)
 
         if coverage is not None:
             cover = coverage.view(-1).unsqueeze(1)
@@ -205,23 +197,13 @@ class GlobalAttention(nn.Module):
 
             # Check output sizes
             batch_, dim_ = attn_h.size()
-            aeq(batch, batch_)
-            aeq(dim, dim_)
             batch_, source_l_ = align_vectors.size()
-            aeq(batch, batch_)
-            aeq(source_l, source_l_)
 
         else:
             attn_h = attn_h.transpose(0, 1).contiguous()
             align_vectors = align_vectors.transpose(0, 1).contiguous()
             # Check output sizes
             target_l_, batch_, dim_ = attn_h.size()
-            aeq(target_l, target_l_)
-            aeq(batch, batch_)
-            aeq(dim, dim_)
             target_l_, batch_, source_l_ = align_vectors.size()
-            aeq(target_l, target_l_)
-            aeq(batch, batch_)
-            aeq(source_l, source_l_)
 
         return attn_h, align_vectors

@@ -198,8 +198,7 @@ class Trainer(object):
         for batch in iterator:
             batches.append(batch)
             if self.norm_method == "tokens":
-                num_tokens = batch['tgtlen'].sum()
-                normalization += num_tokens.item()
+                normalization += batch['tgtlen'].sum().item()
             else:
                 normalization += len(batch['indices'])
             if len(batches) == self.accum_count:
@@ -260,13 +259,6 @@ class Trainer(object):
             # UPDATE DROPOUT
             self._maybe_update_dropout(step)
 
-            if self.gpu_verbose_level > 1:
-                logger.info("GpuRank %d: index: %d", self.gpu_rank, i)
-            if self.gpu_verbose_level > 0:
-                logger.info("GpuRank %d: reduce_counter: %d \
-                            n_minibatch %d"
-                            % (self.gpu_rank, i + 1, len(batches)))
-
             if self.n_gpu > 1:
                 normalization = sum(onmt.utils.distributed
                                     .all_gather_list
@@ -286,15 +278,9 @@ class Trainer(object):
 
             if (valid_iter is not None and step % valid_steps == 0 and
                     self.gpu_rank == 0):
-                if self.gpu_verbose_level > 0:
-                    logger.info('GpuRank %d: validate step %d'
-                                % (self.gpu_rank, step))
 
                 valid_stats = self.validate(
                     valid_iter, moving_average=self.moving_average)
-                if self.gpu_verbose_level > 0:
-                    logger.info('GpuRank %d: report stat step %d'
-                                % (self.gpu_rank, step))
                 self._report_step(self.optim.learning_rate(),
                                   step, valid_stats=valid_stats)
                 # Run patience mechanism
