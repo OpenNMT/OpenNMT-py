@@ -9,10 +9,10 @@ import torch.nn.functional as F
 import onmt
 from onmt.modules.sparse_losses import SparsemaxLoss
 from onmt.modules.sparse_activations import LogSparsemax
-from onmt.constants import ModelTask
+from onmt.constants import ModelTask, DefaultTokens
 
 
-def build_loss_compute(model, tgt_field, opt, train=True):
+def build_loss_compute(model, vocab, opt, train=True):
     """
     Returns a LossCompute subclass which wraps around an nn.Module subclass
     (such as nn.NLLLoss) which defines the loss criterion. The LossCompute
@@ -23,8 +23,8 @@ def build_loss_compute(model, tgt_field, opt, train=True):
     """
     device = torch.device("cuda" if onmt.utils.misc.use_gpu(opt) else "cpu")
 
-    padding_idx = tgt_field.vocab.stoi[tgt_field.pad_token]
-    unk_idx = tgt_field.vocab.stoi[tgt_field.unk_token]
+    padding_idx = vocab[DefaultTokens.PAD]
+    unk_idx = vocab[DefaultTokens.UNK]
 
     if opt.lambda_coverage != 0:
         assert opt.coverage_attn, "--coverage_attn needs to be set in " \
@@ -32,12 +32,12 @@ def build_loss_compute(model, tgt_field, opt, train=True):
 
     if opt.copy_attn:
         criterion = onmt.modules.CopyGeneratorLoss(
-            len(tgt_field.vocab), opt.copy_attn_force,
+            len(vocab), opt.copy_attn_force,
             unk_index=unk_idx, ignore_index=padding_idx
         )
     elif opt.label_smoothing > 0 and train:
         criterion = LabelSmoothingLoss(
-            opt.label_smoothing, len(tgt_field.vocab), ignore_index=padding_idx
+            opt.label_smoothing, len(vocab), ignore_index=padding_idx
         )
     elif isinstance(model.generator[-1], LogSparsemax):
         criterion = SparsemaxLoss(ignore_index=padding_idx, reduction='sum')
@@ -53,13 +53,13 @@ def build_loss_compute(model, tgt_field, opt, train=True):
     if opt.copy_attn:
         if opt.model_task == ModelTask.SEQ2SEQ:
             compute = onmt.modules.CopyGeneratorLossCompute(
-                criterion, loss_gen, tgt_field.vocab,
+                criterion, loss_gen, vocab,
                 opt.copy_loss_by_seqlength,
                 lambda_coverage=opt.lambda_coverage
             )
         elif opt.model_task == ModelTask.LANGUAGE_MODEL:
             compute = onmt.modules.CopyGeneratorLMLossCompute(
-                criterion, loss_gen, tgt_field.vocab,
+                criterion, loss_gen, vocab,
                 opt.copy_loss_by_seqlength,
                 lambda_coverage=opt.lambda_coverage
             )
@@ -105,12 +105,10 @@ class LossComputeBase(nn.Module):
     and make_shard_state() methods.
 
     Args:
+        criterion (:obj:`nn. loss function`) : NLLoss or customed loss
         generator (:obj:`nn.Module`) :
              module that maps the output of the decoder to a
              distribution over the target vocabulary.
-        tgt_vocab (:obj:`Vocab`) :
-             torchtext vocab object representing the target output
-        normalzation (str): normalize by "sents" or "tokens"
     """
 
     def __init__(self, criterion, generator):
@@ -185,7 +183,7 @@ class LossComputeBase(nn.Module):
             A tuple with the loss and a :obj:`onmt.utils.Statistics` instance.
         """
         if trunc_size is None:
-            trunc_size = batch.tgt.size(0) - trunc_start
+            trunc_size = batch['tgt'].size(0) - trunc_start
         trunc_range = (trunc_start, trunc_start + trunc_size)
         shard_state = self._make_shard_state(batch, output, trunc_range, attns)
         if shard_size == 0:
@@ -320,7 +318,7 @@ class CommonLossCompute(LossComputeBase):
         # align_idx should be a Tensor in size([N, 3]), N is total number
         # of align src-tgt pair in current batch, each as
         # ['sent_N°_in_batch', 'tgt_id+1', 'src_id'] (check AlignField)
-        align_idx = batch.align
+        align_idx = batch['align']
         assert attns is not None
         assert attn_align is not None, (
             "lambda_align != 0.0 requires " "alignement attention head"
@@ -328,14 +326,14 @@ class CommonLossCompute(LossComputeBase):
         assert align_idx is not None, (
             "lambda_align != 0.0 requires " "provide guided alignement"
         )
-        pad_tgt_size, batch_size, _ = batch.tgt.size()
-        pad_src_size = batch.src[0].size(0)
+        pad_tgt_size, batch_size, _ = batch['tgt'].size()
+        pad_src_size, _, _ = batch['src'].size()
         align_matrix_size = [batch_size, pad_tgt_size, pad_src_size]
         ref_align = onmt.utils.make_batch_align_matrix(
             align_idx, align_matrix_size, normalize=True
         )
         # NOTE: tgt-src ref alignement that in range_ of shard
-        # (coherent with batch.tgt)
+        # (coherent with batch['tgt'])
         shard_state.update(
             {
                 "align_head": attn_align,
@@ -358,7 +356,7 @@ class CommonLossCompute(LossComputeBase):
         range_end = range_[1]
         shard_state = {
             "output": output,
-            "target": batch.tgt[range_start:range_end, :, 0],
+            "target": batch['tgt'][range_start:range_end, :, 0],
         }
         if self.lambda_coverage != 0.0:
             self._add_coverage_shard_state(shard_state, attns)

@@ -16,11 +16,16 @@ Unless there is a bug, please use the [forum](https://forum.opennmt.net) or [Git
 
 ----
 
-# Announcement - OpenNMT-py 2.0
+# Announcement - OpenNMT-py 3.0 beta
 
-**We're happy to announce the upcoming release v2.0 of OpenNMT-py.**
+**We're happy to announce the upcoming release v3.0 of OpenNMT-py.**
 
-The major idea behind this release is the -- almost -- complete **makeover of the data loading pipeline**. A new 'dynamic' paradigm is introduced, allowing to apply on the fly transforms to the data.
+This new version does not rely on Torchtext anymore.
+The checkpoint structure is slightly changed but we provide a tool to convert v2 to v3 models (cf tools/convertv2_v3.py)
+
+Since it's beta version, do not use in production until we make sure the checkpoint structure does not change again.
+
+We use the same 'dynamic' paradigm as in v2, allowing to apply on-the-fly transforms to the data.
 
 This has a few advantages, amongst which:
 

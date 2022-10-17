@@ -1,20 +1,12 @@
 """Module defining inputters.
 
 Inputters implement the logic of transforming raw data to vectorized inputs,
-e.g., from a line of text to a sequence of embeddings.
+e.g., from a line of text to a sequence of vectors.
 """
-from onmt.inputters.inputter import get_fields, build_vocab, filter_example
-from onmt.inputters.iterator import max_tok_len, OrderedIterator
-from onmt.inputters.dataset_base import Dataset, DynamicDataset
-from onmt.inputters.text_dataset import text_sort_key, TextDataReader
-from onmt.inputters.datareader_base import DataReaderBase
-
-str2reader = {
-    "text": TextDataReader}
-str2sortkey = {
-    'text': text_sort_key}
+from onmt.inputters.inputter import build_vocab, IterOnDevice
+from onmt.inputters.text_utils import text_sort_key, max_tok_len, process,\
+    numericalize, tensorify
 
 
-__all__ = ['Dataset', 'get_fields', 'DataReaderBase', 'filter_example',
-           'build_vocab', 'OrderedIterator', 'max_tok_len',
-           'text_sort_key', 'TextDataReader', 'DynamicDataset']
+__all__ = ['IterOnDevice', 'build_vocab', 'text_sort_key', 'max_tok_len',
+           'process', 'numericalize', 'tensorify']

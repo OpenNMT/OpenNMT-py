@@ -122,33 +122,20 @@ class EnsembleModel(NMTModel):
 
 def load_test_model(opt):
     """Read in multiple models for ensemble."""
-    shared_fields = None
+    shared_vocabs = None
     shared_model_opt = None
     models = []
     for model_path in opt.models:
-        fields, model, model_opt = \
+        vocabs, model, model_opt = \
             onmt.model_builder.load_test_model(opt, model_path=model_path)
-        if shared_fields is None:
-            shared_fields = fields
+        if shared_vocabs is None:
+            shared_vocabs = vocabs
         else:
-            for key, field in fields.items():
-                try:
-                    f_iter = iter(field)
-                except TypeError:
-                    f_iter = [(key, field)]
-                for sn, sf in f_iter:
-                    if sf is not None and 'vocab' in sf.__dict__:
-                        sh_field = shared_fields[key]
-                        try:
-                            sh_f_iter = iter(sh_field)
-                        except TypeError:
-                            sh_f_iter = [(key, sh_field)]
-                        sh_f_dict = dict(sh_f_iter)
-                        assert sf.vocab.stoi == sh_f_dict[sn].vocab.stoi, \
-                            "Ensemble models must use the same " \
-                            "preprocessed data"
+            assert shared_vocabs['src'].tokens_to_ids == \
+                vocabs['src'].tokens_to_ids, \
+                "Ensemble models must use the same vocabs "
         models.append(model)
         if shared_model_opt is None:
             shared_model_opt = model_opt
     ensemble_model = EnsembleModel(models, opt.avg_raw_probs)
-    return shared_fields, ensemble_model, shared_model_opt
+    return shared_vocabs, ensemble_model, shared_model_opt

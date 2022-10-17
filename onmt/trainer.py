@@ -19,7 +19,7 @@ from onmt.translate.utils import ScoringPreparator
 from onmt.scorers import get_scorers_cls, build_scorers
 
 
-def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
+def build_trainer(opt, device_id, model, vocabs, optim, model_saver=None):
     """
     Simplify `Trainer` creation based on user `opt`s*
 
@@ -34,12 +34,11 @@ def build_trainer(opt, device_id, model, fields, optim, model_saver=None):
             used to save the model
     """
 
-    tgt_field = dict(fields)["tgt"].base_field
-    train_loss = onmt.utils.loss.build_loss_compute(model, tgt_field, opt)
+    train_loss = onmt.utils.loss.build_loss_compute(model, vocabs['tgt'], opt)
     valid_loss = onmt.utils.loss.build_loss_compute(
-        model, tgt_field, opt, train=False)
+        model, vocabs['tgt'], opt, train=False)
 
-    scoring_preparator = ScoringPreparator(fields, opt)
+    scoring_preparator = ScoringPreparator(vocabs, opt)
     scorers_cls = get_scorers_cls(opt.train_metrics)
     train_scorers = build_scorers(opt, scorers_cls)
     scorers_cls = get_scorers_cls(opt.valid_metrics)
@@ -199,11 +198,10 @@ class Trainer(object):
         for batch in iterator:
             batches.append(batch)
             if self.norm_method == "tokens":
-                num_tokens = batch.tgt[1:, :, 0].ne(
-                    self.train_loss.padding_idx).sum()
+                num_tokens = batch['tgtlen'].sum()
                 normalization += num_tokens.item()
             else:
-                normalization += batch.batch_size
+                normalization += len(batch['indices'])
             if len(batches) == self.accum_count:
                 yield batches, normalization
                 self.accum_count = self._accum_count(self.optim.training_step)
@@ -343,9 +341,9 @@ class Trainer(object):
             stats = onmt.utils.Statistics()
 
             for batch in valid_iter:
-                src, src_lengths = batch.src if isinstance(batch.src, tuple) \
-                    else (batch.src, None)
-                tgt = batch.tgt
+                src = batch['src']
+                src_lengths = batch['srclen']
+                tgt = batch['tgt']
 
                 with torch.cuda.amp.autocast(enabled=self.optim.amp):
                     # F-prop through the model.
@@ -398,19 +396,19 @@ class Trainer(object):
             self.optim.zero_grad()
 
         for k, batch in enumerate(true_batches):
-            target_size = batch.tgt.size(0)
+            target_size = batch['tgt'].size(0)
             # Truncated BPTT: reminder not compatible with accum > 1
             if self.trunc_size:
                 trunc_size = self.trunc_size
             else:
                 trunc_size = target_size
 
-            src, src_lengths = batch.src if isinstance(batch.src, tuple) \
-                else (batch.src, None)
+            src = batch['src']
+            src_lengths = batch['srclen']
             if src_lengths is not None:
                 report_stats.n_src_words += src_lengths.sum().item()
 
-            tgt_outer = batch.tgt
+            tgt_outer = batch['tgt']
 
             bptt = False
             for j in range(0, target_size - 1, trunc_size):

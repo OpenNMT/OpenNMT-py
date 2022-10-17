@@ -11,7 +11,7 @@ setup(
     description='A python implementation of OpenNMT',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    version='2.3.0',
+    version='3.0.0',
     packages=find_packages(),
     project_urls={
         "Documentation": "http://opennmt.net/OpenNMT-py/",
@@ -19,10 +19,9 @@ setup(
         "Gitter": "https://gitter.im/OpenNMT/OpenNMT-py",
         "Source": "https://github.com/OpenNMT/OpenNMT-py/"
     },
-    python_requires=">=3.5",
+    python_requires=">=3.7",
     install_requires=[
-        "torch>=1.9.0",
-        "torchtext==0.5.0",
+        "torch>=1.12.1",
         "configargparse",
         "tensorboard>=2.3",
         "flask",

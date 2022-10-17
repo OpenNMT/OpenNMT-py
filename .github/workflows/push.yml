@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.6] # build only for 3.6 for now
+        python-version: [3.8] # build only for 3.8 for now
 
     steps:
     - uses: actions/checkout@v2
@@ -245,7 +245,7 @@ jobs:
         head data/src-test.txt > /tmp/src-test.txt
         python translate.py \
           -model onmt/tests/test_model_lm.pt \
-          -src data/src-test.txt \
+          -src /tmp/src-test.txt \
           -verbose
     - name: Test LM generation with beam search
       run: |
@@ -300,8 +300,7 @@ jobs:
     - name: Test extract_vocabulary tool
       run: |
         python tools/extract_vocabulary.py \
-          -file /tmp/onmt.train.check.vocab.pt \
-          -file_type field \
+          -model onmt/tests/test_model.pt \
           -side src \
           -out_file /tmp/onmt.vocab.txt
         if ! wc -l /tmp/onmt.vocab.txt | grep -qF  "1002"
@@ -314,10 +313,9 @@ jobs:
         python tools/embeddings_to_torch.py \
           -emb_file_enc onmt/tests/sample_glove.txt \
           -emb_file_dec onmt/tests/sample_glove.txt \
-          -dict_file /tmp/onmt.train.check.vocab.pt \
+          -dict_file onmt/tests/test_model.pt \
           -output_file /tmp/q_gloveembeddings \
           && rm /tmp/q_gloveembeddings*
-        rm /tmp/onmt.train.check.*.pt
     - name: Test extract_embeddings tool
       run: |
         python tools/extract_embeddings.py \
@@ -359,7 +357,7 @@ jobs:
         python train.py \
           -config data/lm_data.yaml \
           -src_vocab /tmp/onmt.vocab.src \
-          -tgt_vocab /tmp/onmt.vocab.tgt \
+          -tgt_vocab /tmp/onmt.vocab.src \
           -model_task lm \
           -encoder_type transformer_lm \
           -decoder_type transformer_lm \
@@ -371,11 +369,11 @@ jobs:
           -save_model /tmp/lm.onmt.model \
           -save_checkpoint_steps 10 \
           -rnn_size 16 -train_steps 10
-        sed -i '1s/^/new_tok\t100000000\n/' /tmp/onmt.vocab.src
+        sed -i '1s/^/new_tok2\t100000000\n/' /tmp/onmt.vocab.src
         python train.py \
           -config data/lm_data.yaml \
           -src_vocab /tmp/onmt.vocab.src \
-          -tgt_vocab /tmp/onmt.vocab.tgt \
+          -tgt_vocab /tmp/onmt.vocab.src \
           -model_task lm \
           -encoder_type transformer_lm \
           -decoder_type transformer_lm \
@@ -392,10 +390,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - name: Set up Python 3.6
+    - name: Set up Python 3.7
       uses: actions/setup-python@v2
       with:
-        python-version: 3.6
+        python-version: 3.7
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip

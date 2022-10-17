@@ -48,7 +48,9 @@ if false; then
 $my_python build_vocab.py \
     -config data/morph_data.yaml -save_data data/data \
     -src_vocab data/morph_data.vocab.src -tgt_vocab data/morph_data.vocab.tgt \
-    -overwrite true
+    -overwrite true -n_sample 10000
+fi
+if false; then
 $my_python train.py \
     -config data/morph_data.yaml -src_vocab data/morph_data.vocab.src -tgt_vocab data/morph_data.vocab.tgt \
     -save_model tmp -world_size 1 -gpu_ranks 0 \
@@ -73,19 +75,19 @@ $my_python build_vocab.py \
 $my_python train.py \
     -config data/data.yaml -src_vocab data/data.vocab.src -tgt_vocab data/data.vocab.tgt \
     -save_model /tmp/tmp \
-    -batch_type tokens -batch_size 1024 -accum_count 4 \
-    -layers 4 -rnn_size 256 -word_vec_size 256 \
+    -batch_type tokens -batch_size 8 -accum_count 4 \
+    -layers 1 -rnn_size 16 -word_vec_size 16 \
     -encoder_type transformer -decoder_type transformer \
     -share_embedding -share_vocab \
-    -train_steps 10000 -world_size 1 -gpu_ranks 0 \
-    -max_generator_batches 4 -dropout 0.1 \
+    -train_steps 1000 -world_size 1 -gpu_ranks 0 \
+    -max_generator_batches 2 -dropout 0.1 \
     -normalization tokens \
     -max_grad_norm 0 -optim adam -decay_method noam \
     -learning_rate 2 -label_smoothing 0.1 \
     -position_encoding -param_init 0 \
     -warmup_steps 100 -param_init_glorot -adam_beta2 0.998
 
-mv /tmp/tmp*10000.pt onmt/tests/test_model.pt
+mv /tmp/tmp*1000.pt onmt/tests/test_model.pt
 rm /tmp/tmp*.pt
 fi
 
