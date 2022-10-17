@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 
-from onmt.utils.misc import aeq
 from onmt.utils.loss import CommonLossCompute
 
 
@@ -107,12 +106,8 @@ class CopyGenerator(nn.Module):
                ``(src_len, batch, extra_words)``
         """
 
-        # CHECKS
-        batch_by_tlen, _ = hidden.size()
-        batch_by_tlen_, slen = attn.size()
-        slen_, batch, cvocab = src_map.size()
-        aeq(batch_by_tlen, batch_by_tlen_)
-        aeq(slen, slen_)
+        _, slen = attn.size()
+        _, batch, cvocab = src_map.size()
 
         # Original probabilities.
         logits = self.linear(hidden)

@@ -191,7 +191,7 @@ class GGNNEncoder(EncoderBase):
 
     def forward(self, src, lengths=None):
         """See :func:`EncoderBase.forward()`"""
-        self._check_args(src, lengths)
+
         nodes = self.n_node
         batch_size = src.size()[1]
         first_extra = np.zeros(batch_size, dtype=np.int32)

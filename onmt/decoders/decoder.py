@@ -5,8 +5,6 @@ from onmt.models.stacked_rnn import StackedLSTM, StackedGRU
 from onmt.modules import context_gate_factory, GlobalAttention
 from onmt.utils.rnn_factory import rnn_factory
 
-from onmt.utils.misc import aeq
-
 
 class DecoderBase(nn.Module):
     """Abstract class for decoders.
@@ -290,11 +288,7 @@ class StdRNNDecoder(RNNDecoderBase):
         else:
             rnn_output, dec_state = self.rnn(emb, self.state["hidden"])
 
-        # Check
         tgt_len, tgt_batch, _ = tgt.size()
-        output_len, output_batch, _ = rnn_output.size()
-        aeq(tgt_len, output_len)
-        aeq(tgt_batch, output_batch)
 
         # Calculate the attention.
         if not self.attentional:
@@ -365,8 +359,6 @@ class InputFeedRNNDecoder(RNNDecoderBase):
         input_feed = self.state["input_feed"].squeeze(0)
         input_feed_batch, _ = input_feed.size()
         _, tgt_batch, _ = tgt.size()
-        aeq(tgt_batch, input_feed_batch)
-        # END Additional args check.
 
         dec_outs = []
         attns = {}

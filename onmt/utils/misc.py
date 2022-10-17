@@ -74,16 +74,6 @@ def _split_corpus(path, shard_size):
                 yield shard
 
 
-def aeq(*args):
-    """
-    Assert all arguments have the same value
-    """
-    arguments = (arg for arg in args)
-    first = next(arguments)
-    assert all(arg == first for arg in arguments), \
-        "Not all arguments have the same value: " + str(args)
-
-
 def sequence_mask(lengths, max_len=None):
     """
     Creates a boolean mask from sequence lengths.

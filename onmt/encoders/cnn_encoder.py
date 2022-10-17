@@ -36,10 +36,8 @@ class CNNEncoder(EncoderBase):
 
     def forward(self, input, lengths=None, hidden=None):
         """See :class:`onmt.modules.EncoderBase.forward()`"""
-        self._check_args(input, lengths, hidden)
 
         emb = self.embeddings(input)
-        # s_len, batch, emb_dim = emb.size()
 
         emb = emb.transpose(0, 1).contiguous()
         emb_reshape = emb.view(emb.size(0) * emb.size(1), -1)
