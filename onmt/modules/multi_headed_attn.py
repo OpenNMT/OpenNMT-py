@@ -1,14 +1,75 @@
 """ Multi-Head Attention module """
 import math
 import torch
+from torch import Tensor
+from typing import Optional, Tuple
 import torch.nn as nn
 
-from onmt.utils.misc import generate_relative_positions_matrix,\
-                            relative_matmul
-# from onmt.utils.misc import aeq
+
+def relative_matmul(x: Tensor, z: Tensor,
+                    transpose: bool) -> Tensor:
+    """
+    Helper function for relative positions attention.
+    https://arxiv.org/pdf/1803.02155.pdf
+    x shape [batch_size x heads x q_len x k_len]
+    """
+    batch_size = x.size(0)
+    heads = x.size(1)
+    length = x.size(2)
+    x_t = x.permute(2, 0, 1, 3)
+    x_t_r = x_t.contiguous().view(length, heads * batch_size, -1)
+    if transpose:
+        z = z.transpose(1, 2)
+    x_tz_matmul = torch.matmul(x_t_r, z)
+    x_tz_matmul_r = x_tz_matmul.view(length, batch_size, heads, -1)
+    x_tz_matmul_r_t = x_tz_matmul_r.permute(1, 2, 0, 3)
+    return x_tz_matmul_r_t
+
+
+def gen_relative_positions(length: int,
+                           max_relative_positions: int,
+                           cache: bool = False,
+                           device: Optional[torch.device] = None
+                           ) -> Tensor:
+    """Generate the clipped relative positions matrix
+       for a given length and maximum relative positions"""
+    if cache:
+        distance_mat = torch.arange(-length+1, 1, 1,
+                                    device=device).unsqueeze(0)
+    else:
+        range_vec = torch.arange(length, device=device)
+        range_mat = range_vec.unsqueeze(-1).expand(-1, length).transpose(0, 1)
+        distance_mat = range_mat - range_mat.transpose(0, 1)
+    distance_mat_clipped = torch.clamp(distance_mat,
+                                       min=-max_relative_positions,
+                                       max=max_relative_positions)
+    # Shift values to be >= 0
+    final_mat = distance_mat_clipped + max_relative_positions
+    return final_mat
+
+
+def shape(x: Tensor, dim_per_head: int) -> Tensor:
+    """
+    Projection.
+    [batchsize x length x modeldim]
+    -> [batchsize x heads x length x dimperhead]
+    """
+    return x.view(x.size(0), x.size(1), -1, dim_per_head) \
+        .transpose(1, 2)
+
+
+def unshape(x: Tensor) -> Tensor:
+    """
+    Compute context.
+    [batchsize x heads x length x dimperhead]
+    -> [batchsize x length x modeldim]
+    """
+    return x.transpose(1, 2).contiguous() \
+        .view(x.size(0), -1, x.size(1) * x.size(3))
 
 
 class MultiHeadedAttention(nn.Module):
+    # class MultiHeadedAttention(torch.jit.ScriptModule):
     """Multi-Head Attention module from "Attention is All You Need"
     :cite:`DBLP:journals/corr/VaswaniSPUJGKP17`.
 
@@ -46,152 +107,123 @@ class MultiHeadedAttention(nn.Module):
        model_dim (int): the dimension of keys/values/queries,
            must be divisible by head_count
        dropout (float): dropout parameter
+       max_relative_positions (int): max relative positions
     """
 
-    def __init__(self, head_count, model_dim, dropout=0.1,
-                 max_relative_positions=0):
+    def __init__(self, head_count: int, model_dim: int, dropout: float = 0.1,
+                 max_relative_positions: int = 0,
+                 attn_type: str = None) -> None:
+
         assert model_dim % head_count == 0
         self.dim_per_head = model_dim // head_count
-        self.model_dim = model_dim
-
         super(MultiHeadedAttention, self).__init__()
-        self.head_count = head_count
+        if max_relative_positions > 0:
+            vocab_size = max_relative_positions * 2 + 1
+            self.relative_positions_embeddings = nn.Embedding(
+                vocab_size, self.dim_per_head)
+        else:
+            self.relative_positions_embeddings = None
 
-        self.linear_keys = nn.Linear(model_dim,
-                                     head_count * self.dim_per_head)
-        self.linear_values = nn.Linear(model_dim,
-                                       head_count * self.dim_per_head)
-        self.linear_query = nn.Linear(model_dim,
-                                      head_count * self.dim_per_head)
+        self.linear_keys = nn.Linear(model_dim, model_dim)
+        self.linear_values = nn.Linear(model_dim, model_dim)
+        self.linear_query = nn.Linear(model_dim, model_dim)
         self.softmax = nn.Softmax(dim=-1)
         self.dropout = nn.Dropout(dropout)
         self.final_linear = nn.Linear(model_dim, model_dim)
 
         self.max_relative_positions = max_relative_positions
+        self.attn_type = attn_type
+        self.layer_cache = (False, {'keys': torch.tensor([]),
+                                    'values': torch.tensor([])})
 
-        if max_relative_positions > 0:
-            vocab_size = max_relative_positions * 2 + 1
-            self.relative_positions_embeddings = nn.Embedding(
-                vocab_size, self.dim_per_head)
+    def update_dropout(self, dropout: float) -> None:
+        self.dropout.p = dropout
 
-    def forward(self, key, value, query, mask=None,
-                layer_cache=None, attn_type=None):
+    # @torch.jit.script_method
+    def forward(self, key: Tensor, value: Tensor,
+                query: Tensor, mask: Optional[Tensor] = None
+                ) -> Tuple[Tensor, Tensor]:
         """
         Compute the context vector and the attention vectors.
 
         Args:
-           key (FloatTensor): set of `key_len`
+           key (Tensor): set of `key_len`
                key vectors ``(batch, key_len, dim)``
-           value (FloatTensor): set of `key_len`
+           value (Tensor): set of `key_len`
                value vectors ``(batch, key_len, dim)``
-           query (FloatTensor): set of `query_len`
+           query (Tensor): set of `query_len`
                query vectors  ``(batch, query_len, dim)``
            mask: binary mask 1/0 indicating which keys have
                zero / non-zero attention ``(batch, query_len, key_len)``
         Returns:
-           (FloatTensor, FloatTensor):
+           (Tensor, Tensor):
 
            * output context vectors ``(batch, query_len, dim)``
            * Attention vector in heads ``(batch, head, query_len, key_len)``.
         """
-
-        # CHECKS
-        # batch, k_len, d = key.size()
-        # batch_, k_len_, d_ = value.size()
-        # aeq(batch, batch_)
-        # aeq(k_len, k_len_)
-        # aeq(d, d_)
-        # batch_, q_len, d_ = query.size()
-        # aeq(batch, batch_)
-        # aeq(d, d_)
-        # aeq(self.model_dim % 8, 0)
-        # if mask is not None:
-        #    batch_, q_len_, k_len_ = mask.size()
-        #    aeq(batch_, batch)
-        #    aeq(k_len_, k_len)
-        #    aeq(q_len_ == q_len)
-        # END CHECKS
-
-        batch_size = key.size(0)
-        dim_per_head = self.dim_per_head
-        head_count = self.head_count
-        key_len = key.size(1)
-        query_len = query.size(1)
-
-        def shape(x):
-            """Projection."""
-            return x.view(batch_size, -1, head_count, dim_per_head) \
-                .transpose(1, 2)
-
-        def unshape(x):
-            """Compute context."""
-            return x.transpose(1, 2).contiguous() \
-                    .view(batch_size, -1, head_count * dim_per_head)
-
         # 1) Project key, value, and query.
-        if layer_cache is not None:
-            if attn_type == "self":
+        # as a reminder at training layer_cache[0] remains False
+        if self.layer_cache[0]:
+            if self.attn_type == "self":
                 query, key, value = self.linear_query(query),\
                                     self.linear_keys(query),\
                                     self.linear_values(query)
-                key = shape(key)
-                value = shape(value)
-                if layer_cache["self_keys"] is not None:
+                key = shape(key, self.dim_per_head)
+                value = shape(value, self.dim_per_head)
+                if self.layer_cache[1]['keys'].numel() != 0:
                     key = torch.cat(
-                        (layer_cache["self_keys"], key),
+                        (self.layer_cache[1]['keys'], key),
                         dim=2)
-                if layer_cache["self_values"] is not None:
+
+                if self.layer_cache[1]['values'].numel() != 0:
                     value = torch.cat(
-                        (layer_cache["self_values"], value),
+                        (self.layer_cache[1]['values'], value),
                         dim=2)
-                layer_cache["self_keys"] = key
-                layer_cache["self_values"] = value
-            elif attn_type == "context":
+                self.layer_cache[1]['keys'] = key
+                self.layer_cache[1]['values'] = value
+            elif self.attn_type == "context":
                 query = self.linear_query(query)
-                if layer_cache["memory_keys"] is None:
+                if self.layer_cache[1]['keys'].numel() == 0:
                     key, value = self.linear_keys(key),\
                                  self.linear_values(value)
-                    key = shape(key)
-                    value = shape(value)
+                    key = shape(key, self.dim_per_head)
+                    value = shape(value, self.dim_per_head)
                 else:
-                    key, value = layer_cache["memory_keys"],\
-                               layer_cache["memory_values"]
-                layer_cache["memory_keys"] = key
-                layer_cache["memory_values"] = value
+                    key, value = self.layer_cache[1]['keys'],\
+                               self.layer_cache[1]['values']
+                self.layer_cache[1]['keys'] = key
+                self.layer_cache[1]['values'] = value
         else:
             key = self.linear_keys(key)
             value = self.linear_values(value)
             query = self.linear_query(query)
-            key = shape(key)
-            value = shape(value)
+            key = shape(key, self.dim_per_head)
+            value = shape(value, self.dim_per_head)
 
-        if self.max_relative_positions > 0 and attn_type == "self":
-            key_len = key.size(2)
-            # 1 or key_len x key_len
-            relative_positions_matrix = generate_relative_positions_matrix(
-                key_len, self.max_relative_positions,
-                cache=True if layer_cache is not None else False)
-            #  1 or key_len x key_len x dim_per_head
-            relations_keys = self.relative_positions_embeddings(
-                relative_positions_matrix.to(key.device))
-            #  1 or key_len x key_len x dim_per_head
-            relations_values = self.relative_positions_embeddings(
-                relative_positions_matrix.to(key.device))
-
-        query = shape(query)
-
-        key_len = key.size(2)
-        query_len = query.size(2)
+        query = shape(query, self.dim_per_head)
 
         # 2) Calculate and scale scores.
-        query = query / math.sqrt(dim_per_head)
+        query = query / math.sqrt(self.dim_per_head)
         # batch x num_heads x query_len x key_len
         query_key = torch.matmul(query, key.transpose(2, 3))
 
-        if self.max_relative_positions > 0 and attn_type == "self":
+        if self.relative_positions_embeddings is not None:
+            key_len = key.size(2)
+            # 1 or key_len x key_len
+            relative_positions_matrix = gen_relative_positions(
+                key_len, self.max_relative_positions,
+                cache=self.layer_cache[0],
+                device=key.device)
+            #  1 or key_len x key_len x dim_per_head
+            relations_keys = self.relative_positions_embeddings(
+                relative_positions_matrix)
+            #  1 or key_len x key_len x dim_per_head
+            relations_values = self.relative_positions_embeddings(
+                relative_positions_matrix)
             scores = query_key + relative_matmul(query, relations_keys, True)
         else:
             scores = query_key
+
         scores = scores.float()
 
         if mask is not None:
@@ -204,7 +236,7 @@ class MultiHeadedAttention(nn.Module):
 
         context_original = torch.matmul(drop_attn, value)
 
-        if self.max_relative_positions > 0 and attn_type == "self":
+        if self.relative_positions_embeddings is not None:
             context = unshape(context_original
                               + relative_matmul(drop_attn,
                                                 relations_values,
@@ -213,18 +245,5 @@ class MultiHeadedAttention(nn.Module):
             context = unshape(context_original)
 
         output = self.final_linear(context)
-        # CHECK
-        # batch_, q_len_, d_ = output.size()
-        # aeq(q_len, q_len_)
-        # aeq(batch, batch_)
-        # aeq(d, d_)
 
-        # Return multi-head attn
-        attns = attn \
-            .view(batch_size, head_count,
-                  query_len, key_len)
-
-        return output, attns
-
-    def update_dropout(self, dropout):
-        self.dropout.p = dropout
+        return output, attn

@@ -33,7 +33,8 @@ class TransformerEncoderLayer(nn.Module):
 
         self.self_attn = MultiHeadedAttention(
             heads, d_model, dropout=attention_dropout,
-            max_relative_positions=max_relative_positions)
+            max_relative_positions=max_relative_positions,
+            attn_type="self")
         self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout,
                                                     pos_ffn_activation_fn)
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
@@ -52,7 +53,7 @@ class TransformerEncoderLayer(nn.Module):
         """
         input_norm = self.layer_norm(inputs)
         context, _ = self.self_attn(input_norm, input_norm, input_norm,
-                                    mask=mask, attn_type="self")
+                                    mask=mask)
         out = self.dropout(context) + inputs
         return self.feed_forward(out)
 
