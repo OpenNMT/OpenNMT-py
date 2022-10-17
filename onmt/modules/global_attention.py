@@ -104,8 +104,6 @@ class GlobalAttention(nn.Module):
           FloatTensor: raw attention scores (unnormalized) for each src index
             ``(batch, tgt_len, src_len)``
         """
-
-        # Check input sizes
         src_batch, src_len, src_dim = h_s.size()
         tgt_batch, tgt_len, tgt_dim = h_t.size()
 
@@ -194,16 +192,8 @@ class GlobalAttention(nn.Module):
         if one_step:
             attn_h = attn_h.squeeze(1)
             align_vectors = align_vectors.squeeze(1)
-
-            # Check output sizes
-            batch_, dim_ = attn_h.size()
-            batch_, source_l_ = align_vectors.size()
-
         else:
             attn_h = attn_h.transpose(0, 1).contiguous()
             align_vectors = align_vectors.transpose(0, 1).contiguous()
-            # Check output sizes
-            target_l_, batch_, dim_ = attn_h.size()
-            target_l_, batch_, source_l_ = align_vectors.size()
 
         return attn_h, align_vectors
