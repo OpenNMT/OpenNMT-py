@@ -108,6 +108,7 @@ class MultiHeadedAttention(nn.Module):
            must be divisible by head_count
        dropout (float): dropout parameter
        max_relative_positions (int): max relative positions
+       attn_type: "self" or "context"
     """
 
     def __init__(self, head_count: int, model_dim: int, dropout: float = 0.1,

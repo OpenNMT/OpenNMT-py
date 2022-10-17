@@ -438,10 +438,12 @@ class TransformerDecoder(TransformerDecoderBase):
         self.state["src"] = self.state["src"].detach()
 
     def forward(self, tgt, memory_bank=None, step=None, **kwargs):
-        """Decode, possibly stepwise."""
-
-        # when training step is always None, when decoding, step increases
-
+        """
+        Decode, possibly stepwise.
+        when training step is always None, when decoding, step increases
+        tgt (Tensor): len x batch x feats
+        memory_bank (Tensor): encoder output (len x batch x model_dim)
+        """
         if memory_bank is None:
             memory_bank = self.embeddings(tgt)
         if step == 0:
@@ -496,8 +498,8 @@ class TransformerDecoder(TransformerDecoderBase):
         depth = memory_bank.size(-1)
 
         for layer in self.transformer_layers:
-            layer.context_attn.step = True
-            layer.self_attn.step = True
+            # first value set to True triggered by the beginning of decoding
+            # layer_cache becomes active in the MultiHeadedAttention fwd
             layer.context_attn.layer_cache = (
                 True,
                 {'keys': torch.tensor([], device=memory_bank.device),
