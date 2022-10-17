@@ -475,8 +475,6 @@ def _add_train_general_opts(parser):
               help="IP of master for torch.distributed training.")
     group.add('--master_port', '-master_port', default=10000, type=int,
               help="Port of master for torch.distributed training.")
-    group.add('--queue_size', '-queue_size', default=40, type=int,
-              help="Size of queue for each process in producer/consumer")
 
     _add_reproducibility_opts(parser)
 
@@ -516,6 +514,8 @@ def _add_train_general_opts(parser):
 
     # Optimization options
     group = parser.add_argument_group('Optimization- Type')
+    group.add('--num_workers', '-num_workers', type=int, default=0,
+              help='pytorch DataLoader num_workers')
     group.add('--batch_size', '-batch_size', type=int, default=64,
               help='Maximum batch size for training')
     group.add('--batch_size_multiple', '-batch_size_multiple',

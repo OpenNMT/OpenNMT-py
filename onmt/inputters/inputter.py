@@ -7,13 +7,13 @@ import pyonmttok
 from onmt.constants import DefaultTokens
 
 
-class IterOnDevice(object):
+class IterOnDevice(torch.utils.data.IterableDataset):
     """Sent items from `iterable` on `device_id` and yield."""
 
     def __init__(self, iterable, device_id):
+        super(IterOnDevice).__init__()
         self.iterable = iterable
         self.device_id = device_id
-        self.transforms = iterable.transforms
 
     @staticmethod
     def batch_to_device(tensor_batch, device_id):

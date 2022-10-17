@@ -63,14 +63,14 @@ report_every: 100
 train_steps: 100000
 valid_steps: 4000
 
-queue_size: 10000
 bucket_size: 32768
 world_size: 2
 gpu_ranks: [0, 1]
+num_workers: 4
 batch_type: "tokens"
 batch_size: 4096
 valid_batch_size: 8
-batch_size_multiple: 1
+batch_size_multiple: 8
 max_generator_batches: 0
 accum_count: [3]
 accum_steps: [0]

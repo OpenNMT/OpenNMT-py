@@ -1,4 +1,5 @@
 """Module that contain iterator used for dynamic data."""
+import torch
 from itertools import cycle
 from onmt.constants import CorpusTask, ModelTask
 from onmt.inputters.text_corpus import get_corpora, build_corpora_iters
@@ -7,6 +8,7 @@ from onmt.inputters.text_utils import text_sort_key, max_tok_len, process,\
 from onmt.transforms import make_transforms
 from onmt.utils.logging import logger
 from onmt.utils.misc import RandomShuffler
+from torch.utils.data import DataLoader
 
 
 class MixingStrategy(object):
@@ -83,7 +85,7 @@ class WeightedMixer(MixingStrategy):
                 yield item
 
 
-class DynamicDatasetIter(object):
+class DynamicDatasetIter(torch.utils.data.IterableDataset):
     """Yield batch from (multiple) plain text corpus.
 
     Args:
@@ -112,6 +114,7 @@ class DynamicDatasetIter(object):
                  batch_type, batch_size, batch_size_multiple, data_type="text",
                  bucket_size=2048, copy=False,
                  skip_empty_level='warning', stride=1, offset=0):
+        super(DynamicDatasetIter).__init__()
         self.corpora = corpora
         self.transforms = transforms
         self.vocabs = vocabs
@@ -170,11 +173,12 @@ class DynamicDatasetIter(object):
             stride=stride, offset=offset
         )
 
-    def _init_datasets(self):
+    def _init_datasets(self, worker_id):
+        stride = self.stride * self.num_workers if self.num_workers > 0 else 1
         datasets_iterables = build_corpora_iters(
             self.corpora, self.transforms, self.corpora_info,
             skip_empty_level=self.skip_empty_level,
-            stride=self.stride, offset=self.offset)
+            stride=stride, offset=self.offset+worker_id)
         datasets_weights = {
             ds_name: int(self.corpora_info[ds_name]['weight'])
             for ds_name in datasets_iterables.keys()
@@ -249,8 +253,6 @@ class DynamicDatasetIter(object):
             yield minibatch
 
     def __iter__(self):
-        if self.init_iterators is False:
-            self._init_datasets()
         for bucket in self._bucketing():
             # For TRAIN we need to group examples by length
             # for faster performance, but otherwise, sequential.
@@ -285,6 +287,18 @@ def build_dynamic_dataset_iter(opt, transforms_cls, vocabs, copy=False,
     if corpora is None:
         assert task != CorpusTask.TRAIN, "only valid corpus is ignorable."
         return None
-    return DynamicDatasetIter.from_opt(
+    data_iter = DynamicDatasetIter.from_opt(
         corpora, transforms, vocabs, opt, task, copy=copy,
         stride=stride, offset=offset)
+    data_iter.num_workers = opt.num_workers if \
+        hasattr(opt, 'num_workers') else 0
+    if data_iter.num_workers == 0 or task == CorpusTask.INFER:
+        data_iter._init_datasets(0)  # when workers=0 init_fn not called
+        data_loader = data_iter
+    else:
+        data_loader = DataLoader(data_iter, batch_size=None,
+                                 pin_memory=True,
+                                 multiprocessing_context="fork",
+                                 num_workers=data_iter.num_workers,
+                                 worker_init_fn=data_iter._init_datasets)
+    return data_loader

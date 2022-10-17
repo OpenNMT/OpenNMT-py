@@ -8,6 +8,7 @@ from onmt.transforms import get_transforms_cls, TransformPipe
 from onmt.constants import CorpusTask
 import onmt.opts as opts
 from onmt.utils.parse import ArgumentParser
+from onmt.utils.misc import use_gpu, set_random_seed
 
 
 def translate(opt):
@@ -16,6 +17,8 @@ def translate(opt):
     ArgumentParser._validate_transforms_opts(opt)
     ArgumentParser.validate_translate_opts_dynamic(opt)
     logger = init_logger(opt.log_file)
+
+    set_random_seed(opt.seed, use_gpu(opt))
 
     translator = build_translator(opt, logger=logger,
                                   report_score=True)
@@ -26,14 +29,14 @@ def translate(opt):
         opt, transforms_cls, translator.vocabs, task=CorpusTask.INFER,
         copy=translator.copy_attn)
 
-    if infer_iter is not None:
-        infer_iter = IterOnDevice(infer_iter, opt.gpu)
-
     data_transform = [
         infer_iter.transforms[name] for name in
         opt.transforms if name in infer_iter.transforms
     ]
     transform = TransformPipe.build_from(data_transform)
+
+    if infer_iter is not None:
+        infer_iter = IterOnDevice(infer_iter, opt.gpu)
 
     _, _ = translator._translate(
         infer_iter,

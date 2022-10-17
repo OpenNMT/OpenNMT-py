@@ -1,22 +1,22 @@
 #!/usr/bin/env python
 """Training on a single process."""
-import sys
 import torch
+import sys
+from onmt.utils.logging import init_logger, logger
+from onmt.utils.parse import ArgumentParser
 from onmt.constants import CorpusTask
-from onmt.inputters.inputter import IterOnDevice
-from onmt.inputters import build_vocab
+from onmt.transforms import make_transforms, save_transforms, \
+    get_specials, get_transforms_cls
+from onmt.inputters import build_vocab, IterOnDevice
+from onmt.inputters.dynamic_iterator import build_dynamic_dataset_iter
+from onmt.inputters.text_corpus import save_transformed_sample
 from onmt.model_builder import build_model
+from onmt.models.model_saver import load_checkpoint
 from onmt.utils.optimizers import Optimizer
 from onmt.utils.misc import set_random_seed
 from onmt.trainer import build_trainer
 from onmt.models import build_model_saver
-from onmt.utils.logging import init_logger, logger
-from onmt.utils.parse import ArgumentParser
-from onmt.inputters.dynamic_iterator import build_dynamic_dataset_iter
-from onmt.transforms import make_transforms, save_transforms, \
-    get_specials, get_transforms_cls
 from onmt.modules.embeddings import prepare_pretrained_embeddings
-from onmt.inputters.text_corpus import save_transformed_sample
 
 
 def prepare_transforms_vocabs(opt):
@@ -42,6 +42,38 @@ def prepare_transforms_vocabs(opt):
             "Sample saved, please check it before restart training.")
         sys.exit()
     return vocabs, transforms_cls
+
+
+def _init_train(opt):
+    """Common initilization stuff for all training process."""
+    ArgumentParser.validate_prepare_opts(opt)
+
+    if opt.train_from:
+        # Load checkpoint if we resume from a previous training.
+        checkpoint = load_checkpoint(ckpt_path=opt.train_from)
+
+        transforms_cls = get_transforms_cls(opt._all_transform)
+        if (hasattr(checkpoint["opt"], '_all_transform') and
+                len(opt._all_transform.symmetric_difference(
+                    checkpoint["opt"]._all_transform)) != 0):
+            _msg = "configured transforms is different from checkpoint:"
+            new_transf = opt._all_transform.difference(
+                checkpoint["opt"]._all_transform)
+            old_transf = checkpoint["opt"]._all_transform.difference(
+                opt._all_transform)
+            if len(new_transf) != 0:
+                _msg += f" +{new_transf}"
+            if len(old_transf) != 0:
+                _msg += f" -{old_transf}."
+            logger.warning(_msg)
+        if opt.update_vocab:
+            logger.info("Updating checkpoint vocabulary with new vocabulary")
+            vocabs, transforms_cls = prepare_transforms_vocabs(opt)
+    else:
+        checkpoint = None
+        vocabs, transforms_cls = prepare_transforms_vocabs(opt)
+
+    return checkpoint, vocabs, transforms_cls
 
 
 def configure_process(opt, device_id):
@@ -87,15 +119,16 @@ def _build_train_iter(opt, transforms_cls, vocabs, stride=1, offset=0):
     return train_iter
 
 
-def main(opt, checkpoint, device_id,
-         batch_queue=None, semaphore=None):
+def main(opt, device_id):
     """Start training on `device_id`."""
     # NOTE: It's important that ``opt`` has been validated and updated
     # at this point.
+
     configure_process(opt, device_id)
     init_logger(opt.log_file)
 
-    vocabs, transforms_cls = prepare_transforms_vocabs(opt)
+    checkpoint, vocabs, transforms_cls = _init_train(opt)
+
     model_opt = _get_model_opts(opt, checkpoint=checkpoint)
 
     # Build model.
@@ -112,22 +145,8 @@ def main(opt, checkpoint, device_id,
     trainer = build_trainer(
         opt, device_id, model, vocabs, optim, model_saver=model_saver)
 
-    if batch_queue is None:
-        _train_iter = _build_train_iter(opt, transforms_cls, vocabs)
-        train_iter = IterOnDevice(_train_iter, device_id)
-    else:
-        assert semaphore is not None, \
-            "Using batch_queue requires semaphore as well"
-
-        def _train_iter():
-            while True:
-                batch = batch_queue.get()
-                semaphore.release()
-                # Move batch to specified device
-                IterOnDevice.batch_to_device(batch, device_id)
-                yield batch
-
-        train_iter = _train_iter()
+    _train_iter = _build_train_iter(opt, transforms_cls, vocabs)
+    train_iter = IterOnDevice(_train_iter, device_id)
 
     valid_iter = _build_valid_iter(opt, transforms_cls, vocabs)
     if valid_iter is not None:

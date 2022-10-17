@@ -67,10 +67,10 @@ valid_steps: 10000
 train_steps: 200000
 
 # Batching
-queue_size: 10000
 bucket_size: 32768
 world_size: 4
 gpu_ranks: [0, 1, 2, 3]
+num_workers: 4
 batch_type: "tokens"
 batch_size: 4096
 valid_batch_size: 8
