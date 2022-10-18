@@ -26,6 +26,12 @@ class LossCompute(nn.Module):
     Args:
         criterion (:obj:`nn. loss function`) : NLLoss or customed loss
         generator (:obj:`nn.Module`) :
+        normalization (str "tokens" or "sents")
+        copy_attn (bool): whether copy attention mechanism is on/off
+        lambda_coverage: Hyper-param to apply coverage attention if any
+        lambda_align: Hyper-param for alignment loss
+        tgt_shift_index: 1 for NMT, 0 for LM
+        vocab: target vocab (for copy attention score calculation)
              module that maps the output of the decoder to a
              distribution over the target vocabulary.
     """
@@ -47,10 +53,9 @@ class LossCompute(nn.Module):
         """
         Returns a subclass which wraps around an nn.Module subclass
         (such as nn.NLLLoss) which defines the loss criterion. The LossCompute
-        object allows this loss to be computed in shards and passes relevant
-        data to a Statistics object which handles training/validation logging.
-        Currently, the NMTLossCompute class handles all loss computation except
-        for when using a copy mechanism.
+        object passes relevant data to a Statistics object which handles
+        training/validation logging.
+        The Criterion and LossCompute options are triggered by opt settings.
         """
         device = torch.device("cuda" if onmt.utils.misc.use_gpu(opt)
                               else "cpu")
@@ -69,8 +74,6 @@ class LossCompute(nn.Module):
                 len(vocab), opt.copy_attn_force,
                 unk_index=unk_idx, ignore_index=padding_idx
             )
-            vocab = vocab
-
         else:
             if opt.label_smoothing > 0 and train:
                 criterion = LabelSmoothingLoss(
@@ -83,7 +86,6 @@ class LossCompute(nn.Module):
             else:
                 criterion = nn.NLLLoss(ignore_index=padding_idx,
                                        reduction='sum')
-            vocab = vocab
 
         # if the loss function operates on vectors of raw logits instead
         # of probabilities, only the first part of the generator needs to
@@ -109,6 +111,7 @@ class LossCompute(nn.Module):
         return self.criterion.ignore_index
 
     def _compute_coverage_loss(self, std_attn, coverage_attn):
+        """compute coverage loss"""
         covloss = torch.min(std_attn, coverage_attn).sum()
         covloss *= self.lambda_coverage
         return covloss
@@ -124,11 +127,16 @@ class LossCompute(nn.Module):
         return align_loss
 
     def _compute_copy_loss(self, batch, output, target, align, attns):
-        """Compute the loss.
+        """Compute the copy attention loss.
         Args:
             batch: the current batch.
             output: the predict output from the model.
             target: the validate target to compare output with.
+            align:
+            attns: dictionary of attention distributions
+              `[tgt_len x batch x src_len]`
+        Returns:
+            A tuple with the loss and a :obj:`onmt.utils.Statistics` instance.
         """
         scores = self.generator(self._bottle(output),
                                 self._bottle(attns['copy']),
@@ -182,7 +190,6 @@ class LossCompute(nn.Module):
               output of decoder model `[tgt_len x batch x hidden]`
           attns (dict) : dictionary of attention distributions
               `[tgt_len x batch x src_len]`
-          normalization: Optional normalization factor.
           trunc_start (int) : starting position of truncation window
           trunc_size (int) : length of truncation window
 

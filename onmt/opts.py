@@ -540,11 +540,6 @@ def _add_train_general_opts(parser):
               help='Perfom validation every X steps')
     group.add('--valid_batch_size', '-valid_batch_size', type=int, default=32,
               help='Maximum batch size for validation')
-    group.add('--max_generator_batches', '-max_generator_batches',
-              type=int, default=32,
-              help="Maximum batches of words in a sequence to run "
-                   "the generator on in parallel. Higher is faster, but "
-                   "uses more memory. Set to 0 to disable.")
     group.add('--train_steps', '-train_steps', type=int, default=100000,
               help='Number of training steps')
     group.add('--single_pass', '-single_pass', action='store_true',
