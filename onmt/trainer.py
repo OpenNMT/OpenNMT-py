@@ -12,8 +12,8 @@
 
 import torch
 import traceback
-
 import onmt.utils
+from onmt.utils.loss import LossCompute
 from onmt.utils.logging import logger
 from onmt.translate.utils import ScoringPreparator
 from onmt.scorers import get_scorers_cls, build_scorers
@@ -34,9 +34,8 @@ def build_trainer(opt, device_id, model, vocabs, optim, model_saver=None):
             used to save the model
     """
 
-    train_loss = onmt.utils.loss.build_loss_compute(model, vocabs['tgt'], opt)
-    valid_loss = onmt.utils.loss.build_loss_compute(
-        model, vocabs['tgt'], opt, train=False)
+    train_loss = LossCompute.from_opts(opt, model, vocabs['tgt'])
+    valid_loss = LossCompute.from_opts(opt, model, vocabs['tgt'], train=False)
 
     scoring_preparator = ScoringPreparator(vocabs, opt)
     scorers_cls = get_scorers_cls(opt.train_metrics)
@@ -45,8 +44,6 @@ def build_trainer(opt, device_id, model, vocabs, optim, model_saver=None):
     valid_scorers = build_scorers(opt, scorers_cls)
 
     trunc_size = opt.truncated_decoder  # Badly named...
-    shard_size = opt.max_generator_batches if opt.model_dtype == 'fp32' else 0
-    norm_method = opt.normalization
     accum_count = opt.accum_count
     accum_steps = opt.accum_steps
     n_gpu = opt.world_size
@@ -71,7 +68,6 @@ def build_trainer(opt, device_id, model, vocabs, optim, model_saver=None):
                            train_loss, valid_loss,
                            scoring_preparator, train_scorers, valid_scorers,
                            optim, trunc_size,
-                           shard_size, norm_method,
                            accum_count, accum_steps,
                            n_gpu, gpu_rank, gpu_verbose_level,
                            opt.train_eval_steps, report_manager,
@@ -100,9 +96,7 @@ class Trainer(object):
             optim(:obj:`onmt.utils.optimizers.Optimizer`):
                the optimizer responsible for update
             trunc_size(int): length of truncated back propagation through time
-            shard_size(int): compute loss in shards of this size for efficiency
             data_type(string): type of the source input: [text]
-            norm_method(string): normalization methods: [sents|tokens]
             accum_count(list): accumulate gradients this many times.
             accum_steps(list): steps for accum gradients changes.
             report_manager(:obj:`onmt.utils.ReportMgrBase`):
@@ -115,8 +109,8 @@ class Trainer(object):
     def __init__(self, model, train_loss, valid_loss,
                  scoring_preparator, train_scorers, valid_scorers,
                  optim,
-                 trunc_size=0, shard_size=32,
-                 norm_method="sents", accum_count=[1],
+                 trunc_size=0,
+                 accum_count=[1],
                  accum_steps=[0],
                  n_gpu=1, gpu_rank=1, gpu_verbose_level=0,
                  train_eval_steps=200,
@@ -135,8 +129,6 @@ class Trainer(object):
         self.valid_scorers = valid_scorers
         self.optim = optim
         self.trunc_size = trunc_size
-        self.shard_size = shard_size
-        self.norm_method = norm_method
         self.accum_count_l = accum_count
         self.accum_count = accum_count[0]
         self.accum_steps = accum_steps
@@ -193,21 +185,15 @@ class Trainer(object):
 
     def _accum_batches(self, iterator):
         batches = []
-        normalization = 0
         self.accum_count = self._accum_count(self.optim.training_step)
         for batch in iterator:
             batches.append(batch)
-            if self.norm_method == "tokens":
-                normalization += batch['tgtlen'].sum().item()
-            else:
-                normalization += len(batch['indices'])
             if len(batches) == self.accum_count:
-                yield batches, normalization
+                yield batches
                 self.accum_count = self._accum_count(self.optim.training_step)
                 batches = []
-                normalization = 0
         if batches:
-            yield batches, normalization
+            yield batches
 
     def _update_average(self, step):
         if self.moving_average is None:
@@ -253,19 +239,14 @@ class Trainer(object):
         report_stats = onmt.utils.Statistics()
         self._start_report_manager(start_time=total_stats.start_time)
 
-        for i, (batches, normalization) in enumerate(
+        for i, batches in enumerate(
                 self._accum_batches(train_iter)):
             step = self.optim.training_step
             # UPDATE DROPOUT
             self._maybe_update_dropout(step)
 
-            if self.n_gpu > 1:
-                normalization = sum(onmt.utils.distributed
-                                    .all_gather_list
-                                    (normalization))
-
             self._gradient_accumulation(
-                batches, normalization, total_stats,
+                batches, total_stats,
                 report_stats)
 
             if self.average_decay > 0 and i % self.average_every == 0:
@@ -376,7 +357,7 @@ class Trainer(object):
 
         return stats
 
-    def _gradient_accumulation(self, true_batches, normalization, total_stats,
+    def _gradient_accumulation(self, true_batches, total_stats,
                                report_stats):
         if self.accum_count > 1:
             self.optim.zero_grad()
@@ -417,8 +398,6 @@ class Trainer(object):
                             batch,
                             outputs,
                             attns,
-                            normalization=normalization,
-                            shard_size=self.shard_size,
                             trunc_start=j,
                             trunc_size=trunc_size)
 
@@ -475,7 +454,7 @@ class Trainer(object):
                 # TO CHECK
                 # if dec_state is not None:
                 #    dec_state.detach()
-                if self.model.decoder.state is not None:
+                if self.model.decoder.state != {}:
                     self.model.decoder.detach_state()
 
         # in case of multi step gradient accumulation,
