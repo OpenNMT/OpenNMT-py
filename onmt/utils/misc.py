@@ -5,7 +5,6 @@ import random
 from contextlib import contextmanager
 import inspect
 import numpy as np
-from itertools import islice, repeat
 import os
 from copy import deepcopy
 
@@ -48,30 +47,6 @@ def check_path(path, exist_ok=False, log=print):
             raise IOError(f"path {path} exists, stop.")
     else:
         os.makedirs(os.path.dirname(path), exist_ok=True)
-
-
-def split_corpus(path, shard_size, default=None):
-    """yield a `list` containing `shard_size` line of `path`,
-    or repeatly generate `default` if `path` is None.
-    """
-    if path is not None:
-        return _split_corpus(path, shard_size)
-    else:
-        return repeat(default)
-
-
-def _split_corpus(path, shard_size):
-    """Yield a `list` containing `shard_size` line of `path`.
-    """
-    with open(path, "rb") as f:
-        if shard_size <= 0:
-            yield f.readlines()
-        else:
-            while True:
-                shard = list(islice(f, shard_size))
-                if not shard:
-                    break
-                yield shard
 
 
 def sequence_mask(lengths, max_len=None):
