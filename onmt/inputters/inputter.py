@@ -47,9 +47,8 @@ def build_vocab(opt, specials):
         if vocab_size % multiple == 0:
             return vocab
         target_size = int(math.ceil(vocab_size / multiple)) * multiple
-        padding_tokens = ["{}{}".format(DefaultTokens.VOCAB_PAD, i)
-                          for i in range(target_size - vocab_size)]
-        vocab.add_fromtext(padding_tokens)
+        for i in range(target_size - vocab_size):
+            vocab.add_token(DefaultTokens.VOCAB_PAD + str(i))
         return vocab
 
     vocabs = {}

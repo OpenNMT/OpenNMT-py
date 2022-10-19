@@ -292,15 +292,9 @@ class ArgumentParser(cfargparse.ArgumentParser, DataOptsCheckerMixin):
 
     @classmethod
     def validate_train_opts(cls, opt):
-        if opt.epochs:
-            raise AssertionError(
-                  "-epochs is deprecated please use -train_steps.")
         if opt.truncated_decoder > 0 and max(opt.accum_count) > 1:
             raise AssertionError("BPTT is not compatible with -accum > 1")
 
-        if opt.gpuid:
-            raise AssertionError(
-                  "gpuid is deprecated see world_size and gpu_ranks")
         if torch.cuda.is_available() and not opt.gpu_ranks:
             logger.warn("You have a CUDA device, should run with -gpu_ranks")
         if opt.world_size < len(opt.gpu_ranks):

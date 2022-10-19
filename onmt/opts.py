@@ -338,12 +338,6 @@ def model_opts(parser):
               choices=['LSTM', 'GRU', 'SRU'],
               action=CheckSRU,
               help="The gate type to use in the RNNs")
-    # group.add('--residual', '-residual',   action="store_true",
-    #                     help="Add residual connections between RNN layers.")
-
-    group.add('--brnn', '-brnn', action=DeprecateAction,
-              help="Deprecated, use `encoder_type`.")
-
     group.add('--context_gate', '-context_gate', type=str, default=None,
               choices=['source', 'target', 'both'],
               help="Type of context gate to use. "
@@ -460,8 +454,6 @@ def _add_train_general_opts(parser):
               help="Keep X checkpoints (negative: keep all)")
 
     # GPU
-    group.add('--gpuid', '-gpuid', default=[], nargs='*', type=int,
-              help="Deprecated see world_size and gpu_ranks.")
     group.add('--gpu_ranks', '-gpu_ranks', default=[], nargs='*', type=int,
               help="list of ranks of each process.")
     group.add('--world_size', '-world_size', default=1, type=int,
@@ -544,8 +536,6 @@ def _add_train_general_opts(parser):
               help='Number of training steps')
     group.add('--single_pass', '-single_pass', action='store_true',
               help="Make a single pass over the training dataset.")
-    group.add('--epochs', '-epochs', type=int, default=0,
-              help='Deprecated epochs see train_steps')
     group.add('--early_stopping', '-early_stopping', type=int, default=0,
               help='Number of validation steps without improving.')
     group.add('--early_stopping_criteria', '-early_stopping_criteria',
@@ -713,8 +703,6 @@ def _add_decoding_opts(parser):
               help='Minimum prediction length')
     group.add('--max_length', '-max_length', type=int, default=100,
               help='Maximum prediction length.')
-    group.add('--max_sent_length', '-max_sent_length', action=DeprecateAction,
-              help="Deprecated, use `-max_length` instead")
     # Decoding content constraint
     group.add('--block_ngram_repeat', '-block_ngram_repeat',
               type=int, default=0,
@@ -777,14 +765,6 @@ def translate_opts(parser, dynamic=False):
               help='True target sequence (optional)')
     group.add('--tgt_prefix', '-tgt_prefix', action='store_true',
               help='Generate predictions using provided `-tgt` as prefix.')
-    group.add('--shard_size', '-shard_size', type=int, default=10000,
-              help="Divide src and tgt (if applicable) into "
-                   "smaller multiple src and tgt files, then "
-                   "build shards, each shard will have "
-                   "opt.shard_size samples except last shard. "
-                   "shard_size=0 means no segmentation "
-                   "shard_size>0 means segment dataset into multiple shards, "
-                   "each shard has shard_size samples")
     group.add('--output', '-output', default='pred.txt',
               help="Path to output the predictions (each line will "
                    "be the decoded sequence")
