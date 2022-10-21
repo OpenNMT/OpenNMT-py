@@ -133,6 +133,10 @@ class TransformerEncoder(EncoderBase):
 
         out = emb.transpose(0, 1).contiguous()
         mask = ~sequence_mask(lengths).unsqueeze(1)
+        mask = mask.unsqueeze(1)
+        mask = mask.expand(-1, -1, mask.size(3), -1)
+        # mask is now (batch x 1 x slen x slen)
+        # 1 to be expanded to number of heads in MHA
         # Run the forward pass of every layer of the tranformer.
         for layer in self.transformer:
             out = layer(out, mask)

@@ -251,10 +251,16 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
 
         """
         dec_mask = None
+        src_pad_mask = src_pad_mask.unsqueeze(1)
 
         if inputs.size(1) > 1:
             # masking is necessary when sequence length is greater than one
             dec_mask = self._compute_dec_mask(tgt_pad_mask, future)
+            dec_mask = dec_mask.unsqueeze(1)
+            dec_mask = dec_mask.expand(-1, -1, dec_mask.size(3), -1)
+            src_pad_mask = src_pad_mask.expand(-1, -1, dec_mask.size(3), -1)
+            # mask now are (batch x 1 x tlen x s or t len)
+            # 1 = heads to be expanded in MHA
 
         inputs_norm = self.layer_norm_1(inputs)
 
