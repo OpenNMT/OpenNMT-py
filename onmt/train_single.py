@@ -146,8 +146,8 @@ def main(opt, device_id):
         opt, device_id, model, vocabs, optim, model_saver=model_saver)
 
     _train_iter = _build_train_iter(opt, transforms_cls, vocabs,
-                                    stride=len(opt.gpu_ranks),
-                                    offset=device_id)
+                                    stride=max(1, len(opt.gpu_ranks)),
+                                    offset=max(0, device_id))
     train_iter = IterOnDevice(_train_iter, device_id)
 
     valid_iter = _build_valid_iter(opt, transforms_cls, vocabs)
