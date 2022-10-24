@@ -119,6 +119,11 @@ class MultiHeadedAttention(nn.Module):
         self.dim_per_head = model_dim // head_count
         super(MultiHeadedAttention, self).__init__()
         if max_relative_positions > 0:
+            # https://arxiv.org/pdf/1803.02155.pdf
+            # in the paper they suggest either two embeds
+            # relative_key / relative_value or only
+            # relative_key. We implemented the same embed
+            # for both.
             vocab_size = max_relative_positions * 2 + 1
             self.relative_positions_embeddings = nn.Embedding(
                 vocab_size, self.dim_per_head)
@@ -218,9 +223,6 @@ class MultiHeadedAttention(nn.Module):
             #  1 or key_len x key_len x dim_per_head
             relations_keys = self.relative_positions_embeddings(
                 relative_positions_matrix)
-            #  1 or key_len x key_len x dim_per_head
-            relations_values = self.relative_positions_embeddings(
-                relative_positions_matrix)
             scores = query_key + relative_matmul(query, relations_keys, True)
         else:
             scores = query_key
@@ -238,6 +240,8 @@ class MultiHeadedAttention(nn.Module):
         context_original = torch.matmul(drop_attn, value)
 
         if self.relative_positions_embeddings is not None:
+            # We use the same embeddings for key and value
+            relations_values = relations_keys
             context = unshape(context_original
                               + relative_matmul(drop_attn,
                                                 relations_values,
