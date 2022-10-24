@@ -174,11 +174,16 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
         )
 
     def _init_datasets(self, worker_id):
-        stride = self.stride * self.num_workers if self.num_workers > 0 else 1
+        if self.num_workers > 0:
+            stride = self.stride * self.num_workers
+            offset = self.offset * self.num_workers + worker_id
+        else:
+            stride = self.stride
+            offset = self.offset
         datasets_iterables = build_corpora_iters(
             self.corpora, self.transforms, self.corpora_info,
             skip_empty_level=self.skip_empty_level,
-            stride=stride, offset=self.offset+worker_id)
+            stride=stride, offset=offset)
         datasets_weights = {
             ds_name: int(self.corpora_info[ds_name]['weight'])
             for ds_name in datasets_iterables.keys()

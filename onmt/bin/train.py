@@ -43,13 +43,8 @@ def train(opt):
             procs[device_id].start()
             logger.info(" Starting process pid: %d  " % procs[device_id].pid)
             error_handler.add_child(procs[device_id].pid)
-        producers = []
-
         for p in procs:
             p.join()
-        # Once training is done, we can terminate the producers
-        for p in producers:
-            p.terminate()
 
     elif nb_gpu == 1:  # case 1 GPU only
         train_process(opt, device_id=0)
