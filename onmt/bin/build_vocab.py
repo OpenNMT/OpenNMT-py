@@ -42,19 +42,26 @@ def write_files_from_queues(sample_path, queues):
 
 # Just for debugging purposes
 # It appends features to subwords when dumping to file
-def append_features_to_example(example, features):
-    ex_toks = example.split(' ')
-    feat_toks = features.split(' ')
-    toks = [f"{subword}￨{feat}" for subword, feat in
-            zip(ex_toks, feat_toks)]
-    return " ".join(toks)
+def append_features_to_text(text, features):
+    text_tok = text.split(' ')
+    feats_tok = [x.split(' ') for x in features]
+
+    pretty_toks = []
+    for tok, *feats in zip(text_tok, *feats_tok):
+        feats = '￨'.join(feats)
+        if feats:
+            pretty_toks.append(f"{tok}￨{feats}")
+        else:
+            pretty_toks.append(tok)
+    return " ".join(pretty_toks)
 
 
 def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
     """Build vocab on (strided) subpart of the data."""
     sub_counter_src = Counter()
     sub_counter_tgt = Counter()
-    sub_counter_src_feats = defaultdict(Counter)
+    sub_counter_src_feats = [Counter() for _ in range(opts.n_src_feats)]
+    sub_counter_tgt_feats = [Counter() for _ in range(opts.n_tgt_feats)]
     datasets_iterables = build_corpora_iters(
         corpora, transforms, opts.data,
         skip_empty_level=opts.skip_empty_level,
@@ -66,28 +73,30 @@ def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
                 if opts.dump_samples:
                     build_sub_vocab.queues[c_name][offset].put("blank")
                 continue
-            src_line, tgt_line = (maybe_example['src']['src'],
-                                  maybe_example['tgt']['tgt'])
-            src_line_pretty = src_line
-            for feat_name, feat_line in maybe_example["src"].items():
-                if feat_name not in ["src", "src_original"]:
-                    sub_counter_src_feats[feat_name].update(
-                        feat_line.split(' '))
-                    if opts.dump_samples:
-                        src_line_pretty = append_features_to_example(
-                            src_line_pretty, feat_line)
+            src_line = maybe_example['src']['src']
+            tgt_line = maybe_example['tgt']['tgt']
+            src_feats_lines = maybe_example['src']['feats']
+            tgt_feats_lines = maybe_example['tgt']['feats']
+
             sub_counter_src.update(src_line.split(' '))
             sub_counter_tgt.update(tgt_line.split(' '))
+            for i in range(opts.n_src_feats):
+                sub_counter_src_feats[i].update(src_feats_lines[i].split(' '))
+            for i in range(opts.n_tgt_feats):
+                sub_counter_tgt_feats[i].update(tgt_feats_lines[i].split(' '))
+
             if opts.dump_samples:
+                src_pretty_line = append_features_to_text(src_line, src_feats_lines)
+                tgt_pretty_line = append_features_to_text(tgt_line, tgt_feats_lines)
                 build_sub_vocab.queues[c_name][offset].put(
-                    (i, src_line_pretty, tgt_line))
+                    (i, src_pretty_line, tgt_pretty_line))
             if n_sample > 0 and ((i+1) * stride + offset) >= n_sample:
                 if opts.dump_samples:
                     build_sub_vocab.queues[c_name][offset].put("break")
                 break
         if opts.dump_samples:
             build_sub_vocab.queues[c_name][offset].put("break")
-    return sub_counter_src, sub_counter_tgt, sub_counter_src_feats
+    return sub_counter_src, sub_counter_tgt, sub_counter_src_feats, sub_counter_tgt_feats
 
 
 def init_pool(queues):
@@ -111,7 +120,8 @@ def build_vocab(opts, transforms, n_sample=3):
     corpora = get_corpora(opts, task=CorpusTask.TRAIN)
     counter_src = Counter()
     counter_tgt = Counter()
-    counter_src_feats = defaultdict(Counter)
+    counter_src_feats = [Counter() for _ in range(opts.n_src_feats)]
+    counter_tgt_feats = [Counter() for _ in range(opts.n_tgt_feats)]
     from functools import partial
     queues = {c_name: [mp.Queue(opts.vocab_sample_queue_size)
                        for i in range(opts.num_threads)]
@@ -128,14 +138,17 @@ def build_vocab(opts, transforms, n_sample=3):
         func = partial(
             build_sub_vocab, corpora, transforms,
             opts, n_sample, opts.num_threads)
-        for sub_counter_src, sub_counter_tgt, sub_counter_src_feats in p.imap(
+        for sub_counter_src, sub_counter_tgt, sub_counter_src_feats, sub_counter_tgt_feats in p.imap(
                 func, range(0, opts.num_threads)):
             counter_src.update(sub_counter_src)
             counter_tgt.update(sub_counter_tgt)
-            counter_src_feats.update(sub_counter_src_feats)
+            for i in range(opts.n_src_feats):
+                counter_src_feats[i].update(sub_counter_src_feats[i])
+            for i in range(opts.n_tgt_feats):
+                counter_tgt_feats[i].update(sub_counter_tgt_feats[i])
     if opts.dump_samples:
         write_process.join()
-    return counter_src, counter_tgt, counter_src_feats
+    return counter_src, counter_tgt, counter_src_feats, counter_tgt_feats
 
 
 def build_vocab_main(opts):
@@ -161,13 +174,15 @@ def build_vocab_main(opts):
     transforms = make_transforms(opts, transforms_cls, None)
 
     logger.info(f"Counter vocab from {opts.n_sample} samples.")
-    src_counter, tgt_counter, src_feats_counter = build_vocab(
+    src_counter, tgt_counter, src_feats_counter, tgt_feats_counter = build_vocab(
         opts, transforms, n_sample=opts.n_sample)
 
-    logger.info(f"Counters src:{len(src_counter)}")
-    logger.info(f"Counters tgt:{len(tgt_counter)}")
-    for feat_name, feat_counter in src_feats_counter.items():
-        logger.info(f"Counters {feat_name}:{len(feat_counter)}")
+    logger.info(f"Counters src: {len(src_counter)}")
+    logger.info(f"Counters tgt: {len(tgt_counter)}")
+    for i, feat_counter in enumerate(src_feats_counter):
+        logger.info(f"Counters src feat_{i}: {len(feat_counter)}")
+    for i, feat_counter in enumerate(tgt_feats_counter):
+        logger.info(f"Counters tgt feat_{i}: {len(feat_counter)}")
 
     def save_counter(counter, save_path):
         check_path(save_path, exist_ok=opts.overwrite, log=logger.warning)
@@ -184,8 +199,10 @@ def build_vocab_main(opts):
         save_counter(src_counter, opts.src_vocab)
         save_counter(tgt_counter, opts.tgt_vocab)
 
-    for k, v in src_feats_counter.items():
-        save_counter(v, opts.src_feats_vocab[k])
+    for i, c in enumerate(src_feats_counter):
+        save_counter(c, f"{opts.src_vocab}_feat{i}")
+    for i, c in enumerate(tgt_feats_counter):
+        save_counter(c, f"{opts.tgt_vocab}_feat{i}")
 
 
 def _get_parser():

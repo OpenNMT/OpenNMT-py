@@ -6,6 +6,27 @@ from onmt.utils.logging import logger
 from collections import Counter
 
 
+def parse_features(line, n_feats=0, defaults=None):
+    text, feats = [], [[] for _ in range(n_feats)]
+    check, count = 0, 0
+    for token in line.split(' '):
+        tok, *fts = token.strip().split("￨")
+        check += len(fts)
+        count += 1
+        if not fts and defaults is not None:
+            if isinstance(defaults, str):
+                defaults = defaults.split("￨")
+            assert len(defaults) == n_feats, "The number of provided defaults does not match the number of feats"
+            fts = defaults
+        assert len(fts) == n_feats, "The number of fetures does not match the expected number of features"
+        text.append(tok)
+        for i in range(n_feats):
+            feats[i].append(fts[i])
+    # Check if all tokens have features or none at all
+    assert check == 0 or check == count*n_feats, "Some features are missing"
+    return " ".join(text), [" ".join(x) for x in feats]
+
+
 def text_sort_key(ex):
     """Sort using the number of tokens in the sequence."""
     if ex['tgt']:
@@ -49,21 +70,23 @@ def process(task, item):
     maybe_example['src'] = {"src": ' '.join(maybe_example['src'])}
 
     # Make features part of src like
-    # {'src': {'src': ..., 'feat1': ...., 'feat2': ....}}
-    if 'src_feats' in maybe_example:
-        for feat_name, feat_value in maybe_example['src_feats'].items():
-            maybe_example['src'][feat_name] = ' '.join(feat_value)
-        del maybe_example['src_feats']
+    # {'src': {'src': ..., 'feats': ....}
+    maybe_example['src']['feats'] = [' '.join(x) for x in maybe_example["src_feats"]]
     if maybe_example['tgt'] is not None:
         maybe_example['tgt'] = {'tgt': ' '.join(maybe_example['tgt'])}
+        maybe_example['tgt']['feats'] = [' '.join(x) for x in maybe_example["tgt_feats"]]
     if 'align' in maybe_example:
         maybe_example['align'] = ' '.join(maybe_example['align'])
 
+    # Delete these fields as they are no longer needed
+    del maybe_example['src_original']
+    del maybe_example['tgt_original']
+    del maybe_example['src_feats']
+    del maybe_example['tgt_feats']
+
     # at this point an example looks like:
-    # {'src': {'src': ..., 'feat1': ...., 'feat2': ....},
-    #  'tgt': {'tgt': ...},
-    #  'src_original': ['tok1', ...'tokn'],
-    #  'tgt_original': ['tok1', ...'tokm'],
+    # {'src': {'src': ..., 'feats': ....},
+    #  'tgt': {'tgt': ..., 'feats': ....},
     #  'indices' : seq in bucket
     #  'align': ...,
     # }

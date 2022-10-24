@@ -142,12 +142,16 @@ def _add_dynamic_vocab_opts(parser, build_vocab_only=False):
     group.add("-share_vocab", "--share_vocab", action="store_true",
               help="Share source and target vocabulary.")
 
-    group.add("-src_feats_vocab", "--src_feats_vocab",
-              help=("List of paths to save"
-                    if build_vocab_only
-                    else "List of paths to")
-              + " src features vocabulary files. "
-              "Files format: one <word> or <word>\t<count> per line.")
+    group.add("-n_src_feats", "--n_src_feats", type=int,
+              default=0, help="Number of source feats.")
+    group.add("-n_tgt_feats", "--n_tgt_feats", type=int,
+              default=0, help="Number of target feats.")
+    group.add("-src_feats_defaults", "--src_feats_defaults",
+              help="Default features to apply in source in case "
+              "there are not annotated")
+    group.add("-tgt_feats_defaults", "--tgt_feats_defaults",
+              help="Default features to apply in target in case "
+              "there are not annotated")
 
     if not build_vocab_only:
         group.add("-src_vocab_size", "--src_vocab_size",

@@ -78,20 +78,11 @@ class DataOptsCheckerMixin(object):
 
             # Check features
             src_feats = corpus.get("src_feats", None)
-            if src_feats is not None:
-                for feature_name, feature_file in src_feats.items():
-                    cls._validate_file(
-                        feature_file, info=f'{cname}/path_{feature_name}')
+            if opt.n_src_feats > 0 or opt.n_tgt_feats > 0:
                 if 'inferfeats' not in corpus["transforms"]:
                     raise ValueError(
                         "'inferfeats' transform is required "
-                        "when setting source features")
-                if 'filterfeats' not in corpus["transforms"]:
-                    raise ValueError(
-                        "'filterfeats' transform is required "
-                        "when setting source features")
-            else:
-                corpus["src_feats"] = None
+                        "when using source or target features")
 
         logger.info(f"Parsed {len(corpora)} corpora from -data.")
         opt.data = corpora
@@ -129,19 +120,6 @@ class DataOptsCheckerMixin(object):
     @classmethod
     def _validate_vocab_opts(cls, opt, build_vocab_only=False):
         """Check options relate to vocab."""
-
-        for cname, corpus in opt.data.items():
-            if cname != CorpusName.VALID and corpus["src_feats"] is not None:
-                assert opt.src_feats_vocab, \
-                    "-src_feats_vocab is required if using source features."
-                if isinstance(opt.src_feats_vocab, str):
-                    import yaml
-                    opt.src_feats_vocab = yaml.safe_load(opt.src_feats_vocab)
-
-                for feature in corpus["src_feats"].keys():
-                    assert feature in opt.src_feats_vocab, \
-                        f"No vocab file set for feature {feature}"
-
         if build_vocab_only:
             if not opt.share_vocab:
                 assert opt.tgt_vocab, \
