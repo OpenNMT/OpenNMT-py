@@ -227,33 +227,37 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
         if batch_size_fn is None:
             def batch_size_fn(new, count, sofar):
                 return count
-        minibatch, size_so_far = [], 0
+        minibatch, size_so_far, seen = [], 0, []
         for ex in data:
-            minibatch.append(ex)
-            size_so_far = batch_size_fn(ex, len(minibatch), size_so_far)
-            if size_so_far >= batch_size:
-                overflowed = 0
-                if size_so_far > batch_size:
-                    overflowed += 1
-                if batch_size_multiple > 1:
-                    overflowed += (
-                        (len(minibatch) - overflowed) % batch_size_multiple)
-                if overflowed == 0:
-                    yield minibatch
-                    minibatch, size_so_far = [], 0
-                else:
-                    if overflowed == len(minibatch):
-                        logger.warning(
-                            "The batch will be filled until we reach %d,"
-                            "its size may exceed %d tokens"
-                            % (batch_size_multiple, batch_size)
-                            )
+            if ex['src']['src'] not in seen:
+                seen.append(ex['src']['src'])
+                minibatch.append(ex)
+                size_so_far = batch_size_fn(ex, len(minibatch), size_so_far)
+                if size_so_far >= batch_size:
+                    overflowed = 0
+                    if size_so_far > batch_size:
+                        overflowed += 1
+                    if batch_size_multiple > 1:
+                        overflowed += (
+                            (len(minibatch) - overflowed)
+                            % batch_size_multiple)
+                    if overflowed == 0:
+                        yield minibatch
+                        minibatch, size_so_far, seen = [], 0, []
                     else:
-                        yield minibatch[:-overflowed]
-                        minibatch = minibatch[-overflowed:]
-                        size_so_far = 0
-                        for i, ex in enumerate(minibatch):
-                            size_so_far = batch_size_fn(ex, i + 1, size_so_far)
+                        if overflowed == len(minibatch):
+                            logger.warning(
+                                "The batch will be filled until we reach %d,"
+                                "its size may exceed %d tokens"
+                                % (batch_size_multiple, batch_size)
+                                )
+                        else:
+                            yield minibatch[:-overflowed]
+                            minibatch = minibatch[-overflowed:]
+                            size_so_far, seen = 0, []
+                            for i, ex in enumerate(minibatch):
+                                size_so_far = batch_size_fn(ex, i + 1,
+                                                            size_so_far)
         if minibatch:
             yield minibatch
 
