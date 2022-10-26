@@ -118,6 +118,7 @@ class MultiHeadedAttention(nn.Module):
         assert model_dim % head_count == 0
         self.dim_per_head = model_dim // head_count
         super(MultiHeadedAttention, self).__init__()
+        self.head_count = head_count
         if max_relative_positions > 0:
             # https://arxiv.org/pdf/1803.02155.pdf
             # in the paper they suggest either two embeds
@@ -230,7 +231,9 @@ class MultiHeadedAttention(nn.Module):
         scores = scores.float()
 
         if mask is not None:
-            mask = mask.unsqueeze(1)  # [B, 1, 1, T_values]
+            # not 100% necessary but expand to nb of heads
+            mask = mask.expand(-1, self.head_count, -1, -1)
+            # now mask and scores have the same shape
             scores = scores.masked_fill(mask, -1e18)
 
         # 3) Apply attention dropout and compute context vectors.
