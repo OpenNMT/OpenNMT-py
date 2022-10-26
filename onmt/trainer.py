@@ -365,7 +365,7 @@ class Trainer(object):
             self.optim.zero_grad()
 
         for k, batch in enumerate(true_batches):
-            target_size = batch['tgt'].size(0)
+            target_size = batch['tgt'].size(1)
             # Truncated BPTT: reminder not compatible with accum > 1
             if self.trunc_size:
                 trunc_size = self.trunc_size
@@ -383,7 +383,7 @@ class Trainer(object):
             bptt = False
             for j in range(0, target_size - 1, trunc_size):
                 # 1. Create truncated target.
-                tgt = tgt_outer[j: j + trunc_size]
+                tgt = tgt_outer[:,j: j + trunc_size,:]
 
                 # 2. F-prop all but generator.
                 if self.accum_count == 1:
@@ -441,7 +441,10 @@ class Trainer(object):
                     else:
                         traceback.print_exc()
                         raise exc
-
+                for name, param in self.model.named_parameters():
+                    if param.grad is None:
+                        print(name, param.grad)
+                        
                 # 4. Update the parameters and statistics.
                 if self.accum_count == 1:
                     # Multi GPU gradient gather

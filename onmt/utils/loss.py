@@ -188,9 +188,9 @@ class LossCompute(nn.Module):
         Args:
           batch (batch) : batch of labeled examples
           output (:obj:`FloatTensor`) :
-              output of decoder model `[tgt_len x batch x hidden]`
+              output of decoder model `[batch x tgt_len x hidden]`
           attns (dict) : dictionary of attention distributions
-              `[tgt_len x batch x src_len]`
+              `[batch x tgt_len x src_len]`
           trunc_start (int) : starting position of truncation window
           trunc_size (int) : length of truncation window
 
@@ -198,12 +198,12 @@ class LossCompute(nn.Module):
             A tuple with the loss and a :obj:`onmt.utils.Statistics` instance.
         """
         if trunc_size is None:
-            trunc_size = batch['tgt'].size(0) - trunc_start
+            trunc_size = batch['tgt'].size(1) - trunc_start
         # take into account here the tgt_shift_index (0 / 1 = LM/NMT)
         trunc_range = (trunc_start + self.tgt_shift_index,
                        trunc_start + trunc_size)
-        target = batch['tgt'][trunc_range[0]:trunc_range[1],
-                              :, 0].view(-1)
+        target = batch['tgt'][:, trunc_range[0]:trunc_range[1],
+                              0].contiguous().view(-1)
 
         if self.copy_attn:
             align = batch['alignment'][trunc_range[0]:trunc_range[1]].view(-1)
@@ -213,14 +213,14 @@ class LossCompute(nn.Module):
 
             scores = self.generator(self._bottle(output))
             loss = self.criterion(scores, target)
-
+            
             if self.lambda_align != 0.0:
                 align_head = attns['align']
                 if align_head.dtype != loss.dtype:  # Fix FP16
                     align_head = align_head.to(loss.dtype)
                 align_idx = batch['align']
-                pad_tgt_size, batch_size, _ = batch['tgt'].size()
-                pad_src_size, _, _ = batch['src'].size()
+                batch_size, pad_tgt_size, _ = batch['tgt'].size()
+                _, pad_src_size, _ = batch['src'].size()
                 align_matrix_size = [batch_size, pad_tgt_size, pad_src_size]
                 ref_align = onmt.utils.make_batch_align_matrix(
                     align_idx, align_matrix_size, normalize=True
@@ -245,7 +245,7 @@ class LossCompute(nn.Module):
                                       :,
                                       0].ne(self.padding_idx).sum()
         elif self.normalization == "sents":
-            normfactor = batch['tgt'].size(1)
+            normfactor = batch['tgt'].size(0)
 
         return loss / float(normfactor), stats
 

@@ -18,10 +18,10 @@ class BaseModel(nn.Module):
         Args:
             src (Tensor): A source sequence passed to encoder.
                 typically for inputs this will be a padded `LongTensor`
-                of size ``(len, batch, features)``. However, may be an
+                of size ``(batch, len, features)``. However, may be an
                 image or other generic input depending on encoder.
             tgt (LongTensor): A target sequence passed to decoder.
-                Size ``(tgt_len, batch, features)``.
+                Size ``(batch, tgt_len, features)``.
             lengths(LongTensor): The src lengths, pre-padding ``(batch,)``.
             bptt (Boolean): A flag indicating if truncated bptt is set.
                 If reset then init_state
@@ -31,8 +31,8 @@ class BaseModel(nn.Module):
         Returns:
             (FloatTensor, dict[str, FloatTensor]):
 
-            * decoder output ``(tgt_len, batch, hidden)``
-            * dictionary attention dists of ``(tgt_len, batch, src_len)``
+            * decoder output ``(batch, tgt_len, hidden)``
+            * dictionary attention dists of ``(batch, tgt_len, src_len)``
         """
         raise NotImplementedError
 
@@ -58,7 +58,7 @@ class NMTModel(BaseModel):
         self.decoder = decoder
 
     def forward(self, src, tgt, lengths, bptt=False, with_align=False):
-        dec_in = tgt[:-1]  # exclude last target from inputs
+        dec_in = tgt[:,:-1,:]  # exclude last target from inputs
 
         enc_state, memory_bank, lengths = self.encoder(src, lengths)
 
@@ -117,10 +117,10 @@ class LanguageModel(BaseModel):
         Args:
             src (Tensor): A source sequence passed to decoder.
                 typically for inputs this will be a padded `LongTensor`
-                of size ``(len, batch, features)``. However, may be an
+                of size ``(batch, len, features)``. However, may be an
                 image or other generic input depending on decoder.
             tgt (LongTensor): A target sequence passed to decoder.
-                Size ``(tgt_len, batch, features)``.
+                Size ``(batch, tgt_len, features)``.
             lengths(LongTensor): The src lengths, pre-padding ``(batch,)``.
             bptt (Boolean): A flag indicating if truncated bptt is set.
                 If reset then init_state
@@ -128,8 +128,8 @@ class LanguageModel(BaseModel):
                 Only valid for transformer decoder.
         Returns:
             (FloatTensor, dict[str, FloatTensor]):
-            * decoder output ``(tgt_len, batch, hidden)``
-            * dictionary attention dists of ``(tgt_len, batch, src_len)``
+            * decoder output ``(batch, tgt_len, hidden)``
+            * dictionary attention dists of ``(batch, tgt_len, src_len)``
         """
 
         if not bptt:

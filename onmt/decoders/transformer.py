@@ -251,7 +251,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
 
         """
         dec_mask = None
-        src_pad_mask = src_pad_mask.unsqueeze(1)
+        src_pad_mask = src_pad_mask.unsqueeze(1)  # [B,1,1,slen]
 
         if inputs.size(1) > 1:
             # masking is necessary when sequence length is greater than one
@@ -447,35 +447,34 @@ class TransformerDecoder(TransformerDecoderBase):
         """
         Decode, possibly stepwise.
         when training step is always None, when decoding, step increases
-        tgt (Tensor): len x batch x feats
-        memory_bank (Tensor): encoder output (len x batch x model_dim)
+        tgt (Tensor): batch x tlen x feats
+        memory_bank (Tensor): encoder output (batch x slen x model_dim)
         """
         if memory_bank is None:
             memory_bank = self.embeddings(tgt)
         if step == 0:
             self._init_cache(memory_bank)
 
-        tgt_words = tgt[:, :, 0].transpose(0, 1)
+        tgt_words = tgt[:, :, 0]
 
         emb = self.embeddings(tgt, step=step)
+        dec_out = emb
         assert emb.dim() == 3  # len x batch x embedding_dim
-
-        output = emb.transpose(0, 1).contiguous()
-        src_memory_bank = memory_bank.transpose(0, 1).contiguous()
 
         pad_idx = self.embeddings.word_padding_idx
         src_lens = kwargs["memory_lengths"]
-        src_max_len = self.state["src"].shape[0]
-        src_pad_mask = ~sequence_mask(src_lens, src_max_len).unsqueeze(1)
+        src_max_len = self.state["src"].shape[1]
+        src_pad_mask = ~sequence_mask(src_lens, src_max_len)  # [B x slen]
+        src_pad_mask = src_pad_mask.unsqueeze(1)  # [B x 1 x slen]
         tgt_pad_mask = tgt_words.data.eq(pad_idx).unsqueeze(1)  # [B, 1, T_tgt]
 
         with_align = kwargs.pop("with_align", False)
         attn_aligns = []
 
         for layer in self.transformer_layers:
-            output, attn, attn_align = layer(
-                output,
-                src_memory_bank,
+            dec_out, attn, attn_align = layer(
+                dec_out,
+                memory_bank,
                 src_pad_mask,
                 tgt_pad_mask,
                 step=step,
@@ -484,9 +483,7 @@ class TransformerDecoder(TransformerDecoderBase):
             if attn_align is not None:
                 attn_aligns.append(attn_align)
 
-        output = self.layer_norm(output)
-        dec_outs = output.transpose(0, 1).contiguous()
-        attn = attn.transpose(0, 1).contiguous()
+        dec_out = self.layer_norm(dec_out)
 
         attns = {"std": attn}
         if self._copy:
@@ -496,11 +493,11 @@ class TransformerDecoder(TransformerDecoderBase):
             # attns["align"] = torch.stack(attn_aligns, 0).mean(0)  # All avg
 
         # TODO change the way attns is returned dict => list or tuple (onnx)
-        return dec_outs, attns
+        return dec_out, attns
 
     def _init_cache(self, memory_bank):
 
-        batch_size = memory_bank.size(1)
+        batch_size = memory_bank.size(0)
         depth = memory_bank.size(-1)
 
         for layer in self.transformer_layers:
@@ -668,12 +665,10 @@ class TransformerLMDecoder(TransformerDecoderBase):
         if step == 0:
             self._init_cache(tgt)
 
-        tgt_words = tgt[:, :, 0].transpose(0, 1)
+        tgt_words = tgt[:, :, 0]
 
         emb = self.embeddings(tgt, step=step)
         assert emb.dim() == 3  # len x batch x embedding_dim
-
-        output = emb.transpose(0, 1).contiguous()
 
         pad_idx = self.embeddings.word_padding_idx
         tgt_pad_mask = tgt_words.data.eq(pad_idx).unsqueeze(1)  # [B, 1, T_tgt]
@@ -683,22 +678,20 @@ class TransformerLMDecoder(TransformerDecoderBase):
 
         for layer in self.transformer_layers:
             output, attn, _ = layer(
-                output,
+                emb,
                 tgt_pad_mask,
                 step=step,
                 with_align=with_align,
             )
 
         output = self.layer_norm(output)
-        dec_outs = output.transpose(0, 1).contiguous()
-        attn = attn.transpose(0, 1).contiguous()
 
         attns = {"std": attn}
         if self._copy:
             attns["copy"] = attn
 
         # TODO change the way attns is returned dict => list or tuple (onnx)
-        return dec_outs, attns
+        return output, attns
 
     def _init_cache(self, tgt=None):
 

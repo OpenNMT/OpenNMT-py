@@ -130,8 +130,7 @@ class TransformerEncoder(EncoderBase):
         """See :func:`EncoderBase.forward()`"""
 
         emb = self.embeddings(src)
-
-        out = emb.transpose(0, 1).contiguous()
+        enc_out = emb
         mask = ~sequence_mask(lengths).unsqueeze(1)
         mask = mask.unsqueeze(1)
         mask = mask.expand(-1, -1, mask.size(3), -1)
@@ -139,10 +138,10 @@ class TransformerEncoder(EncoderBase):
         # 1 to be expanded to number of heads in MHA
         # Run the forward pass of every layer of the tranformer.
         for layer in self.transformer:
-            out = layer(out, mask)
-        out = self.layer_norm(out)
+            enc_out = layer(enc_out, mask)
+        enc_out = self.layer_norm(enc_out)
 
-        return emb, out.transpose(0, 1).contiguous(), lengths
+        return emb, enc_out, lengths
 
     def update_dropout(self, dropout, attention_dropout):
         self.embeddings.update_dropout(dropout)
