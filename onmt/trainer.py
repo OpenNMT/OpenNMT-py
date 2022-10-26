@@ -263,7 +263,9 @@ class Trainer(object):
                 valid_stats = self.validate(
                     valid_iter, moving_average=self.moving_average)
                 self._report_step(self.optim.learning_rate(),
-                                  step, valid_stats=valid_stats)
+                                  step, train_stats=total_stats,
+                                  valid_stats=valid_stats)
+
                 # Run patience mechanism
                 if self.earlystopper is not None:
                     self.earlystopper(valid_stats, step)
@@ -374,6 +376,7 @@ class Trainer(object):
             src_lengths = batch['srclen']
             if src_lengths is not None:
                 report_stats.n_src_words += src_lengths.sum().item()
+                total_stats.n_src_words += src_lengths.sum().item()
 
             tgt_outer = batch['tgt']
 
