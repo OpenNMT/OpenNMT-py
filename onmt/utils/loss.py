@@ -159,7 +159,8 @@ class LossCompute(nn.Module):
         target_data[correct_mask] += offset_align
 
         # Compute sum of perplexities for stats
-        stats = self._stats(loss.item(), scores_data, target_data)
+        stats = self._stats(len(batch['srclen']), loss.item(),
+                            scores_data, target_data)
 
         return loss, stats
 
@@ -231,7 +232,8 @@ class LossCompute(nn.Module):
                     align_head=align_head, ref_align=ref_align)
                 loss += align_loss
 
-            stats = self._stats(loss.item(), scores, target)
+            stats = self._stats(len(batch['srclen']), loss.item(),
+                                scores, target)
 
         if self.lambda_coverage != 0.0:
             coverage_loss = self._compute_coverage_loss(
@@ -247,7 +249,7 @@ class LossCompute(nn.Module):
 
         return loss / float(normfactor), stats
 
-    def _stats(self, loss, scores, target):
+    def _stats(self, bsz, loss, scores, target):
         """
         Args:
             loss (int): the loss computed by the loss criterion.
@@ -263,8 +265,11 @@ class LossCompute(nn.Module):
         num_non_padding = non_padding.sum().item()
         # in the case criterion reduction is None then we need
         # to sum the loss of each sentence in the batch
-        return onmt.utils.Statistics(loss,
-                                     num_non_padding, num_correct)
+        return onmt.utils.Statistics(loss=loss,
+                                     n_batchs=1,
+                                     n_sents=bsz,
+                                     n_words=num_non_padding,
+                                     n_correct=num_correct)
 
 
 class LabelSmoothingLoss(nn.Module):
