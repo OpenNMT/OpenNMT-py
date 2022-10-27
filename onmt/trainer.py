@@ -150,10 +150,6 @@ class Trainer(object):
 
         for i in range(len(self.accum_count_l)):
             assert self.accum_count_l[i] > 0
-            if self.accum_count_l[i] > 1:
-                assert self.trunc_size == 0, \
-                    """To enable accumulated gradients,
-                       you must disable target sequence truncating."""
 
         # Set model in training mode.
         self.model.train()
@@ -383,7 +379,7 @@ class Trainer(object):
             bptt = False
             for j in range(0, target_size - 1, trunc_size):
                 # 1. Create truncated target.
-                tgt = tgt_outer[j: j + trunc_size]
+                tgt = tgt_outer[j: j + trunc_size, :, :]
 
                 # 2. F-prop all but generator.
                 if self.accum_count == 1:
@@ -428,6 +424,8 @@ class Trainer(object):
                         batch_stats.computed_metrics = computed_metrics
 
                     if loss is not None:
+                        # in theory we should divide by accum_count and bptt
+                        # to rescale for each sub batch
                         self.optim.backward(loss)
 
                     total_stats.update(batch_stats)
@@ -450,13 +448,10 @@ class Trainer(object):
                                  if p.requires_grad
                                  and p.grad is not None]
                         onmt.utils.distributed.all_reduce_and_rescale_tensors(
-                            grads, float(1))
+                            grads, float(self.n_gpu))
                     self.optim.step()
 
                 # If truncated, don't backprop fully.
-                # TO CHECK
-                # if dec_state is not None:
-                #    dec_state.detach()
                 if self.model.decoder.state != {}:
                     self.model.decoder.detach_state()
 
@@ -468,7 +463,7 @@ class Trainer(object):
                          if p.requires_grad
                          and p.grad is not None]
                 onmt.utils.distributed.all_reduce_and_rescale_tensors(
-                    grads, float(1))
+                    grads, float(self.n_gpu))
             self.optim.step()
 
     def _start_report_manager(self, start_time=None):
@@ -480,21 +475,6 @@ class Trainer(object):
                 self.report_manager.start()
             else:
                 self.report_manager.start_time = start_time
-
-    def _maybe_gather_stats(self, stat):
-        """
-        Gather statistics in multi-processes cases
-
-        Args:
-            stat(:obj:onmt.utils.Statistics): a Statistics object to gather
-                or None (it returns None in this case)
-
-        Returns:
-            stat: the updated (or unchanged) stat object
-        """
-        if stat is not None and self.n_gpu > 1:
-            return onmt.utils.Statistics.all_gather_stats(stat)
-        return stat
 
     def _maybe_report_training(self, step, num_steps, learning_rate,
                                report_stats):
