@@ -292,8 +292,6 @@ class ArgumentParser(cfargparse.ArgumentParser, DataOptsCheckerMixin):
 
     @classmethod
     def validate_train_opts(cls, opt):
-        if opt.truncated_decoder > 0 and max(opt.accum_count) > 1:
-            raise AssertionError("BPTT is not compatible with -accum > 1")
 
         if torch.cuda.is_available() and not opt.gpu_ranks:
             logger.warn("You have a CUDA device, should run with -gpu_ranks")

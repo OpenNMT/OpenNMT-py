@@ -89,7 +89,6 @@ class Statistics(object):
         self.computed_metrics = stat.computed_metrics
 
         if update_n_src_words:
-            print("updating n_src_word")
             self.n_src_words += stat.n_src_words
 
     def accuracy(self):
