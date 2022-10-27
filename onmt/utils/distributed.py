@@ -6,11 +6,8 @@ import os
 import signal
 import math
 import pickle
-
 import torch.distributed
-
-from onmt.utils.misc import set_random_seed
-from onmt.utils.logging import init_logger, logger
+from onmt.utils.logging import logger
 
 
 def is_master(opt, device_id):
@@ -156,43 +153,6 @@ class ErrorHandler(object):
                  be ignored --\n\n"""
         msg += original_trace
         raise Exception(msg)
-
-
-def batch_producer(generator_to_serve, queue, semaphore, opt, device_id):
-    """Produce batches to `queues` from `generator_to_serve`."""
-    log_level = "INFO" if opt.verbose or device_id == 0 else "WARNING"
-    init_logger(opt.log_file, log_level=log_level)
-    set_random_seed(opt.seed, False)
-
-    def pred(x):
-        """
-        Filters batches that belong only
-        to gpu_ranks of current node
-        """
-        for rank in opt.gpu_ranks:
-            if x[0] % opt.world_size == rank:
-                return True
-
-    generator_to_serve = filter(
-        pred, enumerate(generator_to_serve))
-
-    def next_batch():
-        # NOTE: stride (if needed) is handled at the
-        # generator (train_iter) level
-        new_batch = next(generator_to_serve)
-        semaphore.acquire()
-        return new_batch[1]
-
-    b = next_batch()
-
-    while True:
-        b.dataset = None
-        # Move batch to correspond device_id when consumer iterate
-
-        # hack to dodge unpicklable `dict_keys`
-        b.fields = list(b.fields)
-        queue.put(b)
-        b = next_batch()
 
 
 def consumer(process_fn, opt, device_id, error_queue):  # noqa: E501

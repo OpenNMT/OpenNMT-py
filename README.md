@@ -16,14 +16,12 @@ Unless there is a bug, please use the [forum](https://forum.opennmt.net) or [Git
 
 ----
 
-# Announcement - OpenNMT-py 3.0 beta
+# OpenNMT-py 3.0
 
-**We're happy to announce the upcoming release v3.0 of OpenNMT-py.**
+**We're happy to announce the release v3.0 of OpenNMT-py.**
 
 This new version does not rely on Torchtext anymore.
 The checkpoint structure is slightly changed but we provide a tool to convert v2 to v3 models (cf tools/convertv2_v3.py)
-
-Since it's beta version, do not use in production until we make sure the checkpoint structure does not change again.
 
 We use the same 'dynamic' paradigm as in v2, allowing to apply on-the-fly transforms to the data.
 
@@ -38,20 +36,29 @@ You can check out how to use this new data loading pipeline in the updated [docs
 
 All the readily available transforms are described [here](https://opennmt.net/OpenNMT-py/FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms).
 
-### Performance
+### Performance tips
 
 Given sufficient CPU resources according to GPU computing power, most of the transforms should not slow the training down. (Note: for now, one producer process per GPU is spawned -- meaning you would ideally need 2N CPU threads for N GPUs).
+If you want to optimize the training performance:
+- use fp16
+- use batch_size_multiple 8
+- use vocab_size_multiple 8
+- Depending on the number of GPU use num_workers 4 (for 1 GPU) or 2 (for multiple GPU)
+
+- To avoid averaging checkpoints you can use the "during training" average decay system.
+- If you train a transformer we support max_relative_positions (use 20) instead of position_encoding.
+
+- for very fast inference convert your model to [CTranslate2](https://github.com/OpenNMT/CTranslate2) format. 
 
 ### Breaking changes
 
-For now, the new data loading paradigm does not support Audio, Video and Image inputs.
-
-A few features are also dropped, at least for now:
+A few features were dropped between v1 and v2:
 
 - audio, image and video inputs;
-- source word features.
 
 For any user that still need these features, the previous codebase will be retained as `legacy` in a separate branch. It will no longer receive extensive development from the core team but PRs may still be accepted.
+
+- For inference, we default to length_penalty: avg which usually gives better BLEU and is comparable to other toolkits.
 
 Feel free to check it out and let us know what you think of the new paradigm!
 
@@ -106,7 +113,6 @@ pip install -r requirements.opt.txt
 - [Source word features](https://opennmt.net/OpenNMT-py/options/train.html#model-embeddings)
 - [TensorBoard logging](https://opennmt.net/OpenNMT-py/options/train.html#logging)
 - [Multi-GPU training](https://opennmt.net/OpenNMT-py/FAQ.html##do-you-support-multi-gpu)
-- [Data preprocessing](https://opennmt.net/OpenNMT-py/options/preprocess.html)
 - [Inference (translation) with batching and beam search](https://opennmt.net/OpenNMT-py/options/translate.html)
 - Inference time loss functions
 - [Conv2Conv convolution model](https://arxiv.org/abs/1705.03122)
@@ -254,15 +260,19 @@ http://opennmt.net/Models-py/
 OpenNMT-py is run as a collaborative open-source project.
 The original code was written by [Adam Lerer](http://github.com/adamlerer) (NYC) to reproduce OpenNMT-Lua using PyTorch.
 
-Major contributors are:
+Current maintainers:
+Ubiqus Team: [François Hernandez](https://github.com/francoishernandez) and Team.
+[Vincent Nguyen](https://github.com/vince62s) (Seedfall)
+
+Project incubators:
 * [Sasha Rush](https://github.com/srush) (Cambridge, MA)
-* [Vincent Nguyen](https://github.com/vince62s) (ex-Ubiqus)
-* [Ben Peters](http://github.com/bpopeters) (Lisbon)
-* [Sebastian Gehrmann](https://github.com/sebastianGehrmann) (Harvard NLP)
-* [Yuntian Deng](https://github.com/da03) (Harvard NLP)
 * [Guillaume Klein](https://github.com/guillaumekln) (Systran)
-* [Paul Tardy](https://github.com/pltrdy) (Ubiqus / Lium)
-* [François Hernandez](https://github.com/francoishernandez) (Ubiqus)
+
+Early contributors
+* [Ben Peters](http://github.com/bpopeters) (Lisbon)
+* [Sebastian Gehrmann](https://github.com/sebastianGehrmann) (PhD Harvard NLP)
+* [Yuntian Deng](https://github.com/da03) (PhD Harvard NLP)
+* [Paul Tardy](https://github.com/pltrdy) (PhD Ubiqus / Lium)
 * [Linxiao Zeng](https://github.com/Zenglinxiao) (Ubiqus)
 * [Jianyu Zhan](http://github.com/jianyuzhan) (Shanghai)
 * [Dylan Flaute](http://github.com/flauted) (University of Dayton)

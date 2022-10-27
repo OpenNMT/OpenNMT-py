@@ -458,7 +458,10 @@ class Trainer(object):
                 # if dec_state is not None:
                 #    dec_state.detach()
                 if self.model.decoder.state != {}:
+                    print("detaching dec state")
                     self.model.decoder.detach_state()
+                else:
+                    print("not detaching")
 
         # in case of multi step gradient accumulation,
         # update only after accum batches
@@ -480,21 +483,6 @@ class Trainer(object):
                 self.report_manager.start()
             else:
                 self.report_manager.start_time = start_time
-
-    def _maybe_gather_stats(self, stat):
-        """
-        Gather statistics in multi-processes cases
-
-        Args:
-            stat(:obj:onmt.utils.Statistics): a Statistics object to gather
-                or None (it returns None in this case)
-
-        Returns:
-            stat: the updated (or unchanged) stat object
-        """
-        if stat is not None and self.n_gpu > 1:
-            return onmt.utils.Statistics.all_gather_stats(stat)
-        return stat
 
     def _maybe_report_training(self, step, num_steps, learning_rate,
                                report_stats):
