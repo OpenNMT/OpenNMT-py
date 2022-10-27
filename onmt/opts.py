@@ -151,13 +151,13 @@ def _add_dynamic_vocab_opts(parser, build_vocab_only=False):
 
     if not build_vocab_only:
         group.add("-src_vocab_size", "--src_vocab_size",
-                  type=int, default=50000,
+                  type=int, default=32768,
                   help="Maximum size of the source vocabulary.")
         group.add("-tgt_vocab_size", "--tgt_vocab_size",
-                  type=int, default=50000,
+                  type=int, default=32768,
                   help="Maximum size of the target vocabulary")
         group.add("-vocab_size_multiple", "--vocab_size_multiple",
-                  type=int, default=1,
+                  type=int, default=8,
                   help="Make the vocabulary size a multiple of this value.")
 
         group.add("-src_words_min_frequency", "--src_words_min_frequency",
@@ -506,12 +506,12 @@ def _add_train_general_opts(parser):
 
     # Optimization options
     group = parser.add_argument_group('Optimization- Type')
-    group.add('--num_workers', '-num_workers', type=int, default=0,
+    group.add('--num_workers', '-num_workers', type=int, default=2,
               help='pytorch DataLoader num_workers')
     group.add('--batch_size', '-batch_size', type=int, default=64,
               help='Maximum batch size for training')
     group.add('--batch_size_multiple', '-batch_size_multiple',
-              type=int, default=None,
+              type=int, default=1,
               help='Batch size multiple for token batches.')
     group.add('--batch_type', '-batch_type', default='sents',
               choices=["sents", "tokens"],
@@ -628,7 +628,7 @@ def _add_train_general_opts(parser):
 
 def _add_train_dynamic_data(parser):
     group = parser.add_argument_group("Dynamic data")
-    group.add("-bucket_size", "--bucket_size", type=int, default=2048,
+    group.add("-bucket_size", "--bucket_size", type=int, default=262144,
               help="""A bucket is a buffer of bucket_size examples to pick
                    from the various Corpora. The dynamic iterator batches
                    batch_size batchs from the bucket and shuffle them.""")
@@ -677,7 +677,7 @@ def _add_decoding_opts(parser):
     # Alpha and Beta values for Google Length + Coverage penalty
     # Described here: https://arxiv.org/pdf/1609.08144.pdf, Section 7
     # Length penalty options
-    group.add('--length_penalty', '-length_penalty', default='none',
+    group.add('--length_penalty', '-length_penalty', default='avg',
               choices=['none', 'wu', 'avg'],
               help="Length Penalty to use.")
     group.add('--alpha', '-alpha', type=float, default=1.,
@@ -701,7 +701,7 @@ def _add_decoding_opts(parser):
     # Decoding Length constraint
     group.add('--min_length', '-min_length', type=int, default=0,
               help='Minimum prediction length')
-    group.add('--max_length', '-max_length', type=int, default=100,
+    group.add('--max_length', '-max_length', type=int, default=250,
               help='Maximum prediction length.')
     # Decoding content constraint
     group.add('--block_ngram_repeat', '-block_ngram_repeat',
