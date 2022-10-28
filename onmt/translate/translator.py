@@ -849,9 +849,8 @@ class Translator(Inference):
         self, batch, enc_output, src_lengths, src_map
     ):
         tgt = batch['tgt']
-        print("tgt: ", tgt.size())
-        tgt_in = tgt[-1:]
-        print("tgt_in: ", tgt_in.size())
+        tgt_in = tgt[:, :-1, :]
+
         log_probs, attn = self._decode_and_generate(
             tgt_in,
             enc_output,
@@ -859,14 +858,11 @@ class Translator(Inference):
             src_len=src_lengths,
             src_map=src_map,
         )
-        print("logprobs: ", log_probs.size())
+
         log_probs[:, :, self._tgt_pad_idx] = 0
-        gold = tgt[:1]
-        print("gold: ", gold.size())
+        gold = tgt[:, 1:, :]
         gold_scores = log_probs.gather(2, gold)
-        print("gs: ", gold_scores.size())
-        gold_scores = gold_scores.sum(dim=0).view(-1)
-        print("gs: ", gold_scores.size())
+        gold_scores = gold_scores.sum(dim=1).view(-1)
         return gold_scores
 
 
@@ -948,17 +944,18 @@ class GeneratorLM(Inference):
     def split_src_to_prevent_padding(cls, src, src_lengths):
         min_len_batch = torch.min(src_lengths).item()
         target_prefix = None
-        if min_len_batch > 0 and min_len_batch < src.size(0):
-            target_prefix = src[min_len_batch:]
-            src = src[:min_len_batch]
+        if min_len_batch > 0 and min_len_batch < src.size(1):
+            print(min_len_batch, src.size())
+            target_prefix = src[:, min_len_batch:, :]
+            src = src[:, :min_len_batch, :]
             src_lengths[:] = min_len_batch
         return src, src_lengths, target_prefix
 
     def tile_to_beam_size_after_initial_step(self, fn_map_state, log_probs):
         if fn_map_state is not None:
-            log_probs = fn_map_state(log_probs, dim=1)
+            log_probs = fn_map_state(log_probs, dim=0)
             self.model.decoder.map_state(fn_map_state)
-            log_probs = log_probs[-1]
+            log_probs = log_probs[:, -1, :]
         return log_probs
 
     def _translate_batch_with_strategy(
@@ -1084,6 +1081,6 @@ class GeneratorLM(Inference):
 
         log_probs[:, :, self._tgt_pad_idx] = 0
         gold_scores = log_probs.gather(2, tgt)
-        gold_scores = gold_scores.sum(dim=0).view(-1)
+        gold_scores = gold_scores.sum(dim=1).view(-1)
 
         return gold_scores

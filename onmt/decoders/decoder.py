@@ -343,7 +343,6 @@ class InputFeedRNNDecoder(RNNDecoderBase):
         # Input feed concatenates hidden state with
         # input at every time step.
         for emb_t in emb.split(1, dim=1):
-            print(emb_t.size(), input_feed.size())
             decoder_input = torch.cat([emb_t.squeeze(1), input_feed], 1)
             rnn_output, dec_state = self.rnn(decoder_input, dec_state)
             if self.attentional:
