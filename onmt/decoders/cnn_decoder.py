@@ -61,9 +61,9 @@ class CNNDecoder(DecoderBase):
             embeddings,
             opt.copy_attn_type)
 
-    def init_state(self, _, memory_bank, enc_hidden):
+    def init_state(self, _, enc_output, enc_hidden):
         """Init decoder state."""
-        self.state["src"] = (memory_bank + enc_hidden) * SCALE_WEIGHT
+        self.state["src"] = (enc_output + enc_hidden) * SCALE_WEIGHT
         self.state["previous_input"] = None
 
     def map_state(self, fn):
@@ -74,11 +74,11 @@ class CNNDecoder(DecoderBase):
     def detach_state(self):
         self.state["previous_input"] = self.state["previous_input"].detach()
 
-    def forward(self, tgt, memory_bank, step=None, **kwargs):
+    def forward(self, tgt, enc_output, step=None, **kwargs):
         """ See :obj:`onmt.modules.RNNDecoderBase.forward()`"""
 
         if self.state["previous_input"] is not None:
-            tgt = torch.cat([self.state["previous_input"], tgt], 0)
+            tgt = torch.cat([self.state["previous_input"], tgt], 1)
 
         dec_outs = []
         attns = {"std": []}
@@ -86,15 +86,15 @@ class CNNDecoder(DecoderBase):
             attns["copy"] = []
 
         emb = self.embeddings(tgt)
-        assert emb.dim() == 3  # len x batch x embedding_dim
+        assert emb.dim() == 3  # batch x len x embedding_dim
 
-        tgt_emb = emb.transpose(0, 1).contiguous()
+        tgt_emb = emb
         # The output of CNNEncoder.
-        src_memory_bank_t = memory_bank.transpose(0, 1).contiguous()
+        src_memory_bank_t = enc_output
         # The combination of output of CNNEncoder and source embeddings.
-        src_memory_bank_c = self.state["src"].transpose(0, 1).contiguous()
+        src_memory_bank_c = self.state["src"]
 
-        emb_reshape = tgt_emb.contiguous().view(
+        emb_reshape = tgt_emb.view(
             tgt_emb.size(0) * tgt_emb.size(1), -1)
         linear_out = self.linear(emb_reshape)
         x = linear_out.view(tgt_emb.size(0), tgt_emb.size(1), -1)
@@ -114,10 +114,10 @@ class CNNDecoder(DecoderBase):
         output = x.squeeze(3).transpose(1, 2)
 
         # Process the result and update the attentions.
-        dec_outs = output.transpose(0, 1).contiguous()
+        dec_outs = output
         if self.state["previous_input"] is not None:
-            dec_outs = dec_outs[self.state["previous_input"].size(0):]
-            attn = attn[:, self.state["previous_input"].size(0):].squeeze()
+            dec_outs = dec_outs[:, self.state["previous_input"].size(1):, :]
+            attn = attn[:, self.state["previous_input"].size(1):].squeeze()
             attn = torch.stack([attn])
         attns["std"] = attn
         if self.copy_attn is not None:

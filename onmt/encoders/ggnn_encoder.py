@@ -193,7 +193,7 @@ class GGNNEncoder(EncoderBase):
         """See :func:`EncoderBase.forward()`"""
 
         nodes = self.n_node
-        batch_size = src.size()[1]
+        batch_size = src.size()[0]
         first_extra = np.zeros(batch_size, dtype=np.int32)
         token_onehot = np.zeros((batch_size, nodes,
                                  self.src_ggnn_size if self.src_ggnn_size > 0
@@ -213,7 +213,7 @@ class GGNNEncoder(EncoderBase):
             edge = 0
             source_node = -1
             for j in range(len(npsrc)):
-                token = npsrc[j][i]
+                token = npsrc[i][j]
                 if not tokens_done:
                     if token == self.DELIMITER:
                         tokens_done = True
@@ -277,7 +277,7 @@ class GGNNEncoder(EncoderBase):
             prop_state = self.propogator(in_states, out_states, prop_state,
                                          edges, nodes)
 
-        prop_state = prop_state.transpose(0, 1)
+        prop_state = prop_state
         if self.bridge_extra_node:
             # Use first extra node as only source for decoder init
             join_state = prop_state[first_extra, torch.arange(batch_size)]
@@ -289,8 +289,8 @@ class GGNNEncoder(EncoderBase):
         join_state = (join_state, join_state)
 
         encoder_final = self._bridge(join_state)
-
-        return encoder_final, prop_state, lengths
+        print(prop_state.size(), encoder_final[0].size())
+        return prop_state, encoder_final, lengths
 
     def _initialize_bridge(self, rnn_type,
                            hidden_size,

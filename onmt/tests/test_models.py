@@ -49,8 +49,8 @@ class TestModel(unittest.TestCase):
 
     def get_batch(self, source_l=3, bsize=1):
         # len x batch x nfeat
-        test_src = torch.ones(source_l, bsize, 1).long()
-        test_tgt = torch.ones(source_l, bsize, 1).long()
+        test_src = torch.ones(bsize, source_l, 1).long()
+        test_tgt = torch.ones(bsize, source_l, 1).long()
         test_length = torch.ones(bsize).fill_(source_l).long()
         return test_src, test_tgt, test_length
 
@@ -67,13 +67,13 @@ class TestModel(unittest.TestCase):
         emb = build_embeddings(opt, vocabs)
         test_src, _, __ = self.get_batch(source_l=source_l, bsize=bsize)
         if opt.decoder_type == 'transformer':
-            input = torch.cat([test_src, test_src], 0)
+            input = torch.cat([test_src, test_src], 1)
             res = emb(input)
-            compare_to = torch.zeros(source_l * 2, bsize,
+            compare_to = torch.zeros(bsize, source_l * 2,
                                      opt.src_word_vec_size)
         else:
             res = emb(test_src)
-            compare_to = torch.zeros(source_l, bsize, opt.src_word_vec_size)
+            compare_to = torch.zeros(bsize, source_l, opt.src_word_vec_size)
 
         self.assertEqual(res.size(), compare_to.size())
 
@@ -95,11 +95,11 @@ class TestModel(unittest.TestCase):
         test_src, test_tgt, test_length = self.get_batch(source_l=source_l,
                                                          bsize=bsize)
 
-        hidden_t, outputs, test_length = enc(test_src, test_length)
+        outputs, hidden_t, test_length = enc(test_src, test_length)
 
         # Initialize vectors to compare size with
         test_hid = torch.zeros(self.opt.enc_layers, bsize, opt.enc_rnn_size)
-        test_out = torch.zeros(source_l, bsize, opt.dec_rnn_size)
+        test_out = torch.zeros(bsize, source_l, opt.dec_rnn_size)
 
         # Ensure correct sizes and types
         self.assertEqual(test_hid.size(),
@@ -134,7 +134,7 @@ class TestModel(unittest.TestCase):
         test_src, test_tgt, test_length = self.get_batch(source_l=source_l,
                                                          bsize=bsize)
         outputs, attn = model(test_src, test_tgt, test_length)
-        outputsize = torch.zeros(source_l - 1, bsize, opt.dec_rnn_size)
+        outputsize = torch.zeros(bsize, source_l - 1, opt.dec_rnn_size)
         # Make sure that output has the correct size and type
         self.assertEqual(outputs.size(), outputsize.size())
         self.assertEqual(type(outputs), torch.Tensor)

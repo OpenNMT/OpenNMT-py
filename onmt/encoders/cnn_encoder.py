@@ -36,18 +36,16 @@ class CNNEncoder(EncoderBase):
 
     def forward(self, input, lengths=None, hidden=None):
         """See :class:`onmt.modules.EncoderBase.forward()`"""
-
+        # batch x len x dim
         emb = self.embeddings(input)
 
-        emb = emb.transpose(0, 1).contiguous()
         emb_reshape = emb.view(emb.size(0) * emb.size(1), -1)
         emb_remap = self.linear(emb_reshape)
         emb_remap = emb_remap.view(emb.size(0), emb.size(1), -1)
         emb_remap = shape_transform(emb_remap)
         out = self.cnn(emb_remap)
 
-        return emb_remap.squeeze(3).transpose(0, 1).contiguous(), \
-            out.squeeze(3).transpose(0, 1).contiguous(), lengths
+        return out.squeeze(3), emb_remap.squeeze(3), lengths
 
     def update_dropout(self, dropout, attention_dropout=None):
         self.cnn.dropout.p = dropout

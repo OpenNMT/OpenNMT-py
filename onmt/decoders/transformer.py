@@ -225,7 +225,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
     def _forward(
         self,
         inputs,
-        memory_bank,
+        enc_output,
         src_pad_mask,
         tgt_pad_mask,
         step=None,
@@ -237,7 +237,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
 
         Args:
             inputs (FloatTensor): ``(batch_size, T, model_dim)``
-            memory_bank (FloatTensor): ``(batch_size, src_len, model_dim)``
+            enc_output (FloatTensor): ``(batch_size, src_len, model_dim)``
             src_pad_mask (bool): ``(batch_size, 1, src_len)``
             tgt_pad_mask (bool): ``(batch_size, 1, T)``
             step (int or None): stepwise decoding counter
@@ -272,8 +272,8 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
 
         query_norm = self.layer_norm_2(query)
         mid, attns = self.context_attn(
-            memory_bank,
-            memory_bank,
+            enc_output,
+            enc_output,
             query_norm,
             mask=src_pad_mask
         )
@@ -322,7 +322,7 @@ class TransformerDecoderBase(DecoderBase):
             pos_ffn_activation_fn=opt.pos_ffn_activation_fn,
         )
 
-    def init_state(self, src, memory_bank, enc_hidden):
+    def init_state(self, src, enc_output, enc_hidden):
         """Initialize decoder state."""
         self.state["src"] = src
 
@@ -443,17 +443,17 @@ class TransformerDecoder(TransformerDecoderBase):
     def detach_state(self):
         self.state["src"] = self.state["src"].detach()
 
-    def forward(self, tgt, memory_bank=None, step=None, **kwargs):
+    def forward(self, tgt, enc_output=None, step=None, **kwargs):
         """
         Decode, possibly stepwise.
         when training step is always None, when decoding, step increases
         tgt (Tensor): batch x tlen x feats
-        memory_bank (Tensor): encoder output (batch x slen x model_dim)
+        enc_output (Tensor): encoder output (batch x slen x model_dim)
         """
-        if memory_bank is None:
-            memory_bank = self.embeddings(tgt)
+        if enc_output is None:
+            enc_output = self.embeddings(tgt)
         if step == 0:
-            self._init_cache(memory_bank)
+            self._init_cache(enc_output)
 
         tgt_words = tgt[:, :, 0]
 
@@ -462,7 +462,7 @@ class TransformerDecoder(TransformerDecoderBase):
         assert emb.dim() == 3  # len x batch x embedding_dim
 
         pad_idx = self.embeddings.word_padding_idx
-        src_lens = kwargs["memory_lengths"]
+        src_lens = kwargs["src_len"]
         src_max_len = self.state["src"].shape[1]
         src_pad_mask = ~sequence_mask(src_lens, src_max_len)  # [B x slen]
         src_pad_mask = src_pad_mask.unsqueeze(1)  # [B x 1 x slen]
@@ -474,7 +474,7 @@ class TransformerDecoder(TransformerDecoderBase):
         for layer in self.transformer_layers:
             dec_out, attn, attn_align = layer(
                 dec_out,
-                memory_bank,
+                enc_output,
                 src_pad_mask,
                 tgt_pad_mask,
                 step=step,
@@ -495,28 +495,28 @@ class TransformerDecoder(TransformerDecoderBase):
         # TODO change the way attns is returned dict => list or tuple (onnx)
         return dec_out, attns
 
-    def _init_cache(self, memory_bank):
+    def _init_cache(self, enc_output):
 
-        batch_size = memory_bank.size(0)
-        depth = memory_bank.size(-1)
+        batch_size = enc_output.size(0)
+        depth = enc_output.size(-1)
 
         for layer in self.transformer_layers:
             # first value set to True triggered by the beginning of decoding
             # layer_cache becomes active in the MultiHeadedAttention fwd
             layer.context_attn.layer_cache = (
                 True,
-                {'keys': torch.tensor([], device=memory_bank.device),
-                 'values': torch.tensor([], device=memory_bank.device)}
+                {'keys': torch.tensor([], device=enc_output.device),
+                 'values': torch.tensor([], device=enc_output.device)}
                 )
             if isinstance(layer.self_attn, AverageAttention):
                 layer.self_attn.layer_cache = True, {'prev_g': torch.zeros(
-                     (batch_size, 1, depth), device=memory_bank.device
-                ).to(memory_bank.dtype)}
+                     (batch_size, 1, depth), device=enc_output.device
+                ).to(enc_output.dtype)}
             else:
                 layer.self_attn.layer_cache = (
                     True,
-                    {'keys': torch.tensor([], device=memory_bank.device),
-                     'values': torch.tensor([], device=memory_bank.device)}
+                    {'keys': torch.tensor([], device=enc_output.device),
+                     'values': torch.tensor([], device=enc_output.device)}
                     )
 
 
@@ -654,13 +654,13 @@ class TransformerLMDecoder(TransformerDecoderBase):
             ]
         )
 
-    def init_state(self, src=None, memory_bank=None, enc_hidden=None):
+    def init_state(self, src=None, enc_output=None, enc_hidden=None):
         super(TransformerLMDecoder, self).init_state(None, None, None)
 
     def detach_state(self):
         pass
 
-    def forward(self, tgt, memory_bank=None, step=None, **kwargs):
+    def forward(self, tgt, enc_output=None, step=None, **kwargs):
         """Decode, possibly stepwise."""
         if step == 0:
             self._init_cache(tgt)

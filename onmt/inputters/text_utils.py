@@ -195,25 +195,26 @@ def tensorify(vocabs, minibatch):
 
     if 'src_map' in minibatch[0].keys():
         src_vocab_size = max([max(ex['src_map']) for ex in minibatch]) + 1
-        src_map = torch.zeros(tbatchsrc.size(0),
-                              len(tensor_batch['srclen']),
+        src_map = torch.zeros(len(tensor_batch['srclen']),
+                              tbatchsrc.size(1),
                               src_vocab_size)
         for i, ex in enumerate(minibatch):
             for j, t in enumerate(ex['src_map']):
-                src_map[j, i, t] = 1
+                src_map[i, j, t] = 1
         tensor_batch['src_map'] = src_map
 
     if 'alignment' in minibatch[0].keys():
-        alignment = torch.zeros(tbatchtgt.size(0),
-                                len(tensor_batch['srclen'])).long()
+        alignment = torch.zeros(len(tensor_batch['srclen']),
+                                tbatchtgt.size(1)).long()
         for i, ex in enumerate(minibatch):
-            alignment[:len(ex['alignment']), i] = \
+            alignment[i, :len(ex['alignment'])] = \
                 torch.LongTensor(ex['alignment'])
         tensor_batch['alignment'] = alignment
 
     if 'src_ex_vocab' in minibatch[0].keys():
         tensor_batch['src_ex_vocab'] = [ex['src_ex_vocab']
                                         for ex in minibatch]
+
     return tensor_batch
 
 

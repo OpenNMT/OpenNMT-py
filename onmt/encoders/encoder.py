@@ -8,24 +8,6 @@ class EncoderBase(nn.Module):
     Base encoder class. Specifies the interface used by different encoder types
     and required by :class:`onmt.Models.NMTModel`.
 
-    .. mermaid::
-
-       graph BT
-          A[Input]
-          subgraph RNN
-            C[Pos 1]
-            D[Pos 2]
-            E[Pos N]
-          end
-          F[Memory_Bank]
-          G[Final]
-          A-->C
-          A-->D
-          A-->E
-          C-->F
-          D-->F
-          E-->F
-          E-->G
     """
 
     @classmethod
@@ -36,15 +18,18 @@ class EncoderBase(nn.Module):
         """
         Args:
             src (LongTensor):
-               padded sequences of sparse indices ``(src_len, batch, nfeat)``
+               padded sequences of sparse indices ``(batch, src_len, nfeat)``
             lengths (LongTensor): length of each sequence ``(batch,)``
 
         Returns:
             (FloatTensor, FloatTensor, FloatTensor):
 
-            * final encoder state, used to initialize decoder
-            * memory bank for attention, ``(src_len, batch, hidden)``
-            * lengths
+            * output (for attention), ``(batch, src_len, hidden_size)``
+              for bidirectional rnn last dimension is 2x hidden_size
+            * final_hidden_state ``(num_layersxdir, batch, hidden_size)``
+              (used to initialize decoder in RNNs)
+              In the case of LSTM this is a tuple.
+            * lengths (batch)
         """
 
         raise NotImplementedError

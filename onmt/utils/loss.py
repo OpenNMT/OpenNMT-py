@@ -206,14 +206,16 @@ class LossCompute(nn.Module):
                               0].contiguous().view(-1)
 
         if self.copy_attn:
-            align = batch['alignment'][trunc_range[0]:trunc_range[1]].view(-1)
+            align = batch['alignment'][
+                :, trunc_range[0]:trunc_range[1]
+                ].contiguous().view(-1)
             loss, stats = self._compute_copy_loss(batch, output, target,
                                                   align, attns)
         else:
 
             scores = self.generator(self._bottle(output))
             loss = self.criterion(scores, target)
-            
+
             if self.lambda_align != 0.0:
                 align_head = attns['align']
                 if align_head.dtype != loss.dtype:  # Fix FP16

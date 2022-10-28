@@ -256,7 +256,6 @@ class BeamSearchBase(DecodeStrategy):
         step = len(self)
         self.ensure_min_length(log_probs)
         self.ensure_unk_removed(log_probs)
-
         # Multiply probs by the beam probability.
         log_probs += self.topk_log_probs.view(_B * self.beam_size, 1)
 

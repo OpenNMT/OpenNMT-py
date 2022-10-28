@@ -130,13 +130,13 @@ class GlobalAttention(nn.Module):
 
             return self.v(wquh.view(-1, dim)).view(tgt_batch, tgt_len, src_len)
 
-    def forward(self, source, memory_bank, memory_lengths=None, coverage=None):
+    def forward(self, source, memory_bank, src_len=None, coverage=None):
         """
 
         Args:
           source (FloatTensor): query vectors ``(batch, tgt_len, dim)``
           memory_bank (FloatTensor): source vectors ``(batch, src_len, dim)``
-          memory_lengths (LongTensor): the source context lengths ``(batch,)``
+          src_len (LongTensor): the source context lengths ``(batch,)``
           coverage (FloatTensor): None (not supported yet)
 
         Returns:
@@ -167,8 +167,8 @@ class GlobalAttention(nn.Module):
         # compute attention scores, as in Luong et al.
         align = self.score(source, memory_bank)
 
-        if memory_lengths is not None:
-            mask = sequence_mask(memory_lengths, max_len=align.size(-1))
+        if src_len is not None:
+            mask = sequence_mask(src_len, max_len=align.size(-1))
             mask = mask.unsqueeze(1)  # Make it broadcastable.
             align.masked_fill_(~mask, -float('inf'))
 
@@ -192,8 +192,5 @@ class GlobalAttention(nn.Module):
         if one_step:
             attn_h = attn_h.squeeze(1)
             align_vectors = align_vectors.squeeze(1)
-        else:
-            attn_h = attn_h.transpose(0, 1).contiguous()
-            align_vectors = align_vectors.transpose(0, 1).contiguous()
 
         return attn_h, align_vectors

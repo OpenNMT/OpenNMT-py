@@ -44,7 +44,6 @@ class ConvMultiStepAttention(nn.Module):
                 the value matrix for the attention-weighted sum,
                 which is the combination of base emb and top output of encode
         """
-
         batch, _, height, _ = base_target_emb.size()
         batch_, _, height_, _ = input_from_dec.size()
 

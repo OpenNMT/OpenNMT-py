@@ -29,7 +29,7 @@ class TestAttention(unittest.TestCase):
         attn = onmt.modules.GlobalAttention(dim)
 
         _, alignments = attn(hidden, memory_bank,
-                             memory_lengths=source_lengths)
+                             src_len=source_lengths)
         # TODO: fix for pytorch 0.3
         # illegal_weights = alignments.masked_select(illegal_weights_mask)
 

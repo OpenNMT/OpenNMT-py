@@ -29,7 +29,7 @@ class TestCopyGenerator(unittest.TestCase):
                               init_case["input_size"]))
         attn = torch.randn((params["batch_size"] * params["tgt_max_len"],
                             params["max_seq_len"]))
-        src_map = torch.randn((params["max_seq_len"], params["batch_size"],
+        src_map = torch.randn((params["batch_size"], params["max_seq_len"],
                                params["n_extra_words"]))
         return hidden, attn, src_map
 

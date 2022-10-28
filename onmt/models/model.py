@@ -58,14 +58,14 @@ class NMTModel(BaseModel):
         self.decoder = decoder
 
     def forward(self, src, tgt, lengths, bptt=False, with_align=False):
-        dec_in = tgt[:,:-1,:]  # exclude last target from inputs
+        dec_in = tgt[:, :-1, :]  # exclude last target from inputs
 
-        enc_state, memory_bank, lengths = self.encoder(src, lengths)
+        output, enc_final_hs, src_len = self.encoder(src, lengths)
 
         if not bptt:
-            self.decoder.init_state(src, memory_bank, enc_state)
-        dec_out, attns = self.decoder(dec_in, memory_bank,
-                                      memory_lengths=lengths,
+            self.decoder.init_state(src, output, enc_final_hs)
+        dec_out, attns = self.decoder(dec_in, output,
+                                      src_len=src_len,
                                       with_align=with_align)
         return dec_out, attns
 

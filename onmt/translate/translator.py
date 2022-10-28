@@ -281,21 +281,21 @@ class Inference(object):
     def _gold_score(
         self,
         batch,
-        memory_bank,
+        enc_output,
         src_lengths,
         use_src_map,
-        enc_states,
+        enc_final_hs,
         batch_size,
         src,
     ):
         if 'tgt' in batch.keys():
             gs = self._score_target(
                 batch,
-                memory_bank,
+                enc_output,
                 src_lengths,
                 batch['src_map'] if use_src_map else None,
             )
-            self.model.decoder.init_state(src, memory_bank, enc_states)
+            self.model.decoder.init_state(src, enc_output, enc_final_hs)
         else:
             gs = [0] * batch_size
         return gs
@@ -341,6 +341,7 @@ class Inference(object):
         start_time = time.time()
 
         for batch in infer_iter:
+
             batch_data = self.translate_batch(
                 batch, attn_debug
             )
@@ -517,9 +518,9 @@ class Inference(object):
     def _decode_and_generate(
         self,
         decoder_in,
-        memory_bank,
+        enc_output,
         batch,
-        memory_lengths,
+        src_len,
         src_map=None,
         step=None,
         batch_offset=None,
@@ -530,12 +531,13 @@ class Inference(object):
                 decoder_in.gt(self._tgt_vocab_len - 1), self._tgt_unk_idx
             )
 
-        # Decoder forward, takes [tgt_len, batch, nfeats] as input
-        # and [src_len, batch, hidden] as memory_bank
+        # Decoder forward, takes [batch, tgt_len, nfeats] as input
+        # and [batch, src_len, hidden] as enc_output
         # in case of inference tgt_len = 1, batch = beam times batch_size
         # in case of Gold Scoring tgt_len = actual length, batch = 1 batch
+
         dec_out, dec_attn = self.model.decoder(
-            decoder_in, memory_bank, memory_lengths=memory_lengths, step=step
+            decoder_in, enc_output, src_len=src_len, step=step
         )
 
         # Generator forward.
@@ -544,10 +546,12 @@ class Inference(object):
                 attn = dec_attn["std"]
             else:
                 attn = None
-            log_probs = self.model.generator(dec_out.squeeze(0))
+
+            log_probs = self.model.generator(dec_out.squeeze(1))
             # returns [(batch_size x beam_size) , vocab ] when 1 step
-            # or [ tgt_len, batch_size, vocab ] when full sentence
+            # or [batch_size, tgt_len, vocab ] when full sentence
         else:
+            # TODO PUT BATCH FIRST
             attn = dec_attn["copy"]
             scores = self.model.generator(
                 dec_out.view(-1, dec_out.size(2)),
@@ -571,7 +575,7 @@ class Inference(object):
             scores = scores.view(decoder_in.size(0), -1, scores.size(-1))
             log_probs = scores.squeeze(0).log()
             # returns [(batch_size x beam_size) , vocab ] when 1 step
-            # or [ tgt_len, batch_size, vocab ] when full sentence
+            # or [batch_size, tgt_len, vocab ] when full sentence
         return log_probs, attn
 
     def translate_batch(self, batch, attn_debug):
@@ -579,7 +583,7 @@ class Inference(object):
         raise NotImplementedError
 
     def _score_target(
-        self, batch, memory_bank, src_lengths, src_map
+        self, batch, enc_output, src_lengths, src_map
     ):
         raise NotImplementedError
 
@@ -639,25 +643,25 @@ class Translator(Inference):
 
         n_best = batch_tgt_idxs.size(1)
         # (1) Encoder forward.
-        src, enc_states, memory_bank, src_lengths = self._run_encoder(batch)
+        src, enc_states, enc_output, src_lengths = self._run_encoder(batch)
 
         # (2) Repeat src objects `n_best` times.
         # We use batch_size x n_best, get ``(src_len, batch * n_best, nfeat)``
         src = tile(src, n_best, dim=1)
         enc_states = tile(enc_states, n_best, dim=1)
-        if isinstance(memory_bank, tuple):
-            memory_bank = tuple(tile(x, n_best, dim=1) for x in memory_bank)
+        if isinstance(enc_output, tuple):
+            enc_output = tuple(tile(x, n_best, dim=1) for x in enc_output)
         else:
-            memory_bank = tile(memory_bank, n_best, dim=1)
+            enc_output = tile(enc_output, n_best, dim=1)
         src_lengths = tile(src_lengths, n_best)  # ``(batch * n_best,)``
 
         # (3) Init decoder with n_best src,
-        self.model.decoder.init_state(src, memory_bank, enc_states)
+        self.model.decoder.init_state(src, enc_output, enc_states)
         # reshape tgt to ``(len, batch * n_best, nfeat)``
         tgt = batch_tgt_idxs.view(-1, batch_tgt_idxs.size(-1)).T.unsqueeze(-1)
         dec_in = tgt[:-1]  # exclude last target from inputs
         _, attns = self.model.decoder(
-            dec_in, memory_bank, memory_lengths=src_lengths, with_align=True
+            dec_in, enc_output, src_len=src_lengths, with_align=True
         )
 
         alignment_attn = attns["align"]  # ``(B, tgt_len-1, src_len)``
@@ -722,21 +726,21 @@ class Translator(Inference):
         src_lengths = batch['srclen']
         batch_size = len(batch['srclen'])
 
-        enc_states, memory_bank, src_lengths = self.model.encoder(
+        enc_output, enc_final_hs, src_lengths = self.model.encoder(
             src, src_lengths
         )
 
         if src_lengths is None:
             assert not isinstance(
-                memory_bank, tuple
+                enc_output, tuple
             ), "Ensemble decoding only supported for text data"
             src_lengths = (
                 torch.Tensor(batch_size)
-                .type_as(memory_bank)
+                .type_as(enc_output)
                 .long()
-                .fill_(memory_bank.size(0))
+                .fill_(enc_output.size(1))
             )
-        return src, enc_states, memory_bank, src_lengths
+        return src, enc_final_hs, enc_output, src_lengths
 
     def _translate_batch_with_strategy(
         self, batch, decode_strategy
@@ -758,15 +762,16 @@ class Translator(Inference):
         batch_size = len(batch['srclen'])
 
         # (1) Run the encoder on the src.
-        src, enc_states, memory_bank, src_lengths = self._run_encoder(batch)
-        self.model.decoder.init_state(src, memory_bank, enc_states)
+        src, enc_final_hs, enc_output, src_lengths = self._run_encoder(batch)
+
+        self.model.decoder.init_state(src, enc_output, enc_final_hs)
 
         gold_score = self._gold_score(
             batch,
-            memory_bank,
+            enc_output,
             src_lengths,
             use_src_map,
-            enc_states,
+            enc_final_hs,
             batch_size,
             src,
         )
@@ -776,11 +781,11 @@ class Translator(Inference):
         target_prefix = batch['tgt'] if self.tgt_prefix else None
         (
             fn_map_state,
-            memory_bank,
-            memory_lengths,
+            enc_output,
+            src_len,
             src_map,
         ) = decode_strategy.initialize(
-            memory_bank, src_lengths, src_map, target_prefix=target_prefix
+            enc_output, src_lengths, src_map, target_prefix=target_prefix
         )
 
         if fn_map_state is not None:
@@ -788,13 +793,15 @@ class Translator(Inference):
 
         # (3) Begin decoding step by step:
         for step in range(decode_strategy.max_length):
-            decoder_input = decode_strategy.current_predictions.view(1, -1, 1)
+            # decoder_input = decode_strategy.current_predictions.view(1, -1,
+            #                                                          1)
+            decoder_input = decode_strategy.current_predictions.view(-1, 1, 1)
 
             log_probs, attn = self._decode_and_generate(
                 decoder_input,
-                memory_bank,
+                enc_output,
                 batch,
-                memory_lengths=memory_lengths,
+                src_len=src_len,
                 src_map=src_map,
                 step=step,
                 batch_offset=decode_strategy.batch_offset,
@@ -811,17 +818,17 @@ class Translator(Inference):
 
             if any_finished:
                 # Reorder states.
-                if isinstance(memory_bank, tuple):
-                    memory_bank = tuple(
-                        x.index_select(1, select_indices) for x in memory_bank
+                if isinstance(enc_output, tuple):
+                    enc_output = tuple(
+                        x.index_select(0, select_indices) for x in enc_output
                     )
                 else:
-                    memory_bank = memory_bank.index_select(1, select_indices)
+                    enc_output = enc_output.index_select(0, select_indices)
 
-                memory_lengths = memory_lengths.index_select(0, select_indices)
+                src_len = src_len.index_select(0, select_indices)
 
                 if src_map is not None:
-                    src_map = src_map.index_select(1, select_indices)
+                    src_map = src_map.index_select(0, select_indices)
 
             if parallel_paths > 1 or any_finished:
                 self.model.decoder.map_state(
@@ -839,24 +846,27 @@ class Translator(Inference):
         )
 
     def _score_target(
-        self, batch, memory_bank, src_lengths, src_map
+        self, batch, enc_output, src_lengths, src_map
     ):
         tgt = batch['tgt']
-        tgt_in = tgt[:-1]
-
+        print("tgt: ", tgt.size())
+        tgt_in = tgt[-1:]
+        print("tgt_in: ", tgt_in.size())
         log_probs, attn = self._decode_and_generate(
             tgt_in,
-            memory_bank,
+            enc_output,
             batch,
-            memory_lengths=src_lengths,
+            src_len=src_lengths,
             src_map=src_map,
         )
-
+        print("logprobs: ", log_probs.size())
         log_probs[:, :, self._tgt_pad_idx] = 0
-        gold = tgt[1:]
+        gold = tgt[:1]
+        print("gold: ", gold.size())
         gold_scores = log_probs.gather(2, gold)
+        print("gs: ", gold_scores.size())
         gold_scores = gold_scores.sum(dim=0).view(-1)
-
+        print("gs: ", gold_scores.size())
         return gold_scores
 
 
@@ -994,7 +1004,7 @@ class GeneratorLM(Inference):
         (
             fn_map_state,
             src,
-            memory_lengths,
+            src_len,
             src_map,
         ) = decode_strategy.initialize(
             src,
@@ -1008,14 +1018,14 @@ class GeneratorLM(Inference):
             decoder_input = (
                 src
                 if step == 0
-                else decode_strategy.current_predictions.view(1, -1, 1)
+                else decode_strategy.current_predictions.view(-1, 1, 1)
             )
 
             log_probs, attn = self._decode_and_generate(
                 decoder_input,
                 None,
                 batch,
-                memory_lengths=memory_lengths.clone(),
+                src_len=src_len.clone(),
                 src_map=src_map,
                 step=step if step == 0 else step + src_lengths[0].item(),
                 batch_offset=decode_strategy.batch_offset,
@@ -1033,13 +1043,13 @@ class GeneratorLM(Inference):
                     break
 
             select_indices = decode_strategy.select_indices
-            memory_lengths += 1
+            src_len += 1
             if any_finished:
                 # Reorder states.
-                memory_lengths = memory_lengths.index_select(0, select_indices)
+                src_len = src_len.index_select(0, select_indices)
 
                 if src_map is not None:
-                    src_map = src_map.index_select(1, select_indices)
+                    src_map = src_map.index_select(0, select_indices)
 
             if parallel_paths > 1 or any_finished:
                 # select indexes in model state/cache
@@ -1058,7 +1068,7 @@ class GeneratorLM(Inference):
         )
 
     def _score_target(
-        self, batch, memory_bank, src_lengths, src_map
+        self, batch, enc_output, src_lengths, src_map
     ):
         src = batch['src']
         src_lengths = batch['srclen']
@@ -1068,7 +1078,7 @@ class GeneratorLM(Inference):
             src,
             None,
             batch,
-            memory_lengths=src_lengths,
+            src_len=src_lengths,
             src_map=src_map,
         )
 

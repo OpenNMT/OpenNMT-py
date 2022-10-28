@@ -67,17 +67,6 @@ class TransformerEncoder(EncoderBase):
     """The Transformer encoder from "Attention is All You Need"
     :cite:`DBLP:journals/corr/VaswaniSPUJGKP17`
 
-    .. mermaid::
-
-       graph BT
-          A[input]
-          B[multi-head self-attn]
-          C[feed forward]
-          O[output]
-          A --> B
-          B --> C
-          C --> O
-
     Args:
         num_layers (int): number of encoder layers
         d_model (int): size of the model
@@ -92,8 +81,9 @@ class TransformerEncoder(EncoderBase):
     Returns:
         (torch.FloatTensor, torch.FloatTensor):
 
-        * embeddings ``(src_len, batch_size, model_dim)``
-        * memory_bank ``(src_len, batch_size, model_dim)``
+        * output ``(src_len, batch_size, model_dim)``
+        * encoder final state: None in the case of Transformer
+        * lengths ``(batch_size)``
     """
 
     def __init__(self, num_layers, d_model, heads, d_ff, dropout,
@@ -128,9 +118,7 @@ class TransformerEncoder(EncoderBase):
 
     def forward(self, src, lengths=None):
         """See :func:`EncoderBase.forward()`"""
-
-        emb = self.embeddings(src)
-        enc_out = emb
+        enc_out = self.embeddings(src)
         mask = ~sequence_mask(lengths).unsqueeze(1)
         mask = mask.unsqueeze(1)
         mask = mask.expand(-1, -1, mask.size(3), -1)
@@ -139,9 +127,9 @@ class TransformerEncoder(EncoderBase):
         # Run the forward pass of every layer of the tranformer.
         for layer in self.transformer:
             enc_out = layer(enc_out, mask)
-        enc_out = self.layer_norm(enc_out)
+        output = self.layer_norm(enc_out)
 
-        return emb, enc_out, lengths
+        return output, None, lengths
 
     def update_dropout(self, dropout, attention_dropout):
         self.embeddings.update_dropout(dropout)

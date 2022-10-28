@@ -380,7 +380,7 @@ class Trainer(object):
             for j in range(0, target_size - 1, trunc_size):
                 # 1. Create truncated target.
 
-                tgt = tgt_outer[:,j: j + trunc_size,:]
+                tgt = tgt_outer[:, j: j + trunc_size, :]
 
                 # 2. F-prop all but generator.
                 if self.accum_count == 1:
@@ -440,10 +440,10 @@ class Trainer(object):
                     else:
                         traceback.print_exc()
                         raise exc
-                for name, param in self.model.named_parameters():
-                    if param.grad is None:
-                        print(name, param.grad)
-                        
+                # for name, param in self.model.named_parameters():
+                #    if param.grad is None:
+                #        print(name, param.grad)
+
                 # 4. Update the parameters and statistics.
                 if self.accum_count == 1:
                     # Multi GPU gradient gather
