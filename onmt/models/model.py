@@ -60,11 +60,11 @@ class NMTModel(BaseModel):
     def forward(self, src, tgt, lengths, bptt=False, with_align=False):
         dec_in = tgt[:, :-1, :]  # exclude last target from inputs
 
-        output, enc_final_hs, src_len = self.encoder(src, lengths)
+        enc_out, enc_final_hs, src_len = self.encoder(src, lengths)
 
         if not bptt:
-            self.decoder.init_state(src, output, enc_final_hs)
-        dec_out, attns = self.decoder(dec_in, output,
+            self.decoder.init_state(src, enc_out, enc_final_hs)
+        dec_out, attns = self.decoder(dec_in, enc_out,
                                       src_len=src_len,
                                       with_align=with_align)
         return dec_out, attns
@@ -135,7 +135,7 @@ class LanguageModel(BaseModel):
         if not bptt:
             self.decoder.init_state()
         dec_out, attns = self.decoder(
-            src, enc_output=None, src_len=lengths,
+            src, enc_out=None, src_len=lengths,
             with_align=with_align
         )
         return dec_out, attns

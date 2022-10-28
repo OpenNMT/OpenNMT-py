@@ -667,7 +667,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
         tgt_words = tgt[:, :, 0]
 
         dec_out = self.embeddings(tgt, step=step)
-        assert dec_out.dim() == 3  # len x batch x embedding_dim
+        assert dec_out.dim() == 3  # batch x len x embedding_dim
 
         pad_idx = self.embeddings.word_padding_idx
         tgt_pad_mask = tgt_words.data.eq(pad_idx).unsqueeze(1)  # [B, 1, T_tgt]

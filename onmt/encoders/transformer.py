@@ -81,7 +81,7 @@ class TransformerEncoder(EncoderBase):
     Returns:
         (torch.FloatTensor, torch.FloatTensor):
 
-        * enc_out ``(src_len, batch_size, model_dim)``
+        * enc_out ``(batch_size, src_len, model_dim)``
         * encoder final state: None in the case of Transformer
         * src_len ``(batch_size)``
     """
