@@ -14,22 +14,23 @@ class EncoderBase(nn.Module):
     def from_opt(cls, opt, embeddings=None):
         raise NotImplementedError
 
-    def forward(self, src, lengths=None):
+    def forward(self, src, src_len=None):
         """
         Args:
             src (LongTensor):
                padded sequences of sparse indices ``(batch, src_len, nfeat)``
-            lengths (LongTensor): length of each sequence ``(batch,)``
+            src_len (LongTensor): length of each sequence ``(batch,)``
 
         Returns:
             (FloatTensor, FloatTensor, FloatTensor):
 
-            * output (for attention), ``(batch, src_len, hidden_size)``
+            * enc_out (ecoder output used for attention),
+              ``(batch, src_len, hidden_size)``
               for bidirectional rnn last dimension is 2x hidden_size
-            * final_hidden_state ``(num_layersxdir, batch, hidden_size)``
-              (used to initialize decoder in RNNs)
+            * enc_final_hs: encoder final hidden state
+              ``(num_layersxdir, batch, hidden_size)``
               In the case of LSTM this is a tuple.
-            * lengths (batch)
+            * src_len (batch)
         """
 
         raise NotImplementedError

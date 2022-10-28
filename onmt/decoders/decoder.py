@@ -163,13 +163,13 @@ class RNNDecoderBase(DecoderBase):
         self.state["hidden"] = tuple(h.detach() for h in self.state["hidden"])
         self.state["input_feed"] = self.state["input_feed"].detach()
 
-    def forward(self, tgt, enc_output, src_len=None, step=None,
+    def forward(self, tgt, enc_out, src_len=None, step=None,
                 **kwargs):
         """
         Args:
             tgt (LongTensor): sequences of padded tokens
                  ``(batch, tgt_len, nfeats)``.
-            enc_output (FloatTensor): vectors from the encoder
+            enc_out (FloatTensor): vectors from the encoder
                  ``(batch, src_len, hidden)``.
             src_len (LongTensor): the padded source lengths
                 ``(batch,)``.
@@ -183,7 +183,7 @@ class RNNDecoderBase(DecoderBase):
               ``(batch, tgt_len, src_len)``.
         """
         dec_state, dec_outs, attns = self._run_forward_pass(
-            tgt, enc_output, src_len=src_len)
+            tgt, enc_out, src_len=src_len)
 
         # Update the state with the result.
         if not isinstance(dec_state, tuple):
@@ -235,7 +235,7 @@ class StdRNNDecoder(RNNDecoderBase):
     or `copy_attn` support.
     """
 
-    def _run_forward_pass(self, tgt, enc_output, src_len=None):
+    def _run_forward_pass(self, tgt, enc_out, src_len=None):
         """
         Private helper for running the specific RNN forward pass.
         Must be overriden by all subclasses.
@@ -243,9 +243,9 @@ class StdRNNDecoder(RNNDecoderBase):
         Args:
             tgt (LongTensor): a sequence of input tokens tensors
                 ``(batch, tgt_len, nfeats)``.
-            enc_output (FloatTensor): output(tensor sequence) from the
+            enc_out (FloatTensor): output(tensor sequence) from the
                 encoder RNN of size ``(batch, src_len, hidden_size)``.
-            src_len (LongTensor): the source enc_output lengths.
+            src_len (LongTensor): the source enc_out lengths.
 
         Returns:
             (Tensor, List[FloatTensor], Dict[str, List[FloatTensor]):
@@ -265,19 +265,19 @@ class StdRNNDecoder(RNNDecoderBase):
         emb = self.embeddings(tgt)
 
         if isinstance(self.rnn, nn.GRU):
-            rnn_output, dec_state = self.rnn(emb, self.state["hidden"][0])
+            rnn_out, dec_state = self.rnn(emb, self.state["hidden"][0])
         else:
-            rnn_output, dec_state = self.rnn(emb, self.state["hidden"])
+            rnn_out, dec_state = self.rnn(emb, self.state["hidden"])
 
         tgt_batch, tgt_len, _ = tgt.size()
 
         # Calculate the attention.
         if not self.attentional:
-            dec_outs = rnn_output
+            dec_outs = rnn_out
         else:
             dec_outs, p_attn = self.attn(
-                rnn_output,
-                enc_output,
+                rnn_out,
+                enc_out,
                 src_len=src_len
             )
             attns["std"] = p_attn
@@ -286,7 +286,7 @@ class StdRNNDecoder(RNNDecoderBase):
         if self.context_gate is not None:
             dec_outs = self.context_gate(
                 emb.view(-1, emb.size(2)),
-                rnn_output.view(-1, rnn_output.size(2)),
+                rnn_out.view(-1, rnn_out.size(2)),
                 dec_outs.view(-1, dec_outs.size(2))
             )
             dec_outs = dec_outs.view(tgt_batch, tgt_len, self.hidden_size)
@@ -315,7 +315,7 @@ class InputFeedRNNDecoder(RNNDecoderBase):
 
     """
 
-    def _run_forward_pass(self, tgt, enc_output, src_len=None):
+    def _run_forward_pass(self, tgt, enc_out, src_len=None):
         """
         See StdRNNDecoder._run_forward_pass() for description
         of arguments and return values.
@@ -343,26 +343,26 @@ class InputFeedRNNDecoder(RNNDecoderBase):
         # Input feed concatenates hidden state with
         # input at every time step.
         for emb_t in emb.split(1, dim=1):
-            decoder_input = torch.cat([emb_t.squeeze(1), input_feed], 1)
-            rnn_output, dec_state = self.rnn(decoder_input, dec_state)
+            dec_in = torch.cat([emb_t.squeeze(1), input_feed], 1)
+            rnn_out, dec_state = self.rnn(dec_in, dec_state)
             if self.attentional:
-                decoder_output, p_attn = self.attn(
-                    rnn_output,
-                    enc_output,
+                dec_out, p_attn = self.attn(
+                    rnn_out,
+                    enc_out,
                     src_len=src_len)
                 attns["std"].append(p_attn)
             else:
-                decoder_output = rnn_output
+                dec_out = rnn_out
             if self.context_gate is not None:
                 # TODO: context gate should be employed
                 # instead of second RNN transform.
-                decoder_output = self.context_gate(
-                    decoder_input, rnn_output, decoder_output
+                dec_out = self.context_gate(
+                    dec_in, rnn_out, dec_out
                 )
-            decoder_output = self.dropout(decoder_output)
-            input_feed = decoder_output
+            dec_out = self.dropout(dec_out)
+            input_feed = dec_out
 
-            dec_outs += [decoder_output]
+            dec_outs += [dec_out]
 
             # Update the coverage attention.
             if self._coverage:
@@ -371,7 +371,7 @@ class InputFeedRNNDecoder(RNNDecoderBase):
 
             if self.copy_attn is not None:
                 _, copy_attn = self.copy_attn(
-                    decoder_output, enc_output)
+                    dec_out, enc_out)
                 attns["copy"] += [copy_attn]
             elif self._reuse_copy_attn:
                 attns["copy"] = attns["std"]

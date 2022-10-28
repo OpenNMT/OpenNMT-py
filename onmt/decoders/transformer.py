@@ -225,7 +225,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
     def _forward(
         self,
         inputs,
-        enc_output,
+        enc_out,
         src_pad_mask,
         tgt_pad_mask,
         step=None,
@@ -237,7 +237,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
 
         Args:
             inputs (FloatTensor): ``(batch_size, T, model_dim)``
-            enc_output (FloatTensor): ``(batch_size, src_len, model_dim)``
+            enc_out (FloatTensor): ``(batch_size, src_len, model_dim)``
             src_pad_mask (bool): ``(batch_size, 1, src_len)``
             tgt_pad_mask (bool): ``(batch_size, 1, T)``
             step (int or None): stepwise decoding counter
@@ -272,8 +272,8 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
 
         query_norm = self.layer_norm_2(query)
         mid, attns = self.context_attn(
-            enc_output,
-            enc_output,
+            enc_out,
+            enc_out,
             query_norm,
             mask=src_pad_mask
         )
@@ -322,14 +322,14 @@ class TransformerDecoderBase(DecoderBase):
             pos_ffn_activation_fn=opt.pos_ffn_activation_fn,
         )
 
-    def init_state(self, src, enc_output, enc_hidden):
+    def init_state(self, src, enc_out, enc_hidden):
         """Initialize decoder state."""
         self.state["src"] = src
 
     def map_state(self, fn):
 
         if self.state["src"] is not None:
-            self.state["src"] = fn(self.state["src"], 1)
+            self.state["src"] = fn(self.state["src"], 0)
         for layer in self.transformer_layers:
             if hasattr(layer, 'context_attn'):
                 if layer.context_attn.layer_cache[1]['keys'].numel() != 0:
@@ -443,17 +443,17 @@ class TransformerDecoder(TransformerDecoderBase):
     def detach_state(self):
         self.state["src"] = self.state["src"].detach()
 
-    def forward(self, tgt, enc_output=None, step=None, **kwargs):
+    def forward(self, tgt, enc_out=None, step=None, **kwargs):
         """
         Decode, possibly stepwise.
         when training step is always None, when decoding, step increases
         tgt (Tensor): batch x tlen x feats
-        enc_output (Tensor): encoder output (batch x slen x model_dim)
+        enc_out (Tensor): encoder output (batch x slen x model_dim)
         """
-        if enc_output is None:
-            enc_output = self.embeddings(tgt)
+        if enc_out is None:
+            enc_out = self.embeddings(tgt)
         if step == 0:
-            self._init_cache(enc_output)
+            self._init_cache(enc_out)
 
         tgt_words = tgt[:, :, 0]
 
@@ -470,11 +470,10 @@ class TransformerDecoder(TransformerDecoderBase):
 
         with_align = kwargs.pop("with_align", False)
         attn_aligns = []
-
         for layer in self.transformer_layers:
             dec_out, attn, attn_align = layer(
                 dec_out,
-                enc_output,
+                enc_out,
                 src_pad_mask,
                 tgt_pad_mask,
                 step=step,
@@ -495,28 +494,28 @@ class TransformerDecoder(TransformerDecoderBase):
         # TODO change the way attns is returned dict => list or tuple (onnx)
         return dec_out, attns
 
-    def _init_cache(self, enc_output):
+    def _init_cache(self, enc_out):
 
-        batch_size = enc_output.size(0)
-        depth = enc_output.size(-1)
+        batch_size = enc_out.size(0)
+        depth = enc_out.size(-1)
 
         for layer in self.transformer_layers:
             # first value set to True triggered by the beginning of decoding
             # layer_cache becomes active in the MultiHeadedAttention fwd
             layer.context_attn.layer_cache = (
                 True,
-                {'keys': torch.tensor([], device=enc_output.device),
-                 'values': torch.tensor([], device=enc_output.device)}
+                {'keys': torch.tensor([], device=enc_out.device),
+                 'values': torch.tensor([], device=enc_out.device)}
                 )
             if isinstance(layer.self_attn, AverageAttention):
                 layer.self_attn.layer_cache = True, {'prev_g': torch.zeros(
-                     (batch_size, 1, depth), device=enc_output.device
-                ).to(enc_output.dtype)}
+                     (batch_size, 1, depth), device=enc_out.device
+                ).to(enc_out.dtype)}
             else:
                 layer.self_attn.layer_cache = (
                     True,
-                    {'keys': torch.tensor([], device=enc_output.device),
-                     'values': torch.tensor([], device=enc_output.device)}
+                    {'keys': torch.tensor([], device=enc_out.device),
+                     'values': torch.tensor([], device=enc_out.device)}
                     )
 
 
@@ -654,21 +653,21 @@ class TransformerLMDecoder(TransformerDecoderBase):
             ]
         )
 
-    def init_state(self, src=None, enc_output=None, enc_hidden=None):
+    def init_state(self, src=None, enc_out=None, enc_hidden=None):
         super(TransformerLMDecoder, self).init_state(None, None, None)
 
     def detach_state(self):
         pass
 
-    def forward(self, tgt, enc_output=None, step=None, **kwargs):
+    def forward(self, tgt, enc_out=None, step=None, **kwargs):
         """Decode, possibly stepwise."""
         if step == 0:
             self._init_cache(tgt)
 
         tgt_words = tgt[:, :, 0]
 
-        emb = self.embeddings(tgt, step=step)
-        assert emb.dim() == 3  # len x batch x embedding_dim
+        dec_out = self.embeddings(tgt, step=step)
+        assert dec_out.dim() == 3  # len x batch x embedding_dim
 
         pad_idx = self.embeddings.word_padding_idx
         tgt_pad_mask = tgt_words.data.eq(pad_idx).unsqueeze(1)  # [B, 1, T_tgt]
@@ -677,21 +676,21 @@ class TransformerLMDecoder(TransformerDecoderBase):
         assert not with_align, "TransformerLMDecoder does not support align"
 
         for layer in self.transformer_layers:
-            output, attn, _ = layer(
-                emb,
+            dec_out, attn, _ = layer(
+                dec_out,
                 tgt_pad_mask,
                 step=step,
                 with_align=with_align,
             )
 
-        output = self.layer_norm(output)
+        dec_out = self.layer_norm(dec_out)
 
         attns = {"std": attn}
         if self._copy:
             attns["copy"] = attn
 
         # TODO change the way attns is returned dict => list or tuple (onnx)
-        return output, attns
+        return dec_out, attns
 
     def _init_cache(self, tgt=None):
 

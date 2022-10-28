@@ -130,13 +130,13 @@ class GlobalAttention(nn.Module):
 
             return self.v(wquh.view(-1, dim)).view(tgt_batch, tgt_len, src_len)
 
-    def forward(self, source, memory_bank, src_len=None, coverage=None):
+    def forward(self, src, enc_out, src_len=None, coverage=None):
         """
 
         Args:
-          source (FloatTensor): query vectors ``(batch, tgt_len, dim)``
-          memory_bank (FloatTensor): source vectors ``(batch, src_len, dim)``
-          src_len (LongTensor): the source context lengths ``(batch,)``
+          src (FloatTensor): query vectors ``(batch, tgt_len, dim)``
+          enc_out (FloatTensor): encoder out vectors ``(batch, src_len, dim)``
+          src_len (LongTensor): source context lengths ``(batch,)``
           coverage (FloatTensor): None (not supported yet)
 
         Returns:
@@ -148,24 +148,24 @@ class GlobalAttention(nn.Module):
         """
 
         # one step input
-        if source.dim() == 2:
+        if src.dim() == 2:
             one_step = True
-            source = source.unsqueeze(1)
+            src = src.unsqueeze(1)
         else:
             one_step = False
 
-        batch, source_l, dim = memory_bank.size()
-        batch_, target_l, dim_ = source.size()
+        batch, src_l, dim = enc_out.size()
+        batch_, target_l, dim_ = src.size()
         if coverage is not None:
-            batch_, source_l_ = coverage.size()
+            batch_, src_l_ = coverage.size()
 
         if coverage is not None:
             cover = coverage.view(-1).unsqueeze(1)
-            memory_bank += self.linear_cover(cover).view_as(memory_bank)
-            memory_bank = torch.tanh(memory_bank)
+            enc_out += self.linear_cover(cover).view_as(enc_out)
+            enc_out = torch.tanh(enc_out)
 
         # compute attention scores, as in Luong et al.
-        align = self.score(source, memory_bank)
+        align = self.score(src, enc_out)
 
         if src_len is not None:
             mask = sequence_mask(src_len, max_len=align.size(-1))
@@ -174,17 +174,17 @@ class GlobalAttention(nn.Module):
 
         # Softmax or sparsemax to normalize attention weights
         if self.attn_func == "softmax":
-            align_vectors = F.softmax(align.view(batch*target_l, source_l), -1)
+            align_vectors = F.softmax(align.view(batch*target_l, src_l), -1)
         else:
-            align_vectors = sparsemax(align.view(batch*target_l, source_l), -1)
-        align_vectors = align_vectors.view(batch, target_l, source_l)
+            align_vectors = sparsemax(align.view(batch*target_l, src_l), -1)
+        align_vectors = align_vectors.view(batch, target_l, src_l)
 
         # each context vector c_t is the weighted average
         # over all the source hidden states
-        c = torch.bmm(align_vectors, memory_bank)
+        c = torch.bmm(align_vectors, enc_out)
 
         # concatenate
-        concat_c = torch.cat([c, source], 2).view(batch*target_l, dim*2)
+        concat_c = torch.cat([c, src], 2).view(batch*target_l, dim*2)
         attn_h = self.linear_out(concat_c).view(batch, target_l, dim)
         if self.attn_type in ["general", "dot"]:
             attn_h = torch.tanh(attn_h)

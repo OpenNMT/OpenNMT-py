@@ -135,7 +135,7 @@ class LanguageModel(BaseModel):
         if not bptt:
             self.decoder.init_state()
         dec_out, attns = self.decoder(
-            src, memory_bank=None, memory_lengths=lengths,
+            src, enc_output=None, src_len=lengths,
             with_align=with_align
         )
         return dec_out, attns

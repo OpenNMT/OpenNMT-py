@@ -578,7 +578,7 @@ class TestBeamSearchLM(TestBeamSearchAgainstReferenceCase):
         if any_finished:
             beam.update_finished()
 
-    def test_beam_lm_increase_memory_length(self):
+    def test_beam_lm_increase_src_len(self):
         beam = BeamSearchLM(
             self.BEAM_SZ, self.BATCH_SZ, 0, 1, 2, 3, self.N_BEST,
             GlobalScorerStub(),
@@ -593,10 +593,10 @@ class TestBeamSearchLM(TestBeamSearchAgainstReferenceCase):
         self.third_step(beam, expected_beam_scores, 1)
 
         n_steps = beam.alive_seq.shape[-1] - 1
-        self.assertTrue(beam.memory_lengths.equal(
+        self.assertTrue(beam.src_len.equal(
             n_steps+fn_map_state(src_lengths, dim=0)))
 
-    def test_beam_lm_update_memory_length_when_finished(self):
+    def test_beam_lm_update_src_len_when_finished(self):
         beam = BeamSearchLM(
             self.BEAM_SZ, self.BATCH_SZ, 0, 1, 2, 3, self.N_BEST,
             GlobalScorerStub(),
@@ -609,5 +609,5 @@ class TestBeamSearchLM(TestBeamSearchAgainstReferenceCase):
         self.finish_first_beam_step(beam)
 
         n_steps = beam.alive_seq.shape[-1] - 1
-        self.assertTrue(beam.memory_lengths.equal(
+        self.assertTrue(beam.src_len.equal(
             n_steps+fn_map_state(src_lengths[1:], dim=0)))

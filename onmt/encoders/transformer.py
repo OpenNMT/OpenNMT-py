@@ -81,9 +81,9 @@ class TransformerEncoder(EncoderBase):
     Returns:
         (torch.FloatTensor, torch.FloatTensor):
 
-        * output ``(src_len, batch_size, model_dim)``
+        * enc_out ``(src_len, batch_size, model_dim)``
         * encoder final state: None in the case of Transformer
-        * lengths ``(batch_size)``
+        * src_len ``(batch_size)``
     """
 
     def __init__(self, num_layers, d_model, heads, d_ff, dropout,
@@ -116,10 +116,10 @@ class TransformerEncoder(EncoderBase):
             pos_ffn_activation_fn=opt.pos_ffn_activation_fn,
         )
 
-    def forward(self, src, lengths=None):
+    def forward(self, src, src_len=None):
         """See :func:`EncoderBase.forward()`"""
         enc_out = self.embeddings(src)
-        mask = ~sequence_mask(lengths).unsqueeze(1)
+        mask = ~sequence_mask(src_len).unsqueeze(1)
         mask = mask.unsqueeze(1)
         mask = mask.expand(-1, -1, mask.size(3), -1)
         # mask is now (batch x 1 x slen x slen)
@@ -127,9 +127,9 @@ class TransformerEncoder(EncoderBase):
         # Run the forward pass of every layer of the tranformer.
         for layer in self.transformer:
             enc_out = layer(enc_out, mask)
-        output = self.layer_norm(enc_out)
+        enc_out = self.layer_norm(enc_out)
 
-        return output, None, lengths
+        return enc_out, None, src_len
 
     def update_dropout(self, dropout, attention_dropout):
         self.embeddings.update_dropout(dropout)

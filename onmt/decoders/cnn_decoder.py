@@ -61,9 +61,9 @@ class CNNDecoder(DecoderBase):
             embeddings,
             opt.copy_attn_type)
 
-    def init_state(self, _, enc_output, enc_hidden):
+    def init_state(self, _, enc_out, enc_hidden):
         """Init decoder state."""
-        self.state["src"] = (enc_output + enc_hidden) * SCALE_WEIGHT
+        self.state["src"] = (enc_out + enc_hidden) * SCALE_WEIGHT
         self.state["previous_input"] = None
 
     def map_state(self, fn):
@@ -74,7 +74,7 @@ class CNNDecoder(DecoderBase):
     def detach_state(self):
         self.state["previous_input"] = self.state["previous_input"].detach()
 
-    def forward(self, tgt, enc_output, step=None, **kwargs):
+    def forward(self, tgt, enc_out, step=None, **kwargs):
         """ See :obj:`onmt.modules.RNNDecoderBase.forward()`"""
 
         if self.state["previous_input"] is not None:
@@ -90,9 +90,9 @@ class CNNDecoder(DecoderBase):
 
         tgt_emb = emb
         # The output of CNNEncoder.
-        src_memory_bank_t = enc_output
+        enc_out_t = enc_out
         # The combination of output of CNNEncoder and source embeddings.
-        src_memory_bank_c = self.state["src"]
+        enc_out_c = self.state["src"]
 
         emb_reshape = tgt_emb.view(
             tgt_emb.size(0) * tgt_emb.size(1), -1)
@@ -109,12 +109,12 @@ class CNNDecoder(DecoderBase):
             new_target_input = torch.cat([pad, x], 2)
             out = conv(new_target_input)
             c, attn = attention(base_target_emb, out,
-                                src_memory_bank_t, src_memory_bank_c)
+                                enc_out_t, enc_out_c)
             x = (x + (c + out) * SCALE_WEIGHT) * SCALE_WEIGHT
-        output = x.squeeze(3).transpose(1, 2)
+
+        dec_outs = x.squeeze(3).transpose(1, 2)
 
         # Process the result and update the attentions.
-        dec_outs = output
         if self.state["previous_input"] is not None:
             dec_outs = dec_outs[:, self.state["previous_input"].size(1):, :]
             attn = attn[:, self.state["previous_input"].size(1):].squeeze()
