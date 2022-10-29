@@ -440,9 +440,6 @@ class Trainer(object):
                     else:
                         traceback.print_exc()
                         raise exc
-                # for name, param in self.model.named_parameters():
-                #    if param.grad is None:
-                #        print(name, param.grad)
 
                 # 4. Update the parameters and statistics.
                 if self.accum_count == 1:

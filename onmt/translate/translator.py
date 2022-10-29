@@ -551,7 +551,6 @@ class Inference(object):
             # returns [(batch_size x beam_size) , vocab ] when 1 step
             # or [batch_size, tgt_len, vocab ] when full sentence
         else:
-            # TODO PUT BATCH FIRST
             attn = dec_attn["copy"]
             scores = self.model.generator(
                 dec_out.view(-1, dec_out.size(2)),
@@ -565,6 +564,7 @@ class Inference(object):
                 scores = scores.transpose(0, 1).contiguous()
             else:
                 scores = scores.view(-1, self.beam_size, scores.size(-1))
+            # at this point scores is batch first (dim=0)
             scores = collapse_copy_scores(
                 scores,
                 batch,
@@ -572,7 +572,7 @@ class Inference(object):
                 batch_dim=0,
                 batch_offset=batch_offset,
             )
-            scores = scores.view(decoder_in.size(0), -1, scores.size(-1))
+            scores = scores.view(decoder_in.size(1), -1, scores.size(-1))
             log_probs = scores.squeeze(0).log()
             # returns [(batch_size x beam_size) , vocab ] when 1 step
             # or [batch_size, tgt_len, vocab ] when full sentence
@@ -631,7 +631,6 @@ class Translator(Inference):
         For a batch of input and its prediction, return a list of batch predict
         alignment src indice Tensor in size ``(batch, n_best,)``.
         """
-        # TODO put batch first
 
         # (0) add BOS and padding to tgt prediction
         batch_tgt_idxs = self._align_pad_prediction(
@@ -648,20 +647,22 @@ class Translator(Inference):
         src, enc_states, enc_out, src_lengths = self._run_encoder(batch)
 
         # (2) Repeat src objects `n_best` times.
-        # We use batch_size x n_best, get ``(src_len, batch * n_best, nfeat)``
-        src = tile(src, n_best, dim=1)
-        enc_states = tile(enc_states, n_best, dim=1)
+        # We use batch_size x n_best, get ``(batch * n_best, src_len, nfeat)``
+        src = tile(src, n_best, dim=0)
+        enc_states = tile(enc_states, n_best, dim=0)
         if isinstance(enc_out, tuple):
-            enc_out = tuple(tile(x, n_best, dim=1) for x in enc_out)
+            enc_out = tuple(tile(x, n_best, dim=0) for x in enc_out)
         else:
-            enc_out = tile(enc_out, n_best, dim=1)
+            enc_out = tile(enc_out, n_best, dim=0)
         src_lengths = tile(src_lengths, n_best)  # ``(batch * n_best,)``
 
         # (3) Init decoder with n_best src,
         self.model.decoder.init_state(src, enc_out, enc_states)
         # reshape tgt to ``(len, batch * n_best, nfeat)``
+        # it should be done in a better way
         tgt = batch_tgt_idxs.view(-1, batch_tgt_idxs.size(-1)).T.unsqueeze(-1)
-        dec_in = tgt[:-1]  # exclude last target from inputs
+        dec_in = tgt[:-1].transpose(0, 1)  # exclude last target from inputs
+        # here dec_in is batch first
         _, attns = self.model.decoder(
             dec_in, enc_out, src_len=src_lengths, with_align=True
         )
