@@ -40,22 +40,22 @@ class TransformerEncoderLayer(nn.Module):
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, inputs, mask):
+    def forward(self, layer_in, mask):
         """
         Args:
-            inputs (FloatTensor): ``(batch_size, src_len, model_dim)``
+            layer_in (FloatTensor): ``(batch_size, src_len, model_dim)``
             mask (LongTensor): ``(batch_size, 1, src_len)``
 
         Returns:
             (FloatTensor):
-
-            * outputs ``(batch_size, src_len, model_dim)``
+            * layer_out ``(batch_size, src_len, model_dim)``
         """
-        input_norm = self.layer_norm(inputs)
+        input_norm = self.layer_norm(layer_in)
         context, _ = self.self_attn(input_norm, input_norm, input_norm,
                                     mask=mask)
-        out = self.dropout(context) + inputs
-        return self.feed_forward(out)
+        layer_out = self.dropout(context) + layer_in
+        layer_out = self.feed_forward(layer_out)
+        return layer_out
 
     def update_dropout(self, dropout, attention_dropout):
         self.self_attn.update_dropout(attention_dropout)

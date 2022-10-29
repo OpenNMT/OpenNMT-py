@@ -95,7 +95,7 @@ class TestModel(unittest.TestCase):
         test_src, test_tgt, test_length = self.get_batch(source_l=source_l,
                                                          bsize=bsize)
 
-        outputs, hidden_t, test_length = enc(test_src, test_length)
+        enc_out, hidden_t, test_length = enc(test_src, test_length)
 
         # Initialize vectors to compare size with
         test_hid = torch.zeros(self.opt.enc_layers, bsize, opt.enc_rnn_size)
@@ -105,8 +105,8 @@ class TestModel(unittest.TestCase):
         self.assertEqual(test_hid.size(),
                          hidden_t[0].size(),
                          hidden_t[1].size())
-        self.assertEqual(test_out.size(), outputs.size())
-        self.assertEqual(type(outputs), torch.Tensor)
+        self.assertEqual(test_out.size(), enc_out.size())
+        self.assertEqual(type(enc_out), torch.Tensor)
 
     def nmtmodel_forward(self, opt, source_l=3, bsize=1):
         """
@@ -133,11 +133,11 @@ class TestModel(unittest.TestCase):
 
         test_src, test_tgt, test_length = self.get_batch(source_l=source_l,
                                                          bsize=bsize)
-        outputs, attn = model(test_src, test_tgt, test_length)
+        output, attn = model(test_src, test_tgt, test_length)
         outputsize = torch.zeros(bsize, source_l - 1, opt.dec_rnn_size)
         # Make sure that output has the correct size and type
-        self.assertEqual(outputs.size(), outputsize.size())
-        self.assertEqual(type(outputs), torch.Tensor)
+        self.assertEqual(output.size(), outputsize.size())
+        self.assertEqual(type(output), torch.Tensor)
 
 
 def _add_test(param_setting, methodname):

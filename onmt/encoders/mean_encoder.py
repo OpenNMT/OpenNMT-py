@@ -39,6 +39,6 @@ class MeanEncoder(EncoderBase):
             mean = emb.mean(1)
 
         mean = mean.expand(self.num_layers, batch, emb_dim)
-        output = emb
+        enc_out = emb
         enc_final_hs = (mean, mean)
-        return output, enc_final_hs, lengths
+        return enc_out, enc_final_hs, lengths

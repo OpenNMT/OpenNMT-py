@@ -71,15 +71,15 @@ class RNNEncoder(EncoderBase):
             lengths_list = lengths.view(-1).tolist()
             packed_emb = pack(emb, lengths_list, batch_first=True)
 
-        output, enc_final_hs = self.rnn(packed_emb)
+        enc_out, enc_final_hs = self.rnn(packed_emb)
 
         if lengths is not None and not self.no_pack_padded_seq:
-            output = unpack(output, batch_first=True)[0]
+            enc_out = unpack(enc_out, batch_first=True)[0]
 
         if self.use_bridge:
             enc_final_hs = self._bridge(enc_final_hs)
 
-        return output, enc_final_hs, lengths
+        return enc_out, enc_final_hs, lengths
 
     def _initialize_bridge(self, rnn_type,
                            hidden_size,

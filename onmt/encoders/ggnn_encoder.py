@@ -58,9 +58,9 @@ class GGNNPropogator(nn.Module):
         joined_input = torch.cat((a_in, a_out, r * state_cur), 2)
         h_hat = self.tansform(joined_input)
 
-        output = (1 - z) * state_cur + z * h_hat
+        prop_out = (1 - z) * state_cur + z * h_hat
 
-        return output
+        return prop_out
 
 
 class GGNNEncoder(EncoderBase):
@@ -277,7 +277,6 @@ class GGNNEncoder(EncoderBase):
             prop_state = self.propogator(in_states, out_states, prop_state,
                                          edges, nodes)
 
-        prop_state = prop_state
         if self.bridge_extra_node:
             # Use first extra node as only source for decoder init
             join_state = prop_state[first_extra, torch.arange(batch_size)]
@@ -288,9 +287,9 @@ class GGNNEncoder(EncoderBase):
                                   join_state, join_state))
         join_state = (join_state, join_state)
 
-        encoder_final = self._bridge(join_state)
-        print(prop_state.size(), encoder_final[0].size())
-        return prop_state, encoder_final, lengths
+        enc_final_hs = self._bridge(join_state)
+
+        return prop_state, enc_final_hs, lengths
 
     def _initialize_bridge(self, rnn_type,
                            hidden_size,

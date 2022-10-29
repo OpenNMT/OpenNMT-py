@@ -57,26 +57,6 @@ class CopyGenerator(nn.Module):
 
     :math:`p(w) = p(z=1)  p_{copy}(w)  +  p(z=0)  p_{softmax}(w)`
 
-
-    .. mermaid::
-
-       graph BT
-          A[input]
-          S[src_map]
-          B[softmax]
-          BB[switch]
-          C[attn]
-          D[copy]
-          O[output]
-          A --> B
-          A --> BB
-          S --> D
-          C --> D
-          D --> O
-          B --> O
-          BB --> O
-
-
     Args:
        input_size (int): size of input representation
        output_size (int): size of output vocabulary
@@ -96,7 +76,7 @@ class CopyGenerator(nn.Module):
         source words.
 
         Args:
-           hidden (FloatTensor): hidden outputs ``(batch x tlen, input_size)``
+           hidden (FloatTensor): hidden output ``(batch x tlen, input_size)``
            attn (FloatTensor): attn for each ``(batch x tlen, slen)``
            src_map (FloatTensor):
                A sparse indicator matrix mapping each source word to

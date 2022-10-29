@@ -312,11 +312,11 @@ class Trainer(object):
 
                 with torch.cuda.amp.autocast(enabled=self.optim.amp):
                     # F-prop through the model.
-                    outputs, attns = valid_model(src, tgt, src_lengths,
-                                                 with_align=self.with_align)
+                    model_out, attns = valid_model(src, tgt, src_lengths,
+                                                   with_align=self.with_align)
 
                     # Compute loss.
-                    _, batch_stats = self.valid_loss(batch, outputs, attns)
+                    _, batch_stats = self.valid_loss(batch, model_out, attns)
 
                     stats.update(batch_stats)
 
@@ -388,7 +388,7 @@ class Trainer(object):
 
                 try:
                     with torch.cuda.amp.autocast(enabled=self.optim.amp):
-                        outputs, attns = self.model(
+                        model_out, attns = self.model(
                             src, tgt, src_lengths, bptt=bptt,
                             with_align=self.with_align)
                         bptt = True
@@ -396,7 +396,7 @@ class Trainer(object):
                         # 3. Compute loss.
                         loss, batch_stats = self.train_loss(
                             batch,
-                            outputs,
+                            model_out,
                             attns,
                             trunc_start=j,
                             trunc_size=trunc_size)

@@ -24,7 +24,7 @@ class EncoderBase(nn.Module):
         Returns:
             (FloatTensor, FloatTensor, FloatTensor):
 
-            * enc_out (ecoder output used for attention),
+            * enc_out (encoder output used for attention),
               ``(batch, src_len, hidden_size)``
               for bidirectional rnn last dimension is 2x hidden_size
             * enc_final_hs: encoder final hidden state

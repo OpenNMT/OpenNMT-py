@@ -17,7 +17,7 @@ class BaseModel(nn.Module):
 
         Args:
             src (Tensor): A source sequence passed to encoder.
-                typically for inputs this will be a padded `LongTensor`
+                typically for input this will be a padded `LongTensor`
                 of size ``(batch, len, features)``. However, may be an
                 image or other generic input depending on encoder.
             tgt (LongTensor): A target sequence passed to decoder.
@@ -58,7 +58,7 @@ class NMTModel(BaseModel):
         self.decoder = decoder
 
     def forward(self, src, tgt, lengths, bptt=False, with_align=False):
-        dec_in = tgt[:, :-1, :]  # exclude last target from inputs
+        dec_in = tgt[:, :-1, :]  # exclude last target from input
 
         enc_out, enc_final_hs, src_len = self.encoder(src, lengths)
 
@@ -116,7 +116,7 @@ class LanguageModel(BaseModel):
         Possible initialized with a beginning decoder state.
         Args:
             src (Tensor): A source sequence passed to decoder.
-                typically for inputs this will be a padded `LongTensor`
+                typically for input this will be a padded `LongTensor`
                 of size ``(batch, len, features)``. However, may be an
                 image or other generic input depending on decoder.
             tgt (LongTensor): A target sequence passed to decoder.

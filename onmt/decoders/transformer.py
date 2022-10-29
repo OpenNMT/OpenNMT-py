@@ -92,12 +92,12 @@ class TransformerDecoderLayerBase(nn.Module):
         Returns:
             (FloatTensor, FloatTensor, FloatTensor or None):
 
-            * output ``(batch_size, T, model_dim)``
+            * layer_out ``(batch_size, T, model_dim)``
             * top_attn ``(batch_size, T, src_len)``
             * attn_align ``(batch_size, T, src_len)`` or None
         """
         with_align = kwargs.pop("with_align", False)
-        output, attns = self._forward(*args, **kwargs)
+        layer_out, attns = self._forward(*args, **kwargs)
         top_attn = attns[:, 0, :, :].contiguous()
         attn_align = None
         if with_align:
@@ -112,7 +112,7 @@ class TransformerDecoderLayerBase(nn.Module):
             # Case 2: no full_context, 1 align heads -> guided align
             # Case 3: full_context, 1 align heads -> full cte guided align
             attn_align = attns.mean(dim=1)
-        return output, top_attn, attn_align
+        return layer_out, top_attn, attn_align
 
     def update_dropout(self, dropout, attention_dropout):
         self.self_attn.update_dropout(attention_dropout)
@@ -141,17 +141,17 @@ class TransformerDecoderLayerBase(nn.Module):
             dec_mask = tgt_pad_mask
         return dec_mask
 
-    def _forward_self_attn(self, inputs_norm, dec_mask, step):
+    def _forward_self_attn(self, layer_in_norm, dec_mask, step):
         if self.self_attn_type == "scaled-dot":
             return self.self_attn(
-                inputs_norm,
-                inputs_norm,
-                inputs_norm,
+                layer_in_norm,
+                layer_in_norm,
+                layer_in_norm,
                 mask=dec_mask
             )
         elif self.self_attn_type == "average":
             return self.self_attn(
-                inputs_norm, mask=dec_mask, step=step
+                layer_in_norm, mask=dec_mask, step=step
             )
         else:
             raise ValueError(
@@ -165,17 +165,6 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
     providing better converge speed and performance. This is also the actual
     implementation in tensor2tensor and also avalable in fairseq.
     See https://tunz.kr/post/4 and :cite:`DeeperTransformer`.
-
-    .. mermaid::
-
-        graph LR
-        %% "*SubLayer" can be self-attn, src-attn or feed forward block
-            A(input) --> B[Norm]
-            B --> C["*SubLayer"]
-            C --> D[Drop]
-            D --> E((+))
-            A --> E
-            E --> F(out)
 
     """
 
@@ -224,7 +213,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
 
     def _forward(
         self,
-        inputs,
+        layer_in,
         enc_out,
         src_pad_mask,
         tgt_pad_mask,
@@ -236,7 +225,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
         # T: could be 1 in the case of stepwise decoding or tgt_len
 
         Args:
-            inputs (FloatTensor): ``(batch_size, T, model_dim)``
+            layer_in (FloatTensor): ``(batch_size, T, model_dim)``
             enc_out (FloatTensor): ``(batch_size, src_len, model_dim)``
             src_pad_mask (bool): ``(batch_size, 1, src_len)``
             tgt_pad_mask (bool): ``(batch_size, 1, T)``
@@ -246,14 +235,14 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
         Returns:
             (FloatTensor, FloatTensor):
 
-            * output ``(batch_size, T, model_dim)``
+            * layer_out ``(batch_size, T, model_dim)``
             * attns ``(batch_size, head, T, src_len)``
 
         """
         dec_mask = None
         src_pad_mask = src_pad_mask.unsqueeze(1)  # [B,1,1,slen]
 
-        if inputs.size(1) > 1:
+        if layer_in.size(1) > 1:
             # masking is necessary when sequence length is greater than one
             dec_mask = self._compute_dec_mask(tgt_pad_mask, future)
             dec_mask = dec_mask.unsqueeze(1)
@@ -262,13 +251,13 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
             # mask now are (batch x 1 x tlen x s or t len)
             # 1 = heads to be expanded in MHA
 
-        inputs_norm = self.layer_norm_1(inputs)
+        layer_in_norm = self.layer_norm_1(layer_in)
 
         query, _ = self._forward_self_attn(
-            inputs_norm, dec_mask, step
+            layer_in_norm, dec_mask, step
         )
 
-        query = self.drop(query) + inputs
+        query = self.drop(query) + layer_in
 
         query_norm = self.layer_norm_2(query)
         mid, attns = self.context_attn(
@@ -277,9 +266,9 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
             query_norm,
             mask=src_pad_mask
         )
-        output = self.feed_forward(self.drop(mid) + query)
+        layer_out = self.feed_forward(self.drop(mid) + query)
 
-        return output, attns
+        return layer_out, attns
 
 
 class TransformerDecoderBase(DecoderBase):
@@ -363,21 +352,6 @@ class TransformerDecoderBase(DecoderBase):
 class TransformerDecoder(TransformerDecoderBase):
     """The Transformer decoder from "Attention is All You Need".
     :cite:`DBLP:journals/corr/VaswaniSPUJGKP17`
-
-    .. mermaid::
-
-       graph BT
-          A[input]
-          B[multi-head self-attn]
-          BB[multi-head src-attn]
-          C[feed forward]
-          O[output]
-          A --> B
-          B --> BB
-          BB --> C
-          C --> O
-
-
     Args:
         num_layers (int): number of decoder layers.
         d_model (int): size of the model
@@ -521,32 +495,19 @@ class TransformerDecoder(TransformerDecoderBase):
 
 class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
     """Transformer Decoder only layer block in GPT style.
-
-    .. mermaid::
-
-        graph LR
-        %% "*SubLayer" can be self-attn, src-attn or feed forward block
-            A(input) --> B[Norm]
-            B --> C["*SubLayer"]
-            C --> D[Drop]
-            D --> E((+))
-            A --> E
-            E --> F(out)
-
-
-    Args:
+   Args:
         See TransformerDecoderLayerBase
     """
 
     def _forward(
-        self, inputs, tgt_pad_mask, step=None, future=False
+        self, layer_in, tgt_pad_mask, step=None, future=False
     ):
         """A naive forward pass for transformer decoder.
 
         # T: could be 1 in the case of stepwise decoding or tgt_len
 
         Args:
-            inputs (FloatTensor): ``(batch_size, T, model_dim)``
+            layer_in (FloatTensor): ``(batch_size, T, model_dim)``
             tgt_pad_mask (bool): ``(batch_size, 1, T)``
             layer_cache (dict or None): cached layer info when stepwise decode
             step (int or None): stepwise decoding counter
@@ -555,13 +516,13 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
         Returns:
             (FloatTensor, FloatTensor):
 
-            * output ``(batch_size, T, model_dim)``
+            * layer_out ``(batch_size, T, model_dim)``
             * attns ``(batch_size, head, T, T)``
 
         """
         dec_mask = None
 
-        if inputs.size(1) > 1:
+        if layer_in.size(1) > 1:
             # masking is necessary when sequence length is greater than one
             dec_mask = self._compute_dec_mask(tgt_pad_mask, future)
             dec_mask = dec_mask.unsqueeze(1)
@@ -569,35 +530,22 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
             # mask now are (batch x 1 x tlen x tlen)
             # 1 = heads to be expanded in MHA
 
-        inputs_norm = self.layer_norm_1(inputs)
+        layer_in_norm = self.layer_norm_1(layer_in)
 
         query, attns = self._forward_self_attn(
-            inputs_norm, dec_mask, step
+            layer_in_norm, dec_mask, step
         )
 
-        output = self.drop(query) + inputs
+        layer_out = self.drop(query) + layer_in
 
-        output_feedforward = self.feed_forward(output)
+        layer_out = self.feed_forward(layer_out)
 
-        return output_feedforward, attns
+        return layer_out, attns
 
 
 class TransformerLMDecoder(TransformerDecoderBase):
     """The Transformer decoder from GPT-2
-
-    .. mermaid::
-
-       graph BT
-          A[input]
-          B[multi-head self-attn]
-          C[feed forward]
-          O[output]
-          A --> B
-          B --> C
-          C --> O
-
-
-    Args:
+   Args:
         num_layers (int): number of decoder layers.
         d_model (int): size of the model
         heads (int): number of heads
