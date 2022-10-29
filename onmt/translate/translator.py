@@ -632,7 +632,7 @@ class Translator(Inference):
         alignment src indice Tensor in size ``(batch, n_best,)``.
         """
         # TODO put batch first
-        
+
         # (0) add BOS and padding to tgt prediction
         batch_tgt_idxs = self._align_pad_prediction(
             predictions, bos=self._tgt_bos_idx, pad=self._tgt_pad_idx
