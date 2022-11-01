@@ -67,9 +67,9 @@ class CNNDecoder(DecoderBase):
         self.state["previous_input"] = None
 
     def map_state(self, fn):
-        self.state["src"] = fn(self.state["src"], 1)
+        self.state["src"] = fn(self.state["src"], 0)
         if self.state["previous_input"] is not None:
-            self.state["previous_input"] = fn(self.state["previous_input"], 1)
+            self.state["previous_input"] = fn(self.state["previous_input"], 0)
 
     def detach_state(self):
         self.state["previous_input"] = self.state["previous_input"].detach()

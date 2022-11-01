@@ -260,6 +260,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
         query = self.drop(query) + layer_in
 
         query_norm = self.layer_norm_2(query)
+
         mid, attns = self.context_attn(
             enc_out,
             enc_out,
@@ -444,6 +445,7 @@ class TransformerDecoder(TransformerDecoderBase):
 
         with_align = kwargs.pop("with_align", False)
         attn_aligns = []
+
         for layer in self.transformer_layers:
             dec_out, attn, attn_align = layer(
                 dec_out,

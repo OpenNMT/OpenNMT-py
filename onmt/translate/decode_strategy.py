@@ -116,6 +116,7 @@ class DecodeStrategy(object):
                             for x in enc_out)
         elif enc_out is not None:
             enc_out = tile(enc_out, self.beam_size, dim=0)
+
         if src_map is not None:
             src_map = tile(src_map, self.beam_size, dim=0)
 

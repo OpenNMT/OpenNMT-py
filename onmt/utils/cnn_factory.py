@@ -23,6 +23,7 @@ class GatedConv(nn.Module):
         self.conv = onmt.modules.WeightNormConv2d(
             input_size, 2 * input_size, kernel_size=(width, 1), stride=(1, 1),
             padding=(width // 2 * (1 - nopad), 0))
+        # this param init is overridden by model_builder, useless then.
         init.xavier_uniform_(self.conv.weight, gain=(4 * (1 - dropout))**0.5)
         self.dropout = nn.Dropout(dropout)
 
