@@ -294,7 +294,7 @@ class TransformerDecoderBase(DecoderBase):
         """Alternate constructor."""
         return cls(
             opt.dec_layers,
-            opt.dec_rnn_size,
+            opt.dec_hid_size,
             opt.heads,
             opt.transformer_ff,
             opt.copy_attn,
@@ -312,7 +312,7 @@ class TransformerDecoderBase(DecoderBase):
             pos_ffn_activation_fn=opt.pos_ffn_activation_fn,
         )
 
-    def init_state(self, src, enc_out, enc_hidden):
+    def init_state(self, src, enc_out, enc_final_hs):
         """Initialize decoder state."""
         self.state["src"] = src
 
@@ -603,7 +603,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
             ]
         )
 
-    def init_state(self, src=None, enc_out=None, enc_hidden=None):
+    def init_state(self, src=None, enc_out=None, enc_final_hs=None):
         super(TransformerLMDecoder, self).init_state(None, None, None)
 
     def detach_state(self):

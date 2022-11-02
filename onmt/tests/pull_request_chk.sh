@@ -109,10 +109,10 @@ ${PYTHON} onmt/bin/train.py \
             -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
             -src_vocab_size 1000 \
             -tgt_vocab_size 1000 \
-            -rnn_size 2 -batch_size 10 \
+            -hidden_size 2 -batch_size 10 \
             -num_workers 0 -bucket_size 1024 \
             -word_vec_size 5 -report_every 5        \
-            -rnn_size 10 -train_steps 10 >> ${LOG_FILE} 2>&1
+            -hidden_size 10 -train_steps 10 >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 
@@ -123,10 +123,10 @@ ${PYTHON} onmt/bin/train.py \
             -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
             -src_vocab_size 1000 \
             -tgt_vocab_size 1000 \
-            -rnn_size 2 -batch_size 10 \
+            -hidden_size 2 -batch_size 10 \
             -num_workers 0 -bucket_size 1024 \
             -word_vec_size 5 -report_every 5        \
-            -rnn_size 10 -train_steps 10 \
+            -hidden_size 10 -train_steps 10 \
             -copy_attn >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
@@ -141,7 +141,7 @@ ${PYTHON} onmt/bin/train.py \
             -max_generator_batches 0 \
             -num_workers 0 -bucket_size 1024 \
             -encoder_type transformer -decoder_type transformer \
-            -layers 4 -word_vec_size 16 -rnn_size 16 -heads 2 -transformer_ff 64 \
+            -layers 4 -word_vec_size 16 -hidden_size 16 -heads 2 -transformer_ff 64 \
             -lambda_align 0.05 -alignment_layer 2 -alignment_heads 0 \
             -report_every 5 -train_steps 10 >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
@@ -154,11 +154,11 @@ ${PYTHON} onmt/bin/train.py \
             -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
             -src_vocab_size 1000 \
             -tgt_vocab_size 1000 \
-            -rnn_size 2 -batch_size 10 \
+            -hidden_size 2 -batch_size 10 \
             -num_workers 0 -bucket_size 1024 \
             -word_vec_size 5 -report_every 5        \
             -coverage_attn true -lambda_coverage 0.1 \
-            -rnn_size 10 -train_steps 10 >> ${LOG_FILE} 2>&1
+            -hidden_size 10 -train_steps 10 >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 
@@ -176,7 +176,7 @@ ${PYTHON} onmt/bin/train.py \
             -dec_layers 2 -batch_size 10 \
             -heads 4 -transformer_ff 64 \
             -word_vec_size 16 -report_every 5        \
-            -rnn_size 16 -train_steps 10 >> ${LOG_FILE} 2>&1
+            -hidden_size 16 -train_steps 10 >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 
@@ -194,7 +194,7 @@ ${PYTHON} onmt/bin/train.py \
             -heads 4 -transformer_ff 64 \
             -num_workers 0 -bucket_size 1024 \
             -word_vec_size 16 -report_every 5        \
-            -rnn_size 16 -train_steps 10 \
+            -hidden_size 16 -train_steps 10 \
             -copy_attn >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}*
@@ -205,8 +205,8 @@ ${PYTHON} onmt/bin/train.py \
             -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
             -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
             -src_vocab_size 1000 -tgt_vocab_size 1000 \
-            -rnn_size 2 -batch_size 10 \
-            -word_vec_size 5 -rnn_size 10 \
+            -hidden_size 2 -batch_size 10 \
+            -word_vec_size 5 -hidden_size 10 \
             -num_workers 0 -bucket_size 1024 \
             -report_every 5 -train_steps 10 \
             -save_model $TMP_OUT_DIR/onmt.model \
@@ -217,8 +217,8 @@ ${PYTHON} onmt/bin/train.py \
             -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
             -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
             -src_vocab_size 1000 -tgt_vocab_size 1000 \
-            -rnn_size 2 -batch_size 10 \
-            -word_vec_size 5 -rnn_size 10 \
+            -hidden_size 2 -batch_size 10 \
+            -word_vec_size 5 -hidden_size 10 \
             -num_workers 0 -bucket_size 1024 \
             -report_every 5 -train_steps 20 \
             -update_vocab -reset_optim "states" \
@@ -242,7 +242,7 @@ ${PYTHON} onmt/bin/train.py \
             -word_vec_size 16 -report_every 5 \
             -save_model $TMP_OUT_DIR/lm.onmt.model \
             -save_checkpoint_steps 10 \
-            -rnn_size 16 -train_steps 10 >> ${LOG_FILE} 2>&1
+            -hidden_size 16 -train_steps 10 >> ${LOG_FILE} 2>&1
 sed -i '1s/^/new_tok2\t100000000\n/' $TMP_OUT_DIR/onmt.vocab.src >> ${LOG_FILE} 2>&1
 ${PYTHON} onmt/bin/train.py \
             -config ${DATA_DIR}/lm_data.yaml \
@@ -257,7 +257,7 @@ ${PYTHON} onmt/bin/train.py \
             -num_workers 0 -bucket_size 1024 \
             -heads 4 -transformer_ff 64 \
             -word_vec_size 16 -report_every 5 \
-            -rnn_size 16  -train_steps 20 \
+            -hidden_size 16  -train_steps 20 \
             -update_vocab -reset_optim "states" \
             -train_from $TMP_OUT_DIR/lm.onmt.model_step_10.pt >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
@@ -268,7 +268,7 @@ ${PYTHON} onmt/bin/train.py \
             -config ${DATA_DIR}/ggnn_data.yaml \
             -src_seq_length 1000 -tgt_seq_length 30 \
             -encoder_type ggnn -layers 2 \
-            -decoder_type rnn -rnn_size 256 \
+            -decoder_type rnn -hidden_size 256 \
             -learning_rate 0.1 -learning_rate_decay 0.8 \
             -num_workers 0 -bucket_size 1024 \
             -global_attention general -batch_size 32 -word_vec_size 256 \
@@ -284,8 +284,8 @@ ${PYTHON} onmt/bin/train.py \
             -tgt_vocab $TMP_OUT_DIR/onmt_feat.vocab.tgt \
             -src_feats_vocab "{\"feat0\": \"${TMP_OUT_DIR}/onmt_feat.vocab.feat0\"}" \
             -src_vocab_size 1000 -tgt_vocab_size 1000 \
-            -rnn_size 2 -batch_size 10 \
-            -word_vec_size 5 -rnn_size 10 \
+            -hidden_size 2 -batch_size 10 \
+            -word_vec_size 5 -hidden_size 10 \
             -num_workers 0 -bucket_size 1024 \
             -report_every 5 -train_steps 10 \
             -save_model $TMP_OUT_DIR/onmt.features.model \

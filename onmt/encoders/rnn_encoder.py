@@ -55,31 +55,31 @@ class RNNEncoder(EncoderBase):
             opt.rnn_type,
             opt.brnn,
             opt.enc_layers,
-            opt.enc_rnn_size,
+            opt.enc_hid_size,
             opt.dropout[0] if type(opt.dropout) is list else opt.dropout,
             embeddings,
             opt.bridge)
 
-    def forward(self, src, lengths=None):
+    def forward(self, src, src_len=None):
         """See :func:`EncoderBase.forward()`"""
 
         emb = self.embeddings(src)
 
         packed_emb = emb
-        if lengths is not None and not self.no_pack_padded_seq:
-            # Lengths data is wrapped inside a Tensor.
-            lengths_list = lengths.view(-1).tolist()
-            packed_emb = pack(emb, lengths_list, batch_first=True)
+        if src_len is not None and not self.no_pack_padded_seq:
+            # src lengths data is wrapped inside a Tensor.
+            src_len_list = src_len.view(-1).tolist()
+            packed_emb = pack(emb, src_len_list, batch_first=True)
 
         enc_out, enc_final_hs = self.rnn(packed_emb)
 
-        if lengths is not None and not self.no_pack_padded_seq:
+        if src_len is not None and not self.no_pack_padded_seq:
             enc_out = unpack(enc_out, batch_first=True)[0]
 
         if self.use_bridge:
             enc_final_hs = self._bridge(enc_final_hs)
 
-        return enc_out, enc_final_hs, lengths
+        return enc_out, enc_final_hs, src_len
 
     def _initialize_bridge(self, rnn_type,
                            hidden_size,

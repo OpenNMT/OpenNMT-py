@@ -189,7 +189,7 @@ class GGNNEncoder(EncoderBase):
                 m.weight.data.normal_(0.0, 0.02)
                 m.bias.data.fill_(0)
 
-    def forward(self, src, lengths=None):
+    def forward(self, src, src_len=None):
         """See :func:`EncoderBase.forward()`"""
 
         nodes = self.n_node
@@ -289,7 +289,7 @@ class GGNNEncoder(EncoderBase):
 
         enc_final_hs = self._bridge(join_state)
 
-        return prop_state, enc_final_hs, lengths
+        return prop_state, enc_final_hs, src_len
 
     def _initialize_bridge(self, rnn_type,
                            hidden_size,

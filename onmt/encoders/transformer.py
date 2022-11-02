@@ -105,7 +105,7 @@ class TransformerEncoder(EncoderBase):
         """Alternate constructor."""
         return cls(
             opt.enc_layers,
-            opt.enc_rnn_size,
+            opt.enc_hid_size,
             opt.heads,
             opt.transformer_ff,
             opt.dropout[0] if type(opt.dropout) is list else opt.dropout,

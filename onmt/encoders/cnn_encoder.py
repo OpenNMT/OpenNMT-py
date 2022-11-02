@@ -29,12 +29,12 @@ class CNNEncoder(EncoderBase):
         """Alternate constructor."""
         return cls(
             opt.enc_layers,
-            opt.enc_rnn_size,
+            opt.enc_hid_size,
             opt.cnn_kernel_width,
             opt.dropout[0] if type(opt.dropout) is list else opt.dropout,
             embeddings)
 
-    def forward(self, input, lengths=None, hidden=None):
+    def forward(self, input, src_len=None, hidden=None):
         """See :class:`onmt.modules.EncoderBase.forward()`"""
         # batch x len x dim
         emb = self.embeddings(input)
@@ -45,7 +45,7 @@ class CNNEncoder(EncoderBase):
         emb_remap = shape_transform(emb_remap)
         out = self.cnn(emb_remap)
 
-        return out.squeeze(3), emb_remap.squeeze(3), lengths
+        return out.squeeze(3), emb_remap.squeeze(3), src_len
 
     def update_dropout(self, dropout, attention_dropout=None):
         self.cnn.dropout.p = dropout

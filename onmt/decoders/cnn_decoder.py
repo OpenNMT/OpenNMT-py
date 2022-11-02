@@ -53,7 +53,7 @@ class CNNDecoder(DecoderBase):
         """Alternate constructor."""
         return cls(
             opt.dec_layers,
-            opt.dec_rnn_size,
+            opt.dec_hid_size,
             opt.global_attention,
             opt.copy_attn,
             opt.cnn_kernel_width,
