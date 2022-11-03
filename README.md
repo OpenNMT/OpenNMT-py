@@ -55,22 +55,22 @@ If you want to optimize the training performance:
 Changes between v2 and v3:
 
 Options removed:
-queue_size, pool_factor are no longer needed. Only adjust the bucket_size to the number of examples to be loaded by each num_workers of the pytorch Dataloader.
+`queue_size`, `pool_factor` are no longer needed. Only adjust the `bucket_size` to the number of examples to be loaded by each `num_workers` of the pytorch Dataloader.
 
 New options: 
-num_workers: number of workers for each process. If you run on one GPU the recommended value is 4. If you run on more than 1 GPU, the recommended value is 2
-add_qkvbias: default is false. However old model trained with v2 will be set at true. The original transformer paper used no bias for the Q/K/V nn.Linear of the multihed attention module.
+`num_workers`: number of workers for each process. If you run on one GPU the recommended value is 4. If you run on more than 1 GPU, the recommended value is 2
+`add_qkvbias`: default is false. However old model trained with v2 will be set at true. The original transformer paper used no bias for the Q/K/V nn.Linear of the multihead attention module.
 
 Options renamed:
-rnn_size => hidden_size
-enc_rnn_size => enc_hid_size
-dec_rnn_size => dec_hid_size
+`rnn_size` => `hidden_size`
+`enc_rnn_size` => `enc_hid_size`
+`dec_rnn_size` => `dec_hid_size`
 
-Note: tools/convertv2_v3.py will modify these options stored in the checkpoint to make things compatible with v3.0
+Note: `tools/convertv2_v3.py` will modify these options stored in the checkpoint to make things compatible with v3.0
 
 Inference:
 The translator will use the same dynamic_iterator as the trainer.
-The new default for inference is "length_penalty=avg" which will provide better BLEU scores in most cases (and comparable to other toolkits defaults)
+The new default for inference is `length_penalty=avg` which will provide better BLEU scores in most cases (and comparable to other toolkits defaults)
 
 
 
