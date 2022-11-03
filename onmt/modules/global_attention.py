@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from onmt.modules.sparse_activations import sparsemax
-from onmt.utils.misc import aeq, sequence_mask
+from onmt.utils.misc import sequence_mask
 
 # This class is mainly used by decoder.py for RNNs but also
 # by the CNN / transformer decoder when copy attention is used
@@ -104,13 +104,8 @@ class GlobalAttention(nn.Module):
           FloatTensor: raw attention scores (unnormalized) for each src index
             ``(batch, tgt_len, src_len)``
         """
-
-        # Check input sizes
         src_batch, src_len, src_dim = h_s.size()
         tgt_batch, tgt_len, tgt_dim = h_t.size()
-        aeq(src_batch, tgt_batch)
-        aeq(src_dim, tgt_dim)
-        aeq(self.dim, src_dim)
 
         if self.attn_type in ["general", "dot"]:
             if self.attn_type == "general":
@@ -135,13 +130,13 @@ class GlobalAttention(nn.Module):
 
             return self.v(wquh.view(-1, dim)).view(tgt_batch, tgt_len, src_len)
 
-    def forward(self, source, memory_bank, memory_lengths=None, coverage=None):
+    def forward(self, src, enc_out, src_len=None, coverage=None):
         """
 
         Args:
-          source (FloatTensor): query vectors ``(batch, tgt_len, dim)``
-          memory_bank (FloatTensor): source vectors ``(batch, src_len, dim)``
-          memory_lengths (LongTensor): the source context lengths ``(batch,)``
+          src (FloatTensor): query vectors ``(batch, tgt_len, dim)``
+          enc_out (FloatTensor): encoder out vectors ``(batch, src_len, dim)``
+          src_len (LongTensor): source context lengths ``(batch,)``
           coverage (FloatTensor): None (not supported yet)
 
         Returns:
@@ -153,48 +148,43 @@ class GlobalAttention(nn.Module):
         """
 
         # one step input
-        if source.dim() == 2:
+        if src.dim() == 2:
             one_step = True
-            source = source.unsqueeze(1)
+            src = src.unsqueeze(1)
         else:
             one_step = False
 
-        batch, source_l, dim = memory_bank.size()
-        batch_, target_l, dim_ = source.size()
-        aeq(batch, batch_)
-        aeq(dim, dim_)
-        aeq(self.dim, dim)
+        batch, src_l, dim = enc_out.size()
+        batch_, target_l, dim_ = src.size()
         if coverage is not None:
-            batch_, source_l_ = coverage.size()
-            aeq(batch, batch_)
-            aeq(source_l, source_l_)
+            batch_, src_l_ = coverage.size()
 
         if coverage is not None:
             cover = coverage.view(-1).unsqueeze(1)
-            memory_bank += self.linear_cover(cover).view_as(memory_bank)
-            memory_bank = torch.tanh(memory_bank)
+            enc_out += self.linear_cover(cover).view_as(enc_out)
+            enc_out = torch.tanh(enc_out)
 
         # compute attention scores, as in Luong et al.
-        align = self.score(source, memory_bank)
+        align = self.score(src, enc_out)
 
-        if memory_lengths is not None:
-            mask = sequence_mask(memory_lengths, max_len=align.size(-1))
+        if src_len is not None:
+            mask = sequence_mask(src_len, max_len=align.size(-1))
             mask = mask.unsqueeze(1)  # Make it broadcastable.
             align.masked_fill_(~mask, -float('inf'))
 
         # Softmax or sparsemax to normalize attention weights
         if self.attn_func == "softmax":
-            align_vectors = F.softmax(align.view(batch*target_l, source_l), -1)
+            align_vectors = F.softmax(align.view(batch*target_l, src_l), -1)
         else:
-            align_vectors = sparsemax(align.view(batch*target_l, source_l), -1)
-        align_vectors = align_vectors.view(batch, target_l, source_l)
+            align_vectors = sparsemax(align.view(batch*target_l, src_l), -1)
+        align_vectors = align_vectors.view(batch, target_l, src_l)
 
         # each context vector c_t is the weighted average
         # over all the source hidden states
-        c = torch.bmm(align_vectors, memory_bank)
+        c = torch.bmm(align_vectors, enc_out)
 
         # concatenate
-        concat_c = torch.cat([c, source], 2).view(batch*target_l, dim*2)
+        concat_c = torch.cat([c, src], 2).view(batch*target_l, dim*2)
         attn_h = self.linear_out(concat_c).view(batch, target_l, dim)
         if self.attn_type in ["general", "dot"]:
             attn_h = torch.tanh(attn_h)
@@ -202,26 +192,5 @@ class GlobalAttention(nn.Module):
         if one_step:
             attn_h = attn_h.squeeze(1)
             align_vectors = align_vectors.squeeze(1)
-
-            # Check output sizes
-            batch_, dim_ = attn_h.size()
-            aeq(batch, batch_)
-            aeq(dim, dim_)
-            batch_, source_l_ = align_vectors.size()
-            aeq(batch, batch_)
-            aeq(source_l, source_l_)
-
-        else:
-            attn_h = attn_h.transpose(0, 1).contiguous()
-            align_vectors = align_vectors.transpose(0, 1).contiguous()
-            # Check output sizes
-            target_l_, batch_, dim_ = attn_h.size()
-            aeq(target_l, target_l_)
-            aeq(batch, batch_)
-            aeq(dim, dim_)
-            target_l_, batch_, source_l_ = align_vectors.size()
-            aeq(target_l, target_l_)
-            aeq(batch, batch_)
-            aeq(source_l, source_l_)
 
         return attn_h, align_vectors

@@ -10,9 +10,7 @@ import torch
 
 from onmt.constants import DefaultTokens
 import onmt.model_builder
-import onmt.inputters as inputters
 import onmt.decoders.ensemble
-from onmt.inputters.text_dataset import InferenceDataIterator
 from onmt.translate.beam_search import BeamSearch, BeamSearchLM
 from onmt.translate.greedy_search import GreedySearch, GreedySearchLM
 from onmt.utils.misc import tile, set_random_seed, report_matrix
@@ -30,14 +28,14 @@ def build_translator(opt, report_score=True, logger=None, out_file=None):
         if len(opt.models) > 1
         else onmt.model_builder.load_test_model
     )
-    fields, model, model_opt = load_test_model(opt)
+    vocabs, model, model_opt = load_test_model(opt)
 
     scorer = onmt.translate.GNMTGlobalScorer.from_opt(opt)
 
     if model_opt.model_task == ModelTask.LANGUAGE_MODEL:
         translator = GeneratorLM.from_opt(
             model,
-            fields,
+            vocabs,
             opt,
             model_opt,
             global_scorer=scorer,
@@ -49,7 +47,7 @@ def build_translator(opt, report_score=True, logger=None, out_file=None):
     else:
         translator = Translator.from_opt(
             model,
-            fields,
+            vocabs,
             opt,
             model_opt,
             global_scorer=scorer,
@@ -61,34 +59,13 @@ def build_translator(opt, report_score=True, logger=None, out_file=None):
     return translator
 
 
-def max_tok_len(new, count, sofar):
-    """
-    In token batching scheme, the number of sequences is limited
-    such that the total number of src/tgt tokens (including padding)
-    in a batch <= batch_size
-    """
-    # Maintains the longest src and tgt length in the current batch
-    global max_src_in_batch  # this is a hack
-    # Reset current longest length at a new batch (count=1)
-    if count == 1:
-        max_src_in_batch = 0
-        # max_tgt_in_batch = 0
-    # Src: [<bos> w1 ... wN <eos>]
-    max_src_in_batch = max(max_src_in_batch, len(new.src[0]) + 2)
-    # Tgt: [w1 ... wM <eos>]
-    src_elements = count * max_src_in_batch
-    return src_elements
-
-
 class Inference(object):
     """Translate a batch of sentences with a saved model.
 
     Args:
         model (onmt.modules.NMTModel): NMT model to use for translation
-        fields (dict[str, torchtext.data.Field]): A dict
-            mapping each side to its list of name-Field pairs.
-        src_reader (onmt.inputters.DataReaderBase): Source reader.
-        tgt_reader (onmt.inputters.TextDataReader): Target reader.
+        vocabs (dict[str, Vocab]): A dict
+            mapping each side's Vocab.
         gpu (int): GPU device. Set to negative for no GPU.
         n_best (int): How many beams to wait for.
         min_length (int): See
@@ -123,9 +100,7 @@ class Inference(object):
     def __init__(
         self,
         model,
-        fields,
-        src_reader,
-        tgt_reader,
+        vocabs,
         gpu=-1,
         n_best=1,
         min_length=0,
@@ -156,13 +131,12 @@ class Inference(object):
         with_score=False
     ):
         self.model = model
-        self.fields = fields
-        tgt_field = dict(self.fields)["tgt"].base_field
-        self._tgt_vocab = tgt_field.vocab
-        self._tgt_eos_idx = self._tgt_vocab.stoi[tgt_field.eos_token]
-        self._tgt_pad_idx = self._tgt_vocab.stoi[tgt_field.pad_token]
-        self._tgt_bos_idx = self._tgt_vocab.stoi[tgt_field.init_token]
-        self._tgt_unk_idx = self._tgt_vocab.stoi[tgt_field.unk_token]
+        self.vocabs = vocabs
+        self._tgt_vocab = self.vocabs['tgt']
+        self._tgt_eos_idx = self.vocabs['tgt'].lookup_token(DefaultTokens.EOS)
+        self._tgt_pad_idx = self.vocabs['tgt'].lookup_token(DefaultTokens.PAD)
+        self._tgt_bos_idx = self.vocabs['tgt'].lookup_token(DefaultTokens.BOS)
+        self._tgt_unk_idx = self.vocabs['tgt'].lookup_token(DefaultTokens.UNK)
         self._tgt_vocab_len = len(self._tgt_vocab)
 
         self._gpu = gpu
@@ -189,10 +163,8 @@ class Inference(object):
         self.block_ngram_repeat = block_ngram_repeat
         self.ignore_when_blocking = ignore_when_blocking
         self._exclusion_idxs = {
-            self._tgt_vocab.stoi[t] for t in self.ignore_when_blocking
+            self._tgt_vocab[t] for t in self.ignore_when_blocking
         }
-        self.src_reader = src_reader
-        self.tgt_reader = tgt_reader
         self.replace_unk = replace_unk
         if self.replace_unk and not self.model.decoder.attentional:
             raise ValueError("replace_unk requires an attentional decoder.")
@@ -238,7 +210,7 @@ class Inference(object):
     def from_opt(
         cls,
         model,
-        fields,
+        vocabs,
         opt,
         model_opt,
         global_scorer=None,
@@ -251,7 +223,7 @@ class Inference(object):
 
         Args:
             model (onmt.modules.NMTModel): See :func:`__init__()`.
-            fields (dict[str, torchtext.data.Field]): See
+            vocabs (dict[str, Vocab]): See
                 :func:`__init__()`.
             opt (argparse.Namespace): Command line options
             model_opt (argparse.Namespace): Command line options saved with
@@ -267,13 +239,9 @@ class Inference(object):
         # TODO: maybe add dynamic part
         cls.validate_task(model_opt.model_task)
 
-        src_reader = inputters.str2reader[opt.data_type].from_opt(opt)
-        tgt_reader = inputters.str2reader["text"].from_opt(opt)
         return cls(
             model,
-            fields,
-            src_reader,
-            tgt_reader,
+            vocabs,
             gpu=opt.gpu,
             n_best=opt.n_best,
             min_length=opt.min_length,
@@ -313,84 +281,37 @@ class Inference(object):
     def _gold_score(
         self,
         batch,
-        memory_bank,
-        src_lengths,
-        src_vocabs,
+        enc_out,
+        src_len,
         use_src_map,
-        enc_states,
+        enc_final_hs,
         batch_size,
         src,
     ):
-        if "tgt" in batch.__dict__:
+        if 'tgt' in batch.keys():
             gs = self._score_target(
                 batch,
-                memory_bank,
-                src_lengths,
-                src_vocabs,
-                batch.src_map if use_src_map else None,
+                enc_out,
+                src_len,
+                batch['src_map'] if use_src_map else None,
             )
-            self.model.decoder.init_state(src, memory_bank, enc_states)
+            self.model.decoder.init_state(src, enc_out, enc_final_hs)
         else:
             gs = [0] * batch_size
         return gs
 
-    def translate_dynamic(
+    def _translate(
         self,
-        src,
-        transform,
-        src_feats={},
-        tgt=None,
-        batch_size=None,
-        batch_type="sents",
+        infer_iter,
+        transform=None,
         attn_debug=False,
         align_debug=False,
         phrase_table=""
     ):
-
-        if batch_size is None:
-            raise ValueError("batch_size must be set")
-
-        if self.tgt_prefix and tgt is None:
-            raise ValueError("Prefix should be feed to tgt if -tgt_prefix.")
-
-        data_iter = InferenceDataIterator(src, tgt, src_feats, transform)
-
-        data = inputters.DynamicDataset(
-            self.fields,
-            data=data_iter,
-            sort_key=inputters.str2sortkey[self.data_type],
-            filter_pred=self._filter_pred,
-        )
-
-        return self._translate(
-            data,
-            tgt=tgt,
-            batch_size=batch_size,
-            batch_type=batch_type,
-            attn_debug=attn_debug,
-            align_debug=align_debug,
-            phrase_table=phrase_table,
-            dynamic=True,
-            transform=transform)
-
-    def translate(
-        self,
-        src,
-        src_feats={},
-        tgt=None,
-        batch_size=None,
-        batch_type="sents",
-        attn_debug=False,
-        align_debug=False,
-        phrase_table="",
-    ):
         """Translate content of ``src`` and get gold scores from ``tgt``.
 
         Args:
-            src: See :func:`self.src_reader.read()`.
-            tgt: See :func:`self.tgt_reader.read()`.
-            src_feats: See :func`self.src_reader.read()`.
-            batch_size (int): size of examples per mini-batch
+            infer_iter: tensored batch iterator from DynamicDatasetIter
             attn_debug (bool): enables the attention logging
             align_debug (bool): enables the word alignment logging
 
@@ -401,74 +322,11 @@ class Inference(object):
             * all_predictions is a list of `batch_size` lists
                 of `n_best` predictions
         """
-
-        if batch_size is None:
-            raise ValueError("batch_size must be set")
-
-        if self.tgt_prefix and tgt is None:
-            raise ValueError("Prefix should be feed to tgt if -tgt_prefix.")
-
-        src_data = {
-            "reader": self.src_reader,
-            "data": src,
-            "features": src_feats
-        }
-        tgt_data = {
-            "reader": self.tgt_reader,
-            "data": tgt,
-            "features": {}
-        }
-        _readers, _data = inputters.Dataset.config(
-            [("src", src_data), ("tgt", tgt_data)]
-        )
-
-        data = inputters.Dataset(
-            self.fields,
-            readers=_readers,
-            data=_data,
-            sort_key=inputters.str2sortkey[self.data_type],
-            filter_pred=self._filter_pred,
-        )
-
-        return self._translate(
-            data,
-            tgt=tgt,
-            batch_size=batch_size,
-            batch_type=batch_type,
-            attn_debug=attn_debug,
-            align_debug=align_debug,
-            phrase_table=phrase_table)
-
-    def _translate(
-        self,
-        data,
-        tgt=None,
-        batch_size=None,
-        batch_type="sents",
-        attn_debug=False,
-        align_debug=False,
-        phrase_table="",
-        dynamic=False,
-        transform=None
-    ):
-
-        data_iter = inputters.OrderedIterator(
-            dataset=data,
-            device=self._dev,
-            batch_size=batch_size,
-            batch_size_fn=max_tok_len if batch_type == "tokens" else None,
-            train=False,
-            sort=False,
-            sort_within_batch=True,
-            shuffle=False,
-        )
-
         xlation_builder = onmt.translate.TranslationBuilder(
-            data,
-            self.fields,
+            infer_iter,
+            self.vocabs,
             self.n_best,
             self.replace_unk,
-            tgt,
             self.phrase_table,
         )
 
@@ -482,9 +340,10 @@ class Inference(object):
 
         start_time = time.time()
 
-        for batch in data_iter:
+        for batch in infer_iter:
+
             batch_data = self.translate_batch(
-                batch, data.src_vocabs, attn_debug
+                batch, attn_debug
             )
             translations = xlation_builder.from_batch(batch_data)
 
@@ -492,7 +351,7 @@ class Inference(object):
                 all_scores += [trans.pred_scores[: self.n_best]]
                 pred_score_total += trans.pred_scores[0]
                 pred_words_total += len(trans.pred_sents[0])
-                if tgt is not None:
+                if 'tgt' in batch.keys():
                     gold_score_total += trans.gold_score
                     gold_words_total += len(trans.gold_sent) + 1
 
@@ -519,7 +378,7 @@ class Inference(object):
                         )
                     ]
 
-                if dynamic:
+                if transform is not None:
                     n_best_preds = [transform.apply_reverse(x)
                                     for x in n_best_preds]
                 all_predictions += [n_best_preds]
@@ -577,7 +436,7 @@ class Inference(object):
                 "PRED", pred_score_total, len(all_scores)
             )
             self._log(msg)
-            if tgt is not None:
+            if 'tgt' in batch.keys():
                 msg = self._report_score(
                     "GOLD", gold_score_total, len(all_scores)
                 )
@@ -659,10 +518,9 @@ class Inference(object):
     def _decode_and_generate(
         self,
         decoder_in,
-        memory_bank,
+        enc_out,
         batch,
-        src_vocabs,
-        memory_lengths,
+        src_len,
         src_map=None,
         step=None,
         batch_offset=None,
@@ -673,12 +531,13 @@ class Inference(object):
                 decoder_in.gt(self._tgt_vocab_len - 1), self._tgt_unk_idx
             )
 
-        # Decoder forward, takes [tgt_len, batch, nfeats] as input
-        # and [src_len, batch, hidden] as memory_bank
+        # Decoder forward, takes [batch, tgt_len, nfeats] as input
+        # and [batch, src_len, hidden] as enc_out
         # in case of inference tgt_len = 1, batch = beam times batch_size
         # in case of Gold Scoring tgt_len = actual length, batch = 1 batch
+
         dec_out, dec_attn = self.model.decoder(
-            decoder_in, memory_bank, memory_lengths=memory_lengths, step=step
+            decoder_in, enc_out, src_len=src_len, step=step
         )
 
         # Generator forward.
@@ -687,9 +546,10 @@ class Inference(object):
                 attn = dec_attn["std"]
             else:
                 attn = None
-            log_probs = self.model.generator(dec_out.squeeze(0))
+
+            log_probs = self.model.generator(dec_out.squeeze(1))
             # returns [(batch_size x beam_size) , vocab ] when 1 step
-            # or [ tgt_len, batch_size, vocab ] when full sentence
+            # or [batch_size, tgt_len, vocab ] when full sentence
         else:
             attn = dec_attn["copy"]
             scores = self.model.generator(
@@ -699,30 +559,31 @@ class Inference(object):
             )
             # here we have scores [tgt_lenxbatch, vocab] or [beamxbatch, vocab]
             if batch_offset is None:
-                scores = scores.view(-1, batch.batch_size, scores.size(-1))
+                scores = scores.view(-1, len(batch['srclen']),
+                                     scores.size(-1))
                 scores = scores.transpose(0, 1).contiguous()
             else:
                 scores = scores.view(-1, self.beam_size, scores.size(-1))
+            # at this point scores is batch first (dim=0)
             scores = collapse_copy_scores(
                 scores,
                 batch,
                 self._tgt_vocab,
-                src_vocabs,
                 batch_dim=0,
                 batch_offset=batch_offset,
             )
-            scores = scores.view(decoder_in.size(0), -1, scores.size(-1))
+            scores = scores.view(decoder_in.size(1), -1, scores.size(-1))
             log_probs = scores.squeeze(0).log()
             # returns [(batch_size x beam_size) , vocab ] when 1 step
-            # or [ tgt_len, batch_size, vocab ] when full sentence
+            # or [batch_size, tgt_len, vocab ] when full sentence
         return log_probs, attn
 
-    def translate_batch(self, batch, src_vocabs, attn_debug):
+    def translate_batch(self, batch, attn_debug):
         """Translate a batch of sentences."""
         raise NotImplementedError
 
     def _score_target(
-        self, batch, memory_bank, src_lengths, src_vocabs, src_map
+        self, batch, enc_out, src_len, src_map
     ):
         raise NotImplementedError
 
@@ -732,8 +593,7 @@ class Inference(object):
         batch,
         batch_size,
         src,
-        src_lengths,
-        src_vocabs,
+        src_len,
         use_src_map,
         decode_strategy,
     ):
@@ -771,6 +631,7 @@ class Translator(Inference):
         For a batch of input and its prediction, return a list of batch predict
         alignment src indice Tensor in size ``(batch, n_best,)``.
         """
+
         # (0) add BOS and padding to tgt prediction
         batch_tgt_idxs = self._align_pad_prediction(
             predictions, bos=self._tgt_bos_idx, pad=self._tgt_pad_idx
@@ -783,25 +644,27 @@ class Translator(Inference):
 
         n_best = batch_tgt_idxs.size(1)
         # (1) Encoder forward.
-        src, enc_states, memory_bank, src_lengths = self._run_encoder(batch)
+        src, enc_states, enc_out, src_len = self._run_encoder(batch)
 
         # (2) Repeat src objects `n_best` times.
-        # We use batch_size x n_best, get ``(src_len, batch * n_best, nfeat)``
-        src = tile(src, n_best, dim=1)
-        enc_states = tile(enc_states, n_best, dim=1)
-        if isinstance(memory_bank, tuple):
-            memory_bank = tuple(tile(x, n_best, dim=1) for x in memory_bank)
+        # We use batch_size x n_best, get ``(batch * n_best, src_len, nfeat)``
+        src = tile(src, n_best, dim=0)
+        enc_states = tile(enc_states, n_best, dim=0)
+        if isinstance(enc_out, tuple):
+            enc_out = tuple(tile(x, n_best, dim=0) for x in enc_out)
         else:
-            memory_bank = tile(memory_bank, n_best, dim=1)
-        src_lengths = tile(src_lengths, n_best)  # ``(batch * n_best,)``
+            enc_out = tile(enc_out, n_best, dim=0)
+        src_len = tile(src_len, n_best)  # ``(batch * n_best,)``
 
         # (3) Init decoder with n_best src,
-        self.model.decoder.init_state(src, memory_bank, enc_states)
+        self.model.decoder.init_state(src, enc_out, enc_states)
         # reshape tgt to ``(len, batch * n_best, nfeat)``
+        # it should be done in a better way
         tgt = batch_tgt_idxs.view(-1, batch_tgt_idxs.size(-1)).T.unsqueeze(-1)
-        dec_in = tgt[:-1]  # exclude last target from inputs
+        dec_in = tgt[:-1].transpose(0, 1)  # exclude last target from inputs
+        # here dec_in is batch first
         _, attns = self.model.decoder(
-            dec_in, memory_bank, memory_lengths=src_lengths, with_align=True
+            dec_in, enc_out, src_len=src_len, with_align=True
         )
 
         alignment_attn = attns["align"]  # ``(B, tgt_len-1, src_len)``
@@ -810,11 +673,11 @@ class Translator(Inference):
         prediction_mask = align_tgt_mask[:, 1:]  # exclude bos to match pred
         # get aligned src id for each prediction's valid tgt tokens
         alignement = extract_alignment(
-            alignment_attn, prediction_mask, src_lengths, n_best
+            alignment_attn, prediction_mask, src_len, n_best
         )
         return alignement
 
-    def translate_batch(self, batch, src_vocabs, attn_debug):
+    def translate_batch(self, batch, attn_debug):
         """Translate a batch of sentences."""
         with torch.no_grad():
             if self.sample_from_topk != 0 or self.sample_from_topp != 0:
@@ -823,7 +686,7 @@ class Translator(Inference):
                     bos=self._tgt_bos_idx,
                     eos=self._tgt_eos_idx,
                     unk=self._tgt_unk_idx,
-                    batch_size=batch.batch_size,
+                    batch_size=len(batch['srclen']),
                     global_scorer=self.global_scorer,
                     min_length=self.min_length,
                     max_length=self.max_length,
@@ -841,7 +704,7 @@ class Translator(Inference):
                 assert not self.dump_beam
                 decode_strategy = BeamSearch(
                     self.beam_size,
-                    batch_size=batch.batch_size,
+                    batch_size=len(batch['srclen']),
                     pad=self._tgt_pad_idx,
                     bos=self._tgt_bos_idx,
                     eos=self._tgt_eos_idx,
@@ -858,37 +721,37 @@ class Translator(Inference):
                     ban_unk_token=self.ban_unk_token,
                 )
             return self._translate_batch_with_strategy(
-                batch, src_vocabs, decode_strategy
+                batch, decode_strategy
             )
 
     def _run_encoder(self, batch):
-        src, src_lengths = (
-            batch.src if isinstance(batch.src, tuple) else (batch.src, None)
+        src = batch['src']
+        src_len = batch['srclen']
+        batch_size = len(batch['srclen'])
+
+        enc_out, enc_final_hs, src_len = self.model.encoder(
+            src, src_len
         )
 
-        enc_states, memory_bank, src_lengths = self.model.encoder(
-            src, src_lengths
-        )
-        if src_lengths is None:
+        if src_len is None:
             assert not isinstance(
-                memory_bank, tuple
+                enc_out, tuple
             ), "Ensemble decoding only supported for text data"
-            src_lengths = (
-                torch.Tensor(batch.batch_size)
-                .type_as(memory_bank)
+            src_len = (
+                torch.Tensor(batch_size)
+                .type_as(enc_out)
                 .long()
-                .fill_(memory_bank.size(0))
+                .fill_(enc_out.size(1))
             )
-        return src, enc_states, memory_bank, src_lengths
+        return src, enc_final_hs, enc_out, src_len
 
     def _translate_batch_with_strategy(
-        self, batch, src_vocabs, decode_strategy
+        self, batch, decode_strategy
     ):
         """Translate a batch of sentences step by step using cache.
 
         Args:
             batch: a batch of sentences, yield by data iterator.
-            src_vocabs (list): list of torchtext.data.Vocab if can_copy.
             decode_strategy (DecodeStrategy): A decode strategy to use for
                 generate translation step by step.
 
@@ -898,47 +761,50 @@ class Translator(Inference):
         # (0) Prep the components of the search.
         use_src_map = self.copy_attn
         parallel_paths = decode_strategy.parallel_paths  # beam_size
-        batch_size = batch.batch_size
+
+        batch_size = len(batch['srclen'])
 
         # (1) Run the encoder on the src.
-        src, enc_states, memory_bank, src_lengths = self._run_encoder(batch)
-        self.model.decoder.init_state(src, memory_bank, enc_states)
+        src, enc_final_hs, enc_out, src_len = self._run_encoder(batch)
+
+        self.model.decoder.init_state(src, enc_out, enc_final_hs)
 
         gold_score = self._gold_score(
             batch,
-            memory_bank,
-            src_lengths,
-            src_vocabs,
+            enc_out,
+            src_len,
             use_src_map,
-            enc_states,
+            enc_final_hs,
             batch_size,
             src,
         )
 
         # (2) prep decode_strategy. Possibly repeat src objects.
-        src_map = batch.src_map if use_src_map else None
-        target_prefix = batch.tgt if self.tgt_prefix else None
+        src_map = batch['src_map'] if use_src_map else None
+        target_prefix = batch['tgt'] if self.tgt_prefix else None
         (
             fn_map_state,
-            memory_bank,
-            memory_lengths,
+            enc_out,
+            src_len_tiled,
             src_map,
         ) = decode_strategy.initialize(
-            memory_bank, src_lengths, src_map, target_prefix=target_prefix
+            enc_out, src_len, src_map, target_prefix=target_prefix
         )
+
         if fn_map_state is not None:
             self.model.decoder.map_state(fn_map_state)
 
         # (3) Begin decoding step by step:
         for step in range(decode_strategy.max_length):
-            decoder_input = decode_strategy.current_predictions.view(1, -1, 1)
+            # decoder_input = decode_strategy.current_predictions.view(1, -1,
+            #                                                          1)
+            decoder_input = decode_strategy.current_predictions.view(-1, 1, 1)
 
             log_probs, attn = self._decode_and_generate(
                 decoder_input,
-                memory_bank,
+                enc_out,
                 batch,
-                src_vocabs,
-                memory_lengths=memory_lengths,
+                src_len=src_len_tiled,
                 src_map=src_map,
                 step=step,
                 batch_offset=decode_strategy.batch_offset,
@@ -955,17 +821,17 @@ class Translator(Inference):
 
             if any_finished:
                 # Reorder states.
-                if isinstance(memory_bank, tuple):
-                    memory_bank = tuple(
-                        x.index_select(1, select_indices) for x in memory_bank
+                if isinstance(enc_out, tuple):
+                    enc_out = tuple(
+                        x.index_select(0, select_indices) for x in enc_out
                     )
                 else:
-                    memory_bank = memory_bank.index_select(1, select_indices)
+                    enc_out = enc_out.index_select(0, select_indices)
 
-                memory_lengths = memory_lengths.index_select(0, select_indices)
+                src_len_tiled = src_len_tiled.index_select(0, select_indices)
 
                 if src_map is not None:
-                    src_map = src_map.index_select(1, select_indices)
+                    src_map = src_map.index_select(0, select_indices)
 
             if parallel_paths > 1 or any_finished:
                 self.model.decoder.map_state(
@@ -977,32 +843,29 @@ class Translator(Inference):
             batch,
             batch_size,
             src,
-            src_lengths,
-            src_vocabs,
+            src_len,
             use_src_map,
             decode_strategy,
         )
 
     def _score_target(
-        self, batch, memory_bank, src_lengths, src_vocabs, src_map
+        self, batch, enc_out, src_len, src_map
     ):
-        tgt = batch.tgt
-        tgt_in = tgt[:-1]
+        tgt = batch['tgt']
+        tgt_in = tgt[:, :-1, :]
 
         log_probs, attn = self._decode_and_generate(
             tgt_in,
-            memory_bank,
+            enc_out,
             batch,
-            src_vocabs,
-            memory_lengths=src_lengths,
+            src_len=src_len,
             src_map=src_map,
         )
 
         log_probs[:, :, self._tgt_pad_idx] = 0
-        gold = tgt[1:]
+        gold = tgt[:, 1:, :]
         gold_scores = log_probs.gather(2, gold)
-        gold_scores = gold_scores.sum(dim=0).view(-1)
-
+        gold_scores = gold_scores.sum(dim=1).view(-1)
         return gold_scores
 
 
@@ -1022,17 +885,9 @@ class GeneratorLM(Inference):
         """
         raise NotImplementedError
 
-    def translate(
-        self,
-        src,
-        src_feats={},
-        tgt=None,
-        batch_size=None,
-        batch_type="sents",
-        attn_debug=False,
-        align_debug=False,
-        phrase_table="",
-    ):
+    def translate_batch(self, batch, attn_debug):
+        """Translate a batch of sentences."""
+        batch_size = len(batch['srclen'])
         if batch_size != 1:
             warning_msg = ("GeneratorLM does not support batch_size != 1"
                            " nicely. You can remove this limitation here."
@@ -1043,20 +898,6 @@ class GeneratorLM(Inference):
                 self.logger.info(warning_msg)
             else:
                 os.write(1, warning_msg.encode("utf-8"))
-
-        return super(GeneratorLM, self).translate(
-            src,
-            src_feats,
-            tgt,
-            batch_size=1,
-            batch_type=batch_type,
-            attn_debug=attn_debug,
-            align_debug=align_debug,
-            phrase_table=phrase_table,
-        )
-
-    def translate_batch(self, batch, src_vocabs, attn_debug):
-        """Translate a batch of sentences."""
         with torch.no_grad():
             if self.sample_from_topk != 0 or self.sample_from_topp != 0:
                 decode_strategy = GreedySearchLM(
@@ -1064,7 +905,7 @@ class GeneratorLM(Inference):
                     bos=self._tgt_bos_idx,
                     eos=self._tgt_eos_idx,
                     unk=self._tgt_unk_idx,
-                    batch_size=batch.batch_size,
+                    batch_size=len(batch['srclen']),
                     global_scorer=self.global_scorer,
                     min_length=self.min_length,
                     max_length=self.max_length,
@@ -1082,7 +923,7 @@ class GeneratorLM(Inference):
                 assert not self.dump_beam
                 decode_strategy = BeamSearchLM(
                     self.beam_size,
-                    batch_size=batch.batch_size,
+                    batch_size=len(batch['srclen']),
                     pad=self._tgt_pad_idx,
                     bos=self._tgt_bos_idx,
                     eos=self._tgt_eos_idx,
@@ -1099,34 +940,33 @@ class GeneratorLM(Inference):
                     ban_unk_token=self.ban_unk_token,
                 )
             return self._translate_batch_with_strategy(
-                batch, src_vocabs, decode_strategy
+                batch, decode_strategy
             )
 
     @classmethod
-    def split_src_to_prevent_padding(cls, src, src_lengths):
-        min_len_batch = torch.min(src_lengths).item()
+    def split_src_to_prevent_padding(cls, src, src_len):
+        min_len_batch = torch.min(src_len).item()
         target_prefix = None
-        if min_len_batch > 0 and min_len_batch < src.size(0):
-            target_prefix = src[min_len_batch:]
-            src = src[:min_len_batch]
-            src_lengths[:] = min_len_batch
-        return src, src_lengths, target_prefix
+        if min_len_batch > 0 and min_len_batch < src.size(1):
+            target_prefix = src[:, min_len_batch:, :]
+            src = src[:, :min_len_batch, :]
+            src_len[:] = min_len_batch
+        return src, src_len, target_prefix
 
     def tile_to_beam_size_after_initial_step(self, fn_map_state, log_probs):
         if fn_map_state is not None:
-            log_probs = fn_map_state(log_probs, dim=1)
+            log_probs = fn_map_state(log_probs, dim=0)
             self.model.decoder.map_state(fn_map_state)
-            log_probs = log_probs[-1]
+            log_probs = log_probs[:, -1, :]
         return log_probs
 
     def _translate_batch_with_strategy(
-        self, batch, src_vocabs, decode_strategy
+        self, batch, decode_strategy
     ):
         """Translate a batch of sentences step by step using cache.
 
         Args:
             batch: a batch of sentences, yield by data iterator.
-            src_vocabs (list): list of torchtext.data.Vocab if can_copy.
             decode_strategy (DecodeStrategy): A decode strategy to use for
                 generate translation step by step.
 
@@ -1136,15 +976,14 @@ class GeneratorLM(Inference):
         # (0) Prep the components of the search.
         use_src_map = self.copy_attn
         parallel_paths = decode_strategy.parallel_paths  # beam_size
-        batch_size = batch.batch_size
+        batch_size = len(batch['srclen'])
 
         # (1) split src into src and target_prefix to avoid padding.
-        src, src_lengths = (
-            batch.src if isinstance(batch.src, tuple) else (batch.src, None)
-        )
+        src = batch['src']
+        src_len = batch['srclen']
 
-        src, src_lengths, target_prefix = self.split_src_to_prevent_padding(
-            src, src_lengths
+        src, src_len, target_prefix = self.split_src_to_prevent_padding(
+            src, src_len
         )
 
         # (2) init decoder
@@ -1152,8 +991,7 @@ class GeneratorLM(Inference):
         gold_score = self._gold_score(
             batch,
             None,
-            src_lengths,
-            src_vocabs,
+            src_len,
             use_src_map,
             None,
             batch_size,
@@ -1161,15 +999,15 @@ class GeneratorLM(Inference):
         )
 
         # (3) prep decode_strategy. Possibly repeat src objects.
-        src_map = batch.src_map if use_src_map else None
+        src_map = batch['src_map'] if use_src_map else None
         (
             fn_map_state,
             src,
-            memory_lengths,
+            src_len_tiled,
             src_map,
         ) = decode_strategy.initialize(
             src,
-            src_lengths,
+            src_len,
             src_map,
             target_prefix=target_prefix,
         )
@@ -1179,17 +1017,16 @@ class GeneratorLM(Inference):
             decoder_input = (
                 src
                 if step == 0
-                else decode_strategy.current_predictions.view(1, -1, 1)
+                else decode_strategy.current_predictions.view(-1, 1, 1)
             )
 
             log_probs, attn = self._decode_and_generate(
                 decoder_input,
                 None,
                 batch,
-                src_vocabs,
-                memory_lengths=memory_lengths.clone(),
+                src_len=src_len_tiled.clone(),
                 src_map=src_map,
-                step=step if step == 0 else step + src_lengths[0].item(),
+                step=step if step == 0 else step + src_len[0].item(),
                 batch_offset=decode_strategy.batch_offset,
             )
 
@@ -1205,13 +1042,13 @@ class GeneratorLM(Inference):
                     break
 
             select_indices = decode_strategy.select_indices
-            memory_lengths += 1
+            src_len_tiled += 1
             if any_finished:
                 # Reorder states.
-                memory_lengths = memory_lengths.index_select(0, select_indices)
+                src_len_tiled = src_len_tiled.index_select(0, select_indices)
 
                 if src_map is not None:
-                    src_map = src_map.index_select(1, select_indices)
+                    src_map = src_map.index_select(0, select_indices)
 
             if parallel_paths > 1 or any_finished:
                 # select indexes in model state/cache
@@ -1224,31 +1061,28 @@ class GeneratorLM(Inference):
             batch,
             batch_size,
             src,
-            src_lengths,
-            src_vocabs,
+            src_len,
             use_src_map,
             decode_strategy,
         )
 
     def _score_target(
-        self, batch, memory_bank, src_lengths, src_vocabs, src_map
+        self, batch, enc_out, src_len, src_map
     ):
-        tgt = batch.tgt
-        src, src_lengths = (
-            batch.src if isinstance(batch.src, tuple) else (batch.src, None)
-        )
+        src = batch['src']
+        src_len = batch['srclen']
+        tgt = batch['tgt']
 
         log_probs, attn = self._decode_and_generate(
             src,
             None,
             batch,
-            src_vocabs,
-            memory_lengths=src_lengths,
+            src_len=src_len,
             src_map=src_map,
         )
 
         log_probs[:, :, self._tgt_pad_idx] = 0
         gold_scores = log_probs.gather(2, tgt)
-        gold_scores = gold_scores.sum(dim=0).view(-1)
+        gold_scores = gold_scores.sum(dim=1).view(-1)
 
         return gold_scores

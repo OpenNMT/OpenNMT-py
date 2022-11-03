@@ -67,10 +67,10 @@ valid_steps: 10000
 train_steps: 200000
 
 # Batching
-queue_size: 10000
 bucket_size: 32768
 world_size: 4
 gpu_ranks: [0, 1, 2, 3]
+num_workers: 4
 batch_type: "tokens"
 batch_size: 4096
 valid_batch_size: 8
@@ -98,7 +98,7 @@ position_encoding: true
 enc_layers: 6
 dec_layers: 6
 heads: 8
-rnn_size: 512
+hidden_size: 512
 word_vec_size: 512
 transformer_ff: 2048
 dropout_steps: [0]
@@ -125,7 +125,7 @@ Both `-world_size` and `-gpu_ranks` need to be set. E.g. `-world_size 4 -gpu_ran
 
 **Warning - Deprecated**
 
-Multi-node distributed training is not properly implemented in OpenNMT-py 2.0 yet.
+Multi-node distributed training has not been properly re-implemented since OpenNMT-py 2.0.
 
 If you want to use 2 nodes with 2 GPU each, you need to set `-master_ip` and `-master_port`, and
 

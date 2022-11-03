@@ -343,7 +343,7 @@ class ONMTTokenizerTransform(TokenizerTransform):
                               '｟mrk_begin_case_region_U｠',
                               '｟mrk_end_case_region_U｠']
             tgt_specials.update(_case_specials)
-        return (set(), set())
+        return (src_specials, tgt_specials)
 
     def _get_subword_kwargs(self, side='src'):
         """Return a dict containing kwargs relate to `side` subwords."""
@@ -419,11 +419,18 @@ class ONMTTokenizerTransform(TokenizerTransform):
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Apply OpenNMT Tokenizer to src & tgt."""
         src_out = self._tokenize(example['src'], 'src')
-        tgt_out = self._tokenize(example['tgt'], 'tgt')
-        if stats is not None:
-            n_words = len(example['src']) + len(example['tgt'])
-            n_subwords = len(src_out) + len(tgt_out)
-            stats.update(SubwordStats(n_subwords, n_words))
+        if example['tgt'] is not None:
+            tgt_out = self._tokenize(example['tgt'], 'tgt')
+            if stats is not None:
+                n_words = len(example['src']) + len(example['tgt'])
+                n_subwords = len(src_out) + len(tgt_out)
+                stats.update(SubwordStats(n_subwords, n_words))
+        else:
+            tgt_out = None
+            if stats is not None:
+                n_words = len(example['src'])
+                n_subwords = len(src_out)
+                stats.update(SubwordStats(n_subwords, n_words))
         example['src'], example['tgt'] = src_out, tgt_out
         return example
 

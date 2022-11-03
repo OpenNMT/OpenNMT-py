@@ -127,8 +127,8 @@ class DataOptsCheckerMixin(object):
         opt._all_transform = opt.transforms
 
     @classmethod
-    def _validate_fields_opts(cls, opt, build_vocab_only=False):
-        """Check options relate to vocab and fields."""
+    def _validate_vocab_opts(cls, opt, build_vocab_only=False):
+        """Check options relate to vocab."""
 
         for cname, corpus in opt.data.items():
             if cname != CorpusName.VALID and corpus["src_feats"] is not None:
@@ -152,9 +152,9 @@ class DataOptsCheckerMixin(object):
         if not opt.share_vocab:
             cls._validate_file(opt.tgt_vocab, info='tgt vocab')
 
-        if opt.dump_fields or opt.dump_transforms:
+        if opt.dump_transforms:
             assert opt.save_data, "-save_data should be set if set \
-                -dump_fields or -dump_transforms."
+                -dump_transforms."
         # Check embeddings stuff
         if opt.both_embeddings is not None:
             assert (opt.src_embeddings is None
@@ -194,7 +194,7 @@ class DataOptsCheckerMixin(object):
         cls._validate_data(opt)
         cls._get_all_transform(opt)
         cls._validate_transforms_opts(opt)
-        cls._validate_fields_opts(opt, build_vocab_only=build_vocab_only)
+        cls._validate_vocab_opts(opt, build_vocab_only=build_vocab_only)
 
     @classmethod
     def validate_model_opts(cls, opt):
@@ -239,9 +239,9 @@ class ArgumentParser(cfargparse.ArgumentParser, DataOptsCheckerMixin):
             model_opt.enc_layers = model_opt.layers
             model_opt.dec_layers = model_opt.layers
 
-        if model_opt.rnn_size > 0:
-            model_opt.enc_rnn_size = model_opt.rnn_size
-            model_opt.dec_rnn_size = model_opt.rnn_size
+        if model_opt.hidden_size > 0:
+            model_opt.enc_hid_size = model_opt.hidden_size
+            model_opt.dec_hid_size = model_opt.hidden_size
 
         model_opt.brnn = model_opt.encoder_type == "brnn"
 
@@ -259,7 +259,7 @@ class ArgumentParser(cfargparse.ArgumentParser, DataOptsCheckerMixin):
             "Unsupported model type %s" % model_opt.model_type
 
         # encoder and decoder should be same sizes
-        same_size = model_opt.enc_rnn_size == model_opt.dec_rnn_size
+        same_size = model_opt.enc_hid_size == model_opt.dec_hid_size
         assert same_size, \
             "The encoder and decoder rnns must be the same size for now"
 
@@ -292,15 +292,7 @@ class ArgumentParser(cfargparse.ArgumentParser, DataOptsCheckerMixin):
 
     @classmethod
     def validate_train_opts(cls, opt):
-        if opt.epochs:
-            raise AssertionError(
-                  "-epochs is deprecated please use -train_steps.")
-        if opt.truncated_decoder > 0 and max(opt.accum_count) > 1:
-            raise AssertionError("BPTT is not compatible with -accum > 1")
 
-        if opt.gpuid:
-            raise AssertionError(
-                  "gpuid is deprecated see world_size and gpu_ranks")
         if torch.cuda.is_available() and not opt.gpu_ranks:
             logger.warn("You have a CUDA device, should run with -gpu_ranks")
         if opt.world_size < len(opt.gpu_ranks):

@@ -2,10 +2,40 @@
 
 import torch
 import random
+from contextlib import contextmanager
 import inspect
 import numpy as np
-from itertools import islice, repeat
 import os
+from copy import deepcopy
+
+
+class RandomShuffler(object):
+    """Use random functions while keeping track of the random state to make it
+    reproducible and deterministic.
+    taken from the torchtext Library"""
+
+    def __init__(self, random_state=None):
+        self._random_state = random_state
+        if self._random_state is None:
+            self._random_state = random.getstate()
+
+    @contextmanager
+    def use_internal_state(self):
+        """Use a specific RNG state."""
+        old_state = random.getstate()
+        random.setstate(self._random_state)
+        yield
+        self._random_state = random.getstate()
+        random.setstate(old_state)
+
+    @property
+    def random_state(self):
+        return deepcopy(self._random_state)
+
+    def __call__(self, data):
+        """Shuffle and return a new list."""
+        with self.use_internal_state():
+            return random.sample(data, len(data))
 
 
 def check_path(path, exist_ok=False, log=print):
@@ -17,40 +47,6 @@ def check_path(path, exist_ok=False, log=print):
             raise IOError(f"path {path} exists, stop.")
     else:
         os.makedirs(os.path.dirname(path), exist_ok=True)
-
-
-def split_corpus(path, shard_size, default=None):
-    """yield a `list` containing `shard_size` line of `path`,
-    or repeatly generate `default` if `path` is None.
-    """
-    if path is not None:
-        return _split_corpus(path, shard_size)
-    else:
-        return repeat(default)
-
-
-def _split_corpus(path, shard_size):
-    """Yield a `list` containing `shard_size` line of `path`.
-    """
-    with open(path, "rb") as f:
-        if shard_size <= 0:
-            yield f.readlines()
-        else:
-            while True:
-                shard = list(islice(f, shard_size))
-                if not shard:
-                    break
-                yield shard
-
-
-def aeq(*args):
-    """
-    Assert all arguments have the same value
-    """
-    arguments = (arg for arg in args)
-    first = next(arguments)
-    assert all(arg == first for arg in arguments), \
-        "Not all arguments have the same value: " + str(args)
 
 
 def sequence_mask(lengths, max_len=None):
@@ -99,7 +95,7 @@ def set_random_seed(seed, is_cuda):
     """Sets the random seed."""
     if seed > 0:
         torch.manual_seed(seed)
-        # this one is needed for torchtext random call (shuffled iterator)
+        # this one is needed for Random Shuffler of batches
         # in multi gpu it ensures datasets are read in the same order
         random.seed(seed)
         # some cudnn methods can be random even after fixing the seed
@@ -111,41 +107,6 @@ def set_random_seed(seed, is_cuda):
     if is_cuda and seed > 0:
         # These ensure same initialization in multi gpu mode
         torch.cuda.manual_seed(seed)
-
-
-def generate_relative_positions_matrix(length, max_relative_positions,
-                                       cache=False):
-    """Generate the clipped relative positions matrix
-       for a given length and maximum relative positions"""
-    if cache:
-        distance_mat = torch.arange(-length+1, 1, 1).unsqueeze(0)
-    else:
-        range_vec = torch.arange(length)
-        range_mat = range_vec.unsqueeze(-1).expand(-1, length).transpose(0, 1)
-        distance_mat = range_mat - range_mat.transpose(0, 1)
-    distance_mat_clipped = torch.clamp(distance_mat,
-                                       min=-max_relative_positions,
-                                       max=max_relative_positions)
-    # Shift values to be >= 0
-    final_mat = distance_mat_clipped + max_relative_positions
-    return final_mat
-
-
-def relative_matmul(x, z, transpose):
-    """Helper function for relative positions attention."""
-    batch_size = x.shape[0]
-    heads = x.shape[1]
-    length = x.shape[2]
-    x_t = x.permute(2, 0, 1, 3)
-    x_t_r = x_t.reshape(length, heads * batch_size, -1)
-    if transpose:
-        z_t = z.transpose(1, 2)
-        x_tz_matmul = torch.matmul(x_t_r, z_t)
-    else:
-        x_tz_matmul = torch.matmul(x_t_r, z)
-    x_tz_matmul_r = x_tz_matmul.reshape(length, batch_size, heads, -1)
-    x_tz_matmul_r_t = x_tz_matmul_r.permute(1, 2, 0, 3)
-    return x_tz_matmul_r_t
 
 
 def fn_args(fun):

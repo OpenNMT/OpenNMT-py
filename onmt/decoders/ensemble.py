@@ -36,11 +36,11 @@ class EnsembleEncoder(EncoderBase):
         super(EnsembleEncoder, self).__init__()
         self.model_encoders = nn.ModuleList(model_encoders)
 
-    def forward(self, src, lengths=None):
-        enc_hidden, memory_bank, _ = zip(*[
-            model_encoder(src, lengths)
+    def forward(self, src, src_len=None):
+        enc_out, enc_final_hs, _ = zip(*[
+            model_encoder(src, src_len)
             for model_encoder in self.model_encoders])
-        return enc_hidden, memory_bank, lengths
+        return enc_out, enc_final_hs, src_len
 
 
 class EnsembleDecoder(DecoderBase):
@@ -51,17 +51,17 @@ class EnsembleDecoder(DecoderBase):
         super(EnsembleDecoder, self).__init__(attentional)
         self.model_decoders = model_decoders
 
-    def forward(self, tgt, memory_bank, memory_lengths=None, step=None,
+    def forward(self, tgt, enc_out, src_len=None, step=None,
                 **kwargs):
         """See :func:`onmt.decoders.decoder.DecoderBase.forward()`."""
-        # Memory_lengths is a single tensor shared between all models.
+        # src_len is a single tensor shared between all models.
         # This assumption will not hold if Translator is modified
-        # to calculate memory_lengths as something other than the length
+        # to calculate src_len as something other than the length
         # of the input.
         dec_outs, attns = zip(*[
             model_decoder(
-                tgt, memory_bank[i],
-                memory_lengths=memory_lengths, step=step, **kwargs)
+                tgt, enc_out[i],
+                src_len=src_len, step=step, **kwargs)
             for i, model_decoder in enumerate(self.model_decoders)])
         mean_attns = self.combine_attns(attns)
         return EnsembleDecoderOutput(dec_outs), mean_attns
@@ -73,10 +73,10 @@ class EnsembleDecoder(DecoderBase):
                 [attn[key] for attn in attns if attn[key] is not None]).mean(0)
         return result
 
-    def init_state(self, src, memory_bank, enc_hidden):
+    def init_state(self, src, enc_out, enc_hidden):
         """ See :obj:`RNNDecoderBase.init_state()` """
         for i, model_decoder in enumerate(self.model_decoders):
-            model_decoder.init_state(src, memory_bank[i], enc_hidden[i])
+            model_decoder.init_state(src, enc_out[i], enc_hidden[i])
 
     def map_state(self, fn):
         for model_decoder in self.model_decoders:
@@ -122,33 +122,20 @@ class EnsembleModel(NMTModel):
 
 def load_test_model(opt):
     """Read in multiple models for ensemble."""
-    shared_fields = None
+    shared_vocabs = None
     shared_model_opt = None
     models = []
     for model_path in opt.models:
-        fields, model, model_opt = \
+        vocabs, model, model_opt = \
             onmt.model_builder.load_test_model(opt, model_path=model_path)
-        if shared_fields is None:
-            shared_fields = fields
+        if shared_vocabs is None:
+            shared_vocabs = vocabs
         else:
-            for key, field in fields.items():
-                try:
-                    f_iter = iter(field)
-                except TypeError:
-                    f_iter = [(key, field)]
-                for sn, sf in f_iter:
-                    if sf is not None and 'vocab' in sf.__dict__:
-                        sh_field = shared_fields[key]
-                        try:
-                            sh_f_iter = iter(sh_field)
-                        except TypeError:
-                            sh_f_iter = [(key, sh_field)]
-                        sh_f_dict = dict(sh_f_iter)
-                        assert sf.vocab.stoi == sh_f_dict[sn].vocab.stoi, \
-                            "Ensemble models must use the same " \
-                            "preprocessed data"
+            assert shared_vocabs['src'].tokens_to_ids == \
+                vocabs['src'].tokens_to_ids, \
+                "Ensemble models must use the same vocabs "
         models.append(model)
         if shared_model_opt is None:
             shared_model_opt = model_opt
     ensemble_model = EnsembleModel(models, opt.avg_raw_probs)
-    return shared_fields, ensemble_model, shared_model_opt
+    return shared_vocabs, ensemble_model, shared_model_opt

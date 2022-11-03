@@ -34,7 +34,7 @@ class PositionalEncoding(nn.Module):
                              -(math.log(10000.0) / dim)))
         pe[:, 0::2] = torch.sin(position.float() * div_term)
         pe[:, 1::2] = torch.cos(position.float() * div_term)
-        pe = pe.unsqueeze(1)
+        pe = pe.unsqueeze(1)  # we keep pe (len x batch x dim) for back comp
         super(PositionalEncoding, self).__init__()
         self.register_buffer('pe', pe)
         self.dropout = nn.Dropout(p=dropout)
@@ -45,19 +45,19 @@ class PositionalEncoding(nn.Module):
 
         Args:
             emb (FloatTensor): Sequence of word vectors
-                ``(seq_len, batch_size, self.dim)``
+                ``(batch_size, seq_len, self.dim)``
             step (int or NoneType): If stepwise (``seq_len = 1``), use
                 the encoding for this position.
         """
-
+        pe = self.pe.transpose(0, 1)  # (batch x len x dim)
         emb = emb * math.sqrt(self.dim)
         step = step or 0
-        if self.pe.size(0) < step + emb.size(0):
+        if pe.size(1) < step + emb.size(1):
             raise SequenceTooLongError(
-                f"Sequence is {emb.size(0) + step} but PositionalEncoding is"
-                f" limited to {self.pe.size(0)}. See max_len argument."
+                f"Sequence is {emb.size(1) + step} but PositionalEncoding is"
+                f" limited to {self.pe.size(1)}. See max_len argument."
             )
-        emb = emb + self.pe[step:emb.size(0)+step]
+        emb = emb + pe[:, step:emb.size(1)+step, :]
         emb = self.dropout(emb)
         return emb
 
@@ -290,7 +290,7 @@ def read_embeddings(path, skip_lines=0, filter_set=None):
 
 def calc_vocab_load_stats(vocab, loaded_embed_dict):
     matching_count = len(
-        set(vocab.stoi.keys()) & set(loaded_embed_dict.keys()))
+        set(vocab.ids_to_tokens) & set(loaded_embed_dict.keys()))
     missing_count = len(vocab) - matching_count
     percent_matching = matching_count / len(vocab) * 100
     return matching_count, missing_count, percent_matching
@@ -300,11 +300,11 @@ def convert_to_torch_tensor(word_to_float_list_dict, vocab):
     dim = len(next(iter(word_to_float_list_dict.values())))
     tensor = torch.zeros((len(vocab), dim))
     for word, values in word_to_float_list_dict.items():
-        tensor[vocab.stoi[word]] = torch.Tensor(values)
+        tensor[vocab.tokens_to_ids[word]] = torch.Tensor(values)
     return tensor
 
 
-def prepare_pretrained_embeddings(opt, fields):
+def prepare_pretrained_embeddings(opt, vocabs):
     if all([opt.both_embeddings is None,
             opt.src_embeddings is None,
             opt.tgt_embeddings is None]):
@@ -315,17 +315,14 @@ def prepare_pretrained_embeddings(opt, fields):
 
     vocs = []
     for side in ['src', 'tgt']:
-        try:
-            vocab = fields[side].base_field.vocab
-        except AttributeError:
-            vocab = fields[side].vocab
+        vocab = vocabs[side]
         vocs.append(vocab)
     enc_vocab, dec_vocab = vocs
 
     skip_lines = 1 if opt.embeddings_type == "word2vec" else 0
     if opt.both_embeddings is not None:
         set_of_src_and_tgt_vocab = \
-            set(enc_vocab.stoi.keys()) | set(dec_vocab.stoi.keys())
+            set(enc_vocab.ids_to_tokens) | set(dec_vocab.ids_to_tokens)
         logger.info("Reading encoder and decoder embeddings from {}".format(
             opt.both_embeddings))
         src_vectors, total_vec_count = \
@@ -339,7 +336,7 @@ def prepare_pretrained_embeddings(opt, fields):
                 opt.src_embeddings))
             src_vectors, total_vec_count = read_embeddings(
                 opt.src_embeddings, skip_lines,
-                filter_set=enc_vocab.stoi
+                filter_set=set(enc_vocab.ids_to_tokens)
             )
             logger.info("\tFound {} total vectors in file.".format(
                 total_vec_count))
@@ -350,7 +347,7 @@ def prepare_pretrained_embeddings(opt, fields):
                 opt.tgt_embeddings))
             tgt_vectors, total_vec_count = read_embeddings(
                 opt.tgt_embeddings, skip_lines,
-                filter_set=dec_vocab.stoi
+                filter_set=set(dec_vocab.ids_to_tokens)
             )
             logger.info(
                 "\tFound {} total vectors in file".format(total_vec_count))

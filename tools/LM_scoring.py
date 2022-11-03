@@ -1,3 +1,4 @@
+import os
 import torch
 import numpy as np
 import codecs
@@ -5,11 +6,11 @@ import onmt.opts as opts
 from onmt.utils.misc import set_random_seed
 from onmt.utils.logging import init_logger, logger
 from onmt.utils.parse import ArgumentParser
+from onmt.inputters.dynamic_iterator import build_dynamic_dataset_iter
+from onmt.inputters.inputter import IterOnDevice
 from onmt.utils.loss import LMLossCompute
-from onmt.inputters import DynamicDataset, str2sortkey, OrderedIterator
-from onmt.inputters.text_dataset import InferenceDataIterator, \
-                                        InferenceDataReader
-from onmt.transforms import make_transforms, get_transforms_cls, TransformPipe
+from onmt.constants import DefaultTokens, CorpusTask
+from onmt.transforms import get_transforms_cls, TransformPipe
 from onmt.model_builder import load_test_model
 
 """
@@ -53,34 +54,16 @@ def main():
 
     init_logger(opt.log_file)
     set_random_seed(opt.seed, False)
-    out_file = codecs.open(opt.output, "w+", "utf-8")
-
-    # Load model for inference
-    fields, model, model_opt = load_test_model(opt)
-
-    # Build transforms
-    transforms_cls = get_transforms_cls(opt._all_transform)
-    transforms = make_transforms(opt, transforms_cls, fields)
-    data_transform = [
-        transforms[name] for name in opt.transforms if name in transforms
-    ]
-    transform = TransformPipe.build_from(data_transform)
+    ppl_file = codecs.open(opt.output + ".ppl", "w+", "utf-8")
 
     device = (
         torch.device("cuda", opt.gpu)
         if opt.gpu > -1
         else torch.device("cpu")
     )
-    model.to(device)
-    model.eval()
 
-    # Build datareader based on src AND tgt (should be equal)
-    data_reader = InferenceDataReader(opt.src, opt.tgt, opt.src_feats)
-
-    tgt_field = dict(fields)["tgt"].base_field
-    padding_idx = tgt_field.vocab.stoi[tgt_field.pad_token]
-    # Cannot use build_loss_compute() we need reduction 'none' in the criterion
-    # to get the loss of each sentence instead of the loss of the full batch
+    vocabs, model, model_opt = load_test_model(opt)
+    padding_idx = vocabs['tgt'][DefaultTokens.PAD]
     criterion = torch.nn.NLLLoss(ignore_index=padding_idx, reduction='none')
     loss_gen = model.generator
     valid_loss = LMLossCompute(criterion, loss_gen,
@@ -88,57 +71,56 @@ def main():
                                lambda_align=model_opt.lambda_align)
     valid_loss.to(device)
 
+    transforms_cls = get_transforms_cls(opt._all_transform)
+
+    infer_iter = build_dynamic_dataset_iter(
+        opt, transforms_cls, vocabs, task=CorpusTask.INFER,
+        copy=False)
+
+    if infer_iter is not None:
+        infer_iter = IterOnDevice(infer_iter, opt.gpu)
+
+    data_transform = [
+        infer_iter.transforms[name] for name in
+        opt.transforms if name in infer_iter.transforms
+    ]
+    _ = TransformPipe.build_from(data_transform)
+
+    model.to(device)
+    model.eval()
+
     cumul_loss = 0.0
     cumul_length = 0
     # Now we can pipe the full file through the model using the Iterator
-    with torch.no_grad():
-        for i, (src_shard, tgt_shard, feats_shard) in enumerate(data_reader):
-            logger.info("Translating shard %d." % i)
-            data_iter = InferenceDataIterator(src_shard, tgt_shard,
-                                              feats_shard, transform)
-            data = DynamicDataset(
-                fields,
-                data=data_iter,
-                sort_key=str2sortkey[opt.data_type],
-                filter_pred=None,
-            )
-            data_iter2 = OrderedIterator(
-                dataset=data,
-                device=device,
-                batch_size=opt.batch_size,
-                batch_size_fn=None,
-                train=False,
-                sort=False,
-                sort_within_batch=True,
-                shuffle=False,
-            )
-            for i, batch in enumerate(data_iter2):
-                # reminder a batch includes .src .tgt .indices and it is sorted
-                batch_size = len(batch)
-                src, src_lengths = batch.src if isinstance(batch.src, tuple) \
-                    else (batch.src, None)
-                tgt = batch.tgt
-                outputs, attns = model(src, tgt, src_lengths,
-                                       with_align=False)
-                # Compute and retrieve the loss for EACH sentence
-                lossflat, _ = valid_loss(batch, outputs, attns)
-                loss = lossflat.view(-1, batch_size)
-                mask = (loss != 0)
-                sent_loss = torch.sum(loss, dim=0) / mask.sum(dim=0)
-                sent_ppl = torch.exp(sent_loss)
-                cumul_loss += loss.sum().item()
-                cumul_length += mask.sum().cpu()
-                # Now we need to rearrange the batch of ppl
-                # in the original order with indices
-                sent_ppl_orig = sent_ppl.gather(0, batch.indices.argsort(0))
-                for j in range(batch_size):
-                    srctxt = src_shard[i * opt.batch_size + j]
-                    out_file.write(srctxt.strip().decode("UTF-8") +
-                                   "\t" + str(sent_ppl_orig[j].item()) + "\n")
-        logger.info("Loss: %.2f Tokens: %d Corpus PPL: %.2f" %
-                    (cumul_loss, cumul_length,
-                     np.exp(cumul_loss / cumul_length)))
-        out_file.close()
+
+    for i, batch in enumerate(infer_iter):
+        # reminder a batch includes .src .tgt .indices and it is sorted
+        batch_size = len(batch['srclen'])
+        src = batch['src']
+        src_len = batch['srclen']
+        tgt = batch['tgt']
+
+        outputs, attns = model(src, tgt, src_len,
+                               with_align=False)
+        # Compute and retrieve the loss for EACH sentence
+        lossflat, _ = valid_loss(batch, outputs, attns)
+        loss = lossflat.view(batch_size, -1)
+        mask = (loss != 0)
+        sent_loss = torch.sum(loss, dim=1) / mask.sum(dim=1)
+        sent_ppl = torch.exp(sent_loss)
+        cumul_loss += loss.sum().item()
+        cumul_length += mask.sum().cpu()
+        # Now we need to rearrange the batch of ppl
+        # in the original order with indices
+        sent_ppl_orig = sent_ppl.gather(0, batch['indices'].argsort(0))
+        for j in range(batch_size):
+            ppl_file.write(str(sent_ppl_orig[j].item()) + "\n")
+    logger.info("Loss: %.2f Tokens: %d Corpus PPL: %.2f" %
+                (cumul_loss, cumul_length,
+                 np.exp(cumul_loss / cumul_length)))
+    ppl_file.close()
+
+    os.system("paste " + opt.src + " " + opt.output + ".ppl > " + opt.output)
 
 
 if __name__ == "__main__":

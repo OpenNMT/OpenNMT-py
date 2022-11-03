@@ -34,7 +34,7 @@ save_model: cnndm/run/model
 copy_attn: true
 global_attention: mlp
 word_vec_size: 128
-rnn_size: 512
+hidden_size: 512
 layers: 1
 encoder_type: brnn
 train_steps: 200000

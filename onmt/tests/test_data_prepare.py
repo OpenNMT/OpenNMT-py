@@ -8,7 +8,7 @@ import os
 
 from onmt.utils.parse import ArgumentParser
 from onmt.opts import dynamic_prepare_opts
-from onmt.bin.train import prepare_fields_transforms
+from onmt.train_single import prepare_transforms_vocabs
 from onmt.constants import CorpusName
 
 
@@ -42,7 +42,7 @@ class TestData(unittest.TestCase):
 
     def dataset_build(self, opt):
         try:
-            prepare_fields_transforms(opt)
+            prepare_transforms_vocabs(opt)
         except SystemExit as err:
             print(err)
         except IOError as err:

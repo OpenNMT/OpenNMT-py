@@ -7,30 +7,30 @@ class TestGeneratorLM(unittest.TestCase):
     def test_split_src_to_prevent_padding_target_prefix_is_none_when_equal_size(  # noqa: E501
         self,
     ):
-        src = torch.randint(0, 10, (5, 6))
-        src_lengths = 5 * torch.ones(5)
+        src = torch.randint(0, 10, (6, 5, 1))
+        src_len = 5 * torch.ones(5, dtype=torch.int)
         (
             src,
-            src_lengths,
+            src_len,
             target_prefix,
-        ) = GeneratorLM.split_src_to_prevent_padding(src, src_lengths)
+        ) = GeneratorLM.split_src_to_prevent_padding(src, src_len)
         self.assertIsNone(target_prefix)
 
     def test_split_src_to_prevent_padding_target_prefix_is_ok_when_different_size(  # noqa: E501
         self,
     ):
         default_length = 5
-        src = torch.randint(0, 10, (default_length, 6))
-        src_lengths = default_length * torch.ones(6, dtype=torch.int)
+        src = torch.randint(0, 10, (6, default_length, 1))
+        src_len = default_length * torch.ones(6, dtype=torch.int)
         new_length = 4
-        src_lengths[1] = new_length
+        src_len[1] = new_length
         (
             src,
-            src_lengths,
+            src_len,
             target_prefix,
-        ) = GeneratorLM.split_src_to_prevent_padding(src, src_lengths)
-        self.assertTupleEqual(src.shape, (new_length, 6))
-        self.assertTupleEqual(target_prefix.shape, (1, 6))
+        ) = GeneratorLM.split_src_to_prevent_padding(src, src_len)
+        self.assertTupleEqual(src.shape, (6, new_length, 1))
+        self.assertTupleEqual(target_prefix.shape, (6, 1, 1))
         self.assertTrue(
-            src_lengths.equal(new_length * torch.ones(6, dtype=torch.int))
+            src_len.equal(new_length * torch.ones(6, dtype=torch.int))
         )

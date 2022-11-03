@@ -106,7 +106,7 @@ save_model: cnndm/run/model
 copy_attn: true
 global_attention: mlp
 word_vec_size: 128
-rnn_size: 512
+hidden_size: 512
 layers: 1
 encoder_type: brnn
 train_steps: 200000
@@ -138,7 +138,7 @@ tgt_vocab: cnndm/run/example.vocab.tgt
 
 save_model: cnndm/run/model_transformer
 layers: 4
-rnn_size: 512
+hidden_size: 512
 word_vec_size: 512
 max_grad_norm: 0
 optim: adam

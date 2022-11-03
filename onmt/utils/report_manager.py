@@ -147,6 +147,11 @@ class ReportMgr(ReportMgrBase):
         if train_stats is not None:
             self.log('Train perplexity: %g' % train_stats.ppl())
             self.log('Train accuracy: %g' % train_stats.accuracy())
+            self.log('Sentences processed: %g' % train_stats.n_sents)
+            self.log('Average bsz: %4.0f/%4.0f/%2.0f' %
+                     (train_stats.n_src_words / train_stats.n_batchs,
+                      train_stats.n_words / train_stats.n_batchs,
+                      train_stats.n_sents / train_stats.n_batchs))
 
             self.maybe_log_tensorboard(train_stats,
                                        "train",

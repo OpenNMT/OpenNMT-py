@@ -17,6 +17,13 @@ class CorpusName(object):
     VALID = 'valid'
     TRAIN = 'train'
     SAMPLE = 'sample'
+    INFER = 'infer'
+
+
+class CorpusTask(object):
+    TRAIN = 'train'
+    VALID = 'valid'
+    INFER = 'infer'
 
 
 class SubwordMarker(object):

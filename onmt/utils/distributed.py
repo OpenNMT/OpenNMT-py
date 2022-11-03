@@ -6,11 +6,8 @@ import os
 import signal
 import math
 import pickle
-
 import torch.distributed
-
-from onmt.utils.misc import set_random_seed
-from onmt.utils.logging import init_logger, logger
+from onmt.utils.logging import logger
 
 
 def is_master(opt, device_id):
@@ -33,7 +30,7 @@ def multi_init(opt, device_id):
 
 
 def all_reduce_and_rescale_tensors(tensors, rescale_denom,
-                                   buffer_size=10485760):
+                                   buffer_size=104857600):
     """All-reduce and rescale tensors in chunks of the specified size.
 
     Args:
@@ -55,7 +52,7 @@ def all_reduce_and_rescale_tensors(tensors, rescale_denom,
             offset += numel
 
         # all-reduce and rescale
-        torch.distributed.all_reduce(buffer_t[:offset])
+        torch.distributed.all_reduce(buffer_t[:offset], async_op=True)
         buffer_t.div_(rescale_denom)
 
         # copy all-reduced buffer back into tensors
@@ -68,9 +65,10 @@ def all_reduce_and_rescale_tensors(tensors, rescale_denom,
     filled = 0
     for t in tensors:
         sz = t.numel() * t.element_size()
+        # print(filled, sz)
         if sz > buffer_size:
             # tensor is bigger than buffer, all-reduce and rescale directly
-            torch.distributed.all_reduce(t)
+            torch.distributed.all_reduce(t, async_op=True)
             t.div_(rescale_denom)
         elif filled + sz > buffer_size:
             # buffer is full, all-reduce and replace buffer with grad
@@ -158,52 +156,14 @@ class ErrorHandler(object):
         raise Exception(msg)
 
 
-def batch_producer(generator_to_serve, queue, semaphore, opt, device_id):
-    """Produce batches to `queues` from `generator_to_serve`."""
-    log_level = "INFO" if opt.verbose or device_id == 0 else "WARNING"
-    init_logger(opt.log_file, log_level=log_level)
-    set_random_seed(opt.seed, False)
-
-    def pred(x):
-        """
-        Filters batches that belong only
-        to gpu_ranks of current node
-        """
-        for rank in opt.gpu_ranks:
-            if x[0] % opt.world_size == rank:
-                return True
-
-    generator_to_serve = filter(
-        pred, enumerate(generator_to_serve))
-
-    def next_batch():
-        # NOTE: stride (if needed) is handled at the
-        # generator (train_iter) level
-        new_batch = next(generator_to_serve)
-        semaphore.acquire()
-        return new_batch[1]
-
-    b = next_batch()
-
-    while True:
-        b.dataset = None
-        # Move batch to correspond device_id when consumer iterate
-
-        # hack to dodge unpicklable `dict_keys`
-        b.fields = list(b.fields)
-        queue.put(b)
-        b = next_batch()
-
-
-def consumer(process_fn, opt, device_id, error_queue, batch_queue, semaphore):  # noqa: E501
+def consumer(process_fn, opt, device_id, error_queue):  # noqa: E501
     """Run `process_fn` on `device_id` with data from `batch_queue`."""
     try:
         gpu_rank = multi_init(opt, device_id)
         if gpu_rank != opt.gpu_ranks[device_id]:
             raise AssertionError("An error occurred in \
                   Distributed initialization")
-        process_fn(opt, device_id=device_id,
-                   batch_queue=batch_queue, semaphore=semaphore)
+        process_fn(opt, device_id=device_id)
     except KeyboardInterrupt:
         pass  # killed by parent, do nothing
     except Exception:

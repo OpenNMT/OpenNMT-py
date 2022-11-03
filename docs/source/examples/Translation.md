@@ -88,10 +88,10 @@ train_steps: 100000
 valid_steps: 5000
 
 # Batching
-queue_size: 10000
 bucket_size: 32768
 world_size: 2
 gpu_ranks: [0, 1]
+num_workers: 4
 batch_type: "tokens"
 batch_size: 4096
 valid_batch_size: 16
@@ -119,7 +119,7 @@ decoder_type: transformer
 enc_layers: 6
 dec_layers: 6
 heads: 8
-rnn_size: 512
+hidden_size: 512
 word_vec_size: 512
 transformer_ff: 2048
 dropout_steps: [0]

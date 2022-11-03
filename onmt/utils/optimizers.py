@@ -104,12 +104,12 @@ def make_learning_rate_decay_fn(opt):
         return functools.partial(
             noam_decay,
             warmup_steps=opt.warmup_steps,
-            model_size=opt.rnn_size)
+            model_size=opt.hidden_size)
     elif opt.decay_method == 'noamwd':
         return functools.partial(
             noamwd_decay,
             warmup_steps=opt.warmup_steps,
-            model_size=opt.rnn_size,
+            model_size=opt.hidden_size,
             rate=opt.learning_rate_decay,
             decay_steps=opt.decay_steps,
             start_step=opt.start_decay_steps)
