@@ -119,17 +119,6 @@ class MultiHeadedAttention(nn.Module):
         self.dim_per_head = model_dim // head_count
         super(MultiHeadedAttention, self).__init__()
         self.head_count = head_count
-        if max_relative_positions > 0:
-            # https://arxiv.org/pdf/1803.02155.pdf
-            # in the paper they suggest either two embeds
-            # relative_key / relative_value or only
-            # relative_key. We implemented the same embed
-            # for both.
-            vocab_size = max_relative_positions * 2 + 1
-            self.relative_positions_embeddings = nn.Embedding(
-                vocab_size, self.dim_per_head)
-        else:
-            self.relative_positions_embeddings = None
 
         self.linear_keys = nn.Linear(model_dim, model_dim, bias=add_qkvbias)
         self.linear_values = nn.Linear(model_dim, model_dim, bias=add_qkvbias)
@@ -142,6 +131,17 @@ class MultiHeadedAttention(nn.Module):
         self.attn_type = attn_type
         self.layer_cache = (False, {'keys': torch.tensor([]),
                                     'values': torch.tensor([])})
+        if max_relative_positions > 0:
+            # https://arxiv.org/pdf/1803.02155.pdf
+            # in the paper they suggest either two embeds
+            # relative_key / relative_value or only
+            # relative_key. We implemented the same embed
+            # for both.
+            vocab_size = max_relative_positions * 2 + 1
+            self.relative_positions_embeddings = nn.Embedding(
+                vocab_size, self.dim_per_head)
+        else:
+            self.relative_positions_embeddings = None
 
     def update_dropout(self, dropout: float) -> None:
         self.dropout.p = dropout
