@@ -66,14 +66,13 @@ valid_steps: 5000
 
 # Batching
 bucket_size: 32768
-pool_factor: 8192
 world_size: 2
 gpu_ranks: [0, 1]
 num_workers: 4
 batch_type: "tokens"
 batch_size: 4096
-valid_batch_size: 16
-batch_size_multiple: 1
+valid_batch_size: 2048
+batch_size_multiple: 8
 max_generator_batches: 0
 accum_count: [3]
 accum_steps: [0]
