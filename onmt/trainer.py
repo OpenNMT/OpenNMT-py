@@ -307,16 +307,16 @@ class Trainer(object):
 
             for batch in valid_iter:
                 src = batch['src']
-                src_lengths = batch['srclen']
+                src_len = batch['srclen']
                 tgt = batch['tgt']
 
                 with torch.cuda.amp.autocast(enabled=self.optim.amp):
                     # F-prop through the model.
-                    outputs, attns = valid_model(src, tgt, src_lengths,
-                                                 with_align=self.with_align)
+                    model_out, attns = valid_model(src, tgt, src_len,
+                                                   with_align=self.with_align)
 
                     # Compute loss.
-                    _, batch_stats = self.valid_loss(batch, outputs, attns)
+                    _, batch_stats = self.valid_loss(batch, model_out, attns)
 
                     stats.update(batch_stats)
 
@@ -361,7 +361,7 @@ class Trainer(object):
             self.optim.zero_grad()
 
         for k, batch in enumerate(true_batches):
-            target_size = batch['tgt'].size(0)
+            target_size = batch['tgt'].size(1)
             # Truncated BPTT: reminder not compatible with accum > 1
             if self.trunc_size:
                 trunc_size = self.trunc_size
@@ -369,17 +369,18 @@ class Trainer(object):
                 trunc_size = target_size
 
             src = batch['src']
-            src_lengths = batch['srclen']
-            if src_lengths is not None:
-                report_stats.n_src_words += src_lengths.sum().item()
-                total_stats.n_src_words += src_lengths.sum().item()
+            src_len = batch['srclen']
+            if src_len is not None:
+                report_stats.n_src_words += src_len.sum().item()
+                total_stats.n_src_words += src_len.sum().item()
 
             tgt_outer = batch['tgt']
 
             bptt = False
             for j in range(0, target_size - 1, trunc_size):
                 # 1. Create truncated target.
-                tgt = tgt_outer[j: j + trunc_size, :, :]
+
+                tgt = tgt_outer[:, j: j + trunc_size, :]
 
                 # 2. F-prop all but generator.
                 if self.accum_count == 1:
@@ -387,15 +388,15 @@ class Trainer(object):
 
                 try:
                     with torch.cuda.amp.autocast(enabled=self.optim.amp):
-                        outputs, attns = self.model(
-                            src, tgt, src_lengths, bptt=bptt,
+                        model_out, attns = self.model(
+                            src, tgt, src_len, bptt=bptt,
                             with_align=self.with_align)
                         bptt = True
 
                         # 3. Compute loss.
                         loss, batch_stats = self.train_loss(
                             batch,
-                            outputs,
+                            model_out,
                             attns,
                             trunc_start=j,
                             trunc_size=trunc_size)

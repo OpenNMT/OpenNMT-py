@@ -33,33 +33,6 @@ class RNNDecoderBase(DecoderBase):
     Specifies the interface used by different decoder types
     and required by :class:`~onmt.models.NMTModel`.
 
-
-    .. mermaid::
-
-       graph BT
-          A[Input]
-          subgraph RNN
-             C[Pos 1]
-             D[Pos 2]
-             E[Pos N]
-          end
-          G[Decoder State]
-          H[Decoder State]
-          I[Outputs]
-          F[memory_bank]
-          A--emb-->C
-          A--emb-->D
-          A--emb-->E
-          H-->C
-          C-- attn --- F
-          D-- attn --- F
-          E-- attn --- F
-          C-->I
-          D-->I
-          E-->I
-          E-->G
-          F---I
-
     Args:
        rnn_type (str):
           style of recurrent unit to use, one of [RNN, LSTM, GRU, SRU]
@@ -143,7 +116,7 @@ class RNNDecoderBase(DecoderBase):
             opt.rnn_type,
             opt.brnn,
             opt.dec_layers,
-            opt.dec_rnn_size,
+            opt.dec_hid_size,
             opt.global_attention,
             opt.global_attention_function,
             opt.coverage_attn,
@@ -155,7 +128,7 @@ class RNNDecoderBase(DecoderBase):
             opt.reuse_copy_attn,
             opt.copy_attn_type)
 
-    def init_state(self, src, memory_bank, encoder_final):
+    def init_state(self, src, _, enc_final_hs):
         """Initialize decoder state with last state of the encoder."""
         def _fix_enc_hidden(hidden):
             # The encoder hidden is  (layers*directions) x batch x dim.
@@ -165,17 +138,19 @@ class RNNDecoderBase(DecoderBase):
                                     hidden[1:hidden.size(0):2]], 2)
             return hidden
 
-        if isinstance(encoder_final, tuple):  # LSTM
+        if isinstance(enc_final_hs, tuple):  # LSTM
             self.state["hidden"] = tuple(_fix_enc_hidden(enc_hid)
-                                         for enc_hid in encoder_final)
+                                         for enc_hid in enc_final_hs)
         else:  # GRU
-            self.state["hidden"] = (_fix_enc_hidden(encoder_final), )
+            self.state["hidden"] = (_fix_enc_hidden(enc_final_hs), )
 
         # Init the input feed.
         batch_size = self.state["hidden"][0].size(1)
+
         h_size = (batch_size, self.hidden_size)
         self.state["input_feed"] = \
             self.state["hidden"][0].data.new(*h_size).zero_().unsqueeze(0)
+
         self.state["coverage"] = None
 
     def map_state(self, fn):
@@ -188,37 +163,32 @@ class RNNDecoderBase(DecoderBase):
         self.state["hidden"] = tuple(h.detach() for h in self.state["hidden"])
         self.state["input_feed"] = self.state["input_feed"].detach()
 
-    def forward(self, tgt, memory_bank, memory_lengths=None, step=None,
+    def forward(self, tgt, enc_out, src_len=None, step=None,
                 **kwargs):
         """
         Args:
             tgt (LongTensor): sequences of padded tokens
-                 ``(tgt_len, batch, nfeats)``.
-            memory_bank (FloatTensor): vectors from the encoder
-                 ``(src_len, batch, hidden)``.
-            memory_lengths (LongTensor): the padded source lengths
+                 ``(batch, tgt_len, nfeats)``.
+            enc_out (FloatTensor): vectors from the encoder
+                 ``(batch, src_len, hidden)``.
+            src_len (LongTensor): the padded source lengths
                 ``(batch,)``.
 
         Returns:
             (FloatTensor, dict[str, FloatTensor]):
 
             * dec_outs: output from the decoder (after attn)
-              ``(tgt_len, batch, hidden)``.
+              ``(batch, tgt_len, hidden)``.
             * attns: distribution over src at each tgt
-              ``(tgt_len, batch, src_len)``.
+              ``(batch, tgt_len, src_len)``.
         """
-
         dec_state, dec_outs, attns = self._run_forward_pass(
-            tgt, memory_bank, memory_lengths=memory_lengths)
+            tgt, enc_out, src_len=src_len)
 
         # Update the state with the result.
         if not isinstance(dec_state, tuple):
             dec_state = (dec_state,)
         self.state["hidden"] = dec_state
-        self.state["input_feed"] = dec_outs[-1].unsqueeze(0)
-        self.state["coverage"] = None
-        if "coverage" in attns:
-            self.state["coverage"] = attns["coverage"][-1].unsqueeze(0)
 
         # Concatenates sequence of tensors along a new dimension.
         # NOTE: v0.3 to 0.4: dec_outs / attns[*] may not be list
@@ -226,11 +196,16 @@ class RNNDecoderBase(DecoderBase):
         #       since stack(Variable) was allowed.
         #       In 0.4, SRU returns a tensor that shouldn't be stacke
         if type(dec_outs) == list:
-            dec_outs = torch.stack(dec_outs)
-
+            dec_outs = torch.stack(dec_outs, dim=1)
             for k in attns:
                 if type(attns[k]) == list:
                     attns[k] = torch.stack(attns[k])
+
+        self.state["input_feed"] = dec_outs[:, -1, :].unsqueeze(0)
+        self.state["coverage"] = None
+        if "coverage" in attns:
+            self.state["coverage"] = attns["coverage"][:, -1, :].unsqueeze(0)
+
         return dec_outs, attns
 
     def update_dropout(self, dropout, attention_dropout=None):
@@ -254,17 +229,17 @@ class StdRNNDecoder(RNNDecoderBase):
     or `copy_attn` support.
     """
 
-    def _run_forward_pass(self, tgt, memory_bank, memory_lengths=None):
+    def _run_forward_pass(self, tgt, enc_out, src_len=None):
         """
         Private helper for running the specific RNN forward pass.
         Must be overriden by all subclasses.
 
         Args:
             tgt (LongTensor): a sequence of input tokens tensors
-                ``(len, batch, nfeats)``.
-            memory_bank (FloatTensor): output(tensor sequence) from the
-                encoder RNN of size ``(src_len, batch, hidden_size)``.
-            memory_lengths (LongTensor): the source memory_bank lengths.
+                ``(batch, tgt_len, nfeats)``.
+            enc_out (FloatTensor): output(tensor sequence) from the
+                encoder RNN of size ``(batch, src_len, hidden_size)``.
+            src_len (LongTensor): the source enc_out lengths.
 
         Returns:
             (Tensor, List[FloatTensor], Dict[str, List[FloatTensor]):
@@ -284,20 +259,20 @@ class StdRNNDecoder(RNNDecoderBase):
         emb = self.embeddings(tgt)
 
         if isinstance(self.rnn, nn.GRU):
-            rnn_output, dec_state = self.rnn(emb, self.state["hidden"][0])
+            rnn_out, dec_state = self.rnn(emb, self.state["hidden"][0])
         else:
-            rnn_output, dec_state = self.rnn(emb, self.state["hidden"])
+            rnn_out, dec_state = self.rnn(emb, self.state["hidden"])
 
-        tgt_len, tgt_batch, _ = tgt.size()
+        tgt_batch, tgt_len, _ = tgt.size()
 
         # Calculate the attention.
         if not self.attentional:
-            dec_outs = rnn_output
+            dec_outs = rnn_out
         else:
             dec_outs, p_attn = self.attn(
-                rnn_output.transpose(0, 1).contiguous(),
-                memory_bank.transpose(0, 1),
-                memory_lengths=memory_lengths
+                rnn_out,
+                enc_out,
+                src_len=src_len
             )
             attns["std"] = p_attn
 
@@ -305,12 +280,13 @@ class StdRNNDecoder(RNNDecoderBase):
         if self.context_gate is not None:
             dec_outs = self.context_gate(
                 emb.view(-1, emb.size(2)),
-                rnn_output.view(-1, rnn_output.size(2)),
+                rnn_out.view(-1, rnn_out.size(2)),
                 dec_outs.view(-1, dec_outs.size(2))
             )
-            dec_outs = dec_outs.view(tgt_len, tgt_batch, self.hidden_size)
+            dec_outs = dec_outs.view(tgt_batch, tgt_len, self.hidden_size)
 
         dec_outs = self.dropout(dec_outs)
+
         return dec_state, dec_outs, attns
 
     def _build_rnn(self, rnn_type, **kwargs):
@@ -331,34 +307,15 @@ class InputFeedRNNDecoder(RNNDecoderBase):
     "Effective Approaches to Attention-based Neural Machine Translation"
     :cite:`Luong2015`
 
-
-    .. mermaid::
-
-       graph BT
-          A[Input n-1]
-          AB[Input n]
-          subgraph RNN
-            E[Pos n-1]
-            F[Pos n]
-            E --> F
-          end
-          G[Encoder]
-          H[memory_bank n-1]
-          A --> E
-          AB --> F
-          E --> H
-          G --> H
     """
 
-    def _run_forward_pass(self, tgt, memory_bank, memory_lengths=None):
+    def _run_forward_pass(self, tgt, enc_out, src_len=None):
         """
         See StdRNNDecoder._run_forward_pass() for description
         of arguments and return values.
         """
         # Additional args check.
         input_feed = self.state["input_feed"].squeeze(0)
-        input_feed_batch, _ = input_feed.size()
-        _, tgt_batch, _ = tgt.size()
 
         dec_outs = []
         attns = {}
@@ -370,35 +327,36 @@ class InputFeedRNNDecoder(RNNDecoderBase):
             attns["coverage"] = []
 
         emb = self.embeddings(tgt)
-        assert emb.dim() == 3  # len x batch x embedding_dim
+        assert emb.dim() == 3  # batch x len x embedding_dim
 
         dec_state = self.state["hidden"]
+
         coverage = self.state["coverage"].squeeze(0) \
             if self.state["coverage"] is not None else None
 
         # Input feed concatenates hidden state with
         # input at every time step.
-        for emb_t in emb.split(1):
-            decoder_input = torch.cat([emb_t.squeeze(0), input_feed], 1)
-            rnn_output, dec_state = self.rnn(decoder_input, dec_state)
+        for emb_t in emb.split(1, dim=1):
+            dec_in = torch.cat([emb_t.squeeze(1), input_feed], 1)
+            rnn_out, dec_state = self.rnn(dec_in, dec_state)
             if self.attentional:
-                decoder_output, p_attn = self.attn(
-                    rnn_output,
-                    memory_bank.transpose(0, 1),
-                    memory_lengths=memory_lengths)
+                dec_out, p_attn = self.attn(
+                    rnn_out,
+                    enc_out,
+                    src_len=src_len)
                 attns["std"].append(p_attn)
             else:
-                decoder_output = rnn_output
+                dec_out = rnn_out
             if self.context_gate is not None:
                 # TODO: context gate should be employed
                 # instead of second RNN transform.
-                decoder_output = self.context_gate(
-                    decoder_input, rnn_output, decoder_output
+                dec_out = self.context_gate(
+                    dec_in, rnn_out, dec_out
                 )
-            decoder_output = self.dropout(decoder_output)
-            input_feed = decoder_output
+            dec_out = self.dropout(dec_out)
+            input_feed = dec_out
 
-            dec_outs += [decoder_output]
+            dec_outs += [dec_out]
 
             # Update the coverage attention.
             if self._coverage:
@@ -407,7 +365,7 @@ class InputFeedRNNDecoder(RNNDecoderBase):
 
             if self.copy_attn is not None:
                 _, copy_attn = self.copy_attn(
-                    decoder_output, memory_bank.transpose(0, 1))
+                    dec_out, enc_out)
                 attns["copy"] += [copy_attn]
             elif self._reuse_copy_attn:
                 attns["copy"] = attns["std"]
@@ -419,7 +377,8 @@ class InputFeedRNNDecoder(RNNDecoderBase):
         assert rnn_type != "SRU", "SRU doesn't support input feed! " \
             "Please set -input_feed 0!"
         stacked_cell = StackedLSTM if rnn_type == "LSTM" else StackedGRU
-        return stacked_cell(num_layers, input_size, hidden_size, dropout)
+        return stacked_cell(num_layers, input_size,
+                            hidden_size, dropout)
 
     @property
     def _input_size(self):

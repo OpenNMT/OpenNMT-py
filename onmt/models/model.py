@@ -11,18 +11,18 @@ class BaseModel(nn.Module):
     def __init__(self, encoder, decoder):
         super(BaseModel, self).__init__()
 
-    def forward(self, src, tgt, lengths, bptt=False, with_align=False):
+    def forward(self, src, tgt, src_len, bptt=False, with_align=False):
         """Forward propagate a `src` and `tgt` pair for training.
         Possible initialized with a beginning decoder state.
 
         Args:
             src (Tensor): A source sequence passed to encoder.
-                typically for inputs this will be a padded `LongTensor`
-                of size ``(len, batch, features)``. However, may be an
+                typically for input this will be a padded `LongTensor`
+                of size ``(batch, len, features)``. However, may be an
                 image or other generic input depending on encoder.
             tgt (LongTensor): A target sequence passed to decoder.
-                Size ``(tgt_len, batch, features)``.
-            lengths(LongTensor): The src lengths, pre-padding ``(batch,)``.
+                Size ``(batch, tgt_len, features)``.
+            src_len(LongTensor): The src lengths, pre-padding ``(batch,)``.
             bptt (Boolean): A flag indicating if truncated bptt is set.
                 If reset then init_state
             with_align (Boolean): A flag indicating whether output alignment,
@@ -31,8 +31,8 @@ class BaseModel(nn.Module):
         Returns:
             (FloatTensor, dict[str, FloatTensor]):
 
-            * decoder output ``(tgt_len, batch, hidden)``
-            * dictionary attention dists of ``(tgt_len, batch, src_len)``
+            * decoder output ``(batch, tgt_len, hidden)``
+            * dictionary attention dists of ``(batch, tgt_len, src_len)``
         """
         raise NotImplementedError
 
@@ -57,15 +57,18 @@ class NMTModel(BaseModel):
         self.encoder = encoder
         self.decoder = decoder
 
-    def forward(self, src, tgt, lengths, bptt=False, with_align=False):
-        dec_in = tgt[:-1]  # exclude last target from inputs
+    def forward(self, src, tgt, src_len, bptt=False, with_align=False):
+        dec_in = tgt[:, :-1, :]  # exclude last target from input
 
-        enc_state, memory_bank, lengths = self.encoder(src, lengths)
+        enc_out, enc_final_hs, src_len = self.encoder(src, src_len)
 
         if not bptt:
-            self.decoder.init_state(src, memory_bank, enc_state)
-        dec_out, attns = self.decoder(dec_in, memory_bank,
-                                      memory_lengths=lengths,
+            # RNN uses enc_final_hs
+            # CNN uses enc_out and enc_final_hs
+            # transformer uses src
+            self.decoder.init_state(src, enc_out, enc_final_hs)
+        dec_out, attns = self.decoder(dec_in, enc_out,
+                                      src_len=src_len,
                                       with_align=with_align)
         return dec_out, attns
 
@@ -111,31 +114,31 @@ class LanguageModel(BaseModel):
                              "with an encoder")
         self.decoder = decoder
 
-    def forward(self, src, tgt, lengths, bptt=False, with_align=False):
+    def forward(self, src, tgt, src_len, bptt=False, with_align=False):
         """Forward propagate a `src` and `tgt` pair for training.
         Possible initialized with a beginning decoder state.
         Args:
             src (Tensor): A source sequence passed to decoder.
-                typically for inputs this will be a padded `LongTensor`
-                of size ``(len, batch, features)``. However, may be an
+                typically for input this will be a padded `LongTensor`
+                of size ``(batch, len, features)``. However, may be an
                 image or other generic input depending on decoder.
             tgt (LongTensor): A target sequence passed to decoder.
-                Size ``(tgt_len, batch, features)``.
-            lengths(LongTensor): The src lengths, pre-padding ``(batch,)``.
+                Size ``(batch, tgt_len, features)``.
+            src_len(LongTensor): The src lengths, pre-padding ``(batch,)``.
             bptt (Boolean): A flag indicating if truncated bptt is set.
                 If reset then init_state
             with_align (Boolean): A flag indicating whether output alignment,
                 Only valid for transformer decoder.
         Returns:
             (FloatTensor, dict[str, FloatTensor]):
-            * decoder output ``(tgt_len, batch, hidden)``
-            * dictionary attention dists of ``(tgt_len, batch, src_len)``
+            * decoder output ``(batch, tgt_len, hidden)``
+            * dictionary attention dists of ``(batch, tgt_len, src_len)``
         """
 
         if not bptt:
             self.decoder.init_state()
         dec_out, attns = self.decoder(
-            src, memory_bank=None, memory_lengths=lengths,
+            src, enc_out=None, src_len=src_len,
             with_align=with_align
         )
         return dec_out, attns

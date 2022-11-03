@@ -34,7 +34,7 @@ class PositionalEncoding(nn.Module):
                              -(math.log(10000.0) / dim)))
         pe[:, 0::2] = torch.sin(position.float() * div_term)
         pe[:, 1::2] = torch.cos(position.float() * div_term)
-        pe = pe.unsqueeze(1)
+        pe = pe.unsqueeze(1)  # we keep pe (len x batch x dim) for back comp
         super(PositionalEncoding, self).__init__()
         self.register_buffer('pe', pe)
         self.dropout = nn.Dropout(p=dropout)
@@ -45,19 +45,19 @@ class PositionalEncoding(nn.Module):
 
         Args:
             emb (FloatTensor): Sequence of word vectors
-                ``(seq_len, batch_size, self.dim)``
+                ``(batch_size, seq_len, self.dim)``
             step (int or NoneType): If stepwise (``seq_len = 1``), use
                 the encoding for this position.
         """
-
+        pe = self.pe.transpose(0, 1)  # (batch x len x dim)
         emb = emb * math.sqrt(self.dim)
         step = step or 0
-        if self.pe.size(0) < step + emb.size(0):
+        if pe.size(1) < step + emb.size(1):
             raise SequenceTooLongError(
-                f"Sequence is {emb.size(0) + step} but PositionalEncoding is"
-                f" limited to {self.pe.size(0)}. See max_len argument."
+                f"Sequence is {emb.size(1) + step} but PositionalEncoding is"
+                f" limited to {self.pe.size(1)}. See max_len argument."
             )
-        emb = emb + self.pe[step:emb.size(0)+step]
+        emb = emb + pe[:, step:emb.size(1)+step, :]
         emb = self.dropout(emb)
         return emb
 

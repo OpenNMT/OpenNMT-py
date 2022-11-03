@@ -38,23 +38,18 @@ class ConvMultiStepAttention(nn.Module):
         Args:
             base_target_emb: target emb tensor (batch, channel, height, width)
             input_from_dec: output of dec conv (batch, channel, height, width)
-            encoder_out_top: the key matrix for calculation of attetion weight,
+            encoder_out_top: the key matrix for calc of attention weight,
                 which is the top output of encode conv
             encoder_out_combine:
                 the value matrix for the attention-weighted sum,
                 which is the combination of base emb and top output of encode
         """
 
-        batch, _, height, _ = base_target_emb.size()
-        batch_, _, height_, _ = input_from_dec.size()
-
-        enc_batch, _, enc_height = encoder_out_top.size()
-        enc_batch_, _, enc_height_ = encoder_out_combine.size()
-
         preatt = seq_linear(self.linear_in, input_from_dec)
         target = (base_target_emb + preatt) * SCALE_WEIGHT
         target = torch.squeeze(target, 3)
         target = torch.transpose(target, 1, 2)
+
         pre_attn = torch.bmm(target, encoder_out_top)
 
         if self.mask is not None:

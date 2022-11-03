@@ -98,7 +98,7 @@ position_encoding: true
 enc_layers: 6
 dec_layers: 6
 heads: 8
-rnn_size: 512
+hidden_size: 512
 word_vec_size: 512
 transformer_ff: 2048
 dropout_steps: [0]

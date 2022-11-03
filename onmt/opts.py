@@ -309,12 +309,12 @@ def model_opts(parser):
               help='Number of layers in the encoder')
     group.add('--dec_layers', '-dec_layers', type=int, default=2,
               help='Number of layers in the decoder')
-    group.add('--rnn_size', '-rnn_size', type=int, default=-1,
+    group.add('--hidden_size', '-hidden_size', type=int, default=-1,
               help="Size of rnn hidden states. Overwrites "
-                   "enc_rnn_size and dec_rnn_size")
-    group.add('--enc_rnn_size', '-enc_rnn_size', type=int, default=500,
+                   "enc_hid_size and dec_hid_size")
+    group.add('--enc_hid_size', '-enc_hid_size', type=int, default=500,
               help="Size of encoder rnn hidden states.")
-    group.add('--dec_rnn_size', '-dec_rnn_size', type=int, default=500,
+    group.add('--dec_hid_size', '-dec_hid_size', type=int, default=500,
               help="Size of decoder rnn hidden states.")
     group.add('--cnn_kernel_width', '-cnn_kernel_width', type=int, default=3,
               help="Size of windows in the cnn, the kernel_size is "

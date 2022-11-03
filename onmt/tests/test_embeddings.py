@@ -69,12 +69,12 @@ class TestEmbeddings(unittest.TestCase):
             init_case["feat_padding_idx"]
         lengths = torch.randint(0, max_seq_len, (batch_size,))
         lengths[0] = max_seq_len
-        inps = torch.empty((max_seq_len, batch_size, len(voc_sizes)),
+        inps = torch.empty((batch_size, max_seq_len, len(voc_sizes)),
                            dtype=torch.long)
         for f, (voc_size, pad_idx) in enumerate(zip(voc_sizes, pad_idxs)):
             for b, len_ in enumerate(lengths):
-                inps[:len_, b, f] = torch.randint(0, voc_size-1, (len_,))
-                inps[len_:, b, f] = pad_idx
+                inps[b, :len_, f] = torch.randint(0, voc_size-1, (len_,))
+                inps[b, len_:, f] = pad_idx
         return inps
 
     @classmethod
@@ -85,7 +85,7 @@ class TestEmbeddings(unittest.TestCase):
         size = wvs
         if init_case["feat_merge"] not in {"sum", "mlp"}:
             size += nf * fvs
-        return params["max_seq_len"], params["batch_size"], size
+        return params["batch_size"], params["max_seq_len"], size
 
     def test_embeddings_forward_shape(self):
         for params, init_case in itertools.product(self.PARAMS, self.cases()):

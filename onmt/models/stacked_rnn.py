@@ -9,15 +9,15 @@ class StackedLSTM(nn.Module):
     Needed for the decoder, because we do input feeding.
     """
 
-    def __init__(self, num_layers, input_size, rnn_size, dropout):
+    def __init__(self, num_layers, input_size, hidden_size, dropout):
         super(StackedLSTM, self).__init__()
         self.dropout = nn.Dropout(dropout)
         self.num_layers = num_layers
         self.layers = nn.ModuleList()
 
         for _ in range(num_layers):
-            self.layers.append(nn.LSTMCell(input_size, rnn_size))
-            input_size = rnn_size
+            self.layers.append(nn.LSTMCell(input_size, hidden_size))
+            input_size = hidden_size
 
     def forward(self, input_feed, hidden):
         h_0, c_0 = hidden
@@ -42,15 +42,15 @@ class StackedGRU(nn.Module):
     Needed for the decoder, because we do input feeding.
     """
 
-    def __init__(self, num_layers, input_size, rnn_size, dropout):
+    def __init__(self, num_layers, input_size, hidden_size, dropout):
         super(StackedGRU, self).__init__()
         self.dropout = nn.Dropout(dropout)
         self.num_layers = num_layers
         self.layers = nn.ModuleList()
 
         for _ in range(num_layers):
-            self.layers.append(nn.GRUCell(input_size, rnn_size))
-            input_size = rnn_size
+            self.layers.append(nn.GRUCell(input_size, hidden_size))
+            input_size = hidden_size
 
     def forward(self, input_feed, hidden):
         h_1 = []

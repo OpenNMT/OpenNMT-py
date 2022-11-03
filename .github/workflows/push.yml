@@ -72,12 +72,12 @@ jobs:
           -tgt_vocab /tmp/onmt.vocab.tgt \
           -src_vocab_size 1000 \
           -tgt_vocab_size 1000 \
-          -rnn_size 2 \
+          -hidden_size 2 \
           -num_workers 0 -bucket_size 1024 \
           -batch_size 10 \
           -word_vec_size 5 \
           -report_every 5\
-          -rnn_size 10 \
+          -hidden_size 10 \
           -train_steps 10
     - name: Test RNN training with copy
       run: |
@@ -87,12 +87,12 @@ jobs:
           -tgt_vocab /tmp/onmt.vocab.tgt \
           -src_vocab_size 1000 \
           -tgt_vocab_size 1000 \
-          -rnn_size 2 \
+          -hidden_size 2 \
           -num_workers 0 -bucket_size 1024 \
           -batch_size 10 \
           -word_vec_size 5 \
           -report_every 5 \
-          -rnn_size 10 \
+          -hidden_size 10 \
           -train_steps 10 \
           -copy_attn
     - name: Test RNN training with coverage
@@ -103,11 +103,11 @@ jobs:
           -tgt_vocab /tmp/onmt.vocab.tgt \
           -src_vocab_size 1000 \
           -tgt_vocab_size 1000 \
-          -rnn_size 2 -batch_size 10 \
+          -hidden_size 2 -batch_size 10 \
           -num_workers 0 -bucket_size 1024 \
           -word_vec_size 5 -report_every 5        \
           -coverage_attn true -lambda_coverage 0.1 \
-          -rnn_size 10 -train_steps 10
+          -hidden_size 10 -train_steps 10
     - name: Test Transformer training with align
       run: |
         python train.py \
@@ -121,7 +121,7 @@ jobs:
           -decoder_type transformer \
           -layers 4 \
           -word_vec_size 16 \
-          -rnn_size 16 \
+          -hidden_size 16 \
           -num_workers 0 -bucket_size 1024 \
           -heads 2 \
           -transformer_ff 64 \
@@ -148,7 +148,7 @@ jobs:
             -dec_layers 2 -batch_size 10 \
             -heads 4 -transformer_ff 64 \
             -word_vec_size 16 -report_every 5 \
-            -rnn_size 16 -train_steps 10
+            -hidden_size 16 -train_steps 10
     - name: Test LM training with copy
       run: |
         python train.py \
@@ -164,7 +164,7 @@ jobs:
           -dec_layers 2 -batch_size 10 \
           -heads 4 -transformer_ff 64 \
           -word_vec_size 16 -report_every 5        \
-          -rnn_size 16 -train_steps 10 \
+          -hidden_size 16 -train_steps 10 \
           -copy_attn
     - name: Test Graph neural network training
       run: |
@@ -175,7 +175,7 @@ jobs:
           -encoder_type ggnn \
           -layers 2 \
           -decoder_type rnn \
-          -rnn_size 256 \
+          -hidden_size 256 \
           -learning_rate 0.1 \
           -learning_rate_decay 0.8 \
           -global_attention general \
@@ -196,9 +196,9 @@ jobs:
           -tgt_vocab /tmp/onmt_feat.vocab.tgt \
           -src_feats_vocab '{"feat0": "/tmp/onmt_feat.vocab.feat0"}' \
           -src_vocab_size 1000 -tgt_vocab_size 1000 \
-          -rnn_size 2 -batch_size 10 \
+          -hidden_size 2 -batch_size 10 \
           -num_workers 0 -bucket_size 1024 \
-          -word_vec_size 5 -rnn_size 10 \
+          -word_vec_size 5 -hidden_size 10 \
           -report_every 5 -train_steps 10 \
           -save_model /tmp/onmt.model \
           -save_checkpoint_steps 10
@@ -340,11 +340,11 @@ jobs:
           -tgt_vocab /tmp/onmt.vocab.tgt \
           -src_vocab_size 1000 \
           -tgt_vocab_size 1000 \
-          -rnn_size 2 \
+          -hidden_size 2 \
           -batch_size 10 \
           -word_vec_size 5 \
           -report_every 5\
-          -rnn_size 10 \
+          -hidden_size 10 \
           -num_workers 0 -bucket_size 1024 \
           -train_steps 10 \
           -save_model /tmp/onmt.model \
@@ -356,11 +356,11 @@ jobs:
           -tgt_vocab /tmp/onmt.vocab.tgt \
           -src_vocab_size 1000 \
           -tgt_vocab_size 1000 \
-          -rnn_size 2 \
+          -hidden_size 2 \
           -batch_size 10 \
           -word_vec_size 5 \
           -report_every 5\
-          -rnn_size 10 \
+          -hidden_size 10 \
           -train_steps 20 \
           -num_workers 0 -bucket_size 1024 \
           -update_vocab \
@@ -383,7 +383,7 @@ jobs:
           -word_vec_size 16 -report_every 5 \
           -save_model /tmp/lm.onmt.model \
           -save_checkpoint_steps 10 \
-          -rnn_size 16 -train_steps 10
+          -hidden_size 16 -train_steps 10
         sed -i '1s/^/new_tok2\t100000000\n/' /tmp/onmt.vocab.src
         python train.py \
           -config data/lm_data.yaml \
@@ -398,7 +398,7 @@ jobs:
           -dec_layers 2 -batch_size 10 \
           -heads 4 -transformer_ff 64 \
           -word_vec_size 16 -report_every 5 \
-          -rnn_size 16  -train_steps 20 \
+          -hidden_size 16  -train_steps 20 \
           -update_vocab -reset_optim "states" \
           -train_from /tmp/lm.onmt.model_step_10.pt
 

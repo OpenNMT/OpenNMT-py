@@ -57,26 +57,6 @@ class CopyGenerator(nn.Module):
 
     :math:`p(w) = p(z=1)  p_{copy}(w)  +  p(z=0)  p_{softmax}(w)`
 
-
-    .. mermaid::
-
-       graph BT
-          A[input]
-          S[src_map]
-          B[softmax]
-          BB[switch]
-          C[attn]
-          D[copy]
-          O[output]
-          A --> B
-          A --> BB
-          S --> D
-          C --> D
-          D --> O
-          B --> O
-          BB --> O
-
-
     Args:
        input_size (int): size of input representation
        output_size (int): size of output vocabulary
@@ -96,16 +76,15 @@ class CopyGenerator(nn.Module):
         source words.
 
         Args:
-           hidden (FloatTensor): hidden outputs ``(batch x tlen, input_size)``
+           hidden (FloatTensor): hidden output ``(batch x tlen, input_size)``
            attn (FloatTensor): attn for each ``(batch x tlen, slen)``
            src_map (FloatTensor):
                A sparse indicator matrix mapping each source word to
                its index in the "extended" vocab containing.
-               ``(src_len, batch, extra_words)``
+               ``(batch, src_len, extra_words)``
         """
-
         _, slen = attn.size()
-        _, batch, cvocab = src_map.size()
+        batch, _, cvocab = src_map.size()
 
         # Original probabilities.
         logits = self.linear(hidden)
@@ -119,8 +98,8 @@ class CopyGenerator(nn.Module):
         mul_attn = torch.mul(attn, p_copy)
         copy_prob = torch.bmm(
             mul_attn.view(-1, batch, slen).transpose(0, 1),
-            src_map.transpose(0, 1)
-        ).transpose(0, 1)
+            src_map
+        )
         copy_prob = copy_prob.contiguous().view(-1, cvocab)
         return torch.cat([out_prob, copy_prob], 1)
 
@@ -145,7 +124,6 @@ class CopyGeneratorLoss(nn.Module):
             align (LongTensor): ``(batch_size x tgt_len)``
             target (LongTensor): ``(batch_size x tgt_len)``
         """
-
         # probabilities assigned by the model to the gold targets
         vocab_probs = scores.gather(1, target.unsqueeze(1)).squeeze(1)
 

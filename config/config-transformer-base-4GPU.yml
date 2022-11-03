@@ -11,7 +11,7 @@ report_every: 100
 decoder_type: transformer
 encoder_type: transformer
 word_vec_size: 512
-rnn_size: 512
+hidden_size: 512
 layers: 6
 transformer_ff: 2048
 heads: 8
