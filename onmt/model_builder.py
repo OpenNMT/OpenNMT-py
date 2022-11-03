@@ -92,8 +92,9 @@ def load_test_model(opt, model_path=None):
                             map_location=lambda storage, loc: storage)
 
     model_opt = ArgumentParser.ckpt_model_opts(checkpoint['opt'])
-    if hasattr(model_opt, 'rnn_size'):
-        model_opt.hidden_size = model_opt.rnn_size
+    # this patch is no longer needed, included in converter
+    # if hasattr(model_opt, 'rnn_size'):
+    #     model_opt.hidden_size = model_opt.rnn_size
     ArgumentParser.update_model_opts(model_opt)
     ArgumentParser.validate_model_opts(model_opt)
     vocabs = dict_to_vocabs(checkpoint['vocab'])

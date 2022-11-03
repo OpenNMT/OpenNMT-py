@@ -28,13 +28,14 @@ class TransformerEncoderLayer(nn.Module):
 
     def __init__(self, d_model, heads, d_ff, dropout, attention_dropout,
                  max_relative_positions=0,
-                 pos_ffn_activation_fn=ActivationFunction.relu):
+                 pos_ffn_activation_fn=ActivationFunction.relu,
+                 add_kvbias=False):
         super(TransformerEncoderLayer, self).__init__()
 
         self.self_attn = MultiHeadedAttention(
             heads, d_model, dropout=attention_dropout,
             max_relative_positions=max_relative_positions,
-            attn_type="self")
+            attn_type="self", add_kvbias=add_kvbias)
         self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout,
                                                     pos_ffn_activation_fn)
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
@@ -88,7 +89,8 @@ class TransformerEncoder(EncoderBase):
 
     def __init__(self, num_layers, d_model, heads, d_ff, dropout,
                  attention_dropout, embeddings, max_relative_positions,
-                 pos_ffn_activation_fn=ActivationFunction.relu):
+                 pos_ffn_activation_fn=ActivationFunction.relu,
+                 add_kvbias=False):
         super(TransformerEncoder, self).__init__()
 
         self.embeddings = embeddings
@@ -96,7 +98,8 @@ class TransformerEncoder(EncoderBase):
             [TransformerEncoderLayer(
                 d_model, heads, d_ff, dropout, attention_dropout,
                 max_relative_positions=max_relative_positions,
-                pos_ffn_activation_fn=pos_ffn_activation_fn)
+                pos_ffn_activation_fn=pos_ffn_activation_fn,
+                add_kvbias=add_kvbias)
              for i in range(num_layers)])
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
 
@@ -114,6 +117,7 @@ class TransformerEncoder(EncoderBase):
             embeddings,
             opt.max_relative_positions,
             pos_ffn_activation_fn=opt.pos_ffn_activation_fn,
+            add_kvbias=opt.add_kvbias
         )
 
     def forward(self, src, src_len=None):

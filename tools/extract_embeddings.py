@@ -48,8 +48,9 @@ def main():
     tgt_vocab = vocabs['tgt']
 
     model_opt = checkpoint['opt']
-    if hasattr(model_opt, 'rnn_size'):
-        model_opt.hidden_size = model_opt.rnn_size
+    # this patch is no longer needed included in converter
+    # if hasattr(model_opt, 'rnn_size'):
+    #     model_opt.hidden_size = model_opt.rnn_size
     for arg in dummy_opt.__dict__:
         if arg not in model_opt:
             model_opt.__dict__[arg] = dummy_opt.__dict__[arg]
