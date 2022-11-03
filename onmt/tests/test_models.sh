@@ -101,7 +101,7 @@ lstm(){
     $PYTHON_BIN train.py -data "$DATA_PATH" \
                     -save_model "$MODEL_PATH" \
                     -gpuid $GPUID \
-                    -rnn_size 512 \
+                    -hidden_size 512 \
                     -word_vec_size 512 \
                     -layers 1 \
                     -train_steps 10000 \
@@ -132,7 +132,7 @@ sru(){
     $PYTHON_BIN train.py -data "$DATA_PATH" \
                     -save_model "$MODEL_PATH" \
                     -gpuid $GPUID \
-                    -rnn_size 512 \
+                    -hidden_size 512 \
                     -word_vec_size 512 \
                     -layers 1 \
                     -train_steps 10000 \
@@ -158,7 +158,7 @@ cnn(){
     $PYTHON_BIN train.py -data "$DATA_PATH" \
                     -save_model "$MODEL_PATH" \
                     -gpuid $GPUID \
-                    -rnn_size 256 \
+                    -hidden_size 256 \
                     -word_vec_size 256 \
                     -layers 2 \
                     -train_steps 10000 \
@@ -186,7 +186,7 @@ morph(){
     $PYTHON_BIN train.py -data "$DATA_DIR"/morph/data \
                     -save_model "$MODEL_PATH" \
                     -gpuid $GPUID \
-                    -rnn_size 400 \
+                    -hidden_size 400 \
                     -word_vec_size 100 \
                     -layers 1 \
                     -train_steps 10000 \
@@ -220,7 +220,7 @@ transformer(){
                     -batch_size 1024 \
                     -accum_count 4 \
                     -layers 1 \
-                    -rnn_size 256 \
+                    -hidden_size 256 \
                     -word_vec_size 256 \
                     -encoder_type transformer \
                     -decoder_type transformer \

@@ -152,7 +152,7 @@ Bear in mind that your models must share the same target vocabulary.
 
 This is naturally embedded in the data configuration format introduced in OpenNMT-py 2.0. Each entry of the `data` configuration will have its own *weight*. When building batches, we'll sequentially take *weight* example from each corpus.
 
-**Note**: don't worry about batch homogeneity/heterogeneity, the pooling mechanism is here for that reason. Instead of building batches one at a time, we will load `pool_factor` of batches worth of examples, sort them by length, build batches and then yield them in a random order.
+**Note**: don't worry about batch homogeneity/heterogeneity, the bucketing mechanism is here for that reason. Instead of building batches one at a time, we will load `bucket_size` examples, sort them by length, build batches and then yield them in a random order.
 
 ### Example
 
