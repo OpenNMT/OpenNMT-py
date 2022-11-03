@@ -211,13 +211,35 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
         tokens numericalized.
         """
         bucket = []
+        _bucket_size = int(self.bucket_size/10)
+        print("#### INITIAL bucket_size: %d" % _bucket_size)
         for ex in self.mixer:
             bucket.append(ex)
-            if len(bucket) == self.bucket_size:
+            if len(bucket) == _bucket_size:
                 yield self._tuple_to_json_with_tokIDs(bucket)
                 bucket = []
+                if _bucket_size < self.bucket_size:
+                    _bucket_size = _bucket_size * 2
+                else:
+                    _bucket_size = self.bucket_size
+                print("updated bucket_size to %d" % _bucket_size)
         if bucket:
             yield self._tuple_to_json_with_tokIDs(bucket)
+
+    # def _bucketing(self):
+    #     """
+    #     Add up to bucket_size examples from the mixed corpora according
+    #     to the above strategy. example tuple is converted to json and
+    #     tokens numericalized.
+    #     """
+    #     bucket = []
+    #     for ex in self.mixer:
+    #         bucket.append(ex)
+    #         if len(bucket) == self.bucket_size:
+    #             yield self._tuple_to_json_with_tokIDs(bucket)
+    #             bucket = []
+    #     if bucket:
+    #         yield self._tuple_to_json_with_tokIDs(bucket)
 
     def batch_iter(self, data, batch_size, batch_size_fn=None,
                    batch_size_multiple=1):
