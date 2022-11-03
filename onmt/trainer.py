@@ -307,12 +307,12 @@ class Trainer(object):
 
             for batch in valid_iter:
                 src = batch['src']
-                src_lengths = batch['srclen']
+                src_len = batch['srclen']
                 tgt = batch['tgt']
 
                 with torch.cuda.amp.autocast(enabled=self.optim.amp):
                     # F-prop through the model.
-                    model_out, attns = valid_model(src, tgt, src_lengths,
+                    model_out, attns = valid_model(src, tgt, src_len,
                                                    with_align=self.with_align)
 
                     # Compute loss.
@@ -369,10 +369,10 @@ class Trainer(object):
                 trunc_size = target_size
 
             src = batch['src']
-            src_lengths = batch['srclen']
-            if src_lengths is not None:
-                report_stats.n_src_words += src_lengths.sum().item()
-                total_stats.n_src_words += src_lengths.sum().item()
+            src_len = batch['srclen']
+            if src_len is not None:
+                report_stats.n_src_words += src_len.sum().item()
+                total_stats.n_src_words += src_len.sum().item()
 
             tgt_outer = batch['tgt']
 
@@ -389,7 +389,7 @@ class Trainer(object):
                 try:
                     with torch.cuda.amp.autocast(enabled=self.optim.amp):
                         model_out, attns = self.model(
-                            src, tgt, src_lengths, bptt=bptt,
+                            src, tgt, src_len, bptt=bptt,
                             with_align=self.with_align)
                         bptt = True
 

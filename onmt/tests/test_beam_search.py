@@ -585,8 +585,8 @@ class TestBeamSearchLM(TestBeamSearchAgainstReferenceCase):
             0, 30, False, 0, set(),
             False, 0., False)
         device_init = torch.zeros(1, 1)
-        src_lengths = torch.randint(0, 30, (self.BATCH_SZ,))
-        fn_map_state, _, _, _ = beam.initialize(device_init, src_lengths)
+        src_len = torch.randint(0, 30, (self.BATCH_SZ,))
+        fn_map_state, _, _, _ = beam.initialize(device_init, src_len)
         expected_beam_scores = self.init_step(beam, 1)
         expected_beam_scores = self.first_step(beam, expected_beam_scores, 1)
         expected_beam_scores = self.second_step(beam, expected_beam_scores, 1)
@@ -594,7 +594,7 @@ class TestBeamSearchLM(TestBeamSearchAgainstReferenceCase):
 
         n_steps = beam.alive_seq.shape[-1] - 1
         self.assertTrue(beam.src_len.equal(
-            n_steps+fn_map_state(src_lengths, dim=0)))
+            n_steps+fn_map_state(src_len, dim=0)))
 
     def test_beam_lm_update_src_len_when_finished(self):
         beam = BeamSearchLM(
@@ -603,11 +603,11 @@ class TestBeamSearchLM(TestBeamSearchAgainstReferenceCase):
             0, 30, False, 0, set(),
             False, 0., False)
         device_init = torch.zeros(1, 1)
-        src_lengths = torch.randint(0, 30, (self.BATCH_SZ,))
-        fn_map_state, _, _, _ = beam.initialize(device_init, src_lengths)
+        src_len = torch.randint(0, 30, (self.BATCH_SZ,))
+        fn_map_state, _, _, _ = beam.initialize(device_init, src_len)
         self.init_step(beam, 1)
         self.finish_first_beam_step(beam)
 
         n_steps = beam.alive_seq.shape[-1] - 1
         self.assertTrue(beam.src_len.equal(
-            n_steps+fn_map_state(src_lengths[1:], dim=0)))
+            n_steps+fn_map_state(src_len[1:], dim=0)))

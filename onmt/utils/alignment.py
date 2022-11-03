@@ -27,7 +27,7 @@ def make_batch_align_matrix(index_tensor, size=None, normalize=False):
     return dense_tensor
 
 
-def extract_alignment(align_matrix, tgt_mask, src_lens, n_best):
+def extract_alignment(align_matrix, tgt_mask, src_len, n_best):
     """
     Extract a batched align_matrix into its src indice alignment lists,
     with tgt_mask to filter out invalid tgt position as EOS/PAD.
@@ -37,7 +37,7 @@ def extract_alignment(align_matrix, tgt_mask, src_lens, n_best):
         align_matrix (Tensor): ``(B, tgt_len, src_len)``,
             attention head normalized by Softmax(dim=-1)
         tgt_mask (BoolTensor): ``(B, tgt_len)``, True for EOS, PAD.
-        src_lens (LongTensor): ``(B,)``, containing valid src length
+        src_len (LongTensor): ``(B,)``, containing valid src lengths
         n_best (int): a value indicating number of parallel translation.
         * B: denote flattened batch as B = batch_size * n_best.
 
@@ -53,7 +53,7 @@ def extract_alignment(align_matrix, tgt_mask, src_lens, n_best):
 
     # treat alignment matrix one by one as each have different lengths
     for i, (am_b, tgt_mask_b, src_len) in enumerate(
-            zip(align_matrix, tgt_mask, src_lens)):
+            zip(align_matrix, tgt_mask, src_len)):
         valid_tgt = ~tgt_mask_b
         valid_tgt_len = valid_tgt.sum()
         if valid_tgt_len == 0:
