@@ -386,6 +386,8 @@ def model_opts(parser):
               help='Size of hidden transformer feed-forward')
     group.add('--aan_useffn', '-aan_useffn', action="store_true",
               help='Turn on the FFN layer in the AAN decoder')
+    group.add('--add_kvbias', '-add_kvbias', action="store_true",
+              help='Add bias to nn.linear of Key/Value in MHA')
 
     # Alignement options
     group = parser.add_argument_group('Model - Alignement')

@@ -27,6 +27,7 @@ class TransformerDecoderLayerBase(nn.Module):
         full_context_alignment=False,
         alignment_heads=0,
         pos_ffn_activation_fn=ActivationFunction.relu,
+        add_kvbias=False
     ):
         """
         Args:
@@ -53,6 +54,7 @@ class TransformerDecoderLayerBase(nn.Module):
                 N. of cross attention heads to use for alignment guiding
             pos_ffn_activation_fn (ActivationFunction):
                 activation function choice for PositionwiseFeedForward layer
+            add_kvbias (bool): whether to add bias to the Key/Value nn.Linear
 
         """
         super(TransformerDecoderLayerBase, self).__init__()
@@ -64,7 +66,8 @@ class TransformerDecoderLayerBase(nn.Module):
                 d_model,
                 dropout=attention_dropout,
                 max_relative_positions=max_relative_positions,
-                attn_type="self"
+                attn_type="self",
+                add_kvbias=add_kvbias
             )
         elif self_attn_type == "average":
             self.self_attn = AverageAttention(
@@ -181,6 +184,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
         full_context_alignment=False,
         alignment_heads=0,
         pos_ffn_activation_fn=ActivationFunction.relu,
+        add_kvbias=False
     ):
         """
         Args:
@@ -198,10 +202,12 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
             full_context_alignment,
             alignment_heads,
             pos_ffn_activation_fn=pos_ffn_activation_fn,
+            add_kvbias=add_kvbias
         )
         self.context_attn = MultiHeadedAttention(
             heads, d_model, dropout=attention_dropout,
-            attn_type="context"
+            attn_type="context",
+            add_kvbias=add_kvbias
         )
         self.layer_norm_2 = nn.LayerNorm(d_model, eps=1e-6)
 
@@ -310,6 +316,7 @@ class TransformerDecoderBase(DecoderBase):
             opt.alignment_layer,
             alignment_heads=opt.alignment_heads,
             pos_ffn_activation_fn=opt.pos_ffn_activation_fn,
+            add_kvbias=opt.add_kvbias
         )
 
     def init_state(self, src, enc_out, enc_final_hs):
@@ -372,6 +379,7 @@ class TransformerDecoder(TransformerDecoderBase):
         alignment_layer (int): N° Layer to supervise with for alignment guiding
         alignment_heads (int):
             N. of cross attention heads to use for alignment guiding
+        add_kvbias (bool): whether to add bias to the Key/Value nn.Linear
     """
 
     def __init__(
@@ -391,6 +399,7 @@ class TransformerDecoder(TransformerDecoderBase):
         alignment_layer,
         alignment_heads,
         pos_ffn_activation_fn=ActivationFunction.relu,
+        add_kvbias=False
     ):
         super(TransformerDecoder, self).__init__(
             d_model, copy_attn, embeddings, alignment_layer
@@ -410,6 +419,7 @@ class TransformerDecoder(TransformerDecoderBase):
                     full_context_alignment=full_context_alignment,
                     alignment_heads=alignment_heads,
                     pos_ffn_activation_fn=pos_ffn_activation_fn,
+                    add_kvbias=add_kvbias
                 )
                 for i in range(num_layers)
             ]
@@ -561,6 +571,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
         max_relative_positions (int):
             Max distance between inputs in relative positions representations
         aan_useffn (bool): Turn on the FFN layer in the AAN decoder
+        add_kvbias (bool): whether to add bias to the Key/Value nn.Linear
     """
 
     def __init__(
@@ -580,6 +591,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
         alignment_layer=None,
         alignment_heads=None,
         pos_ffn_activation_fn=ActivationFunction.relu,
+        add_kvbias=False
     ):
         super(TransformerLMDecoder, self).__init__(
             d_model, copy_attn, embeddings, None
@@ -598,6 +610,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
                     full_context_alignment=None,
                     alignment_heads=None,
                     pos_ffn_activation_fn=pos_ffn_activation_fn,
+                    add_kvbias=add_kvbias
                 )
                 for i in range(num_layers)
             ]

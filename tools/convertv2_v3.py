@@ -81,4 +81,14 @@ if __name__ == "__main__":
     else:
         vocabs['data_task'] = "seq2seq"
     checkpoint['vocab'] = vocabs_to_dict(vocabs)
+
+    checkpoint['opt'].__dict__['hidden_size'] =\
+        checkpoint['opt'].__dict__.pop('rnn_size')
+    checkpoint['opt'].__dict__['enc_hid_size'] =\
+        checkpoint['opt'].__dict__.pop('enc_rnn_size')
+    checkpoint['opt'].__dict__['dec_hid_size'] =\
+        checkpoint['opt'].__dict__.pop('dec_rnn_size')
+
+    checkpoint['opt'].__dict__['add_kvbias'] = True
+
     torch.save(checkpoint, opt.v3model)

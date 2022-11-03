@@ -113,7 +113,7 @@ class MultiHeadedAttention(nn.Module):
 
     def __init__(self, head_count: int, model_dim: int, dropout: float = 0.1,
                  max_relative_positions: int = 0,
-                 attn_type: str = None) -> None:
+                 attn_type: str = None, add_kvbias=False) -> None:
 
         assert model_dim % head_count == 0
         self.dim_per_head = model_dim // head_count
@@ -131,8 +131,8 @@ class MultiHeadedAttention(nn.Module):
         else:
             self.relative_positions_embeddings = None
 
-        self.linear_keys = nn.Linear(model_dim, model_dim)
-        self.linear_values = nn.Linear(model_dim, model_dim)
+        self.linear_keys = nn.Linear(model_dim, model_dim, bias=add_kvbias)
+        self.linear_values = nn.Linear(model_dim, model_dim, bias=add_kvbias)
         self.linear_query = nn.Linear(model_dim, model_dim)
         self.softmax = nn.Softmax(dim=-1)
         self.dropout = nn.Dropout(dropout)
