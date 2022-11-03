@@ -89,6 +89,6 @@ if __name__ == "__main__":
     checkpoint['opt'].__dict__['dec_hid_size'] =\
         checkpoint['opt'].__dict__.pop('dec_rnn_size')
 
-    checkpoint['opt'].__dict__['add_kvbias'] = True
+    checkpoint['opt'].__dict__['add_qkvbias'] = True
 
     torch.save(checkpoint, opt.v3model)
