@@ -269,20 +269,20 @@ Next we specify the core model itself. Here we will build a small model with an 
 
 ```python
 emb_size = 100
-rnn_size = 500
+hidden_size = 500
 # Specify the core model.
 
 encoder_embeddings = onmt.modules.Embeddings(emb_size, len(src_vocab),
                                              word_padding_idx=src_padding)
 
-encoder = onmt.encoders.RNNEncoder(hidden_size=rnn_size, num_layers=1,
+encoder = onmt.encoders.RNNEncoder(hidden_size=hidden_size, num_layers=1,
                                    rnn_type="LSTM", bidirectional=True,
                                    embeddings=encoder_embeddings)
 
 decoder_embeddings = onmt.modules.Embeddings(emb_size, len(tgt_vocab),
                                              word_padding_idx=tgt_padding)
 decoder = onmt.decoders.decoder.InputFeedRNNDecoder(
-    hidden_size=rnn_size, num_layers=1, bidirectional_encoder=True, 
+    hidden_size=hidden_size, num_layers=1, bidirectional_encoder=True, 
     rnn_type="LSTM", embeddings=decoder_embeddings)
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -291,7 +291,7 @@ model.to(device)
 
 # Specify the tgt word generator and loss computation module
 model.generator = nn.Sequential(
-    nn.Linear(rnn_size, len(tgt_vocab)),
+    nn.Linear(hidden_size, len(tgt_vocab)),
     nn.LogSoftmax(dim=-1)).to(device)
 
 loss = onmt.utils.loss.NMTLossCompute(

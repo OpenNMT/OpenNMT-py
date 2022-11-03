@@ -199,58 +199,35 @@
 
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
 
-<span class="kn">from</span> <span class="nn">onmt.utils.misc</span> <span class="kn">import</span> <span class="n">aeq</span>
-
 
 <div class="viewcode-block" id="EncoderBase"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.encoders.EncoderBase">[docs]</a><span class="k">class</span> <span class="nc">EncoderBase</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Base encoder class. Specifies the interface used by different encoder types</span>
 <span class="sd">    and required by :class:`onmt.Models.NMTModel`.</span>
 
-<span class="sd">    .. mermaid::</span>
-
-<span class="sd">       graph BT</span>
-<span class="sd">          A[Input]</span>
-<span class="sd">          subgraph RNN</span>
-<span class="sd">            C[Pos 1]</span>
-<span class="sd">            D[Pos 2]</span>
-<span class="sd">            E[Pos N]</span>
-<span class="sd">          end</span>
-<span class="sd">          F[Memory_Bank]</span>
-<span class="sd">          G[Final]</span>
-<span class="sd">          A--&gt;C</span>
-<span class="sd">          A--&gt;D</span>
-<span class="sd">          A--&gt;E</span>
-<span class="sd">          C--&gt;F</span>
-<span class="sd">          D--&gt;F</span>
-<span class="sd">          E--&gt;F</span>
-<span class="sd">          E--&gt;G</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_opt</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">embeddings</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 
-    <span class="k">def</span> <span class="nf">_check_args</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">lengths</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hidden</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="n">n_batch</span> <span class="o">=</span> <span class="n">src</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">lengths</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">n_batch_</span><span class="p">,</span> <span class="o">=</span> <span class="n">lengths</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
-            <span class="n">aeq</span><span class="p">(</span><span class="n">n_batch</span><span class="p">,</span> <span class="n">n_batch_</span><span class="p">)</span>
-
-<div class="viewcode-block" id="EncoderBase.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.encoders.EncoderBase.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">lengths</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="EncoderBase.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.encoders.EncoderBase.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">src_len</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            src (LongTensor):</span>
-<span class="sd">               padded sequences of sparse indices ``(src_len, batch, nfeat)``</span>
-<span class="sd">            lengths (LongTensor): length of each sequence ``(batch,)``</span>
-
+<span class="sd">               padded sequences of sparse indices ``(batch, src_len, nfeat)``</span>
+<span class="sd">            src_len (LongTensor): length of each sequence ``(batch,)``</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            (FloatTensor, FloatTensor, FloatTensor):</span>
 
-<span class="sd">            * final encoder state, used to initialize decoder</span>
-<span class="sd">            * memory bank for attention, ``(src_len, batch, hidden)``</span>
-<span class="sd">            * lengths</span>
+<span class="sd">            * enc_out (encoder output used for attention),</span>
+<span class="sd">              ``(batch, src_len, hidden_size)``</span>
+<span class="sd">              for bidirectional rnn last dimension is 2x hidden_size</span>
+<span class="sd">            * enc_final_hs: encoder final hidden state</span>
+<span class="sd">              ``(num_layersxdir, batch, hidden_size)``</span>
+<span class="sd">              In the case of LSTM this is a tuple.</span>
+<span class="sd">            * src_len (batch)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div></div>
@@ -266,7 +243,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, srush
+        &copy; Copyright 2017, OpenNMT
 
     </p>
   </div>

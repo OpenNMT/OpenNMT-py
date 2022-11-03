@@ -224,6 +224,7 @@
         <span class="n">full_context_alignment</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">alignment_heads</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
         <span class="n">pos_ffn_activation_fn</span><span class="o">=</span><span class="n">ActivationFunction</span><span class="o">.</span><span class="n">relu</span><span class="p">,</span>
+        <span class="n">add_qkvbias</span><span class="o">=</span><span class="kc">False</span>
     <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
@@ -250,16 +251,20 @@
 <span class="sd">                N. of cross attention heads to use for alignment guiding</span>
 <span class="sd">            pos_ffn_activation_fn (ActivationFunction):</span>
 <span class="sd">                activation function choice for PositionwiseFeedForward layer</span>
+<span class="sd">            add_qkvbias (bool): whether to add bias to the Key/Value nn.Linear</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">TransformerDecoderLayerBase</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">self_attn_type</span> <span class="o">=</span> <span class="n">self_attn_type</span>
         <span class="k">if</span> <span class="n">self_attn_type</span> <span class="o">==</span> <span class="s2">&quot;scaled-dot&quot;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">self_attn</span> <span class="o">=</span> <span class="n">MultiHeadedAttention</span><span class="p">(</span>
                 <span class="n">heads</span><span class="p">,</span>
                 <span class="n">d_model</span><span class="p">,</span>
                 <span class="n">dropout</span><span class="o">=</span><span class="n">attention_dropout</span><span class="p">,</span>
                 <span class="n">max_relative_positions</span><span class="o">=</span><span class="n">max_relative_positions</span><span class="p">,</span>
+                <span class="n">attn_type</span><span class="o">=</span><span class="s2">&quot;self&quot;</span><span class="p">,</span>
+                <span class="n">add_qkvbias</span><span class="o">=</span><span class="n">add_qkvbias</span>
             <span class="p">)</span>
         <span class="k">elif</span> <span class="n">self_attn_type</span> <span class="o">==</span> <span class="s2">&quot;average&quot;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">self_attn</span> <span class="o">=</span> <span class="n">AverageAttention</span><span class="p">(</span>
@@ -287,12 +292,12 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            (FloatTensor, FloatTensor, FloatTensor or None):</span>
 
-<span class="sd">            * output ``(batch_size, T, model_dim)``</span>
+<span class="sd">            * layer_out ``(batch_size, T, model_dim)``</span>
 <span class="sd">            * top_attn ``(batch_size, T, src_len)``</span>
 <span class="sd">            * attn_align ``(batch_size, T, src_len)`` or None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">with_align</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;with_align&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
-        <span class="n">output</span><span class="p">,</span> <span class="n">attns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_forward</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">layer_out</span><span class="p">,</span> <span class="n">attns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_forward</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="n">top_attn</span> <span class="o">=</span> <span class="n">attns</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
         <span class="n">attn_align</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">with_align</span><span class="p">:</span>
@@ -307,7 +312,7 @@
             <span class="c1"># Case 2: no full_context, 1 align heads -&gt; guided align</span>
             <span class="c1"># Case 3: full_context, 1 align heads -&gt; full cte guided align</span>
             <span class="n">attn_align</span> <span class="o">=</span> <span class="n">attns</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">output</span><span class="p">,</span> <span class="n">top_attn</span><span class="p">,</span> <span class="n">attn_align</span>
+        <span class="k">return</span> <span class="n">layer_out</span><span class="p">,</span> <span class="n">top_attn</span><span class="p">,</span> <span class="n">attn_align</span>
 
     <span class="k">def</span> <span class="nf">update_dropout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">attention_dropout</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">self_attn</span><span class="o">.</span><span class="n">update_dropout</span><span class="p">(</span><span class="n">attention_dropout</span><span class="p">)</span>
@@ -336,19 +341,17 @@
             <span class="n">dec_mask</span> <span class="o">=</span> <span class="n">tgt_pad_mask</span>
         <span class="k">return</span> <span class="n">dec_mask</span>
 
-    <span class="k">def</span> <span class="nf">_forward_self_attn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs_norm</span><span class="p">,</span> <span class="n">dec_mask</span><span class="p">,</span> <span class="n">layer_cache</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">self_attn</span><span class="p">,</span> <span class="n">MultiHeadedAttention</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_forward_self_attn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer_in_norm</span><span class="p">,</span> <span class="n">dec_mask</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">self_attn_type</span> <span class="o">==</span> <span class="s2">&quot;scaled-dot&quot;</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">self_attn</span><span class="p">(</span>
-                <span class="n">inputs_norm</span><span class="p">,</span>
-                <span class="n">inputs_norm</span><span class="p">,</span>
-                <span class="n">inputs_norm</span><span class="p">,</span>
-                <span class="n">mask</span><span class="o">=</span><span class="n">dec_mask</span><span class="p">,</span>
-                <span class="n">layer_cache</span><span class="o">=</span><span class="n">layer_cache</span><span class="p">,</span>
-                <span class="n">attn_type</span><span class="o">=</span><span class="s2">&quot;self&quot;</span><span class="p">,</span>
+                <span class="n">layer_in_norm</span><span class="p">,</span>
+                <span class="n">layer_in_norm</span><span class="p">,</span>
+                <span class="n">layer_in_norm</span><span class="p">,</span>
+                <span class="n">mask</span><span class="o">=</span><span class="n">dec_mask</span>
             <span class="p">)</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">self_attn</span><span class="p">,</span> <span class="n">AverageAttention</span><span class="p">):</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">self_attn_type</span> <span class="o">==</span> <span class="s2">&quot;average&quot;</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">self_attn</span><span class="p">(</span>
-                <span class="n">inputs_norm</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">dec_mask</span><span class="p">,</span> <span class="n">layer_cache</span><span class="o">=</span><span class="n">layer_cache</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span>
+                <span class="n">layer_in_norm</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">dec_mask</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
@@ -362,17 +365,6 @@
 <span class="sd">    providing better converge speed and performance. This is also the actual</span>
 <span class="sd">    implementation in tensor2tensor and also avalable in fairseq.</span>
 <span class="sd">    See https://tunz.kr/post/4 and :cite:`DeeperTransformer`.</span>
-
-<span class="sd">    .. mermaid::</span>
-
-<span class="sd">        graph LR</span>
-<span class="sd">        %% &quot;*SubLayer&quot; can be self-attn, src-attn or feed forward block</span>
-<span class="sd">            A(input) --&gt; B[Norm]</span>
-<span class="sd">            B --&gt; C[&quot;*SubLayer&quot;]</span>
-<span class="sd">            C --&gt; D[Drop]</span>
-<span class="sd">            D --&gt; E((+))</span>
-<span class="sd">            A --&gt; E</span>
-<span class="sd">            E --&gt; F(out)</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -389,6 +381,7 @@
         <span class="n">full_context_alignment</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">alignment_heads</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
         <span class="n">pos_ffn_activation_fn</span><span class="o">=</span><span class="n">ActivationFunction</span><span class="o">.</span><span class="n">relu</span><span class="p">,</span>
+        <span class="n">add_qkvbias</span><span class="o">=</span><span class="kc">False</span>
     <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
@@ -406,9 +399,12 @@
             <span class="n">full_context_alignment</span><span class="p">,</span>
             <span class="n">alignment_heads</span><span class="p">,</span>
             <span class="n">pos_ffn_activation_fn</span><span class="o">=</span><span class="n">pos_ffn_activation_fn</span><span class="p">,</span>
+            <span class="n">add_qkvbias</span><span class="o">=</span><span class="n">add_qkvbias</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">context_attn</span> <span class="o">=</span> <span class="n">MultiHeadedAttention</span><span class="p">(</span>
-            <span class="n">heads</span><span class="p">,</span> <span class="n">d_model</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="n">attention_dropout</span>
+            <span class="n">heads</span><span class="p">,</span> <span class="n">d_model</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="n">attention_dropout</span><span class="p">,</span>
+            <span class="n">attn_type</span><span class="o">=</span><span class="s2">&quot;context&quot;</span><span class="p">,</span>
+            <span class="n">add_qkvbias</span><span class="o">=</span><span class="n">add_qkvbias</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm_2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
 
@@ -420,11 +416,10 @@
 
     <span class="k">def</span> <span class="nf">_forward</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">inputs</span><span class="p">,</span>
-        <span class="n">memory_bank</span><span class="p">,</span>
+        <span class="n">layer_in</span><span class="p">,</span>
+        <span class="n">enc_out</span><span class="p">,</span>
         <span class="n">src_pad_mask</span><span class="p">,</span>
         <span class="n">tgt_pad_mask</span><span class="p">,</span>
-        <span class="n">layer_cache</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">future</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
@@ -433,47 +428,51 @@
 <span class="sd">        # T: could be 1 in the case of stepwise decoding or tgt_len</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            inputs (FloatTensor): ``(batch_size, T, model_dim)``</span>
-<span class="sd">            memory_bank (FloatTensor): ``(batch_size, src_len, model_dim)``</span>
+<span class="sd">            layer_in (FloatTensor): ``(batch_size, T, model_dim)``</span>
+<span class="sd">            enc_out (FloatTensor): ``(batch_size, src_len, model_dim)``</span>
 <span class="sd">            src_pad_mask (bool): ``(batch_size, 1, src_len)``</span>
 <span class="sd">            tgt_pad_mask (bool): ``(batch_size, 1, T)``</span>
-<span class="sd">            layer_cache (dict or None): cached layer info when stepwise decode</span>
 <span class="sd">            step (int or None): stepwise decoding counter</span>
 <span class="sd">            future (bool): If set True, do not apply future_mask.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            (FloatTensor, FloatTensor):</span>
 
-<span class="sd">            * output ``(batch_size, T, model_dim)``</span>
+<span class="sd">            * layer_out ``(batch_size, T, model_dim)``</span>
 <span class="sd">            * attns ``(batch_size, head, T, src_len)``</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">dec_mask</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">src_pad_mask</span> <span class="o">=</span> <span class="n">src_pad_mask</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># [B,1,1,slen]</span>
 
-        <span class="k">if</span> <span class="n">inputs</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">layer_in</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="c1"># masking is necessary when sequence length is greater than one</span>
             <span class="n">dec_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_dec_mask</span><span class="p">(</span><span class="n">tgt_pad_mask</span><span class="p">,</span> <span class="n">future</span><span class="p">)</span>
+            <span class="n">dec_mask</span> <span class="o">=</span> <span class="n">dec_mask</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">dec_mask</span> <span class="o">=</span> <span class="n">dec_mask</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">dec_mask</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">src_pad_mask</span> <span class="o">=</span> <span class="n">src_pad_mask</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">dec_mask</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="c1"># mask now are (batch x 1 x tlen x s or t len)</span>
+            <span class="c1"># 1 = heads to be expanded in MHA</span>
 
-        <span class="n">inputs_norm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm_1</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
+        <span class="n">layer_in_norm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm_1</span><span class="p">(</span><span class="n">layer_in</span><span class="p">)</span>
 
         <span class="n">query</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_forward_self_attn</span><span class="p">(</span>
-            <span class="n">inputs_norm</span><span class="p">,</span> <span class="n">dec_mask</span><span class="p">,</span> <span class="n">layer_cache</span><span class="p">,</span> <span class="n">step</span>
+            <span class="n">layer_in_norm</span><span class="p">,</span> <span class="n">dec_mask</span><span class="p">,</span> <span class="n">step</span>
         <span class="p">)</span>
 
-        <span class="n">query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">query</span><span class="p">)</span> <span class="o">+</span> <span class="n">inputs</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">query</span><span class="p">)</span> <span class="o">+</span> <span class="n">layer_in</span>
 
         <span class="n">query_norm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm_2</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
-        <span class="n">mid</span><span class="p">,</span> <span class="n">attns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context_attn</span><span class="p">(</span>
-            <span class="n">memory_bank</span><span class="p">,</span>
-            <span class="n">memory_bank</span><span class="p">,</span>
-            <span class="n">query_norm</span><span class="p">,</span>
-            <span class="n">mask</span><span class="o">=</span><span class="n">src_pad_mask</span><span class="p">,</span>
-            <span class="n">layer_cache</span><span class="o">=</span><span class="n">layer_cache</span><span class="p">,</span>
-            <span class="n">attn_type</span><span class="o">=</span><span class="s2">&quot;context&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">feed_forward</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">mid</span><span class="p">)</span> <span class="o">+</span> <span class="n">query</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">output</span><span class="p">,</span> <span class="n">attns</span>
+        <span class="n">mid</span><span class="p">,</span> <span class="n">attns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context_attn</span><span class="p">(</span>
+            <span class="n">enc_out</span><span class="p">,</span>
+            <span class="n">enc_out</span><span class="p">,</span>
+            <span class="n">query_norm</span><span class="p">,</span>
+            <span class="n">mask</span><span class="o">=</span><span class="n">src_pad_mask</span>
+        <span class="p">)</span>
+        <span class="n">layer_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">feed_forward</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">mid</span><span class="p">)</span> <span class="o">+</span> <span class="n">query</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">layer_out</span><span class="p">,</span> <span class="n">attns</span>
 
 
 <span class="k">class</span> <span class="nc">TransformerDecoderBase</span><span class="p">(</span><span class="n">DecoderBase</span><span class="p">):</span>
@@ -498,7 +497,7 @@
         <span class="sd">&quot;&quot;&quot;Alternate constructor.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">dec_layers</span><span class="p">,</span>
-            <span class="n">opt</span><span class="o">.</span><span class="n">dec_rnn_size</span><span class="p">,</span>
+            <span class="n">opt</span><span class="o">.</span><span class="n">dec_hid_size</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">heads</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">transformer_ff</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">copy_attn</span><span class="p">,</span>
@@ -514,26 +513,34 @@
             <span class="n">opt</span><span class="o">.</span><span class="n">alignment_layer</span><span class="p">,</span>
             <span class="n">alignment_heads</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">alignment_heads</span><span class="p">,</span>
             <span class="n">pos_ffn_activation_fn</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">pos_ffn_activation_fn</span><span class="p">,</span>
+            <span class="n">add_qkvbias</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">add_qkvbias</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">init_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">enc_hidden</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">init_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span> <span class="n">enc_final_hs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize decoder state.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">src</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;cache&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">def</span> <span class="nf">map_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fn</span><span class="p">):</span>
-        <span class="k">def</span> <span class="nf">_recursive_map</span><span class="p">(</span><span class="n">struct</span><span class="p">,</span> <span class="n">batch_dim</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">struct</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-                        <span class="n">_recursive_map</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="n">struct</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">fn</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">batch_dim</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fn</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;cache&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">_recursive_map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;cache&quot;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fn</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer_layers</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="s1">&#39;context_attn&#39;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">layer</span><span class="o">.</span><span class="n">context_attn</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;keys&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">x</span> <span class="o">=</span> <span class="n">fn</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">context_attn</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;keys&#39;</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+                    <span class="n">y</span> <span class="o">=</span> <span class="n">fn</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">context_attn</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;values&#39;</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+                    <span class="n">layer</span><span class="o">.</span><span class="n">context_attn</span><span class="o">.</span><span class="n">layer_cache</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;keys&#39;</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
+                                                            <span class="s1">&#39;values&#39;</span><span class="p">:</span> <span class="n">y</span><span class="p">}</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">self_attn</span><span class="p">,</span> <span class="n">AverageAttention</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">layer</span><span class="o">.</span><span class="n">self_attn</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;prev_g&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">x</span> <span class="o">=</span> <span class="n">fn</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">self_attn</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;prev_g&#39;</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+                    <span class="n">layer</span><span class="o">.</span><span class="n">self_attn</span><span class="o">.</span><span class="n">layer_cache</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;prev_g&#39;</span><span class="p">:</span> <span class="n">x</span><span class="p">}</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">layer</span><span class="o">.</span><span class="n">self_attn</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;keys&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">x</span> <span class="o">=</span> <span class="n">fn</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">self_attn</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;keys&#39;</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+                    <span class="n">y</span> <span class="o">=</span> <span class="n">fn</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">self_attn</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;values&#39;</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+                    <span class="n">layer</span><span class="o">.</span><span class="n">self_attn</span><span class="o">.</span><span class="n">layer_cache</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;keys&#39;</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
+                                                         <span class="s1">&#39;values&#39;</span><span class="p">:</span> <span class="n">y</span><span class="p">}</span>
 
     <span class="k">def</span> <span class="nf">detach_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
@@ -550,21 +557,6 @@
 <div class="viewcode-block" id="TransformerDecoder"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.decoders.TransformerDecoder">[docs]</a><span class="k">class</span> <span class="nc">TransformerDecoder</span><span class="p">(</span><span class="n">TransformerDecoderBase</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;The Transformer decoder from &quot;Attention is All You Need&quot;.</span>
 <span class="sd">    :cite:`DBLP:journals/corr/VaswaniSPUJGKP17`</span>
-
-<span class="sd">    .. mermaid::</span>
-
-<span class="sd">       graph BT</span>
-<span class="sd">          A[input]</span>
-<span class="sd">          B[multi-head self-attn]</span>
-<span class="sd">          BB[multi-head src-attn]</span>
-<span class="sd">          C[feed forward]</span>
-<span class="sd">          O[output]</span>
-<span class="sd">          A --&gt; B</span>
-<span class="sd">          B --&gt; BB</span>
-<span class="sd">          BB --&gt; C</span>
-<span class="sd">          C --&gt; O</span>
-
-
 <span class="sd">    Args:</span>
 <span class="sd">        num_layers (int): number of decoder layers.</span>
 <span class="sd">        d_model (int): size of the model</span>
@@ -584,6 +576,7 @@
 <span class="sd">        alignment_layer (int): N° Layer to supervise with for alignment guiding</span>
 <span class="sd">        alignment_heads (int):</span>
 <span class="sd">            N. of cross attention heads to use for alignment guiding</span>
+<span class="sd">        add_qkvbias (bool): whether to add bias to the Key/Value nn.Linear</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
@@ -603,6 +596,7 @@
         <span class="n">alignment_layer</span><span class="p">,</span>
         <span class="n">alignment_heads</span><span class="p">,</span>
         <span class="n">pos_ffn_activation_fn</span><span class="o">=</span><span class="n">ActivationFunction</span><span class="o">.</span><span class="n">relu</span><span class="p">,</span>
+        <span class="n">add_qkvbias</span><span class="o">=</span><span class="kc">False</span>
     <span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">TransformerDecoder</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">d_model</span><span class="p">,</span> <span class="n">copy_attn</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">,</span> <span class="n">alignment_layer</span>
@@ -622,6 +616,7 @@
                     <span class="n">full_context_alignment</span><span class="o">=</span><span class="n">full_context_alignment</span><span class="p">,</span>
                     <span class="n">alignment_heads</span><span class="o">=</span><span class="n">alignment_heads</span><span class="p">,</span>
                     <span class="n">pos_ffn_activation_fn</span><span class="o">=</span><span class="n">pos_ffn_activation_fn</span><span class="p">,</span>
+                    <span class="n">add_qkvbias</span><span class="o">=</span><span class="n">add_qkvbias</span>
                 <span class="p">)</span>
                 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_layers</span><span class="p">)</span>
             <span class="p">]</span>
@@ -630,51 +625,47 @@
     <span class="k">def</span> <span class="nf">detach_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
 
-<div class="viewcode-block" id="TransformerDecoder.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.decoders.TransformerDecoder.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">memory_bank</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Decode, possibly stepwise.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">memory_bank</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">memory_bank</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span><span class="p">(</span><span class="n">tgt</span><span class="p">)</span>
+<div class="viewcode-block" id="TransformerDecoder.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.decoders.TransformerDecoder.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">enc_out</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Decode, possibly stepwise.</span>
+<span class="sd">        when training step is always None, when decoding, step increases</span>
+<span class="sd">        tgt (Tensor): batch x tlen x feats</span>
+<span class="sd">        enc_out (Tensor): encoder output (batch x slen x model_dim)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">enc_out</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">enc_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span><span class="p">(</span><span class="n">tgt</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">step</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_init_cache</span><span class="p">(</span><span class="n">memory_bank</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_init_cache</span><span class="p">(</span><span class="n">enc_out</span><span class="p">)</span>
 
-        <span class="n">tgt_words</span> <span class="o">=</span> <span class="n">tgt</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">tgt_words</span> <span class="o">=</span> <span class="n">tgt</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span>
 
         <span class="n">emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span><span class="p">(</span><span class="n">tgt</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">)</span>
+        <span class="n">dec_out</span> <span class="o">=</span> <span class="n">emb</span>
         <span class="k">assert</span> <span class="n">emb</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">3</span>  <span class="c1"># len x batch x embedding_dim</span>
 
-        <span class="n">output</span> <span class="o">=</span> <span class="n">emb</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
-        <span class="n">src_memory_bank</span> <span class="o">=</span> <span class="n">memory_bank</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
-
         <span class="n">pad_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span><span class="o">.</span><span class="n">word_padding_idx</span>
-        <span class="n">src_lens</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;memory_lengths&quot;</span><span class="p">]</span>
-        <span class="n">src_max_len</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">src_pad_mask</span> <span class="o">=</span> <span class="o">~</span><span class="n">sequence_mask</span><span class="p">(</span><span class="n">src_lens</span><span class="p">,</span> <span class="n">src_max_len</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">src_lens</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;src_len&quot;</span><span class="p">]</span>
+        <span class="n">src_max_len</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">src_pad_mask</span> <span class="o">=</span> <span class="o">~</span><span class="n">sequence_mask</span><span class="p">(</span><span class="n">src_lens</span><span class="p">,</span> <span class="n">src_max_len</span><span class="p">)</span>  <span class="c1"># [B x slen]</span>
+        <span class="n">src_pad_mask</span> <span class="o">=</span> <span class="n">src_pad_mask</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># [B x 1 x slen]</span>
         <span class="n">tgt_pad_mask</span> <span class="o">=</span> <span class="n">tgt_words</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">pad_idx</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># [B, 1, T_tgt]</span>
 
         <span class="n">with_align</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;with_align&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
         <span class="n">attn_aligns</span> <span class="o">=</span> <span class="p">[]</span>
 
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">layer</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transformer_layers</span><span class="p">):</span>
-            <span class="n">layer_cache</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;cache&quot;</span><span class="p">][</span><span class="s2">&quot;layer_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span>
-                <span class="k">if</span> <span class="n">step</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-                <span class="k">else</span> <span class="kc">None</span>
-            <span class="p">)</span>
-            <span class="n">output</span><span class="p">,</span> <span class="n">attn</span><span class="p">,</span> <span class="n">attn_align</span> <span class="o">=</span> <span class="n">layer</span><span class="p">(</span>
-                <span class="n">output</span><span class="p">,</span>
-                <span class="n">src_memory_bank</span><span class="p">,</span>
+        <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer_layers</span><span class="p">:</span>
+            <span class="n">dec_out</span><span class="p">,</span> <span class="n">attn</span><span class="p">,</span> <span class="n">attn_align</span> <span class="o">=</span> <span class="n">layer</span><span class="p">(</span>
+                <span class="n">dec_out</span><span class="p">,</span>
+                <span class="n">enc_out</span><span class="p">,</span>
                 <span class="n">src_pad_mask</span><span class="p">,</span>
                 <span class="n">tgt_pad_mask</span><span class="p">,</span>
-                <span class="n">layer_cache</span><span class="o">=</span><span class="n">layer_cache</span><span class="p">,</span>
                 <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">,</span>
                 <span class="n">with_align</span><span class="o">=</span><span class="n">with_align</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="k">if</span> <span class="n">attn_align</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">attn_aligns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">attn_align</span><span class="p">)</span>
 
-        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
-        <span class="n">dec_outs</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
-        <span class="n">attn</span> <span class="o">=</span> <span class="n">attn</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
+        <span class="n">dec_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span><span class="p">(</span><span class="n">dec_out</span><span class="p">)</span>
 
         <span class="n">attns</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;std&quot;</span><span class="p">:</span> <span class="n">attn</span><span class="p">}</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_copy</span><span class="p">:</span>
@@ -684,53 +675,48 @@
             <span class="c1"># attns[&quot;align&quot;] = torch.stack(attn_aligns, 0).mean(0)  # All avg</span>
 
         <span class="c1"># TODO change the way attns is returned dict =&gt; list or tuple (onnx)</span>
-        <span class="k">return</span> <span class="n">dec_outs</span><span class="p">,</span> <span class="n">attns</span></div>
+        <span class="k">return</span> <span class="n">dec_out</span><span class="p">,</span> <span class="n">attns</span></div>
 
-    <span class="k">def</span> <span class="nf">_init_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;cache&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="n">batch_size</span> <span class="o">=</span> <span class="n">memory_bank</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">depth</span> <span class="o">=</span> <span class="n">memory_bank</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_init_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">):</span>
 
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">layer</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transformer_layers</span><span class="p">):</span>
-            <span class="n">layer_cache</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;memory_keys&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;memory_values&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">self_attn</span><span class="p">,</span> <span class="n">AverageAttention</span><span class="p">):</span>
-                <span class="n">layer_cache</span><span class="p">[</span><span class="s2">&quot;prev_g&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
-                    <span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">depth</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">memory_bank</span><span class="o">.</span><span class="n">device</span>
+        <span class="n">batch_size</span> <span class="o">=</span> <span class="n">enc_out</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">depth</span> <span class="o">=</span> <span class="n">enc_out</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer_layers</span><span class="p">:</span>
+            <span class="c1"># first value set to True triggered by the beginning of decoding</span>
+            <span class="c1"># layer_cache becomes active in the MultiHeadedAttention fwd</span>
+            <span class="n">layer</span><span class="o">.</span><span class="n">context_attn</span><span class="o">.</span><span class="n">layer_cache</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="kc">True</span><span class="p">,</span>
+                <span class="p">{</span><span class="s1">&#39;keys&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([],</span> <span class="n">device</span><span class="o">=</span><span class="n">enc_out</span><span class="o">.</span><span class="n">device</span><span class="p">),</span>
+                 <span class="s1">&#39;values&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([],</span> <span class="n">device</span><span class="o">=</span><span class="n">enc_out</span><span class="o">.</span><span class="n">device</span><span class="p">)}</span>
                 <span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">self_attn</span><span class="p">,</span> <span class="n">AverageAttention</span><span class="p">):</span>
+                <span class="n">layer</span><span class="o">.</span><span class="n">self_attn</span><span class="o">.</span><span class="n">layer_cache</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;prev_g&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+                     <span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">depth</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">enc_out</span><span class="o">.</span><span class="n">device</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">enc_out</span><span class="o">.</span><span class="n">dtype</span><span class="p">)}</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">layer_cache</span><span class="p">[</span><span class="s2">&quot;self_keys&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-                <span class="n">layer_cache</span><span class="p">[</span><span class="s2">&quot;self_values&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;cache&quot;</span><span class="p">][</span><span class="s2">&quot;layer_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span> <span class="o">=</span> <span class="n">layer_cache</span></div>
+                <span class="n">layer</span><span class="o">.</span><span class="n">self_attn</span><span class="o">.</span><span class="n">layer_cache</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="kc">True</span><span class="p">,</span>
+                    <span class="p">{</span><span class="s1">&#39;keys&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([],</span> <span class="n">device</span><span class="o">=</span><span class="n">enc_out</span><span class="o">.</span><span class="n">device</span><span class="p">),</span>
+                     <span class="s1">&#39;values&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([],</span> <span class="n">device</span><span class="o">=</span><span class="n">enc_out</span><span class="o">.</span><span class="n">device</span><span class="p">)}</span>
+                    <span class="p">)</span></div>
 
 
 <span class="k">class</span> <span class="nc">TransformerLMDecoderLayer</span><span class="p">(</span><span class="n">TransformerDecoderLayerBase</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Transformer Decoder only layer block in GPT style.</span>
-
-<span class="sd">    .. mermaid::</span>
-
-<span class="sd">        graph LR</span>
-<span class="sd">        %% &quot;*SubLayer&quot; can be self-attn, src-attn or feed forward block</span>
-<span class="sd">            A(input) --&gt; B[Norm]</span>
-<span class="sd">            B --&gt; C[&quot;*SubLayer&quot;]</span>
-<span class="sd">            C --&gt; D[Drop]</span>
-<span class="sd">            D --&gt; E((+))</span>
-<span class="sd">            A --&gt; E</span>
-<span class="sd">            E --&gt; F(out)</span>
-
-
-<span class="sd">    Args:</span>
+<span class="sd">   Args:</span>
 <span class="sd">        See TransformerDecoderLayerBase</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">_forward</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">tgt_pad_mask</span><span class="p">,</span> <span class="n">layer_cache</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">future</span><span class="o">=</span><span class="kc">False</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">layer_in</span><span class="p">,</span> <span class="n">tgt_pad_mask</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">future</span><span class="o">=</span><span class="kc">False</span>
     <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;A naive forward pass for transformer decoder.</span>
 
 <span class="sd">        # T: could be 1 in the case of stepwise decoding or tgt_len</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            inputs (FloatTensor): ``(batch_size, T, model_dim)``</span>
+<span class="sd">            layer_in (FloatTensor): ``(batch_size, T, model_dim)``</span>
 <span class="sd">            tgt_pad_mask (bool): ``(batch_size, 1, T)``</span>
 <span class="sd">            layer_cache (dict or None): cached layer info when stepwise decode</span>
 <span class="sd">            step (int or None): stepwise decoding counter</span>
@@ -739,45 +725,36 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            (FloatTensor, FloatTensor):</span>
 
-<span class="sd">            * output ``(batch_size, T, model_dim)``</span>
+<span class="sd">            * layer_out ``(batch_size, T, model_dim)``</span>
 <span class="sd">            * attns ``(batch_size, head, T, T)``</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">dec_mask</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="k">if</span> <span class="n">inputs</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">layer_in</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="c1"># masking is necessary when sequence length is greater than one</span>
             <span class="n">dec_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_dec_mask</span><span class="p">(</span><span class="n">tgt_pad_mask</span><span class="p">,</span> <span class="n">future</span><span class="p">)</span>
+            <span class="n">dec_mask</span> <span class="o">=</span> <span class="n">dec_mask</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">dec_mask</span> <span class="o">=</span> <span class="n">dec_mask</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">dec_mask</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="c1"># mask now are (batch x 1 x tlen x tlen)</span>
+            <span class="c1"># 1 = heads to be expanded in MHA</span>
 
-        <span class="n">inputs_norm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm_1</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
+        <span class="n">layer_in_norm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm_1</span><span class="p">(</span><span class="n">layer_in</span><span class="p">)</span>
 
         <span class="n">query</span><span class="p">,</span> <span class="n">attns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_forward_self_attn</span><span class="p">(</span>
-            <span class="n">inputs_norm</span><span class="p">,</span> <span class="n">dec_mask</span><span class="p">,</span> <span class="n">layer_cache</span><span class="p">,</span> <span class="n">step</span>
+            <span class="n">layer_in_norm</span><span class="p">,</span> <span class="n">dec_mask</span><span class="p">,</span> <span class="n">step</span>
         <span class="p">)</span>
 
-        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">query</span><span class="p">)</span> <span class="o">+</span> <span class="n">inputs</span>
+        <span class="n">layer_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">query</span><span class="p">)</span> <span class="o">+</span> <span class="n">layer_in</span>
 
-        <span class="n">output_feedforward</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">feed_forward</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+        <span class="n">layer_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">feed_forward</span><span class="p">(</span><span class="n">layer_out</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">output_feedforward</span><span class="p">,</span> <span class="n">attns</span>
+        <span class="k">return</span> <span class="n">layer_out</span><span class="p">,</span> <span class="n">attns</span>
 
 
 <span class="k">class</span> <span class="nc">TransformerLMDecoder</span><span class="p">(</span><span class="n">TransformerDecoderBase</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;The Transformer decoder from GPT-2</span>
-
-<span class="sd">    .. mermaid::</span>
-
-<span class="sd">       graph BT</span>
-<span class="sd">          A[input]</span>
-<span class="sd">          B[multi-head self-attn]</span>
-<span class="sd">          C[feed forward]</span>
-<span class="sd">          O[output]</span>
-<span class="sd">          A --&gt; B</span>
-<span class="sd">          B --&gt; C</span>
-<span class="sd">          C --&gt; O</span>
-
-
-<span class="sd">    Args:</span>
+<span class="sd">   Args:</span>
 <span class="sd">        num_layers (int): number of decoder layers.</span>
 <span class="sd">        d_model (int): size of the model</span>
 <span class="sd">        heads (int): number of heads</span>
@@ -791,6 +768,7 @@
 <span class="sd">        max_relative_positions (int):</span>
 <span class="sd">            Max distance between inputs in relative positions representations</span>
 <span class="sd">        aan_useffn (bool): Turn on the FFN layer in the AAN decoder</span>
+<span class="sd">        add_qkvbias (bool): whether to add bias to the Key/Value nn.Linear</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
@@ -810,6 +788,7 @@
         <span class="n">alignment_layer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">alignment_heads</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">pos_ffn_activation_fn</span><span class="o">=</span><span class="n">ActivationFunction</span><span class="o">.</span><span class="n">relu</span><span class="p">,</span>
+        <span class="n">add_qkvbias</span><span class="o">=</span><span class="kc">False</span>
     <span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">TransformerLMDecoder</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">d_model</span><span class="p">,</span> <span class="n">copy_attn</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">,</span> <span class="kc">None</span>
@@ -828,28 +807,27 @@
                     <span class="n">full_context_alignment</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                     <span class="n">alignment_heads</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                     <span class="n">pos_ffn_activation_fn</span><span class="o">=</span><span class="n">pos_ffn_activation_fn</span><span class="p">,</span>
+                    <span class="n">add_qkvbias</span><span class="o">=</span><span class="n">add_qkvbias</span>
                 <span class="p">)</span>
                 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_layers</span><span class="p">)</span>
             <span class="p">]</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">init_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">memory_bank</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">enc_hidden</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">init_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">enc_out</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">enc_final_hs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">TransformerLMDecoder</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">init_state</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">detach_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">pass</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">memory_bank</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">enc_out</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Decode, possibly stepwise.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">step</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_init_cache</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_init_cache</span><span class="p">(</span><span class="n">tgt</span><span class="p">)</span>
 
-        <span class="n">tgt_words</span> <span class="o">=</span> <span class="n">tgt</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">tgt_words</span> <span class="o">=</span> <span class="n">tgt</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span>
 
-        <span class="n">emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span><span class="p">(</span><span class="n">tgt</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="n">emb</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">3</span>  <span class="c1"># len x batch x embedding_dim</span>
-
-        <span class="n">output</span> <span class="o">=</span> <span class="n">emb</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
+        <span class="n">dec_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span><span class="p">(</span><span class="n">tgt</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">dec_out</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">3</span>  <span class="c1"># batch x len x embedding_dim</span>
 
         <span class="n">pad_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span><span class="o">.</span><span class="n">word_padding_idx</span>
         <span class="n">tgt_pad_mask</span> <span class="o">=</span> <span class="n">tgt_words</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">pad_idx</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># [B, 1, T_tgt]</span>
@@ -857,39 +835,34 @@
         <span class="n">with_align</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;with_align&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
         <span class="k">assert</span> <span class="ow">not</span> <span class="n">with_align</span><span class="p">,</span> <span class="s2">&quot;TransformerLMDecoder does not support align&quot;</span>
 
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">layer</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transformer_layers</span><span class="p">):</span>
-            <span class="n">layer_cache</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;cache&quot;</span><span class="p">][</span><span class="s2">&quot;layer_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span>
-                <span class="k">if</span> <span class="n">step</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-                <span class="k">else</span> <span class="kc">None</span>
-            <span class="p">)</span>
-            <span class="n">output</span><span class="p">,</span> <span class="n">attn</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">layer</span><span class="p">(</span>
-                <span class="n">output</span><span class="p">,</span>
+        <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer_layers</span><span class="p">:</span>
+            <span class="n">dec_out</span><span class="p">,</span> <span class="n">attn</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">layer</span><span class="p">(</span>
+                <span class="n">dec_out</span><span class="p">,</span>
                 <span class="n">tgt_pad_mask</span><span class="p">,</span>
-                <span class="n">layer_cache</span><span class="o">=</span><span class="n">layer_cache</span><span class="p">,</span>
                 <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">,</span>
                 <span class="n">with_align</span><span class="o">=</span><span class="n">with_align</span><span class="p">,</span>
             <span class="p">)</span>
 
-        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
-        <span class="n">dec_outs</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
-        <span class="n">attn</span> <span class="o">=</span> <span class="n">attn</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
+        <span class="n">dec_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span><span class="p">(</span><span class="n">dec_out</span><span class="p">)</span>
 
         <span class="n">attns</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;std&quot;</span><span class="p">:</span> <span class="n">attn</span><span class="p">}</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_copy</span><span class="p">:</span>
             <span class="n">attns</span><span class="p">[</span><span class="s2">&quot;copy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">attn</span>
 
         <span class="c1"># TODO change the way attns is returned dict =&gt; list or tuple (onnx)</span>
-        <span class="k">return</span> <span class="n">dec_outs</span><span class="p">,</span> <span class="n">attns</span>
+        <span class="k">return</span> <span class="n">dec_out</span><span class="p">,</span> <span class="n">attns</span>
 
-    <span class="k">def</span> <span class="nf">_init_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory_bank</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;cache&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">def</span> <span class="nf">_init_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tgt</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">layer</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transformer_layers</span><span class="p">):</span>
-            <span class="n">layer_cache</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;self_keys&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;self_values&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer_layers</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">self_attn</span><span class="p">,</span> <span class="n">AverageAttention</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">NotImplementedError</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;cache&quot;</span><span class="p">][</span><span class="s2">&quot;layer_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span> <span class="o">=</span> <span class="n">layer_cache</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">layer</span><span class="o">.</span><span class="n">self_attn</span><span class="o">.</span><span class="n">layer_cache</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="kc">True</span><span class="p">,</span>
+                    <span class="p">{</span><span class="s1">&#39;keys&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([],</span> <span class="n">device</span><span class="o">=</span><span class="n">tgt</span><span class="o">.</span><span class="n">device</span><span class="p">),</span>
+                     <span class="s1">&#39;values&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([],</span> <span class="n">device</span><span class="o">=</span><span class="n">tgt</span><span class="o">.</span><span class="n">device</span><span class="p">)}</span>
+                    <span class="p">)</span>
 </pre></div>
 
            </div>
@@ -902,7 +875,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, srush
+        &copy; Copyright 2017, OpenNMT
 
     </p>
   </div>

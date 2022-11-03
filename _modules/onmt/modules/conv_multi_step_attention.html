@@ -199,7 +199,6 @@
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
 <span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
-<span class="kn">from</span> <span class="nn">onmt.utils.misc</span> <span class="kn">import</span> <span class="n">aeq</span>
 
 
 <span class="n">SCALE_WEIGHT</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">**</span> <span class="mf">0.5</span>
@@ -234,35 +233,20 @@
                 <span class="n">encoder_out_combine</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
-<span class="sd">            base_target_emb: target emb tensor</span>
-<span class="sd">            input_from_dec: output of decode conv</span>
-<span class="sd">            encoder_out_top: the key matrix for calculation of attetion weight,</span>
+<span class="sd">            base_target_emb: target emb tensor (batch, channel, height, width)</span>
+<span class="sd">            input_from_dec: output of dec conv (batch, channel, height, width)</span>
+<span class="sd">            encoder_out_top: the key matrix for calc of attention weight,</span>
 <span class="sd">                which is the top output of encode conv</span>
 <span class="sd">            encoder_out_combine:</span>
 <span class="sd">                the value matrix for the attention-weighted sum,</span>
 <span class="sd">                which is the combination of base emb and top output of encode</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="c1"># checks</span>
-        <span class="c1"># batch, channel, height, width = base_target_emb.size()</span>
-        <span class="n">batch</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">base_target_emb</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
-        <span class="c1"># batch_, channel_, height_, width_ = input_from_dec.size()</span>
-        <span class="n">batch_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">height_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">input_from_dec</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
-        <span class="n">aeq</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">batch_</span><span class="p">)</span>
-        <span class="n">aeq</span><span class="p">(</span><span class="n">height</span><span class="p">,</span> <span class="n">height_</span><span class="p">)</span>
-
-        <span class="c1"># enc_batch, enc_channel, enc_height = encoder_out_top.size()</span>
-        <span class="n">enc_batch</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">enc_height</span> <span class="o">=</span> <span class="n">encoder_out_top</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
-        <span class="c1"># enc_batch_, enc_channel_, enc_height_ = encoder_out_combine.size()</span>
-        <span class="n">enc_batch_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">enc_height_</span> <span class="o">=</span> <span class="n">encoder_out_combine</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
-
-        <span class="n">aeq</span><span class="p">(</span><span class="n">enc_batch</span><span class="p">,</span> <span class="n">enc_batch_</span><span class="p">)</span>
-        <span class="n">aeq</span><span class="p">(</span><span class="n">enc_height</span><span class="p">,</span> <span class="n">enc_height_</span><span class="p">)</span>
-
         <span class="n">preatt</span> <span class="o">=</span> <span class="n">seq_linear</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">linear_in</span><span class="p">,</span> <span class="n">input_from_dec</span><span class="p">)</span>
         <span class="n">target</span> <span class="o">=</span> <span class="p">(</span><span class="n">base_target_emb</span> <span class="o">+</span> <span class="n">preatt</span><span class="p">)</span> <span class="o">*</span> <span class="n">SCALE_WEIGHT</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
         <span class="n">pre_attn</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">bmm</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">encoder_out_top</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -287,7 +271,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, srush
+        &copy; Copyright 2017, OpenNMT
 
     </p>
   </div>

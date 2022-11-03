@@ -242,11 +242,11 @@ each translation.</p></li>
 <h2>Translator Class<a class="headerlink" href="#translator-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.translate.Translator">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.translate.</code><code class="sig-name descname">Translator</code><span class="sig-paren">(</span><em class="sig-param">model</em>, <em class="sig-param">fields</em>, <em class="sig-param">src_reader</em>, <em class="sig-param">tgt_reader</em>, <em class="sig-param">gpu=-1</em>, <em class="sig-param">n_best=1</em>, <em class="sig-param">min_length=0</em>, <em class="sig-param">max_length=100</em>, <em class="sig-param">ratio=0.0</em>, <em class="sig-param">beam_size=30</em>, <em class="sig-param">random_sampling_topk=0</em>, <em class="sig-param">random_sampling_topp=0.0</em>, <em class="sig-param">random_sampling_temp=1.0</em>, <em class="sig-param">stepwise_penalty=None</em>, <em class="sig-param">dump_beam=False</em>, <em class="sig-param">block_ngram_repeat=0</em>, <em class="sig-param">ignore_when_blocking=frozenset({})</em>, <em class="sig-param">replace_unk=False</em>, <em class="sig-param">ban_unk_token=False</em>, <em class="sig-param">tgt_prefix=False</em>, <em class="sig-param">phrase_table=''</em>, <em class="sig-param">data_type='text'</em>, <em class="sig-param">verbose=False</em>, <em class="sig-param">report_time=False</em>, <em class="sig-param">copy_attn=False</em>, <em class="sig-param">global_scorer=None</em>, <em class="sig-param">out_file=None</em>, <em class="sig-param">report_align=False</em>, <em class="sig-param">report_score=True</em>, <em class="sig-param">logger=None</em>, <em class="sig-param">seed=-1</em>, <em class="sig-param">with_score=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.translate.</code><code class="sig-name descname">Translator</code><span class="sig-paren">(</span><em class="sig-param">model</em>, <em class="sig-param">vocabs</em>, <em class="sig-param">gpu=-1</em>, <em class="sig-param">n_best=1</em>, <em class="sig-param">min_length=0</em>, <em class="sig-param">max_length=100</em>, <em class="sig-param">ratio=0.0</em>, <em class="sig-param">beam_size=30</em>, <em class="sig-param">random_sampling_topk=0</em>, <em class="sig-param">random_sampling_topp=0.0</em>, <em class="sig-param">random_sampling_temp=1.0</em>, <em class="sig-param">stepwise_penalty=None</em>, <em class="sig-param">dump_beam=False</em>, <em class="sig-param">block_ngram_repeat=0</em>, <em class="sig-param">ignore_when_blocking=frozenset({})</em>, <em class="sig-param">replace_unk=False</em>, <em class="sig-param">ban_unk_token=False</em>, <em class="sig-param">tgt_prefix=False</em>, <em class="sig-param">phrase_table=''</em>, <em class="sig-param">data_type='text'</em>, <em class="sig-param">verbose=False</em>, <em class="sig-param">report_time=False</em>, <em class="sig-param">copy_attn=False</em>, <em class="sig-param">global_scorer=None</em>, <em class="sig-param">out_file=None</em>, <em class="sig-param">report_align=False</em>, <em class="sig-param">report_score=True</em>, <em class="sig-param">logger=None</em>, <em class="sig-param">seed=-1</em>, <em class="sig-param">with_score=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.translate.translator.Inference</span></code></p>
 <dl class="method">
 <dt id="onmt.translate.Translator.translate_batch">
-<code class="sig-name descname">translate_batch</code><span class="sig-paren">(</span><em class="sig-param">batch</em>, <em class="sig-param">src_vocabs</em>, <em class="sig-param">attn_debug</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator.translate_batch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator.translate_batch" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">translate_batch</code><span class="sig-paren">(</span><em class="sig-param">batch</em>, <em class="sig-param">attn_debug</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator.translate_batch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator.translate_batch" title="Permalink to this definition">¶</a></dt>
 <dd><p>Translate a batch of sentences.</p>
 </dd></dl>
 
@@ -254,7 +254,7 @@ each translation.</p></li>
 
 <dl class="class">
 <dt id="onmt.translate.TranslationBuilder">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.translate.</code><code class="sig-name descname">TranslationBuilder</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">fields</em>, <em class="sig-param">n_best=1</em>, <em class="sig-param">replace_unk=False</em>, <em class="sig-param">has_tgt=False</em>, <em class="sig-param">phrase_table=''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation.html#TranslationBuilder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.TranslationBuilder" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.translate.</code><code class="sig-name descname">TranslationBuilder</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">vocabs</em>, <em class="sig-param">n_best=1</em>, <em class="sig-param">replace_unk=False</em>, <em class="sig-param">phrase_table=''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation.html#TranslationBuilder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.TranslationBuilder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Build a word-based translation from the batch output
 of translator and the underlying dictionaries.</p>
@@ -263,11 +263,10 @@ Problem in Neural Machine Translation” <a class="bibtex reference internal" hr
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> (<a class="reference internal" href="onmt.inputters.html#onmt.inputters.Dataset" title="onmt.inputters.Dataset"><em>onmt.inputters.Dataset</em></a>) – Data.</p></li>
-<li><p><strong>fields</strong> (<em>List</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>torchtext.data.Field</em><em>]</em><em>]</em>) – data fields</p></li>
+<li><p><strong>(</strong><strong>)</strong> (<em>vocabs</em>) – </p></li>
+<li><p><strong>(</strong><strong>)</strong> – </p></li>
 <li><p><strong>n_best</strong> (<em>int</em>) – number of translations produced</p></li>
 <li><p><strong>replace_unk</strong> (<em>bool</em>) – replace unknown words using attention</p></li>
-<li><p><strong>has_tgt</strong> (<em>bool</em>) – will the batch have gold targets</p></li>
 </ul>
 </dd>
 </dl>
@@ -382,7 +381,7 @@ manually put any token that would lead to a repeated ngram to 0.</p>
 
 <dl class="method">
 <dt id="onmt.translate.DecodeStrategy.initialize">
-<code class="sig-name descname">initialize</code><span class="sig-paren">(</span><em class="sig-param">memory_bank</em>, <em class="sig-param">src_lengths</em>, <em class="sig-param">src_map=None</em>, <em class="sig-param">device=None</em>, <em class="sig-param">target_prefix=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/decode_strategy.html#DecodeStrategy.initialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.DecodeStrategy.initialize" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">initialize</code><span class="sig-paren">(</span><em class="sig-param">enc_out</em>, <em class="sig-param">src_len</em>, <em class="sig-param">src_map=None</em>, <em class="sig-param">device=None</em>, <em class="sig-param">target_prefix=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/decode_strategy.html#DecodeStrategy.initialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.DecodeStrategy.initialize" title="Permalink to this definition">¶</a></dt>
 <dd><p>DecodeStrategy subclasses should override <a class="reference internal" href="#onmt.translate.DecodeStrategy.initialize" title="onmt.translate.DecodeStrategy.initialize"><code class="xref py py-func docutils literal notranslate"><span class="pre">initialize()</span></code></a>.</p>
 <p><cite>initialize</cite> should be called before all actions.
 used to prepare necessary ingredients for decode.</p>
@@ -434,7 +433,7 @@ used to prepare necessary ingredients for decode.</p>
 <p>Beam search for seq2seq/encoder-decoder models</p>
 <dl class="method">
 <dt id="onmt.translate.BeamSearch.initialize">
-<code class="sig-name descname">initialize</code><span class="sig-paren">(</span><em class="sig-param">memory_bank</em>, <em class="sig-param">src_lengths</em>, <em class="sig-param">src_map=None</em>, <em class="sig-param">device=None</em>, <em class="sig-param">target_prefix=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam_search.html#BeamSearch.initialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.BeamSearch.initialize" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">initialize</code><span class="sig-paren">(</span><em class="sig-param">enc_out</em>, <em class="sig-param">src_len</em>, <em class="sig-param">src_map=None</em>, <em class="sig-param">device=None</em>, <em class="sig-param">target_prefix=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam_search.html#BeamSearch.initialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.BeamSearch.initialize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize for decoding.
 Repeat src objects <cite>beam_size</cite> times.</p>
 </dd></dl>
@@ -535,7 +534,7 @@ to 1.)</p></li>
 
 <dl class="method">
 <dt id="onmt.translate.GreedySearch.initialize">
-<code class="sig-name descname">initialize</code><span class="sig-paren">(</span><em class="sig-param">memory_bank</em>, <em class="sig-param">src_lengths</em>, <em class="sig-param">src_map=None</em>, <em class="sig-param">device=None</em>, <em class="sig-param">target_prefix=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/greedy_search.html#GreedySearch.initialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.GreedySearch.initialize" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">initialize</code><span class="sig-paren">(</span><em class="sig-param">enc_out</em>, <em class="sig-param">src_len</em>, <em class="sig-param">src_map=None</em>, <em class="sig-param">device=None</em>, <em class="sig-param">target_prefix=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/greedy_search.html#GreedySearch.initialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.GreedySearch.initialize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize for decoding.</p>
 </dd></dl>
 
@@ -601,7 +600,7 @@ then the <code class="docutils literal notranslate"><span class="pre">seq_len</s
 
 <dl class="method">
 <dt id="onmt.translate.penalties.PenaltyBuilder.length_average">
-<code class="sig-name descname">length_average</code><span class="sig-paren">(</span><em class="sig-param">cur_len</em>, <em class="sig-param">alpha=0.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/penalties.html#PenaltyBuilder.length_average"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.penalties.PenaltyBuilder.length_average" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">length_average</code><span class="sig-paren">(</span><em class="sig-param">cur_len</em>, <em class="sig-param">alpha=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/penalties.html#PenaltyBuilder.length_average"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.penalties.PenaltyBuilder.length_average" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the current sequence length.</p>
 </dd></dl>
 
@@ -670,7 +669,7 @@ then the <code class="docutils literal notranslate"><span class="pre">seq_len</s
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, srush
+        &copy; Copyright 2017, OpenNMT
 
     </p>
   </div>

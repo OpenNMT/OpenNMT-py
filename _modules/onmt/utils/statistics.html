@@ -213,8 +213,11 @@
 <span class="sd">    * elapsed time</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_words</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_correct</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">computed_metrics</span><span class="o">=</span><span class="p">{}):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_batchs</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_sents</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                 <span class="n">n_words</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_correct</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">computed_metrics</span><span class="o">=</span><span class="p">{}):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">loss</span> <span class="o">=</span> <span class="n">loss</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_batchs</span> <span class="o">=</span> <span class="n">n_batchs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_sents</span> <span class="o">=</span> <span class="n">n_sents</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_words</span> <span class="o">=</span> <span class="n">n_words</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_correct</span> <span class="o">=</span> <span class="n">n_correct</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_src_words</span> <span class="o">=</span> <span class="mi">0</span>
@@ -276,6 +279,8 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">loss</span> <span class="o">+=</span> <span class="n">stat</span><span class="o">.</span><span class="n">loss</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_batchs</span> <span class="o">+=</span> <span class="n">stat</span><span class="o">.</span><span class="n">n_batchs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_sents</span> <span class="o">+=</span> <span class="n">stat</span><span class="o">.</span><span class="n">n_sents</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_words</span> <span class="o">+=</span> <span class="n">stat</span><span class="o">.</span><span class="n">n_words</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_correct</span> <span class="o">+=</span> <span class="n">stat</span><span class="o">.</span><span class="n">n_correct</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">computed_metrics</span> <span class="o">=</span> <span class="n">stat</span><span class="o">.</span><span class="n">computed_metrics</span>
@@ -312,13 +317,18 @@
         <span class="k">if</span> <span class="n">num_steps</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">step_fmt</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">/</span><span class="si">%5d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">step_fmt</span><span class="p">,</span> <span class="n">num_steps</span><span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="p">(</span><span class="s2">&quot;Step </span><span class="si">%s</span><span class="s2">; acc: </span><span class="si">%6.2f</span><span class="s2">; ppl: </span><span class="si">%5.2f</span><span class="s2">; xent: </span><span class="si">%4.2f</span><span class="s2">; &quot;</span> <span class="o">+</span>
-             <span class="s2">&quot;lr: </span><span class="si">%7.5f</span><span class="s2">; </span><span class="si">%3.0f</span><span class="s2">/</span><span class="si">%3.0f</span><span class="s2"> tok/s; </span><span class="si">%6.0f</span><span class="s2"> sec;&quot;</span><span class="p">)</span>
+            <span class="p">(</span><span class="s2">&quot;Step </span><span class="si">%s</span><span class="s2">; acc: </span><span class="si">%2.1f</span><span class="s2">; ppl: </span><span class="si">%5.1f</span><span class="s2">; xent: </span><span class="si">%2.1f</span><span class="s2">; &quot;</span> <span class="o">+</span>
+             <span class="s2">&quot;lr: </span><span class="si">%7.5f</span><span class="s2">; sents: </span><span class="si">%7.0f</span><span class="s2">; bsz: </span><span class="si">%4.0f</span><span class="s2">/</span><span class="si">%4.0f</span><span class="s2">/</span><span class="si">%2.0f</span><span class="s2">; &quot;</span> <span class="o">+</span>
+             <span class="s2">&quot;</span><span class="si">%3.0f</span><span class="s2">/</span><span class="si">%3.0f</span><span class="s2"> tok/s; </span><span class="si">%6.0f</span><span class="s2"> sec;&quot;</span><span class="p">)</span>
             <span class="o">%</span> <span class="p">(</span><span class="n">step_fmt</span><span class="p">,</span>
                <span class="bp">self</span><span class="o">.</span><span class="n">accuracy</span><span class="p">(),</span>
                <span class="bp">self</span><span class="o">.</span><span class="n">ppl</span><span class="p">(),</span>
                <span class="bp">self</span><span class="o">.</span><span class="n">xent</span><span class="p">(),</span>
                <span class="n">learning_rate</span><span class="p">,</span>
+               <span class="bp">self</span><span class="o">.</span><span class="n">n_sents</span><span class="p">,</span>
+               <span class="bp">self</span><span class="o">.</span><span class="n">n_src_words</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_batchs</span><span class="p">,</span>
+               <span class="bp">self</span><span class="o">.</span><span class="n">n_words</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_batchs</span><span class="p">,</span>
+               <span class="bp">self</span><span class="o">.</span><span class="n">n_sents</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_batchs</span><span class="p">,</span>
                <span class="bp">self</span><span class="o">.</span><span class="n">n_src_words</span> <span class="o">/</span> <span class="p">(</span><span class="n">t</span> <span class="o">+</span> <span class="mf">1e-5</span><span class="p">),</span>
                <span class="bp">self</span><span class="o">.</span><span class="n">n_words</span> <span class="o">/</span> <span class="p">(</span><span class="n">t</span> <span class="o">+</span> <span class="mf">1e-5</span><span class="p">),</span>
                <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span> <span class="o">+</span>
@@ -350,7 +360,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, srush
+        &copy; Copyright 2017, OpenNMT
 
     </p>
   </div>

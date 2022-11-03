@@ -237,19 +237,19 @@ for a simple, generic encoder + decoder model.
 
 <dl class="method">
 <dt id="onmt.models.NMTModel.forward">
-<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">src</em>, <em class="sig-param">tgt</em>, <em class="sig-param">lengths</em>, <em class="sig-param">bptt=False</em>, <em class="sig-param">with_align=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/models/model.html#NMTModel.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.models.NMTModel.forward" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">src</em>, <em class="sig-param">tgt</em>, <em class="sig-param">src_len</em>, <em class="sig-param">bptt=False</em>, <em class="sig-param">with_align=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/models/model.html#NMTModel.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.models.NMTModel.forward" title="Permalink to this definition">¶</a></dt>
 <dd><p>Forward propagate a <cite>src</cite> and <cite>tgt</cite> pair for training.
 Possible initialized with a beginning decoder state.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>src</strong> (<em>Tensor</em>) – A source sequence passed to encoder.
-typically for inputs this will be a padded <cite>LongTensor</cite>
-of size <code class="docutils literal notranslate"><span class="pre">(len,</span> <span class="pre">batch,</span> <span class="pre">features)</span></code>. However, may be an
+typically for input this will be a padded <cite>LongTensor</cite>
+of size <code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">len,</span> <span class="pre">features)</span></code>. However, may be an
 image or other generic input depending on encoder.</p></li>
 <li><p><strong>tgt</strong> (<em>LongTensor</em>) – A target sequence passed to decoder.
-Size <code class="docutils literal notranslate"><span class="pre">(tgt_len,</span> <span class="pre">batch,</span> <span class="pre">features)</span></code>.</p></li>
-<li><p><strong>lengths</strong> (<em>LongTensor</em>) – The src lengths, pre-padding <code class="docutils literal notranslate"><span class="pre">(batch,)</span></code>.</p></li>
+Size <code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">tgt_len,</span> <span class="pre">features)</span></code>.</p></li>
+<li><p><strong>src_len</strong> (<em>LongTensor</em>) – The src lengths, pre-padding <code class="docutils literal notranslate"><span class="pre">(batch,)</span></code>.</p></li>
 <li><p><strong>bptt</strong> (<em>Boolean</em>) – A flag indicating if truncated bptt is set.
 If reset then init_state</p></li>
 <li><p><strong>with_align</strong> (<em>Boolean</em>) – A flag indicating whether output alignment,
@@ -258,8 +258,8 @@ Only valid for transformer decoder.</p></li>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p><ul class="simple">
-<li><p>decoder output <code class="docutils literal notranslate"><span class="pre">(tgt_len,</span> <span class="pre">batch,</span> <span class="pre">hidden)</span></code></p></li>
-<li><p>dictionary attention dists of <code class="docutils literal notranslate"><span class="pre">(tgt_len,</span> <span class="pre">batch,</span> <span class="pre">src_len)</span></code></p></li>
+<li><p>decoder output <code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">tgt_len,</span> <span class="pre">hidden)</span></code></p></li>
+<li><p>dictionary attention dists of <code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">tgt_len,</span> <span class="pre">src_len)</span></code></p></li>
 </ul>
 </p>
 </dd>
@@ -276,7 +276,7 @@ Only valid for transformer decoder.</p></li>
 <h2>Trainer<a class="headerlink" href="#trainer" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.Trainer">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.</code><code class="sig-name descname">Trainer</code><span class="sig-paren">(</span><em class="sig-param">model, train_loss, valid_loss, scoring_preparator, train_scorers, valid_scorers, optim, trunc_size=0, shard_size=32, norm_method='sents', accum_count=[1], accum_steps=[0], n_gpu=1, gpu_rank=1, gpu_verbose_level=0, train_eval_steps=200, report_manager=None, with_align=False, model_saver=None, average_decay=0, average_every=1, model_dtype='fp32', earlystopper=None, dropout=[0.3], attention_dropout=[0.1], dropout_steps=[0]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.</code><code class="sig-name descname">Trainer</code><span class="sig-paren">(</span><em class="sig-param">model, train_loss, valid_loss, scoring_preparator, train_scorers, valid_scorers, optim, trunc_size=0, accum_count=[1], accum_steps=[0], n_gpu=1, gpu_rank=1, gpu_verbose_level=0, train_eval_steps=200, report_manager=None, with_align=False, model_saver=None, average_decay=0, average_every=1, model_dtype='fp32', earlystopper=None, dropout=[0.3], attention_dropout=[0.1], dropout_steps=[0]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Class that controls the training process.
 :param model: translation model</p>
@@ -286,13 +286,11 @@ Only valid for transformer decoder.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>train_loss</strong> (<a class="reference internal" href="#onmt.utils.loss.LossComputeBase" title="onmt.utils.loss.LossComputeBase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.utils.loss.LossComputeBase</span></code></a>) – training loss computation</p></li>
-<li><p><strong>valid_loss</strong> (<a class="reference internal" href="#onmt.utils.loss.LossComputeBase" title="onmt.utils.loss.LossComputeBase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.utils.loss.LossComputeBase</span></code></a>) – training loss computation</p></li>
+<li><p><strong>train_loss</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.utils.loss.LossComputeBase</span></code>) – training loss computation</p></li>
+<li><p><strong>valid_loss</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.utils.loss.LossComputeBase</span></code>) – training loss computation</p></li>
 <li><p><strong>optim</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.utils.optimizers.Optimizer</span></code>) – the optimizer responsible for update</p></li>
 <li><p><strong>trunc_size</strong> (<em>int</em>) – length of truncated back propagation through time</p></li>
-<li><p><strong>shard_size</strong> (<em>int</em>) – compute loss in shards of this size for efficiency</p></li>
 <li><p><strong>data_type</strong> (<em>string</em>) – type of the source input: [text]</p></li>
-<li><p><strong>norm_method</strong> (<em>string</em>) – normalization methods: [sents|tokens]</p></li>
 <li><p><strong>accum_count</strong> (<em>list</em>) – accumulate gradients this many times.</p></li>
 <li><p><strong>accum_steps</strong> (<em>list</em>) – steps for accum gradients changes.</p></li>
 <li><p><strong>report_manager</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">onmt.utils.ReportMgrBase</span></code>) – the object that creates reports, or None</p></li>
@@ -351,7 +349,7 @@ iterations.</p></li>
 
 <dl class="class">
 <dt id="onmt.utils.Statistics">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.utils.</code><code class="sig-name descname">Statistics</code><span class="sig-paren">(</span><em class="sig-param">loss=0</em>, <em class="sig-param">n_words=0</em>, <em class="sig-param">n_correct=0</em>, <em class="sig-param">computed_metrics={}</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/statistics.html#Statistics"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.Statistics" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.utils.</code><code class="sig-name descname">Statistics</code><span class="sig-paren">(</span><em class="sig-param">loss=0</em>, <em class="sig-param">n_batchs=0</em>, <em class="sig-param">n_sents=0</em>, <em class="sig-param">n_words=0</em>, <em class="sig-param">n_correct=0</em>, <em class="sig-param">computed_metrics={}</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/statistics.html#Statistics"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.Statistics" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Accumulator for loss statistics.
 Currently calculates:</p>
@@ -464,28 +462,6 @@ or not</p></li>
 </div>
 <div class="section" id="loss">
 <h2>Loss<a class="headerlink" href="#loss" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="onmt.utils.loss.LossComputeBase">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.utils.loss.</code><code class="sig-name descname">LossComputeBase</code><span class="sig-paren">(</span><em class="sig-param">criterion</em>, <em class="sig-param">generator</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/loss.html#LossComputeBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.loss.LossComputeBase" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.module.Module</span></code></p>
-<p>Class for managing efficient loss computation. Handles
-sharding next step predictions and accumulating multiple
-loss computations</p>
-<p>Users can implement their own loss computation strategy by making
-subclass of this one.  Users need to implement the _compute_loss()
-and make_shard_state() methods.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>generator</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">nn.Module</span></code>) – module that maps the output of the decoder to a
-distribution over the target vocabulary.</p></li>
-<li><p><strong>tgt_vocab</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Vocab</span></code>) – torchtext vocab object representing the target output</p></li>
-<li><p><strong>normalzation</strong> (<em>str</em>) – normalize by “sents” or “tokens”</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
 </div>
 <div class="section" id="optimizer">
 <h2>Optimizer<a class="headerlink" href="#optimizer" title="Permalink to this headline">¶</a></h2>
@@ -581,7 +557,7 @@ rate.</p>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, srush
+        &copy; Copyright 2017, OpenNMT
 
     </p>
   </div>

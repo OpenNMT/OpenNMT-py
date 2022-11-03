@@ -198,9 +198,6 @@
 <span></span><span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
 
-<span class="kn">from</span> <span class="nn">onmt.utils.misc</span> <span class="kn">import</span> <span class="n">aeq</span>
-<span class="kn">from</span> <span class="nn">onmt.utils.loss</span> <span class="kn">import</span> <span class="n">CommonLossCompute</span>
-
 
 <span class="k">def</span> <span class="nf">collapse_copy_scores</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">tgt_vocab</span><span class="p">,</span> <span class="n">src_vocabs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                          <span class="n">batch_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">batch_offset</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -215,21 +212,21 @@
         <span class="n">fill</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="k">if</span> <span class="n">src_vocabs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">src_vocab</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">src_ex_vocab</span><span class="p">[</span><span class="n">b</span><span class="p">]</span>
+            <span class="n">src_vocab</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;src_ex_vocab&#39;</span><span class="p">][</span><span class="n">b</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">batch_id</span> <span class="o">=</span> <span class="n">batch_offset</span><span class="p">[</span><span class="n">b</span><span class="p">]</span> <span class="k">if</span> <span class="n">batch_offset</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">b</span>
-            <span class="n">index</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">indices</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">batch_id</span><span class="p">]</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;indices&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">batch_id</span><span class="p">]</span>
             <span class="n">src_vocab</span> <span class="o">=</span> <span class="n">src_vocabs</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
 
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">src_vocab</span><span class="p">)):</span>
-            <span class="n">sw</span> <span class="o">=</span> <span class="n">src_vocab</span><span class="o">.</span><span class="n">itos</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-            <span class="n">ti</span> <span class="o">=</span> <span class="n">tgt_vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">sw</span><span class="p">]</span>
+            <span class="n">sw</span> <span class="o">=</span> <span class="n">src_vocab</span><span class="o">.</span><span class="n">ids_to_tokens</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">ti</span> <span class="o">=</span> <span class="n">tgt_vocab</span><span class="p">[</span><span class="n">sw</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">ti</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">blank</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">offset</span> <span class="o">+</span> <span class="n">i</span><span class="p">)</span>
                 <span class="n">fill</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ti</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">blank</span><span class="p">:</span>
-            <span class="n">blank</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">blank</span><span class="p">)</span><span class="o">.</span><span class="n">type_as</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">indices</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
-            <span class="n">fill</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">fill</span><span class="p">)</span><span class="o">.</span><span class="n">type_as</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">indices</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">blank</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">blank</span><span class="p">)</span><span class="o">.</span><span class="n">type_as</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s1">&#39;indices&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">fill</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">fill</span><span class="p">)</span><span class="o">.</span><span class="n">type_as</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s1">&#39;indices&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
             <span class="n">score</span> <span class="o">=</span> <span class="n">scores</span><span class="p">[:,</span> <span class="n">b</span><span class="p">]</span> <span class="k">if</span> <span class="n">batch_dim</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">scores</span><span class="p">[</span><span class="n">b</span><span class="p">]</span>
             <span class="n">score</span><span class="o">.</span><span class="n">index_add_</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">fill</span><span class="p">,</span> <span class="n">score</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">blank</span><span class="p">))</span>
             <span class="n">score</span><span class="o">.</span><span class="n">index_fill_</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">blank</span><span class="p">,</span> <span class="mf">1e-10</span><span class="p">)</span>
@@ -257,26 +254,6 @@
 
 <span class="sd">    :math:`p(w) = p(z=1)  p_{copy}(w)  +  p(z=0)  p_{softmax}(w)`</span>
 
-
-<span class="sd">    .. mermaid::</span>
-
-<span class="sd">       graph BT</span>
-<span class="sd">          A[input]</span>
-<span class="sd">          S[src_map]</span>
-<span class="sd">          B[softmax]</span>
-<span class="sd">          BB[switch]</span>
-<span class="sd">          C[attn]</span>
-<span class="sd">          D[copy]</span>
-<span class="sd">          O[output]</span>
-<span class="sd">          A --&gt; B</span>
-<span class="sd">          A --&gt; BB</span>
-<span class="sd">          S --&gt; D</span>
-<span class="sd">          C --&gt; D</span>
-<span class="sd">          D --&gt; O</span>
-<span class="sd">          B --&gt; O</span>
-<span class="sd">          BB --&gt; O</span>
-
-
 <span class="sd">    Args:</span>
 <span class="sd">       input_size (int): size of input representation</span>
 <span class="sd">       output_size (int): size of output vocabulary</span>
@@ -296,20 +273,15 @@
 <span class="sd">        source words.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">           hidden (FloatTensor): hidden outputs ``(batch x tlen, input_size)``</span>
+<span class="sd">           hidden (FloatTensor): hidden output ``(batch x tlen, input_size)``</span>
 <span class="sd">           attn (FloatTensor): attn for each ``(batch x tlen, slen)``</span>
 <span class="sd">           src_map (FloatTensor):</span>
 <span class="sd">               A sparse indicator matrix mapping each source word to</span>
 <span class="sd">               its index in the &quot;extended&quot; vocab containing.</span>
-<span class="sd">               ``(src_len, batch, extra_words)``</span>
+<span class="sd">               ``(batch, src_len, extra_words)``</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="c1"># CHECKS</span>
-        <span class="n">batch_by_tlen</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">hidden</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
-        <span class="n">batch_by_tlen_</span><span class="p">,</span> <span class="n">slen</span> <span class="o">=</span> <span class="n">attn</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
-        <span class="n">slen_</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">cvocab</span> <span class="o">=</span> <span class="n">src_map</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
-        <span class="n">aeq</span><span class="p">(</span><span class="n">batch_by_tlen</span><span class="p">,</span> <span class="n">batch_by_tlen_</span><span class="p">)</span>
-        <span class="n">aeq</span><span class="p">(</span><span class="n">slen</span><span class="p">,</span> <span class="n">slen_</span><span class="p">)</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">slen</span> <span class="o">=</span> <span class="n">attn</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+        <span class="n">batch</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">cvocab</span> <span class="o">=</span> <span class="n">src_map</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
 
         <span class="c1"># Original probabilities.</span>
         <span class="n">logits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear</span><span class="p">(</span><span class="n">hidden</span><span class="p">)</span>
@@ -323,8 +295,8 @@
         <span class="n">mul_attn</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">attn</span><span class="p">,</span> <span class="n">p_copy</span><span class="p">)</span>
         <span class="n">copy_prob</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">bmm</span><span class="p">(</span>
             <span class="n">mul_attn</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">slen</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
-            <span class="n">src_map</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">src_map</span>
+        <span class="p">)</span>
         <span class="n">copy_prob</span> <span class="o">=</span> <span class="n">copy_prob</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">cvocab</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">out_prob</span><span class="p">,</span> <span class="n">copy_prob</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span></div></div>
 
@@ -372,112 +344,6 @@
         <span class="c1"># Drop padding.</span>
         <span class="n">loss</span><span class="p">[</span><span class="n">target</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignore_index</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">return</span> <span class="n">loss</span>
-
-
-<span class="k">class</span> <span class="nc">CommonCopyGeneratorLossCompute</span><span class="p">(</span><span class="n">CommonLossCompute</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Common Copy Generator Loss Computation.&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">criterion</span><span class="p">,</span> <span class="n">generator</span><span class="p">,</span> <span class="n">tgt_vocab</span><span class="p">,</span> <span class="n">normalize_by_length</span><span class="p">,</span>
-                 <span class="n">lambda_coverage</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">tgt_shift_index</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">CommonCopyGeneratorLossCompute</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">criterion</span><span class="p">,</span> <span class="n">generator</span><span class="p">,</span> <span class="n">lambda_coverage</span><span class="o">=</span><span class="n">lambda_coverage</span><span class="p">,</span>
-            <span class="n">tgt_shift_index</span><span class="o">=</span><span class="n">tgt_shift_index</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">tgt_vocab</span> <span class="o">=</span> <span class="n">tgt_vocab</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">normalize_by_length</span> <span class="o">=</span> <span class="n">normalize_by_length</span>
-
-    <span class="k">def</span> <span class="nf">_compute_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">copy_attn</span><span class="p">,</span> <span class="n">align</span><span class="p">,</span>
-                      <span class="n">std_attn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">coverage_attn</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Compute the loss.</span>
-
-<span class="sd">        The args must match :func:`self._make_shard_state()`.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            batch: the current batch.</span>
-<span class="sd">            output: the predict output from the model.</span>
-<span class="sd">            target: the validate target to compare output with.</span>
-<span class="sd">            copy_attn: the copy attention value.</span>
-<span class="sd">            align: the align info.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">target</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">align</span> <span class="o">=</span> <span class="n">align</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_bottle</span><span class="p">(</span><span class="n">output</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bottle</span><span class="p">(</span><span class="n">copy_attn</span><span class="p">),</span> <span class="n">batch</span><span class="o">.</span><span class="n">src_map</span>
-        <span class="p">)</span>
-        <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">criterion</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">align</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lambda_coverage</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">:</span>
-            <span class="n">coverage_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_coverage_loss</span><span class="p">(</span><span class="n">std_attn</span><span class="p">,</span>
-                                                        <span class="n">coverage_attn</span><span class="p">)</span>
-            <span class="n">loss</span> <span class="o">+=</span> <span class="n">coverage_loss</span>
-
-        <span class="c1"># this block does not depend on the loss value computed above</span>
-        <span class="c1"># and is used only for stats</span>
-        <span class="n">scores_data</span> <span class="o">=</span> <span class="n">collapse_copy_scores</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_unbottle</span><span class="p">(</span><span class="n">scores</span><span class="o">.</span><span class="n">clone</span><span class="p">(),</span> <span class="n">batch</span><span class="o">.</span><span class="n">batch_size</span><span class="p">),</span>
-            <span class="n">batch</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tgt_vocab</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-        <span class="n">scores_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bottle</span><span class="p">(</span><span class="n">scores_data</span><span class="p">)</span>
-
-        <span class="c1"># this block does not depend on the loss value computed above</span>
-        <span class="c1"># and is used only for stats</span>
-        <span class="c1"># Correct target copy token instead of &lt;unk&gt;</span>
-        <span class="c1"># tgt[i] = align[i] + len(tgt_vocab)</span>
-        <span class="c1"># for i such that tgt[i] == 0 and align[i] != 0</span>
-        <span class="n">target_data</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
-        <span class="n">unk</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">criterion</span><span class="o">.</span><span class="n">unk_index</span>
-        <span class="n">correct_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">target_data</span> <span class="o">==</span> <span class="n">unk</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">align</span> <span class="o">!=</span> <span class="n">unk</span><span class="p">)</span>
-        <span class="n">offset_align</span> <span class="o">=</span> <span class="n">align</span><span class="p">[</span><span class="n">correct_mask</span><span class="p">]</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tgt_vocab</span><span class="p">)</span>
-        <span class="n">target_data</span><span class="p">[</span><span class="n">correct_mask</span><span class="p">]</span> <span class="o">+=</span> <span class="n">offset_align</span>
-
-        <span class="c1"># Compute sum of perplexities for stats</span>
-        <span class="n">stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stats</span><span class="p">(</span><span class="n">loss</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">clone</span><span class="p">(),</span> <span class="n">scores_data</span><span class="p">,</span> <span class="n">target_data</span><span class="p">)</span>
-
-        <span class="c1"># this part looks like it belongs in CopyGeneratorLoss</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalize_by_length</span><span class="p">:</span>
-            <span class="c1"># Compute Loss as NLL divided by seq length</span>
-            <span class="n">tgt_lens</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">tgt</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ne</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">padding_idx</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
-            <span class="c1"># Compute Total Loss per sequence in batch</span>
-            <span class="n">loss</span> <span class="o">=</span> <span class="n">loss</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">batch</span><span class="o">.</span><span class="n">batch_size</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-            <span class="c1"># Divide by length of each sequence and sum</span>
-            <span class="n">loss</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="n">loss</span><span class="p">,</span> <span class="n">tgt_lens</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">loss</span> <span class="o">=</span> <span class="n">loss</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-
-        <span class="k">return</span> <span class="n">loss</span><span class="p">,</span> <span class="n">stats</span>
-
-    <span class="k">def</span> <span class="nf">_make_shard_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">range_</span><span class="p">,</span> <span class="n">attns</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;See base class for args description.&quot;&quot;&quot;</span>
-        <span class="n">shard_state</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">CommonCopyGeneratorLossCompute</span><span class="p">,</span>
-                            <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_make_shard_state</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span>
-                                                    <span class="n">range_</span><span class="p">,</span> <span class="n">attns</span><span class="p">)</span>
-
-        <span class="n">start_range</span> <span class="o">=</span> <span class="n">range_</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">tgt_shift_index</span>
-        <span class="n">end_range</span> <span class="o">=</span> <span class="n">range_</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">shard_state</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
-            <span class="s2">&quot;copy_attn&quot;</span><span class="p">:</span> <span class="n">attns</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;copy&quot;</span><span class="p">),</span>
-            <span class="s2">&quot;align&quot;</span><span class="p">:</span> <span class="n">batch</span><span class="o">.</span><span class="n">alignment</span><span class="p">[</span><span class="n">start_range</span><span class="p">:</span> <span class="n">end_range</span><span class="p">]</span>
-        <span class="p">})</span>
-        <span class="k">return</span> <span class="n">shard_state</span>
-
-
-<span class="k">class</span> <span class="nc">CopyGeneratorLossCompute</span><span class="p">(</span><span class="n">CommonCopyGeneratorLossCompute</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Copy Generator Loss Computation.&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">criterion</span><span class="p">,</span> <span class="n">generator</span><span class="p">,</span> <span class="n">tgt_vocab</span><span class="p">,</span> <span class="n">normalize_by_length</span><span class="p">,</span>
-                 <span class="n">lambda_coverage</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">CopyGeneratorLossCompute</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">criterion</span><span class="p">,</span> <span class="n">generator</span><span class="p">,</span>
-                                                       <span class="n">tgt_vocab</span><span class="p">,</span>
-                                                       <span class="n">normalize_by_length</span><span class="p">,</span>
-                                                       <span class="n">lambda_coverage</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
-                                                       <span class="n">tgt_shift_index</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-
-
-<span class="k">class</span> <span class="nc">CopyGeneratorLMLossCompute</span><span class="p">(</span><span class="n">CommonCopyGeneratorLossCompute</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Copy Generator LM Loss Computation.&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">criterion</span><span class="p">,</span> <span class="n">generator</span><span class="p">,</span> <span class="n">tgt_vocab</span><span class="p">,</span> <span class="n">normalize_by_length</span><span class="p">,</span>
-                 <span class="n">lambda_coverage</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">CopyGeneratorLMLossCompute</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">criterion</span><span class="p">,</span> <span class="n">generator</span><span class="p">,</span>
-                                                         <span class="n">tgt_vocab</span><span class="p">,</span>
-                                                         <span class="n">normalize_by_length</span><span class="p">,</span>
-                                                         <span class="n">lambda_coverage</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
-                                                         <span class="n">tgt_shift_index</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 </pre></div>
 
            </div>
@@ -490,7 +356,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, srush
+        &copy; Copyright 2017, OpenNMT
 
     </p>
   </div>

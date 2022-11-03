@@ -122,14 +122,14 @@
 <li class="toctree-l2"><a class="reference internal" href="#Vocab">Vocab</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Pruning">Pruning</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Embeddings">Embeddings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Transform/BART">Transform/BART</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Transform/SwitchOut">Transform/SwitchOut</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Transform/Token_Drop">Transform/Token_Drop</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Transform/Token_Mask">Transform/Token_Mask</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#Transform/Filter">Transform/Filter</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#Transform/BART">Transform/BART</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Transform/Subword/Common">Transform/Subword/Common</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Transform/Subword/ONMTTOK">Transform/Subword/ONMTTOK</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Transform/InferFeats">Transform/InferFeats</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Transform/Filter">Transform/Filter</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Model-Embeddings">Model-Embeddings</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Model-Embedding Features">Model-Embedding Features</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Model- Task">Model- Task</a></li>
@@ -233,11 +233,10 @@
 </p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">train</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">config</span> <span class="n">CONFIG</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">save_config</span> <span class="n">SAVE_CONFIG</span><span class="p">]</span> <span class="o">-</span><span class="n">data</span> <span class="n">DATA</span>
                 <span class="p">[</span><span class="o">-</span><span class="n">skip_empty_level</span> <span class="p">{</span><span class="n">silent</span><span class="p">,</span><span class="n">warning</span><span class="p">,</span><span class="n">error</span><span class="p">}]</span>
-                <span class="p">[</span><span class="o">-</span><span class="n">transforms</span> <span class="p">{</span><span class="n">switchout</span><span class="p">,</span><span class="n">tokendrop</span><span class="p">,</span><span class="n">tokenmask</span><span class="p">,</span><span class="n">filtertoolong</span><span class="p">,</span><span class="n">prefix</span><span class="p">,</span><span class="n">bart</span><span class="p">,</span><span class="n">sentencepiece</span><span class="p">,</span><span class="n">bpe</span><span class="p">,</span><span class="n">onmt_tokenize</span><span class="p">,</span><span class="n">filterfeats</span><span class="p">,</span><span class="n">inferfeats</span><span class="p">}</span> <span class="p">[{</span><span class="n">switchout</span><span class="p">,</span><span class="n">tokendrop</span><span class="p">,</span><span class="n">tokenmask</span><span class="p">,</span><span class="n">filtertoolong</span><span class="p">,</span><span class="n">prefix</span><span class="p">,</span><span class="n">bart</span><span class="p">,</span><span class="n">sentencepiece</span><span class="p">,</span><span class="n">bpe</span><span class="p">,</span><span class="n">onmt_tokenize</span><span class="p">,</span><span class="n">filterfeats</span><span class="p">,</span><span class="n">inferfeats</span><span class="p">}</span> <span class="o">...</span><span class="p">]]</span>
+                <span class="p">[</span><span class="o">-</span><span class="n">transforms</span> <span class="p">{</span><span class="n">bart</span><span class="p">,</span><span class="n">switchout</span><span class="p">,</span><span class="n">tokendrop</span><span class="p">,</span><span class="n">tokenmask</span><span class="p">,</span><span class="n">sentencepiece</span><span class="p">,</span><span class="n">bpe</span><span class="p">,</span><span class="n">onmt_tokenize</span><span class="p">,</span><span class="n">filterfeats</span><span class="p">,</span><span class="n">inferfeats</span><span class="p">,</span><span class="n">filtertoolong</span><span class="p">,</span><span class="n">prefix</span><span class="p">}</span> <span class="p">[{</span><span class="n">bart</span><span class="p">,</span><span class="n">switchout</span><span class="p">,</span><span class="n">tokendrop</span><span class="p">,</span><span class="n">tokenmask</span><span class="p">,</span><span class="n">sentencepiece</span><span class="p">,</span><span class="n">bpe</span><span class="p">,</span><span class="n">onmt_tokenize</span><span class="p">,</span><span class="n">filterfeats</span><span class="p">,</span><span class="n">inferfeats</span><span class="p">,</span><span class="n">filtertoolong</span><span class="p">,</span><span class="n">prefix</span><span class="p">}</span> <span class="o">...</span><span class="p">]]</span>
                 <span class="p">[</span><span class="o">-</span><span class="n">save_data</span> <span class="n">SAVE_DATA</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">overwrite</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">n_sample</span> <span class="n">N_SAMPLE</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">-</span><span class="n">dump_fields</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">dump_transforms</span><span class="p">]</span> <span class="o">-</span><span class="n">src_vocab</span> <span class="n">SRC_VOCAB</span>
-                <span class="p">[</span><span class="o">-</span><span class="n">tgt_vocab</span> <span class="n">TGT_VOCAB</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">share_vocab</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">-</span><span class="n">src_feats_vocab</span> <span class="n">SRC_FEATS_VOCAB</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">-</span><span class="n">dump_transforms</span><span class="p">]</span> <span class="o">-</span><span class="n">src_vocab</span> <span class="n">SRC_VOCAB</span> <span class="p">[</span><span class="o">-</span><span class="n">tgt_vocab</span> <span class="n">TGT_VOCAB</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">-</span><span class="n">share_vocab</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">src_feats_vocab</span> <span class="n">SRC_FEATS_VOCAB</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">-</span><span class="n">src_vocab_size</span> <span class="n">SRC_VOCAB_SIZE</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">-</span><span class="n">tgt_vocab_size</span> <span class="n">TGT_VOCAB_SIZE</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">-</span><span class="n">vocab_size_multiple</span> <span class="n">VOCAB_SIZE_MULTIPLE</span><span class="p">]</span>
@@ -249,16 +248,14 @@
                 <span class="p">[</span><span class="o">-</span><span class="n">src_embeddings</span> <span class="n">SRC_EMBEDDINGS</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">-</span><span class="n">tgt_embeddings</span> <span class="n">TGT_EMBEDDINGS</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">-</span><span class="n">embeddings_type</span> <span class="p">{</span><span class="n">GloVe</span><span class="p">,</span><span class="n">word2vec</span><span class="p">}]</span>
-                <span class="p">[</span><span class="o">-</span><span class="n">switchout_temperature</span> <span class="n">SWITCHOUT_TEMPERATURE</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">-</span><span class="n">tokendrop_temperature</span> <span class="n">TOKENDROP_TEMPERATURE</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">-</span><span class="n">tokenmask_temperature</span> <span class="n">TOKENMASK_TEMPERATURE</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">src_seq_length</span> <span class="n">SRC_SEQ_LENGTH</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">tgt_seq_length</span> <span class="n">TGT_SEQ_LENGTH</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">permute_sent_ratio</span> <span class="n">PERMUTE_SENT_RATIO</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">rotate_ratio</span> <span class="n">ROTATE_RATIO</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">insert_ratio</span> <span class="n">INSERT_RATIO</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">random_ratio</span> <span class="n">RANDOM_RATIO</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">mask_ratio</span> <span class="n">MASK_RATIO</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">mask_length</span> <span class="p">{</span><span class="n">subword</span><span class="p">,</span><span class="n">word</span><span class="p">,</span><span class="n">span</span><span class="o">-</span><span class="n">poisson</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">poisson_lambda</span> <span class="n">POISSON_LAMBDA</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">replace_length</span> <span class="p">{</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">}]</span>
+                <span class="p">[</span><span class="o">-</span><span class="n">switchout_temperature</span> <span class="n">SWITCHOUT_TEMPERATURE</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">-</span><span class="n">tokendrop_temperature</span> <span class="n">TOKENDROP_TEMPERATURE</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">-</span><span class="n">tokenmask_temperature</span> <span class="n">TOKENMASK_TEMPERATURE</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">-</span><span class="n">src_subword_model</span> <span class="n">SRC_SUBWORD_MODEL</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">-</span><span class="n">tgt_subword_model</span> <span class="n">TGT_SUBWORD_MODEL</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">-</span><span class="n">src_subword_nbest</span> <span class="n">SRC_SUBWORD_NBEST</span><span class="p">]</span>
@@ -274,7 +271,9 @@
                 <span class="p">[</span><span class="o">-</span><span class="n">src_onmttok_kwargs</span> <span class="n">SRC_ONMTTOK_KWARGS</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">-</span><span class="n">tgt_onmttok_kwargs</span> <span class="n">TGT_ONMTTOK_KWARGS</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">reversible_tokenization</span> <span class="p">{</span><span class="n">joiner</span><span class="p">,</span><span class="n">spacer</span><span class="p">}]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">prior_tokenization</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">src_word_vec_size</span> <span class="n">SRC_WORD_VEC_SIZE</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">prior_tokenization</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">src_seq_length</span> <span class="n">SRC_SEQ_LENGTH</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">tgt_seq_length</span> <span class="n">TGT_SEQ_LENGTH</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">src_word_vec_size</span> <span class="n">SRC_WORD_VEC_SIZE</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">tgt_word_vec_size</span> <span class="n">TGT_WORD_VEC_SIZE</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">word_vec_size</span> <span class="n">WORD_VEC_SIZE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">share_decoder_embeddings</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">share_embeddings</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">position_encoding</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">update_vocab</span><span class="p">]</span>
@@ -287,12 +286,12 @@
                 <span class="p">[</span><span class="o">--</span><span class="n">decoder_type</span> <span class="p">{</span><span class="n">rnn</span><span class="p">,</span><span class="n">transformer</span><span class="p">,</span><span class="n">cnn</span><span class="p">,</span><span class="n">transformer_lm</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">freeze_encoder</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">freeze_decoder</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">layers</span> <span class="n">LAYERS</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">enc_layers</span> <span class="n">ENC_LAYERS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">dec_layers</span> <span class="n">DEC_LAYERS</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">rnn_size</span> <span class="n">RNN_SIZE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">enc_rnn_size</span> <span class="n">ENC_RNN_SIZE</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">dec_rnn_size</span> <span class="n">DEC_RNN_SIZE</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">hidden_size</span> <span class="n">HIDDEN_SIZE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">enc_hid_size</span> <span class="n">ENC_HID_SIZE</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">dec_hid_size</span> <span class="n">DEC_HID_SIZE</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">cnn_kernel_width</span> <span class="n">CNN_KERNEL_WIDTH</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">pos_ffn_activation_fn</span> <span class="p">{</span><span class="n">relu</span><span class="p">,</span><span class="n">gelu</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">input_feed</span> <span class="n">INPUT_FEED</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">bridge</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">rnn_type</span> <span class="p">{</span><span class="n">LSTM</span><span class="p">,</span><span class="n">GRU</span><span class="p">,</span><span class="n">SRU</span><span class="p">}]</span> <span class="p">[</span><span class="o">--</span><span class="n">brnn</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">rnn_type</span> <span class="p">{</span><span class="n">LSTM</span><span class="p">,</span><span class="n">GRU</span><span class="p">,</span><span class="n">SRU</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">context_gate</span> <span class="p">{</span><span class="n">source</span><span class="p">,</span><span class="n">target</span><span class="p">,</span><span class="n">both</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">bridge_extra_node</span> <span class="n">BRIDGE_EXTRA_NODE</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">bidir_edges</span> <span class="n">BIDIR_EDGES</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">state_dim</span> <span class="n">STATE_DIM</span><span class="p">]</span>
@@ -303,7 +302,7 @@
                 <span class="p">[</span><span class="o">--</span><span class="n">self_attn_type</span> <span class="n">SELF_ATTN_TYPE</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">max_relative_positions</span> <span class="n">MAX_RELATIVE_POSITIONS</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">heads</span> <span class="n">HEADS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">transformer_ff</span> <span class="n">TRANSFORMER_FF</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">aan_useffn</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">lambda_align</span> <span class="n">LAMBDA_ALIGN</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">aan_useffn</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">add_qkvbias</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">lambda_align</span> <span class="n">LAMBDA_ALIGN</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">alignment_layer</span> <span class="n">ALIGNMENT_LAYER</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">alignment_heads</span> <span class="n">ALIGNMENT_HEADS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">full_context_alignment</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">copy_attn</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">copy_attn_type</span> <span class="p">{</span><span class="n">dot</span><span class="p">,</span><span class="n">general</span><span class="p">,</span><span class="n">mlp</span><span class="p">,</span><span class="n">none</span><span class="p">}]</span>
@@ -314,28 +313,24 @@
                 <span class="p">[</span><span class="o">--</span><span class="n">data_type</span> <span class="n">DATA_TYPE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">save_model</span> <span class="n">SAVE_MODEL</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">save_checkpoint_steps</span> <span class="n">SAVE_CHECKPOINT_STEPS</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">keep_checkpoint</span> <span class="n">KEEP_CHECKPOINT</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">gpuid</span> <span class="p">[</span><span class="n">GPUID</span> <span class="p">[</span><span class="n">GPUID</span> <span class="o">...</span><span class="p">]]]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">gpu_ranks</span> <span class="p">[</span><span class="n">GPU_RANKS</span> <span class="p">[</span><span class="n">GPU_RANKS</span> <span class="o">...</span><span class="p">]]]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">world_size</span> <span class="n">WORLD_SIZE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">gpu_backend</span> <span class="n">GPU_BACKEND</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">gpu_verbose_level</span> <span class="n">GPU_VERBOSE_LEVEL</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">master_ip</span> <span class="n">MASTER_IP</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">master_port</span> <span class="n">MASTER_PORT</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">queue_size</span> <span class="n">QUEUE_SIZE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">seed</span> <span class="n">SEED</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">param_init</span> <span class="n">PARAM_INIT</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">param_init_glorot</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">seed</span> <span class="n">SEED</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">param_init</span> <span class="n">PARAM_INIT</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">param_init_glorot</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">train_from</span> <span class="n">TRAIN_FROM</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">reset_optim</span> <span class="p">{</span><span class="n">none</span><span class="p">,</span><span class="nb">all</span><span class="p">,</span><span class="n">states</span><span class="p">,</span><span class="n">keep_states</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">pre_word_vecs_enc</span> <span class="n">PRE_WORD_VECS_ENC</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">pre_word_vecs_dec</span> <span class="n">PRE_WORD_VECS_DEC</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">freeze_word_vecs_enc</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">freeze_word_vecs_dec</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">batch_size</span> <span class="n">BATCH_SIZE</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">num_workers</span> <span class="n">NUM_WORKERS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">batch_size</span> <span class="n">BATCH_SIZE</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">batch_size_multiple</span> <span class="n">BATCH_SIZE_MULTIPLE</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">batch_type</span> <span class="p">{</span><span class="n">sents</span><span class="p">,</span><span class="n">tokens</span><span class="p">}]</span> <span class="p">[</span><span class="o">--</span><span class="n">pool_factor</span> <span class="n">POOL_FACTOR</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">normalization</span> <span class="p">{</span><span class="n">sents</span><span class="p">,</span><span class="n">tokens</span><span class="p">}]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">batch_type</span> <span class="p">{</span><span class="n">sents</span><span class="p">,</span><span class="n">tokens</span><span class="p">}]</span> <span class="p">[</span><span class="o">--</span><span class="n">normalization</span> <span class="p">{</span><span class="n">sents</span><span class="p">,</span><span class="n">tokens</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">accum_count</span> <span class="n">ACCUM_COUNT</span> <span class="p">[</span><span class="n">ACCUM_COUNT</span> <span class="o">...</span><span class="p">]]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">accum_steps</span> <span class="n">ACCUM_STEPS</span> <span class="p">[</span><span class="n">ACCUM_STEPS</span> <span class="o">...</span><span class="p">]]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">valid_steps</span> <span class="n">VALID_STEPS</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">valid_batch_size</span> <span class="n">VALID_BATCH_SIZE</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">max_generator_batches</span> <span class="n">MAX_GENERATOR_BATCHES</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">train_steps</span> <span class="n">TRAIN_STEPS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">single_pass</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">epochs</span> <span class="n">EPOCHS</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">train_steps</span> <span class="n">TRAIN_STEPS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">single_pass</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">early_stopping</span> <span class="n">EARLY_STOPPING</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">early_stopping_criteria</span> <span class="p">[</span><span class="n">EARLY_STOPPING_CRITERIA</span> <span class="p">[</span><span class="n">EARLY_STOPPING_CRITERIA</span> <span class="o">...</span><span class="p">]]]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">optim</span> <span class="p">{</span><span class="n">sgd</span><span class="p">,</span><span class="n">adagrad</span><span class="p">,</span><span class="n">adadelta</span><span class="p">,</span><span class="n">adam</span><span class="p">,</span><span class="n">sparseadam</span><span class="p">,</span><span class="n">adafactor</span><span class="p">,</span><span class="n">fusedadam</span><span class="p">}]</span>
@@ -389,7 +384,7 @@
 <p>Default: “warning”</p>
 </dd>
 <dt><kbd>-transforms, --transforms</kbd></dt>
-<dd><p>Possible choices: switchout, tokendrop, tokenmask, filtertoolong, prefix, bart, sentencepiece, bpe, onmt_tokenize, filterfeats, inferfeats</p>
+<dd><p>Possible choices: bart, switchout, tokendrop, tokenmask, sentencepiece, bpe, onmt_tokenize, filterfeats, inferfeats, filtertoolong, prefix</p>
 <p>Default transform pipeline to apply to data. Can be specified in each corpus of data to override.</p>
 <p>Default: []</p>
 </dd>
@@ -403,10 +398,6 @@
 <dt><kbd>-n_sample, --n_sample</kbd></dt>
 <dd><p>Stop after save this number of transformed samples/corpus. Can be [-1, 0, N&gt;0]. Set to -1 to go full corpus, 0 to skip.</p>
 <p>Default: 0</p>
-</dd>
-<dt><kbd>-dump_fields, --dump_fields</kbd></dt>
-<dd><p>Dump fields <cite>*.vocab.pt</cite> to disk. -save_data should be set as saving prefix.</p>
-<p>Default: False</p>
 </dd>
 <dt><kbd>-dump_transforms, --dump_transforms</kbd></dt>
 <dd><p>Dump transforms <cite>*.transforms.pt</cite> to disk. -save_data should be set as saving prefix.</p>
@@ -432,15 +423,15 @@
 </dd>
 <dt><kbd>-src_vocab_size, --src_vocab_size</kbd></dt>
 <dd><p>Maximum size of the source vocabulary.</p>
-<p>Default: 50000</p>
+<p>Default: 32768</p>
 </dd>
 <dt><kbd>-tgt_vocab_size, --tgt_vocab_size</kbd></dt>
 <dd><p>Maximum size of the target vocabulary</p>
-<p>Default: 50000</p>
+<p>Default: 32768</p>
 </dd>
 <dt><kbd>-vocab_size_multiple, --vocab_size_multiple</kbd></dt>
 <dd><p>Make the vocabulary size a multiple of this value.</p>
-<p>Default: 1</p>
+<p>Default: 8</p>
 </dd>
 <dt><kbd>-src_words_min_frequency, --src_words_min_frequency</kbd></dt>
 <dd><p>Discard source words with lower frequency.</p>
@@ -481,46 +472,6 @@
 </dd>
 </dl>
 </div>
-<div class="section" id="Transform/SwitchOut">
-<h2>Transform/SwitchOut<a class="headerlink" href="#Transform/SwitchOut" title="Permalink to this headline">¶</a></h2>
-<dl class="option-list">
-<dt><kbd>-switchout_temperature, --switchout_temperature</kbd></dt>
-<dd><p>Sampling temperature for SwitchOut. <span class="math notranslate nohighlight">\(\tau^{-1}\)</span> in <a class="bibtex reference internal" href="../ref.html#dblp-journals-corr-abs-1808-07512" id="id1">[WPDN18]</a>. Smaller value makes data more diverse.</p>
-<p>Default: 1.0</p>
-</dd>
-</dl>
-</div>
-<div class="section" id="Transform/Token_Drop">
-<h2>Transform/Token_Drop<a class="headerlink" href="#Transform/Token_Drop" title="Permalink to this headline">¶</a></h2>
-<dl class="option-list">
-<dt><kbd>-tokendrop_temperature, --tokendrop_temperature</kbd></dt>
-<dd><p>Sampling temperature for token deletion.</p>
-<p>Default: 1.0</p>
-</dd>
-</dl>
-</div>
-<div class="section" id="Transform/Token_Mask">
-<h2>Transform/Token_Mask<a class="headerlink" href="#Transform/Token_Mask" title="Permalink to this headline">¶</a></h2>
-<dl class="option-list">
-<dt><kbd>-tokenmask_temperature, --tokenmask_temperature</kbd></dt>
-<dd><p>Sampling temperature for token masking.</p>
-<p>Default: 1.0</p>
-</dd>
-</dl>
-</div>
-<div class="section" id="Transform/Filter">
-<h2>Transform/Filter<a class="headerlink" href="#Transform/Filter" title="Permalink to this headline">¶</a></h2>
-<dl class="option-list">
-<dt><kbd>--src_seq_length, -src_seq_length</kbd></dt>
-<dd><p>Maximum source sequence length.</p>
-<p>Default: 200</p>
-</dd>
-<dt><kbd>--tgt_seq_length, -tgt_seq_length</kbd></dt>
-<dd><p>Maximum target sequence length.</p>
-<p>Default: 200</p>
-</dd>
-</dl>
-</div>
 <div class="section" id="Transform/BART">
 <h2>Transform/BART<a class="headerlink" href="#Transform/BART" title="Permalink to this headline">¶</a></h2>
 <dl class="option-list">
@@ -557,6 +508,33 @@
 <dd><p>Possible choices: -1, 0, 1</p>
 <p>When masking N tokens, replace with 0, 1, or N tokens. (use -1 for N)</p>
 <p>Default: -1</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="Transform/SwitchOut">
+<h2>Transform/SwitchOut<a class="headerlink" href="#Transform/SwitchOut" title="Permalink to this headline">¶</a></h2>
+<dl class="option-list">
+<dt><kbd>-switchout_temperature, --switchout_temperature</kbd></dt>
+<dd><p>Sampling temperature for SwitchOut. <span class="math notranslate nohighlight">\(\tau^{-1}\)</span> in <a class="bibtex reference internal" href="../ref.html#dblp-journals-corr-abs-1808-07512" id="id1">[WPDN18]</a>. Smaller value makes data more diverse.</p>
+<p>Default: 1.0</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="Transform/Token_Drop">
+<h2>Transform/Token_Drop<a class="headerlink" href="#Transform/Token_Drop" title="Permalink to this headline">¶</a></h2>
+<dl class="option-list">
+<dt><kbd>-tokendrop_temperature, --tokendrop_temperature</kbd></dt>
+<dd><p>Sampling temperature for token deletion.</p>
+<p>Default: 1.0</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="Transform/Token_Mask">
+<h2>Transform/Token_Mask<a class="headerlink" href="#Transform/Token_Mask" title="Permalink to this headline">¶</a></h2>
+<dl class="option-list">
+<dt><kbd>-tokenmask_temperature, --tokenmask_temperature</kbd></dt>
+<dd><p>Sampling temperature for token masking.</p>
+<p>Default: 1.0</p>
 </dd>
 </dl>
 </div>
@@ -641,6 +619,19 @@
 <dt><kbd>--prior_tokenization, -prior_tokenization</kbd></dt>
 <dd><p>Whether the input has already been tokenized.</p>
 <p>Default: False</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="Transform/Filter">
+<h2>Transform/Filter<a class="headerlink" href="#Transform/Filter" title="Permalink to this headline">¶</a></h2>
+<dl class="option-list">
+<dt><kbd>--src_seq_length, -src_seq_length</kbd></dt>
+<dd><p>Maximum source sequence length.</p>
+<p>Default: 200</p>
+</dd>
+<dt><kbd>--tgt_seq_length, -tgt_seq_length</kbd></dt>
+<dd><p>Maximum target sequence length.</p>
+<p>Default: 200</p>
 </dd>
 </dl>
 </div>
@@ -748,15 +739,15 @@
 <dd><p>Number of layers in the decoder</p>
 <p>Default: 2</p>
 </dd>
-<dt><kbd>--rnn_size, -rnn_size</kbd></dt>
-<dd><p>Size of rnn hidden states. Overwrites enc_rnn_size and dec_rnn_size</p>
+<dt><kbd>--hidden_size, -hidden_size</kbd></dt>
+<dd><p>Size of rnn hidden states. Overwrites enc_hid_size and dec_hid_size</p>
 <p>Default: -1</p>
 </dd>
-<dt><kbd>--enc_rnn_size, -enc_rnn_size</kbd></dt>
+<dt><kbd>--enc_hid_size, -enc_hid_size</kbd></dt>
 <dd><p>Size of encoder rnn hidden states.</p>
 <p>Default: 500</p>
 </dd>
-<dt><kbd>--dec_rnn_size, -dec_rnn_size</kbd></dt>
+<dt><kbd>--dec_hid_size, -dec_hid_size</kbd></dt>
 <dd><p>Size of decoder rnn hidden states.</p>
 <p>Default: 500</p>
 </dd>
@@ -781,9 +772,6 @@
 <dd><p>Possible choices: LSTM, GRU, SRU</p>
 <p>The gate type to use in the RNNs</p>
 <p>Default: “LSTM”</p>
-</dd>
-<dt><kbd>--brnn, -brnn</kbd></dt>
-<dd><p>Deprecated, use <cite>encoder_type</cite>.</p>
 </dd>
 <dt><kbd>--context_gate, -context_gate</kbd></dt>
 <dd><p>Possible choices: source, target, both</p>
@@ -849,6 +837,10 @@
 </dd>
 <dt><kbd>--aan_useffn, -aan_useffn</kbd></dt>
 <dd><p>Turn on the FFN layer in the AAN decoder</p>
+<p>Default: False</p>
+</dd>
+<dt><kbd>--add_qkvbias, -add_qkvbias</kbd></dt>
+<dd><p>Add bias to nn.linear of Query/Key/Value in MHANote: this will add bias to output proj layer too</p>
 <p>Default: False</p>
 </dd>
 </dl>
@@ -942,10 +934,6 @@
 <dd><p>Keep X checkpoints (negative: keep all)</p>
 <p>Default: -1</p>
 </dd>
-<dt><kbd>--gpuid, -gpuid</kbd></dt>
-<dd><p>Deprecated see world_size and gpu_ranks.</p>
-<p>Default: []</p>
-</dd>
 <dt><kbd>--gpu_ranks, -gpu_ranks</kbd></dt>
 <dd><p>list of ranks of each process.</p>
 <p>Default: []</p>
@@ -969,10 +957,6 @@
 <dt><kbd>--master_port, -master_port</kbd></dt>
 <dd><p>Port of master for torch.distributed training.</p>
 <p>Default: 10000</p>
-</dd>
-<dt><kbd>--queue_size, -queue_size</kbd></dt>
-<dd><p>Size of queue for each process in producer/consumer</p>
-<p>Default: 40</p>
 </dd>
 </dl>
 </div>
@@ -1024,28 +1008,22 @@
 <div class="section" id="Optimization- Type">
 <h2>Optimization- Type<a class="headerlink" href="#Optimization- Type" title="Permalink to this headline">¶</a></h2>
 <dl class="option-list">
+<dt><kbd>--num_workers, -num_workers</kbd></dt>
+<dd><p>pytorch DataLoader num_workers</p>
+<p>Default: 2</p>
+</dd>
 <dt><kbd>--batch_size, -batch_size</kbd></dt>
 <dd><p>Maximum batch size for training</p>
 <p>Default: 64</p>
 </dd>
 <dt><kbd>--batch_size_multiple, -batch_size_multiple</kbd></dt>
 <dd><p>Batch size multiple for token batches.</p>
+<p>Default: 1</p>
 </dd>
 <dt><kbd>--batch_type, -batch_type</kbd></dt>
 <dd><p>Possible choices: sents, tokens</p>
 <p>Batch grouping for batch_size. Standard is sents. Tokens will do dynamic batching</p>
 <p>Default: “sents”</p>
-</dd>
-<dt><kbd>--pool_factor, -pool_factor</kbd></dt>
-<dd><dl class="simple">
-<dt>Factor used in data loading and batch creations.</dt><dd><p>It will load the equivalent of <cite>pool_factor</cite> batches,
-sort them by the according <cite>sort_key</cite> to produce
-homogeneous batches and reduce padding, and yield
-the produced batches in a shuffled way.
-Inspired by torchtext’s pool mechanism.</p>
-</dd>
-</dl>
-<p>Default: 8192</p>
 </dd>
 <dt><kbd>--normalization, -normalization</kbd></dt>
 <dd><p>Possible choices: sents, tokens</p>
@@ -1068,10 +1046,6 @@ Inspired by torchtext’s pool mechanism.</p>
 <dd><p>Maximum batch size for validation</p>
 <p>Default: 32</p>
 </dd>
-<dt><kbd>--max_generator_batches, -max_generator_batches</kbd></dt>
-<dd><p>Maximum batches of words in a sequence to run the generator on in parallel. Higher is faster, but uses more memory. Set to 0 to disable.</p>
-<p>Default: 32</p>
-</dd>
 <dt><kbd>--train_steps, -train_steps</kbd></dt>
 <dd><p>Number of training steps</p>
 <p>Default: 100000</p>
@@ -1079,10 +1053,6 @@ Inspired by torchtext’s pool mechanism.</p>
 <dt><kbd>--single_pass, -single_pass</kbd></dt>
 <dd><p>Make a single pass over the training dataset.</p>
 <p>Default: False</p>
-</dd>
-<dt><kbd>--epochs, -epochs</kbd></dt>
-<dd><p>Deprecated epochs see train_steps</p>
-<p>Default: 0</p>
 </dd>
 <dt><kbd>--early_stopping, -early_stopping</kbd></dt>
 <dd><p>Number of validation steps without improving.</p>
@@ -1233,8 +1203,12 @@ Inspired by torchtext’s pool mechanism.</p>
 <h2>Dynamic data<a class="headerlink" href="#Dynamic data" title="Permalink to this headline">¶</a></h2>
 <dl class="option-list">
 <dt><kbd>-bucket_size, --bucket_size</kbd></dt>
-<dd><p>Examples per dynamically generated torchtext Dataset.</p>
-<p>Default: 2048</p>
+<dd><dl class="simple">
+<dt>A bucket is a buffer of bucket_size examples to pick</dt><dd><p>from the various Corpora. The dynamic iterator batches
+batch_size batchs from the bucket and shuffle them.</p>
+</dd>
+</dl>
+<p>Default: 262144</p>
 </dd>
 </dl>
 </div>
@@ -1260,7 +1234,7 @@ Inspired by torchtext’s pool mechanism.</p>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, srush
+        &copy; Copyright 2017, OpenNMT
 
     </p>
   </div>

@@ -209,14 +209,14 @@
 
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">traceback</span>
-
 <span class="kn">import</span> <span class="nn">onmt.utils</span>
+<span class="kn">from</span> <span class="nn">onmt.utils.loss</span> <span class="kn">import</span> <span class="n">LossCompute</span>
 <span class="kn">from</span> <span class="nn">onmt.utils.logging</span> <span class="kn">import</span> <span class="n">logger</span>
 <span class="kn">from</span> <span class="nn">onmt.translate.utils</span> <span class="kn">import</span> <span class="n">ScoringPreparator</span>
 <span class="kn">from</span> <span class="nn">onmt.scorers</span> <span class="kn">import</span> <span class="n">get_scorers_cls</span><span class="p">,</span> <span class="n">build_scorers</span>
 
 
-<span class="k">def</span> <span class="nf">build_trainer</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">device_id</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">optim</span><span class="p">,</span> <span class="n">model_saver</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">build_trainer</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">device_id</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">vocabs</span><span class="p">,</span> <span class="n">optim</span><span class="p">,</span> <span class="n">model_saver</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Simplify `Trainer` creation based on user `opt`s*</span>
 
@@ -231,20 +231,16 @@
 <span class="sd">            used to save the model</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">tgt_field</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">fields</span><span class="p">)[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">base_field</span>
-    <span class="n">train_loss</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">loss</span><span class="o">.</span><span class="n">build_loss_compute</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">tgt_field</span><span class="p">,</span> <span class="n">opt</span><span class="p">)</span>
-    <span class="n">valid_loss</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">loss</span><span class="o">.</span><span class="n">build_loss_compute</span><span class="p">(</span>
-        <span class="n">model</span><span class="p">,</span> <span class="n">tgt_field</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">train</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">train_loss</span> <span class="o">=</span> <span class="n">LossCompute</span><span class="o">.</span><span class="n">from_opts</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">vocabs</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">])</span>
+    <span class="n">valid_loss</span> <span class="o">=</span> <span class="n">LossCompute</span><span class="o">.</span><span class="n">from_opts</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">vocabs</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">],</span> <span class="n">train</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
-    <span class="n">scoring_preparator</span> <span class="o">=</span> <span class="n">ScoringPreparator</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">opt</span><span class="p">)</span>
+    <span class="n">scoring_preparator</span> <span class="o">=</span> <span class="n">ScoringPreparator</span><span class="p">(</span><span class="n">vocabs</span><span class="p">,</span> <span class="n">opt</span><span class="p">)</span>
     <span class="n">scorers_cls</span> <span class="o">=</span> <span class="n">get_scorers_cls</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">train_metrics</span><span class="p">)</span>
     <span class="n">train_scorers</span> <span class="o">=</span> <span class="n">build_scorers</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">scorers_cls</span><span class="p">)</span>
     <span class="n">scorers_cls</span> <span class="o">=</span> <span class="n">get_scorers_cls</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">valid_metrics</span><span class="p">)</span>
     <span class="n">valid_scorers</span> <span class="o">=</span> <span class="n">build_scorers</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">scorers_cls</span><span class="p">)</span>
 
     <span class="n">trunc_size</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">truncated_decoder</span>  <span class="c1"># Badly named...</span>
-    <span class="n">shard_size</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">max_generator_batches</span> <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">model_dtype</span> <span class="o">==</span> <span class="s1">&#39;fp32&#39;</span> <span class="k">else</span> <span class="mi">0</span>
-    <span class="n">norm_method</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">normalization</span>
     <span class="n">accum_count</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">accum_count</span>
     <span class="n">accum_steps</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">accum_steps</span>
     <span class="n">n_gpu</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">world_size</span>
@@ -269,7 +265,6 @@
                            <span class="n">train_loss</span><span class="p">,</span> <span class="n">valid_loss</span><span class="p">,</span>
                            <span class="n">scoring_preparator</span><span class="p">,</span> <span class="n">train_scorers</span><span class="p">,</span> <span class="n">valid_scorers</span><span class="p">,</span>
                            <span class="n">optim</span><span class="p">,</span> <span class="n">trunc_size</span><span class="p">,</span>
-                           <span class="n">shard_size</span><span class="p">,</span> <span class="n">norm_method</span><span class="p">,</span>
                            <span class="n">accum_count</span><span class="p">,</span> <span class="n">accum_steps</span><span class="p">,</span>
                            <span class="n">n_gpu</span><span class="p">,</span> <span class="n">gpu_rank</span><span class="p">,</span> <span class="n">gpu_verbose_level</span><span class="p">,</span>
                            <span class="n">opt</span><span class="o">.</span><span class="n">train_eval_steps</span><span class="p">,</span> <span class="n">report_manager</span><span class="p">,</span>
@@ -298,9 +293,7 @@
 <span class="sd">            optim(:obj:`onmt.utils.optimizers.Optimizer`):</span>
 <span class="sd">               the optimizer responsible for update</span>
 <span class="sd">            trunc_size(int): length of truncated back propagation through time</span>
-<span class="sd">            shard_size(int): compute loss in shards of this size for efficiency</span>
 <span class="sd">            data_type(string): type of the source input: [text]</span>
-<span class="sd">            norm_method(string): normalization methods: [sents|tokens]</span>
 <span class="sd">            accum_count(list): accumulate gradients this many times.</span>
 <span class="sd">            accum_steps(list): steps for accum gradients changes.</span>
 <span class="sd">            report_manager(:obj:`onmt.utils.ReportMgrBase`):</span>
@@ -313,8 +306,8 @@
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">train_loss</span><span class="p">,</span> <span class="n">valid_loss</span><span class="p">,</span>
                  <span class="n">scoring_preparator</span><span class="p">,</span> <span class="n">train_scorers</span><span class="p">,</span> <span class="n">valid_scorers</span><span class="p">,</span>
                  <span class="n">optim</span><span class="p">,</span>
-                 <span class="n">trunc_size</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">shard_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span>
-                 <span class="n">norm_method</span><span class="o">=</span><span class="s2">&quot;sents&quot;</span><span class="p">,</span> <span class="n">accum_count</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                 <span class="n">trunc_size</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                 <span class="n">accum_count</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
                  <span class="n">accum_steps</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
                  <span class="n">n_gpu</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">gpu_rank</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">gpu_verbose_level</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                  <span class="n">train_eval_steps</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
@@ -333,8 +326,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">valid_scorers</span> <span class="o">=</span> <span class="n">valid_scorers</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">optim</span> <span class="o">=</span> <span class="n">optim</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">trunc_size</span> <span class="o">=</span> <span class="n">trunc_size</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">shard_size</span> <span class="o">=</span> <span class="n">shard_size</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">norm_method</span> <span class="o">=</span> <span class="n">norm_method</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">accum_count_l</span> <span class="o">=</span> <span class="n">accum_count</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">accum_count</span> <span class="o">=</span> <span class="n">accum_count</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">accum_steps</span> <span class="o">=</span> <span class="n">accum_steps</span>
@@ -356,10 +347,6 @@
 
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accum_count_l</span><span class="p">)):</span>
             <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">accum_count_l</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">accum_count_l</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">trunc_size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> \
-                    <span class="sd">&quot;&quot;&quot;To enable accumulated gradients,</span>
-<span class="sd">                       you must disable target sequence truncating.&quot;&quot;&quot;</span>
 
         <span class="c1"># Set model in training mode.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
@@ -391,23 +378,15 @@
 
     <span class="k">def</span> <span class="nf">_accum_batches</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterator</span><span class="p">):</span>
         <span class="n">batches</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">normalization</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">accum_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_accum_count</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">training_step</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">iterator</span><span class="p">:</span>
             <span class="n">batches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm_method</span> <span class="o">==</span> <span class="s2">&quot;tokens&quot;</span><span class="p">:</span>
-                <span class="n">num_tokens</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">tgt</span><span class="p">[</span><span class="mi">1</span><span class="p">:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ne</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">train_loss</span><span class="o">.</span><span class="n">padding_idx</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-                <span class="n">normalization</span> <span class="o">+=</span> <span class="n">num_tokens</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">normalization</span> <span class="o">+=</span> <span class="n">batch</span><span class="o">.</span><span class="n">batch_size</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">batches</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">accum_count</span><span class="p">:</span>
-                <span class="k">yield</span> <span class="n">batches</span><span class="p">,</span> <span class="n">normalization</span>
+                <span class="k">yield</span> <span class="n">batches</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">accum_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_accum_count</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">training_step</span><span class="p">)</span>
                 <span class="n">batches</span> <span class="o">=</span> <span class="p">[]</span>
-                <span class="n">normalization</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">if</span> <span class="n">batches</span><span class="p">:</span>
-            <span class="k">yield</span> <span class="n">batches</span><span class="p">,</span> <span class="n">normalization</span>
+            <span class="k">yield</span> <span class="n">batches</span>
 
     <span class="k">def</span> <span class="nf">_update_average</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">moving_average</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -453,26 +432,14 @@
         <span class="n">report_stats</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">Statistics</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_start_report_manager</span><span class="p">(</span><span class="n">start_time</span><span class="o">=</span><span class="n">total_stats</span><span class="o">.</span><span class="n">start_time</span><span class="p">)</span>
 
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">batches</span><span class="p">,</span> <span class="n">normalization</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">batches</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_accum_batches</span><span class="p">(</span><span class="n">train_iter</span><span class="p">)):</span>
             <span class="n">step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">training_step</span>
             <span class="c1"># UPDATE DROPOUT</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_maybe_update_dropout</span><span class="p">(</span><span class="n">step</span><span class="p">)</span>
 
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpu_verbose_level</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;GpuRank </span><span class="si">%d</span><span class="s2">: index: </span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpu_rank</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpu_verbose_level</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;GpuRank </span><span class="si">%d</span><span class="s2">: reduce_counter: </span><span class="si">%d</span><span class="s2"> </span><span class="se">\</span>
-<span class="s2">                            n_minibatch </span><span class="si">%d</span><span class="s2">&quot;</span>
-                            <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gpu_rank</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">batches</span><span class="p">)))</span>
-
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_gpu</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">normalization</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">distributed</span>
-                                    <span class="o">.</span><span class="n">all_gather_list</span>
-                                    <span class="p">(</span><span class="n">normalization</span><span class="p">))</span>
-
             <span class="bp">self</span><span class="o">.</span><span class="n">_gradient_accumulation</span><span class="p">(</span>
-                <span class="n">batches</span><span class="p">,</span> <span class="n">normalization</span><span class="p">,</span> <span class="n">total_stats</span><span class="p">,</span>
+                <span class="n">batches</span><span class="p">,</span> <span class="n">total_stats</span><span class="p">,</span>
                 <span class="n">report_stats</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">average_decay</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">average_every</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -484,23 +451,14 @@
                 <span class="n">report_stats</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="p">(</span><span class="n">valid_iter</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">step</span> <span class="o">%</span> <span class="n">valid_steps</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">n_gpu</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpu_verbose_level</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;GpuRank </span><span class="si">%d</span><span class="s1">: validate step </span><span class="si">%d</span><span class="s1">&#39;</span>
-                                <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gpu_rank</span><span class="p">,</span> <span class="n">step</span><span class="p">))</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">gpu_rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
 
                 <span class="n">valid_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span>
                     <span class="n">valid_iter</span><span class="p">,</span> <span class="n">moving_average</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">moving_average</span><span class="p">)</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpu_verbose_level</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;GpuRank </span><span class="si">%d</span><span class="s1">: gather valid stat </span><span class="se">\</span>
-<span class="s1">                                step </span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gpu_rank</span><span class="p">,</span> <span class="n">step</span><span class="p">))</span>
-                <span class="c1"># gather stats unuseful on a single gpu</span>
-                <span class="c1"># valid_stats = self._maybe_gather_stats(valid_stats)</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpu_verbose_level</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;GpuRank </span><span class="si">%d</span><span class="s1">: report stat step </span><span class="si">%d</span><span class="s1">&#39;</span>
-                                <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gpu_rank</span><span class="p">,</span> <span class="n">step</span><span class="p">))</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_report_step</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">(),</span>
-                                  <span class="n">step</span><span class="p">,</span> <span class="n">valid_stats</span><span class="o">=</span><span class="n">valid_stats</span><span class="p">)</span>
+                                  <span class="n">step</span><span class="p">,</span> <span class="n">train_stats</span><span class="o">=</span><span class="n">total_stats</span><span class="p">,</span>
+                                  <span class="n">valid_stats</span><span class="o">=</span><span class="n">valid_stats</span><span class="p">)</span>
+
                 <span class="c1"># Run patience mechanism</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">earlystopper</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">earlystopper</span><span class="p">(</span><span class="n">valid_stats</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
@@ -545,17 +503,17 @@
             <span class="n">stats</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">Statistics</span><span class="p">()</span>
 
             <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">valid_iter</span><span class="p">:</span>
-                <span class="n">src</span><span class="p">,</span> <span class="n">src_lengths</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">src</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">src</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> \
-                    <span class="k">else</span> <span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">src</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-                <span class="n">tgt</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">tgt</span>
+                <span class="n">src</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">]</span>
+                <span class="n">src_len</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;srclen&#39;</span><span class="p">]</span>
+                <span class="n">tgt</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span>
 
                 <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">amp</span><span class="o">.</span><span class="n">autocast</span><span class="p">(</span><span class="n">enabled</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">amp</span><span class="p">):</span>
                     <span class="c1"># F-prop through the model.</span>
-                    <span class="n">outputs</span><span class="p">,</span> <span class="n">attns</span> <span class="o">=</span> <span class="n">valid_model</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">,</span>
-                                                 <span class="n">with_align</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">with_align</span><span class="p">)</span>
+                    <span class="n">model_out</span><span class="p">,</span> <span class="n">attns</span> <span class="o">=</span> <span class="n">valid_model</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span>
+                                                   <span class="n">with_align</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">with_align</span><span class="p">)</span>
 
                     <span class="c1"># Compute loss.</span>
-                    <span class="n">_</span><span class="p">,</span> <span class="n">batch_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_loss</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">outputs</span><span class="p">,</span> <span class="n">attns</span><span class="p">)</span>
+                    <span class="n">_</span><span class="p">,</span> <span class="n">batch_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_loss</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">model_out</span><span class="p">,</span> <span class="n">attns</span><span class="p">)</span>
 
                     <span class="n">stats</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">batch_stats</span><span class="p">)</span>
 
@@ -594,30 +552,32 @@
 
         <span class="k">return</span> <span class="n">stats</span></div>
 
-    <span class="k">def</span> <span class="nf">_gradient_accumulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">true_batches</span><span class="p">,</span> <span class="n">normalization</span><span class="p">,</span> <span class="n">total_stats</span><span class="p">,</span>
+    <span class="k">def</span> <span class="nf">_gradient_accumulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">true_batches</span><span class="p">,</span> <span class="n">total_stats</span><span class="p">,</span>
                                <span class="n">report_stats</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">accum_count</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
 
         <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">batch</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">true_batches</span><span class="p">):</span>
-            <span class="n">target_size</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">tgt</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">target_size</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
             <span class="c1"># Truncated BPTT: reminder not compatible with accum &gt; 1</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">trunc_size</span><span class="p">:</span>
                 <span class="n">trunc_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trunc_size</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">trunc_size</span> <span class="o">=</span> <span class="n">target_size</span>
 
-            <span class="n">src</span><span class="p">,</span> <span class="n">src_lengths</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">src</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">src</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> \
-                <span class="k">else</span> <span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">src</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">src_lengths</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">report_stats</span><span class="o">.</span><span class="n">n_src_words</span> <span class="o">+=</span> <span class="n">src_lengths</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="n">src</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">]</span>
+            <span class="n">src_len</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;srclen&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">src_len</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">report_stats</span><span class="o">.</span><span class="n">n_src_words</span> <span class="o">+=</span> <span class="n">src_len</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+                <span class="n">total_stats</span><span class="o">.</span><span class="n">n_src_words</span> <span class="o">+=</span> <span class="n">src_len</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
 
-            <span class="n">tgt_outer</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">tgt</span>
+            <span class="n">tgt_outer</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span>
 
             <span class="n">bptt</span> <span class="o">=</span> <span class="kc">False</span>
             <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">target_size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">trunc_size</span><span class="p">):</span>
                 <span class="c1"># 1. Create truncated target.</span>
-                <span class="n">tgt</span> <span class="o">=</span> <span class="n">tgt_outer</span><span class="p">[</span><span class="n">j</span><span class="p">:</span> <span class="n">j</span> <span class="o">+</span> <span class="n">trunc_size</span><span class="p">]</span>
+
+                <span class="n">tgt</span> <span class="o">=</span> <span class="n">tgt_outer</span><span class="p">[:,</span> <span class="n">j</span><span class="p">:</span> <span class="n">j</span> <span class="o">+</span> <span class="n">trunc_size</span><span class="p">,</span> <span class="p">:]</span>
 
                 <span class="c1"># 2. F-prop all but generator.</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">accum_count</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
@@ -625,18 +585,16 @@
 
                 <span class="k">try</span><span class="p">:</span>
                     <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">amp</span><span class="o">.</span><span class="n">autocast</span><span class="p">(</span><span class="n">enabled</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">amp</span><span class="p">):</span>
-                        <span class="n">outputs</span><span class="p">,</span> <span class="n">attns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span>
-                            <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">,</span> <span class="n">bptt</span><span class="o">=</span><span class="n">bptt</span><span class="p">,</span>
+                        <span class="n">model_out</span><span class="p">,</span> <span class="n">attns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span>
+                            <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span> <span class="n">bptt</span><span class="o">=</span><span class="n">bptt</span><span class="p">,</span>
                             <span class="n">with_align</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">with_align</span><span class="p">)</span>
                         <span class="n">bptt</span> <span class="o">=</span> <span class="kc">True</span>
 
                         <span class="c1"># 3. Compute loss.</span>
                         <span class="n">loss</span><span class="p">,</span> <span class="n">batch_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_loss</span><span class="p">(</span>
                             <span class="n">batch</span><span class="p">,</span>
-                            <span class="n">outputs</span><span class="p">,</span>
+                            <span class="n">model_out</span><span class="p">,</span>
                             <span class="n">attns</span><span class="p">,</span>
-                            <span class="n">normalization</span><span class="o">=</span><span class="n">normalization</span><span class="p">,</span>
-                            <span class="n">shard_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">shard_size</span><span class="p">,</span>
                             <span class="n">trunc_start</span><span class="o">=</span><span class="n">j</span><span class="p">,</span>
                             <span class="n">trunc_size</span><span class="o">=</span><span class="n">trunc_size</span><span class="p">)</span>
 
@@ -664,6 +622,8 @@
                         <span class="n">batch_stats</span><span class="o">.</span><span class="n">computed_metrics</span> <span class="o">=</span> <span class="n">computed_metrics</span>
 
                     <span class="k">if</span> <span class="n">loss</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="c1"># in theory we should divide by accum_count and bptt</span>
+                        <span class="c1"># to rescale for each sub batch</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span>
 
                     <span class="n">total_stats</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">batch_stats</span><span class="p">)</span>
@@ -686,14 +646,11 @@
                                  <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">requires_grad</span>
                                  <span class="ow">and</span> <span class="n">p</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
                         <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">all_reduce_and_rescale_tensors</span><span class="p">(</span>
-                            <span class="n">grads</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+                            <span class="n">grads</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_gpu</span><span class="p">))</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
 
                 <span class="c1"># If truncated, don&#39;t backprop fully.</span>
-                <span class="c1"># TO CHECK</span>
-                <span class="c1"># if dec_state is not None:</span>
-                <span class="c1">#    dec_state.detach()</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">state</span> <span class="o">!=</span> <span class="p">{}:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">detach_state</span><span class="p">()</span>
 
         <span class="c1"># in case of multi step gradient accumulation,</span>
@@ -704,7 +661,7 @@
                          <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">requires_grad</span>
                          <span class="ow">and</span> <span class="n">p</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
                 <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">all_reduce_and_rescale_tensors</span><span class="p">(</span>
-                    <span class="n">grads</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+                    <span class="n">grads</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_gpu</span><span class="p">))</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">_start_report_manager</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_time</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -716,21 +673,6 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">report_manager</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">report_manager</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="n">start_time</span>
-
-    <span class="k">def</span> <span class="nf">_maybe_gather_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stat</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Gather statistics in multi-processes cases</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            stat(:obj:onmt.utils.Statistics): a Statistics object to gather</span>
-<span class="sd">                or None (it returns None in this case)</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            stat: the updated (or unchanged) stat object</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">stat</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_gpu</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">Statistics</span><span class="o">.</span><span class="n">all_gather_stats</span><span class="p">(</span><span class="n">stat</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">stat</span>
 
     <span class="k">def</span> <span class="nf">_maybe_report_training</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">num_steps</span><span class="p">,</span> <span class="n">learning_rate</span><span class="p">,</span>
                                <span class="n">report_stats</span><span class="p">):</span>
@@ -773,7 +715,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, srush
+        &copy; Copyright 2017, OpenNMT
 
     </p>
   </div>

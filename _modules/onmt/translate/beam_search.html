@@ -233,7 +233,7 @@
 <span class="sd">        alive_seq (LongTensor): See base.</span>
 <span class="sd">        topk_log_probs (FloatTensor): Shape ``(B, beam_size,)``. These</span>
 <span class="sd">            are the scores used for the topk operation.</span>
-<span class="sd">        memory_lengths (LongTensor): Lengths of encodings. Used for</span>
+<span class="sd">        src_len (LongTensor): Lengths of encodings. Used for</span>
 <span class="sd">            masking attentions.</span>
 <span class="sd">        select_indices (LongTensor or NoneType): Shape</span>
 <span class="sd">            ``(B x beam_size,)``. This is just a flat view of the</span>
@@ -285,15 +285,15 @@
             <span class="ow">not</span> <span class="n">stepwise_penalty</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">global_scorer</span><span class="o">.</span><span class="n">has_cov_pen</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_cov_pen</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">global_scorer</span><span class="o">.</span><span class="n">has_cov_pen</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">memory_lengths</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">src_len</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 
-    <span class="k">def</span> <span class="nf">initialize_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">memory_lengths</span><span class="p">,</span> <span class="n">src_map</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span>
+    <span class="k">def</span> <span class="nf">initialize_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span> <span class="n">src_map</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span>
                     <span class="n">target_prefix</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">BeamSearchBase</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span>
-            <span class="n">memory_bank</span><span class="p">,</span> <span class="n">memory_lengths</span><span class="p">,</span> <span class="n">src_map</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">target_prefix</span><span class="p">)</span>
+            <span class="n">enc_out</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span> <span class="n">src_map</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">target_prefix</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">best_scores</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">(</span>
             <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">],</span> <span class="o">-</span><span class="mf">1e10</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
@@ -375,12 +375,12 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">hypotheses</span><span class="p">[</span><span class="n">b</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">((</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">topk_scores</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">],</span>
                     <span class="n">predictions</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="mi">1</span><span class="p">:],</span>  <span class="c1"># Ignore start_token.</span>
-                    <span class="n">attention</span><span class="p">[:,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">memory_lengths</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+                    <span class="n">attention</span><span class="p">[:,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">src_len</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
                     <span class="k">if</span> <span class="n">attention</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">))</span>
             <span class="c1"># End condition is the top beam finished and we can return</span>
             <span class="c1"># n_best hypotheses.</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ratio</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">pred_len</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory_lengths</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ratio</span>
+                <span class="n">pred_len</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_len</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ratio</span>
                 <span class="n">finish_flag</span> <span class="o">=</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">topk_scores</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">pred_len</span><span class="p">)</span>
                                <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">best_scores</span><span class="p">[</span><span class="n">b</span><span class="p">])</span> <span class="ow">or</span> \
                     <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
@@ -453,7 +453,6 @@
         <span class="n">step</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ensure_min_length</span><span class="p">(</span><span class="n">log_probs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ensure_unk_removed</span><span class="p">(</span><span class="n">log_probs</span><span class="p">)</span>
-
         <span class="c1"># Multiply probs by the beam probability.</span>
         <span class="n">log_probs</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">topk_log_probs</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">_B</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 
@@ -525,61 +524,61 @@
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Beam search for seq2seq/encoder-decoder models</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-<div class="viewcode-block" id="BeamSearch.initialize"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.BeamSearch.initialize">[docs]</a>    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">,</span> <span class="n">src_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<div class="viewcode-block" id="BeamSearch.initialize"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.BeamSearch.initialize">[docs]</a>    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span> <span class="n">src_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                    <span class="n">target_prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize for decoding.</span>
 <span class="sd">        Repeat src objects `beam_size` times.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="p">(</span><span class="n">fn_map_state</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_map</span><span class="p">,</span>
+        <span class="p">(</span><span class="n">fn_map_state</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span> <span class="n">src_map</span><span class="p">,</span>
             <span class="n">target_prefix</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">initialize_tile</span><span class="p">(</span>
-                <span class="n">memory_bank</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">,</span> <span class="n">src_map</span><span class="p">,</span> <span class="n">target_prefix</span><span class="p">)</span>
+                <span class="n">enc_out</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span> <span class="n">src_map</span><span class="p">,</span> <span class="n">target_prefix</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">device</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">device</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_device_from_memory_bank</span><span class="p">(</span><span class="n">memory_bank</span><span class="p">)</span>
+            <span class="n">device</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_device_from_enc_out</span><span class="p">(</span><span class="n">enc_out</span><span class="p">)</span>
 
         <span class="nb">super</span><span class="p">(</span><span class="n">BeamSearch</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">initialize_</span><span class="p">(</span>
-            <span class="n">memory_bank</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory_lengths</span><span class="p">,</span> <span class="n">src_map</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">target_prefix</span><span class="p">)</span>
+            <span class="n">enc_out</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_len</span><span class="p">,</span> <span class="n">src_map</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">target_prefix</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">fn_map_state</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory_lengths</span><span class="p">,</span> <span class="n">src_map</span></div></div>
+        <span class="k">return</span> <span class="n">fn_map_state</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_len</span><span class="p">,</span> <span class="n">src_map</span></div></div>
 
 
 <span class="k">class</span> <span class="nc">BeamSearchLM</span><span class="p">(</span><span class="n">BeamSearchBase</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Beam search for language/decoder only models</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">,</span> <span class="n">src_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span> <span class="n">src_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                    <span class="n">target_prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize for decoding.</span>
 <span class="sd">        Repeat src objects `beam_size` times.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="p">(</span><span class="n">fn_map_state</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">src_map</span><span class="p">,</span>
             <span class="n">target_prefix</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">initialize_tile</span><span class="p">(</span>
-                <span class="kc">None</span><span class="p">,</span> <span class="n">src_lengths</span><span class="p">,</span> <span class="n">src_map</span><span class="p">,</span> <span class="n">target_prefix</span><span class="p">)</span>
+                <span class="kc">None</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span> <span class="n">src_map</span><span class="p">,</span> <span class="n">target_prefix</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">device</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">device</span> <span class="o">=</span> <span class="n">src</span><span class="o">.</span><span class="n">device</span>
 
         <span class="nb">super</span><span class="p">(</span><span class="n">BeamSearchLM</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">initialize_</span><span class="p">(</span>
-            <span class="kc">None</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory_lengths</span><span class="p">,</span> <span class="n">src_map</span><span class="o">=</span><span class="n">src_map</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+            <span class="kc">None</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_len</span><span class="p">,</span> <span class="n">src_map</span><span class="o">=</span><span class="n">src_map</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
             <span class="n">target_prefix</span><span class="o">=</span><span class="n">target_prefix</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">fn_map_state</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory_lengths</span><span class="p">,</span> <span class="n">src_map</span>
+        <span class="k">return</span> <span class="n">fn_map_state</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_len</span><span class="p">,</span> <span class="n">src_map</span>
 
     <span class="k">def</span> <span class="nf">advance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log_probs</span><span class="p">,</span> <span class="n">attn</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">BeamSearchLM</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">advance</span><span class="p">(</span><span class="n">log_probs</span><span class="p">,</span> <span class="n">attn</span><span class="p">)</span>
 
-        <span class="c1"># in LM task memory_lengths is associated with currently generated src</span>
+        <span class="c1"># in LM task src_len is associated with currently generated src</span>
         <span class="c1"># and therefore needs to follow the generation</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">memory_lengths</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">src_len</span> <span class="o">+=</span> <span class="mi">1</span>
 
     <span class="k">def</span> <span class="nf">remove_finished_batches</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_B_new</span><span class="p">,</span> <span class="n">_B_old</span><span class="p">,</span> <span class="n">non_finished</span><span class="p">,</span>
                                 <span class="n">predictions</span><span class="p">,</span> <span class="n">attention</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">BeamSearchLM</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">remove_finished_batches</span><span class="p">(</span>
             <span class="n">_B_new</span><span class="p">,</span> <span class="n">_B_old</span><span class="p">,</span> <span class="n">non_finished</span><span class="p">,</span> <span class="n">predictions</span><span class="p">,</span> <span class="n">attention</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
 
-        <span class="c1"># in LM task memory_lengths is associated with currently generated src</span>
+        <span class="c1"># in LM task src_len is associated with currently generated src</span>
         <span class="c1"># and therefore needs to follow the generation</span>
         <span class="n">non_finished</span> <span class="o">=</span> <span class="n">non_finished</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">topk_ids</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">memory_lengths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory_lengths</span><span class="o">.</span><span class="n">view</span><span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">src_len</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_len</span><span class="o">.</span><span class="n">view</span><span class="p">(</span>
             <span class="n">_B_old</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span><span class="p">)</span> \
             <span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">non_finished</span><span class="p">)</span> \
             <span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">_B_new</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span><span class="p">)</span>
@@ -630,15 +629,9 @@
         <span class="c1"># these warnings indicate that either the alpha/beta</span>
         <span class="c1"># forces a penalty to be a no-op, or a penalty is a no-op but</span>
         <span class="c1"># the alpha/beta would suggest otherwise.</span>
-        <span class="k">if</span> <span class="n">length_penalty</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">length_penalty</span> <span class="o">==</span> <span class="s2">&quot;none&quot;</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">alpha</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Non-default `alpha` with no length penalty. &quot;</span>
-                              <span class="s2">&quot;`alpha` has no effect.&quot;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># using some length penalty</span>
-            <span class="k">if</span> <span class="n">length_penalty</span> <span class="o">==</span> <span class="s2">&quot;wu&quot;</span> <span class="ow">and</span> <span class="n">alpha</span> <span class="o">==</span> <span class="mf">0.</span><span class="p">:</span>
-                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Using length penalty Wu with alpha==0 &quot;</span>
-                              <span class="s2">&quot;is equivalent to using length penalty none.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">length_penalty</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">alpha</span> <span class="o">==</span> <span class="mf">0.</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Using length penalty with alpha==0 &quot;</span>
+                          <span class="s2">&quot;is equivalent to using length penalty none.&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">coverage_penalty</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">coverage_penalty</span> <span class="o">==</span> <span class="s2">&quot;none&quot;</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">beta</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Non-default `beta` with no coverage penalty. &quot;</span>
@@ -660,7 +653,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, srush
+        &copy; Copyright 2017, OpenNMT
 
     </p>
   </div>

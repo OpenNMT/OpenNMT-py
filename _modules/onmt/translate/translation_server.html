@@ -222,6 +222,7 @@
 <span class="kn">from</span> <span class="nn">onmt.utils.parse</span> <span class="kn">import</span> <span class="n">ArgumentParser</span>
 <span class="kn">from</span> <span class="nn">onmt.translate.translator</span> <span class="kn">import</span> <span class="n">build_translator</span>
 <span class="kn">from</span> <span class="nn">onmt.transforms.features</span> <span class="kn">import</span> <span class="n">InferFeatsTransform</span>
+<span class="kn">from</span> <span class="nn">onmt.inputters.text_utils</span> <span class="kn">import</span> <span class="n">textbatch_to_tensor</span>
 
 
 <span class="k">def</span> <span class="nf">critical</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
@@ -737,13 +738,11 @@
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">texts_to_translate</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">scores</span><span class="p">,</span> <span class="n">predictions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span>
-                    <span class="n">texts_to_translate</span><span class="p">,</span>
-                    <span class="n">src_feats</span><span class="o">=</span><span class="n">texts_features</span><span class="p">,</span>
-                    <span class="n">tgt</span><span class="o">=</span><span class="n">texts_ref</span><span class="p">,</span>
-                    <span class="n">batch_size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">texts_to_translate</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">==</span> <span class="mi">0</span>
-                    <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">batch_size</span><span class="p">)</span>
+                <span class="n">infer_iter</span> <span class="o">=</span> <span class="n">textbatch_to_tensor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">vocabs</span><span class="p">,</span>
+                                                 <span class="n">texts_to_translate</span><span class="p">)</span>
+
+                <span class="n">scores</span><span class="p">,</span> <span class="n">predictions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">_translate</span><span class="p">(</span>
+                    <span class="n">infer_iter</span><span class="p">)</span>
             <span class="k">except</span> <span class="p">(</span><span class="ne">RuntimeError</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                 <span class="n">err</span> <span class="o">=</span> <span class="s2">&quot;Error: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
@@ -1136,7 +1135,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, srush
+        &copy; Copyright 2017, OpenNMT
 
     </p>
   </div>

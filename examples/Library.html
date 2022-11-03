@@ -420,20 +420,20 @@ toy-ende.tar.gz.5   100%[===================&gt;]   1,58M  2,33MB/s    in 0,7s
 </div>
 <p>Next we specify the core model itself. Here we will build a small model with an encoder and an attention based input feeding decoder. Both models will be RNNs and the encoder will be bidirectional</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">emb_size</span> <span class="o">=</span> <span class="mi">100</span>
-<span class="n">rnn_size</span> <span class="o">=</span> <span class="mi">500</span>
+<span class="n">hidden_size</span> <span class="o">=</span> <span class="mi">500</span>
 <span class="c1"># Specify the core model.</span>
 
 <span class="n">encoder_embeddings</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">Embeddings</span><span class="p">(</span><span class="n">emb_size</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">src_vocab</span><span class="p">),</span>
                                              <span class="n">word_padding_idx</span><span class="o">=</span><span class="n">src_padding</span><span class="p">)</span>
 
-<span class="n">encoder</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">encoders</span><span class="o">.</span><span class="n">RNNEncoder</span><span class="p">(</span><span class="n">hidden_size</span><span class="o">=</span><span class="n">rnn_size</span><span class="p">,</span> <span class="n">num_layers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+<span class="n">encoder</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">encoders</span><span class="o">.</span><span class="n">RNNEncoder</span><span class="p">(</span><span class="n">hidden_size</span><span class="o">=</span><span class="n">hidden_size</span><span class="p">,</span> <span class="n">num_layers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
                                    <span class="n">rnn_type</span><span class="o">=</span><span class="s2">&quot;LSTM&quot;</span><span class="p">,</span> <span class="n">bidirectional</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                                    <span class="n">embeddings</span><span class="o">=</span><span class="n">encoder_embeddings</span><span class="p">)</span>
 
 <span class="n">decoder_embeddings</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">Embeddings</span><span class="p">(</span><span class="n">emb_size</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">tgt_vocab</span><span class="p">),</span>
                                              <span class="n">word_padding_idx</span><span class="o">=</span><span class="n">tgt_padding</span><span class="p">)</span>
 <span class="n">decoder</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">decoders</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">InputFeedRNNDecoder</span><span class="p">(</span>
-    <span class="n">hidden_size</span><span class="o">=</span><span class="n">rnn_size</span><span class="p">,</span> <span class="n">num_layers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">bidirectional_encoder</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> 
+    <span class="n">hidden_size</span><span class="o">=</span><span class="n">hidden_size</span><span class="p">,</span> <span class="n">num_layers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">bidirectional_encoder</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> 
     <span class="n">rnn_type</span><span class="o">=</span><span class="s2">&quot;LSTM&quot;</span><span class="p">,</span> <span class="n">embeddings</span><span class="o">=</span><span class="n">decoder_embeddings</span><span class="p">)</span>
 
 <span class="n">device</span> <span class="o">=</span> <span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span>
@@ -442,7 +442,7 @@ toy-ende.tar.gz.5   100%[===================&gt;]   1,58M  2,33MB/s    in 0,7s
 
 <span class="c1"># Specify the tgt word generator and loss computation module</span>
 <span class="n">model</span><span class="o">.</span><span class="n">generator</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
-    <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">rnn_size</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">tgt_vocab</span><span class="p">)),</span>
+    <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden_size</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">tgt_vocab</span><span class="p">)),</span>
     <span class="n">nn</span><span class="o">.</span><span class="n">LogSoftmax</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
 
 <span class="n">loss</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">loss</span><span class="o">.</span><span class="n">NMTLossCompute</span><span class="p">(</span>
@@ -696,7 +696,7 @@ toy-ende.tar.gz.5   100%[===================&gt;]   1,58M  2,33MB/s    in 0,7s
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, srush
+        &copy; Copyright 2017, OpenNMT
 
     </p>
   </div>

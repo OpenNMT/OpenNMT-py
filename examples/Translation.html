@@ -283,10 +283,10 @@
 <span class="nt">valid_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5000</span><span class="w"></span>
 
 <span class="c1"># Batching</span><span class="w"></span>
-<span class="nt">queue_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10000</span><span class="w"></span>
 <span class="nt">bucket_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">32768</span><span class="w"></span>
 <span class="nt">world_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span><span class="w"></span>
 <span class="nt">gpu_ranks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">1</span><span class="p p-Indicator">]</span><span class="w"></span>
+<span class="nt">num_workers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span><span class="w"></span>
 <span class="nt">batch_type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;tokens&quot;</span><span class="w"></span>
 <span class="nt">batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4096</span><span class="w"></span>
 <span class="nt">valid_batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">16</span><span class="w"></span>
@@ -314,7 +314,7 @@
 <span class="nt">enc_layers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">6</span><span class="w"></span>
 <span class="nt">dec_layers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">6</span><span class="w"></span>
 <span class="nt">heads</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8</span><span class="w"></span>
-<span class="nt">rnn_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">512</span><span class="w"></span>
+<span class="nt">hidden_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">512</span><span class="w"></span>
 <span class="nt">word_vec_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">512</span><span class="w"></span>
 <span class="nt">transformer_ff</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2048</span><span class="w"></span>
 <span class="nt">dropout_steps</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0</span><span class="p p-Indicator">]</span><span class="w"></span>
@@ -344,6 +344,7 @@ spm_encode --model<span class="o">=</span>data/wmt/wmtende.model <span class="se
         -gpu <span class="m">0</span> <span class="se">\</span>
         -batch_size <span class="m">16384</span> -batch_type tokens <span class="se">\</span>
         -beam_size <span class="m">5</span> <span class="se">\</span>
+        -length_penalty avg <span class="se">\</span>
         -model <span class="nv">$checkpoint</span> <span class="se">\</span>
         -src data/wmt/test.en.sp <span class="se">\</span>
         -tgt data/wmt/test.de.sp <span class="se">\</span>
@@ -351,6 +352,11 @@ spm_encode --model<span class="o">=</span>data/wmt/wmtende.model <span class="se
 <span class="k">done</span>
 </pre></div>
 </div>
+<p>Note1: the default value of length_penalty is “none”. If you want to compare with some
+other toolkit, “avg” normalization is often the default value.</p>
+<p>Note2: when using “avg” length penalty, if you know the tokenized ratio between target
+language length divided by source language length (in average) you can set it
+in the -ratio flag.</p>
 <p>Prior to evaluation, we need to detokenize the hypothesis:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> checkpoint <span class="k">in</span> data/wmt/run/model_step*.pt<span class="p">;</span> <span class="k">do</span>
     <span class="nv">base</span><span class="o">=</span><span class="k">$(</span>basename <span class="nv">$checkpoint</span><span class="k">)</span>
@@ -393,7 +399,7 @@ spm_encode --model<span class="o">=</span>data/wmt/wmtende.model <span class="se
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, srush
+        &copy; Copyright 2017, OpenNMT
 
     </p>
   </div>

@@ -265,12 +265,12 @@
 <span class="nt">batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">32</span><span class="w"></span>
 <span class="c1"># src_ggnn_size is larger than vocab plus features to allow one-hot settings</span><span class="w"></span>
 <span class="nt">src_ggnn_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span><span class="w"></span>
-<span class="c1"># src_word_vec_size less than rnn_size allows rnn learning during GGNN steps</span><span class="w"></span>
+<span class="c1"># src_word_vec_size less than hidden_size allows rnn learning during GGNN steps</span><span class="w"></span>
 <span class="nt">src_word_vec_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">16</span><span class="w"></span>
-<span class="c1"># Increase tgt_word_vec_size, rnn_size, and state_dim together</span><span class="w"></span>
+<span class="c1"># Increase tgt_word_vec_size, hidden_size, and state_dim together</span><span class="w"></span>
 <span class="c1"># to provide larger GGNN embeddings and larger decoder RNN</span><span class="w"></span>
 <span class="nt">tgt_word_vec_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">64</span><span class="w"></span>
-<span class="nt">rnn_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">64</span><span class="w"></span>
+<span class="nt">hidden_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">64</span><span class="w"></span>
 <span class="nt">state_dim</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">64</span><span class="w"></span>
 <span class="nt">bridge</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w"></span>
 <span class="nt">gpu_ranks</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span><span class="w"></span>
@@ -378,7 +378,7 @@ Generally, one can use <code class="docutils literal notranslate"><span class="p
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, srush
+        &copy; Copyright 2017, OpenNMT
 
     </p>
   </div>

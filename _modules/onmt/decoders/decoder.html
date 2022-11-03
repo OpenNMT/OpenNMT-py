@@ -202,8 +202,6 @@
 <span class="kn">from</span> <span class="nn">onmt.modules</span> <span class="kn">import</span> <span class="n">context_gate_factory</span><span class="p">,</span> <span class="n">GlobalAttention</span>
 <span class="kn">from</span> <span class="nn">onmt.utils.rnn_factory</span> <span class="kn">import</span> <span class="n">rnn_factory</span>
 
-<span class="kn">from</span> <span class="nn">onmt.utils.misc</span> <span class="kn">import</span> <span class="n">aeq</span>
-
 
 <div class="viewcode-block" id="DecoderBase"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.decoders.DecoderBase">[docs]</a><span class="k">class</span> <span class="nc">DecoderBase</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Abstract class for decoders.</span>
@@ -231,33 +229,6 @@
 
 <span class="sd">    Specifies the interface used by different decoder types</span>
 <span class="sd">    and required by :class:`~onmt.models.NMTModel`.</span>
-
-
-<span class="sd">    .. mermaid::</span>
-
-<span class="sd">       graph BT</span>
-<span class="sd">          A[Input]</span>
-<span class="sd">          subgraph RNN</span>
-<span class="sd">             C[Pos 1]</span>
-<span class="sd">             D[Pos 2]</span>
-<span class="sd">             E[Pos N]</span>
-<span class="sd">          end</span>
-<span class="sd">          G[Decoder State]</span>
-<span class="sd">          H[Decoder State]</span>
-<span class="sd">          I[Outputs]</span>
-<span class="sd">          F[memory_bank]</span>
-<span class="sd">          A--emb--&gt;C</span>
-<span class="sd">          A--emb--&gt;D</span>
-<span class="sd">          A--emb--&gt;E</span>
-<span class="sd">          H--&gt;C</span>
-<span class="sd">          C-- attn --- F</span>
-<span class="sd">          D-- attn --- F</span>
-<span class="sd">          E-- attn --- F</span>
-<span class="sd">          C--&gt;I</span>
-<span class="sd">          D--&gt;I</span>
-<span class="sd">          E--&gt;I</span>
-<span class="sd">          E--&gt;G</span>
-<span class="sd">          F---I</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">       rnn_type (str):</span>
@@ -342,7 +313,7 @@
             <span class="n">opt</span><span class="o">.</span><span class="n">rnn_type</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">brnn</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">dec_layers</span><span class="p">,</span>
-            <span class="n">opt</span><span class="o">.</span><span class="n">dec_rnn_size</span><span class="p">,</span>
+            <span class="n">opt</span><span class="o">.</span><span class="n">dec_hid_size</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">global_attention</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">global_attention_function</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">coverage_attn</span><span class="p">,</span>
@@ -354,7 +325,7 @@
             <span class="n">opt</span><span class="o">.</span><span class="n">reuse_copy_attn</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">copy_attn_type</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="RNNDecoderBase.init_state"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.decoders.RNNDecoderBase.init_state">[docs]</a>    <span class="k">def</span> <span class="nf">init_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">encoder_final</span><span class="p">):</span>
+<div class="viewcode-block" id="RNNDecoderBase.init_state"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.decoders.RNNDecoderBase.init_state">[docs]</a>    <span class="k">def</span> <span class="nf">init_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">enc_final_hs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize decoder state with last state of the encoder.&quot;&quot;&quot;</span>
         <span class="k">def</span> <span class="nf">_fix_enc_hidden</span><span class="p">(</span><span class="n">hidden</span><span class="p">):</span>
             <span class="c1"># The encoder hidden is  (layers*directions) x batch x dim.</span>
@@ -364,17 +335,19 @@
                                     <span class="n">hidden</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">hidden</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">):</span><span class="mi">2</span><span class="p">]],</span> <span class="mi">2</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">hidden</span>
 
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">encoder_final</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>  <span class="c1"># LSTM</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">enc_final_hs</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>  <span class="c1"># LSTM</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;hidden&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">_fix_enc_hidden</span><span class="p">(</span><span class="n">enc_hid</span><span class="p">)</span>
-                                         <span class="k">for</span> <span class="n">enc_hid</span> <span class="ow">in</span> <span class="n">encoder_final</span><span class="p">)</span>
+                                         <span class="k">for</span> <span class="n">enc_hid</span> <span class="ow">in</span> <span class="n">enc_final_hs</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>  <span class="c1"># GRU</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;hidden&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">_fix_enc_hidden</span><span class="p">(</span><span class="n">encoder_final</span><span class="p">),</span> <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;hidden&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">_fix_enc_hidden</span><span class="p">(</span><span class="n">enc_final_hs</span><span class="p">),</span> <span class="p">)</span>
 
         <span class="c1"># Init the input feed.</span>
         <span class="n">batch_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;hidden&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
         <span class="n">h_size</span> <span class="o">=</span> <span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_size</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;input_feed&quot;</span><span class="p">]</span> <span class="o">=</span> \
             <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;hidden&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="o">*</span><span class="n">h_size</span><span class="p">)</span><span class="o">.</span><span class="n">zero_</span><span class="p">()</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;coverage&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
 
     <span class="k">def</span> <span class="nf">map_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fn</span><span class="p">):</span>
@@ -387,37 +360,32 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;hidden&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;hidden&quot;</span><span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;input_feed&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;input_feed&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
 
-<div class="viewcode-block" id="RNNDecoderBase.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.decoders.RNNDecoderBase.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">memory_lengths</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<div class="viewcode-block" id="RNNDecoderBase.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.decoders.RNNDecoderBase.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span> <span class="n">src_len</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                 <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            tgt (LongTensor): sequences of padded tokens</span>
-<span class="sd">                 ``(tgt_len, batch, nfeats)``.</span>
-<span class="sd">            memory_bank (FloatTensor): vectors from the encoder</span>
-<span class="sd">                 ``(src_len, batch, hidden)``.</span>
-<span class="sd">            memory_lengths (LongTensor): the padded source lengths</span>
+<span class="sd">                 ``(batch, tgt_len, nfeats)``.</span>
+<span class="sd">            enc_out (FloatTensor): vectors from the encoder</span>
+<span class="sd">                 ``(batch, src_len, hidden)``.</span>
+<span class="sd">            src_len (LongTensor): the padded source lengths</span>
 <span class="sd">                ``(batch,)``.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            (FloatTensor, dict[str, FloatTensor]):</span>
 
 <span class="sd">            * dec_outs: output from the decoder (after attn)</span>
-<span class="sd">              ``(tgt_len, batch, hidden)``.</span>
+<span class="sd">              ``(batch, tgt_len, hidden)``.</span>
 <span class="sd">            * attns: distribution over src at each tgt</span>
-<span class="sd">              ``(tgt_len, batch, src_len)``.</span>
+<span class="sd">              ``(batch, tgt_len, src_len)``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="n">dec_state</span><span class="p">,</span> <span class="n">dec_outs</span><span class="p">,</span> <span class="n">attns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_forward_pass</span><span class="p">(</span>
-            <span class="n">tgt</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">memory_lengths</span><span class="o">=</span><span class="n">memory_lengths</span><span class="p">)</span>
+            <span class="n">tgt</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span> <span class="n">src_len</span><span class="o">=</span><span class="n">src_len</span><span class="p">)</span>
 
         <span class="c1"># Update the state with the result.</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dec_state</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
             <span class="n">dec_state</span> <span class="o">=</span> <span class="p">(</span><span class="n">dec_state</span><span class="p">,)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;hidden&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dec_state</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;input_feed&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dec_outs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;coverage&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">if</span> <span class="s2">&quot;coverage&quot;</span> <span class="ow">in</span> <span class="n">attns</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;coverage&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">attns</span><span class="p">[</span><span class="s2">&quot;coverage&quot;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
         <span class="c1"># Concatenates sequence of tensors along a new dimension.</span>
         <span class="c1"># NOTE: v0.3 to 0.4: dec_outs / attns[*] may not be list</span>
@@ -425,11 +393,16 @@
         <span class="c1">#       since stack(Variable) was allowed.</span>
         <span class="c1">#       In 0.4, SRU returns a tensor that shouldn&#39;t be stacke</span>
         <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">dec_outs</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
-            <span class="n">dec_outs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">dec_outs</span><span class="p">)</span>
-
+            <span class="n">dec_outs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">dec_outs</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">attns</span><span class="p">:</span>
                 <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">attns</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
                     <span class="n">attns</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">attns</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;input_feed&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dec_outs</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;coverage&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="s2">&quot;coverage&quot;</span> <span class="ow">in</span> <span class="n">attns</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;coverage&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">attns</span><span class="p">[</span><span class="s2">&quot;coverage&quot;</span><span class="p">][:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
         <span class="k">return</span> <span class="n">dec_outs</span><span class="p">,</span> <span class="n">attns</span></div>
 
     <span class="k">def</span> <span class="nf">update_dropout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">attention_dropout</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -453,17 +426,17 @@
 <span class="sd">    or `copy_attn` support.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">_run_forward_pass</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">memory_lengths</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_run_forward_pass</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span> <span class="n">src_len</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Private helper for running the specific RNN forward pass.</span>
 <span class="sd">        Must be overriden by all subclasses.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            tgt (LongTensor): a sequence of input tokens tensors</span>
-<span class="sd">                ``(len, batch, nfeats)``.</span>
-<span class="sd">            memory_bank (FloatTensor): output(tensor sequence) from the</span>
-<span class="sd">                encoder RNN of size ``(src_len, batch, hidden_size)``.</span>
-<span class="sd">            memory_lengths (LongTensor): the source memory_bank lengths.</span>
+<span class="sd">                ``(batch, tgt_len, nfeats)``.</span>
+<span class="sd">            enc_out (FloatTensor): output(tensor sequence) from the</span>
+<span class="sd">                encoder RNN of size ``(batch, src_len, hidden_size)``.</span>
+<span class="sd">            src_len (LongTensor): the source enc_out lengths.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            (Tensor, List[FloatTensor], Dict[str, List[FloatTensor]):</span>
@@ -483,24 +456,20 @@
         <span class="n">emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span><span class="p">(</span><span class="n">tgt</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rnn</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">GRU</span><span class="p">):</span>
-            <span class="n">rnn_output</span><span class="p">,</span> <span class="n">dec_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rnn</span><span class="p">(</span><span class="n">emb</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;hidden&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">rnn_out</span><span class="p">,</span> <span class="n">dec_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rnn</span><span class="p">(</span><span class="n">emb</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;hidden&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">rnn_output</span><span class="p">,</span> <span class="n">dec_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rnn</span><span class="p">(</span><span class="n">emb</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;hidden&quot;</span><span class="p">])</span>
+            <span class="n">rnn_out</span><span class="p">,</span> <span class="n">dec_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rnn</span><span class="p">(</span><span class="n">emb</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;hidden&quot;</span><span class="p">])</span>
 
-        <span class="c1"># Check</span>
-        <span class="n">tgt_len</span><span class="p">,</span> <span class="n">tgt_batch</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">tgt</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
-        <span class="n">output_len</span><span class="p">,</span> <span class="n">output_batch</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">rnn_output</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
-        <span class="n">aeq</span><span class="p">(</span><span class="n">tgt_len</span><span class="p">,</span> <span class="n">output_len</span><span class="p">)</span>
-        <span class="n">aeq</span><span class="p">(</span><span class="n">tgt_batch</span><span class="p">,</span> <span class="n">output_batch</span><span class="p">)</span>
+        <span class="n">tgt_batch</span><span class="p">,</span> <span class="n">tgt_len</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">tgt</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
 
         <span class="c1"># Calculate the attention.</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">attentional</span><span class="p">:</span>
-            <span class="n">dec_outs</span> <span class="o">=</span> <span class="n">rnn_output</span>
+            <span class="n">dec_outs</span> <span class="o">=</span> <span class="n">rnn_out</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">dec_outs</span><span class="p">,</span> <span class="n">p_attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attn</span><span class="p">(</span>
-                <span class="n">rnn_output</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">(),</span>
-                <span class="n">memory_bank</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
-                <span class="n">memory_lengths</span><span class="o">=</span><span class="n">memory_lengths</span>
+                <span class="n">rnn_out</span><span class="p">,</span>
+                <span class="n">enc_out</span><span class="p">,</span>
+                <span class="n">src_len</span><span class="o">=</span><span class="n">src_len</span>
             <span class="p">)</span>
             <span class="n">attns</span><span class="p">[</span><span class="s2">&quot;std&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">p_attn</span>
 
@@ -508,12 +477,13 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">context_gate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">dec_outs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context_gate</span><span class="p">(</span>
                 <span class="n">emb</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">emb</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">)),</span>
-                <span class="n">rnn_output</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">rnn_output</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">)),</span>
+                <span class="n">rnn_out</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">rnn_out</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">)),</span>
                 <span class="n">dec_outs</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">dec_outs</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
             <span class="p">)</span>
-            <span class="n">dec_outs</span> <span class="o">=</span> <span class="n">dec_outs</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">tgt_len</span><span class="p">,</span> <span class="n">tgt_batch</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_size</span><span class="p">)</span>
+            <span class="n">dec_outs</span> <span class="o">=</span> <span class="n">dec_outs</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">tgt_batch</span><span class="p">,</span> <span class="n">tgt_len</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_size</span><span class="p">)</span>
 
         <span class="n">dec_outs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">dec_outs</span><span class="p">)</span>
+
         <span class="k">return</span> <span class="n">dec_state</span><span class="p">,</span> <span class="n">dec_outs</span><span class="p">,</span> <span class="n">attns</span>
 
     <span class="k">def</span> <span class="nf">_build_rnn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rnn_type</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -534,36 +504,15 @@
 <span class="sd">    &quot;Effective Approaches to Attention-based Neural Machine Translation&quot;</span>
 <span class="sd">    :cite:`Luong2015`</span>
 
-
-<span class="sd">    .. mermaid::</span>
-
-<span class="sd">       graph BT</span>
-<span class="sd">          A[Input n-1]</span>
-<span class="sd">          AB[Input n]</span>
-<span class="sd">          subgraph RNN</span>
-<span class="sd">            E[Pos n-1]</span>
-<span class="sd">            F[Pos n]</span>
-<span class="sd">            E --&gt; F</span>
-<span class="sd">          end</span>
-<span class="sd">          G[Encoder]</span>
-<span class="sd">          H[memory_bank n-1]</span>
-<span class="sd">          A --&gt; E</span>
-<span class="sd">          AB --&gt; F</span>
-<span class="sd">          E --&gt; H</span>
-<span class="sd">          G --&gt; H</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">_run_forward_pass</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">memory_bank</span><span class="p">,</span> <span class="n">memory_lengths</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_run_forward_pass</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span> <span class="n">src_len</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        See StdRNNDecoder._run_forward_pass() for description</span>
 <span class="sd">        of arguments and return values.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Additional args check.</span>
         <span class="n">input_feed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;input_feed&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-        <span class="n">input_feed_batch</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">input_feed</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
-        <span class="n">_</span><span class="p">,</span> <span class="n">tgt_batch</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">tgt</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
-        <span class="n">aeq</span><span class="p">(</span><span class="n">tgt_batch</span><span class="p">,</span> <span class="n">input_feed_batch</span><span class="p">)</span>
-        <span class="c1"># END Additional args check.</span>
 
         <span class="n">dec_outs</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">attns</span> <span class="o">=</span> <span class="p">{}</span>
@@ -575,35 +524,36 @@
             <span class="n">attns</span><span class="p">[</span><span class="s2">&quot;coverage&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="n">emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span><span class="p">(</span><span class="n">tgt</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="n">emb</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">3</span>  <span class="c1"># len x batch x embedding_dim</span>
+        <span class="k">assert</span> <span class="n">emb</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">3</span>  <span class="c1"># batch x len x embedding_dim</span>
 
         <span class="n">dec_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;hidden&quot;</span><span class="p">]</span>
+
         <span class="n">coverage</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;coverage&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> \
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;coverage&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
 
         <span class="c1"># Input feed concatenates hidden state with</span>
         <span class="c1"># input at every time step.</span>
-        <span class="k">for</span> <span class="n">emb_t</span> <span class="ow">in</span> <span class="n">emb</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
-            <span class="n">decoder_input</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">emb_t</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">input_feed</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
-            <span class="n">rnn_output</span><span class="p">,</span> <span class="n">dec_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rnn</span><span class="p">(</span><span class="n">decoder_input</span><span class="p">,</span> <span class="n">dec_state</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">emb_t</span> <span class="ow">in</span> <span class="n">emb</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">dec_in</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">emb_t</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">input_feed</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">rnn_out</span><span class="p">,</span> <span class="n">dec_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rnn</span><span class="p">(</span><span class="n">dec_in</span><span class="p">,</span> <span class="n">dec_state</span><span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">attentional</span><span class="p">:</span>
-                <span class="n">decoder_output</span><span class="p">,</span> <span class="n">p_attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attn</span><span class="p">(</span>
-                    <span class="n">rnn_output</span><span class="p">,</span>
-                    <span class="n">memory_bank</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
-                    <span class="n">memory_lengths</span><span class="o">=</span><span class="n">memory_lengths</span><span class="p">)</span>
+                <span class="n">dec_out</span><span class="p">,</span> <span class="n">p_attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attn</span><span class="p">(</span>
+                    <span class="n">rnn_out</span><span class="p">,</span>
+                    <span class="n">enc_out</span><span class="p">,</span>
+                    <span class="n">src_len</span><span class="o">=</span><span class="n">src_len</span><span class="p">)</span>
                 <span class="n">attns</span><span class="p">[</span><span class="s2">&quot;std&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p_attn</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">decoder_output</span> <span class="o">=</span> <span class="n">rnn_output</span>
+                <span class="n">dec_out</span> <span class="o">=</span> <span class="n">rnn_out</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">context_gate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="c1"># TODO: context gate should be employed</span>
                 <span class="c1"># instead of second RNN transform.</span>
-                <span class="n">decoder_output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context_gate</span><span class="p">(</span>
-                    <span class="n">decoder_input</span><span class="p">,</span> <span class="n">rnn_output</span><span class="p">,</span> <span class="n">decoder_output</span>
+                <span class="n">dec_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context_gate</span><span class="p">(</span>
+                    <span class="n">dec_in</span><span class="p">,</span> <span class="n">rnn_out</span><span class="p">,</span> <span class="n">dec_out</span>
                 <span class="p">)</span>
-            <span class="n">decoder_output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">decoder_output</span><span class="p">)</span>
-            <span class="n">input_feed</span> <span class="o">=</span> <span class="n">decoder_output</span>
+            <span class="n">dec_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">dec_out</span><span class="p">)</span>
+            <span class="n">input_feed</span> <span class="o">=</span> <span class="n">dec_out</span>
 
-            <span class="n">dec_outs</span> <span class="o">+=</span> <span class="p">[</span><span class="n">decoder_output</span><span class="p">]</span>
+            <span class="n">dec_outs</span> <span class="o">+=</span> <span class="p">[</span><span class="n">dec_out</span><span class="p">]</span>
 
             <span class="c1"># Update the coverage attention.</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coverage</span><span class="p">:</span>
@@ -612,7 +562,7 @@
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">_</span><span class="p">,</span> <span class="n">copy_attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span><span class="p">(</span>
-                    <span class="n">decoder_output</span><span class="p">,</span> <span class="n">memory_bank</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+                    <span class="n">dec_out</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">)</span>
                 <span class="n">attns</span><span class="p">[</span><span class="s2">&quot;copy&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">[</span><span class="n">copy_attn</span><span class="p">]</span>
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reuse_copy_attn</span><span class="p">:</span>
                 <span class="n">attns</span><span class="p">[</span><span class="s2">&quot;copy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">attns</span><span class="p">[</span><span class="s2">&quot;std&quot;</span><span class="p">]</span>
@@ -624,7 +574,8 @@
         <span class="k">assert</span> <span class="n">rnn_type</span> <span class="o">!=</span> <span class="s2">&quot;SRU&quot;</span><span class="p">,</span> <span class="s2">&quot;SRU doesn&#39;t support input feed! &quot;</span> \
             <span class="s2">&quot;Please set -input_feed 0!&quot;</span>
         <span class="n">stacked_cell</span> <span class="o">=</span> <span class="n">StackedLSTM</span> <span class="k">if</span> <span class="n">rnn_type</span> <span class="o">==</span> <span class="s2">&quot;LSTM&quot;</span> <span class="k">else</span> <span class="n">StackedGRU</span>
-        <span class="k">return</span> <span class="n">stacked_cell</span><span class="p">(</span><span class="n">num_layers</span><span class="p">,</span> <span class="n">input_size</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="n">dropout</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">stacked_cell</span><span class="p">(</span><span class="n">num_layers</span><span class="p">,</span> <span class="n">input_size</span><span class="p">,</span>
+                            <span class="n">hidden_size</span><span class="p">,</span> <span class="n">dropout</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">_input_size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -647,7 +598,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, srush
+        &copy; Copyright 2017, OpenNMT
 
     </p>
   </div>

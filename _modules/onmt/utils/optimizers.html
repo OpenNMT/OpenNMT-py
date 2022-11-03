@@ -301,12 +301,12 @@
         <span class="k">return</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span>
             <span class="n">noam_decay</span><span class="p">,</span>
             <span class="n">warmup_steps</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">warmup_steps</span><span class="p">,</span>
-            <span class="n">model_size</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">rnn_size</span><span class="p">)</span>
+            <span class="n">model_size</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">hidden_size</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">decay_method</span> <span class="o">==</span> <span class="s1">&#39;noamwd&#39;</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span>
             <span class="n">noamwd_decay</span><span class="p">,</span>
             <span class="n">warmup_steps</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">warmup_steps</span><span class="p">,</span>
-            <span class="n">model_size</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">rnn_size</span><span class="p">,</span>
+            <span class="n">model_size</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">hidden_size</span><span class="p">,</span>
             <span class="n">rate</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">learning_rate_decay</span><span class="p">,</span>
             <span class="n">decay_steps</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">decay_steps</span><span class="p">,</span>
             <span class="n">start_step</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">start_decay_steps</span><span class="p">)</span>
@@ -902,7 +902,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, srush
+        &copy; Copyright 2017, OpenNMT
 
     </p>
   </div>
