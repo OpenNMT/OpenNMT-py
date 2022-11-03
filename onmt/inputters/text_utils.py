@@ -29,7 +29,7 @@ def max_tok_len(new, count, sofar):
     max_src_in_batch = max(max_src_in_batch, len(new['src']['src_ids']) + 2)
     src_elements = count * max_src_in_batch
     # Tgt: [w1 ... wM <eos>]
-    if new['tgt'] is not None and new['tgt_ids'] is not None:
+    if new['tgt'] is not None:
         max_tgt_in_batch = max(max_tgt_in_batch, len(new['tgt']['tgt_ids']) + 1)
         tgt_elements = count * max_tgt_in_batch
     else:
