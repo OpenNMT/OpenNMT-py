@@ -13,7 +13,7 @@ After the conversion you can eliminate completely torchtext.
 
 Conversion is:
 
-python tools/convertv2_v3.py -v2model myoldmodel.pt -v2model newmodel.pt
+python tools/convertv2_v3.py -v2model myoldmodel.pt -v3model newmodel.pt
 
 The new checkpoint will no longer have a "fields" key, replaced by "vocab"
 Some model options are modified as follow:
