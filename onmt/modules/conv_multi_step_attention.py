@@ -36,8 +36,10 @@ class ConvMultiStepAttention(nn.Module):
                 encoder_out_combine):
         """
         Args:
-            base_target_emb: target emb tensor (batch, channel, height, width)
-            input_from_dec: output of dec conv (batch, channel, height, width)
+            base_target_emb: target emb tensor
+                ``(batch, channel, height, width)``
+            input_from_dec: output of dec conv
+                ``(batch, channel, height, width)``
             encoder_out_top: the key matrix for calc of attention weight,
                 which is the top output of encode conv
             encoder_out_combine:

@@ -202,6 +202,13 @@ class Optimizer(object):
     rate scheduling beyond what is currently available.
     Also implements necessary methods for training RNNs such
     as grad manipulations.
+
+    Args:
+        optimizer: A ``torch.optim.Optimizer`` instance.
+        learning_rate: The initial learning rate.
+        learning_rate_decay_fn: An optional callable taking the current step
+            as argument and return a learning rate scaling factor.
+        max_grad_norm: Clip gradients to this global norm.
     """
 
     def __init__(self,
@@ -209,15 +216,7 @@ class Optimizer(object):
                  learning_rate,
                  learning_rate_decay_fn=None,
                  max_grad_norm=None):
-        """Initializes the controller.
 
-       Args:
-         optimizer: A ``torch.optim.Optimizer`` instance.
-         learning_rate: The initial learning rate.
-         learning_rate_decay_fn: An optional callable taking the current step
-           as argument and return a learning rate scaling factor.
-         max_grad_norm: Clip gradients to this global norm.
-        """
         self._optimizer = optimizer
         self._learning_rate = learning_rate
         self._learning_rate_decay_fn = learning_rate_decay_fn
@@ -546,8 +545,8 @@ class FusedAdam(torch.optim.Optimizer):
 
     """Implements Adam algorithm. Currently GPU-only.
        Requires Apex to be installed via
-    ``python setup.py install --cuda_ext --cpp_ext``.
-    It has been proposed in `Adam: A Method for Stochastic Optimization`_.
+       ``python setup.py install --cuda_ext --cpp_ext``.
+
     Arguments:
         params (iterable): iterable of parameters to optimize or dicts defining
             parameter groups.
@@ -565,10 +564,6 @@ class FusedAdam(torch.optim.Optimizer):
             adds eps to the bias-corrected second moment estimate before
             evaluating square root instead of adding it to the square root of
             second moment estimate as in the original paper. (default: False)
-    .. _Adam: A Method for Stochastic Optimization:
-        https://arxiv.org/abs/1412.6980
-    .. _On the Convergence of Adam and Beyond:
-        https://openreview.net/forum?id=ryQu7f-RZ
     """
 
     def __init__(self, params,
@@ -589,6 +584,7 @@ class FusedAdam(torch.optim.Optimizer):
     def step(self, closure=None, grads=None, output_params=None,
              scale=1., grad_norms=None):
         """Performs a single optimization step.
+
         Arguments:
             closure (callable, optional): A closure that reevaluates the model
                 and returns the loss.

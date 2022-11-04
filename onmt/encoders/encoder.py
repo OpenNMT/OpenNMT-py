@@ -28,9 +28,9 @@ class EncoderBase(nn.Module):
               ``(batch, src_len, hidden_size)``
               for bidirectional rnn last dimension is 2x hidden_size
             * enc_final_hs: encoder final hidden state
-              ``(num_layersxdir, batch, hidden_size)``
+              ``(num_layers x dir, batch, hidden_size)``
               In the case of LSTM this is a tuple.
-            * src_len (batch)
+            * src_len ``(batch)``
         """
 
         raise NotImplementedError

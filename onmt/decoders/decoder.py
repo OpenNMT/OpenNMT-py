@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from onmt.models.stacked_rnn import StackedLSTM, StackedGRU
+from onmt.modules.stacked_rnn import StackedLSTM, StackedGRU
 from onmt.modules import context_gate_factory, GlobalAttention
 from onmt.utils.rnn_factory import rnn_factory
 

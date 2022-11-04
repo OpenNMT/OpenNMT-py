@@ -360,6 +360,7 @@ class TransformerDecoderBase(DecoderBase):
 class TransformerDecoder(TransformerDecoderBase):
     """The Transformer decoder from "Attention is All You Need".
     :cite:`DBLP:journals/corr/VaswaniSPUJGKP17`
+
     Args:
         num_layers (int): number of decoder layers.
         d_model (int): size of the model

@@ -6,6 +6,10 @@ class BaseModel(nn.Module):
     """
     Core trainable object in OpenNMT. Implements a trainable interface
     for a simple, generic encoder / decoder or decoder only model.
+
+    Args:
+      encoder (onmt.encoders.EncoderBase): an encoder object
+      decoder (onmt.decoders.DecoderBase): a decoder object
     """
 
     def __init__(self, encoder, decoder):
@@ -13,18 +17,17 @@ class BaseModel(nn.Module):
 
     def forward(self, src, tgt, src_len, bptt=False, with_align=False):
         """Forward propagate a `src` and `tgt` pair for training.
-        Possible initialized with a beginning decoder state.
 
         Args:
             src (Tensor): A source sequence passed to encoder.
-                typically for input this will be a padded `LongTensor`
+                Typically for input this will be a padded `LongTensor`
                 of size ``(batch, len, features)``. However, may be an
                 image or other generic input depending on encoder.
             tgt (LongTensor): A target sequence passed to decoder.
                 Size ``(batch, tgt_len, features)``.
             src_len(LongTensor): The src lengths, pre-padding ``(batch,)``.
             bptt (Boolean): A flag indicating if truncated bptt is set.
-                If reset then init_state
+                If bptt is false then init decoder state.
             with_align (Boolean): A flag indicating whether output alignment,
                 Only valid for transformer decoder.
 
@@ -32,7 +35,7 @@ class BaseModel(nn.Module):
             (FloatTensor, dict[str, FloatTensor]):
 
             * decoder output ``(batch, tgt_len, hidden)``
-            * dictionary attention dists of ``(batch, tgt_len, src_len)``
+            * dictionary of attention weights ``(batch, tgt_len, src_len)``
         """
         raise NotImplementedError
 
@@ -45,11 +48,8 @@ class BaseModel(nn.Module):
 
 class NMTModel(BaseModel):
     """
-    Core trainable object in OpenNMT. Implements a trainable interface
-    for a simple, generic encoder + decoder model.
-    Args:
-      encoder (onmt.encoders.EncoderBase): an encoder object
-      decoder (onmt.decoders.DecoderBase): a decoder object
+    NMTModel Class
+    See :class:`~onmt.models.BaseModel` for options.
     """
 
     def __init__(self, encoder, decoder):
@@ -58,14 +58,17 @@ class NMTModel(BaseModel):
         self.decoder = decoder
 
     def forward(self, src, tgt, src_len, bptt=False, with_align=False):
-        dec_in = tgt[:, :-1, :]  # exclude last target from input
-
+        """An NMTModel forward the src side to the encoder.
+        Then the output of encoder ``enc_out`` is forwarded to the
+        decoder along with the target excluding the last token.
+        The decoder state is initiliazed with:
+            * enc_final_hs in the case of RNNs
+            * enc_out + enc_final_hs in the case of CNNs
+            * src in the case of Transformer
+        """
+        dec_in = tgt[:, :-1, :]
         enc_out, enc_final_hs, src_len = self.encoder(src, src_len)
-
         if not bptt:
-            # RNN uses enc_final_hs
-            # CNN uses enc_out and enc_final_hs
-            # transformer uses src
             self.decoder.init_state(src, enc_out, enc_final_hs)
         dec_out, attns = self.decoder(dec_in, enc_out,
                                       src_len=src_len,
@@ -100,8 +103,7 @@ class NMTModel(BaseModel):
 
 class LanguageModel(BaseModel):
     """
-    Core trainable object in OpenNMT. Implements a trainable interface
-    for a simple, generic decoder only model.
+    NMTModel Class
     Currently TransformerLMDecoder is the only LM decoder implemented
     Args:
       decoder (onmt.decoders.TransformerLMDecoder): a transformer decoder
@@ -115,26 +117,9 @@ class LanguageModel(BaseModel):
         self.decoder = decoder
 
     def forward(self, src, tgt, src_len, bptt=False, with_align=False):
-        """Forward propagate a `src` and `tgt` pair for training.
-        Possible initialized with a beginning decoder state.
-        Args:
-            src (Tensor): A source sequence passed to decoder.
-                typically for input this will be a padded `LongTensor`
-                of size ``(batch, len, features)``. However, may be an
-                image or other generic input depending on decoder.
-            tgt (LongTensor): A target sequence passed to decoder.
-                Size ``(batch, tgt_len, features)``.
-            src_len(LongTensor): The src lengths, pre-padding ``(batch,)``.
-            bptt (Boolean): A flag indicating if truncated bptt is set.
-                If reset then init_state
-            with_align (Boolean): A flag indicating whether output alignment,
-                Only valid for transformer decoder.
-        Returns:
-            (FloatTensor, dict[str, FloatTensor]):
-            * decoder output ``(batch, tgt_len, hidden)``
-            * dictionary attention dists of ``(batch, tgt_len, src_len)``
+        """A LanguageModel forward the src side to the decoder along
+        with the source lengths vector. It is a decoder only LM (cf GPT-2)
         """
-
         if not bptt:
             self.decoder.init_state()
         dec_out, attns = self.decoder(
