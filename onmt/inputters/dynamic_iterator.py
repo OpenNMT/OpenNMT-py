@@ -159,6 +159,8 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
                 batch_size_multiple = 8 if opt.model_dtype == "fp16" else 1
             corpora_info = opt.data
             bucket_size = opt.bucket_size
+            bucket_size_init = opt.bucket_size_init
+            bucket_size_increment = opt.bucket_size_increment
             skip_empty_level = opt.skip_empty_level
         else:
             batch_size_multiple = 1
@@ -166,6 +168,8 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
             corpora_info[CorpusTask.INFER]['weight'] = 1
             # bucket_size = batch_size
             bucket_size = 16384
+            bucket_size_init = -1
+            bucket_size_increment = 0
             skip_empty_level = 'warning'
         if task == CorpusTask.INFER and \
            vocabs['data_task'] == ModelTask.LANGUAGE_MODEL:
@@ -175,8 +179,8 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
         return cls(
             corpora, corpora_info, transforms, vocabs, task, opt.batch_type,
             batch_size, batch_size_multiple, data_type=opt.data_type,
-            bucket_size=bucket_size, bucket_size_init=opt.bucket_size_init,
-            bucket_size_increment=opt.bucket_size_increment,
+            bucket_size=bucket_size, bucket_size_init=bucket_size_init,
+            bucket_size_increment=bucket_size_increment,
             copy=copy,
             skip_empty_level=skip_empty_level,
             stride=stride, offset=offset
