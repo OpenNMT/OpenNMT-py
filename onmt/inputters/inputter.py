@@ -130,8 +130,11 @@ def _read_vocab_file(vocab_path, min_count):
             if has_count:
                 vocab = []
                 for line in lines:
-                    if int(line.split(None, 1)[1]) >= min_count:
-                        vocab.append(line.split(None, 1)[0])
+                    line_and_freq = line.split(None, 1)
+                    if len(line_and_freq) == 2:
+                        token, freq = line_and_freq
+                        if int(freq) >= min_count:
+                            vocab.append(token)
             else:
                 vocab = [line.strip().split()[0] for line in lines]
             return vocab
