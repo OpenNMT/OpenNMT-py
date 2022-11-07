@@ -542,10 +542,12 @@ class ServerModel(object):
         if len(texts_to_translate) > 0:
             try:
                 if isinstance(self.translator, CTranslate2Translator):
-                    scores, predictions = self.translator.translate(texts_to_translate)
+                    scores, predictions = self.translator.translate(
+                        texts_to_translate)
                 else:
-                    infer_iter = textbatch_to_tensor(self.translator.vocabs,
-                                                 texts_to_translate)
+                    infer_iter = textbatch_to_tensor(
+                        self.translator.vocabs,
+                        texts_to_translate)
                     scores, predictions = self.translator._translate(
                         infer_iter)
             except (RuntimeError, Exception) as e:
