@@ -225,7 +225,7 @@ tests_nmtmodel = [[('rnn_type', 'GRU')],
                   [],
                   ]
 
-if onmt.models.sru.check_sru_requirement():
+if onmt.modules.sru.check_sru_requirement():
     #   """ Only do SRU test if requirment is safisfied. """
     # SRU doesn't support input_feed.
     tests_nmtmodel.append([('rnn_type', 'SRU'), ('input_feed', 0)])
