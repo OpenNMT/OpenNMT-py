@@ -24,6 +24,13 @@ Some model options are modified as follow:
 A new key `add_qkvbias` is set to `true` for old models.
 New models will be trained by default with `false`
 
+Special note for GPT2 type Language Model trained with v2
+
+The special tokens of LM in v2 where not in line with NMT type models.
+Only 3 special tokens (`<unk>`, `<blank>`, `</s>`) were in the the vocab.
+For v3, we aligned LM and NMT models.
+You need to update the vocab by training from v2 converted to v3 checkpoint, with the update_vocab flag.
+It will make the vocab consistent with v3 structure.
 
 
 ## How do I train the Transformer model?
