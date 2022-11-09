@@ -99,6 +99,7 @@ class Trainer(object):
             data_type(string): type of the source input: [text]
             accum_count(list): accumulate gradients this many times.
             accum_steps(list): steps for accum gradients changes.
+            train_eval_steps(int): steps for training metrics calculation
             report_manager(:obj:`onmt.utils.ReportMgrBase`):
                 the object that creates reports, or None
             model_saver(:obj:`onmt.models.ModelSaverBase`): the saver is
@@ -338,6 +339,8 @@ class Trainer(object):
                 # Compute stats
                 batch_stats = onmt.utils.Statistics(
                     batch_stats.loss,
+                    batch_stats.n_batchs,
+                    batch_stats.n_sents,
                     batch_stats.n_words,
                     batch_stats.n_correct,
                     computed_metrics)

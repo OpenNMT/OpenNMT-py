@@ -87,18 +87,11 @@ class ScoringPreparator():
             tokenized_sentences.append(tokens)
         return tokenized_sentences
 
-    def build_sources_and_refs(self, batch, mode):
+    def build_sources_and_refs(self, batch):
         """Reconstruct the sources and references of the examples
         related to a batch"""
-        if mode == 'valid':
-            sources = []
-            refs = []
-            for example in batch.dataset.examples:
-                sources.append(example.src[0])
-                refs.append(example.tgt[0])
-        elif mode == 'train':
-            sources = self.tokenize_batch(batch['src'], 'src')
-            refs = self.tokenize_batch(batch['tgt'], 'tgt')
+        sources = self.tokenize_batch(batch['src'], 'src')
+        refs = self.tokenize_batch(batch['tgt'], 'tgt')
         return sources, refs
 
     def translate(self, model, batch, gpu_rank, step, mode):
@@ -125,7 +118,7 @@ class ScoringPreparator():
             report_align=opt.report_align,
             report_score=True,
             logger=None)
-        sources, refs = self.build_sources_and_refs(batch, mode)
+        sources, refs = self.build_sources_and_refs(batch)
         infer_iter = textbatch_to_tensor(translator.vocabs,
                                          sources, is_train=True)
         infer_iter = IterOnDevice(infer_iter, opt.gpu)
