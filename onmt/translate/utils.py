@@ -1,9 +1,12 @@
 import codecs
 import os
+import torch
 from onmt.utils.parse import ArgumentParser
 from onmt.translate import GNMTGlobalScorer, Translator
 from onmt.opts import translate_opts
 from onmt.constants import DefaultTokens
+from onmt.inputters.text_utils import textbatch_to_tensor
+from onmt.inputters.inputter import IterOnDevice
 
 
 class Detokenizer():
@@ -62,15 +65,20 @@ class ScoringPreparator():
         self.opt = opt
         self.tgt_detokenizer = Detokenizer(opt)
         self.tgt_detokenizer.build_detokenizer()
+        if self.opt.dump_preds is not None:
+            if not os.path.exists(self.opt.dump_preds):
+                os.makedirs(self.opt.dump_preds)
 
     def tokenize_batch(self, batch_side, side):
         """Convert a batch into a list of tokenized sentences"""
+        # batch_side.shape[0] sentences to rebuild
+        # batch_side.shape[1] tokens per sentence
         vocab = self.vocabs[side]
         tokenized_sentences = []
-        for i in range(batch_side.shape[1]):
+        for i in range(batch_side.shape[0]):
             tokens = []
-            for t in range(batch_side.shape[0]):
-                token = vocab.get_itos()[batch_side[t, i, 0]]
+            for t in range(batch_side.shape[1]):
+                token = vocab.ids_to_tokens[batch_side[i, t, 0]]
                 if (token == DefaultTokens.PAD
                         or token == DefaultTokens.EOS):
                     break
@@ -89,8 +97,8 @@ class ScoringPreparator():
                 sources.append(example.src[0])
                 refs.append(example.tgt[0])
         elif mode == 'train':
-            sources = self.tokenize_batch(batch.src[0], 'src')
-            refs = self.tokenize_batch(batch.tgt, 'tgt')
+            sources = self.tokenize_batch(batch['src'], 'src')
+            refs = self.tokenize_batch(batch['tgt'], 'tgt')
         return sources, refs
 
     def translate(self, model, batch, gpu_rank, step, mode):
@@ -118,16 +126,15 @@ class ScoringPreparator():
             report_score=True,
             logger=None)
         sources, refs = self.build_sources_and_refs(batch, mode)
-        _, preds = translator.translate(
-            sources,
-            batch_size=model_opt.valid_batch_size,
-            batch_type=model_opt.batch_type)
+        infer_iter = textbatch_to_tensor(translator.vocabs,
+                                         sources, is_train=True)
+        infer_iter = IterOnDevice(infer_iter, opt.gpu)
+        _, preds = translator._translate(
+                    infer_iter)
         texts_ref = []
-
         for i in range(len(preds)):
             preds[i] = self.tgt_detokenizer._detokenize(preds[i][0].split())
             texts_ref.append(self.tgt_detokenizer._detokenize(refs[i]))
-
         if len(preds) > 0 and self.opt.scoring_debug:
             path = os.path.join(self.opt.dump_preds,
                                 "preds.{}_step_{}.{}".format(
@@ -137,4 +144,11 @@ class ScoringPreparator():
                     file.write("SOURCE: {}\n".format(sources[i]))
                     file.write("REF: {}\n".format(texts_ref[i]))
                     file.write("PRED: {}\n\n".format(preds[i]))
+        for layer in model.decoder.transformer_layers:
+            layer.self_attn.layer_cache = (False,
+                                           {'keys': torch.tensor([]),
+                                            'values': torch.tensor([])})
+            layer.context_attn.layer_cache = (False,
+                                              {'keys': torch.tensor([]),
+                                               'values': torch.tensor([])})
         return preds, texts_ref
