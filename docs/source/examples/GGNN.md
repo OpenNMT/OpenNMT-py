@@ -63,12 +63,12 @@ global_attention: general
 batch_size: 32
 # src_ggnn_size is larger than vocab plus features to allow one-hot settings
 src_ggnn_size: 100
-# src_word_vec_size less than rnn_size allows rnn learning during GGNN steps
+# src_word_vec_size less than hidden_size allows rnn learning during GGNN steps
 src_word_vec_size: 16
-# Increase tgt_word_vec_size, rnn_size, and state_dim together
+# Increase tgt_word_vec_size, hidden_size, and state_dim together
 # to provide larger GGNN embeddings and larger decoder RNN
 tgt_word_vec_size: 64
-rnn_size: 64
+hidden_size: 64
 state_dim: 64
 bridge: true
 gpu_ranks: 0

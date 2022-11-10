@@ -57,7 +57,6 @@ def build_trainer(opt, device_id, model, vocabs, optim, model_saver=None):
     else:
         gpu_rank = -1
         n_gpu = 0
-    gpu_verbose_level = opt.gpu_verbose_level
 
     earlystopper = onmt.utils.EarlyStopping(
         opt.early_stopping, scorers=onmt.utils.scorers_from_opts(opt)) \
@@ -69,7 +68,7 @@ def build_trainer(opt, device_id, model, vocabs, optim, model_saver=None):
                            scoring_preparator, train_scorers, valid_scorers,
                            optim, trunc_size,
                            accum_count, accum_steps,
-                           n_gpu, gpu_rank, gpu_verbose_level,
+                           n_gpu, gpu_rank,
                            opt.train_eval_steps, report_manager,
                            with_align=True if opt.lambda_align > 0 else False,
                            model_saver=model_saver if gpu_rank <= 0 else None,
@@ -86,6 +85,7 @@ def build_trainer(opt, device_id, model, vocabs, optim, model_saver=None):
 class Trainer(object):
     """
     Class that controls the training process.
+
     Args:
             model(:py:class:`onmt.models.model.NMTModel`): translation model
                 to train
@@ -96,14 +96,25 @@ class Trainer(object):
             optim(:obj:`onmt.utils.optimizers.Optimizer`):
                the optimizer responsible for update
             trunc_size(int): length of truncated back propagation through time
-            data_type(string): type of the source input: [text]
             accum_count(list): accumulate gradients this many times.
             accum_steps(list): steps for accum gradients changes.
+            n_gpu (int): number of gpu.
+            gpu_rank (int): ordinal rank of the gpu in the list.
+            train_eval_steps (int): process a validation every x steps.
             report_manager(:obj:`onmt.utils.ReportMgrBase`):
                 the object that creates reports, or None
+            with_align (bool): whether to jointly lear alignment (Transformer)
             model_saver(:obj:`onmt.models.ModelSaverBase`): the saver is
                 used to save a checkpoint.
-                Thus nothing will be saved if this parameter is None
+                Thus nothing will be saved if this parameter is None.
+            average_decay (float): cf opt.average_decay
+            average_every (int): average model every x steps.
+            model_dtype (str): fp32 or fp16.
+            earlystopper (:obj:`onmt.utils.EarlyStopping`): add early
+                stopping mecanism
+            dropout (float): dropout value in RNN or FF layers.
+            attention_dropout (float): dropaout in attention layers.
+            dropout_steps (list): dropout values scheduling in steps.
     """
 
     def __init__(self, model, train_loss, valid_loss,
@@ -112,7 +123,7 @@ class Trainer(object):
                  trunc_size=0,
                  accum_count=[1],
                  accum_steps=[0],
-                 n_gpu=1, gpu_rank=1, gpu_verbose_level=0,
+                 n_gpu=1, gpu_rank=1,
                  train_eval_steps=200,
                  report_manager=None, with_align=False, model_saver=None,
                  average_decay=0, average_every=1, model_dtype='fp32',
@@ -134,7 +145,6 @@ class Trainer(object):
         self.accum_steps = accum_steps
         self.n_gpu = n_gpu
         self.gpu_rank = gpu_rank
-        self.gpu_verbose_level = gpu_verbose_level
         self.report_manager = report_manager
         self.train_eval_steps = train_eval_steps
         self.with_align = with_align
@@ -150,15 +160,11 @@ class Trainer(object):
 
         for i in range(len(self.accum_count_l)):
             assert self.accum_count_l[i] > 0
-            if self.accum_count_l[i] > 1:
-                assert self.trunc_size == 0, \
-                    """To enable accumulated gradients,
-                       you must disable target sequence truncating."""
 
         # Set model in training mode.
         self.model.train()
 
-    def training_eval_handler(self, scorer, batch, mode="train"):
+    def _training_eval_handler(self, scorer, batch, mode="train"):
         """Trigger metrics calculations"""
         preds, texts_ref = self.scoring_preparator.translate(
             model=self.model,
@@ -220,14 +226,14 @@ class Trainer(object):
         running validation on `valid_iter`.
 
         Args:
-            train_iter: A generator that returns the next training batch.
+            train_iter: An iterator that returns the next training batch.
             train_steps: Run training for this many iterations.
             save_checkpoint_steps: Save a checkpoint every this many
               iterations.
             valid_iter: A generator that returns the next validation batch.
             valid_steps: Run evaluation every this many iterations.
         Returns:
-            The gathered statistics.
+            :obj:`nmt.Statistics`: training loss statistics
         """
         if valid_iter is None:
             logger.info('Start training loop without validation...')
@@ -311,16 +317,16 @@ class Trainer(object):
 
             for batch in valid_iter:
                 src = batch['src']
-                src_lengths = batch['srclen']
+                src_len = batch['srclen']
                 tgt = batch['tgt']
 
                 with torch.cuda.amp.autocast(enabled=self.optim.amp):
                     # F-prop through the model.
-                    outputs, attns = valid_model(src, tgt, src_lengths,
-                                                 with_align=self.with_align)
+                    model_out, attns = valid_model(src, tgt, src_len,
+                                                   with_align=self.with_align)
 
                     # Compute loss.
-                    _, batch_stats = self.valid_loss(batch, outputs, attns)
+                    _, batch_stats = self.valid_loss(batch, model_out, attns)
 
                     stats.update(batch_stats)
 
@@ -329,7 +335,7 @@ class Trainer(object):
             for i, metric in enumerate(self.valid_scorers):
                 logger.info("UPDATING VALIDATION {}".format(metric))
                 self.valid_scorers[
-                    metric]["value"] = self.training_eval_handler(
+                    metric]["value"] = self._training_eval_handler(
                         scorer=self.valid_scorers[metric]["scorer"],
                         batch=batch,
                         mode="valid")
@@ -361,11 +367,15 @@ class Trainer(object):
 
     def _gradient_accumulation(self, true_batches, total_stats,
                                report_stats):
+        """Function that iterates over big batches = ``true_batches``
+        perform a backward on the loss of each sub_batch and
+        finally update the params at the end of the big batch."""
+
         if self.accum_count > 1:
             self.optim.zero_grad()
 
         for k, batch in enumerate(true_batches):
-            target_size = batch['tgt'].size(0)
+            target_size = batch['tgt'].size(1)
             # Truncated BPTT: reminder not compatible with accum > 1
             if self.trunc_size:
                 trunc_size = self.trunc_size
@@ -373,17 +383,18 @@ class Trainer(object):
                 trunc_size = target_size
 
             src = batch['src']
-            src_lengths = batch['srclen']
-            if src_lengths is not None:
-                report_stats.n_src_words += src_lengths.sum().item()
-                total_stats.n_src_words += src_lengths.sum().item()
+            src_len = batch['srclen']
+            if src_len is not None:
+                report_stats.n_src_words += src_len.sum().item()
+                total_stats.n_src_words += src_len.sum().item()
 
             tgt_outer = batch['tgt']
 
             bptt = False
             for j in range(0, target_size - 1, trunc_size):
                 # 1. Create truncated target.
-                tgt = tgt_outer[j: j + trunc_size]
+
+                tgt = tgt_outer[:, j: j + trunc_size, :]
 
                 # 2. F-prop all but generator.
                 if self.accum_count == 1:
@@ -391,15 +402,15 @@ class Trainer(object):
 
                 try:
                     with torch.cuda.amp.autocast(enabled=self.optim.amp):
-                        outputs, attns = self.model(
-                            src, tgt, src_lengths, bptt=bptt,
+                        model_out, attns = self.model(
+                            src, tgt, src_len, bptt=bptt,
                             with_align=self.with_align)
                         bptt = True
 
                         # 3. Compute loss.
                         loss, batch_stats = self.train_loss(
                             batch,
-                            outputs,
+                            model_out,
                             attns,
                             trunc_start=j,
                             trunc_size=trunc_size)
@@ -414,7 +425,7 @@ class Trainer(object):
                         for i, metric in enumerate(self.train_scorers):
                             logger.info("UPDATING TRAINING {}".format(metric))
                             self.train_scorers[
-                                metric]["value"] = self.training_eval_handler(
+                                metric]["value"] = self._training_eval_handler(
                                 scorer=self.train_scorers[
                                     metric]["scorer"],
                                 batch=batch,
@@ -428,6 +439,8 @@ class Trainer(object):
                         batch_stats.computed_metrics = computed_metrics
 
                     if loss is not None:
+                        # in theory we should divide by accum_count and bptt
+                        # to rescale for each sub batch
                         self.optim.backward(loss)
 
                     total_stats.update(batch_stats)
@@ -450,13 +463,10 @@ class Trainer(object):
                                  if p.requires_grad
                                  and p.grad is not None]
                         onmt.utils.distributed.all_reduce_and_rescale_tensors(
-                            grads, float(1))
+                            grads, float(self.n_gpu))
                     self.optim.step()
 
                 # If truncated, don't backprop fully.
-                # TO CHECK
-                # if dec_state is not None:
-                #    dec_state.detach()
                 if self.model.decoder.state != {}:
                     self.model.decoder.detach_state()
 
@@ -468,7 +478,7 @@ class Trainer(object):
                          if p.requires_grad
                          and p.grad is not None]
                 onmt.utils.distributed.all_reduce_and_rescale_tensors(
-                    grads, float(1))
+                    grads, float(self.n_gpu))
             self.optim.step()
 
     def _start_report_manager(self, start_time=None):
@@ -480,21 +490,6 @@ class Trainer(object):
                 self.report_manager.start()
             else:
                 self.report_manager.start_time = start_time
-
-    def _maybe_gather_stats(self, stat):
-        """
-        Gather statistics in multi-processes cases
-
-        Args:
-            stat(:obj:onmt.utils.Statistics): a Statistics object to gather
-                or None (it returns None in this case)
-
-        Returns:
-            stat: the updated (or unchanged) stat object
-        """
-        if stat is not None and self.n_gpu > 1:
-            return onmt.utils.Statistics.all_gather_stats(stat)
-        return stat
 
     def _maybe_report_training(self, step, num_steps, learning_rate,
                                report_stats):

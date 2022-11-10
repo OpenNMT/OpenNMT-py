@@ -27,10 +27,14 @@ def max_tok_len(new, count, sofar):
         max_tgt_in_batch = 0
     # Src: [<bos> w1 ... wN <eos>]
     max_src_in_batch = max(max_src_in_batch, len(new['src']['src_ids']) + 2)
-    # Tgt: [w1 ... wM <eos>]
-    max_tgt_in_batch = max(max_tgt_in_batch, len(new['tgt']['tgt_ids']) + 1)
     src_elements = count * max_src_in_batch
-    tgt_elements = count * max_tgt_in_batch
+    # Tgt: [w1 ... wM <eos>]
+    if new['tgt'] is not None:
+        max_tgt_in_batch = max(max_tgt_in_batch,
+                               len(new['tgt']['tgt_ids']) + 1)
+        tgt_elements = count * max_tgt_in_batch
+    else:
+        tgt_elements = 0
     return max(src_elements, tgt_elements)
 
 
@@ -150,7 +154,8 @@ def tensorify(vocabs, minibatch):
     tensor_batch = {}
     tbatchsrc = [torch.LongTensor(ex['src']['src_ids']) for ex in minibatch]
     padidx = vocabs['src'][DefaultTokens.PAD]
-    tbatchsrc = pad_sequence(tbatchsrc, padding_value=padidx)
+    tbatchsrc = pad_sequence(tbatchsrc, batch_first=True,
+                             padding_value=padidx)
     if len(minibatch[0]['src'].keys()) > 2:
         tbatchfs = [tbatchsrc]
         for feat in minibatch[0]['src'].keys():
@@ -158,7 +163,8 @@ def tensorify(vocabs, minibatch):
                 tbatchfeat = [torch.LongTensor(ex['src'][feat])
                               for ex in minibatch]
                 padidx = vocabs['src_feats'][feat][DefaultTokens.PAD]
-                tbatchfeat = pad_sequence(tbatchfeat, padding_value=padidx)
+                tbatchfeat = pad_sequence(tbatchfeat, batch_first=True,
+                                          padding_value=padidx)
                 tbatchfs.append(tbatchfeat)
         tbatchsrc = torch.stack(tbatchfs, dim=2)
     else:
@@ -175,7 +181,8 @@ def tensorify(vocabs, minibatch):
         tbatchtgt = [torch.LongTensor(ex['tgt']['tgt_ids'])
                      for ex in minibatch]
         padidx = vocabs['tgt'][DefaultTokens.PAD]
-        tbatchtgt = pad_sequence(tbatchtgt, padding_value=padidx)
+        tbatchtgt = pad_sequence(tbatchtgt, batch_first=True,
+                                 padding_value=padidx)
         tbatchtgt = tbatchtgt[:, :, None]
         tbatchtgtlen = torch.LongTensor([len(ex['tgt']['tgt_ids'])
                                          for ex in minibatch])
@@ -192,25 +199,26 @@ def tensorify(vocabs, minibatch):
 
     if 'src_map' in minibatch[0].keys():
         src_vocab_size = max([max(ex['src_map']) for ex in minibatch]) + 1
-        src_map = torch.zeros(tbatchsrc.size(0),
-                              len(tensor_batch['srclen']),
+        src_map = torch.zeros(len(tensor_batch['srclen']),
+                              tbatchsrc.size(1),
                               src_vocab_size)
         for i, ex in enumerate(minibatch):
             for j, t in enumerate(ex['src_map']):
-                src_map[j, i, t] = 1
+                src_map[i, j, t] = 1
         tensor_batch['src_map'] = src_map
 
     if 'alignment' in minibatch[0].keys():
-        alignment = torch.zeros(tbatchtgt.size(0),
-                                len(tensor_batch['srclen'])).long()
+        alignment = torch.zeros(len(tensor_batch['srclen']),
+                                tbatchtgt.size(1)).long()
         for i, ex in enumerate(minibatch):
-            alignment[:len(ex['alignment']), i] = \
+            alignment[i, :len(ex['alignment'])] = \
                 torch.LongTensor(ex['alignment'])
         tensor_batch['alignment'] = alignment
 
     if 'src_ex_vocab' in minibatch[0].keys():
         tensor_batch['src_ex_vocab'] = [ex['src_ex_vocab']
                                         for ex in minibatch]
+
     return tensor_batch
 
 

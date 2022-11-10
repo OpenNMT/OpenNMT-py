@@ -78,9 +78,9 @@ class TranslationBuilder(object):
         # Sorting
         inds, perm = torch.sort(batch['indices'])
 
-        src = batch['src'][:, :, 0].index_select(1, perm)
+        src = batch['src'][:, :, 0].index_select(0, perm)
         if 'tgt' in batch.keys():
-            tgt = batch['tgt'][:, :, 0].index_select(1, perm)
+            tgt = batch['tgt'][:, :, 0].index_select(0, perm)
         else:
             tgt = None
 
@@ -90,7 +90,7 @@ class TranslationBuilder(object):
             # src_raw = self.data.examples[inds[b]].src[0]
             src_raw = None
             pred_sents = [self._build_target_tokens(
-                src[:, b] if src is not None else None,
+                src[b, :] if src is not None else None,
                 src_raw,
                 preds[b][n],
                 align[b][n] if align[b] is not None else attn[b][n])
@@ -98,12 +98,12 @@ class TranslationBuilder(object):
             gold_sent = None
             if tgt is not None:
                 gold_sent = self._build_target_tokens(
-                    src[:, b] if src is not None else None,
+                    src[b, :] if src is not None else None,
                     src_raw,
-                    tgt[1:, b] if tgt is not None else None, None)
+                    tgt[b, 1:] if tgt is not None else None, None)
 
             translation = Translation(
-                src[:, b] if src is not None else None,
+                src[b, :] if src is not None else None,
                 src_raw, pred_sents, attn[b], pred_score[b],
                 gold_sent, gold_score[b], align[b]
             )

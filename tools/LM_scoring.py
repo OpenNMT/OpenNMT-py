@@ -97,16 +97,16 @@ def main():
         # reminder a batch includes .src .tgt .indices and it is sorted
         batch_size = len(batch['srclen'])
         src = batch['src']
-        src_lengths = batch['srclen']
+        src_len = batch['srclen']
         tgt = batch['tgt']
 
-        outputs, attns = model(src, tgt, src_lengths,
+        outputs, attns = model(src, tgt, src_len,
                                with_align=False)
         # Compute and retrieve the loss for EACH sentence
         lossflat, _ = valid_loss(batch, outputs, attns)
-        loss = lossflat.view(-1, batch_size)
+        loss = lossflat.view(batch_size, -1)
         mask = (loss != 0)
-        sent_loss = torch.sum(loss, dim=0) / mask.sum(dim=0)
+        sent_loss = torch.sum(loss, dim=1) / mask.sum(dim=1)
         sent_ppl = torch.exp(sent_loss)
         cumul_loss += loss.sum().item()
         cumul_length += mask.sum().cpu()

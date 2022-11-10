@@ -113,12 +113,24 @@ class MultiHeadedAttention(nn.Module):
 
     def __init__(self, head_count: int, model_dim: int, dropout: float = 0.1,
                  max_relative_positions: int = 0,
-                 attn_type: str = None) -> None:
+                 attn_type: str = None, add_qkvbias=False) -> None:
 
         assert model_dim % head_count == 0
         self.dim_per_head = model_dim // head_count
         super(MultiHeadedAttention, self).__init__()
         self.head_count = head_count
+
+        self.linear_keys = nn.Linear(model_dim, model_dim, bias=add_qkvbias)
+        self.linear_values = nn.Linear(model_dim, model_dim, bias=add_qkvbias)
+        self.linear_query = nn.Linear(model_dim, model_dim, bias=add_qkvbias)
+        self.softmax = nn.Softmax(dim=-1)
+        self.dropout = nn.Dropout(dropout)
+        self.final_linear = nn.Linear(model_dim, model_dim, bias=add_qkvbias)
+
+        self.max_relative_positions = max_relative_positions
+        self.attn_type = attn_type
+        self.layer_cache = (False, {'keys': torch.tensor([]),
+                                    'values': torch.tensor([])})
         if max_relative_positions > 0:
             # https://arxiv.org/pdf/1803.02155.pdf
             # in the paper they suggest either two embeds
@@ -130,18 +142,6 @@ class MultiHeadedAttention(nn.Module):
                 vocab_size, self.dim_per_head)
         else:
             self.relative_positions_embeddings = None
-
-        self.linear_keys = nn.Linear(model_dim, model_dim)
-        self.linear_values = nn.Linear(model_dim, model_dim)
-        self.linear_query = nn.Linear(model_dim, model_dim)
-        self.softmax = nn.Softmax(dim=-1)
-        self.dropout = nn.Dropout(dropout)
-        self.final_linear = nn.Linear(model_dim, model_dim)
-
-        self.max_relative_positions = max_relative_positions
-        self.attn_type = attn_type
-        self.layer_cache = (False, {'keys': torch.tensor([]),
-                                    'values': torch.tensor([])})
 
     def update_dropout(self, dropout: float) -> None:
         self.dropout.p = dropout

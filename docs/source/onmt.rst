@@ -4,9 +4,15 @@ Framework
 Model
 -----
 
+.. autoclass:: onmt.models.BaseModel
+    :members:
+    
 .. autoclass:: onmt.models.NMTModel
     :members:
 
+.. autoclass:: onmt.models.LanguageModel
+    :members:
+    
 Trainer
 -------
 
@@ -20,13 +26,20 @@ Trainer
 Loss
 ----
 
-
-.. autoclass:: onmt.utils.loss.LossComputeBase
+.. autoclass:: onmt.utils.loss.LossCompute
     :members:
 
+.. autoclass:: onmt.utils.loss.LabelSmoothingLoss
+    :members:
 
 Optimizer
 ---------
 
 .. autoclass:: onmt.utils.Optimizer
+    :members:
+
+.. autoclass:: onmt.utils.AdaFactor
+    :members:
+
+.. autoclass:: onmt.utils.FusedAdam
     :members:

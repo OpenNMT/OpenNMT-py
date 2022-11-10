@@ -16,21 +16,16 @@ from onmt.modules.copy_generator import collapse_copy_scores
 class LossCompute(nn.Module):
     """
     Class for managing efficient loss computation. Handles
-    sharding next step predictions and accumulating multiple
-    loss computations
-
-    Users can implement their own loss computation strategy by making
-    subclass of this one.  Users need to implement the _compute_loss()
-    and make_shard_state() methods.
+    accumulating multiple loss computations.
 
     Args:
         criterion (:obj:`nn. loss function`) : NLLoss or customed loss
         generator (:obj:`nn.Module`) :
-        normalization (str "tokens" or "sents")
+        normalization (str): "tokens" or "sents"
         copy_attn (bool): whether copy attention mechanism is on/off
         lambda_coverage: Hyper-param to apply coverage attention if any
         lambda_align: Hyper-param for alignment loss
-        tgt_shift_index: 1 for NMT, 0 for LM
+        tgt_shift_index (int): 1 for NMT, 0 for LM
         vocab: target vocab (for copy attention score calculation)
              module that maps the output of the decoder to a
              distribution over the target vocabulary.
@@ -134,7 +129,7 @@ class LossCompute(nn.Module):
             target: the validate target to compare output with.
             align:
             attns: dictionary of attention distributions
-              `[tgt_len x batch x src_len]`
+              `(tgt_len, batch, src_len)`
         Returns:
             A tuple with the loss and a :obj:`onmt.utils.Statistics` instance.
         """
@@ -170,27 +165,21 @@ class LossCompute(nn.Module):
     def _unbottle(self, _v, batch_size):
         return _v.view(-1, batch_size, _v.size(1))
 
-    def __call__(self, batch, output, attns,
-                 trunc_start=0, trunc_size=None):
-        """Compute the forward loss, possibly in shards in which case this
-        method also runs the backward pass and returns ``None`` as the loss
-        value.
-
-        Also supports truncated BPTT for long sequences by taking a
-        range in the decoder output sequence to back propagate in.
+    def forward(self, batch, output, attns,
+                trunc_start=0, trunc_size=None):
+        """Compute the forward loss, supports truncated BPTT for long
+        sequences by taking a range in the decoder output sequence to
+        back propagate in.
         Range is from `(trunc_start, trunc_start + trunc_size)`.
-
-        Note sharding is an exact efficiency trick to relieve memory
-        required for the generation buffers. Truncation is an
-        approximate efficiency trick to relieve the memory required
-        in the RNN buffers.
+        Truncation is an approximate efficiency trick to relieve the
+        memory required in the RNN buffers.
 
         Args:
           batch (batch) : batch of labeled examples
           output (:obj:`FloatTensor`) :
-              output of decoder model `[tgt_len x batch x hidden]`
-          attns (dict) : dictionary of attention distributions
-              `[tgt_len x batch x src_len]`
+              output of decoder model ``(batch, tgt_len, hidden)``
+          attns (dict) : dictionary of attention weights
+              ``(batch, tgt_len, src_len)``
           trunc_start (int) : starting position of truncation window
           trunc_size (int) : length of truncation window
 
@@ -198,15 +187,17 @@ class LossCompute(nn.Module):
             A tuple with the loss and a :obj:`onmt.utils.Statistics` instance.
         """
         if trunc_size is None:
-            trunc_size = batch['tgt'].size(0) - trunc_start
+            trunc_size = batch['tgt'].size(1) - trunc_start
         # take into account here the tgt_shift_index (0 / 1 = LM/NMT)
         trunc_range = (trunc_start + self.tgt_shift_index,
                        trunc_start + trunc_size)
-        target = batch['tgt'][trunc_range[0]:trunc_range[1],
-                              :, 0].view(-1)
+        target = batch['tgt'][:, trunc_range[0]:trunc_range[1],
+                              0].contiguous().view(-1)
 
         if self.copy_attn:
-            align = batch['alignment'][trunc_range[0]:trunc_range[1]].view(-1)
+            align = batch['alignment'][
+                :, trunc_range[0]:trunc_range[1]
+                ].contiguous().view(-1)
             loss, stats = self._compute_copy_loss(batch, output, target,
                                                   align, attns)
         else:
@@ -219,8 +210,8 @@ class LossCompute(nn.Module):
                 if align_head.dtype != loss.dtype:  # Fix FP16
                     align_head = align_head.to(loss.dtype)
                 align_idx = batch['align']
-                pad_tgt_size, batch_size, _ = batch['tgt'].size()
-                pad_src_size, _, _ = batch['src'].size()
+                batch_size, pad_tgt_size, _ = batch['tgt'].size()
+                _, pad_src_size, _ = batch['src'].size()
                 align_matrix_size = [batch_size, pad_tgt_size, pad_src_size]
                 ref_align = onmt.utils.make_batch_align_matrix(
                     align_idx, align_matrix_size, normalize=True
@@ -245,7 +236,7 @@ class LossCompute(nn.Module):
                                       :,
                                       0].ne(self.padding_idx).sum()
         elif self.normalization == "sents":
-            normfactor = batch['tgt'].size(1)
+            normfactor = batch['tgt'].size(0)
 
         return loss / float(normfactor), stats
 
@@ -292,8 +283,8 @@ class LabelSmoothingLoss(nn.Module):
 
     def forward(self, output, target):
         """
-        output (FloatTensor): batch_size x n_classes
-        target (LongTensor): batch_size
+        output (FloatTensor): ``(batch_size, n_classes)``
+        target (LongTensor): ``(batch_size)``
         """
         model_prob = self.one_hot.repeat(target.size(0), 1)
         model_prob.scatter_(1, target.unsqueeze(1), self.confidence)

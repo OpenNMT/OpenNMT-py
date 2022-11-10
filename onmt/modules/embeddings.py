@@ -34,7 +34,7 @@ class PositionalEncoding(nn.Module):
                              -(math.log(10000.0) / dim)))
         pe[:, 0::2] = torch.sin(position.float() * div_term)
         pe[:, 1::2] = torch.cos(position.float() * div_term)
-        pe = pe.unsqueeze(1)
+        pe = pe.unsqueeze(1)  # we keep pe (len x batch x dim) for back comp
         super(PositionalEncoding, self).__init__()
         self.register_buffer('pe', pe)
         self.dropout = nn.Dropout(p=dropout)
@@ -45,19 +45,19 @@ class PositionalEncoding(nn.Module):
 
         Args:
             emb (FloatTensor): Sequence of word vectors
-                ``(seq_len, batch_size, self.dim)``
+                ``(batch_size, seq_len, self.dim)``
             step (int or NoneType): If stepwise (``seq_len = 1``), use
                 the encoding for this position.
         """
-
+        pe = self.pe.transpose(0, 1)  # (batch x len x dim)
         emb = emb * math.sqrt(self.dim)
         step = step or 0
-        if self.pe.size(0) < step + emb.size(0):
+        if pe.size(1) < step + emb.size(1):
             raise SequenceTooLongError(
-                f"Sequence is {emb.size(0) + step} but PositionalEncoding is"
-                f" limited to {self.pe.size(0)}. See max_len argument."
+                f"Sequence is {emb.size(1) + step} but PositionalEncoding is"
+                f" limited to {self.pe.size(1)}. See max_len argument."
             )
-        emb = emb + self.pe[step:emb.size(0)+step]
+        emb = emb + pe[:, step:emb.size(1)+step, :]
         emb = self.dropout(emb)
         return emb
 
@@ -85,12 +85,8 @@ class Embeddings(nn.Module):
 
     Args:
         word_vec_size (int): size of the dictionary of embeddings.
-        word_padding_idx (int): padding index for words in the embeddings.
-        feat_padding_idx (List[int]): padding index for a list of features
-                                   in the embeddings.
         word_vocab_size (int): size of dictionary of embeddings for words.
-        feat_vocab_sizes (List[int], optional): list of size of dictionary
-            of embeddings for each feature.
+        word_padding_idx (int): padding index for words in the embeddings.
         position_encoding (bool): see :class:`~onmt.modules.PositionalEncoding`
         feat_merge (string): merge action for the features embeddings:
             concat, sum or mlp.
@@ -99,7 +95,12 @@ class Embeddings(nn.Module):
             number of values the feature takes.
         feat_vec_size (int): embedding dimension for features when using
             `-feat_merge mlp`
+        feat_padding_idx (List[int]): padding index for a list of features
+                                   in the embeddings.
+        feat_vocab_sizes (List[int], optional): list of size of dictionary
+            of embeddings for each feature.
         dropout (float): dropout probability.
+        sparse (bool): sparse embbedings default False
         freeze_word_vecs (bool): freeze weights of word vectors.
     """
 
@@ -238,10 +239,10 @@ class Embeddings(nn.Module):
         """Computes the embeddings for words and features.
 
         Args:
-            source (LongTensor): index tensor ``(len, batch, nfeat)``
+            source (LongTensor): index tensor ``(batch, len, nfeat)``
 
         Returns:
-            FloatTensor: Word embeddings ``(len, batch, embedding_size)``
+            FloatTensor: Word embeddings ``(batch, len, embedding_size)``
         """
 
         if self.position_encoding:

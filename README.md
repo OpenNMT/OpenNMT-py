@@ -16,14 +16,12 @@ Unless there is a bug, please use the [forum](https://forum.opennmt.net) or [Git
 
 ----
 
-# Announcement - OpenNMT-py 3.0 beta
+# OpenNMT-py 3.0
 
-**We're happy to announce the upcoming release v3.0 of OpenNMT-py.**
+**We're happy to announce the release v3.0 of OpenNMT-py.**
 
 This new version does not rely on Torchtext anymore.
 The checkpoint structure is slightly changed but we provide a tool to convert v2 to v3 models (cf tools/convertv2_v3.py)
-
-Since it's beta version, do not use in production until we make sure the checkpoint structure does not change again.
 
 We use the same 'dynamic' paradigm as in v2, allowing to apply on-the-fly transforms to the data.
 
@@ -38,18 +36,47 @@ You can check out how to use this new data loading pipeline in the updated [docs
 
 All the readily available transforms are described [here](https://opennmt.net/OpenNMT-py/FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms).
 
-### Performance
+### Performance tips
 
 Given sufficient CPU resources according to GPU computing power, most of the transforms should not slow the training down. (Note: for now, one producer process per GPU is spawned -- meaning you would ideally need 2N CPU threads for N GPUs).
+If you want to optimize the training performance:
+- use fp16
+- use batch_size_multiple 8
+- use vocab_size_multiple 8
+- Depending on the number of GPU use num_workers 4 (for 1 GPU) or 2 (for multiple GPU)
+
+- To avoid averaging checkpoints you can use the "during training" average decay system.
+- If you train a transformer we support max_relative_positions (use 20) instead of position_encoding.
+
+- for very fast inference convert your model to [CTranslate2](https://github.com/OpenNMT/CTranslate2) format. 
 
 ### Breaking changes
 
-For now, the new data loading paradigm does not support Audio, Video and Image inputs.
+Changes between v2 and v3:
 
-A few features are also dropped, at least for now:
+Options removed:
+`queue_size`, `pool_factor` are no longer needed. Only adjust the `bucket_size` to the number of examples to be loaded by each `num_workers` of the pytorch Dataloader.
+
+New options: 
+`num_workers`: number of workers for each process. If you run on one GPU the recommended value is 4. If you run on more than 1 GPU, the recommended value is 2
+`add_qkvbias`: default is false. However old model trained with v2 will be set at true. The original transformer paper used no bias for the Q/K/V nn.Linear of the multihead attention module.
+
+Options renamed:
+`rnn_size` => `hidden_size`
+`enc_rnn_size` => `enc_hid_size`
+`dec_rnn_size` => `dec_hid_size`
+
+Note: `tools/convertv2_v3.py` will modify these options stored in the checkpoint to make things compatible with v3.0
+
+Inference:
+The translator will use the same dynamic_iterator as the trainer.
+The new default for inference is `length_penalty=avg` which will provide better BLEU scores in most cases (and comparable to other toolkits defaults)
+
+
+
+Reminder: a few features were dropped between v1 and v2:
 
 - audio, image and video inputs;
-- source word features.
 
 For any user that still need these features, the previous codebase will be retained as `legacy` in a separate branch. It will no longer receive extensive development from the core team but PRs may still be accepted.
 
@@ -72,7 +99,7 @@ Table of Contents
 
 OpenNMT-py requires:
 
-- Python >= 3.6
+- Python >= 3.7
 - PyTorch >= 1.9.0
 
 Install `OpenNMT-py` from `pip`:
@@ -97,8 +124,7 @@ pip install -r requirements.opt.txt
 
 ## Features
 
-- :warning: **New in OpenNMT-py 2.0**: [On the fly data processing]([here](https://opennmt.net/OpenNMT-py/FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms).)
-
+- [On the fly data processing]([here](https://opennmt.net/OpenNMT-py/FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms).)
 - [Encoder-decoder models with multiple RNN cells (LSTM, GRU) and attention types (Luong, Bahdanau)](https://opennmt.net/OpenNMT-py/options/train.html#model-encoder-decoder)
 - [Transformer models](https://opennmt.net/OpenNMT-py/FAQ.html#how-do-i-use-the-transformer-model)
 - [Copy and Coverage Attention](https://opennmt.net/OpenNMT-py/options/train.html#model-attention)
@@ -106,7 +132,6 @@ pip install -r requirements.opt.txt
 - [Source word features](https://opennmt.net/OpenNMT-py/options/train.html#model-embeddings)
 - [TensorBoard logging](https://opennmt.net/OpenNMT-py/options/train.html#logging)
 - [Multi-GPU training](https://opennmt.net/OpenNMT-py/FAQ.html##do-you-support-multi-gpu)
-- [Data preprocessing](https://opennmt.net/OpenNMT-py/options/preprocess.html)
 - [Inference (translation) with batching and beam search](https://opennmt.net/OpenNMT-py/options/translate.html)
 - Inference time loss functions
 - [Conv2Conv convolution model](https://arxiv.org/abs/1705.03122)
@@ -254,15 +279,19 @@ http://opennmt.net/Models-py/
 OpenNMT-py is run as a collaborative open-source project.
 The original code was written by [Adam Lerer](http://github.com/adamlerer) (NYC) to reproduce OpenNMT-Lua using PyTorch.
 
-Major contributors are:
+Current maintainers:
+Ubiqus Team: [François Hernandez](https://github.com/francoishernandez) and Team.
+[Vincent Nguyen](https://github.com/vince62s) (Seedfall)
+
+Project incubators:
 * [Sasha Rush](https://github.com/srush) (Cambridge, MA)
-* [Vincent Nguyen](https://github.com/vince62s) (ex-Ubiqus)
-* [Ben Peters](http://github.com/bpopeters) (Lisbon)
-* [Sebastian Gehrmann](https://github.com/sebastianGehrmann) (Harvard NLP)
-* [Yuntian Deng](https://github.com/da03) (Harvard NLP)
 * [Guillaume Klein](https://github.com/guillaumekln) (Systran)
-* [Paul Tardy](https://github.com/pltrdy) (Ubiqus / Lium)
-* [François Hernandez](https://github.com/francoishernandez) (Ubiqus)
+
+Early contributors
+* [Ben Peters](http://github.com/bpopeters) (Lisbon)
+* [Sebastian Gehrmann](https://github.com/sebastianGehrmann) (PhD Harvard NLP)
+* [Yuntian Deng](https://github.com/da03) (PhD Harvard NLP)
+* [Paul Tardy](https://github.com/pltrdy) (PhD Ubiqus / Lium)
 * [Linxiao Zeng](https://github.com/Zenglinxiao) (Ubiqus)
 * [Jianyu Zhan](http://github.com/jianyuzhan) (Shanghai)
 * [Dylan Flaute](http://github.com/flauted) (University of Dayton)

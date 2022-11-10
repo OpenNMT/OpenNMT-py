@@ -58,9 +58,9 @@ class GGNNPropogator(nn.Module):
         joined_input = torch.cat((a_in, a_out, r * state_cur), 2)
         h_hat = self.tansform(joined_input)
 
-        output = (1 - z) * state_cur + z * h_hat
+        prop_out = (1 - z) * state_cur + z * h_hat
 
-        return output
+        return prop_out
 
 
 class GGNNEncoder(EncoderBase):
@@ -189,11 +189,11 @@ class GGNNEncoder(EncoderBase):
                 m.weight.data.normal_(0.0, 0.02)
                 m.bias.data.fill_(0)
 
-    def forward(self, src, lengths=None):
+    def forward(self, src, src_len=None):
         """See :func:`EncoderBase.forward()`"""
 
         nodes = self.n_node
-        batch_size = src.size()[1]
+        batch_size = src.size()[0]
         first_extra = np.zeros(batch_size, dtype=np.int32)
         token_onehot = np.zeros((batch_size, nodes,
                                  self.src_ggnn_size if self.src_ggnn_size > 0
@@ -213,7 +213,7 @@ class GGNNEncoder(EncoderBase):
             edge = 0
             source_node = -1
             for j in range(len(npsrc)):
-                token = npsrc[j][i]
+                token = npsrc[i][j]
                 if not tokens_done:
                     if token == self.DELIMITER:
                         tokens_done = True
@@ -277,7 +277,6 @@ class GGNNEncoder(EncoderBase):
             prop_state = self.propogator(in_states, out_states, prop_state,
                                          edges, nodes)
 
-        prop_state = prop_state.transpose(0, 1)
         if self.bridge_extra_node:
             # Use first extra node as only source for decoder init
             join_state = prop_state[first_extra, torch.arange(batch_size)]
@@ -288,9 +287,9 @@ class GGNNEncoder(EncoderBase):
                                   join_state, join_state))
         join_state = (join_state, join_state)
 
-        encoder_final = self._bridge(join_state)
+        enc_final_hs = self._bridge(join_state)
 
-        return encoder_final, prop_state, lengths
+        return prop_state, enc_final_hs, src_len
 
     def _initialize_bridge(self, rnn_type,
                            hidden_size,

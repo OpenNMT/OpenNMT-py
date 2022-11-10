@@ -9,7 +9,7 @@ report_every: 100
 
 encoder_type: brnn
 word_vec_size: 128
-rnn_size: 512
+hidden_size: 512
 layers: 1
 
 optim: adagrad

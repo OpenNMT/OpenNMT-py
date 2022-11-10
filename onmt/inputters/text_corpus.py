@@ -127,7 +127,7 @@ def get_corpora(opts, task=CorpusTask.TRAIN):
 
 
 class ParallelCorpusIterator(object):
-    """An iterator dedicate for ParallelCorpus.
+    """An iterator dedicated to ParallelCorpus.
 
     Args:
         corpus (ParallelCorpus): corpus to iterate;

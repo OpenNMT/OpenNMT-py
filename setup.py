@@ -23,6 +23,7 @@ setup(
     install_requires=[
         "torch>=1.12.1",
         "configargparse",
+        "ctranslate2>=3.0,<4",
         "tensorboard>=2.3",
         "flask",
         "waitress",

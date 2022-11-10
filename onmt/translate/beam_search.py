@@ -36,7 +36,7 @@ class BeamSearchBase(DecodeStrategy):
         alive_seq (LongTensor): See base.
         topk_log_probs (FloatTensor): Shape ``(B, beam_size,)``. These
             are the scores used for the topk operation.
-        memory_lengths (LongTensor): Lengths of encodings. Used for
+        src_len (LongTensor): Lengths of encodings. Used for
             masking attentions.
         select_indices (LongTensor or NoneType): Shape
             ``(B x beam_size,)``. This is just a flat view of the
@@ -88,15 +88,15 @@ class BeamSearchBase(DecodeStrategy):
             not stepwise_penalty and self.global_scorer.has_cov_pen)
         self._cov_pen = self.global_scorer.has_cov_pen
 
-        self.memory_lengths = None
+        self.src_len = None
 
     def initialize(self, *args, **kwargs):
         raise NotImplementedError
 
-    def initialize_(self, memory_bank, memory_lengths, src_map, device,
+    def initialize_(self, enc_out, src_len, src_map, device,
                     target_prefix):
         super(BeamSearchBase, self).initialize(
-            memory_bank, memory_lengths, src_map, device, target_prefix)
+            enc_out, src_len, src_map, device, target_prefix)
 
         self.best_scores = torch.full(
             [self.batch_size], -1e10, dtype=torch.float, device=device)
@@ -178,12 +178,12 @@ class BeamSearchBase(DecodeStrategy):
                 self.hypotheses[b].append((
                     self.topk_scores[i, j],
                     predictions[i, j, 1:],  # Ignore start_token.
-                    attention[:, i, j, :self.memory_lengths[i]]
+                    attention[:, i, j, :self.src_len[i]]
                     if attention is not None else None))
             # End condition is the top beam finished and we can return
             # n_best hypotheses.
             if self.ratio > 0:
-                pred_len = self.memory_lengths[i] * self.ratio
+                pred_len = self.src_len[i] * self.ratio
                 finish_flag = ((self.topk_scores[i, 0] / pred_len)
                                <= self.best_scores[b]) or \
                     self.is_finished[i].all()
@@ -256,7 +256,6 @@ class BeamSearchBase(DecodeStrategy):
         step = len(self)
         self.ensure_min_length(log_probs)
         self.ensure_unk_removed(log_probs)
-
         # Multiply probs by the beam probability.
         log_probs += self.topk_log_probs.view(_B * self.beam_size, 1)
 
@@ -328,61 +327,61 @@ class BeamSearch(BeamSearchBase):
     """
         Beam search for seq2seq/encoder-decoder models
     """
-    def initialize(self, memory_bank, src_lengths, src_map=None, device=None,
+    def initialize(self, enc_out, src_len, src_map=None, device=None,
                    target_prefix=None):
         """Initialize for decoding.
         Repeat src objects `beam_size` times.
         """
 
-        (fn_map_state, memory_bank, src_map,
+        (fn_map_state, enc_out, src_map,
             target_prefix) = self.initialize_tile(
-                memory_bank, src_lengths, src_map, target_prefix)
+                enc_out, src_len, src_map, target_prefix)
         if device is None:
-            device = self.get_device_from_memory_bank(memory_bank)
+            device = self.get_device_from_enc_out(enc_out)
 
         super(BeamSearch, self).initialize_(
-            memory_bank, self.memory_lengths, src_map, device, target_prefix)
+            enc_out, self.src_len, src_map, device, target_prefix)
 
-        return fn_map_state, memory_bank, self.memory_lengths, src_map
+        return fn_map_state, enc_out, self.src_len, src_map
 
 
 class BeamSearchLM(BeamSearchBase):
     """
         Beam search for language/decoder only models
     """
-    def initialize(self, src, src_lengths, src_map=None, device=None,
+    def initialize(self, src, src_len, src_map=None, device=None,
                    target_prefix=None):
         """Initialize for decoding.
         Repeat src objects `beam_size` times.
         """
         (fn_map_state, _, src_map,
             target_prefix) = self.initialize_tile(
-                None, src_lengths, src_map, target_prefix)
+                None, src_len, src_map, target_prefix)
         if device is None:
             device = src.device
 
         super(BeamSearchLM, self).initialize_(
-            None, self.memory_lengths, src_map=src_map, device=device,
+            None, self.src_len, src_map=src_map, device=device,
             target_prefix=target_prefix)
 
-        return fn_map_state, src, self.memory_lengths, src_map
+        return fn_map_state, src, self.src_len, src_map
 
     def advance(self, log_probs, attn):
         super(BeamSearchLM, self).advance(log_probs, attn)
 
-        # in LM task memory_lengths is associated with currently generated src
+        # in LM task src_len is associated with currently generated src
         # and therefore needs to follow the generation
-        self.memory_lengths += 1
+        self.src_len += 1
 
     def remove_finished_batches(self, _B_new, _B_old, non_finished,
                                 predictions, attention, step):
         super(BeamSearchLM, self).remove_finished_batches(
             _B_new, _B_old, non_finished, predictions, attention, step)
 
-        # in LM task memory_lengths is associated with currently generated src
+        # in LM task src_len is associated with currently generated src
         # and therefore needs to follow the generation
         non_finished = non_finished.to(self.topk_ids.device)
-        self.memory_lengths = self.memory_lengths.view(
+        self.src_len = self.src_len.view(
             _B_old, self.beam_size) \
             .index_select(0, non_finished) \
             .view(_B_new * self.beam_size)

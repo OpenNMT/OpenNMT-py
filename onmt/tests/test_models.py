@@ -49,8 +49,8 @@ class TestModel(unittest.TestCase):
 
     def get_batch(self, source_l=3, bsize=1):
         # len x batch x nfeat
-        test_src = torch.ones(source_l, bsize, 1).long()
-        test_tgt = torch.ones(source_l, bsize, 1).long()
+        test_src = torch.ones(bsize, source_l, 1).long()
+        test_tgt = torch.ones(bsize, source_l, 1).long()
         test_length = torch.ones(bsize).fill_(source_l).long()
         return test_src, test_tgt, test_length
 
@@ -67,13 +67,13 @@ class TestModel(unittest.TestCase):
         emb = build_embeddings(opt, vocabs)
         test_src, _, __ = self.get_batch(source_l=source_l, bsize=bsize)
         if opt.decoder_type == 'transformer':
-            input = torch.cat([test_src, test_src], 0)
+            input = torch.cat([test_src, test_src], 1)
             res = emb(input)
-            compare_to = torch.zeros(source_l * 2, bsize,
+            compare_to = torch.zeros(bsize, source_l * 2,
                                      opt.src_word_vec_size)
         else:
             res = emb(test_src)
-            compare_to = torch.zeros(source_l, bsize, opt.src_word_vec_size)
+            compare_to = torch.zeros(bsize, source_l, opt.src_word_vec_size)
 
         self.assertEqual(res.size(), compare_to.size())
 
@@ -86,8 +86,8 @@ class TestModel(unittest.TestCase):
             source_l: Length of generated input sentence
             bsize: Batchsize of generated input
         '''
-        if opt.rnn_size > 0:
-            opt.enc_rnn_size = opt.rnn_size
+        if opt.hidden_size > 0:
+            opt.enc_hid_size = opt.hidden_size
         vocabs = self.get_vocabs()
         embeddings = build_embeddings(opt, vocabs)
         enc = build_encoder(opt, embeddings)
@@ -95,18 +95,18 @@ class TestModel(unittest.TestCase):
         test_src, test_tgt, test_length = self.get_batch(source_l=source_l,
                                                          bsize=bsize)
 
-        hidden_t, outputs, test_length = enc(test_src, test_length)
+        enc_out, hidden_t, test_length = enc(test_src, test_length)
 
         # Initialize vectors to compare size with
-        test_hid = torch.zeros(self.opt.enc_layers, bsize, opt.enc_rnn_size)
-        test_out = torch.zeros(source_l, bsize, opt.dec_rnn_size)
+        test_hid = torch.zeros(self.opt.enc_layers, bsize, opt.enc_hid_size)
+        test_out = torch.zeros(bsize, source_l, opt.dec_hid_size)
 
         # Ensure correct sizes and types
         self.assertEqual(test_hid.size(),
                          hidden_t[0].size(),
                          hidden_t[1].size())
-        self.assertEqual(test_out.size(), outputs.size())
-        self.assertEqual(type(outputs), torch.Tensor)
+        self.assertEqual(test_out.size(), enc_out.size())
+        self.assertEqual(type(enc_out), torch.Tensor)
 
     def nmtmodel_forward(self, opt, source_l=3, bsize=1):
         """
@@ -118,9 +118,9 @@ class TestModel(unittest.TestCase):
             source_l: length of input sequence
             bsize: batchsize
         """
-        if opt.rnn_size > 0:
-            opt.enc_rnn_size = opt.rnn_size
-            opt.dec_rnn_size = opt.rnn_size
+        if opt.hidden_size > 0:
+            opt.enc_hid_size = opt.hidden_size
+            opt.dec_hid_size = opt.hidden_size
         vocabs = self.get_vocabs()
 
         embeddings = build_embeddings(opt, vocabs)
@@ -133,11 +133,11 @@ class TestModel(unittest.TestCase):
 
         test_src, test_tgt, test_length = self.get_batch(source_l=source_l,
                                                          bsize=bsize)
-        outputs, attn = model(test_src, test_tgt, test_length)
-        outputsize = torch.zeros(source_l - 1, bsize, opt.dec_rnn_size)
+        output, attn = model(test_src, test_tgt, test_length)
+        outputsize = torch.zeros(bsize, source_l - 1, opt.dec_hid_size)
         # Make sure that output has the correct size and type
-        self.assertEqual(outputs.size(), outputsize.size())
-        self.assertEqual(type(outputs), torch.Tensor)
+        self.assertEqual(output.size(), outputsize.size())
+        self.assertEqual(type(output), torch.Tensor)
 
 
 def _add_test(param_setting, methodname):
@@ -180,7 +180,7 @@ for p in test_embeddings:
 tests_encoder = [[],
                  [('encoder_type', 'mean')],
                  # [('encoder_type', 'transformer'),
-                 # ('word_vec_size', 16), ('rnn_size', 16)],
+                 # ('word_vec_size', 16), ('hidden_size', 16)],
                  []
                  ]
 
@@ -194,12 +194,12 @@ tests_nmtmodel = [[('rnn_type', 'GRU')],
                    ('encoder_type', 'transformer'),
                    ('src_word_vec_size', 16),
                    ('tgt_word_vec_size', 16),
-                   ('rnn_size', 16)],
+                   ('hidden_size', 16)],
                   [('decoder_type', 'transformer'),
                    ('encoder_type', 'transformer'),
                    ('src_word_vec_size', 16),
                    ('tgt_word_vec_size', 16),
-                   ('rnn_size', 16),
+                   ('hidden_size', 16),
                    ('position_encoding', True)],
                   [('coverage_attn', True)],
                   [('copy_attn', True)],
@@ -225,7 +225,7 @@ tests_nmtmodel = [[('rnn_type', 'GRU')],
                   [],
                   ]
 
-if onmt.models.sru.check_sru_requirement():
+if onmt.modules.sru.check_sru_requirement():
     #   """ Only do SRU test if requirment is safisfied. """
     # SRU doesn't support input_feed.
     tests_nmtmodel.append([('rnn_type', 'SRU'), ('input_feed', 0)])

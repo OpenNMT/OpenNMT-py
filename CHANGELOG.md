@@ -4,6 +4,16 @@
 
 ## [Unreleased]
 
+## [3.0.0](https://github.com/OpenNMT/OpenNMT-py/tree/3.0.0) (2022-11-3)
+
+* Removed completely torchtext. Use Vocab object of pyonmttok instead
+* Dataloading changed accordingly with the use of pytorch Dataloader (num_workers)
+* queue_size / pool_factor no longer needed. bucket_size optimal value > 64K
+* options renamed: rnn_size => hidden_size (enc/dec_rnn_size => enc/dec_hid_size)
+* new tools/convertv2_v3.py to upgrade v2 models.pt
+* inference with length_penalty=avg is now the default
+* add_qkvbias (default false, but true for old model)
+
 ## [2.3.0](https://github.com/OpenNMT/OpenNMT-py/tree/2.3.0) (2022-09-14)
 
 ### New features
