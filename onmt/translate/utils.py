@@ -137,6 +137,8 @@ class ScoringPreparator():
                     file.write("SOURCE: {}\n".format(sources[i]))
                     file.write("REF: {}\n".format(texts_ref[i]))
                     file.write("PRED: {}\n\n".format(preds[i]))
+        # we deactivate the decoder's cache
+        # as we use teacher forcing at training time.
         for layer in model.decoder.transformer_layers:
             layer.self_attn.layer_cache = (False,
                                            {'keys': torch.tensor([]),

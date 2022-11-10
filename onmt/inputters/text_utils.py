@@ -238,12 +238,6 @@ def textbatch_to_tensor(vocabs, batch, is_train=False):
             toks = ex.strip("\n").split()
         idxs = vocabs['src'](toks)
         # Need to add features also in 'src'
-        # numeric.append({'src': {'src': ex.strip("\n").split(),
-        #                         'src_ids': idxs},
-        #                 'srclen': len(ex.strip("\n").split()),
-        #                 'tgt': None,
-        #                 'indices': i,
-        #                 'align': None})
         numeric.append({'src': {'src': toks,
                         'src_ids': idxs},
                         'srclen': len(toks),
