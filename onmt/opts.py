@@ -1,7 +1,7 @@
 """ Implementation of all available options """
 import configargparse
 
-from onmt.models.sru import CheckSRU
+from onmt.modules.sru import CheckSRU
 from onmt.transforms import AVAILABLE_TRANSFORMS
 from onmt.constants import ModelTask
 from onmt.modules.position_ffn import ACTIVATION_FUNCTIONS

@@ -142,9 +142,9 @@ class GlobalAttention(nn.Module):
         Returns:
           (FloatTensor, FloatTensor):
 
-          * Computed vector ``(tgt_len, batch, dim)``
+          * Computed vector ``(batch, tgt_len, dim)``
           * Attention distribtutions for each query
-            ``(tgt_len, batch, src_len)``
+            ``(batch, tgt_len, src_len)``
         """
 
         # one step input

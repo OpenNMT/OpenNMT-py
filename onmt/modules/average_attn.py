@@ -91,14 +91,14 @@ class AverageAttention(nn.Module):
     def forward(self, layer_in, mask=None, step=None):
         """
         Args:
-            layer_in (FloatTensor): ``(batch_size, t_len, model_dim)``
+            layer_in (FloatTensor): ``(batch, t_len, dim)``
 
         Returns:
             (FloatTensor, FloatTensor):
 
-            * gating_out ``(batch_size, tlen, model_dim)``
+            * gating_out ``(batch, tlen, dim)``
             * average_out average attention
-                ``(batch_size, input_len, model_dim)``
+                ``(batch, input_len, dim)``
         """
 
         batch_size = layer_in.size(0)

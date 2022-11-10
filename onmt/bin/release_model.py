@@ -26,10 +26,6 @@ def main():
         torch.save(model, opt.output)
     elif opt.format == "ctranslate2":
         import ctranslate2
-        if not hasattr(ctranslate2, "__version__"):
-            raise RuntimeError(
-                "onmt_release_model script requires ctranslate2 >= 2.0.0"
-            )
         converter = ctranslate2.converters.OpenNMTPyConverter(opt.model)
         converter.convert(opt.output, force=True,
                           quantization=opt.quantization)

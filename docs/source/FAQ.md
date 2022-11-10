@@ -1,5 +1,139 @@
-
+# FAQ
 All the example YAML configurations are partial. To get an overview of what this YAML configuration is you can start by reading the [Quickstart](quickstart) section.
+
+## How do I use my v2 models in v3 ?
+
+As a reminder, OpenNMT-py v2.x used to rely on Torchtext 0.5
+This torchtext version used "Fields", "RawFields", "MultiFields" which were deprecated in trochtext version > 0.5
+In order to convert old models we have to mimic those old Class and as a result you need to install a newer version of torchtext.
+If you use pytorch 1.12.1 then install torchtext 0.13
+If you use pytorch 1.13.0 then install torchtext 0.14
+
+After the conversion you can eliminate completely torchtext.
+
+Conversion is:
+
+python tools/convertv2_v3.py -v2model myoldmodel.pt -v3model newmodel.pt
+
+The new checkpoint will no longer have a "fields" key, replaced by "vocab"
+Some model options are modified as follow:
+`rnn_size` is now `hidden_size`
+`enc_rnn_size` is now `enc_hid_size`
+`dec_rnn_size` is now `dec_hid_size`
+
+A new key `add_qkvbias` is set to `true` for old models.
+New models will be trained by default with `false`
+
+Special note for GPT2 type Language Model trained with v2
+
+The special tokens of LM in v2 where not in line with NMT type models.
+Only 3 special tokens (`<unk>`, `<blank>`, `</s>`) were in the the vocab.
+For v3, we aligned LM and NMT models.
+You need to update the vocab by training from v2 converted to v3 checkpoint, with the update_vocab flag.
+It will make the vocab consistent with v3 structure.
+
+
+## How do I train the Transformer model?
+
+The transformer model is very sensitive to hyperparameters. To run it
+effectively you need to set different options that mimic the [Google](https://arxiv.org/abs/1706.03762) setup. We have confirmed the following configuration can replicate their WMT results.
+
+```yaml
+<data configuration>
+...
+
+# General opts
+save_model: mybasemodel
+save_checkpoint_steps: 10000
+valid_steps: 10000
+train_steps: 200000
+
+# Batching
+bucket_size: 262144
+world_size: 4
+gpu_ranks: [0, 1, 2, 3]
+num_workers: 2
+batch_type: "tokens"
+batch_size: 4096
+valid_batch_size: 2048
+max_generator_batches: 2
+accum_count: [4]
+accum_steps: [0]
+
+# Optimization
+model_dtype: "fp16"
+optim: "adam"
+learning_rate: 2
+warmup_steps: 8000
+decay_method: "noam"
+adam_beta2: 0.998
+max_grad_norm: 0
+label_smoothing: 0.1
+param_init: 0
+param_init_glorot: true
+normalization: "tokens"
+
+# Model
+encoder_type: transformer
+decoder_type: transformer
+position_encoding: true
+enc_layers: 6
+dec_layers: 6
+heads: 8
+hidden_size: 512
+word_vec_size: 512
+transformer_ff: 2048
+dropout_steps: [0]
+dropout: [0.1]
+attention_dropout: [0.1]
+```
+
+Here are what the most important parameters mean:
+
+* `param_init_glorot` & `param_init 0`: correct initialization of parameters;
+* `position_encoding`: add sinusoidal position encoding to each embedding;
+* `optim adam`, `decay_method noam`, `warmup_steps 8000`: use special learning rate;
+* `batch_type tokens`, `normalization tokens`: batch and normalize based on number of tokens and not sentences;
+* `accum_count 4`: compute gradients based on four batches;
+* `label_smoothing 0.1`: use label smoothing loss.
+
+## Performance tips
+
+* use `fp16`
+* use `batch_size_multiple` 8
+* use `vocab_size_multiple` 8
+* Depending on the number of GPU use num_workers 4 (for 1 GPU) or 2 (for multiple GPU)
+* To avoid averaging checkpoints you can use the "during training" average decay system.
+* If you train a transformer we support `max_relative_positions` (use 20) instead of position_encoding.
+* for very fast inference convert your model to CTranslate2 format.
+
+## Do you support multi-gpu?
+
+First you need to make sure you `export CUDA_VISIBLE_DEVICES=0,1,2,3`.
+
+If you want to use GPU id 1 and 3 of your OS, you will need to `export CUDA_VISIBLE_DEVICES=1,3`
+
+Both `-world_size` and `-gpu_ranks` need to be set. E.g. `-world_size 4 -gpu_ranks 0 1 2 3` will use 4 GPU on this node only.
+
+**Warning - Deprecated**
+
+Multi-node distributed training has not been properly re-implemented since OpenNMT-py 2.0.
+
+If you want to use 2 nodes with 2 GPU each, you need to set `-master_ip` and `-master_port`, and
+
+* `-world_size 4 -gpu_ranks 0 1`: on the first node
+* `-world_size 4 -gpu_ranks 2 3`: on the second node
+* `-accum_count 2`: This will accumulate over 2 batches before updating parameters.
+
+If you use a regular network card (1 Gbps) then we suggest to use a higher `-accum_count` to minimize the inter-node communication.
+
+**Note:**
+
+In the legacy version, when training on several GPUs, you couldn't have them in 'Exclusive' compute mode (`nvidia-smi -c 3`).
+
+The multi-gpu setup relied on a Producer/Consumer setup. This setup means there will be `2<n_gpu> + 1` processes spawned, with 2 processes per GPU, one for model training and one (Consumer) that hosts a `Queue` of batches that will be processed next. The additional process is the Producer, creating batches and sending them to the Consumers. This setup is beneficial for both wall time and memory, since it loads data shards 'in advance', and does not require to load it for each GPU process.
+
+The new codebase allows GPUs to be in exclusive mode, because batches are moved to the device later in the process. Hence, there is no 'producer' process on each GPU.
 
 ## How do I use Pretrained embeddings (e.g. GloVe)?
 
@@ -50,98 +184,6 @@ Notes:
 
 - the matched embeddings will be saved at `<save_data>.enc_embeddings.pt` and `<save_data>.dec_embeddings.pt`;
 - additional flags `freeze_word_vecs_enc` and `freeze_word_vecs_dec` are available to freeze the embeddings.
-
-## How do I use the Transformer model?
-
-The transformer model is very sensitive to hyperparameters. To run it
-effectively you need to set a bunch of different options that mimic the [Google](https://arxiv.org/abs/1706.03762) setup. We have confirmed the following configuration can replicate their WMT results.
-
-```yaml
-<data configuration>
-...
-
-# General opts
-save_model: foo
-save_checkpoint_steps: 10000
-valid_steps: 10000
-train_steps: 200000
-
-# Batching
-bucket_size: 32768
-world_size: 4
-gpu_ranks: [0, 1, 2, 3]
-num_workers: 4
-batch_type: "tokens"
-batch_size: 4096
-valid_batch_size: 8
-max_generator_batches: 2
-accum_count: [4]
-accum_steps: [0]
-
-# Optimization
-model_dtype: "fp32"
-optim: "adam"
-learning_rate: 2
-warmup_steps: 8000
-decay_method: "noam"
-adam_beta2: 0.998
-max_grad_norm: 0
-label_smoothing: 0.1
-param_init: 0
-param_init_glorot: true
-normalization: "tokens"
-
-# Model
-encoder_type: transformer
-decoder_type: transformer
-position_encoding: true
-enc_layers: 6
-dec_layers: 6
-heads: 8
-hidden_size: 512
-word_vec_size: 512
-transformer_ff: 2048
-dropout_steps: [0]
-dropout: [0.1]
-attention_dropout: [0.1]
-```
-
-Here are what the most important parameters mean:
-
-* `param_init_glorot` & `param_init 0`: correct initialization of parameters;
-* `position_encoding`: add sinusoidal position encoding to each embedding;
-* `optim adam`, `decay_method noam`, `warmup_steps 8000`: use special learning rate;
-* `batch_type tokens`, `normalization tokens`: batch and normalize based on number of tokens and not sentences;
-* `accum_count 4`: compute gradients based on four batches;
-* `label_smoothing 0.1`: use label smoothing loss.
-
-## Do you support multi-gpu?
-
-First you need to make sure you `export CUDA_VISIBLE_DEVICES=0,1,2,3`.
-
-If you want to use GPU id 1 and 3 of your OS, you will need to `export CUDA_VISIBLE_DEVICES=1,3`
-
-Both `-world_size` and `-gpu_ranks` need to be set. E.g. `-world_size 4 -gpu_ranks 0 1 2 3` will use 4 GPU on this node only.
-
-**Warning - Deprecated**
-
-Multi-node distributed training has not been properly re-implemented since OpenNMT-py 2.0.
-
-If you want to use 2 nodes with 2 GPU each, you need to set `-master_ip` and `-master_port`, and
-
-* `-world_size 4 -gpu_ranks 0 1`: on the first node
-* `-world_size 4 -gpu_ranks 2 3`: on the second node
-* `-accum_count 2`: This will accumulate over 2 batches before updating parameters.
-
-If you use a regular network card (1 Gbps) then we suggest to use a higher `-accum_count` to minimize the inter-node communication.
-
-**Note:**
-
-In the legacy version, when training on several GPUs, you couldn't have them in 'Exclusive' compute mode (`nvidia-smi -c 3`).
-
-The multi-gpu setup relied on a Producer/Consumer setup. This setup means there will be `2<n_gpu> + 1` processes spawned, with 2 processes per GPU, one for model training and one (Consumer) that hosts a `Queue` of batches that will be processed next. The additional process is the Producer, creating batches and sending them to the Consumers. This setup is beneficial for both wall time and memory, since it loads data shards 'in advance', and does not require to load it for each GPU process.
-
-The new codebase allows GPUs to be in exclusive mode, because batches are moved to the device later in the process. Hence, there is no 'producer' process on each GPU.
 
 ## How can I ensemble Models at inference?
 
@@ -429,7 +471,6 @@ The `example` argument of `apply` is a `dict` of the form:
 
 This is defined in `onmt.inputters.corpus.ParallelCorpus.load`. This class is not easily extendable for now but it can be considered for future developments. For instance, we could create some `CustomParallelCorpus` class that would handle other kind of inputs.
 
-
 ## Can I get word alignments while translating?
 
 ### Raw alignments from averaging Transformer attention heads
@@ -484,7 +525,6 @@ Training options to learn such alignments are:
 * `-alignment_heads`:  number of alignment heads for the alignment task - should be set to 1 for the supervised task, and preferably kept to default (or same as `num_heads`) for the average task;
 * `-full_context_alignment`: do full context decoder pass (no future mask) when computing alignments. This will slow down the training (~12% in terms of tok/s) but will be beneficial to generate better alignment.
 
-
 ## How can I update a checkpoint's vocabulary?
 
 New vocabulary can be used to continue training from a checkpoint. Existing vocabulary embeddings will be mapped to the new vocabulary, and new vocabulary tokens will be initialized as usual.
@@ -496,7 +536,6 @@ Training options to perform vocabulary update are:
 * `-update_vocab`: set this option
 * `-reset_optim`: set the value to "states"
 * `-train_from`: checkpoint path
-
 
 ## How can I use source word features?
 
@@ -586,12 +625,11 @@ When using the Transformer architecture make sure the following options are appr
 - `feat_merge`: how to handle features vecs
 - `feat_vec_size` and maybe `feat_vec_exponent`
 
-
 ## How can I set up a translation server ?
 A REST server was implemented to serve OpenNMT-py models. A discussion is opened on the OpenNMT forum: [discussion link](https://forum.opennmt.net/t/simple-opennmt-py-rest-server/1392).
 
 ### I. How it works?
----
+
 The idea behind the translation server is to make a entry point for translation with multiple models. The server will receive natural text input, tokenize it, translate it following the decoding parameters, detokenize the result and return natural text output.
 
 A server configuration file (`./available_models/conf.json`) is required. It contains the path of the model checkpoint, the path of tokenizer's data along with other inference parameters.
@@ -611,7 +649,6 @@ A server configuration file (`./available_models/conf.json`) is required. It con
     - `model`: (str) path to tokenizer model
   - `ct2_translator_args` and `ct2_translate_batch_args`: (opt) [CTranslate2](https://github.com/OpenNMT/CTranslate2) parameters to use CTranslate2 inference engine. Parameters appearing simultaneously in `opt` and `ct2_(...)_args` must be identical.
   - `ct2_model`: (opt) CTranslate2 model path.
-
 
 ##### Example
 ```json
@@ -647,9 +684,9 @@ A server configuration file (`./available_models/conf.json`) is required. It con
 ```
 
 ### II. How to start the server without Docker ?
----
+
 ##### 0. Get the code
-The translation server has been merged into onmt-py `master` branch.   
+The translation server has been merged into onmt-py `master` branch.
 Keep in line with master for last fix / improvements.
 ##### 1. Install `flask`
 ```bash
@@ -675,7 +712,6 @@ python server.py --ip $IP --port $PORT --url_root $URL_ROOT --config $CONFIG
 ```
 
 ### III. How to start the server with Docker ?
----
 
 1. Add the following libraries a requirement file `requirements.docker.txt`.
 ```
@@ -711,7 +747,7 @@ docker run -it --rm -p 5000:5000 opennmt_server
 ```
 
 ### IV. How to use the API ?
-----
+
 This section contains a fex examples of the API. For details on all routes, see `./bin/server.py`.
 ##### 0. Set the hostname
 ```bash

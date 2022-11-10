@@ -35,7 +35,7 @@ class CNNEncoder(EncoderBase):
             embeddings)
 
     def forward(self, input, src_len=None, hidden=None):
-        """See :class:`onmt.modules.EncoderBase.forward()`"""
+        """See :func:`EncoderBase.forward()`"""
         # batch x len x dim
         emb = self.embeddings(input)
 

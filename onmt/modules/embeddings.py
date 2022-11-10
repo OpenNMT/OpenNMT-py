@@ -85,12 +85,8 @@ class Embeddings(nn.Module):
 
     Args:
         word_vec_size (int): size of the dictionary of embeddings.
-        word_padding_idx (int): padding index for words in the embeddings.
-        feat_padding_idx (List[int]): padding index for a list of features
-                                   in the embeddings.
         word_vocab_size (int): size of dictionary of embeddings for words.
-        feat_vocab_sizes (List[int], optional): list of size of dictionary
-            of embeddings for each feature.
+        word_padding_idx (int): padding index for words in the embeddings.
         position_encoding (bool): see :class:`~onmt.modules.PositionalEncoding`
         feat_merge (string): merge action for the features embeddings:
             concat, sum or mlp.
@@ -99,7 +95,12 @@ class Embeddings(nn.Module):
             number of values the feature takes.
         feat_vec_size (int): embedding dimension for features when using
             `-feat_merge mlp`
+        feat_padding_idx (List[int]): padding index for a list of features
+                                   in the embeddings.
+        feat_vocab_sizes (List[int], optional): list of size of dictionary
+            of embeddings for each feature.
         dropout (float): dropout probability.
+        sparse (bool): sparse embbedings default False
         freeze_word_vecs (bool): freeze weights of word vectors.
     """
 
@@ -238,10 +239,10 @@ class Embeddings(nn.Module):
         """Computes the embeddings for words and features.
 
         Args:
-            source (LongTensor): index tensor ``(len, batch, nfeat)``
+            source (LongTensor): index tensor ``(batch, len, nfeat)``
 
         Returns:
-            FloatTensor: Word embeddings ``(len, batch, embedding_size)``
+            FloatTensor: Word embeddings ``(batch, len, embedding_size)``
         """
 
         if self.position_encoding:
