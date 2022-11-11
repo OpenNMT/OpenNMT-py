@@ -223,7 +223,7 @@ class LossCompute(nn.Module):
                     align_head=align_head, ref_align=ref_align)
                 loss += align_loss
 
-            stats = self._stats(len(batch['srclen']), loss.item(),
+            stats = self._stats(len(batch['srclen']), loss.sum().item(),
                                 scores, target)
 
         if self.lambda_coverage != 0.0:

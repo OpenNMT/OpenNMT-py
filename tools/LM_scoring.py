@@ -8,7 +8,7 @@ from onmt.utils.logging import init_logger, logger
 from onmt.utils.parse import ArgumentParser
 from onmt.inputters.dynamic_iterator import build_dynamic_dataset_iter
 from onmt.inputters.inputter import IterOnDevice
-from onmt.utils.loss import LMLossCompute
+from onmt.utils.loss import LossCompute
 from onmt.constants import DefaultTokens, CorpusTask
 from onmt.transforms import get_transforms_cls, TransformPipe
 from onmt.model_builder import load_test_model
@@ -66,9 +66,11 @@ def main():
     padding_idx = vocabs['tgt'][DefaultTokens.PAD]
     criterion = torch.nn.NLLLoss(ignore_index=padding_idx, reduction='none')
     loss_gen = model.generator
-    valid_loss = LMLossCompute(criterion, loss_gen,
-                               lambda_coverage=model_opt.lambda_coverage,
-                               lambda_align=model_opt.lambda_align)
+    valid_loss = LossCompute(criterion, loss_gen,
+                             normalization="tokens",
+                             tgt_shift_index=0,
+                             lambda_coverage=model_opt.lambda_coverage,
+                             lambda_align=model_opt.lambda_align)
     valid_loss.to(device)
 
     transforms_cls = get_transforms_cls(opt._all_transform)
@@ -77,14 +79,14 @@ def main():
         opt, transforms_cls, vocabs, task=CorpusTask.INFER,
         copy=False)
 
-    if infer_iter is not None:
-        infer_iter = IterOnDevice(infer_iter, opt.gpu)
-
     data_transform = [
         infer_iter.transforms[name] for name in
         opt.transforms if name in infer_iter.transforms
     ]
     _ = TransformPipe.build_from(data_transform)
+
+    if infer_iter is not None:
+        infer_iter = IterOnDevice(infer_iter, opt.gpu)
 
     model.to(device)
     model.eval()
@@ -106,9 +108,11 @@ def main():
         lossflat, _ = valid_loss(batch, outputs, attns)
         loss = lossflat.view(batch_size, -1)
         mask = (loss != 0)
-        sent_loss = torch.sum(loss, dim=1) / mask.sum(dim=1)
+        # loss is returned normalized by tokens
+        sent_loss = torch.sum(loss, dim=1)
         sent_ppl = torch.exp(sent_loss)
-        cumul_loss += loss.sum().item()
+        # we unnormalize to cumulate at doc level
+        cumul_loss += loss.sum().item() * mask.sum().cpu()
         cumul_length += mask.sum().cpu()
         # Now we need to rearrange the batch of ppl
         # in the original order with indices
@@ -120,7 +124,8 @@ def main():
                  np.exp(cumul_loss / cumul_length)))
     ppl_file.close()
 
-    os.system("paste " + opt.src + " " + opt.output + ".ppl > " + opt.output)
+    os.system('paste "' + opt.src + '" "' + opt.output +
+              '".ppl > "' + opt.output + '"')
 
 
 if __name__ == "__main__":
