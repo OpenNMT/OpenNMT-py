@@ -100,9 +100,8 @@ def main():
         batch_size = len(batch['srclen'])
         src = batch['src']
         src_len = batch['srclen']
-        tgt = batch['tgt']
 
-        outputs, attns = model(src, tgt, src_len,
+        outputs, attns = model(src, None, src_len,
                                with_align=False)
         # Compute and retrieve the loss for EACH sentence
         lossflat, _ = valid_loss(batch, outputs, attns)

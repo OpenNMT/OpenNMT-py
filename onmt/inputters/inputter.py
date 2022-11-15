@@ -55,6 +55,7 @@ def build_vocab(opt, specials):
     src_vocab = _read_vocab_file(opt.src_vocab, opt.src_words_min_frequency)
 
     src_specials = list(specials['src'])
+
     src_vocab = pyonmttok.build_vocab_from_tokens(
         src_vocab,
         maximum_size=opt.src_vocab_size,
