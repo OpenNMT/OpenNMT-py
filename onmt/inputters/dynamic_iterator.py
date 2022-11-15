@@ -311,6 +311,15 @@ def build_dynamic_dataset_iter(opt, transforms_cls, vocabs, copy=False,
     Build `DynamicDatasetIter` from opt.
     Typically this function is called for CorpusTask.[TRAIN,VALID,INFER]
     from the main tain / translate scripts
+    We disable automatic batching in the DataLoader.
+    The custom optimized batching is performed by the
+    custom class DynamicDatasetIter inherited from IterableDataset
+    (and not by a custom collate function).
+    We load opt.bucket_size examples, sort them and yield
+    mini-batchs of size opt.batch_size.
+    The bucket_size must be large enough to ensure homogeneous batches.
+    Each worker will load opt.prefetch_factor mini-batches in
+    advance to avoid the GPU waiting during the refilling of the bucket.
     """
     transforms = make_transforms(opt, transforms_cls, vocabs)
     corpora = get_corpora(opt, task)
@@ -332,13 +341,4 @@ def build_dynamic_dataset_iter(opt, transforms_cls, vocabs, copy=False,
                                  num_workers=data_iter.num_workers,
                                  worker_init_fn=data_iter._init_datasets,
                                  prefetch_factor=opt.prefetch_factor)
-        # We disable automatic batching in the DataLoader.
-        # The custom optimized batching is performed by the
-        # custom class DynamicDatasetIter inherited from IterableDataset
-        # (and not by a custom collate function).
-        # We load opt.bucket_size examples, sort them and yield
-        # mini-batchs of size opt.batch_size.
-        # The bucket_size must be large enough to ensure homogeneous batches.
-        # Each worker will load opt.prefetch_factor mini-batches in
-        # advance to avoid the GPU waiting during the refilling of the bucket.
     return data_loader
