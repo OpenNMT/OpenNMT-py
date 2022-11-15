@@ -635,6 +635,16 @@ def _add_train_dynamic_data(parser):
               help="""A bucket is a buffer of bucket_size examples to pick
                    from the various Corpora. The dynamic iterator batches
                    batch_size batchs from the bucket and shuffle them.""")
+    group.add("-bucket_size_init", "--bucket_size_init", type=int, default=-1,
+              help="""The bucket is initalized with this awith this
+               amount of examples (optional)""")
+    group.add("-bucket_size_increment", "--bucket_size_increment",
+              type=int, default=0,
+              help="""The bucket size is incremented with this
+              amount of examples (optional)""")
+    group.add("-prefetch_factor", "--prefetch_factor", type=int, default=100,
+              help="""number of mini-batches loaded in advance to avoid the
+                   GPU waiting during the refilling of the bucket.""")
 
 
 def train_opts(parser):
