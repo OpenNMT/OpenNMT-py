@@ -52,7 +52,7 @@ class TestTransform(unittest.TestCase):
         """)
         opt = Namespace(data=corpora)
         specials = get_specials(opt, transforms_cls)
-        specials_expected = {"src": ["｟_pf_src｠"], "tgt": ["｟_pf_tgt｠"]}
+        specials_expected = {"src": {"｟_pf_src｠"}, "tgt": {"｟_pf_tgt｠"}}
         self.assertEqual(specials, specials_expected)
 
     def test_transform_pipe(self):

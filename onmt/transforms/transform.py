@@ -47,7 +47,7 @@ class Transform(object):
 
     @classmethod
     def get_specials(cls, opts):
-        return ([], [])
+        return (set(), set())
 
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Apply transform to `example`.
@@ -174,13 +174,11 @@ class TransformPipe(Transform):
     @classmethod
     def get_specials(cls, opts, transforms):
         """Return all specials introduced by `transforms`."""
-        src_specials, tgt_specials = [], []
+        src_specials, tgt_specials = set(), set()
         for transform in transforms:
             _src_special, _tgt_special = transform.get_specials(transform.opts)
-            for _src_spec in _src_special:
-                src_specials.append(_src_spec)
-            for _tgt_spec in _tgt_special:
-                tgt_specials.append(_tgt_spec)
+            src_specials.update(_src_special)
+            tgt_specials.update(_tgt_special)
         return (src_specials, tgt_specials)
 
     def apply(self, example, is_train=False, **kwargs):
@@ -239,13 +237,11 @@ def make_transforms(opts, transforms_cls, vocabs):
 
 def get_specials(opts, transforms_cls_dict):
     """Get specials of transforms that should be registed in Vocab."""
-    all_specials = {'src': [], 'tgt': []}
+    all_specials = {'src': set(), 'tgt': set()}
     for name, transform_cls in transforms_cls_dict.items():
         src_specials, tgt_specials = transform_cls.get_specials(opts)
-        for src_spec in src_specials:
-            all_specials['src'].append(src_spec)
-        for tgt_spec in tgt_specials:
-            all_specials['tgt'].append(tgt_spec)
+        all_specials['src'].update(src_specials)
+        all_specials['tgt'].update(tgt_specials)
     logger.info(f"Get special vocabs from Transforms: {all_specials}.")
     return all_specials
 

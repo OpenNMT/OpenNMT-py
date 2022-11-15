@@ -24,6 +24,7 @@ def prepare_transforms_vocabs(opt):
     """Prepare or dump transforms before training."""
     transforms_cls = get_transforms_cls(opt._all_transform)
     specials = get_specials(opt, transforms_cls)
+
     vocabs = build_vocab(opt, specials)
 
     # maybe prepare pretrained embeddings, if any

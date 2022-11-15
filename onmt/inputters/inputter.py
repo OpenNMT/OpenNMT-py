@@ -54,8 +54,7 @@ def build_vocab(opt, specials):
     vocabs = {}
     src_vocab = _read_vocab_file(opt.src_vocab, opt.src_words_min_frequency)
 
-    src_specials = list(specials['src'])
-
+    src_specials = list(sorted(specials['src']))
     src_vocab = pyonmttok.build_vocab_from_tokens(
         src_vocab,
         maximum_size=opt.src_vocab_size,
@@ -72,7 +71,7 @@ def build_vocab(opt, specials):
     else:
         tgt_vocab = _read_vocab_file(opt.tgt_vocab,
                                      opt.tgt_words_min_frequency)
-        tgt_specials = list(specials['tgt'])
+        tgt_specials = list(sorted(specials['tgt']))
         tgt_vocab = pyonmttok.build_vocab_from_tokens(
             tgt_vocab,
             maximum_size=opt.tgt_vocab_size,

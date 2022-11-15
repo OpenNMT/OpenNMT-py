@@ -5,12 +5,15 @@ This includes: LossComputeBase and the standard NMTLossCompute, and
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import ctranslate2
 import onmt
 from onmt.modules.sparse_losses import SparsemaxLoss
 from onmt.modules.sparse_activations import LogSparsemax
 from onmt.constants import ModelTask, DefaultTokens
 from onmt.modules.copy_generator import collapse_copy_scores
+try:
+    import ctranslate2
+except ImportError:
+    pass   # this is tested when importing for loading a LM
 
 
 class LossCompute(nn.Module):

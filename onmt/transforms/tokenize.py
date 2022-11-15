@@ -332,19 +332,17 @@ class ONMTTokenizerTransform(TokenizerTransform):
 
     @classmethod
     def get_specials(cls, opts):
-        src_specials, tgt_specials = [], []
+        src_specials, tgt_specials = set(), set()
         if opts.src_onmttok_kwargs.get("case_markup", False):
             _case_specials = ['｟mrk_case_modifier_C｠',
                               '｟mrk_begin_case_region_U｠',
                               '｟mrk_end_case_region_U｠']
-            for src_spec in _case_specials:
-                src_specials.append(src_spec)
+            src_specials.update(_case_specials)
         if opts.tgt_onmttok_kwargs.get("case_markup", False):
             _case_specials = ['｟mrk_case_modifier_C｠',
                               '｟mrk_begin_case_region_U｠',
                               '｟mrk_end_case_region_U｠']
-            for tgt_spec in _case_specials:
-                tgt_specials.append(tgt_spec)
+            tgt_specials.update(_case_specials)
         return (src_specials, tgt_specials)
 
     def _get_subword_kwargs(self, side='src'):
