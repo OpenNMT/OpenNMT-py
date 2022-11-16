@@ -426,8 +426,7 @@ class Trainer(object):
 
                     step = self.optim.training_step
                     if (
-                            step % self.train_eval_steps == 0 and
-                            self.n_gpu > 0
+                            step % self.train_eval_steps == 0
                     ):
                         # Compute and save stats
                         computed_metrics = {}

@@ -153,9 +153,6 @@ jobs:
         -accum_count 2 4 8 \
         -accum_steps 0 15000 30000 \
         -save_model /tmp/onmt.model \
-        -CUDA_VISIBLE_DEVICES 0 \
-        -world_size 1 \
-        -gpu_ranks 0 \
         -train_steps 200 \
         -report_every 50 \
         -train_eval_steps 100 \
