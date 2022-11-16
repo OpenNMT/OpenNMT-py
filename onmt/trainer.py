@@ -93,6 +93,13 @@ class Trainer(object):
                training loss computation
             valid_loss(:obj:`onmt.utils.loss.LossComputeBase`):
                training loss computation
+            scoring_preparator(:obj:`onmt.translate.utils.ScoringPreparator`):
+                preparator for the calculation of metrics via the
+                training_eval_handler method
+            train_scorers (dict): keeps in memory the current values
+                of the training metrics
+            valid_scorers (dict): keeps in memory the current values
+                of the validation metrics
             optim(:obj:`onmt.utils.optimizers.Optimizer`):
                the optimizer responsible for update
             trunc_size(int): length of truncated back propagation through time
