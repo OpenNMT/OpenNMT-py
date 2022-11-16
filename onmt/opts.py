@@ -34,7 +34,7 @@ def _add_logging_opts(parser, is_train=True):
     if is_train:
         group.add('--train_eval_steps', '-train_eval_steps',
                   type=int, default=200,
-                  help="calculate training metrics eat this interval")
+                  help="calculate training metrics at this interval")
         group.add('--train_metrics', '-train_metrics',
                   default=[], nargs="+",
                   help='List of names of additional training metrics')
