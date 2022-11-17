@@ -157,33 +157,14 @@ class LossCompute(nn.Module):
             attns: dictionary of attention distributions
               `(tgt_len, batch, src_len)`
         Returns:
-            A tuple with the loss and a :obj:`onmt.utils.Statistics` instance.
+            A tuple with the loss and raw scores.
         """
         scores = self.generator(self._bottle(output),
                                 self._bottle(attns['copy']),
                                 batch['src_map'])
         loss = self.criterion(scores, align, target).sum()
 
-        # this block does not depend on the loss value computed above
-        # and is used only for stats
-        scores_data = collapse_copy_scores(
-            self._unbottle(scores.clone(), len(batch['srclen'])),
-            batch, self.vocab, None)
-        scores_data = self._bottle(scores_data)
-        # Correct target copy token instead of <unk>
-        # tgt[i] = align[i] + len(tgt_vocab)
-        # for i such that tgt[i] == 0 and align[i] != 0
-        target_data = target.clone()
-        unk = self.criterion.unk_index
-        correct_mask = (target_data == unk) & (align != unk)
-        offset_align = align[correct_mask] + len(self.vocab)
-        target_data[correct_mask] += offset_align
-
-        # Compute sum of perplexities for stats
-        stats = self._stats(len(batch['srclen']), loss.item(),
-                            scores_data, target_data)
-
-        return loss, stats
+        return loss, scores
 
     def _compute_lm_loss(self, output, target):
         """
@@ -258,8 +239,23 @@ class LossCompute(nn.Module):
             align = batch['alignment'][
                 :, trunc_range[0]:trunc_range[1]
                 ].contiguous().view(-1)
-            loss, stats = self._compute_copy_loss(batch, output, flat_tgt,
-                                                  align, attns)
+            loss, scores = self._compute_copy_loss(batch, output, flat_tgt,
+                                                   align, attns)
+            scores_data = collapse_copy_scores(
+                self._unbottle(scores.clone(), len(batch['srclen'])),
+                batch, self.vocab, None)
+            scores_data = self._bottle(scores_data)
+            # Correct target copy token instead of <unk>
+            # tgt[i] = align[i] + len(tgt_vocab)
+            # for i such that tgt[i] == 0 and align[i] != 0
+            target_data = flat_tgt.clone()
+            unk = self.criterion.unk_index
+            correct_mask = (target_data == unk) & (align != unk)
+            offset_align = align[correct_mask] + len(self.vocab)
+            target_data[correct_mask] += offset_align
+            scores = scores_data
+            flat_tgt = target_data
+
         else:
 
             scores = self.generator(self._bottle(output))
@@ -283,9 +279,6 @@ class LossCompute(nn.Module):
                     align_head=align_head, ref_align=ref_align)
                 loss += align_loss
 
-            stats = self._stats(len(batch['srclen']), loss.sum().item(),
-                                scores, flat_tgt)
-
         if self.lambda_coverage != 0.0:
             coverage_loss = self._compute_coverage_loss(
                 std_attn=attns['std'], coverage_attn=attns['coverage'])
@@ -301,6 +294,9 @@ class LossCompute(nn.Module):
                                       0].ne(self.padding_idx).sum()
         elif self.normalization == "sents":
             normfactor = batch['tgt'].size(0)
+
+        stats = self._stats(len(batch['srclen']), loss.sum().item(),
+                            scores, flat_tgt)
 
         return loss / float(normfactor), stats
 
