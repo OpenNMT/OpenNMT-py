@@ -10,6 +10,7 @@ from onmt.modules.sparse_losses import SparsemaxLoss
 from onmt.modules.sparse_activations import LogSparsemax
 from onmt.constants import ModelTask, DefaultTokens
 from onmt.modules.copy_generator import collapse_copy_scores
+from onmt.model_builder import load_test_model
 try:
     import ctranslate2
 except ImportError:
@@ -39,7 +40,8 @@ class LossCompute(nn.Module):
     def __init__(self, criterion, generator, normalization="tokens",
                  copy_attn=False, lambda_coverage=0.0, lambda_align=0.0,
                  tgt_shift_index=1, vocab=None, lm_generator=None,
-                 lm_prior_lambda=None, lm_prior_tau=None):
+                 lm_prior_lambda=None, lm_prior_tau=None,
+                 lm_prior_model=None):
         super(LossCompute, self).__init__()
         self.criterion = criterion
         self.generator = generator
@@ -52,6 +54,7 @@ class LossCompute(nn.Module):
         self.lm_generator = lm_generator
         self.lm_prior_lambda = lm_prior_lambda
         self.lm_prior_tau = lm_prior_tau
+        self.lm_prior_model = lm_prior_model
 
     @classmethod
     def from_opts(cls, opt, model, vocab, train=True):
@@ -93,19 +96,29 @@ class LossCompute(nn.Module):
                                        reduction='sum')
 
         if opt.lm_prior_model:
-            try:
-                import ctranslate2
-                lm_generator = ctranslate2.Generator(opt.lm_prior_model,
-                                                     device="cuda",
-                                                     compute_type="float16")
+            if opt.lm_prior_model[-3:] == ".pt":
+                opt.gpu = 0
+                opt.fp32 = False
+                opt.int8 = False
+                _, lm_prior_model, lm_model_opt \
+                    = load_test_model(opt, model_path=opt.lm_prior_model)
+                lm_prior_model.to(torch.device("cuda", opt.gpu))
+                lm_prior_model.eval()
                 lm_prior_lambda = opt.lm_prior_lambda
                 lm_prior_tau = opt.lm_prior_tau
-            except ImportError:
-                raise ImportError("Could not import ctranslate2")
-        else:
-            lm_generator = None
-            lm_prior_lambda = 0
-            lm_prior_tau = 1
+                lm_generator = None
+            else: 
+                lm_prior_model = None   
+                try:
+                    import ctranslate2
+                    lm_generator = ctranslate2.Generator(
+                        opt.lm_prior_model, device="cuda",
+                        compute_type="float16")
+                    lm_prior_lambda = opt.lm_prior_lambda
+                    lm_prior_tau = opt.lm_prior_tau
+                except ImportError:
+                    raise ImportError("Could not import ctranslate2")
+
         # if the loss function operates on vectors of raw logits instead
         # of probabilities, only the first part of the generator needs to
         # be passed to the NMTLossCompute. At the moment, the only
@@ -122,7 +135,8 @@ class LossCompute(nn.Module):
                       tgt_shift_index=tgt_shift_idx,
                       vocab=vocab, lm_generator=lm_generator,
                       lm_prior_lambda=lm_prior_lambda,
-                      lm_prior_tau=lm_prior_tau)
+                      lm_prior_tau=lm_prior_tau,
+                      lm_prior_model=lm_prior_model)
         compute.to(device)
 
         return compute
@@ -175,7 +189,7 @@ class LossCompute(nn.Module):
 
         # we use the raw logits, rescale with tau (temperature) and
         # apply the log_softmax. reminder generator[0] is just the nn.Linear
-        scores = self.generator[0](self._bottle(output) / self.lm_prior_tau)
+        scores = self.generator[0](self._bottle(output)) / self.lm_prior_tau
         scores = F.log_softmax(scores, dim=-1)
 
         src = target.detach().clone()
@@ -190,12 +204,48 @@ class LossCompute(nn.Module):
         # again we use raw probs to rescale with tau and apply log_softmax
         lm_scores = self._bottle(lm_scores) / self.lm_prior_tau
         lm_scores = F.log_softmax(lm_scores, dim=-1)
+        lm_scores[:, 0] = -100
+        lm_scores[:, 3] -= 20
         # lm_scores are in log space so log_target=True
         lm_loss = F.kl_div(scores, lm_scores, reduction='none',
                            log_target=True)
         non_padding = self._bottle(src).ne(self.padding_idx)
         lm_loss = lm_loss.masked_select(non_padding).sum()
         lm_loss *= self.lm_prior_tau ** 2
+
+        return lm_loss
+
+    def _compute_lm_loss2(self, output, target):
+        """
+        Compute the loss between MT output and LM output
+        https://github.com/cbaziotis/lm-prior-for-nmt/blob/master
+        /fairseq_extension/user/lm_prior/lm_prior.py#L131-L133
+        """
+
+        # we use the raw logits, rescale with tau (temperature) and
+        # apply the log_softmax. reminder generator[0] is just the nn.Linear
+        scores = self.generator(self._bottle(output) / self.lm_prior_tau)
+        # scores = F.log_softmax(scores, dim=-1)
+
+        src = target.detach().clone()
+        src[src == self.vocab[DefaultTokens.EOS]] = self.padding_idx
+        src_len = src[:, :, 0].ne(self.padding_idx).sum(1)
+        # ct2 expects src with lengths without padding
+        lm_outs, _ = self.lm_prior_model(src, None, src_len,
+                                         with_align=False)
+        lm_scores1 = self.lm_prior_model.generator(
+            self._bottle(lm_outs) / self.lm_prior_tau)
+        # again we use raw probs to rescale with tau and apply log_softmax
+        # lm_scores = F.log_softmax(lm_scores, dim=-1)
+        lm_scores = lm_scores1.detach().clone()
+        lm_scores[:, 0] = -100
+        lm_scores[:, 3] -= 20
+        # lm_scores are in log space so log_target=True
+        lm_loss = F.kl_div(scores, lm_scores, reduction='none',
+                           log_target=True)
+        non_padding = self._bottle(src).ne(self.padding_idx)
+        lm_loss = lm_loss.masked_select(non_padding).sum()
+        lm_loss = lm_loss * (self.lm_prior_tau ** 2)
 
         return lm_loss
 
@@ -286,7 +336,11 @@ class LossCompute(nn.Module):
 
         if self.lm_generator is not None:
             lm_loss = self._compute_lm_loss(output, target)
-            loss += lm_loss * self.lm_prior_lambda
+            loss = loss + lm_loss * self.lm_prior_lambda
+
+        if self.lm_prior_model is not None:
+            lm_loss = self._compute_lm_loss2(output, target)
+            loss = loss + lm_loss * self.lm_prior_lambda
 
         if self.normalization == "tokens":
             normfactor = batch['tgt'][:,
