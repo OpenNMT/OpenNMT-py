@@ -34,7 +34,7 @@ def _add_logging_opts(parser, is_train=True):
     if is_train:
         group.add('--train_eval_steps', '-train_eval_steps',
                   type=int, default=200,
-                  help="Print stats at this interval.")
+                  help="calculate training metrics at this interval")
         group.add('--train_metrics', '-train_metrics',
                   default=[], nargs="+",
                   help='List of names of additional training metrics')
@@ -43,7 +43,7 @@ def _add_logging_opts(parser, is_train=True):
                   help='List of names of additional validation metrics')
         group.add('--scoring_debug', '-scoring_debug', action="store_true",
                   help='Dump the src/ref/pred of the current batch')
-        group.add('--dump_preds', '-dump_preds',  type=str, default="",
+        group.add('--dump_preds', '-dump_preds',  type=str, default=None,
                   help='Folder to dump predictions to.')
         group.add('--report_every', '-report_every', type=int, default=50,
                   help="Print stats at this interval.")

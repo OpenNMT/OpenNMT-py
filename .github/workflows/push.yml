@@ -133,6 +133,34 @@ jobs:
           -attention_dropout 0.2 0.1 0.1 \
           -report_every 5 \
           -train_steps 10
+    - name : Test Transformer training with dynamic scoring
+      run: |
+        python3 train.py \
+        -config data/data.yaml \
+        -src_vocab /tmp/onmt.vocab.src \
+        -tgt_vocab /tmp/onmt.vocab.tgt \
+        -src_vocab_size 1000 \
+        -tgt_vocab_size 1000 \
+        -encoder_type transformer \
+        -decoder_type transformer \
+        -layers 4 \
+        -word_vec_size 16 \
+        -hidden_size 16 \
+        -num_workers 0 -bucket_size 1024 \
+        -heads 2 \
+        -transformer_ff 64 \
+        -num_workers 0 -bucket_size 1024 \
+        -accum_count 2 4 8 \
+        -accum_steps 0 15000 30000 \
+        -save_model /tmp/onmt.model \
+        -train_steps 200 \
+        -report_every 50 \
+        -train_eval_steps 100 \
+        -train_metrics "BLEU" "TER" \
+        -tensorboard "true" \
+        -scoring_debug "true" \
+        -tensorboard_log_dir /tmp/logs \
+        -dump_preds /tmp/dump_preds 
     - name: Test LM training
       run: |
         python train.py \

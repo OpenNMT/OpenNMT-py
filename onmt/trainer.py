@@ -15,7 +15,7 @@ import traceback
 import onmt.utils
 from onmt.utils.loss import LossCompute
 from onmt.utils.logging import logger
-from onmt.translate.utils import ScoringPreparator
+from onmt.utils.scoring_utils import ScoringPreparator
 from onmt.scorers import get_scorers_cls, build_scorers
 
 
@@ -93,6 +93,13 @@ class Trainer(object):
                training loss computation
             valid_loss(:obj:`onmt.utils.loss.LossComputeBase`):
                training loss computation
+            scoring_preparator(:obj:`onmt.translate.utils.ScoringPreparator`):
+                preparator for the calculation of metrics via the
+                training_eval_handler method
+            train_scorers (dict): keeps in memory the current values
+                of the training metrics
+            valid_scorers (dict): keeps in memory the current values
+                of the validation metrics
             optim(:obj:`onmt.utils.optimizers.Optimizer`):
                the optimizer responsible for update
             trunc_size(int): length of truncated back propagation through time
@@ -348,6 +355,8 @@ class Trainer(object):
                 # Compute stats
                 batch_stats = onmt.utils.Statistics(
                     batch_stats.loss,
+                    batch_stats.n_batchs,
+                    batch_stats.n_sents,
                     batch_stats.n_words,
                     batch_stats.n_correct,
                     computed_metrics)
@@ -417,8 +426,7 @@ class Trainer(object):
 
                     step = self.optim.training_step
                     if (
-                            step % self.train_eval_steps == 0 and
-                            self.n_gpu > 0
+                            step % self.train_eval_steps == 0
                     ):
                         # Compute and save stats
                         computed_metrics = {}

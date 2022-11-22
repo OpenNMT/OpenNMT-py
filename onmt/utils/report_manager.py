@@ -128,12 +128,6 @@ class ReportMgr(ReportMgrBase):
         """
         report_stats.output(step, num_steps,
                             learning_rate, self.start_time)
-
-        self.maybe_log_tensorboard(report_stats,
-                                   "progress",
-                                   learning_rate,
-                                   patience,
-                                   step)
         report_stats = onmt.utils.Statistics()
 
         return report_stats

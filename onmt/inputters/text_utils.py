@@ -222,7 +222,7 @@ def tensorify(vocabs, minibatch):
     return tensor_batch
 
 
-def textbatch_to_tensor(vocabs, batch):
+def textbatch_to_tensor(vocabs, batch, is_train=False):
     """
     This is a hack to transform a simple batch of texts
     into a tensored batch to pass through _translate()
@@ -232,12 +232,15 @@ def textbatch_to_tensor(vocabs, batch):
     for i, ex in enumerate(batch):
         if isinstance(ex, bytes):
             ex = ex.decode("utf-8")
-        toks = ex.strip("\n").split()
+        if is_train:
+            toks = ex
+        else:
+            toks = ex.strip("\n").split()
         idxs = vocabs['src'](toks)
         # Need to add features also in 'src'
-        numeric.append({'src': {'src': ex.strip("\n").split(),
-                                'src_ids': idxs},
-                        'srclen': len(ex.strip("\n").split()),
+        numeric.append({'src': {'src': toks,
+                        'src_ids': idxs},
+                        'srclen': len(toks),
                         'tgt': None,
                         'indices': i,
                         'align': None})

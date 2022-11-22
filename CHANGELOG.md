@@ -6,7 +6,7 @@
 
 ## [3.0.0](https://github.com/OpenNMT/OpenNMT-py/tree/3.0.0) (2022-11-3)
 
-* Removed completely torchtext. Use Vocab object of pyonmttok instead
+* Removed completely torchtext. Use [Vocab object of pyonmttok](https://github.com/OpenNMT/Tokenizer/tree/master/bindings/python#vocabulary) instead
 * Dataloading changed accordingly with the use of pytorch Dataloader (num_workers)
 * queue_size / pool_factor no longer needed. bucket_size optimal value > 64K
 * options renamed: rnn_size => hidden_size (enc/dec_rnn_size => enc/dec_hid_size)

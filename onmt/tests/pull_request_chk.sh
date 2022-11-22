@@ -162,6 +162,35 @@ ${PYTHON} onmt/bin/train.py \
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 
+echo -n "  [+] Testing NMT training w/ dynamic scoring..."
+${PYTHON} onmt/bin/train.py \
+            -config ${DATA_DIR}/data.yaml \
+            -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
+            -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
+            -src_vocab_size 1000 \
+            -tgt_vocab_size 1000 \
+            -encoder_type transformer \
+            -decoder_type transformer \
+            -layers 4 \
+            -word_vec_size 16 \
+            -hidden_size 16 \
+            -num_workers 0 -bucket_size 1024 \
+            -heads 2 \
+            -transformer_ff 64 \
+            -num_workers 0 -bucket_size 1024 \
+            -train_steps 200 \
+            -report_every 50 \
+            -train_eval_steps 100 \
+            -train_metrics "BLEU" "TER" \
+            -tensorboard "true" \
+            -scoring_debug "true" \
+            -tensorboard_log_dir $TMP_OUT_DIR/logs \
+            -dump_preds $TMP_OUT_DIR/dump_pred >> ${LOG_FILE} 2>&1
+[ "$?" -eq 0 ] || error_exit
+echo "Succeeded" | tee -a ${LOG_FILE}
+rm -r $TMP_OUT_DIR/dump_pred
+rm -r $TMP_OUT_DIR/logs
+
 echo -n "  [+] Testing LM training..."
 ${PYTHON} onmt/bin/train.py \
             -config ${DATA_DIR}/lm_data.yaml \
