@@ -441,6 +441,7 @@ class Trainer(object):
                     if loss is not None:
                         # in theory we should divide by accum_count and bptt
                         # to rescale for each sub batch
+                        loss /= self.accum_count
                         self.optim.backward(loss)
 
                     total_stats.update(batch_stats)
