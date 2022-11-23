@@ -296,7 +296,7 @@ class Trainer(object):
             for avg, param in zip(self.moving_average,
                                   valid_model.parameters()):
                 model_params_data.append(param.data)
-                param.data = avg.data.half() if self.optim._fp16 == "legacy" \
+                param.data = avg.data.half() if param.dtype == torch.float16 \
                     else avg.data
 
         # Set model in validating mode.
@@ -358,7 +358,7 @@ class Trainer(object):
     def _gradient_accumulation(self, true_batches, total_stats,
                                report_stats):
         if self.accum_count > 1:
-            self.optim.zero_grad()
+            self.optim.zero_grad(set_to_none=True)
 
         for k, batch in enumerate(true_batches):
             target_size = batch['tgt'].size(1)
@@ -384,7 +384,7 @@ class Trainer(object):
 
                 # 2. F-prop all but generator.
                 if self.accum_count == 1:
-                    self.optim.zero_grad()
+                    self.optim.zero_grad(set_to_none=True)
 
                 try:
                     with torch.cuda.amp.autocast(enabled=self.optim.amp):
