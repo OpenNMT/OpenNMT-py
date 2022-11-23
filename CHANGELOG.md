@@ -9,6 +9,7 @@
 * fix dynamic scoring
 * reinstate apex.amp level O1/O2 for benchmarking
 * New: LM distillation for NMT training
+* New: bucket_size ramp-up to avoid slow start
 * fix special tokens order
 * remove Library and add link to Yasmin's Tuto
 
