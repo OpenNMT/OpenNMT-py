@@ -9,6 +9,10 @@ from math import sqrt
 import types
 import importlib
 from onmt.utils.misc import fn_args
+try:
+    import apex
+except ImportError:
+    pass
 
 
 def build_torch_optimizer(model, opt):
@@ -78,20 +82,33 @@ def build_torch_optimizer(model, opt):
                  betas=betas,
                  eps=1e-8)])
     elif opt.optim == 'fusedadam':
-        # we use here a FusedAdam() copy of an old Apex repo
         optimizer = FusedAdam(
             params,
             lr=opt.learning_rate,
             betas=betas)
-        if opt.model_dtype == 'fp16':
+        try:
             import apex
-            # In this case use the old FusedAdam with FP16_optimizer wrapper
-            static_loss_scale = opt.loss_scale
-            dynamic_loss_scale = opt.loss_scale == 0
-            optimizer = apex.contrib.optimizers.FP16_Optimizer(
+        except ImportError:
+            raise ImportError("Could not import apex")
+        if opt.apex_opt_level in ['O0', 'O1', 'O2', 'O3']:
+            # we use apex.amp
+            loss_scale = "dynamic" if opt.loss_scale == 0 else opt.loss_scale
+            model, optimizer = apex.amp.initialize(
+                [model, model.generator],
                 optimizer,
-                static_loss_scale=static_loss_scale,
-                dynamic_loss_scale=dynamic_loss_scale)
+                opt_level=opt.apex_opt_level,
+                loss_scale=loss_scale,
+                keep_batchnorm_fp32=None)
+        else:
+            if opt.model_dtype == 'fp16':
+                # In this case use the old FusedAdam with
+                # FP16_optimizer wrapper
+                static_loss_scale = opt.loss_scale
+                dynamic_loss_scale = opt.loss_scale == 0
+                optimizer = apex.contrib.optimizers.FP16_Optimizer(
+                    optimizer,
+                    static_loss_scale=static_loss_scale,
+                    dynamic_loss_scale=dynamic_loss_scale)
     else:
         raise ValueError('Invalid optimizer type: ' + opt.optim)
 
@@ -169,10 +186,10 @@ class MultipleOptimizer(object):
             param_groups.extend(optimizer.param_groups)
         return param_groups
 
-    def zero_grad(self):
+    def zero_grad(self, set_to_none=True):
         """ ? """
         for op in self.optimizers:
-            op.zero_grad()
+            op.zero_grad(set_to_none)
 
     def step(self):
         """ ? """
@@ -276,7 +293,10 @@ class Optimizer(object):
             max_grad_norm=optim_opt.max_grad_norm)
         if opt.model_dtype == "fp16":
             if opt.optim == "fusedadam":
-                optimizer._fp16 = "legacy"
+                if opt.apex_opt_level in ['O0', 'O1', 'O2', 'O3']:
+                    optimizer._fp16 = "apex.amp"
+                else:
+                    optimizer._fp16 = "legacy"
             else:
                 optimizer._fp16 = "amp"
                 from torch.cuda.amp import GradScaler
@@ -317,20 +337,26 @@ class Optimizer(object):
         if 'optimizer' in state_dict:
             self._optimizer.load_state_dict(state_dict['optimizer'])
 
-    def zero_grad(self):
+    def zero_grad(self, set_to_none=True):
         """Zero the gradients of optimized parameters."""
         self._optimizer.zero_grad()
+        # should be: self._optimizer.zero_grad(set_to_none)
+        # but apex.amp is not up-to-date:
+        # https://github.com/NVIDIA/apex/blob/master/apex/amp/_process_optimizer.py#L367
 
     def backward(self, loss):
         """Wrapper for backward pass. Some optimizer requires ownership of the
         backward pass."""
-        if self.amp:
-            self._scaler.scale(loss).backward()
-        elif self._fp16 == "legacy":
+        if self._fp16 == "legacy":
             kwargs = {}
             if "update_master_grads" in fn_args(self._optimizer.backward):
                 kwargs["update_master_grads"] = True
             self._optimizer.backward(loss, **kwargs)
+        elif self.amp:
+            self._scaler.scale(loss).backward()
+        elif self._fp16 == "apex.amp":
+            with apex.amp.scale_loss(loss, self._optimizer) as scaled_loss:
+                scaled_loss.backward()
         else:
             loss.backward()
 
@@ -672,8 +698,8 @@ class FusedAdam(torch.optim.Optimizer):
 
                 state['step'] += 1
 
-                out_p = torch.tensor([], dtype=torch.float) if output_param \
-                    is None else output_param
+                out_p = torch.tensor([], dtype=torch.float) if \
+                    output_param is None else output_param
                 fused_adam_cuda.adam(p.data,
                                      out_p,
                                      exp_avg,
