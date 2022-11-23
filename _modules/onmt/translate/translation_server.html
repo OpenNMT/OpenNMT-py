@@ -90,22 +90,10 @@
 </ul>
 <p class="caption"><span class="caption-text">FAQ</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-do-i-use-the-transformer-model">How do I use the Transformer model?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">FAQ</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../examples/Library.html">Library</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/Translation.html">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/Summarization.html">Summarization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/LanguageModelGeneration.html">Language Model Generation</a></li>
@@ -738,11 +726,15 @@
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">texts_to_translate</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">infer_iter</span> <span class="o">=</span> <span class="n">textbatch_to_tensor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">vocabs</span><span class="p">,</span>
-                                                 <span class="n">texts_to_translate</span><span class="p">)</span>
-
-                <span class="n">scores</span><span class="p">,</span> <span class="n">predictions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">_translate</span><span class="p">(</span>
-                    <span class="n">infer_iter</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="p">,</span> <span class="n">CTranslate2Translator</span><span class="p">):</span>
+                    <span class="n">scores</span><span class="p">,</span> <span class="n">predictions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span>
+                        <span class="n">texts_to_translate</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">infer_iter</span> <span class="o">=</span> <span class="n">textbatch_to_tensor</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">vocabs</span><span class="p">,</span>
+                        <span class="n">texts_to_translate</span><span class="p">)</span>
+                    <span class="n">scores</span><span class="p">,</span> <span class="n">predictions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">_translate</span><span class="p">(</span>
+                        <span class="n">infer_iter</span><span class="p">)</span>
             <span class="k">except</span> <span class="p">(</span><span class="ne">RuntimeError</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                 <span class="n">err</span> <span class="o">=</span> <span class="s2">&quot;Error: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>

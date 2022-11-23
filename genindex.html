@@ -91,22 +91,10 @@
 </ul>
 <p class="caption"><span class="caption-text">FAQ</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="FAQ.html">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-do-i-use-the-transformer-model">How do I use the Transformer model?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html">FAQ</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="examples/Library.html">Library</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/Translation.html">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/Summarization.html">Summarization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/LanguageModelGeneration.html">Language Model Generation</a></li>
@@ -227,16 +215,18 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="onmt.html#onmt.utils.Statistics.accuracy">accuracy() (onmt.utils.Statistics method)</a>
 </li>
+      <li><a href="onmt.html#onmt.utils.AdaFactor">AdaFactor (class in onmt.utils)</a>
+</li>
       <li><a href="onmt.translation.html#onmt.translate.DecodeStrategy.advance">advance() (onmt.translate.DecodeStrategy method)</a>
 
       <ul>
         <li><a href="onmt.translation.html#onmt.translate.GreedySearch.advance">(onmt.translate.GreedySearch method)</a>
 </li>
       </ul></li>
-      <li><a href="onmt.html#onmt.utils.Statistics.all_gather_stats">all_gather_stats() (onmt.utils.Statistics static method)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="onmt.html#onmt.utils.Statistics.all_gather_stats">all_gather_stats() (onmt.utils.Statistics static method)</a>
+</li>
       <li><a href="onmt.html#onmt.utils.Statistics.all_gather_stats_list">all_gather_stats_list() (onmt.utils.Statistics static method)</a>
 </li>
       <li><a href="onmt.html#onmt.utils.Optimizer.amp">amp() (onmt.utils.Optimizer property)</a>
@@ -253,10 +243,14 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="onmt.html#onmt.utils.Optimizer.backward">backward() (onmt.utils.Optimizer method)</a>
 </li>
-      <li><a href="onmt.translation.html#onmt.translate.BeamSearch">BeamSearch (class in onmt.translate)</a>
+      <li><a href="onmt.html#onmt.models.BaseModel">BaseModel (class in onmt.models)</a>
+</li>
+      <li><a href="onmt.inputters.html#onmt.inputters.DynamicDatasetIter.batch_iter">batch_iter() (onmt.inputters.DynamicDatasetIter method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="onmt.translation.html#onmt.translate.BeamSearch">BeamSearch (class in onmt.translate)</a>
+</li>
       <li><a href="onmt.translation.html#onmt.translate.DecodeStrategy.block_ngram_repeats">block_ngram_repeats() (onmt.translate.DecodeStrategy method)</a>
 </li>
       <li><a href="onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.build_tokenizer">build_tokenizer() (onmt.translate.translation_server.ServerModel method)</a>
@@ -275,12 +269,16 @@
 </li>
       <li><a href="onmt.modules.html#onmt.modules.ConvMultiStepAttention">ConvMultiStepAttention (class in onmt.modules)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="onmt.modules.html#onmt.modules.CopyGenerator">CopyGenerator (class in onmt.modules)</a>
 </li>
-      <li><a href="onmt.html#onmt.models.NMTModel.count_parameters">count_parameters() (onmt.models.NMTModel method)</a>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="onmt.html#onmt.models.LanguageModel.count_parameters">count_parameters() (onmt.models.LanguageModel method)</a>
+
+      <ul>
+        <li><a href="onmt.html#onmt.models.NMTModel.count_parameters">(onmt.models.NMTModel method)</a>
 </li>
+      </ul></li>
       <li><a href="onmt.translation.html#onmt.translate.penalties.PenaltyBuilder.coverage_none">coverage_none() (onmt.translate.penalties.PenaltyBuilder method)</a>
 </li>
       <li><a href="onmt.translation.html#onmt.translate.penalties.PenaltyBuilder.coverage_summary">coverage_summary() (onmt.translate.penalties.PenaltyBuilder method)</a>
@@ -302,6 +300,8 @@
       <li><a href="onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.detokenize">detokenize() (onmt.translate.translation_server.ServerModel method)</a>
 </li>
       <li><a href="onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.do_timeout">do_timeout() (onmt.translate.translation_server.ServerModel method)</a>
+</li>
+      <li><a href="onmt.inputters.html#onmt.inputters.DynamicDatasetIter">DynamicDatasetIter (class in onmt.inputters)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -336,15 +336,19 @@
 </li>
         <li><a href="onmt.modules.html#onmt.encoders.EncoderBase.forward">(onmt.encoders.EncoderBase method)</a>
 </li>
+        <li><a href="onmt.modules.html#onmt.encoders.GGNNEncoder.forward">(onmt.encoders.GGNNEncoder method)</a>
+</li>
         <li><a href="onmt.modules.html#onmt.encoders.MeanEncoder.forward">(onmt.encoders.MeanEncoder method)</a>
 </li>
         <li><a href="onmt.modules.html#onmt.encoders.RNNEncoder.forward">(onmt.encoders.RNNEncoder method)</a>
 </li>
         <li><a href="onmt.modules.html#onmt.encoders.TransformerEncoder.forward">(onmt.encoders.TransformerEncoder method)</a>
 </li>
-        <li><a href="onmt.html#onmt.models.NMTModel.forward">(onmt.models.NMTModel method)</a>
+        <li><a href="onmt.html#onmt.models.BaseModel.forward">(onmt.models.BaseModel method)</a>
 </li>
-        <li><a href="onmt.modules.html#onmt.models.sru.SRU.forward">(onmt.models.sru.SRU method)</a>
+        <li><a href="onmt.html#onmt.models.LanguageModel.forward">(onmt.models.LanguageModel method)</a>
+</li>
+        <li><a href="onmt.html#onmt.models.NMTModel.forward">(onmt.models.NMTModel method)</a>
 </li>
         <li><a href="onmt.modules.html#onmt.modules.AverageAttention.forward">(onmt.modules.AverageAttention method)</a>
 </li>
@@ -364,7 +368,9 @@
 </li>
         <li><a href="onmt.modules.html#onmt.modules.structured_attention.MatrixTree.forward">(onmt.modules.structured_attention.MatrixTree method)</a>
 </li>
-        <li><a href="onmt.modules.html#onmt.modules.WeightNormConv2d.forward">(onmt.modules.WeightNormConv2d method)</a>
+        <li><a href="onmt.html#onmt.utils.loss.LabelSmoothingLoss.forward">(onmt.utils.loss.LabelSmoothingLoss method)</a>
+</li>
+        <li><a href="onmt.html#onmt.utils.loss.LossCompute.forward">(onmt.utils.loss.LossCompute method)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -378,21 +384,31 @@
 </li>
         <li><a href="onmt.modules.html#onmt.encoders.CNNEncoder.from_opt">(onmt.encoders.CNNEncoder class method)</a>
 </li>
+        <li><a href="onmt.modules.html#onmt.encoders.GGNNEncoder.from_opt">(onmt.encoders.GGNNEncoder class method)</a>
+</li>
         <li><a href="onmt.modules.html#onmt.encoders.MeanEncoder.from_opt">(onmt.encoders.MeanEncoder class method)</a>
 </li>
         <li><a href="onmt.modules.html#onmt.encoders.RNNEncoder.from_opt">(onmt.encoders.RNNEncoder class method)</a>
 </li>
         <li><a href="onmt.modules.html#onmt.encoders.TransformerEncoder.from_opt">(onmt.encoders.TransformerEncoder class method)</a>
 </li>
+        <li><a href="onmt.inputters.html#onmt.inputters.DynamicDatasetIter.from_opt">(onmt.inputters.DynamicDatasetIter class method)</a>
+</li>
         <li><a href="onmt.html#onmt.utils.Optimizer.from_opt">(onmt.utils.Optimizer class method)</a>
 </li>
       </ul></li>
+      <li><a href="onmt.html#onmt.utils.loss.LossCompute.from_opts">from_opts() (onmt.utils.loss.LossCompute class method)</a>
+</li>
+      <li><a href="onmt.html#onmt.utils.FusedAdam">FusedAdam (class in onmt.utils)</a>
+</li>
   </ul></td>
 </tr></table>
 
 <h2 id="G">G</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="onmt.modules.html#onmt.encoders.GGNNEncoder">GGNNEncoder (class in onmt.encoders)</a>
+</li>
       <li><a href="onmt.modules.html#onmt.modules.GlobalAttention">GlobalAttention (class in onmt.modules)</a>
 </li>
   </ul></td>
@@ -431,6 +447,10 @@
 <h2 id="L">L</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="onmt.html#onmt.utils.loss.LabelSmoothingLoss">LabelSmoothingLoss (class in onmt.utils.loss)</a>
+</li>
+      <li><a href="onmt.html#onmt.models.LanguageModel">LanguageModel (class in onmt.models)</a>
+</li>
       <li><a href="onmt.html#onmt.utils.Optimizer.learning_rate">learning_rate() (onmt.utils.Optimizer method)</a>
 </li>
       <li><a href="onmt.translation.html#onmt.translate.penalties.PenaltyBuilder.length_average">length_average() (onmt.translate.penalties.PenaltyBuilder method)</a>
@@ -443,6 +463,8 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="onmt.translate.translation_server.html#onmt.translate.translation_server.TranslationServer.list_models">list_models() (onmt.translate.translation_server.TranslationServer method)</a>
 </li>
+      <li><a href="onmt.inputters.html#onmt.inputters.ParallelCorpus.load">load() (onmt.inputters.ParallelCorpus method)</a>
+</li>
       <li><a href="onmt.translate.translation_server.html#onmt.translate.translation_server.TranslationServer.load_model">load_model() (onmt.translate.translation_server.TranslationServer method)</a>
 </li>
       <li><a href="onmt.modules.html#onmt.modules.Embeddings.load_pretrained_vectors">load_pretrained_vectors() (onmt.modules.Embeddings method)</a>
@@ -450,6 +472,8 @@
       <li><a href="onmt.translation.html#onmt.translate.Translation.log">log() (onmt.translate.Translation method)</a>
 </li>
       <li><a href="onmt.html#onmt.utils.Statistics.log_tensorboard">log_tensorboard() (onmt.utils.Statistics method)</a>
+</li>
+      <li><a href="onmt.html#onmt.utils.loss.LossCompute">LossCompute (class in onmt.utils.loss)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -467,10 +491,10 @@
 </li>
       <li><a href="onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.maybe_postprocess">maybe_postprocess() (onmt.translate.translation_server.ServerModel method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.maybe_preprocess">maybe_preprocess() (onmt.translate.translation_server.ServerModel method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.maybe_tokenize">maybe_tokenize() (onmt.translate.translation_server.ServerModel method)</a>
 </li>
       <li><a href="onmt.translation.html#onmt.translate.DecodeStrategy.maybe_update_forbidden_tokens">maybe_update_forbidden_tokens() (onmt.translate.DecodeStrategy method)</a>
@@ -478,6 +502,8 @@
       <li><a href="onmt.translation.html#onmt.translate.DecodeStrategy.maybe_update_target_prefix">maybe_update_target_prefix() (onmt.translate.DecodeStrategy method)</a>
 </li>
       <li><a href="onmt.modules.html#onmt.encoders.MeanEncoder">MeanEncoder (class in onmt.encoders)</a>
+</li>
+      <li><a href="onmt.inputters.html#onmt.inputters.MixingStrategy">MixingStrategy (class in onmt.inputters)</a>
 </li>
       <li><a href="onmt.modules.html#onmt.modules.MultiHeadedAttention">MultiHeadedAttention (class in onmt.modules)</a>
 </li>
@@ -507,16 +533,20 @@
 <h2 id="P">P</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="onmt.inputters.html#onmt.inputters.ParallelCorpus">ParallelCorpus (class in onmt.inputters)</a>
+</li>
+      <li><a href="onmt.inputters.html#onmt.inputters.ParallelCorpusIterator">ParallelCorpusIterator (class in onmt.inputters)</a>
+</li>
       <li><a href="onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.parse_opt">parse_opt() (onmt.translate.translation_server.ServerModel method)</a>
 </li>
       <li><a href="onmt.translation.html#onmt.translate.penalties.PenaltyBuilder">PenaltyBuilder (class in onmt.translate.penalties)</a>
 </li>
       <li><a href="onmt.modules.html#onmt.modules.PositionalEncoding">PositionalEncoding (class in onmt.modules)</a>
 </li>
-      <li><a href="onmt.modules.html#onmt.modules.position_ffn.PositionwiseFeedForward">PositionwiseFeedForward (class in onmt.modules.position_ffn)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="onmt.modules.html#onmt.modules.position_ffn.PositionwiseFeedForward">PositionwiseFeedForward (class in onmt.modules.position_ffn)</a>
+</li>
       <li><a href="onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.postprocess">postprocess() (onmt.translate.translation_server.ServerModel method)</a>
 </li>
       <li><a href="onmt.html#onmt.utils.Statistics.ppl">ppl() (onmt.utils.Statistics method)</a>
@@ -551,22 +581,28 @@
 </li>
       <li><a href="onmt.modules.html#onmt.modules.GlobalAttention.score">score() (onmt.modules.GlobalAttention method)</a>
 </li>
+      <li><a href="onmt.inputters.html#onmt.inputters.SequentialMixer">SequentialMixer (class in onmt.inputters)</a>
+</li>
       <li><a href="onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel">ServerModel (class in onmt.translate.translation_server)</a>
 </li>
       <li><a href="onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModelError">ServerModelError</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="onmt.modules.html#onmt.models.sru.SRU">SRU (class in onmt.models.sru)</a>
-</li>
       <li><a href="onmt.translate.translation_server.html#onmt.translate.translation_server.TranslationServer.start">start() (onmt.translate.translation_server.TranslationServer method)</a>
 </li>
       <li><a href="onmt.html#onmt.utils.Statistics">Statistics (class in onmt.utils)</a>
 </li>
       <li><a href="onmt.modules.html#onmt.decoders.StdRNNDecoder">StdRNNDecoder (class in onmt.decoders)</a>
 </li>
-      <li><a href="onmt.html#onmt.utils.Optimizer.step">step() (onmt.utils.Optimizer method)</a>
+      <li><a href="onmt.html#onmt.utils.AdaFactor.step">step() (onmt.utils.AdaFactor method)</a>
+
+      <ul>
+        <li><a href="onmt.html#onmt.utils.FusedAdam.step">(onmt.utils.FusedAdam method)</a>
 </li>
+        <li><a href="onmt.html#onmt.utils.Optimizer.step">(onmt.utils.Optimizer method)</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -587,14 +623,10 @@
 </li>
       <li><a href="onmt.html#onmt.Trainer">Trainer (class in onmt)</a>
 </li>
-      <li><a href="onmt.modules.html#onmt.modules.MultiHeadedAttention.training">training (onmt.modules.MultiHeadedAttention attribute)</a>
-</li>
-      <li><a href="onmt.html#onmt.Trainer.training_eval_handler">training_eval_handler() (onmt.Trainer method)</a>
+      <li><a href="onmt.html#onmt.utils.Optimizer.training_step">training_step() (onmt.utils.Optimizer property)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="onmt.html#onmt.utils.Optimizer.training_step">training_step() (onmt.utils.Optimizer property)</a>
-</li>
       <li><a href="onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.transform_feats">transform_feats() (onmt.translate.translation_server.ServerModel method)</a>
 </li>
       <li><a href="onmt.modules.html#onmt.decoders.TransformerDecoder">TransformerDecoder (class in onmt.decoders)</a>
@@ -623,8 +655,6 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="onmt.modules.html#onmt.modules.MultiHeadedAttention.update_dropout">update_dropout() (onmt.modules.MultiHeadedAttention method)</a>
-</li>
       <li><a href="onmt.translation.html#onmt.translate.DecodeStrategy.update_finished">update_finished() (onmt.translate.DecodeStrategy method)</a>
 
       <ul>
@@ -645,7 +675,7 @@
 <h2 id="W">W</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="onmt.modules.html#onmt.modules.WeightNormConv2d">WeightNormConv2d (class in onmt.modules)</a>
+      <li><a href="onmt.inputters.html#onmt.inputters.WeightedMixer">WeightedMixer (class in onmt.inputters)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>

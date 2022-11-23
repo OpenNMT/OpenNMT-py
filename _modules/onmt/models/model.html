@@ -90,22 +90,10 @@
 </ul>
 <p class="caption"><span class="caption-text">FAQ</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-do-i-use-the-transformer-model">How do I use the Transformer model?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">FAQ</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../examples/Library.html">Library</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/Translation.html">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/Summarization.html">Summarization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/LanguageModelGeneration.html">Language Model Generation</a></li>
@@ -199,29 +187,32 @@
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
 
 
-<span class="k">class</span> <span class="nc">BaseModel</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="BaseModel"><a class="viewcode-back" href="../../../onmt.html#onmt.models.BaseModel">[docs]</a><span class="k">class</span> <span class="nc">BaseModel</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Core trainable object in OpenNMT. Implements a trainable interface</span>
 <span class="sd">    for a simple, generic encoder / decoder or decoder only model.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      encoder (onmt.encoders.EncoderBase): an encoder object</span>
+<span class="sd">      decoder (onmt.decoders.DecoderBase): a decoder object</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">encoder</span><span class="p">,</span> <span class="n">decoder</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span> <span class="n">bptt</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">with_align</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="BaseModel.forward"><a class="viewcode-back" href="../../../onmt.html#onmt.models.BaseModel.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span> <span class="n">bptt</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">with_align</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Forward propagate a `src` and `tgt` pair for training.</span>
-<span class="sd">        Possible initialized with a beginning decoder state.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            src (Tensor): A source sequence passed to encoder.</span>
-<span class="sd">                typically for input this will be a padded `LongTensor`</span>
+<span class="sd">                Typically for input this will be a padded `LongTensor`</span>
 <span class="sd">                of size ``(batch, len, features)``. However, may be an</span>
 <span class="sd">                image or other generic input depending on encoder.</span>
 <span class="sd">            tgt (LongTensor): A target sequence passed to decoder.</span>
 <span class="sd">                Size ``(batch, tgt_len, features)``.</span>
 <span class="sd">            src_len(LongTensor): The src lengths, pre-padding ``(batch,)``.</span>
 <span class="sd">            bptt (Boolean): A flag indicating if truncated bptt is set.</span>
-<span class="sd">                If reset then init_state</span>
+<span class="sd">                If bptt is false then init decoder state.</span>
 <span class="sd">            with_align (Boolean): A flag indicating whether output alignment,</span>
 <span class="sd">                Only valid for transformer decoder.</span>
 
@@ -229,24 +220,21 @@
 <span class="sd">            (FloatTensor, dict[str, FloatTensor]):</span>
 
 <span class="sd">            * decoder output ``(batch, tgt_len, hidden)``</span>
-<span class="sd">            * dictionary attention dists of ``(batch, tgt_len, src_len)``</span>
+<span class="sd">            * dictionary of attention weights ``(batch, tgt_len, src_len)``</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
     <span class="k">def</span> <span class="nf">update_dropout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">attention_dropout</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 
     <span class="k">def</span> <span class="nf">count_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="nb">print</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
 
 <div class="viewcode-block" id="NMTModel"><a class="viewcode-back" href="../../../onmt.html#onmt.models.NMTModel">[docs]</a><span class="k">class</span> <span class="nc">NMTModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Core trainable object in OpenNMT. Implements a trainable interface</span>
-<span class="sd">    for a simple, generic encoder + decoder model.</span>
-<span class="sd">    Args:</span>
-<span class="sd">      encoder (onmt.encoders.EncoderBase): an encoder object</span>
-<span class="sd">      decoder (onmt.decoders.DecoderBase): a decoder object</span>
+<span class="sd">    NMTModel Class</span>
+<span class="sd">    See :class:`~onmt.models.BaseModel` for options.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">encoder</span><span class="p">,</span> <span class="n">decoder</span><span class="p">):</span>
@@ -255,14 +243,17 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span> <span class="o">=</span> <span class="n">decoder</span>
 
 <div class="viewcode-block" id="NMTModel.forward"><a class="viewcode-back" href="../../../onmt.html#onmt.models.NMTModel.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span> <span class="n">bptt</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">with_align</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="n">dec_in</span> <span class="o">=</span> <span class="n">tgt</span><span class="p">[:,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>  <span class="c1"># exclude last target from input</span>
-
+        <span class="sd">&quot;&quot;&quot;An NMTModel forward the src side to the encoder.</span>
+<span class="sd">        Then the output of encoder ``enc_out`` is forwarded to the</span>
+<span class="sd">        decoder along with the target excluding the last token.</span>
+<span class="sd">        The decoder state is initiliazed with:</span>
+<span class="sd">            * enc_final_hs in the case of RNNs</span>
+<span class="sd">            * enc_out + enc_final_hs in the case of CNNs</span>
+<span class="sd">            * src in the case of Transformer</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dec_in</span> <span class="o">=</span> <span class="n">tgt</span><span class="p">[:,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>
         <span class="n">enc_out</span><span class="p">,</span> <span class="n">enc_final_hs</span><span class="p">,</span> <span class="n">src_len</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">src_len</span><span class="p">)</span>
-
         <span class="k">if</span> <span class="ow">not</span> <span class="n">bptt</span><span class="p">:</span>
-            <span class="c1"># RNN uses enc_final_hs</span>
-            <span class="c1"># CNN uses enc_out and enc_final_hs</span>
-            <span class="c1"># transformer uses src</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">init_state</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span> <span class="n">enc_final_hs</span><span class="p">)</span>
         <span class="n">dec_out</span><span class="p">,</span> <span class="n">attns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="p">(</span><span class="n">dec_in</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span>
                                       <span class="n">src_len</span><span class="o">=</span><span class="n">src_len</span><span class="p">,</span>
@@ -295,10 +286,9 @@
         <span class="k">return</span> <span class="n">enc</span><span class="p">,</span> <span class="n">dec</span></div></div>
 
 
-<span class="k">class</span> <span class="nc">LanguageModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<div class="viewcode-block" id="LanguageModel"><a class="viewcode-back" href="../../../onmt.html#onmt.models.LanguageModel">[docs]</a><span class="k">class</span> <span class="nc">LanguageModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Core trainable object in OpenNMT. Implements a trainable interface</span>
-<span class="sd">    for a simple, generic decoder only model.</span>
+<span class="sd">    NMTModel Class</span>
 <span class="sd">    Currently TransformerLMDecoder is the only LM decoder implemented</span>
 <span class="sd">    Args:</span>
 <span class="sd">      decoder (onmt.decoders.TransformerLMDecoder): a transformer decoder</span>
@@ -311,39 +301,22 @@
                              <span class="s2">&quot;with an encoder&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span> <span class="o">=</span> <span class="n">decoder</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span> <span class="n">bptt</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">with_align</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Forward propagate a `src` and `tgt` pair for training.</span>
-<span class="sd">        Possible initialized with a beginning decoder state.</span>
-<span class="sd">        Args:</span>
-<span class="sd">            src (Tensor): A source sequence passed to decoder.</span>
-<span class="sd">                typically for input this will be a padded `LongTensor`</span>
-<span class="sd">                of size ``(batch, len, features)``. However, may be an</span>
-<span class="sd">                image or other generic input depending on decoder.</span>
-<span class="sd">            tgt (LongTensor): A target sequence passed to decoder.</span>
-<span class="sd">                Size ``(batch, tgt_len, features)``.</span>
-<span class="sd">            src_len(LongTensor): The src lengths, pre-padding ``(batch,)``.</span>
-<span class="sd">            bptt (Boolean): A flag indicating if truncated bptt is set.</span>
-<span class="sd">                If reset then init_state</span>
-<span class="sd">            with_align (Boolean): A flag indicating whether output alignment,</span>
-<span class="sd">                Only valid for transformer decoder.</span>
-<span class="sd">        Returns:</span>
-<span class="sd">            (FloatTensor, dict[str, FloatTensor]):</span>
-<span class="sd">            * decoder output ``(batch, tgt_len, hidden)``</span>
-<span class="sd">            * dictionary attention dists of ``(batch, tgt_len, src_len)``</span>
+<div class="viewcode-block" id="LanguageModel.forward"><a class="viewcode-back" href="../../../onmt.html#onmt.models.LanguageModel.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span> <span class="n">bptt</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">with_align</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;A LanguageModel forward the src side to the decoder along</span>
+<span class="sd">        with the source lengths vector. It is a decoder only LM (cf GPT-2)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="k">if</span> <span class="ow">not</span> <span class="n">bptt</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">init_state</span><span class="p">()</span>
         <span class="n">dec_out</span><span class="p">,</span> <span class="n">attns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="p">(</span>
             <span class="n">src</span><span class="p">,</span> <span class="n">enc_out</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">src_len</span><span class="o">=</span><span class="n">src_len</span><span class="p">,</span>
             <span class="n">with_align</span><span class="o">=</span><span class="n">with_align</span>
         <span class="p">)</span>
-        <span class="k">return</span> <span class="n">dec_out</span><span class="p">,</span> <span class="n">attns</span>
+        <span class="k">return</span> <span class="n">dec_out</span><span class="p">,</span> <span class="n">attns</span></div>
 
     <span class="k">def</span> <span class="nf">update_dropout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">attention_dropout</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">update_dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">,</span> <span class="n">attention_dropout</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">count_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="nb">print</span><span class="p">):</span>
+<div class="viewcode-block" id="LanguageModel.count_parameters"><a class="viewcode-back" href="../../../onmt.html#onmt.models.LanguageModel.count_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">count_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="nb">print</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Count number of parameters in model (&amp; print with `log` callback).</span>
 <span class="sd">        Returns:</span>
 <span class="sd">            (int, int):</span>
@@ -361,7 +334,7 @@
             <span class="n">log</span><span class="p">(</span><span class="s2">&quot;encoder: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">enc</span><span class="p">))</span>
             <span class="n">log</span><span class="p">(</span><span class="s2">&quot;decoder: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dec</span><span class="p">))</span>
             <span class="n">log</span><span class="p">(</span><span class="s2">&quot;* number of parameters: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">enc</span> <span class="o">+</span> <span class="n">dec</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">enc</span><span class="p">,</span> <span class="n">dec</span>
+        <span class="k">return</span> <span class="n">enc</span><span class="p">,</span> <span class="n">dec</span></div></div>
 </pre></div>
 
            </div>

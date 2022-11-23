@@ -1,0 +1,490 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>onmt.inputters.text_corpus &mdash; OpenNMT-py  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script src="https://unpkg.com/mermaid@8.4.8/dist/mermaid.min.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> OpenNMT-py
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../main.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../CONTRIBUTING.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../ref.html">References</a></li>
+</ul>
+<p class="caption"><span class="caption-text">FAQ</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">FAQ</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/Translation.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/Summarization.html">Summarization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/LanguageModelGeneration.html">Language Model Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/GGNN.html">Gated Graph Sequence Neural Networks</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Scripts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/build_vocab.html">Build Vocab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/train.html">Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/translate.html">Translate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../options/server.html">Server</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.html">Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.translation.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.translate.translation_server.html">Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../onmt.inputters.html">Data Loaders</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Legacy</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../legacy/FAQ.html">FAQ (Legacy version)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../legacy/im2text.html">Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../legacy/speech2text.html">Speech to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../legacy/vid2text.html">Video to Text</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">OpenNMT-py</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>onmt.inputters.text_corpus</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for onmt.inputters.text_corpus</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Module that contain shard utils for dynamic data.&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">onmt.utils.logging</span> <span class="kn">import</span> <span class="n">logger</span>
+<span class="kn">from</span> <span class="nn">onmt.constants</span> <span class="kn">import</span> <span class="n">CorpusName</span><span class="p">,</span> <span class="n">CorpusTask</span>
+<span class="kn">from</span> <span class="nn">onmt.transforms</span> <span class="kn">import</span> <span class="n">TransformPipe</span>
+<span class="kn">from</span> <span class="nn">onmt.inputters.text_utils</span> <span class="kn">import</span> <span class="n">process</span>
+<span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">contextmanager</span>
+
+
+<span class="nd">@contextmanager</span>
+<span class="k">def</span> <span class="nf">exfile_open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Extended file opener enables open(filename=None).</span>
+
+<span class="sd">    This context manager enables open(filename=None) as well as regular file.</span>
+<span class="sd">    filename None will produce endlessly None for each iterate,</span>
+<span class="sd">    while filename with valid path will produce lines as usual.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        filename (str|None): a valid file path or None;</span>
+<span class="sd">        *args: args relate to open file using codecs;</span>
+<span class="sd">        **kwargs: kwargs relate to open file using codecs.</span>
+
+<span class="sd">    Yields:</span>
+<span class="sd">        `None` repeatly if filename==None,</span>
+<span class="sd">        else yield from file specified in `filename`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">filename</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">repeat</span>
+        <span class="n">_file</span> <span class="o">=</span> <span class="n">repeat</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">codecs</span>
+        <span class="n">_file</span> <span class="o">=</span> <span class="n">codecs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">yield</span> <span class="n">_file</span>
+    <span class="k">if</span> <span class="n">filename</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">_file</span><span class="p">:</span>
+        <span class="n">_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="ParallelCorpus"><a class="viewcode-back" href="../../../onmt.inputters.html#onmt.inputters.ParallelCorpus">[docs]</a><span class="k">class</span> <span class="nc">ParallelCorpus</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A parallel corpus file pair that can be loaded to iterate.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">align</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">src_feats</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize src &amp; tgt side file path.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">src</span> <span class="o">=</span> <span class="n">src</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tgt</span> <span class="o">=</span> <span class="n">tgt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">align</span> <span class="o">=</span> <span class="n">align</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">src_feats</span> <span class="o">=</span> <span class="n">src_feats</span>
+
+<div class="viewcode-block" id="ParallelCorpus.load"><a class="viewcode-back" href="../../../onmt.inputters.html#onmt.inputters.ParallelCorpus.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Load file and iterate by lines.</span>
+<span class="sd">        `offset` and `stride` allow to iterate only on every</span>
+<span class="sd">        `stride` example, starting from `offset`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_feats</span><span class="p">:</span>
+            <span class="n">features_names</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">features_files</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">feat_name</span><span class="p">,</span> <span class="n">feat_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_feats</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">features_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">feat_name</span><span class="p">)</span>
+                <span class="n">features_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">feat_path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;rb&#39;</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">features_files</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">with</span> <span class="n">exfile_open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">src</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fs</span><span class="p">,</span>\
+                <span class="n">exfile_open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tgt</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">ft</span><span class="p">,</span>\
+                <span class="n">exfile_open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">align</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fa</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">sline</span><span class="p">,</span> <span class="n">tline</span><span class="p">,</span> <span class="n">align</span><span class="p">,</span> <span class="o">*</span><span class="n">features</span><span class="p">)</span> <span class="ow">in</span> \
+                    <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">fs</span><span class="p">,</span> <span class="n">ft</span><span class="p">,</span> <span class="n">fa</span><span class="p">,</span> <span class="o">*</span><span class="n">features_files</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">%</span> <span class="n">stride</span><span class="p">)</span> <span class="o">==</span> <span class="n">offset</span><span class="p">:</span>
+                    <span class="n">sline</span> <span class="o">=</span> <span class="n">sline</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">tline</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">tline</span> <span class="o">=</span> <span class="n">tline</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+                    <span class="c1"># &#39;src_original&#39; and &#39;tgt_original&#39; store the</span>
+                    <span class="c1"># original line before tokenization. These</span>
+                    <span class="c1"># fields are used later on in the feature</span>
+                    <span class="c1"># transforms.</span>
+                    <span class="n">example</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s1">&#39;src&#39;</span><span class="p">:</span> <span class="n">sline</span><span class="p">,</span>
+                        <span class="s1">&#39;tgt&#39;</span><span class="p">:</span> <span class="n">tline</span><span class="p">,</span>
+                        <span class="s1">&#39;src_original&#39;</span><span class="p">:</span> <span class="n">sline</span><span class="p">,</span>
+                        <span class="s1">&#39;tgt_original&#39;</span><span class="p">:</span> <span class="n">tline</span>
+                    <span class="p">}</span>
+                    <span class="k">if</span> <span class="n">align</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">example</span><span class="p">[</span><span class="s1">&#39;align&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">align</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">features</span><span class="p">:</span>
+                        <span class="n">example</span><span class="p">[</span><span class="s1">&#39;src_feats&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+                        <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">feat</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">features</span><span class="p">):</span>
+                            <span class="n">example</span><span class="p">[</span><span class="s1">&#39;src_feats&#39;</span><span class="p">][</span><span class="n">features_names</span><span class="p">[</span><span class="n">j</span><span class="p">]]</span> <span class="o">=</span> \
+                                <span class="n">feat</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+                    <span class="k">yield</span> <span class="n">example</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">features_files</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">cls_name</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="k">return</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">(</span><span class="si">{}</span><span class="s1">, </span><span class="si">{}</span><span class="s1">, align=</span><span class="si">{}</span><span class="s1">, src_feats=</span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">cls_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">src</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tgt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">align</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_feats</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">get_corpora</span><span class="p">(</span><span class="n">opts</span><span class="p">,</span> <span class="n">task</span><span class="o">=</span><span class="n">CorpusTask</span><span class="o">.</span><span class="n">TRAIN</span><span class="p">):</span>
+    <span class="n">corpora_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="n">task</span> <span class="o">==</span> <span class="n">CorpusTask</span><span class="o">.</span><span class="n">TRAIN</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">corpus_id</span><span class="p">,</span> <span class="n">corpus_dict</span> <span class="ow">in</span> <span class="n">opts</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">corpus_id</span> <span class="o">!=</span> <span class="n">CorpusName</span><span class="o">.</span><span class="n">VALID</span><span class="p">:</span>
+                <span class="n">corpora_dict</span><span class="p">[</span><span class="n">corpus_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">ParallelCorpus</span><span class="p">(</span>
+                    <span class="n">corpus_id</span><span class="p">,</span>
+                    <span class="n">corpus_dict</span><span class="p">[</span><span class="s2">&quot;path_src&quot;</span><span class="p">],</span>
+                    <span class="n">corpus_dict</span><span class="p">[</span><span class="s2">&quot;path_tgt&quot;</span><span class="p">],</span>
+                    <span class="n">corpus_dict</span><span class="p">[</span><span class="s2">&quot;path_align&quot;</span><span class="p">],</span>
+                    <span class="n">corpus_dict</span><span class="p">[</span><span class="s2">&quot;src_feats&quot;</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="n">task</span> <span class="o">==</span> <span class="n">CorpusTask</span><span class="o">.</span><span class="n">VALID</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">CorpusName</span><span class="o">.</span><span class="n">VALID</span> <span class="ow">in</span> <span class="n">opts</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">corpora_dict</span><span class="p">[</span><span class="n">CorpusName</span><span class="o">.</span><span class="n">VALID</span><span class="p">]</span> <span class="o">=</span> <span class="n">ParallelCorpus</span><span class="p">(</span>
+                <span class="n">CorpusName</span><span class="o">.</span><span class="n">VALID</span><span class="p">,</span>
+                <span class="n">opts</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">CorpusName</span><span class="o">.</span><span class="n">VALID</span><span class="p">][</span><span class="s2">&quot;path_src&quot;</span><span class="p">],</span>
+                <span class="n">opts</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">CorpusName</span><span class="o">.</span><span class="n">VALID</span><span class="p">][</span><span class="s2">&quot;path_tgt&quot;</span><span class="p">],</span>
+                <span class="n">opts</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">CorpusName</span><span class="o">.</span><span class="n">VALID</span><span class="p">][</span><span class="s2">&quot;path_align&quot;</span><span class="p">],</span>
+                <span class="n">opts</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">CorpusName</span><span class="o">.</span><span class="n">VALID</span><span class="p">][</span><span class="s2">&quot;src_feats&quot;</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">corpora_dict</span><span class="p">[</span><span class="n">CorpusName</span><span class="o">.</span><span class="n">INFER</span><span class="p">]</span> <span class="o">=</span> <span class="n">ParallelCorpus</span><span class="p">(</span>
+                <span class="n">CorpusName</span><span class="o">.</span><span class="n">INFER</span><span class="p">,</span>
+                <span class="n">opts</span><span class="o">.</span><span class="n">src</span><span class="p">,</span>
+                <span class="n">opts</span><span class="o">.</span><span class="n">tgt</span><span class="p">,</span>
+                <span class="n">src_feats</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">src_feats</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">corpora_dict</span>
+
+
+<div class="viewcode-block" id="ParallelCorpusIterator"><a class="viewcode-back" href="../../../onmt.inputters.html#onmt.inputters.ParallelCorpusIterator">[docs]</a><span class="k">class</span> <span class="nc">ParallelCorpusIterator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An iterator dedicated to ParallelCorpus.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        corpus (ParallelCorpus): corpus to iterate;</span>
+<span class="sd">        transform (TransformPipe): transforms to be applied to corpus;</span>
+<span class="sd">        skip_empty_level (str): security level when encouter empty line;</span>
+<span class="sd">        stride (int): iterate corpus with this line stride;</span>
+<span class="sd">        offset (int): iterate corpus with this line offset.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">corpus</span><span class="p">,</span> <span class="n">transform</span><span class="p">,</span>
+                 <span class="n">skip_empty_level</span><span class="o">=</span><span class="s1">&#39;warning&#39;</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cid</span> <span class="o">=</span> <span class="n">corpus</span><span class="o">.</span><span class="n">id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">corpus</span> <span class="o">=</span> <span class="n">corpus</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transform</span> <span class="o">=</span> <span class="n">transform</span>
+        <span class="k">if</span> <span class="n">skip_empty_level</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;silent&#39;</span><span class="p">,</span> <span class="s1">&#39;warning&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Invalid argument skip_empty_level=</span><span class="si">{</span><span class="n">skip_empty_level</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">skip_empty_level</span> <span class="o">=</span> <span class="n">skip_empty_level</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stride</span> <span class="o">=</span> <span class="n">stride</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="n">offset</span>
+
+    <span class="k">def</span> <span class="nf">_tokenize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">example</span> <span class="ow">in</span> <span class="n">stream</span><span class="p">:</span>
+            <span class="n">example</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">example</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="n">example</span><span class="p">[</span><span class="s1">&#39;src_original&#39;</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="n">example</span><span class="p">[</span><span class="s1">&#39;src_original&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">example</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">example</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">example</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                <span class="n">example</span><span class="p">[</span><span class="s1">&#39;tgt_original&#39;</span><span class="p">]</span> <span class="o">=</span> \
+                    <span class="n">example</span><span class="p">[</span><span class="s1">&#39;tgt_original&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="k">if</span> <span class="s1">&#39;align&#39;</span> <span class="ow">in</span> <span class="n">example</span><span class="p">:</span>
+                <span class="n">example</span><span class="p">[</span><span class="s1">&#39;align&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">example</span><span class="p">[</span><span class="s1">&#39;align&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="k">if</span> <span class="s1">&#39;src_feats&#39;</span> <span class="ow">in</span> <span class="n">example</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">example</span><span class="p">[</span><span class="s1">&#39;src_feats&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">example</span><span class="p">[</span><span class="s1">&#39;src_feats&#39;</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> \
+                        <span class="n">example</span><span class="p">[</span><span class="s1">&#39;src_feats&#39;</span><span class="p">][</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="k">yield</span> <span class="n">example</span>
+
+    <span class="k">def</span> <span class="nf">_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">example</span> <span class="ow">in</span> <span class="n">stream</span><span class="p">:</span>
+            <span class="c1"># NOTE: moved to dynamic_iterator.py cf process()</span>
+            <span class="c1"># item = self.transform.apply(</span>
+            <span class="c1"># example, is_train=self.infinitely, corpus_name=self.cid)</span>
+            <span class="n">item</span> <span class="o">=</span> <span class="p">(</span><span class="n">example</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cid</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">item</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">item</span>
+        <span class="n">report_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">stats</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">report_msg</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s2">&quot;* Transform statistics for </span><span class="si">{}</span><span class="s2">(</span><span class="si">{:.2f}</span><span class="s2">%):</span><span class="se">\n</span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cid</span><span class="p">,</span> <span class="mi">100</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">stride</span><span class="p">,</span> <span class="n">report_msg</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_add_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">stream</span><span class="p">):</span>
+            <span class="n">example</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">line_number</span> <span class="o">=</span> <span class="n">i</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">stride</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span>
+            <span class="n">example</span><span class="p">[</span><span class="s1">&#39;indices&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">line_number</span>
+            <span class="k">if</span> <span class="n">example</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">example</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">example</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span>
+                        <span class="p">(</span><span class="s1">&#39;align&#39;</span> <span class="ow">in</span> <span class="n">example</span> <span class="ow">and</span> <span class="n">example</span><span class="p">[</span><span class="s1">&#39;align&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)):</span>
+                    <span class="c1"># empty example: skip</span>
+                    <span class="n">empty_msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Empty line  in </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">cid</span><span class="si">}</span><span class="s2">#</span><span class="si">{</span><span class="n">line_number</span><span class="si">}</span><span class="s2">.&quot;</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">skip_empty_level</span> <span class="o">==</span> <span class="s1">&#39;error&#39;</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="n">empty_msg</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">skip_empty_level</span> <span class="o">==</span> <span class="s1">&#39;warning&#39;</span><span class="p">:</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">empty_msg</span><span class="p">)</span>
+                    <span class="k">continue</span>
+            <span class="k">yield</span> <span class="n">item</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">corpus_stream</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">corpus</span><span class="o">.</span><span class="n">load</span><span class="p">(</span>
+            <span class="n">stride</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">stride</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span>
+        <span class="p">)</span>
+        <span class="n">tokenized_corpus</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tokenize</span><span class="p">(</span><span class="n">corpus_stream</span><span class="p">)</span>
+        <span class="n">transformed_corpus</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transform</span><span class="p">(</span><span class="n">tokenized_corpus</span><span class="p">)</span>
+        <span class="n">indexed_corpus</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_index</span><span class="p">(</span><span class="n">transformed_corpus</span><span class="p">)</span>
+        <span class="k">yield from</span> <span class="n">indexed_corpus</span></div>
+
+
+<span class="k">def</span> <span class="nf">build_corpora_iters</span><span class="p">(</span><span class="n">corpora</span><span class="p">,</span> <span class="n">transforms</span><span class="p">,</span> <span class="n">corpora_info</span><span class="p">,</span>
+                        <span class="n">skip_empty_level</span><span class="o">=</span><span class="s1">&#39;warning&#39;</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return `ParallelCorpusIterator` for all corpora defined in opts.&quot;&quot;&quot;</span>
+    <span class="n">corpora_iters</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">c_id</span><span class="p">,</span> <span class="n">corpus</span> <span class="ow">in</span> <span class="n">corpora</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">transform_names</span> <span class="o">=</span> <span class="n">corpora_info</span><span class="p">[</span><span class="n">c_id</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;transforms&#39;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">corpus_transform</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">transforms</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">transform_names</span> <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">transforms</span>
+        <span class="p">]</span>
+        <span class="n">transform_pipe</span> <span class="o">=</span> <span class="n">TransformPipe</span><span class="o">.</span><span class="n">build_from</span><span class="p">(</span><span class="n">corpus_transform</span><span class="p">)</span>
+        <span class="n">corpus_iter</span> <span class="o">=</span> <span class="n">ParallelCorpusIterator</span><span class="p">(</span>
+            <span class="n">corpus</span><span class="p">,</span> <span class="n">transform_pipe</span><span class="p">,</span>
+            <span class="n">skip_empty_level</span><span class="o">=</span><span class="n">skip_empty_level</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="n">stride</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="n">offset</span><span class="p">)</span>
+        <span class="n">corpora_iters</span><span class="p">[</span><span class="n">c_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">corpus_iter</span>
+    <span class="k">return</span> <span class="n">corpora_iters</span>
+
+
+<span class="k">def</span> <span class="nf">save_transformed_sample</span><span class="p">(</span><span class="n">opts</span><span class="p">,</span> <span class="n">transforms</span><span class="p">,</span> <span class="n">n_sample</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Save transformed data sample as specified in opts.&quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">n_sample</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;n_sample=</span><span class="si">{</span><span class="n">n_sample</span><span class="si">}</span><span class="s2">: Save full transformed corpus.&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">n_sample</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;n_sample=</span><span class="si">{</span><span class="n">n_sample</span><span class="si">}</span><span class="s2">: no sample will be saved.&quot;</span><span class="p">)</span>
+        <span class="k">return</span>
+    <span class="k">elif</span> <span class="n">n_sample</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Save </span><span class="si">{</span><span class="n">n_sample</span><span class="si">}</span><span class="s2"> transformed example/corpus.&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;n_sample should &gt;= -1, get </span><span class="si">{</span><span class="n">n_sample</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+    <span class="n">corpora</span> <span class="o">=</span> <span class="n">get_corpora</span><span class="p">(</span><span class="n">opts</span><span class="p">,</span> <span class="n">CorpusTask</span><span class="o">.</span><span class="n">TRAIN</span><span class="p">)</span>
+    <span class="n">datasets_iterables</span> <span class="o">=</span> <span class="n">build_corpora_iters</span><span class="p">(</span>
+        <span class="n">corpora</span><span class="p">,</span> <span class="n">transforms</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">data</span><span class="p">,</span>
+        <span class="n">skip_empty_level</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">skip_empty_level</span><span class="p">)</span>
+    <span class="n">sample_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">save_data</span><span class="p">),</span> <span class="n">CorpusName</span><span class="o">.</span><span class="n">SAMPLE</span><span class="p">)</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">sample_path</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">c_name</span><span class="p">,</span> <span class="n">c_iter</span> <span class="ow">in</span> <span class="n">datasets_iterables</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">dest_base</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">sample_path</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">.</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">c_name</span><span class="p">,</span> <span class="n">CorpusName</span><span class="o">.</span><span class="n">SAMPLE</span><span class="p">))</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">dest_base</span> <span class="o">+</span> <span class="s2">&quot;.src&quot;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f_src</span><span class="p">,</span>\
+                <span class="nb">open</span><span class="p">(</span><span class="n">dest_base</span> <span class="o">+</span> <span class="s2">&quot;.tgt&quot;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f_tgt</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">c_iter</span><span class="p">):</span>
+                <span class="n">maybe_example</span> <span class="o">=</span> <span class="n">process</span><span class="p">(</span><span class="n">CorpusTask</span><span class="o">.</span><span class="n">TRAIN</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">maybe_example</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">src_line</span><span class="p">,</span> <span class="n">tgt_line</span> <span class="o">=</span> <span class="p">(</span><span class="n">maybe_example</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">][</span><span class="s1">&#39;src&#39;</span><span class="p">],</span>
+                                      <span class="n">maybe_example</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">][</span><span class="s1">&#39;tgt&#39;</span><span class="p">])</span>
+                <span class="n">f_src</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">src_line</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="n">f_tgt</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">tgt_line</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">n_sample</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="n">n_sample</span><span class="p">:</span>
+                    <span class="k">break</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, OpenNMT
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

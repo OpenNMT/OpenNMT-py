@@ -92,22 +92,10 @@
 </ul>
 <p class="caption"><span class="caption-text">FAQ</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../FAQ.html">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-do-i-use-the-transformer-model">How do I use the Transformer model?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html">FAQ</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../examples/Library.html">Library</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../examples/Translation.html">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../examples/Summarization.html">Summarization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../examples/LanguageModelGeneration.html">Language Model Generation</a></li>
@@ -309,8 +297,11 @@
                 <span class="p">[</span><span class="o">--</span><span class="n">generator_function</span> <span class="p">{</span><span class="n">softmax</span><span class="p">,</span><span class="n">sparsemax</span><span class="p">}]</span> <span class="p">[</span><span class="o">--</span><span class="n">copy_attn_force</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">reuse_copy_attn</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">copy_loss_by_seqlength</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">coverage_attn</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">lambda_coverage</span> <span class="n">LAMBDA_COVERAGE</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">loss_scale</span> <span class="n">LOSS_SCALE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">apex_opt_level</span> <span class="p">{</span><span class="n">O0</span><span class="p">,</span><span class="n">O1</span><span class="p">,</span><span class="n">O2</span><span class="p">,</span><span class="n">O3</span><span class="p">}]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">data_type</span> <span class="n">DATA_TYPE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">save_model</span> <span class="n">SAVE_MODEL</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">lm_prior_model</span> <span class="n">LM_PRIOR_MODEL</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">lm_prior_lambda</span> <span class="n">LM_PRIOR_LAMBDA</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">lm_prior_tau</span> <span class="n">LM_PRIOR_TAU</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">loss_scale</span> <span class="n">LOSS_SCALE</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">apex_opt_level</span> <span class="p">{</span><span class="n">O0</span><span class="p">,</span><span class="n">O1</span><span class="p">,</span><span class="n">O2</span><span class="p">,</span><span class="n">O3</span><span class="p">}]</span> <span class="p">[</span><span class="o">--</span><span class="n">data_type</span> <span class="n">DATA_TYPE</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">save_model</span> <span class="n">SAVE_MODEL</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">save_checkpoint_steps</span> <span class="n">SAVE_CHECKPOINT_STEPS</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">keep_checkpoint</span> <span class="n">KEEP_CHECKPOINT</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">gpu_ranks</span> <span class="p">[</span><span class="n">GPU_RANKS</span> <span class="p">[</span><span class="n">GPU_RANKS</span> <span class="o">...</span><span class="p">]]]</span>
@@ -359,6 +350,9 @@
                 <span class="p">[</span><span class="o">--</span><span class="n">exp</span> <span class="n">EXP</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">tensorboard</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">tensorboard_log_dir</span> <span class="n">TENSORBOARD_LOG_DIR</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">-</span><span class="n">bucket_size</span> <span class="n">BUCKET_SIZE</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">-</span><span class="n">bucket_size_init</span> <span class="n">BUCKET_SIZE_INIT</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">-</span><span class="n">bucket_size_increment</span> <span class="n">BUCKET_SIZE_INCREMENT</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">-</span><span class="n">prefetch_factor</span> <span class="n">PREFETCH_FACTOR</span><span class="p">]</span>
 </pre></div>
 </div>
 <div class="section" id="Configuration">
@@ -904,6 +898,17 @@
 <dd><p>Lambda value for coverage loss of See et al (2017)</p>
 <p>Default: 0.0</p>
 </dd>
+<dt><kbd>--lm_prior_model, -lm_prior_model</kbd></dt>
+<dd><p>LM model to used to train the TM</p>
+</dd>
+<dt><kbd>--lm_prior_lambda, -lambda_prior_lambda</kbd></dt>
+<dd><p>LM Prior Lambda</p>
+<p>Default: 0.0</p>
+</dd>
+<dt><kbd>--lm_prior_tau, -lambda_prior_tau</kbd></dt>
+<dd><p>LM Prior Tau</p>
+<p>Default: 1.0</p>
+</dd>
 <dt><kbd>--loss_scale, -loss_scale</kbd></dt>
 <dd><p>For FP16 training, the static loss scale to use. If not set, the loss scale is dynamically computed.</p>
 <p>Default: 0</p>
@@ -911,7 +916,7 @@
 <dt><kbd>--apex_opt_level, -apex_opt_level</kbd></dt>
 <dd><p>Possible choices: O0, O1, O2, O3</p>
 <p>For FP16 training, the opt_level to use.See <a class="reference external" href="https://nvidia.github.io/apex/amp.html#opt-levels">https://nvidia.github.io/apex/amp.html#opt-levels</a>.</p>
-<p>Default: “O1”</p>
+<p>Default: “”</p>
 </dd>
 </dl>
 </div>
@@ -1158,7 +1163,7 @@
 <p>Default: False</p>
 </dd>
 <dt><kbd>--train_eval_steps, -train_eval_steps</kbd></dt>
-<dd><p>Print stats at this interval.</p>
+<dd><p>calculate training metrics at this interval</p>
 <p>Default: 200</p>
 </dd>
 <dt><kbd>--train_metrics, -train_metrics</kbd></dt>
@@ -1175,7 +1180,6 @@
 </dd>
 <dt><kbd>--dump_preds, -dump_preds</kbd></dt>
 <dd><p>Folder to dump predictions to.</p>
-<p>Default: “”</p>
 </dd>
 <dt><kbd>--report_every, -report_every</kbd></dt>
 <dd><p>Print stats at this interval.</p>
@@ -1209,6 +1213,27 @@ batch_size batchs from the bucket and shuffle them.</p>
 </dd>
 </dl>
 <p>Default: 262144</p>
+</dd>
+<dt><kbd>-bucket_size_init, --bucket_size_init</kbd></dt>
+<dd><dl class="simple">
+<dt>The bucket is initalized with this awith this</dt><dd><p>amount of examples (optional)</p>
+</dd>
+</dl>
+<p>Default: -1</p>
+</dd>
+<dt><kbd>-bucket_size_increment, --bucket_size_increment</kbd></dt>
+<dd><dl class="simple">
+<dt>The bucket size is incremented with this</dt><dd><p>amount of examples (optional)</p>
+</dd>
+</dl>
+<p>Default: 0</p>
+</dd>
+<dt><kbd>-prefetch_factor, --prefetch_factor</kbd></dt>
+<dd><dl class="simple">
+<dt>number of mini-batches loaded in advance to avoid the</dt><dd><p>GPU waiting during the refilling of the bucket.</p>
+</dd>
+</dl>
+<p>Default: 100</p>
 </dd>
 </dl>
 </div>

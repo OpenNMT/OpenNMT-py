@@ -90,22 +90,10 @@
 </ul>
 <p class="caption"><span class="caption-text">FAQ</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-do-i-use-the-transformer-model">How do I use the Transformer model?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html">FAQ</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../examples/Library.html">Library</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../examples/Translation.html">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../examples/Summarization.html">Summarization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../examples/LanguageModelGeneration.html">Language Model Generation</a></li>
@@ -212,7 +200,7 @@
 <span class="kn">import</span> <span class="nn">onmt.utils</span>
 <span class="kn">from</span> <span class="nn">onmt.utils.loss</span> <span class="kn">import</span> <span class="n">LossCompute</span>
 <span class="kn">from</span> <span class="nn">onmt.utils.logging</span> <span class="kn">import</span> <span class="n">logger</span>
-<span class="kn">from</span> <span class="nn">onmt.translate.utils</span> <span class="kn">import</span> <span class="n">ScoringPreparator</span>
+<span class="kn">from</span> <span class="nn">onmt.utils.scoring_utils</span> <span class="kn">import</span> <span class="n">ScoringPreparator</span>
 <span class="kn">from</span> <span class="nn">onmt.scorers</span> <span class="kn">import</span> <span class="n">get_scorers_cls</span><span class="p">,</span> <span class="n">build_scorers</span>
 
 
@@ -254,7 +242,6 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="n">gpu_rank</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
         <span class="n">n_gpu</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="n">gpu_verbose_level</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">gpu_verbose_level</span>
 
     <span class="n">earlystopper</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">EarlyStopping</span><span class="p">(</span>
         <span class="n">opt</span><span class="o">.</span><span class="n">early_stopping</span><span class="p">,</span> <span class="n">scorers</span><span class="o">=</span><span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">scorers_from_opts</span><span class="p">(</span><span class="n">opt</span><span class="p">))</span> \
@@ -266,7 +253,7 @@
                            <span class="n">scoring_preparator</span><span class="p">,</span> <span class="n">train_scorers</span><span class="p">,</span> <span class="n">valid_scorers</span><span class="p">,</span>
                            <span class="n">optim</span><span class="p">,</span> <span class="n">trunc_size</span><span class="p">,</span>
                            <span class="n">accum_count</span><span class="p">,</span> <span class="n">accum_steps</span><span class="p">,</span>
-                           <span class="n">n_gpu</span><span class="p">,</span> <span class="n">gpu_rank</span><span class="p">,</span> <span class="n">gpu_verbose_level</span><span class="p">,</span>
+                           <span class="n">n_gpu</span><span class="p">,</span> <span class="n">gpu_rank</span><span class="p">,</span>
                            <span class="n">opt</span><span class="o">.</span><span class="n">train_eval_steps</span><span class="p">,</span> <span class="n">report_manager</span><span class="p">,</span>
                            <span class="n">with_align</span><span class="o">=</span><span class="kc">True</span> <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">lambda_align</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">False</span><span class="p">,</span>
                            <span class="n">model_saver</span><span class="o">=</span><span class="n">model_saver</span> <span class="k">if</span> <span class="n">gpu_rank</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
@@ -283,6 +270,7 @@
 <div class="viewcode-block" id="Trainer"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer">[docs]</a><span class="k">class</span> <span class="nc">Trainer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Class that controls the training process.</span>
+
 <span class="sd">    Args:</span>
 <span class="sd">            model(:py:class:`onmt.models.model.NMTModel`): translation model</span>
 <span class="sd">                to train</span>
@@ -290,17 +278,35 @@
 <span class="sd">               training loss computation</span>
 <span class="sd">            valid_loss(:obj:`onmt.utils.loss.LossComputeBase`):</span>
 <span class="sd">               training loss computation</span>
+<span class="sd">            scoring_preparator(:obj:`onmt.translate.utils.ScoringPreparator`):</span>
+<span class="sd">                preparator for the calculation of metrics via the</span>
+<span class="sd">                training_eval_handler method</span>
+<span class="sd">            train_scorers (dict): keeps in memory the current values</span>
+<span class="sd">                of the training metrics</span>
+<span class="sd">            valid_scorers (dict): keeps in memory the current values</span>
+<span class="sd">                of the validation metrics</span>
 <span class="sd">            optim(:obj:`onmt.utils.optimizers.Optimizer`):</span>
 <span class="sd">               the optimizer responsible for update</span>
 <span class="sd">            trunc_size(int): length of truncated back propagation through time</span>
-<span class="sd">            data_type(string): type of the source input: [text]</span>
 <span class="sd">            accum_count(list): accumulate gradients this many times.</span>
 <span class="sd">            accum_steps(list): steps for accum gradients changes.</span>
+<span class="sd">            n_gpu (int): number of gpu.</span>
+<span class="sd">            gpu_rank (int): ordinal rank of the gpu in the list.</span>
+<span class="sd">            train_eval_steps (int): process a validation every x steps.</span>
 <span class="sd">            report_manager(:obj:`onmt.utils.ReportMgrBase`):</span>
 <span class="sd">                the object that creates reports, or None</span>
+<span class="sd">            with_align (bool): whether to jointly lear alignment (Transformer)</span>
 <span class="sd">            model_saver(:obj:`onmt.models.ModelSaverBase`): the saver is</span>
 <span class="sd">                used to save a checkpoint.</span>
-<span class="sd">                Thus nothing will be saved if this parameter is None</span>
+<span class="sd">                Thus nothing will be saved if this parameter is None.</span>
+<span class="sd">            average_decay (float): cf opt.average_decay</span>
+<span class="sd">            average_every (int): average model every x steps.</span>
+<span class="sd">            model_dtype (str): fp32 or fp16.</span>
+<span class="sd">            earlystopper (:obj:`onmt.utils.EarlyStopping`): add early</span>
+<span class="sd">                stopping mecanism</span>
+<span class="sd">            dropout (float): dropout value in RNN or FF layers.</span>
+<span class="sd">            attention_dropout (float): dropaout in attention layers.</span>
+<span class="sd">            dropout_steps (list): dropout values scheduling in steps.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">train_loss</span><span class="p">,</span> <span class="n">valid_loss</span><span class="p">,</span>
@@ -309,7 +315,7 @@
                  <span class="n">trunc_size</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                  <span class="n">accum_count</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
                  <span class="n">accum_steps</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-                 <span class="n">n_gpu</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">gpu_rank</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">gpu_verbose_level</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                 <span class="n">n_gpu</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">gpu_rank</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
                  <span class="n">train_eval_steps</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
                  <span class="n">report_manager</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">with_align</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">model_saver</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">average_decay</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">average_every</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">model_dtype</span><span class="o">=</span><span class="s1">&#39;fp32&#39;</span><span class="p">,</span>
@@ -331,7 +337,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">accum_steps</span> <span class="o">=</span> <span class="n">accum_steps</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_gpu</span> <span class="o">=</span> <span class="n">n_gpu</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">gpu_rank</span> <span class="o">=</span> <span class="n">gpu_rank</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">gpu_verbose_level</span> <span class="o">=</span> <span class="n">gpu_verbose_level</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">report_manager</span> <span class="o">=</span> <span class="n">report_manager</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">train_eval_steps</span> <span class="o">=</span> <span class="n">train_eval_steps</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">with_align</span> <span class="o">=</span> <span class="n">with_align</span>
@@ -351,7 +356,7 @@
         <span class="c1"># Set model in training mode.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
 
-<div class="viewcode-block" id="Trainer.training_eval_handler"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.training_eval_handler">[docs]</a>    <span class="k">def</span> <span class="nf">training_eval_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scorer</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;train&quot;</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_training_eval_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scorer</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;train&quot;</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Trigger metrics calculations&quot;&quot;&quot;</span>
         <span class="n">preds</span><span class="p">,</span> <span class="n">texts_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scoring_preparator</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span>
             <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
@@ -359,7 +364,7 @@
             <span class="n">gpu_rank</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">gpu_rank</span><span class="p">,</span>
             <span class="n">step</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">training_step</span><span class="p">,</span>
             <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">scorer</span><span class="o">.</span><span class="n">compute_score</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="n">texts_ref</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">scorer</span><span class="o">.</span><span class="n">compute_score</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="n">texts_ref</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_accum_count</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accum_steps</span><span class="p">)):</span>
@@ -413,14 +418,14 @@
 <span class="sd">        running validation on `valid_iter`.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            train_iter: A generator that returns the next training batch.</span>
+<span class="sd">            train_iter: An iterator that returns the next training batch.</span>
 <span class="sd">            train_steps: Run training for this many iterations.</span>
 <span class="sd">            save_checkpoint_steps: Save a checkpoint every this many</span>
 <span class="sd">              iterations.</span>
 <span class="sd">            valid_iter: A generator that returns the next validation batch.</span>
 <span class="sd">            valid_steps: Run evaluation every this many iterations.</span>
 <span class="sd">        Returns:</span>
-<span class="sd">            The gathered statistics.</span>
+<span class="sd">            :obj:`nmt.Statistics`: training loss statistics</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">valid_iter</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Start training loop without validation...&#39;</span><span class="p">)</span>
@@ -493,7 +498,7 @@
             <span class="k">for</span> <span class="n">avg</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">moving_average</span><span class="p">,</span>
                                   <span class="n">valid_model</span><span class="o">.</span><span class="n">parameters</span><span class="p">()):</span>
                 <span class="n">model_params_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">param</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
-                <span class="n">param</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">avg</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">half</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">_fp16</span> <span class="o">==</span> <span class="s2">&quot;legacy&quot;</span> \
+                <span class="n">param</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">avg</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">half</span><span class="p">()</span> <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">float16</span> \
                     <span class="k">else</span> <span class="n">avg</span><span class="o">.</span><span class="n">data</span>
 
         <span class="c1"># Set model in validating mode.</span>
@@ -522,7 +527,7 @@
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">metric</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">valid_scorers</span><span class="p">):</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;UPDATING VALIDATION </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">metric</span><span class="p">))</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">valid_scorers</span><span class="p">[</span>
-                    <span class="n">metric</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">training_eval_handler</span><span class="p">(</span>
+                    <span class="n">metric</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_training_eval_handler</span><span class="p">(</span>
                         <span class="n">scorer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">valid_scorers</span><span class="p">[</span><span class="n">metric</span><span class="p">][</span><span class="s2">&quot;scorer&quot;</span><span class="p">],</span>
                         <span class="n">batch</span><span class="o">=</span><span class="n">batch</span><span class="p">,</span>
                         <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;valid&quot;</span><span class="p">)</span>
@@ -535,6 +540,8 @@
                 <span class="c1"># Compute stats</span>
                 <span class="n">batch_stats</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">Statistics</span><span class="p">(</span>
                     <span class="n">batch_stats</span><span class="o">.</span><span class="n">loss</span><span class="p">,</span>
+                    <span class="n">batch_stats</span><span class="o">.</span><span class="n">n_batchs</span><span class="p">,</span>
+                    <span class="n">batch_stats</span><span class="o">.</span><span class="n">n_sents</span><span class="p">,</span>
                     <span class="n">batch_stats</span><span class="o">.</span><span class="n">n_words</span><span class="p">,</span>
                     <span class="n">batch_stats</span><span class="o">.</span><span class="n">n_correct</span><span class="p">,</span>
                     <span class="n">computed_metrics</span><span class="p">)</span>
@@ -554,8 +561,12 @@
 
     <span class="k">def</span> <span class="nf">_gradient_accumulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">true_batches</span><span class="p">,</span> <span class="n">total_stats</span><span class="p">,</span>
                                <span class="n">report_stats</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Function that iterates over big batches = ``true_batches``</span>
+<span class="sd">        perform a backward on the loss of each sub_batch and</span>
+<span class="sd">        finally update the params at the end of the big batch.&quot;&quot;&quot;</span>
+
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">accum_count</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">(</span><span class="n">set_to_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">batch</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">true_batches</span><span class="p">):</span>
             <span class="n">target_size</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
@@ -581,7 +592,7 @@
 
                 <span class="c1"># 2. F-prop all but generator.</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">accum_count</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">(</span><span class="n">set_to_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
                 <span class="k">try</span><span class="p">:</span>
                     <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">amp</span><span class="o">.</span><span class="n">autocast</span><span class="p">(</span><span class="n">enabled</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">amp</span><span class="p">):</span>
@@ -600,15 +611,14 @@
 
                     <span class="n">step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">training_step</span>
                     <span class="k">if</span> <span class="p">(</span>
-                            <span class="n">step</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_eval_steps</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">n_gpu</span> <span class="o">&gt;</span> <span class="mi">0</span>
+                            <span class="n">step</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_eval_steps</span> <span class="o">==</span> <span class="mi">0</span>
                     <span class="p">):</span>
                         <span class="c1"># Compute and save stats</span>
                         <span class="n">computed_metrics</span> <span class="o">=</span> <span class="p">{}</span>
                         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">metric</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_scorers</span><span class="p">):</span>
                             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;UPDATING TRAINING </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">metric</span><span class="p">))</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">train_scorers</span><span class="p">[</span>
-                                <span class="n">metric</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">training_eval_handler</span><span class="p">(</span>
+                                <span class="n">metric</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_training_eval_handler</span><span class="p">(</span>
                                 <span class="n">scorer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">train_scorers</span><span class="p">[</span>
                                     <span class="n">metric</span><span class="p">][</span><span class="s2">&quot;scorer&quot;</span><span class="p">],</span>
                                 <span class="n">batch</span><span class="o">=</span><span class="n">batch</span><span class="p">,</span>
@@ -624,6 +634,7 @@
                     <span class="k">if</span> <span class="n">loss</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                         <span class="c1"># in theory we should divide by accum_count and bptt</span>
                         <span class="c1"># to rescale for each sub batch</span>
+                        <span class="n">loss</span> <span class="o">/=</span> <span class="bp">self</span><span class="o">.</span><span class="n">accum_count</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span>
 
                     <span class="n">total_stats</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">batch_stats</span><span class="p">)</span>

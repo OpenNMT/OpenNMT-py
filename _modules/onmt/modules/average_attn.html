@@ -90,22 +90,10 @@
 </ul>
 <p class="caption"><span class="caption-text">FAQ</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-do-i-use-the-transformer-model">How do I use the Transformer model?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">FAQ</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../examples/Library.html">Library</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/Translation.html">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/Summarization.html">Summarization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/LanguageModelGeneration.html">Language Model Generation</a></li>
@@ -288,14 +276,14 @@
 <div class="viewcode-block" id="AverageAttention.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.AverageAttention.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer_in</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
-<span class="sd">            layer_in (FloatTensor): ``(batch_size, t_len, model_dim)``</span>
+<span class="sd">            layer_in (FloatTensor): ``(batch, t_len, dim)``</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            (FloatTensor, FloatTensor):</span>
 
-<span class="sd">            * gating_out ``(batch_size, tlen, model_dim)``</span>
+<span class="sd">            * gating_out ``(batch, tlen, dim)``</span>
 <span class="sd">            * average_out average attention</span>
-<span class="sd">                ``(batch_size, input_len, model_dim)``</span>
+<span class="sd">                ``(batch, input_len, dim)``</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">batch_size</span> <span class="o">=</span> <span class="n">layer_in</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>

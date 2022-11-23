@@ -38,7 +38,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Summarization" href="Summarization.html" />
-    <link rel="prev" title="Library" href="Library.html" /> 
+    <link rel="prev" title="FAQ" href="../FAQ.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -91,22 +91,10 @@
 </ul>
 <p class="caption"><span class="caption-text">FAQ</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../FAQ.html">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-do-i-use-the-transformer-model">How do I use the Transformer model?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html">FAQ</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="Library.html">Library</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Translation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#step-0-download-the-data-and-prepare-the-subwords-model">Step 0: Download the data and prepare the subwords model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#step-1-build-the-vocabulary">Step 1. Build the vocabulary.</a></li>
@@ -283,23 +271,23 @@
 <span class="nt">valid_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5000</span><span class="w"></span>
 
 <span class="c1"># Batching</span><span class="w"></span>
-<span class="nt">bucket_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">32768</span><span class="w"></span>
+<span class="nt">bucket_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">262144</span><span class="w"></span>
 <span class="nt">world_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span><span class="w"></span>
 <span class="nt">gpu_ranks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">1</span><span class="p p-Indicator">]</span><span class="w"></span>
-<span class="nt">num_workers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span><span class="w"></span>
+<span class="nt">num_workers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span><span class="w"></span>
 <span class="nt">batch_type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;tokens&quot;</span><span class="w"></span>
 <span class="nt">batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4096</span><span class="w"></span>
-<span class="nt">valid_batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">16</span><span class="w"></span>
-<span class="nt">batch_size_multiple</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span><span class="w"></span>
+<span class="nt">valid_batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2048</span><span class="w"></span>
+<span class="nt">batch_size_multiple</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8</span><span class="w"></span>
 <span class="nt">max_generator_batches</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span><span class="w"></span>
 <span class="nt">accum_count</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">3</span><span class="p p-Indicator">]</span><span class="w"></span>
 <span class="nt">accum_steps</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0</span><span class="p p-Indicator">]</span><span class="w"></span>
 
 <span class="c1"># Optimization</span><span class="w"></span>
-<span class="nt">model_dtype</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;fp32&quot;</span><span class="w"></span>
+<span class="nt">model_dtype</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;fp16&quot;</span><span class="w"></span>
 <span class="nt">optim</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;adam&quot;</span><span class="w"></span>
 <span class="nt">learning_rate</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span><span class="w"></span>
-<span class="nt">warmup_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8000</span><span class="w"></span>
+<span class="nt">warmup_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4000</span><span class="w"></span>
 <span class="nt">decay_method</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;noam&quot;</span><span class="w"></span>
 <span class="nt">adam_beta2</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.998</span><span class="w"></span>
 <span class="nt">max_grad_norm</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span><span class="w"></span>
@@ -390,7 +378,7 @@ in the -ratio flag.</p>
         <a href="Summarization.html" class="btn btn-neutral float-right" title="Summarization" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="Library.html" class="btn btn-neutral float-left" title="Library" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="../FAQ.html" class="btn btn-neutral float-left" title="FAQ" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

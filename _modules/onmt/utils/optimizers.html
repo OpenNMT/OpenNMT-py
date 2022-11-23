@@ -90,22 +90,10 @@
 </ul>
 <p class="caption"><span class="caption-text">FAQ</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-do-i-use-the-transformer-model">How do I use the Transformer model?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">FAQ</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../examples/Library.html">Library</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/Translation.html">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/Summarization.html">Summarization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/LanguageModelGeneration.html">Language Model Generation</a></li>
@@ -206,6 +194,10 @@
 <span class="kn">import</span> <span class="nn">types</span>
 <span class="kn">import</span> <span class="nn">importlib</span>
 <span class="kn">from</span> <span class="nn">onmt.utils.misc</span> <span class="kn">import</span> <span class="n">fn_args</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">apex</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="k">pass</span>
 
 
 <span class="k">def</span> <span class="nf">build_torch_optimizer</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">opt</span><span class="p">):</span>
@@ -275,20 +267,33 @@
                  <span class="n">betas</span><span class="o">=</span><span class="n">betas</span><span class="p">,</span>
                  <span class="n">eps</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">)])</span>
     <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">optim</span> <span class="o">==</span> <span class="s1">&#39;fusedadam&#39;</span><span class="p">:</span>
-        <span class="c1"># we use here a FusedAdam() copy of an old Apex repo</span>
         <span class="n">optimizer</span> <span class="o">=</span> <span class="n">FusedAdam</span><span class="p">(</span>
             <span class="n">params</span><span class="p">,</span>
             <span class="n">lr</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span>
             <span class="n">betas</span><span class="o">=</span><span class="n">betas</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">model_dtype</span> <span class="o">==</span> <span class="s1">&#39;fp16&#39;</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
             <span class="kn">import</span> <span class="nn">apex</span>
-            <span class="c1"># In this case use the old FusedAdam with FP16_optimizer wrapper</span>
-            <span class="n">static_loss_scale</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">loss_scale</span>
-            <span class="n">dynamic_loss_scale</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">loss_scale</span> <span class="o">==</span> <span class="mi">0</span>
-            <span class="n">optimizer</span> <span class="o">=</span> <span class="n">apex</span><span class="o">.</span><span class="n">contrib</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">FP16_Optimizer</span><span class="p">(</span>
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s2">&quot;Could not import apex&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">apex_opt_level</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;O0&#39;</span><span class="p">,</span> <span class="s1">&#39;O1&#39;</span><span class="p">,</span> <span class="s1">&#39;O2&#39;</span><span class="p">,</span> <span class="s1">&#39;O3&#39;</span><span class="p">]:</span>
+            <span class="c1"># we use apex.amp</span>
+            <span class="n">loss_scale</span> <span class="o">=</span> <span class="s2">&quot;dynamic&quot;</span> <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">loss_scale</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">opt</span><span class="o">.</span><span class="n">loss_scale</span>
+            <span class="n">model</span><span class="p">,</span> <span class="n">optimizer</span> <span class="o">=</span> <span class="n">apex</span><span class="o">.</span><span class="n">amp</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">model</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">generator</span><span class="p">],</span>
                 <span class="n">optimizer</span><span class="p">,</span>
-                <span class="n">static_loss_scale</span><span class="o">=</span><span class="n">static_loss_scale</span><span class="p">,</span>
-                <span class="n">dynamic_loss_scale</span><span class="o">=</span><span class="n">dynamic_loss_scale</span><span class="p">)</span>
+                <span class="n">opt_level</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">apex_opt_level</span><span class="p">,</span>
+                <span class="n">loss_scale</span><span class="o">=</span><span class="n">loss_scale</span><span class="p">,</span>
+                <span class="n">keep_batchnorm_fp32</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">model_dtype</span> <span class="o">==</span> <span class="s1">&#39;fp16&#39;</span><span class="p">:</span>
+                <span class="c1"># In this case use the old FusedAdam with</span>
+                <span class="c1"># FP16_optimizer wrapper</span>
+                <span class="n">static_loss_scale</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">loss_scale</span>
+                <span class="n">dynamic_loss_scale</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">loss_scale</span> <span class="o">==</span> <span class="mi">0</span>
+                <span class="n">optimizer</span> <span class="o">=</span> <span class="n">apex</span><span class="o">.</span><span class="n">contrib</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">FP16_Optimizer</span><span class="p">(</span>
+                    <span class="n">optimizer</span><span class="p">,</span>
+                    <span class="n">static_loss_scale</span><span class="o">=</span><span class="n">static_loss_scale</span><span class="p">,</span>
+                    <span class="n">dynamic_loss_scale</span><span class="o">=</span><span class="n">dynamic_loss_scale</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid optimizer type: &#39;</span> <span class="o">+</span> <span class="n">opt</span><span class="o">.</span><span class="n">optim</span><span class="p">)</span>
 
@@ -366,10 +371,10 @@
             <span class="n">param_groups</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">optimizer</span><span class="o">.</span><span class="n">param_groups</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">param_groups</span>
 
-    <span class="k">def</span> <span class="nf">zero_grad</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">zero_grad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">set_to_none</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; ? &quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">op</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimizers</span><span class="p">:</span>
-            <span class="n">op</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+            <span class="n">op</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">(</span><span class="n">set_to_none</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; ? &quot;&quot;&quot;</span>
@@ -399,6 +404,13 @@
 <span class="sd">    rate scheduling beyond what is currently available.</span>
 <span class="sd">    Also implements necessary methods for training RNNs such</span>
 <span class="sd">    as grad manipulations.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        optimizer: A ``torch.optim.Optimizer`` instance.</span>
+<span class="sd">        learning_rate: The initial learning rate.</span>
+<span class="sd">        learning_rate_decay_fn: An optional callable taking the current step</span>
+<span class="sd">            as argument and return a learning rate scaling factor.</span>
+<span class="sd">        max_grad_norm: Clip gradients to this global norm.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
@@ -406,15 +418,7 @@
                  <span class="n">learning_rate</span><span class="p">,</span>
                  <span class="n">learning_rate_decay_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">max_grad_norm</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Initializes the controller.</span>
 
-<span class="sd">       Args:</span>
-<span class="sd">         optimizer: A ``torch.optim.Optimizer`` instance.</span>
-<span class="sd">         learning_rate: The initial learning rate.</span>
-<span class="sd">         learning_rate_decay_fn: An optional callable taking the current step</span>
-<span class="sd">           as argument and return a learning rate scaling factor.</span>
-<span class="sd">         max_grad_norm: Clip gradients to this global norm.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span> <span class="o">=</span> <span class="n">optimizer</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_learning_rate</span> <span class="o">=</span> <span class="n">learning_rate</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_learning_rate_decay_fn</span> <span class="o">=</span> <span class="n">learning_rate_decay_fn</span>
@@ -474,7 +478,10 @@
             <span class="n">max_grad_norm</span><span class="o">=</span><span class="n">optim_opt</span><span class="o">.</span><span class="n">max_grad_norm</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">model_dtype</span> <span class="o">==</span> <span class="s2">&quot;fp16&quot;</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">optim</span> <span class="o">==</span> <span class="s2">&quot;fusedadam&quot;</span><span class="p">:</span>
-                <span class="n">optimizer</span><span class="o">.</span><span class="n">_fp16</span> <span class="o">=</span> <span class="s2">&quot;legacy&quot;</span>
+                <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">apex_opt_level</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;O0&#39;</span><span class="p">,</span> <span class="s1">&#39;O1&#39;</span><span class="p">,</span> <span class="s1">&#39;O2&#39;</span><span class="p">,</span> <span class="s1">&#39;O3&#39;</span><span class="p">]:</span>
+                    <span class="n">optimizer</span><span class="o">.</span><span class="n">_fp16</span> <span class="o">=</span> <span class="s2">&quot;apex.amp&quot;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">optimizer</span><span class="o">.</span><span class="n">_fp16</span> <span class="o">=</span> <span class="s2">&quot;legacy&quot;</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">optimizer</span><span class="o">.</span><span class="n">_fp16</span> <span class="o">=</span> <span class="s2">&quot;amp&quot;</span>
                 <span class="kn">from</span> <span class="nn">torch.cuda.amp</span> <span class="kn">import</span> <span class="n">GradScaler</span>
@@ -515,20 +522,26 @@
         <span class="k">if</span> <span class="s1">&#39;optimizer&#39;</span> <span class="ow">in</span> <span class="n">state_dict</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">[</span><span class="s1">&#39;optimizer&#39;</span><span class="p">])</span>
 
-<div class="viewcode-block" id="Optimizer.zero_grad"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.Optimizer.zero_grad">[docs]</a>    <span class="k">def</span> <span class="nf">zero_grad</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Optimizer.zero_grad"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.Optimizer.zero_grad">[docs]</a>    <span class="k">def</span> <span class="nf">zero_grad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">set_to_none</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Zero the gradients of optimized parameters.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span></div>
+        <span class="c1"># should be: self._optimizer.zero_grad(set_to_none)</span>
+        <span class="c1"># but apex.amp is not up-to-date:</span>
+        <span class="c1"># https://github.com/NVIDIA/apex/blob/master/apex/amp/_process_optimizer.py#L367</span>
 
 <div class="viewcode-block" id="Optimizer.backward"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.Optimizer.backward">[docs]</a>    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loss</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Wrapper for backward pass. Some optimizer requires ownership of the</span>
 <span class="sd">        backward pass.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">amp</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_scaler</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fp16</span> <span class="o">==</span> <span class="s2">&quot;legacy&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fp16</span> <span class="o">==</span> <span class="s2">&quot;legacy&quot;</span><span class="p">:</span>
             <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="k">if</span> <span class="s2">&quot;update_master_grads&quot;</span> <span class="ow">in</span> <span class="n">fn_args</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span><span class="o">.</span><span class="n">backward</span><span class="p">):</span>
                 <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;update_master_grads&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">loss</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">amp</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_scaler</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fp16</span> <span class="o">==</span> <span class="s2">&quot;apex.amp&quot;</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">apex</span><span class="o">.</span><span class="n">amp</span><span class="o">.</span><span class="n">scale_loss</span><span class="p">(</span><span class="n">loss</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span><span class="p">)</span> <span class="k">as</span> <span class="n">scaled_loss</span><span class="p">:</span>
+                <span class="n">scaled_loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span></div>
 
@@ -569,7 +582,7 @@
 <span class="c1"># inspired but modified from https://github.com/DeadAt0m/adafactor-pytorch</span>
 
 
-<span class="k">class</span> <span class="nc">AdaFactor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Optimizer</span><span class="p">):</span>
+<div class="viewcode-block" id="AdaFactor"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.AdaFactor">[docs]</a><span class="k">class</span> <span class="nc">AdaFactor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Optimizer</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">beta1</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">beta2</span><span class="o">=</span><span class="mf">0.999</span><span class="p">,</span> <span class="n">eps1</span><span class="o">=</span><span class="mf">1e-30</span><span class="p">,</span>
                  <span class="n">eps2</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">cliping_threshold</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">non_constant_decay</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -621,7 +634,7 @@
     <span class="k">def</span> <span class="nf">_rms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="mi">2</span><span class="p">)))</span>
 
-    <span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">closure</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="AdaFactor.step"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.AdaFactor.step">[docs]</a>    <span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">closure</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="n">loss</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">closure</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">loss</span> <span class="o">=</span> <span class="n">closure</span><span class="p">()</span>
@@ -736,15 +749,15 @@
                 <span class="k">if</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;weight_decay&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="n">p</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">add_</span><span class="p">(</span><span class="o">-</span><span class="n">group</span><span class="p">[</span><span class="s1">&#39;weight_decay&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">lr_t</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">loss</span>
+        <span class="k">return</span> <span class="n">loss</span></div></div>
 
 
-<span class="k">class</span> <span class="nc">FusedAdam</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Optimizer</span><span class="p">):</span>
+<div class="viewcode-block" id="FusedAdam"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.FusedAdam">[docs]</a><span class="k">class</span> <span class="nc">FusedAdam</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Optimizer</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;Implements Adam algorithm. Currently GPU-only.</span>
 <span class="sd">       Requires Apex to be installed via</span>
-<span class="sd">    ``python setup.py install --cuda_ext --cpp_ext``.</span>
-<span class="sd">    It has been proposed in `Adam: A Method for Stochastic Optimization`_.</span>
+<span class="sd">       ``python setup.py install --cuda_ext --cpp_ext``.</span>
+
 <span class="sd">    Arguments:</span>
 <span class="sd">        params (iterable): iterable of parameters to optimize or dicts defining</span>
 <span class="sd">            parameter groups.</span>
@@ -762,10 +775,6 @@
 <span class="sd">            adds eps to the bias-corrected second moment estimate before</span>
 <span class="sd">            evaluating square root instead of adding it to the square root of</span>
 <span class="sd">            second moment estimate as in the original paper. (default: False)</span>
-<span class="sd">    .. _Adam: A Method for Stochastic Optimization:</span>
-<span class="sd">        https://arxiv.org/abs/1412.6980</span>
-<span class="sd">    .. _On the Convergence of Adam and Beyond:</span>
-<span class="sd">        https://openreview.net/forum?id=ryQu7f-RZ</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span>
@@ -783,9 +792,10 @@
         <span class="nb">super</span><span class="p">(</span><span class="n">FusedAdam</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">defaults</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">eps_mode</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">eps_inside_sqrt</span> <span class="k">else</span> <span class="mi">1</span>
 
-    <span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">closure</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">grads</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<div class="viewcode-block" id="FusedAdam.step"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.FusedAdam.step">[docs]</a>    <span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">closure</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">grads</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
              <span class="n">scale</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">grad_norms</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Performs a single optimization step.</span>
+
 <span class="sd">        Arguments:</span>
 <span class="sd">            closure (callable, optional): A closure that reevaluates the model</span>
 <span class="sd">                and returns the loss.</span>
@@ -873,8 +883,8 @@
 
                 <span class="n">state</span><span class="p">[</span><span class="s1">&#39;step&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
 
-                <span class="n">out_p</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">)</span> <span class="k">if</span> <span class="n">output_param</span> \
-                    <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">output_param</span>
+                <span class="n">out_p</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">)</span> <span class="k">if</span> \
+                    <span class="n">output_param</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">output_param</span>
                 <span class="n">fused_adam_cuda</span><span class="o">.</span><span class="n">adam</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">data</span><span class="p">,</span>
                                      <span class="n">out_p</span><span class="p">,</span>
                                      <span class="n">exp_avg</span><span class="p">,</span>
@@ -889,7 +899,7 @@
                                      <span class="bp">self</span><span class="o">.</span><span class="n">eps_mode</span><span class="p">,</span>
                                      <span class="n">bias_correction</span><span class="p">,</span>
                                      <span class="n">group</span><span class="p">[</span><span class="s1">&#39;weight_decay&#39;</span><span class="p">])</span>
-        <span class="k">return</span> <span class="n">loss</span>
+        <span class="k">return</span> <span class="n">loss</span></div></div>
 </pre></div>
 
            </div>
