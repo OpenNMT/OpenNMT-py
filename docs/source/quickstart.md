@@ -9,6 +9,9 @@ pip install --upgrade pip
 pip install OpenNMT-py
 ```
 
+If you want a very detailed tutorial on how to use OpenNMT-py please have a look to this [Tuto]: https://github.com/ymoslem/OpenNMT-Tutorial
+Thanks to Yasmin Moslem.
+
 ### Step 1: Prepare the data
 
 To get started, we propose to download a toy English-German dataset for machine translation containing 10k tokenized sentences:

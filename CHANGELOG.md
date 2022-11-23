@@ -4,6 +4,14 @@
 
 ## [Unreleased]
 
+## [3.0.0](https://github.com/OpenNMT/OpenNMT-py/tree/3.0.1) (2022-11-23)
+
+* fix dynamic scoring
+* reinstate apex.amp level O1/O2 for benchmarking
+* New: LM distillation for NMT training
+* fix special tokens order
+* remove Library and add link to Yasmin's Tuto
+
 ## [3.0.0](https://github.com/OpenNMT/OpenNMT-py/tree/3.0.0) (2022-11-3)
 
 * Removed completely torchtext. Use [Vocab object of pyonmttok](https://github.com/OpenNMT/Tokenizer/tree/master/bindings/python#vocabulary) instead
