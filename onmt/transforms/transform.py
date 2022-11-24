@@ -59,6 +59,19 @@ class Transform(object):
         """
         raise NotImplementedError
 
+    def batch_apply(self, batch, is_train=False, **kwargs):
+        """Apply transform to `batch`.
+        Args:
+            batch (list): a list of examples;
+            is_train (bool): Indicate if src/tgt is training data;bject.
+        """
+        # if self.batch_apply_ is not None:
+        #     self.batch_apply(batch, is_train=False, **kwargs)
+        # else:
+        for (example, _, cid) in batch:
+            example = self.apply(example, is_train=is_train, **kwargs)
+        return batch
+
     def apply_reverse(self, translated):
         return translated
 
@@ -194,6 +207,22 @@ class TransformPipe(Transform):
             if example is None:
                 break
         return example
+
+    def batch_apply(self, batch, is_train=False, **kwargs):
+        """Apply transform pipe to `example`.
+
+        Args:
+            example (dict): a dict of field value, ex. src, tgt.
+
+        """
+        with open('transforms', 'w') as w:
+            w.write(str(self.transforms))
+        for transform in self.transforms:
+            batch = transform.batch_apply(
+                batch, is_train=is_train, stats=self.statistics, **kwargs)
+            if batch is None:
+                break
+        return batch
 
     def apply_reverse(self, translated):
         for transform in self.transforms:
