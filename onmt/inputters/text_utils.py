@@ -67,8 +67,6 @@ def process(task, item, bucket_level=False, **kwargs):
             if example is not None:
                 example = clean_example(example)
             processed_bucket[i] = example
-        with open("processed_bucket", "w") as f:
-            f.write(str(processed_bucket[:5]))
         return processed_bucket
     example, transform, cid = item
     # this is a hack: appears quicker to apply it here
