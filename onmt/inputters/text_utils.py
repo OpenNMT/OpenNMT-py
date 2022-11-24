@@ -79,9 +79,8 @@ def process(task, item, bucket_level=False, **kwargs):
                                     corpus_name=cid)
     if maybe_example is None:
         return None
-    else:
-        maybe_example = clean_example(maybe_example)
-    maybe_example['src'] = {"src": ' '.join(maybe_example['src'])}
+    maybe_example = clean_example(maybe_example)
+
     # at this point an example looks like:
     # {'src': {'src': ..., 'feat1': ...., 'feat2': ....},
     #  'tgt': {'tgt': ...},
