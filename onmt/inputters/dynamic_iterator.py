@@ -153,6 +153,7 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
         corpora_info = {}
         batch_size = opt.valid_batch_size if (task == CorpusTask.VALID) \
             else opt.batch_size
+        bucket_level = opt.bucket_level
         if task != CorpusTask.INFER:
             if opt.batch_size_multiple is not None:
                 batch_size_multiple = opt.batch_size_multiple
@@ -162,7 +163,6 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
             bucket_size = opt.bucket_size
             bucket_size_init = opt.bucket_size_init
             bucket_size_increment = opt.bucket_size_increment
-            bucket_level = opt.bucket_level
             skip_empty_level = opt.skip_empty_level
         else:
             batch_size_multiple = 1
@@ -172,7 +172,6 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
             bucket_size = 16384
             bucket_size_init = -1
             bucket_size_increment = 0
-            bucket_level = False
             skip_empty_level = 'warning'
         if task == CorpusTask.INFER and \
            vocabs['data_task'] == ModelTask.LANGUAGE_MODEL:
