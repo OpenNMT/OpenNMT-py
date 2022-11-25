@@ -269,6 +269,10 @@ class Trainer(object):
                 step, train_steps,
                 self.optim.learning_rate(),
                 report_stats)
+            if step % self.report_manager.report_every == 0:
+                self._report_step(self.optim.learning_rate(),
+                                  step, train_stats=total_stats,
+                                  valid_stats=None)
 
             if (valid_iter is not None and step % valid_steps == 0 and
                     self.gpu_rank == 0):
@@ -276,7 +280,7 @@ class Trainer(object):
                 valid_stats = self.validate(
                     valid_iter, moving_average=self.moving_average)
                 self._report_step(self.optim.learning_rate(),
-                                  step, train_stats=total_stats,
+                                  step, train_stats=None,
                                   valid_stats=valid_stats)
 
                 # Run patience mechanism
