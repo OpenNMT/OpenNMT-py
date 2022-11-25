@@ -111,8 +111,11 @@ ${PYTHON} onmt/bin/train.py \
             -tgt_vocab_size 1000 \
             -hidden_size 2 -batch_size 10 \
             -num_workers 0 -bucket_size 1024 \
-            -word_vec_size 5 -report_every 5        \
-            -hidden_size 10 -train_steps 10 >> ${LOG_FILE} 2>&1
+            -word_vec_size 5 -report_every 5 \
+            -hidden_size 10 -train_steps 10 \
+            -tensorboard "true" \
+            -tensorboard_log_dir $TMP_OUT_DIR/logs_train >> ${LOG_FILE} 2>&1
+${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_train -m train
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 
@@ -184,8 +187,9 @@ ${PYTHON} onmt/bin/train.py \
             -train_metrics "BLEU" "TER" \
             -tensorboard "true" \
             -scoring_debug "true" \
-            -tensorboard_log_dir $TMP_OUT_DIR/logs \
+            -tensorboard_log_dir $TMP_OUT_DIR/logs_train_metrics \
             -dump_preds $TMP_OUT_DIR/dump_pred >> ${LOG_FILE} 2>&1
+${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_train_metrics -m train_metrics
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 rm -r $TMP_OUT_DIR/dump_pred
