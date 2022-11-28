@@ -23,6 +23,7 @@ clean_up()
         ls $TMP_OUT_DIR/*.pt | xargs -I {} rm -f $TMP_OUT_DIR/{}
     else
         # delete all .pt's
+        rm -r $TMP_OUT_DIR/dump_pred
         rm -f $TMP_OUT_DIR/*.pt
         rm -rf $TMP_OUT_DIR/sample
         rm -d $TMP_OUT_DIR
@@ -118,6 +119,7 @@ ${PYTHON} onmt/bin/train.py \
 ${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_train -m train
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
+rm -r $TMP_OUT_DIR/logs_train
 
 echo -n "  [+] Testing NMT training and validation w/ copy..."
 ${PYTHON} onmt/bin/train.py \
@@ -136,6 +138,7 @@ ${PYTHON} onmt/bin/train.py \
 ${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_train_valid -m train_valid
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
+rm -r $TMP_OUT_DIR/logs_train_valid
 
 echo -n "  [+] Testing NMT training w/ align..."
 ${PYTHON} onmt/bin/train.py \
@@ -195,6 +198,7 @@ ${PYTHON} onmt/bin/train.py \
 ${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_train_metrics -m train_metrics
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
+rm -r $TMP_OUT_DIR/logs_train_metrics
 
 echo -n "  [+] Testing NMT training w/ dynamic scoring with validation ..."
 ${PYTHON} onmt/bin/train.py \
@@ -219,11 +223,12 @@ ${PYTHON} onmt/bin/train.py \
             -valid_metrics "BLEU" "TER" \
             -tensorboard "true" \
             -scoring_debug "true" \
-            -tensorboard_log_dir $TMP_OUT_DIR/logs_train_valid_metrics \
-            -dump_preds $TMP_OUT_DIR/dump_pred >> ${LOG_FILE} 2>&1
+            -dump_preds $TMP_OUT_DIR/dump_pred \
+            -tensorboard_log_dir $TMP_OUT_DIR/logs_train_valid_metrics >> ${LOG_FILE} 2>&1
 ${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_train_valid_metrics -m train_valid_metrics
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
+rm -r $TMP_OUT_DIR/logs_train_valid_metrics
 
 echo -n "  [+] Testing LM training..."
 ${PYTHON} onmt/bin/train.py \
