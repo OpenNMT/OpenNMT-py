@@ -167,7 +167,7 @@ jobs:
           -scoring_debug "true" \
           -tensorboard_log_dir /tmp/logs_train_metrics \
           -dump_preds /tmp/dump_preds
-      python onmt/tests/test_events.py --logdir /tmp/logs_train_metrics -m train_metrics
+        python onmt/tests/test_events.py --logdir /tmp/logs_train_metrics -m train_metrics
     - name : Test Transformer training and validation with dynamic scoring
       run: |
         python3 train.py \
@@ -196,7 +196,7 @@ jobs:
           -tensorboard "true" \
           -scoring_debug "true" \
           -tensorboard_log_dir /tmp/logs_train_valid_metrics \
-      python onmt/tests/test_events.py --logdir /tmp/logs_train_valid_metrics -m train_valid_metrics 
+        python onmt/tests/test_events.py --logdir /tmp/logs_train_valid_metrics -m train_valid_metrics 
     - name: Test LM training
       run: |
         python train.py \
