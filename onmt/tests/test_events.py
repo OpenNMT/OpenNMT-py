@@ -10,14 +10,14 @@ class TestEvents():
         metrics = ['BLEU', 'TER']
         self.scalars = {}
         self.scalars["train"] = [('train/' + stat) for stat in stats]
+        self.scalars["train_valid"] = (self.scalars["train"] +
+                                       [('valid/' + stat) for stat in stats])
         self.scalars["train_metrics"] = (
             self.scalars["train"] +
             [('train/' + metric) for metric in metrics])
-        self.scalars["valid"] = (self.scalars["train"] +
-                                 [('valid/' + stat) for stat in stats])
         self.scalars["train_valid_metrics"] = (
-            self.scalars["train"] +
-            [('train/' + metric) for metric in metrics] +
+            self.scalars["train_metrics"] +
+            [('valid/' + stat) for stat in stats] +
             [('valid/' + metric) for metric in metrics])
 
     def reload_events(self, path):
