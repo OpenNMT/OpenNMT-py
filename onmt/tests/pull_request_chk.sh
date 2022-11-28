@@ -116,7 +116,7 @@ ${PYTHON} onmt/bin/train.py \
             -hidden_size 10 -train_steps 10 \
             -tensorboard "true" \
             -tensorboard_log_dir $TMP_OUT_DIR/logs_train >> ${LOG_FILE} 2>&1
-${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_train -m train
+${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_train -tensorboard_checks train
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 rm -r $TMP_OUT_DIR/logs_train
@@ -135,7 +135,7 @@ ${PYTHON} onmt/bin/train.py \
             -tensorboard "true" \
             -tensorboard_log_dir $TMP_OUT_DIR/logs_train_valid \
             -copy_attn >> ${LOG_FILE} 2>&1
-${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_train_valid -m train_valid
+${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_train_valid -tensorboard_checks train_valid
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 rm -r $TMP_OUT_DIR/logs_train_valid
@@ -195,7 +195,7 @@ ${PYTHON} onmt/bin/train.py \
             -scoring_debug "true" \
             -tensorboard_log_dir $TMP_OUT_DIR/logs_train_metrics \
             -dump_preds $TMP_OUT_DIR/dump_pred >> ${LOG_FILE} 2>&1
-${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_train_metrics -m train_metrics
+${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_train_metrics -tensorboard_checks train_metrics
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 rm -r $TMP_OUT_DIR/logs_train_metrics
@@ -225,7 +225,7 @@ ${PYTHON} onmt/bin/train.py \
             -scoring_debug "true" \
             -dump_preds $TMP_OUT_DIR/dump_pred \
             -tensorboard_log_dir $TMP_OUT_DIR/logs_train_valid_metrics >> ${LOG_FILE} 2>&1
-${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_train_valid_metrics -m train_valid_metrics
+${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_train_valid_metrics -tensorboard_checks train_valid_metrics
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 rm -r $TMP_OUT_DIR/logs_train_valid_metrics

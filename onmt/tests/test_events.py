@@ -43,11 +43,11 @@ if __name__ == '__main__':
     requiredArgs = parser.add_argument_group('required arguments')
     requiredArgs.add_argument("-logdir", "--logdir", type=str, required=True)
     requiredArgs.add_argument(
-        "-m", "--method", type=str, required=True,
+        "-tensorboard_checks", "--tensorboard_checks", type=str, required=True,
         choices=["train", "train_metrics",
                  "train_valid", "train_valid_metrics"])
     args = parser.parse_args()
     test_event = TestEvents()
-    scalars = test_event.scalars[args.method]
+    scalars = test_event.scalars[args.tensorboard_checks]
     print("looking for scalars: ", scalars)
     test_event.check_scalars(scalars, args.logdir)
