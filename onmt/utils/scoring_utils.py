@@ -94,7 +94,7 @@ class ScoringPreparator():
         refs = self.tokenize_batch(batch['tgt'], 'tgt')
         return sources, refs
 
-    def translate(self, model, batch, gpu_rank, step, mode):
+    def translate(self, model, sources, refs, gpu_rank, step, mode):
         """Compute the sentences predicted by the current model's state
         related to a batch"""
         model_opt = self.opt
@@ -118,7 +118,7 @@ class ScoringPreparator():
             report_align=opt.report_align,
             report_score=True,
             logger=None)
-        sources, refs = self.build_sources_and_refs(batch)
+        # sources, refs = self.build_sources_and_refs(batchs)
         infer_iter = textbatch_to_tensor(translator.vocabs,
                                          sources, is_train=True)
         infer_iter = IterOnDevice(infer_iter, opt.gpu)
