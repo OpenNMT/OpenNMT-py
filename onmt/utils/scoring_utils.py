@@ -119,11 +119,16 @@ class ScoringPreparator():
             report_score=True,
             logger=None)
         # sources, refs = self.build_sources_and_refs(batchs)
-        infer_iter = textbatch_to_tensor(translator.vocabs,
-                                         sources, is_train=True)
-        infer_iter = IterOnDevice(infer_iter, opt.gpu)
-        _, preds = translator._translate(
-                    infer_iter)
+        preds = []
+        for sources_ in sources:
+            infer_iter = textbatch_to_tensor(translator.vocabs,
+                                             sources_, is_train=True)
+            infer_iter = IterOnDevice(infer_iter, opt.gpu)
+            _, preds_ = translator._translate(
+                        infer_iter)
+            preds += preds_
+        # flatten sources
+        sources = [item for sources_ in sources for item in sources_]
         texts_ref = []
         for i in range(len(preds)):
             preds[i] = self.tgt_detokenizer._detokenize(preds[i][0].split())

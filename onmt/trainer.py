@@ -322,7 +322,7 @@ class Trainer(object):
                 tgt = batch['tgt']
                 sources_, refs_ = self.scoring_preparator.\
                     build_sources_and_refs(batch)
-                sources += sources_
+                sources.append(sources_)
                 refs += refs_
                 with torch.cuda.amp.autocast(enabled=self.optim.amp):
                     # F-prop through the model.
@@ -438,7 +438,7 @@ class Trainer(object):
                             build_sources_and_refs(batch)
                         preds, texts_ref = self.scoring_preparator.translate(
                             model=self.model,
-                            sources=sources_,
+                            sources=[sources_],
                             refs=refs_,
                             gpu_rank=self.gpu_rank,
                             step=self.optim.training_step,
