@@ -32,7 +32,7 @@ class ReportMgrBase(object):
         * `_report_step`
     """
 
-    def __init__(self, report_every, start_time=-1.):
+    def __init__(self, report_every, train_eval_steps, start_time=-1.):
         """
         Args:
             report_every(int): Report status every this many sentences
@@ -40,6 +40,7 @@ class ReportMgrBase(object):
                 means that you will need to set it later or use `start()`
         """
         self.report_every = report_every
+        self.train_eval_steps = train_eval_steps
         self.start_time = start_time
 
     def start(self):
@@ -53,7 +54,6 @@ class ReportMgrBase(object):
         """
         This is the user-defined batch-level traing progress
         report function.
-
         Args:
             step(int): current step count.
             num_steps(int): total number of batches.
@@ -66,7 +66,7 @@ class ReportMgrBase(object):
             raise ValueError("""ReportMgr needs to be started
                                 (set 'start_time' or use 'start()'""")
 
-        if step % self.report_every == 0:
+        if step % self.report_every == 0 or step % self.report_every == 0:
             if multigpu:
                 report_stats = \
                     onmt.utils.Statistics.all_gather_stats(report_stats)
@@ -80,8 +80,8 @@ class ReportMgrBase(object):
         """ To be overridden """
         raise NotImplementedError()
 
-    def report_step(self, lr, patience, step, train_stats=None,
-                    valid_stats=None):
+    def report_validation(self, lr, patience, step,
+                          valid_stats=None):
         """
         Report stats of a step
 
@@ -92,12 +92,11 @@ class ReportMgrBase(object):
             train_stats(Statistics): training stats
             valid_stats(Statistics): validation stats
         """
-        self._report_step(
+        self._report_validation(
             lr, patience, step,
-            train_stats=train_stats,
             valid_stats=valid_stats)
 
-    def _report_step(self, *args, **kwargs):
+    def _report_validation(self, *args, **kwargs):
         raise NotImplementedError()
 
 
@@ -128,31 +127,20 @@ class ReportMgr(ReportMgrBase):
         """
         report_stats.output(step, num_steps,
                             learning_rate, self.start_time)
+        self.maybe_log_tensorboard(report_stats,
+                                   "train",
+                                   learning_rate,
+                                   patience,
+                                   step)
         report_stats = onmt.utils.Statistics()
 
         return report_stats
 
-    def _report_step(self, lr, patience, step,
-                     train_stats=None,
-                     valid_stats=None):
+    def _report_validation(self, lr, patience, step,
+                           valid_stats=None):
         """
         See base class method `ReportMgrBase.report_step`.
         """
-        if train_stats is not None:
-            self.log('Train perplexity: %g' % train_stats.ppl())
-            self.log('Train accuracy: %g' % train_stats.accuracy())
-            self.log('Sentences processed: %g' % train_stats.n_sents)
-            self.log('Average bsz: %4.0f/%4.0f/%2.0f' %
-                     (train_stats.n_src_words / train_stats.n_batchs,
-                      train_stats.n_words / train_stats.n_batchs,
-                      train_stats.n_sents / train_stats.n_batchs))
-
-            self.maybe_log_tensorboard(train_stats,
-                                       "train",
-                                       lr,
-                                       patience,
-                                       step)
-
         if valid_stats is not None:
             self.log('Validation perplexity: %g' % valid_stats.ppl())
             self.log('Validation accuracy: %g' % valid_stats.accuracy())

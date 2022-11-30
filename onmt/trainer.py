@@ -270,18 +270,16 @@ class Trainer(object):
                 self.optim.learning_rate(),
                 report_stats)
             if step % self.report_manager.report_every == 0:
-                self._report_step(self.optim.learning_rate(),
-                                  step, train_stats=total_stats,
-                                  valid_stats=None)
+                self._report_validation(self.optim.learning_rate(),
+                                        step, valid_stats=None)
 
             if (valid_iter is not None and step % valid_steps == 0 and
                     self.gpu_rank <= 0):
 
                 valid_stats = self.validate(
                     valid_iter, moving_average=self.moving_average)
-                self._report_step(self.optim.learning_rate(),
-                                  step, train_stats=None,
-                                  valid_stats=valid_stats)
+                self._report_validation(self.optim.learning_rate(),
+                                        step, valid_stats=valid_stats)
 
                 # Run patience mechanism
                 if self.earlystopper is not None:
@@ -520,16 +518,14 @@ class Trainer(object):
                 report_stats,
                 multigpu=self.n_gpu > 1)
 
-    def _report_step(self, learning_rate, step, train_stats=None,
-                     valid_stats=None):
+    def _report_validation(self, learning_rate, step, valid_stats=None):
         """
         Simple function to report stats (if report_manager is set)
-        see `onmt.utils.ReportManagerBase.report_step` for doc
+        see `onmt.utils.ReportManagerBase.report_validation` for doc
         """
         if self.report_manager is not None:
-            return self.report_manager.report_step(
+            return self.report_manager.report_validation(
                 learning_rate,
                 None if self.earlystopper is None
                 else self.earlystopper.current_tolerance,
-                step, train_stats=train_stats,
-                valid_stats=valid_stats)
+                step, valid_stats=valid_stats)
