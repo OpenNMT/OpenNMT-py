@@ -172,7 +172,13 @@ class Trainer(object):
         self.model.train()
 
     def _training_eval_handler(self, scorer, preds, texts_ref):
-        """Trigger metrics calculations"""
+        """Trigger metrics calculations
+
+        Args:
+            scorer (:obj:`onmt.scorer.Scorer`): scorer.
+            preds, texts_ref: outputs of the scorer's `translate` method.
+        Returns: The metric calculated by the scorer.
+        """
         return scorer.compute_score(preds, texts_ref)
 
     def _accum_count(self, step):
@@ -312,6 +318,7 @@ class Trainer(object):
 
         # Set model in validating mode.
         valid_model.eval()
+
         sources = []
         refs = []
         with torch.no_grad():
