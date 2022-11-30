@@ -439,7 +439,7 @@ def model_opts(parser):
               help="For FP16 training, the static loss scale to use. If not "
                    "set, the loss scale is dynamically computed.")
     group.add('--apex_opt_level', '-apex_opt_level', type=str, default="",
-              choices=["O0", "O1", "O2", "O3"],
+              choices=["", "O0", "O1", "O2", "O3"],
               help="For FP16 training, the opt_level to use."
                    "See https://nvidia.github.io/apex/amp.html#opt-levels.")
 
