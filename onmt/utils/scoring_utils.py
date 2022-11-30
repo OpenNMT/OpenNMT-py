@@ -107,8 +107,8 @@ class ScoringPreparator():
         return sources, refs
 
     def translate(self, model, sources, refs, gpu_rank, step, mode):
-        """Compute and save the sentences predicted by the current model's state
-        related to a batch.
+        """Compute and save the sentences predicted by the
+        current model's state related to a batch.
 
         Args:
             model (:obj:`onmt.models.NMTModel`): The current model's state.
