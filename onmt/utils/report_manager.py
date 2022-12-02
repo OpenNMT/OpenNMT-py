@@ -53,7 +53,6 @@ class ReportMgrBase(object):
         """
         This is the user-defined batch-level traing progress
         report function.
-
         Args:
             step(int): current step count.
             num_steps(int): total number of batches.
@@ -94,8 +93,7 @@ class ReportMgrBase(object):
         """
         self._report_step(
             lr, patience, step,
-            train_stats=train_stats,
-            valid_stats=valid_stats)
+            valid_stats=valid_stats, train_stats=train_stats)
 
     def _report_step(self, *args, **kwargs):
         raise NotImplementedError()
@@ -128,13 +126,17 @@ class ReportMgr(ReportMgrBase):
         """
         report_stats.output(step, num_steps,
                             learning_rate, self.start_time)
+        self.maybe_log_tensorboard(report_stats,
+                                   "progress",
+                                   learning_rate,
+                                   patience,
+                                   step)
         report_stats = onmt.utils.Statistics()
 
         return report_stats
 
     def _report_step(self, lr, patience, step,
-                     train_stats=None,
-                     valid_stats=None):
+                     valid_stats=None, train_stats=None):
         """
         See base class method `ReportMgrBase.report_step`.
         """
@@ -152,7 +154,6 @@ class ReportMgr(ReportMgrBase):
                                        lr,
                                        patience,
                                        step)
-
         if valid_stats is not None:
             self.log('Validation perplexity: %g' % valid_stats.ppl())
             self.log('Validation accuracy: %g' % valid_stats.accuracy())

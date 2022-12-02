@@ -23,6 +23,7 @@ clean_up()
         ls $TMP_OUT_DIR/*.pt | xargs -I {} rm -f $TMP_OUT_DIR/{}
     else
         # delete all .pt's
+        rm -r $TMP_OUT_DIR/dump_pred
         rm -f $TMP_OUT_DIR/*.pt
         rm -rf $TMP_OUT_DIR/sample
         rm -d $TMP_OUT_DIR
@@ -111,12 +112,16 @@ ${PYTHON} onmt/bin/train.py \
             -tgt_vocab_size 1000 \
             -hidden_size 2 -batch_size 10 \
             -num_workers 0 -bucket_size 1024 \
-            -word_vec_size 5 -report_every 5        \
-            -hidden_size 10 -train_steps 10 >> ${LOG_FILE} 2>&1
+            -word_vec_size 5 -report_every 5 \
+            -hidden_size 10 -train_steps 10 \
+            -tensorboard "true" \
+            -tensorboard_log_dir $TMP_OUT_DIR/logs_train >> ${LOG_FILE} 2>&1
+${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_train -tensorboard_checks train
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
+rm -r $TMP_OUT_DIR/logs_train
 
-echo -n "  [+] Testing NMT training w/ copy..."
+echo -n "  [+] Testing NMT training and validation w/ copy..."
 ${PYTHON} onmt/bin/train.py \
             -config ${DATA_DIR}/data.yaml \
             -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
@@ -125,11 +130,15 @@ ${PYTHON} onmt/bin/train.py \
             -tgt_vocab_size 1000 \
             -hidden_size 2 -batch_size 10 \
             -num_workers 0 -bucket_size 1024 \
-            -word_vec_size 5 -report_every 5        \
-            -hidden_size 10 -train_steps 10 \
+            -word_vec_size 5 -report_every 2 \
+            -hidden_size 10 -train_steps 10 -valid_steps 5 \
+            -tensorboard "true" \
+            -tensorboard_log_dir $TMP_OUT_DIR/logs_train_valid \
             -copy_attn >> ${LOG_FILE} 2>&1
+${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_train_valid -tensorboard_checks train_valid
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
+rm -r $TMP_OUT_DIR/logs_train_valid
 
 echo -n "  [+] Testing NMT training w/ align..."
 ${PYTHON} onmt/bin/train.py \
@@ -184,12 +193,42 @@ ${PYTHON} onmt/bin/train.py \
             -train_metrics "BLEU" "TER" \
             -tensorboard "true" \
             -scoring_debug "true" \
-            -tensorboard_log_dir $TMP_OUT_DIR/logs \
+            -tensorboard_log_dir $TMP_OUT_DIR/logs_train_metrics \
             -dump_preds $TMP_OUT_DIR/dump_pred >> ${LOG_FILE} 2>&1
+${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_train_metrics -tensorboard_checks train_metrics
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
-rm -r $TMP_OUT_DIR/dump_pred
-rm -r $TMP_OUT_DIR/logs
+rm -r $TMP_OUT_DIR/logs_train_metrics
+
+echo -n "  [+] Testing NMT training w/ dynamic scoring with validation ..."
+${PYTHON} onmt/bin/train.py \
+            -config ${DATA_DIR}/data.yaml \
+            -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
+            -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
+            -src_vocab_size 1000 \
+            -tgt_vocab_size 1000 \
+            -encoder_type transformer \
+            -decoder_type transformer \
+            -layers 4 \
+            -word_vec_size 16 \
+            -hidden_size 16 \
+            -num_workers 0 -bucket_size 1024 \
+            -heads 2 \
+            -transformer_ff 64 \
+            -num_workers 0 -bucket_size 1024 \
+            -train_steps 10 \
+            -report_every 2 \
+            -train_eval_steps 8 -valid_steps 5 \
+            -train_metrics "BLEU" "TER" \
+            -valid_metrics "BLEU" "TER" \
+            -tensorboard "true" \
+            -scoring_debug "true" \
+            -dump_preds $TMP_OUT_DIR/dump_pred \
+            -tensorboard_log_dir $TMP_OUT_DIR/logs_train_valid_metrics >> ${LOG_FILE} 2>&1
+${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_train_valid_metrics -tensorboard_checks train_valid_metrics
+[ "$?" -eq 0 ] || error_exit
+echo "Succeeded" | tee -a ${LOG_FILE}
+rm -r $TMP_OUT_DIR/logs_train_valid_metrics
 
 echo -n "  [+] Testing LM training..."
 ${PYTHON} onmt/bin/train.py \

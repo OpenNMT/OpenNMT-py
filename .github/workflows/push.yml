@@ -78,8 +78,11 @@ jobs:
           -word_vec_size 5 \
           -report_every 5\
           -hidden_size 10 \
-          -train_steps 10
-    - name: Test RNN training with copy
+          -train_steps 10 \
+          -tensorboard "true" \
+          -tensorboard_log_dir /tmp/logs_train
+        python onmt/tests/test_events.py --logdir /tmp/logs_train -tensorboard_checks train
+    - name: Test RNN training and validation with copy
       run: |
         python train.py \
           -config data/data.yaml \
@@ -93,8 +96,11 @@ jobs:
           -word_vec_size 5 \
           -report_every 5 \
           -hidden_size 10 \
-          -train_steps 10 \
+          -train_steps 10 -valid_steps 5 \
+          -tensorboard "true" \
+          -tensorboard_log_dir /tmp/logs_train_valid \
           -copy_attn
+        python onmt/tests/test_events.py --logdir /tmp/logs_train_valid -tensorboard_checks train_valid
     - name: Test RNN training with coverage
       run: |
         python train.py \
@@ -136,31 +142,62 @@ jobs:
     - name : Test Transformer training with dynamic scoring
       run: |
         python3 train.py \
-        -config data/data.yaml \
-        -src_vocab /tmp/onmt.vocab.src \
-        -tgt_vocab /tmp/onmt.vocab.tgt \
-        -src_vocab_size 1000 \
-        -tgt_vocab_size 1000 \
-        -encoder_type transformer \
-        -decoder_type transformer \
-        -layers 4 \
-        -word_vec_size 16 \
-        -hidden_size 16 \
-        -num_workers 0 -bucket_size 1024 \
-        -heads 2 \
-        -transformer_ff 64 \
-        -num_workers 0 -bucket_size 1024 \
-        -accum_count 2 4 8 \
-        -accum_steps 0 15000 30000 \
-        -save_model /tmp/onmt.model \
-        -train_steps 200 \
-        -report_every 50 \
-        -train_eval_steps 100 \
-        -train_metrics "BLEU" "TER" \
-        -tensorboard "true" \
-        -scoring_debug "true" \
-        -tensorboard_log_dir /tmp/logs \
-        -dump_preds /tmp/dump_preds 
+          -config data/data.yaml \
+          -src_vocab /tmp/onmt.vocab.src \
+          -tgt_vocab /tmp/onmt.vocab.tgt \
+          -src_vocab_size 1000 \
+          -tgt_vocab_size 1000 \
+          -encoder_type transformer \
+          -decoder_type transformer \
+          -layers 4 \
+          -word_vec_size 16 \
+          -hidden_size 16 \
+          -num_workers 0 -bucket_size 1024 \
+          -heads 2 \
+          -transformer_ff 64 \
+          -num_workers 0 -bucket_size 1024 \
+          -accum_count 2 4 8 \
+          -accum_steps 0 15000 30000 \
+          -save_model /tmp/onmt.model \
+          -train_steps 200 \
+          -report_every 50 \
+          -train_eval_steps 100 \
+          -train_metrics "BLEU" "TER" \
+          -tensorboard "true" \
+          -scoring_debug "true" \
+          -tensorboard_log_dir /tmp/logs_train_metrics \
+          -dump_preds /tmp/dump_preds
+        python onmt/tests/test_events.py --logdir /tmp/logs_train_metrics -tensorboard_checks train_metrics
+    - name : Test Transformer training and validation with dynamic scoring
+      run: |
+        python3 train.py \
+          -config data/data.yaml \
+          -src_vocab /tmp/onmt.vocab.src \
+          -tgt_vocab /tmp/onmt.vocab.tgt \
+          -src_vocab_size 1000 \
+          -tgt_vocab_size 1000 \
+          -encoder_type transformer \
+          -decoder_type transformer \
+          -layers 4 \
+          -word_vec_size 16 \
+          -hidden_size 16 \
+          -num_workers 0 -bucket_size 1024 \
+          -heads 2 \
+          -transformer_ff 64 \
+          -num_workers 0 -bucket_size 1024 \
+          -accum_count 2 4 8 \
+          -accum_steps 0 15000 30000 \
+          -save_model /tmp/onmt.model \
+          -train_steps 10  -valid_steps 5 \
+          -report_every 2 \
+          -train_eval_steps 8 \
+          -train_metrics "BLEU" "TER" \
+          -valid_metrics "BLEU" "TER" \
+          -tensorboard "true" \
+          -scoring_debug "true" \
+          -tensorboard_log_dir /tmp/logs_train_valid_metrics \
+          -dump_preds /tmp/dump_preds
+        python onmt/tests/test_events.py --logdir /tmp/logs_train_valid_metrics -tensorboard_checks train_valid_metrics 
     - name: Test LM training
       run: |
         python train.py \
