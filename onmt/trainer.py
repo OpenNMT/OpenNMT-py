@@ -171,14 +171,14 @@ class Trainer(object):
         # Set model in training mode.
         self.model.train()
 
-    def _training_eval_handler(self, scorer, batch, mode="train"):
-        """Trigger metrics calculations"""
-        preds, texts_ref = self.scoring_preparator.translate(
-            model=self.model,
-            batch=batch,
-            gpu_rank=self.gpu_rank,
-            step=self.optim.training_step,
-            mode=mode)
+    def _training_eval_handler(self, scorer, preds, texts_ref):
+        """Trigger metrics calculations
+
+        Args:
+            scorer (:obj:`onmt.scorer.Scorer`): scorer.
+            preds, texts_ref: outputs of the scorer's `translate` method.
+        Returns: The metric calculated by the scorer.
+        """
         return scorer.compute_score(preds, texts_ref)
 
     def _accum_count(self, step):
@@ -321,14 +321,18 @@ class Trainer(object):
         # Set model in validating mode.
         valid_model.eval()
 
+        sources = []
+        refs = []
         with torch.no_grad():
             stats = onmt.utils.Statistics()
-
             for batch in valid_iter:
                 src = batch['src']
                 src_len = batch['srclen']
                 tgt = batch['tgt']
-
+                sources_, refs_ = self.scoring_preparator.\
+                    build_sources_and_refs(batch)
+                sources.append(sources_)
+                refs += refs_
                 with torch.cuda.amp.autocast(enabled=self.optim.amp):
                     # F-prop through the model.
                     model_out, attns = valid_model(src, tgt, src_len,
@@ -341,13 +345,20 @@ class Trainer(object):
 
             # Compute validation metrics (at batch.dataset level)
             computed_metrics = {}
+            preds, texts_ref = self.scoring_preparator.translate(
+                model=self.model,
+                sources=sources,
+                refs=refs,
+                gpu_rank=self.gpu_rank,
+                step=self.optim.training_step,
+                mode="valid")
             for i, metric in enumerate(self.valid_scorers):
                 logger.info("UPDATING VALIDATION {}".format(metric))
                 self.valid_scorers[
                     metric]["value"] = self._training_eval_handler(
                         scorer=self.valid_scorers[metric]["scorer"],
-                        batch=batch,
-                        mode="valid")
+                        preds=preds,
+                        texts_ref=texts_ref)
                 computed_metrics[
                     metric] = self.valid_scorers[metric]["value"]
                 logger.info(
@@ -432,14 +443,23 @@ class Trainer(object):
                     ):
                         # Compute and save stats
                         computed_metrics = {}
+                        sources_, refs_ = self.scoring_preparator.\
+                            build_sources_and_refs(batch)
+                        preds, texts_ref = self.scoring_preparator.translate(
+                            model=self.model,
+                            sources=[sources_],
+                            refs=refs_,
+                            gpu_rank=self.gpu_rank,
+                            step=self.optim.training_step,
+                            mode="train")
                         for i, metric in enumerate(self.train_scorers):
                             logger.info("UPDATING TRAINING {}".format(metric))
                             self.train_scorers[
                                 metric]["value"] = self._training_eval_handler(
                                 scorer=self.train_scorers[
                                     metric]["scorer"],
-                                batch=batch,
-                                mode="train")
+                                preds=preds,
+                                texts_ref=texts_ref)
                             logger.info(
                                 "training {}: {}".format(
                                     metric, self.train_scorers[

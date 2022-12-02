@@ -70,7 +70,14 @@ class ScoringPreparator():
                 os.makedirs(self.opt.dump_preds)
 
     def tokenize_batch(self, batch_side, side):
-        """Convert a batch into a list of tokenized sentences"""
+        """Convert a batch into a list of tokenized sentences
+        Args:
+            batch_side: 'src' or 'tgt' field of a batch.
+            side (string): 'src' or 'tgt'.
+        Returns
+            tokenized_sentences (list): List of lists of tokens.
+                Each list is a tokenized sentence.
+        """
         # batch_side.shape[0] sentences to rebuild
         # batch_side.shape[1] tokens per sentence
         vocab = self.vocabs[side]
@@ -88,15 +95,34 @@ class ScoringPreparator():
         return tokenized_sentences
 
     def build_sources_and_refs(self, batch):
-        """Reconstruct the sources and references of the examples
-        related to a batch"""
+        """Reconstruct sources and references from a batch
+        Args:
+            batch: batch yielded from `DynamicDatasetIter` object
+        Returns:
+           sources (list): Tokenized source sentences
+           refs (list): Tokenized target sentences
+        """
         sources = self.tokenize_batch(batch['src'], 'src')
         refs = self.tokenize_batch(batch['tgt'], 'tgt')
         return sources, refs
 
-    def translate(self, model, batch, gpu_rank, step, mode):
-        """Compute the sentences predicted by the current model's state
-        related to a batch"""
+    def translate(self, model, sources, refs, gpu_rank, step, mode):
+        """Compute and save the sentences predicted by the
+        current model's state related to a batch.
+
+        Args:
+            model (:obj:`onmt.models.NMTModel`): The current model's state.
+            sources: (list) List of lists of tokenized source sentences.
+                Each list is related to a batch.
+            refs (list): Tokenized target sentences.
+            gpu_rank (int): Ordinal rank of the gpu where the
+                translation is to be done.
+            step: The current training step.
+            mode: (string): 'train' or 'valid'.
+        Returns:
+            preds (list): Detokenized predictions
+            texts_ref (list): Detokenized target sentences
+        """
         model_opt = self.opt
         parser = ArgumentParser()
         translate_opts(parser)
@@ -118,12 +144,19 @@ class ScoringPreparator():
             report_align=opt.report_align,
             report_score=True,
             logger=None)
-        sources, refs = self.build_sources_and_refs(batch)
-        infer_iter = textbatch_to_tensor(translator.vocabs,
-                                         sources, is_train=True)
-        infer_iter = IterOnDevice(infer_iter, opt.gpu)
-        _, preds = translator._translate(
-                    infer_iter)
+        preds = []
+        for sources_ in sources:
+            # for validation we build an infer_iter per batch
+            # in order to avoid oom issues because there is no
+            # batching strategy in `textbatch_to_tensor`
+            infer_iter = textbatch_to_tensor(translator.vocabs,
+                                             sources_, is_train=True)
+            infer_iter = IterOnDevice(infer_iter, opt.gpu)
+            _, preds_ = translator._translate(
+                        infer_iter)
+            preds += preds_
+        # flatten sources (for validation)
+        sources = [item for sources_ in sources for item in sources_]
         texts_ref = []
         for i in range(len(preds)):
             preds[i] = self.tgt_detokenizer._detokenize(preds[i][0].split())
