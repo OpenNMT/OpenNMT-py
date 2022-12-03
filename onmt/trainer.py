@@ -438,7 +438,7 @@ class Trainer(object):
                             trunc_size=trunc_size)
 
                     step = self.optim.training_step
-                    if (
+                    if (self.train_scorers != {} and
                             step % self.train_eval_steps == 0
                     ):
                         # Compute and save stats

@@ -250,7 +250,7 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
                 return count
         minibatch, size_so_far, seen = [], 0, []
         for ex in data:
-            if ex['src']['src'] not in seen:
+            if (ex['src']['src'] not in seen) or (self.task != CorpusTask.TRAIN):
                 seen.append(ex['src']['src'])
                 minibatch.append(ex)
                 size_so_far = batch_size_fn(ex, len(minibatch), size_so_far)
