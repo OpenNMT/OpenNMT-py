@@ -344,14 +344,15 @@ class Trainer(object):
                     stats.update(batch_stats)
 
             # Compute validation metrics (at batch.dataset level)
-            computed_metrics = {}
-            preds, texts_ref = self.scoring_preparator.translate(
-                model=self.model,
-                sources=sources,
-                refs=refs,
-                gpu_rank=self.gpu_rank,
-                step=self.optim.training_step,
-                mode="valid")
+            if len(self.valid_scorers) > 0:
+                computed_metrics = {}
+                preds, texts_ref = self.scoring_preparator.translate(
+                    model=self.model,
+                    sources=sources,
+                    refs=refs,
+                    gpu_rank=self.gpu_rank,
+                    step=self.optim.training_step,
+                    mode="valid")
             for i, metric in enumerate(self.valid_scorers):
                 logger.info("UPDATING VALIDATION {}".format(metric))
                 self.valid_scorers[
@@ -439,7 +440,8 @@ class Trainer(object):
 
                     step = self.optim.training_step
                     if (
-                            step % self.train_eval_steps == 0
+                           self.train_scorers != {} and
+                           step % self.train_eval_steps == 0
                     ):
                         # Compute and save stats
                         computed_metrics = {}

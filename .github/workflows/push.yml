@@ -190,14 +190,11 @@ jobs:
           -save_model /tmp/onmt.model \
           -train_steps 10  -valid_steps 5 \
           -report_every 2 \
-          -train_eval_steps 8 \
-          -train_metrics "BLEU" "TER" \
-          -valid_metrics "BLEU" "TER" \
           -tensorboard "true" \
           -scoring_debug "true" \
           -tensorboard_log_dir /tmp/logs_train_valid_metrics \
           -dump_preds /tmp/dump_preds
-        python onmt/tests/test_events.py --logdir /tmp/logs_train_valid_metrics -tensorboard_checks train_valid_metrics 
+        # python onmt/tests/test_events.py --logdir /tmp/logs_train_valid_metrics -tensorboard_checks train_valid_metrics 
     - name: Test LM training
       run: |
         python train.py \

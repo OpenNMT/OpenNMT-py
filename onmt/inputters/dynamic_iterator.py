@@ -250,10 +250,14 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
                 return count
         minibatch, size_so_far, seen = [], 0, []
         for ex in data:
-            if ex['src']['src'] not in seen:
+            if (
+                   (ex['src']['src'] not in seen) or
+                   (self.task != CorpusTask.TRAIN)
+            ):
                 seen.append(ex['src']['src'])
                 minibatch.append(ex)
-                size_so_far = batch_size_fn(ex, len(minibatch), size_so_far)
+                size_so_far = batch_size_fn(ex, len(minibatch),
+                                            size_so_far)
                 if size_so_far >= batch_size:
                     overflowed = 0
                     if size_so_far > batch_size:
@@ -268,10 +272,10 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
                     else:
                         if overflowed == len(minibatch):
                             logger.warning(
-                                "The batch will be filled until we reach %d,"
-                                "its size may exceed %d tokens"
-                                % (batch_size_multiple, batch_size)
-                                )
+                                 "The batch will be filled until we reach"
+                                 " %d, its size may exceed %d tokens"
+                                 % (batch_size_multiple, batch_size)
+                                 )
                         else:
                             yield minibatch[:-overflowed]
                             minibatch = minibatch[-overflowed:]
