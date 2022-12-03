@@ -96,9 +96,7 @@ jobs:
           -word_vec_size 5 \
           -report_every 5 \
           -hidden_size 10 \
-          -train_steps 10 \ # -valid_steps 5 \
-          -tensorboard "true" \
-          -tensorboard_log_dir /tmp/logs_train_valid \
+          -train_steps 10 \
           -copy_attn
         # python onmt/tests/test_events.py --logdir /tmp/logs_train_valid -tensorboard_checks train_valid
     - name: Test RNN training with coverage
