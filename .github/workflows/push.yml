@@ -97,7 +97,9 @@ jobs:
           -report_every 5 \
           -hidden_size 10 \
           -train_steps 10 -valid_steps 5 \
-          -copy_attn
+          -tensorboard "true" \
+          -tensorboard_log_dir $TMP_OUT_DIR/logs_train_valid \
+          -copy_attn >> ${LOG_FILE} 2>&1
         python onmt/tests/test_events.py --logdir /tmp/logs_train_valid -tensorboard_checks train_valid
     - name: Test RNN training with coverage
       run: |
