@@ -96,7 +96,7 @@ jobs:
           -word_vec_size 5 \
           -report_every 5 \
           -hidden_size 10 \
-          -train_steps 10 -valid_steps 5 \
+          -train_steps 10 \ # -valid_steps 5 \
           -tensorboard "true" \
           -tensorboard_log_dir /tmp/logs_train_valid \
           -copy_attn
