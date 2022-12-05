@@ -329,10 +329,11 @@ class Trainer(object):
                 src = batch['src']
                 src_len = batch['srclen']
                 tgt = batch['tgt']
-                sources_, refs_ = self.scoring_preparator.\
-                    build_sources_and_refs(batch)
-                sources.append(sources_)
-                refs += refs_
+                if self.valid_scorers:
+                    sources_, refs_ = self.scoring_preparator.\
+                        build_sources_and_refs(batch)
+                    sources.append(sources_)
+                    refs += refs_
                 with torch.cuda.amp.autocast(enabled=self.optim.amp):
                     # F-prop through the model.
                     model_out, attns = valid_model(src, tgt, src_len,
@@ -367,16 +368,12 @@ class Trainer(object):
                         metric, self.valid_scorers[metric]["value"])
                         )
                 # Compute stats
-                batch_stats = onmt.utils.Statistics(
-                    batch_stats.loss,
-                    batch_stats.n_batchs,
-                    batch_stats.n_sents,
-                    batch_stats.n_words,
-                    batch_stats.n_correct,
+                metric_stats = onmt.utils.Statistics(
+                    0, 0, 0, 0, 0,
                     computed_metrics)
 
                 # Update statistics.
-                stats.update(batch_stats)
+                stats.update(metric_stats)
 
         if moving_average:
             for param_data, param in zip(model_params_data,

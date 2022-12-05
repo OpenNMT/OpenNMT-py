@@ -78,19 +78,18 @@ class ScoringPreparator():
             tokenized_sentences (list): List of lists of tokens.
                 Each list is a tokenized sentence.
         """
-        # batch_side.shape[0] sentences to rebuild
-        # batch_side.shape[1] tokens per sentence
         vocab = self.vocabs[side]
+        nb_sentences = batch_side.shape[0]
+        nb_tokens_per_sentence = batch_side.shape[1]
         tokenized_sentences = []
-        for i in range(batch_side.shape[0]):
-            tokens = []
-            for t in range(batch_side.shape[1]):
-                token = vocab.ids_to_tokens[batch_side[i, t, 0]]
-                if (token == DefaultTokens.PAD
-                        or token == DefaultTokens.EOS):
-                    break
-                if token != DefaultTokens.BOS:
-                    tokens.append(token)
+        for i in range(nb_sentences):
+            tokens = [vocab.lookup_index(batch_side[i, t, 0])
+                      for t in range(nb_tokens_per_sentence)]
+            # remove padding tokens
+            if DefaultTokens.PAD in set(tokens):
+                tokens = tokens[:tokens.index(DefaultTokens.PAD)]
+            # remove EOS and BOS tokens
+            tokens = tokens[1:-1]
             tokenized_sentences.append(tokens)
         return tokenized_sentences
 
