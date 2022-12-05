@@ -446,7 +446,7 @@ class ServerModel(object):
                     self.ct2_model,
                     ct2_translator_args=self.ct2_translator_args,
                     ct2_translate_batch_args=self.ct2_translate_batch_args,
-                    target_prefix=self.opt.tgt_prefix,
+                    target_prefix=self.opt.tgt_file_prefix,
                     preload=preload)
             else:
                 self.translator = build_translator(

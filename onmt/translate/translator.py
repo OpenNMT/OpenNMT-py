@@ -85,7 +85,7 @@ class Inference(object):
         ignore_when_blocking (set or frozenset): See
             :class:`onmt.translate.decode_strategy.DecodeStrategy`.
         replace_unk (bool): Replace unknown token.
-        tgt_prefix (bool): Force the predictions begin with provided -tgt.
+        tgt_file_prefix (bool): Force the predictions begin with provided -tgt.
         data_type (str): Source data type.
         verbose (bool): Print/log every translation.
         report_time (bool): Print/log total time/frequency.
@@ -116,7 +116,7 @@ class Inference(object):
         ignore_when_blocking=frozenset(),
         replace_unk=False,
         ban_unk_token=False,
-        tgt_prefix=False,
+        tgt_file_prefix=False,
         phrase_table="",
         data_type="text",
         verbose=False,
@@ -168,7 +168,7 @@ class Inference(object):
         self.replace_unk = replace_unk
         if self.replace_unk and not self.model.decoder.attentional:
             raise ValueError("replace_unk requires an attentional decoder.")
-        self.tgt_prefix = tgt_prefix
+        self.tgt_file_prefix = tgt_file_prefix
         self.phrase_table = phrase_table
         self.data_type = data_type
         self.verbose = verbose
@@ -257,7 +257,7 @@ class Inference(object):
             ignore_when_blocking=set(opt.ignore_when_blocking),
             replace_unk=opt.replace_unk,
             ban_unk_token=opt.ban_unk_token,
-            tgt_prefix=opt.tgt_prefix,
+            tgt_file_prefix=opt.tgt_file_prefix,
             phrase_table=opt.phrase_table,
             data_type=opt.data_type,
             verbose=opt.verbose,
@@ -781,7 +781,7 @@ class Translator(Inference):
 
         # (2) prep decode_strategy. Possibly repeat src objects.
         src_map = batch['src_map'] if use_src_map else None
-        target_prefix = batch['tgt'] if self.tgt_prefix else None
+        target_prefix = batch['tgt'] if self.tgt_file_prefix else None
         (
             fn_map_state,
             enc_out,
