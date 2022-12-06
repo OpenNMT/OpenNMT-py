@@ -648,7 +648,7 @@ def _add_train_dynamic_data(parser):
               type=int, default=0,
               help="""The bucket size is incremented with this
               amount of examples (optional)""")
-    group.add("-prefetch_factor", "--prefetch_factor", type=int, default=100,
+    group.add("-prefetch_factor", "--prefetch_factor", type=int, default=200,
               help="""number of mini-batches loaded in advance to avoid the
                    GPU waiting during the refilling of the bucket.""")
 
