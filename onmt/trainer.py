@@ -10,6 +10,7 @@
           users of this library) for the strategy things we do.
 """
 
+import time
 import torch
 import traceback
 import onmt.utils
@@ -325,6 +326,7 @@ class Trainer(object):
         refs = []
         with torch.no_grad():
             stats = onmt.utils.Statistics()
+            start = time.time()
             for batch in valid_iter:
                 src = batch['src']
                 src_len = batch['srclen']
@@ -343,10 +345,13 @@ class Trainer(object):
                     _, batch_stats = self.valid_loss(batch, model_out, attns)
 
                     stats.update(batch_stats)
+            logger.info("""valid stats calculation and batchs detokenization
+                           took: {} s.""".format(time.time() - start))
 
             # Compute validation metrics (at batch.dataset level)
             if len(self.valid_scorers) > 0:
                 computed_metrics = {}
+                start = time.time()
                 preds, texts_ref = self.scoring_preparator.translate(
                     model=self.model,
                     sources=sources,
@@ -354,6 +359,8 @@ class Trainer(object):
                     gpu_rank=self.gpu_rank,
                     step=self.optim.training_step,
                     mode="valid")
+                logger.info("""The translation of the valid dataset
+                               took : {} s.""".format(time.time() - start))
             for i, metric in enumerate(self.valid_scorers):
                 logger.info("UPDATING VALIDATION {}".format(metric))
                 self.valid_scorers[

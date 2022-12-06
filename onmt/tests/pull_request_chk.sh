@@ -183,13 +183,12 @@ ${PYTHON} onmt/bin/train.py \
             -layers 4 \
             -word_vec_size 16 \
             -hidden_size 16 \
-            -num_workers 0 -bucket_size 1024 \
             -heads 2 \
             -transformer_ff 64 \
             -num_workers 0 -bucket_size 1024 \
-            -train_steps 200 \
-            -report_every 50 \
-            -train_eval_steps 100 \
+            -train_steps 20 \
+            -report_every 5 \
+            -train_eval_steps 10 \
             -train_metrics "BLEU" "TER" \
             -tensorboard "true" \
             -scoring_debug "true" \
@@ -215,14 +214,17 @@ ${PYTHON} onmt/bin/train.py \
             -num_workers 0 -bucket_size 1024 \
             -heads 2 \
             -transformer_ff 64 \
-            -num_workers 0 -bucket_size 1024 \
+            -bucket_size 1024 \
             -train_steps 10 \
             -report_every 2 \
+            -train_eval_steps 8 -valid_steps 5 \
+            -train_metrics "BLEU" "TER" \
+            -valid_metrics "BLEU" "TER" \
             -tensorboard "true" \
             -scoring_debug "true" \
             -dump_preds $TMP_OUT_DIR/dump_pred \
             -tensorboard_log_dir $TMP_OUT_DIR/logs_train_valid_metrics >> ${LOG_FILE} 2>&1
-#${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_train_valid_metrics -tensorboard_checks train_valid_metrics
+${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_train_valid_metrics -tensorboard_checks train_valid_metrics
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 rm -r $TMP_OUT_DIR/logs_train_valid_metrics

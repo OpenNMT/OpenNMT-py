@@ -326,8 +326,6 @@ def build_dynamic_dataset_iter(opt, transforms_cls, vocabs, copy=False,
     advance to avoid the GPU waiting during the refilling of the bucket.
     """
     transforms = make_transforms(opt, transforms_cls, vocabs)
-    with open("transforms", "w") as f:
-        f.write(str(transforms))
     corpora = get_corpora(opt, task)
     if corpora is None:
         assert task != CorpusTask.TRAIN, "only valid corpus is ignorable."

@@ -81,15 +81,15 @@ class ScoringPreparator():
         vocab = self.vocabs[side]
         nb_sentences = batch_side.shape[0]
         nb_tokens_per_sentence = batch_side.shape[1]
+        indices_to_remove = [vocab.lookup_token(token)
+                             for token in [DefaultTokens.PAD,
+                                           DefaultTokens.EOS,
+                                           DefaultTokens.BOS]]
         tokenized_sentences = []
         for i in range(nb_sentences):
             tokens = [vocab.lookup_index(batch_side[i, t, 0])
-                      for t in range(nb_tokens_per_sentence)]
-            # remove padding tokens
-            if DefaultTokens.PAD in set(tokens):
-                tokens = tokens[:tokens.index(DefaultTokens.PAD)]
-            # remove EOS and BOS tokens
-            tokens = tokens[1:-1]
+                      for t in range(nb_tokens_per_sentence)
+                      if batch_side[i, t, 0] not in indices_to_remove]
             tokenized_sentences.append(tokens)
         return tokenized_sentences
 
@@ -141,7 +141,7 @@ class ScoringPreparator():
             global_scorer=scorer,
             out_file=out_file,
             report_align=opt.report_align,
-            report_score=True,
+            report_score=False,
             logger=None)
         preds = []
         for sources_ in sources:
