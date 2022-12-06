@@ -23,7 +23,7 @@ class FilterTooLongTransform(Transform):
 
     @classmethod
     def add_options(cls, parser):
-        """Avalilable options relate to this Transform."""
+        """Avalailable options relate to this Transform."""
         group = parser.add_argument_group("Transform/Filter")
         group.add("--src_seq_length", "-src_seq_length", type=int, default=200,
                   help="Maximum source sequence length.")
@@ -61,12 +61,12 @@ class PrefixTransform(Transform):
 
     @classmethod
     def add_options(cls, parser):
-        """Avalilable options relate to this Transform."""
+        """Avalailable options relate to this Transform."""
         group = parser.add_argument_group("Transform/Prefix")
         group.add("--src_prefix", "-src_prefix", type=str, default="",
-                  help="Source prefix.")
+                  help="String to prepend to all source example.")
         group.add("--tgt_prefix", "-tgt_prefix", type=str, default="",
-                  help="Source prefix.")
+                  help="String to prepend to all target example.")
 
     @staticmethod
     def _get_prefix(corpus):
@@ -113,7 +113,7 @@ class PrefixTransform(Transform):
     def _prepend(self, example, prefix):
         """Prepend `prefix` to `tokens`."""
         for side, side_prefix in prefix.items():
-            if example[side] is not None:
+            if example.get(side) is not None:
                 example[side] = side_prefix.split() + example[side]
         return example
 
