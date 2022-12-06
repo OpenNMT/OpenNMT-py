@@ -782,7 +782,7 @@ def translate_opts(parser, dynamic=False):
                    "Ex: {'feat_0': '../data.txt.feats0', 'feat_1': '../data.txt.feats1'}")  # noqa: E501
     group.add('--tgt', '-tgt',
               help='True target sequence (optional)')
-    group.add('--tgt_prefix', '-tgt_prefix', action='store_true',
+    group.add('--tgt_file_prefix', '-tgt_file_prefix', action='store_true',
               help='Generate predictions using provided `-tgt` as prefix.')
     group.add('--output', '-output', default='pred.txt',
               help="Path to output the predictions (each line will "
