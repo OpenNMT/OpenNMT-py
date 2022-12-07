@@ -209,8 +209,8 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
 
     def _tuple_to_json_with_tokIDs(self, tuple_bucket):
         bucket = []
-        for item in tuple_bucket:
-            example = process(self.task, item)
+        tuple_bucket = process(self.task, tuple_bucket)
+        for example in tuple_bucket:
             if example is not None:
                 if self.copy:
                     example = _addcopykeys(self.vocabs, example)

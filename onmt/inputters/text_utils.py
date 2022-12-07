@@ -38,20 +38,8 @@ def max_tok_len(new, count, sofar):
     return max(src_elements, tgt_elements)
 
 
-def process(task, item):
-    """Return valid transformed example from `item`."""
-    example, transform, cid = item
-    # this is a hack: appears quicker to apply it here
-    # than in the ParallelCorpusIterator
-    maybe_example = transform.apply(example,
-                                    is_train=(task
-                                              == CorpusTask.TRAIN),
-                                    corpus_name=cid)
-    if maybe_example is None:
-        return None
-
+def clean_example(maybe_example):
     maybe_example['src'] = {"src": ' '.join(maybe_example['src'])}
-
     # Make features part of src like
     # {'src': {'src': ..., 'feat1': ...., 'feat2': ....}}
     if 'src_feats' in maybe_example:
@@ -62,7 +50,20 @@ def process(task, item):
         maybe_example['tgt'] = {'tgt': ' '.join(maybe_example['tgt'])}
     if 'align' in maybe_example:
         maybe_example['align'] = ' '.join(maybe_example['align'])
+    return maybe_example
 
+
+def process(task, bucket, **kwargs):
+    """Returns valid transformed bucket from bucket."""
+    _, transform, cid = bucket[0]
+    # We apply the same TransformPipe to all the bucket
+    processed_bucket = transform.batch_apply(
+        bucket, is_train=(task == CorpusTask.TRAIN), corpus_name=cid)
+    for i in range(len(processed_bucket)):
+        (example, transform, cid) = processed_bucket[i]
+        if example is not None:
+            example = clean_example(example)
+        processed_bucket[i] = example
     # at this point an example looks like:
     # {'src': {'src': ..., 'feat1': ...., 'feat2': ....},
     #  'tgt': {'tgt': ...},
@@ -71,8 +72,7 @@ def process(task, item):
     #  'indices' : seq in bucket
     #  'align': ...,
     # }
-
-    return maybe_example
+    return processed_bucket
 
 
 def numericalize(vocabs, example):
