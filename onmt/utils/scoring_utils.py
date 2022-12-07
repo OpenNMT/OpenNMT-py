@@ -5,7 +5,7 @@ from onmt.utils.parse import ArgumentParser
 from onmt.translate import GNMTGlobalScorer, Translator
 from onmt.opts import translate_opts
 from onmt.constants import DefaultTokens
-from onmt.inputters.text_utils import textbatch_to_tensor
+from onmt.inputters.text_utils import _addcopykeys, tensorify, text_sort_key
 from onmt.inputters.inputter import IterOnDevice
 
 
@@ -148,8 +148,22 @@ class ScoringPreparator():
             # for validation we build an infer_iter per batch
             # in order to avoid oom issues because there is no
             # batching strategy in `textbatch_to_tensor`
-            infer_iter = textbatch_to_tensor(translator.vocabs,
-                                             sources_, is_train=True)
+            numeric = []
+            for i, ex in enumerate(sources_):
+                if isinstance(ex, bytes):
+                    ex = ex.decode("utf-8")
+                idxs = translator.vocabs['src'](ex)
+                num_ex = {'src': {'src': " ".join(ex),
+                          'src_ids': idxs},
+                          'srclen': len(ex),
+                          'tgt': None,
+                          'indices': i,
+                          'align': None}
+                num_ex = _addcopykeys(translator.vocabs["src"], num_ex)
+                num_ex["src"]["src"] = ex
+                numeric.append(num_ex)
+            numeric.sort(key=text_sort_key, reverse=True)
+            infer_iter = [tensorify(self.vocabs, numeric)]
             infer_iter = IterOnDevice(infer_iter, opt.gpu)
             _, preds_ = translator._translate(
                         infer_iter)

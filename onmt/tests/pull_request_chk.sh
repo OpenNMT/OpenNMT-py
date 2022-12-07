@@ -199,7 +199,7 @@ ${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_train_metrics -te
 echo "Succeeded" | tee -a ${LOG_FILE}
 rm -r $TMP_OUT_DIR/logs_train_metrics
 
-echo -n "  [+] Testing NMT training w/ dynamic scoring with validation ..."
+echo -n "  [+] Testing NMT training w/ dynamic scoring with validation and copy ..."
 ${PYTHON} onmt/bin/train.py \
             -config ${DATA_DIR}/data.yaml \
             -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
@@ -223,6 +223,7 @@ ${PYTHON} onmt/bin/train.py \
             -tensorboard "true" \
             -scoring_debug "true" \
             -dump_preds $TMP_OUT_DIR/dump_pred \
+            -copy_attn \
             -tensorboard_log_dir $TMP_OUT_DIR/logs_train_valid_metrics >> ${LOG_FILE} 2>&1
 ${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_train_valid_metrics -tensorboard_checks train_valid_metrics
 [ "$?" -eq 0 ] || error_exit
