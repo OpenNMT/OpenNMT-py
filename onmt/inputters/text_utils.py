@@ -55,11 +55,6 @@ def clean_example(maybe_example):
 
 def process(task, item, **kwargs):
     """Returns valid transformed bucket from bucket."""
-    if isinstance(item, list):
-        is_example = False
-    else:
-        is_example = True
-        item = [item]
     _, transform, cid = item[0]
     # We apply the same TransformPipe to all the bucket
     processed_bucket = transform.batch_apply(
@@ -77,8 +72,6 @@ def process(task, item, **kwargs):
     #  'indices' : seq in bucket
     #  'align': ...,
     # }
-    if is_example:
-        processed_bucket = processed_bucket[0]
     return processed_bucket
 
 

@@ -61,7 +61,7 @@ def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
         stride=stride, offset=offset)
     for c_name, c_iter in datasets_iterables.items():
         for i, item in enumerate(c_iter):
-            maybe_example = process(CorpusTask.TRAIN, item)
+            maybe_example = process(CorpusTask.TRAIN, [item])[0]
             if maybe_example is None:
                 if opts.dump_samples:
                     build_sub_vocab.queues[c_name][offset].put("blank")
