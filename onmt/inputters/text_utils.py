@@ -53,32 +53,22 @@ def clean_example(maybe_example):
     return maybe_example
 
 
-def process(task, item, bucket_level=False, **kwargs):
-    """Return valid transformed example from `item`
-    or valid transformed bucket from bucket."""
-    if bucket_level:
-        # item -> bucket
-        _, transform, cid = item[0]
-        # We apply the same TransformPipe to all the bucket
-        processed_bucket = transform.batch_apply(
-            item, is_train=(task == CorpusTask.TRAIN), corpus_name=cid)
-        for i in range(len(processed_bucket)):
-            (example, transform, cid) = processed_bucket[i]
-            if example is not None:
-                example = clean_example(example)
-            processed_bucket[i] = example
-        return processed_bucket
-    example, transform, cid = item
-    # this is a hack: appears quicker to apply it here
-    # than in the ParallelCorpusIterator
-    maybe_example = transform.apply(example,
-                                    is_train=(task
-                                              == CorpusTask.TRAIN),
-                                    corpus_name=cid)
-    if maybe_example is None:
-        return None
-    maybe_example = clean_example(maybe_example)
-
+def process(task, item, **kwargs):
+    """Returns valid transformed bucket from bucket."""
+    if isinstance(item, list):
+        is_example = False
+    else:
+        is_example = True
+        item = [item]
+    _, transform, cid = item[0]
+    # We apply the same TransformPipe to all the bucket
+    processed_bucket = transform.batch_apply(
+        item, is_train=(task == CorpusTask.TRAIN), corpus_name=cid)
+    for i in range(len(processed_bucket)):
+        (example, transform, cid) = processed_bucket[i]
+        if example is not None:
+            example = clean_example(example)
+        processed_bucket[i] = example
     # at this point an example looks like:
     # {'src': {'src': ..., 'feat1': ...., 'feat2': ....},
     #  'tgt': {'tgt': ...},
@@ -87,7 +77,9 @@ def process(task, item, bucket_level=False, **kwargs):
     #  'indices' : seq in bucket
     #  'align': ...,
     # }
-    return maybe_example
+    if is_example:
+        processed_bucket = processed_bucket[0]
+    return processed_bucket
 
 
 def numericalize(vocabs, example):

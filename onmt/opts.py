@@ -645,8 +645,6 @@ def _add_train_dynamic_data(parser):
     group.add("-prefetch_factor", "--prefetch_factor", type=int, default=100,
               help="""number of mini-batches loaded in advance to avoid the
                    GPU waiting during the refilling of the bucket.""")
-#     group.add("-bucket_level", "--bucket_level", action='store_true',
-#               help="""if true transforms are applied at bucket level""")
 
 
 def train_opts(parser):

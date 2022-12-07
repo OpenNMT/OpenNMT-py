@@ -65,9 +65,6 @@ class Transform(object):
             batch (list): a list of examples;
             is_train (bool): Indicate if src/tgt is training data;bject.
         """
-        # if self.batch_apply_ is not None:
-        #     self.batch_apply(batch, is_train=False, **kwargs)
-        # else:
         for (example, _, cid) in batch:
             example = self.apply(example, is_train=is_train, **kwargs)
         return batch
@@ -215,8 +212,6 @@ class TransformPipe(Transform):
             example (dict): a dict of field value, ex. src, tgt.
 
         """
-        with open('transforms', 'w') as w:
-            w.write(str(self.transforms))
         for transform in self.transforms:
             batch = transform.batch_apply(
                 batch, is_train=is_train, stats=self.statistics, **kwargs)

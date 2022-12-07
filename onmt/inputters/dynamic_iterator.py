@@ -209,20 +209,12 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
 
     def _tuple_to_json_with_tokIDs(self, tuple_bucket):
         bucket = []
-        # if bucket_level:
-        tuple_bucket = process(self.task, tuple_bucket, bucket_level=True)
+        tuple_bucket = process(self.task, tuple_bucket)
         for example in tuple_bucket:
             if example is not None:
                 if self.copy:
                     example = _addcopykeys(self.vocabs, example)
                 bucket.append(numericalize(self.vocabs, example))
-        # else:
-        #     for item in tuple_bucket:
-        #         example = process(self.task, item, bucket_level)
-        #         if example is not None:
-        #             if self.copy:
-        #                 example = _addcopykeys(self.vocabs, example)
-        #             bucket.append(numericalize(self.vocabs, example))
         return bucket
 
     def _bucketing(self):
