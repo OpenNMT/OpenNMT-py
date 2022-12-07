@@ -53,12 +53,12 @@ def clean_example(maybe_example):
     return maybe_example
 
 
-def process(task, item, **kwargs):
+def process(task, bucket, **kwargs):
     """Returns valid transformed bucket from bucket."""
-    _, transform, cid = item[0]
+    _, transform, cid = bucket[0]
     # We apply the same TransformPipe to all the bucket
     processed_bucket = transform.batch_apply(
-        item, is_train=(task == CorpusTask.TRAIN), corpus_name=cid)
+        bucket, is_train=(task == CorpusTask.TRAIN), corpus_name=cid)
     for i in range(len(processed_bucket)):
         (example, transform, cid) = processed_bucket[i]
         if example is not None:
