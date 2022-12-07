@@ -185,11 +185,12 @@ class ScoringPreparator():
                     file.write("PRED: {}\n\n".format(preds[i]))
         # we deactivate the decoder's cache
         # as we use teacher forcing at training time.
-        for layer in model.decoder.transformer_layers:
-            layer.self_attn.layer_cache = (False,
-                                           {'keys': torch.tensor([]),
-                                            'values': torch.tensor([])})
-            layer.context_attn.layer_cache = (False,
-                                              {'keys': torch.tensor([]),
-                                               'values': torch.tensor([])})
+        if hasattr(model.decoder, 'transformer_layers'):
+            for layer in model.decoder.transformer_layers:
+                layer.self_attn.layer_cache = (False,
+                                               {'keys': torch.tensor([]),
+                                                'values': torch.tensor([])})
+                layer.context_attn.layer_cache = (False,
+                                                  {'keys': torch.tensor([]),
+                                                   'values': torch.tensor([])})
         return preds, texts_ref

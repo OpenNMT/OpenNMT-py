@@ -4,7 +4,16 @@
 
 ## [Unreleased]
 
-## [3.0.0](https://github.com/OpenNMT/OpenNMT-py/tree/3.0.1) (2022-11-23)
+## [3.0.2](https://github.com/OpenNMT/OpenNMT-py/tree/3.0.2) (2022-12-07)
+* pyonmttok.Vocab is now pickable. dataloader switched to spawn. (MacOS/Windows compatible)
+* fix scoring with specific metrics (BLEU, TER)
+* fix tensorboard logging
+* fix dedup in batch iterator (only for TRAIN, was happening at inference also)
+* New: Change: tgt_prefix renamed to tgt_file_prefix
+* New: tgt_prefix / src_prefix used for "prefix" Transform (onmt/transforms/misc.py)
+* New: process transforms of buckets in batches (vs per example) / faster
+
+## [3.0.1](https://github.com/OpenNMT/OpenNMT-py/tree/3.0.1) (2022-11-23)
 
 * fix dynamic scoring
 * reinstate apex.amp level O1/O2 for benchmarking

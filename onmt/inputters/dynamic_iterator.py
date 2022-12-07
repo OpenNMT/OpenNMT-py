@@ -341,7 +341,7 @@ def build_dynamic_dataset_iter(opt, transforms_cls, vocabs, copy=False,
     else:
         data_loader = DataLoader(data_iter, batch_size=None,
                                  pin_memory=True,
-                                 multiprocessing_context="fork",
+                                 multiprocessing_context="spawn",
                                  num_workers=data_iter.num_workers,
                                  worker_init_fn=data_iter._init_datasets,
                                  prefetch_factor=opt.prefetch_factor)
