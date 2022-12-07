@@ -9,8 +9,9 @@
 * fix scoring with specific metrics (BLEU, TER)
 * fix tensorboard logging
 * fix dedup in batch iterator (only for TRAIN, was happening at inference also)
-* Change: tgt_prefix renamed to tgt_file_prefix
-* tgt_prefix / src_prefix used for "prefix" Transform (onmt/transforms/misc.py)
+* New: Change: tgt_prefix renamed to tgt_file_prefix
+* New: tgt_prefix / src_prefix used for "prefix" Transform (onmt/transforms/misc.py)
+* New: process transforms of buckets in batches (vs per example) / faster
 
 ## [3.0.1](https://github.com/OpenNMT/OpenNMT-py/tree/3.0.1) (2022-11-23)
 
