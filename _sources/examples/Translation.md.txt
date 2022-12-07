@@ -116,6 +116,7 @@ normalization: "tokens"
 # Model
 encoder_type: transformer
 decoder_type: transformer
+position_encoding: true
 enc_layers: 6
 dec_layers: 6
 heads: 8

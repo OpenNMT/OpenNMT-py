@@ -195,6 +195,7 @@
 <span class="sd">          users of this library) for the strategy things we do.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
+<span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">traceback</span>
 <span class="kn">import</span> <span class="nn">onmt.utils</span>
@@ -356,14 +357,14 @@
         <span class="c1"># Set model in training mode.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">_training_eval_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scorer</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;train&quot;</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Trigger metrics calculations&quot;&quot;&quot;</span>
-        <span class="n">preds</span><span class="p">,</span> <span class="n">texts_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scoring_preparator</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span>
-            <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
-            <span class="n">batch</span><span class="o">=</span><span class="n">batch</span><span class="p">,</span>
-            <span class="n">gpu_rank</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">gpu_rank</span><span class="p">,</span>
-            <span class="n">step</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">training_step</span><span class="p">,</span>
-            <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_training_eval_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scorer</span><span class="p">,</span> <span class="n">preds</span><span class="p">,</span> <span class="n">texts_ref</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Trigger metrics calculations</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            scorer (:obj:`onmt.scorer.Scorer`): scorer.</span>
+<span class="sd">            preds, texts_ref: outputs of the scorer&#39;s `translate` method.</span>
+<span class="sd">        Returns: The metric calculated by the scorer.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">scorer</span><span class="o">.</span><span class="n">compute_score</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="n">texts_ref</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_accum_count</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
@@ -429,6 +430,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">valid_iter</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Start training loop without validation...&#39;</span><span class="p">)</span>
+            <span class="n">valid_stats</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Start training loop and validate every </span><span class="si">%d</span><span class="s1"> steps...&#39;</span><span class="p">,</span>
                         <span class="n">valid_steps</span><span class="p">)</span>
@@ -456,13 +458,14 @@
                 <span class="n">report_stats</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="p">(</span><span class="n">valid_iter</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">step</span> <span class="o">%</span> <span class="n">valid_steps</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">gpu_rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
-
+                    <span class="bp">self</span><span class="o">.</span><span class="n">gpu_rank</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">):</span>
                 <span class="n">valid_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span>
                     <span class="n">valid_iter</span><span class="p">,</span> <span class="n">moving_average</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">moving_average</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">step</span> <span class="o">%</span> <span class="n">valid_steps</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_report_step</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">(),</span>
-                                  <span class="n">step</span><span class="p">,</span> <span class="n">train_stats</span><span class="o">=</span><span class="n">total_stats</span><span class="p">,</span>
-                                  <span class="n">valid_stats</span><span class="o">=</span><span class="n">valid_stats</span><span class="p">)</span>
+                                  <span class="n">step</span><span class="p">,</span> <span class="n">valid_stats</span><span class="o">=</span><span class="n">valid_stats</span><span class="p">,</span>
+                                  <span class="n">train_stats</span><span class="o">=</span><span class="n">total_stats</span><span class="p">)</span>
 
                 <span class="c1"># Run patience mechanism</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">earlystopper</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -504,14 +507,20 @@
         <span class="c1"># Set model in validating mode.</span>
         <span class="n">valid_model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
 
+        <span class="n">sources</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">refs</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
             <span class="n">stats</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">Statistics</span><span class="p">()</span>
-
+            <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
             <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">valid_iter</span><span class="p">:</span>
                 <span class="n">src</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">]</span>
                 <span class="n">src_len</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;srclen&#39;</span><span class="p">]</span>
                 <span class="n">tgt</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span>
-
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_scorers</span><span class="p">:</span>
+                    <span class="n">sources_</span><span class="p">,</span> <span class="n">refs_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scoring_preparator</span><span class="o">.</span>\
+                        <span class="n">build_sources_and_refs</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+                    <span class="n">sources</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sources_</span><span class="p">)</span>
+                    <span class="n">refs</span> <span class="o">+=</span> <span class="n">refs_</span>
                 <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">amp</span><span class="o">.</span><span class="n">autocast</span><span class="p">(</span><span class="n">enabled</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">amp</span><span class="p">):</span>
                     <span class="c1"># F-prop through the model.</span>
                     <span class="n">model_out</span><span class="p">,</span> <span class="n">attns</span> <span class="o">=</span> <span class="n">valid_model</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span>
@@ -521,16 +530,29 @@
                     <span class="n">_</span><span class="p">,</span> <span class="n">batch_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_loss</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">model_out</span><span class="p">,</span> <span class="n">attns</span><span class="p">)</span>
 
                     <span class="n">stats</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">batch_stats</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;valid stats calculation and batchs detokenization</span>
+<span class="s2">                           took: </span><span class="si">{}</span><span class="s2"> s.&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span><span class="p">))</span>
 
             <span class="c1"># Compute validation metrics (at batch.dataset level)</span>
-            <span class="n">computed_metrics</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">valid_scorers</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">computed_metrics</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+                <span class="n">preds</span><span class="p">,</span> <span class="n">texts_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scoring_preparator</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span>
+                    <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
+                    <span class="n">sources</span><span class="o">=</span><span class="n">sources</span><span class="p">,</span>
+                    <span class="n">refs</span><span class="o">=</span><span class="n">refs</span><span class="p">,</span>
+                    <span class="n">gpu_rank</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">gpu_rank</span><span class="p">,</span>
+                    <span class="n">step</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">training_step</span><span class="p">,</span>
+                    <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;valid&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;The translation of the valid dataset</span>
+<span class="s2">                               took : </span><span class="si">{}</span><span class="s2"> s.&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span><span class="p">))</span>
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">metric</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">valid_scorers</span><span class="p">):</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;UPDATING VALIDATION </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">metric</span><span class="p">))</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">valid_scorers</span><span class="p">[</span>
                     <span class="n">metric</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_training_eval_handler</span><span class="p">(</span>
                         <span class="n">scorer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">valid_scorers</span><span class="p">[</span><span class="n">metric</span><span class="p">][</span><span class="s2">&quot;scorer&quot;</span><span class="p">],</span>
-                        <span class="n">batch</span><span class="o">=</span><span class="n">batch</span><span class="p">,</span>
-                        <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;valid&quot;</span><span class="p">)</span>
+                        <span class="n">preds</span><span class="o">=</span><span class="n">preds</span><span class="p">,</span>
+                        <span class="n">texts_ref</span><span class="o">=</span><span class="n">texts_ref</span><span class="p">)</span>
                 <span class="n">computed_metrics</span><span class="p">[</span>
                     <span class="n">metric</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_scorers</span><span class="p">[</span><span class="n">metric</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">]</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
@@ -538,16 +560,12 @@
                         <span class="n">metric</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_scorers</span><span class="p">[</span><span class="n">metric</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">])</span>
                         <span class="p">)</span>
                 <span class="c1"># Compute stats</span>
-                <span class="n">batch_stats</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">Statistics</span><span class="p">(</span>
-                    <span class="n">batch_stats</span><span class="o">.</span><span class="n">loss</span><span class="p">,</span>
-                    <span class="n">batch_stats</span><span class="o">.</span><span class="n">n_batchs</span><span class="p">,</span>
-                    <span class="n">batch_stats</span><span class="o">.</span><span class="n">n_sents</span><span class="p">,</span>
-                    <span class="n">batch_stats</span><span class="o">.</span><span class="n">n_words</span><span class="p">,</span>
-                    <span class="n">batch_stats</span><span class="o">.</span><span class="n">n_correct</span><span class="p">,</span>
+                <span class="n">metric_stats</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">Statistics</span><span class="p">(</span>
+                    <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span>
                     <span class="n">computed_metrics</span><span class="p">)</span>
 
                 <span class="c1"># Update statistics.</span>
-                <span class="n">stats</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">batch_stats</span><span class="p">)</span>
+                <span class="n">stats</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">metric_stats</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">moving_average</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">param_data</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">model_params_data</span><span class="p">,</span>
@@ -611,18 +629,28 @@
 
                     <span class="n">step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">training_step</span>
                     <span class="k">if</span> <span class="p">(</span>
-                            <span class="n">step</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_eval_steps</span> <span class="o">==</span> <span class="mi">0</span>
+                           <span class="bp">self</span><span class="o">.</span><span class="n">train_scorers</span> <span class="o">!=</span> <span class="p">{}</span> <span class="ow">and</span>
+                           <span class="n">step</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_eval_steps</span> <span class="o">==</span> <span class="mi">0</span>
                     <span class="p">):</span>
                         <span class="c1"># Compute and save stats</span>
                         <span class="n">computed_metrics</span> <span class="o">=</span> <span class="p">{}</span>
+                        <span class="n">sources_</span><span class="p">,</span> <span class="n">refs_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scoring_preparator</span><span class="o">.</span>\
+                            <span class="n">build_sources_and_refs</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+                        <span class="n">preds</span><span class="p">,</span> <span class="n">texts_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scoring_preparator</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span>
+                            <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
+                            <span class="n">sources</span><span class="o">=</span><span class="p">[</span><span class="n">sources_</span><span class="p">],</span>
+                            <span class="n">refs</span><span class="o">=</span><span class="n">refs_</span><span class="p">,</span>
+                            <span class="n">gpu_rank</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">gpu_rank</span><span class="p">,</span>
+                            <span class="n">step</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">training_step</span><span class="p">,</span>
+                            <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;train&quot;</span><span class="p">)</span>
                         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">metric</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_scorers</span><span class="p">):</span>
                             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;UPDATING TRAINING </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">metric</span><span class="p">))</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">train_scorers</span><span class="p">[</span>
                                 <span class="n">metric</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_training_eval_handler</span><span class="p">(</span>
                                 <span class="n">scorer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">train_scorers</span><span class="p">[</span>
                                     <span class="n">metric</span><span class="p">][</span><span class="s2">&quot;scorer&quot;</span><span class="p">],</span>
-                                <span class="n">batch</span><span class="o">=</span><span class="n">batch</span><span class="p">,</span>
-                                <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;train&quot;</span><span class="p">)</span>
+                                <span class="n">preds</span><span class="o">=</span><span class="n">preds</span><span class="p">,</span>
+                                <span class="n">texts_ref</span><span class="o">=</span><span class="n">texts_ref</span><span class="p">)</span>
                             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                                 <span class="s2">&quot;training </span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                                     <span class="n">metric</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_scorers</span><span class="p">[</span>
@@ -701,8 +729,8 @@
                 <span class="n">report_stats</span><span class="p">,</span>
                 <span class="n">multigpu</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_gpu</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_report_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">learning_rate</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">train_stats</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                     <span class="n">valid_stats</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_report_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">learning_rate</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span>
+                     <span class="n">valid_stats</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">train_stats</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Simple function to report stats (if report_manager is set)</span>
 <span class="sd">        see `onmt.utils.ReportManagerBase.report_step` for doc</span>
@@ -712,8 +740,7 @@
                 <span class="n">learning_rate</span><span class="p">,</span>
                 <span class="kc">None</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">earlystopper</span> <span class="ow">is</span> <span class="kc">None</span>
                 <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">earlystopper</span><span class="o">.</span><span class="n">current_tolerance</span><span class="p">,</span>
-                <span class="n">step</span><span class="p">,</span> <span class="n">train_stats</span><span class="o">=</span><span class="n">train_stats</span><span class="p">,</span>
-                <span class="n">valid_stats</span><span class="o">=</span><span class="n">valid_stats</span><span class="p">)</span></div>
+                <span class="n">step</span><span class="p">,</span> <span class="n">valid_stats</span><span class="o">=</span><span class="n">valid_stats</span><span class="p">,</span> <span class="n">train_stats</span><span class="o">=</span><span class="n">train_stats</span><span class="p">)</span></div>
 </pre></div>
 
            </div>
