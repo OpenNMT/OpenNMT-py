@@ -159,16 +159,16 @@ jobs:
           -accum_count 2 4 8 \
           -accum_steps 0 15000 30000 \
           -save_model /tmp/onmt.model \
-          -train_steps 200 \
-          -report_every 50 \
-          -train_eval_steps 100 \
+          -train_steps 20 \
+          -report_every 5 \
+          -train_eval_steps 10 \
           -train_metrics "BLEU" "TER" \
           -tensorboard "true" \
           -scoring_debug "true" \
           -tensorboard_log_dir /tmp/logs_train_metrics \
           -dump_preds /tmp/dump_preds
         python onmt/tests/test_events.py --logdir /tmp/logs_train_metrics -tensorboard_checks train_metrics
-    - name : Test Transformer training and validation with dynamic scoring
+    - name : Test Transformer training and validation with dynamic scoring and copy
       run: |
         python3 train.py \
           -config data/data.yaml \
@@ -190,11 +190,15 @@ jobs:
           -save_model /tmp/onmt.model \
           -train_steps 10  -valid_steps 5 \
           -report_every 2 \
+          -train_eval_steps 8 \
+          -train_metrics "BLEU" "TER" \
+          -valid_metrics "BLEU" "TER" \
           -tensorboard "true" \
           -scoring_debug "true" \
           -tensorboard_log_dir /tmp/logs_train_valid_metrics \
-          -dump_preds /tmp/dump_preds
-        # python onmt/tests/test_events.py --logdir /tmp/logs_train_valid_metrics -tensorboard_checks train_valid_metrics 
+          -dump_preds /tmp/dump_preds \
+          -copy_attn
+        python onmt/tests/test_events.py --logdir /tmp/logs_train_valid_metrics -tensorboard_checks train_valid_metrics 
     - name: Test LM training
       run: |
         python train.py \

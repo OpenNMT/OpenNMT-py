@@ -10,6 +10,7 @@
           users of this library) for the strategy things we do.
 """
 
+import time
 import torch
 import traceback
 import onmt.utils
@@ -325,14 +326,16 @@ class Trainer(object):
         refs = []
         with torch.no_grad():
             stats = onmt.utils.Statistics()
+            start = time.time()
             for batch in valid_iter:
                 src = batch['src']
                 src_len = batch['srclen']
                 tgt = batch['tgt']
-                sources_, refs_ = self.scoring_preparator.\
-                    build_sources_and_refs(batch)
-                sources.append(sources_)
-                refs += refs_
+                if self.valid_scorers:
+                    sources_, refs_ = self.scoring_preparator.\
+                        build_sources_and_refs(batch)
+                    sources.append(sources_)
+                    refs += refs_
                 with torch.cuda.amp.autocast(enabled=self.optim.amp):
                     # F-prop through the model.
                     model_out, attns = valid_model(src, tgt, src_len,
@@ -342,10 +345,13 @@ class Trainer(object):
                     _, batch_stats = self.valid_loss(batch, model_out, attns)
 
                     stats.update(batch_stats)
+            logger.info("""valid stats calculation and batchs detokenization
+                           took: {} s.""".format(time.time() - start))
 
             # Compute validation metrics (at batch.dataset level)
             if len(self.valid_scorers) > 0:
                 computed_metrics = {}
+                start = time.time()
                 preds, texts_ref = self.scoring_preparator.translate(
                     model=self.model,
                     sources=sources,
@@ -353,6 +359,8 @@ class Trainer(object):
                     gpu_rank=self.gpu_rank,
                     step=self.optim.training_step,
                     mode="valid")
+                logger.info("""The translation of the valid dataset
+                               took : {} s.""".format(time.time() - start))
             for i, metric in enumerate(self.valid_scorers):
                 logger.info("UPDATING VALIDATION {}".format(metric))
                 self.valid_scorers[
@@ -367,16 +375,12 @@ class Trainer(object):
                         metric, self.valid_scorers[metric]["value"])
                         )
                 # Compute stats
-                batch_stats = onmt.utils.Statistics(
-                    batch_stats.loss,
-                    batch_stats.n_batchs,
-                    batch_stats.n_sents,
-                    batch_stats.n_words,
-                    batch_stats.n_correct,
+                metric_stats = onmt.utils.Statistics(
+                    0, 0, 0, 0, 0,
                     computed_metrics)
 
                 # Update statistics.
-                stats.update(batch_stats)
+                stats.update(metric_stats)
 
         if moving_average:
             for param_data, param in zip(model_params_data,

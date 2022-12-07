@@ -5,7 +5,7 @@ from onmt.utils.parse import ArgumentParser
 from onmt.translate import GNMTGlobalScorer, Translator
 from onmt.opts import translate_opts
 from onmt.constants import DefaultTokens
-from onmt.inputters.text_utils import textbatch_to_tensor
+from onmt.inputters.text_utils import _addcopykeys, tensorify, text_sort_key
 from onmt.inputters.inputter import IterOnDevice
 
 
@@ -78,19 +78,18 @@ class ScoringPreparator():
             tokenized_sentences (list): List of lists of tokens.
                 Each list is a tokenized sentence.
         """
-        # batch_side.shape[0] sentences to rebuild
-        # batch_side.shape[1] tokens per sentence
         vocab = self.vocabs[side]
+        nb_sentences = batch_side.shape[0]
+        nb_tokens_per_sentence = batch_side.shape[1]
+        indices_to_remove = [vocab.lookup_token(token)
+                             for token in [DefaultTokens.PAD,
+                                           DefaultTokens.EOS,
+                                           DefaultTokens.BOS]]
         tokenized_sentences = []
-        for i in range(batch_side.shape[0]):
-            tokens = []
-            for t in range(batch_side.shape[1]):
-                token = vocab.ids_to_tokens[batch_side[i, t, 0]]
-                if (token == DefaultTokens.PAD
-                        or token == DefaultTokens.EOS):
-                    break
-                if token != DefaultTokens.BOS:
-                    tokens.append(token)
+        for i in range(nb_sentences):
+            tokens = [vocab.lookup_index(batch_side[i, t, 0])
+                      for t in range(nb_tokens_per_sentence)
+                      if batch_side[i, t, 0] not in indices_to_remove]
             tokenized_sentences.append(tokens)
         return tokenized_sentences
 
@@ -142,15 +141,29 @@ class ScoringPreparator():
             global_scorer=scorer,
             out_file=out_file,
             report_align=opt.report_align,
-            report_score=True,
+            report_score=False,
             logger=None)
         preds = []
         for sources_ in sources:
             # for validation we build an infer_iter per batch
             # in order to avoid oom issues because there is no
             # batching strategy in `textbatch_to_tensor`
-            infer_iter = textbatch_to_tensor(translator.vocabs,
-                                             sources_, is_train=True)
+            numeric = []
+            for i, ex in enumerate(sources_):
+                if isinstance(ex, bytes):
+                    ex = ex.decode("utf-8")
+                idxs = translator.vocabs['src'](ex)
+                num_ex = {'src': {'src': " ".join(ex),
+                          'src_ids': idxs},
+                          'srclen': len(ex),
+                          'tgt': None,
+                          'indices': i,
+                          'align': None}
+                num_ex = _addcopykeys(translator.vocabs["src"], num_ex)
+                num_ex["src"]["src"] = ex
+                numeric.append(num_ex)
+            numeric.sort(key=text_sort_key, reverse=True)
+            infer_iter = [tensorify(self.vocabs, numeric)]
             infer_iter = IterOnDevice(infer_iter, opt.gpu)
             _, preds_ = translator._translate(
                         infer_iter)
