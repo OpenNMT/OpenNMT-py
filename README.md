@@ -16,6 +16,11 @@ Unless there is a bug, please use the [forum](https://forum.opennmt.net) or [Git
 
 ----
 
+There is a new step-by-step and explained tuto (Thanks to Yasmin Moslem) here:
+Please try to read and/or follow before raising newbie issues [Tutorial](https://github.com/ymoslem/OpenNMT-Tutorial)
+
+----
+
 # OpenNMT-py 3.0
 
 **We're happy to announce the release v3.0 of OpenNMT-py.**

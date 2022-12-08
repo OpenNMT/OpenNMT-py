@@ -1,7 +1,7 @@
 # FAQ
 All the example YAML configurations are partial. To get an overview of what this YAML configuration is you can start by reading the [Quickstart](quickstart) section.
 
-Also you can have a look at this: [Tutorial]https://github.com/ymoslem/OpenNMT-Tutorial
+Also you can have a look at this: [Tutorial](https://github.com/ymoslem/OpenNMT-Tutorial)
 
 ## How do I use my v2 models in v3 ?
 
