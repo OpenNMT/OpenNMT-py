@@ -65,9 +65,12 @@ class Transform(object):
             batch (list): a list of examples;
             is_train (bool): Indicate if src/tgt is training data;bject.
         """
+        transformed_batch = []
         for (example, _, cid) in batch:
             example = self.apply(example, is_train=is_train, **kwargs)
-        return batch
+            if example is not None:
+                transformed_batch.append((example, self, cid))
+        return transformed_batch
 
     def apply_reverse(self, translated):
         return translated
