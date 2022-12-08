@@ -12,7 +12,6 @@ from onmt.encoders import str2enc
 from onmt.decoders import str2dec
 from onmt.inputters.inputter import dict_to_vocabs
 from onmt.modules import Embeddings, CopyGenerator
-from onmt.modules.util_class import Cast
 from onmt.utils.misc import use_gpu
 from onmt.utils.logging import logger
 from onmt.utils.parse import ArgumentParser
@@ -192,19 +191,19 @@ def use_embeddings_from_checkpoint(vocabs, model, generator, checkpoint):
                     emb_name
                 ][old_i]
                 if side == 'tgt':
-                    generator.state_dict()['0.weight'][i] = checkpoint[
+                    generator.state_dict()['weight'][i] = checkpoint[
                         'generator'
-                    ]['0.weight'][old_i]
-                    generator.state_dict()['0.bias'][i] = checkpoint[
+                    ]['weight'][old_i]
+                    generator.state_dict()['bias'][i] = checkpoint[
                         'generator'
-                    ]['0.bias'][old_i]
+                    ]['bias'][old_i]
             else:
                 # Just for debugging purposes
                 new_tokens.append(tok)
         logger.info("%s: %d new tokens" % (side, len(new_tokens)))
         # Remove old vocabulary associated embeddings
         del checkpoint['model'][emb_name]
-    del checkpoint['generator']['0.weight'], checkpoint['generator']['0.bias']
+    del checkpoint['generator']['weight'], checkpoint['generator']['bias']
 
 
 def build_base_model(model_opt, vocabs, gpu, checkpoint=None, gpu_id=None):
@@ -243,18 +242,10 @@ def build_base_model(model_opt, vocabs, gpu, checkpoint=None, gpu_id=None):
 
     # Build Generator.
     if not model_opt.copy_attn:
-        if model_opt.generator_function == "sparsemax":
-            gen_func = onmt.modules.sparse_activations.LogSparsemax(dim=-1)
-        else:
-            gen_func = nn.LogSoftmax(dim=-1)
-        generator = nn.Sequential(
-            nn.Linear(model_opt.dec_hid_size,
-                      len(vocabs['tgt'])),
-            Cast(torch.float32),
-            gen_func
-        )
+        generator = nn.Linear(model_opt.dec_hid_size,
+                              len(vocabs['tgt']))
         if model_opt.share_decoder_embeddings:
-            generator[0].weight = model.decoder.embeddings.word_lut.weight
+            generator.weight = model.decoder.embeddings.word_lut.weight
     else:
         vocab_size = len(vocabs['tgt'])
         pad_idx = vocabs['tgt'][DefaultTokens.PAD]
@@ -295,8 +286,15 @@ def build_base_model(model_opt, vocabs, gpu, checkpoint=None, gpu_id=None):
 
         checkpoint['model'] = {fix_key(k): v
                                for k, v in checkpoint['model'].items()}
-        # end of patch for backward compatibility
 
+        if '0.weight' in checkpoint['generator']:
+            checkpoint['generator']['weight'] =\
+                checkpoint['generator'].pop('0.weight')
+        if '0.bias' in checkpoint['generator']:
+            checkpoint['generator']['bias'] =\
+                checkpoint['generator'].pop('0.bias')
+
+        # end of patch for backward compatibility
         if model_opt.update_vocab:
             # Update model embeddings with those from the checkpoint
             # after initialization

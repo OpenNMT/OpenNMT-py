@@ -7,7 +7,7 @@ import numpy as np
 from itertools import count, zip_longest
 
 import torch
-
+import torch.nn.functional as F
 from onmt.constants import DefaultTokens
 import onmt.model_builder
 import onmt.decoders.ensemble
@@ -547,7 +547,8 @@ class Inference(object):
             else:
                 attn = None
 
-            log_probs = self.model.generator(dec_out.squeeze(1))
+            scores = self.model.generator(dec_out.squeeze(1))
+            log_probs = F.log_softmax(scores.to(torch.float32), dim=-1)
             # returns [(batch_size x beam_size) , vocab ] when 1 step
             # or [batch_size, tgt_len, vocab ] when full sentence
         else:

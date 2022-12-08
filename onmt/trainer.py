@@ -277,7 +277,7 @@ class Trainer(object):
                 valid_stats = self.validate(
                     valid_iter, moving_average=self.moving_average)
 
-            if step % valid_steps == 0:
+            if step % valid_steps == 0 and self.gpu_rank <= 0:
                 self._report_step(self.optim.learning_rate(),
                                   step, valid_stats=valid_stats,
                                   train_stats=total_stats)

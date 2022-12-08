@@ -58,7 +58,6 @@ num_workers: 2
 batch_type: "tokens"
 batch_size: 4096
 valid_batch_size: 2048
-max_generator_batches: 2
 accum_count: [4]
 accum_steps: [0]
 

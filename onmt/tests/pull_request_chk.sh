@@ -147,7 +147,6 @@ ${PYTHON} onmt/bin/train.py \
             -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
             -src_vocab_size 1000 \
             -tgt_vocab_size 1000 \
-            -max_generator_batches 0 \
             -num_workers 0 -bucket_size 1024 \
             -encoder_type transformer -decoder_type transformer \
             -layers 4 -word_vec_size 16 -hidden_size 16 -heads 2 -transformer_ff 64 \

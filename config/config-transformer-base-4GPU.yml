@@ -30,8 +30,6 @@ normalization: tokens
 dropout: 0.1
 label_smoothing: 0.1
 
-max_generator_batches: 2
-
 param_init: 0.0
 param_init_glorot: 'true'
 position_encoding: 'true'

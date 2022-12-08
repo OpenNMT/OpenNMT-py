@@ -226,7 +226,6 @@ transformer(){
                     -decoder_type transformer \
                     -train_steps 10000 \
                     -gpuid $GPUID \
-                    -max_generator_batches 4 \
                     -dropout 0.1 \
                     -normalization tokens \
                     -max_grad_norm 0 \
