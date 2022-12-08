@@ -488,6 +488,7 @@ class Trainer(object):
                     if "CUDA out of memory" in trace_content:
                         logger.info("Step %d, cuda OOM - batch removed",
                                     self.optim.training_step)
+                        torch.cuda.empty_cache()
                     else:
                         traceback.print_exc()
                         raise exc

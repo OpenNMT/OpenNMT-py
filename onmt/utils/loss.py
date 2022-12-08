@@ -313,6 +313,10 @@ class LossCompute(nn.Module):
         else:
 
             scores = self.generator[0](self._bottle(output))
+            #print("BEF CRITERION", torch.cuda.memory_allocated() // (1024 ** 3), torch.cuda.memory_reserved() // (1024 ** 3))
+            #if torch.cuda.memory_reserved() > (torch.cuda.memory_allocated() * 3):
+                #torch.cuda.empty_cache()
+                #print("cache emptied")
             loss = self.criterion(scores, flat_tgt)
 
             if self.lambda_align != 0.0:
