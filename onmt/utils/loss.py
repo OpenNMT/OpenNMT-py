@@ -84,9 +84,14 @@ class LossCompute(nn.Module):
             )
         else:
             if opt.label_smoothing > 0 and train:
-                criterion = LabelSmoothingLoss(
-                    opt.label_smoothing, len(vocab),
-                    ignore_index=padding_idx
+                #criterion = LabelSmoothingLoss(
+                #    opt.label_smoothing, len(vocab),
+                #    ignore_index=padding_idx
+                #)
+                criterion = nn.CrossEntropyLoss(
+                    ignore_index=padding_idx,
+                    reduction='sum',
+                    label_smoothing=opt.label_smoothing
                 )
             elif isinstance(model.generator[-1], LogSparsemax):
                 criterion = SparsemaxLoss(ignore_index=padding_idx,
@@ -307,7 +312,7 @@ class LossCompute(nn.Module):
 
         else:
 
-            scores = self.generator(self._bottle(output))
+            scores = self.generator[0](self._bottle(output))
             loss = self.criterion(scores, flat_tgt)
 
             if self.lambda_align != 0.0:
