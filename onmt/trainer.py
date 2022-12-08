@@ -253,6 +253,8 @@ class Trainer(object):
         total_stats = onmt.utils.Statistics()
         report_stats = onmt.utils.Statistics()
         self._start_report_manager(start_time=total_stats.start_time)
+        # Let's clean the GPUs before training loop
+        torch.cuda.empty_cache()
 
         for i, batches in enumerate(
                 self._accum_batches(train_iter)):
@@ -502,7 +504,18 @@ class Trainer(object):
                                  and p.grad is not None]
                         onmt.utils.distributed.all_reduce_and_rescale_tensors(
                             grads, float(self.n_gpu))
-                    self.optim.step()
+                    try:
+                        self.optim.step()
+                    except Exception as exc:
+                        trace_content = traceback.format_exc()
+                        if "CUDA out of memory" in trace_content:
+                            logger.info("Step %d, cuda OOM - batch removed",
+                                        self.optim.training_step)
+                            torch.cuda.empty_cache()
+                            break
+                        else:
+                            traceback.print_exc()
+                            raise exc
 
                 # If truncated, don't backprop fully.
                 if self.model.decoder.state != {}:
@@ -517,7 +530,17 @@ class Trainer(object):
                          and p.grad is not None]
                 onmt.utils.distributed.all_reduce_and_rescale_tensors(
                     grads, float(self.n_gpu))
-            self.optim.step()
+            try:
+                self.optim.step()
+            except Exception as exc:
+                trace_content = traceback.format_exc()
+                if "CUDA out of memory" in trace_content:
+                    logger.info("Step %d, cuda OOM - batch removed",
+                                self.optim.training_step)
+                    torch.cuda.empty_cache()
+                else:
+                    traceback.print_exc()
+                    raise exc
 
     def _start_report_manager(self, start_time=None):
         """
