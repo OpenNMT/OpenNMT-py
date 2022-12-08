@@ -504,18 +504,7 @@ class Trainer(object):
                                  and p.grad is not None]
                         onmt.utils.distributed.all_reduce_and_rescale_tensors(
                             grads, float(self.n_gpu))
-                    try:
-                        self.optim.step()
-                    except Exception as exc:
-                        trace_content = traceback.format_exc()
-                        if "CUDA out of memory" in trace_content:
-                            logger.info("Step %d, cuda OOM - batch removed",
-                                        self.optim.training_step)
-                            torch.cuda.empty_cache()
-                            break
-                        else:
-                            traceback.print_exc()
-                            raise exc
+                    self.optim.step()
 
                 # If truncated, don't backprop fully.
                 if self.model.decoder.state != {}:
@@ -530,17 +519,7 @@ class Trainer(object):
                          and p.grad is not None]
                 onmt.utils.distributed.all_reduce_and_rescale_tensors(
                     grads, float(self.n_gpu))
-            try:
-                self.optim.step()
-            except Exception as exc:
-                trace_content = traceback.format_exc()
-                if "CUDA out of memory" in trace_content:
-                    logger.info("Step %d, cuda OOM - batch removed",
-                                self.optim.training_step)
-                    torch.cuda.empty_cache()
-                else:
-                    traceback.print_exc()
-                    raise exc
+            self.optim.step()
 
     def _start_report_manager(self, start_time=None):
         """
