@@ -255,7 +255,12 @@ class Trainer(object):
         self._start_report_manager(start_time=total_stats.start_time)
         # Let's clean the GPUs before training loop
         torch.cuda.empty_cache()
-
+        prof = torch.profiler.profile(
+                schedule=torch.profiler.schedule(wait=1, warmup=1, active=3, repeat=2),
+                on_trace_ready=torch.profiler.tensorboard_trace_handler('./log/onmtprof'),
+                record_shapes=True,
+                with_stack=True)
+        prof.start()
         for i, batches in enumerate(
                 self._accum_batches(train_iter)):
             step = self.optim.training_step
@@ -299,7 +304,8 @@ class Trainer(object):
 
             if train_steps > 0 and step >= train_steps:
                 break
-
+            prof.step()
+        prof.stop()
         if self.model_saver is not None:
             self.model_saver.save(step, moving_average=self.moving_average)
         return total_stats
