@@ -122,7 +122,6 @@ jobs:
           -tgt_vocab /tmp/onmt.vocab.tgt \
           -src_vocab_size 1000 \
           -tgt_vocab_size 1000 \
-          -max_generator_batches 0 \
           -encoder_type transformer \
           -decoder_type transformer \
           -layers 4 \

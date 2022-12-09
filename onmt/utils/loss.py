@@ -76,24 +76,22 @@ class LossCompute(nn.Module):
                 "order to use --lambda_coverage != 0"
 
         tgt_shift_idx = 1 if opt.model_task == ModelTask.SEQ2SEQ else 0
-
+        label_smoothing = opt.label_smoothing if train else 0
         if opt.copy_attn:
             criterion = onmt.modules.CopyGeneratorLoss(
                 len(vocab), opt.copy_attn_force,
                 unk_index=unk_idx, ignore_index=padding_idx
             )
         else:
-            if opt.label_smoothing > 0 and train:
-                criterion = LabelSmoothingLoss(
-                    opt.label_smoothing, len(vocab),
-                    ignore_index=padding_idx
-                )
-            elif isinstance(model.generator[-1], LogSparsemax):
+            if opt.generator_function == 'sparsemax':
                 criterion = SparsemaxLoss(ignore_index=padding_idx,
                                           reduction='sum')
             else:
-                criterion = nn.NLLLoss(ignore_index=padding_idx,
-                                       reduction='sum')
+                criterion = nn.CrossEntropyLoss(
+                    ignore_index=padding_idx,
+                    reduction='sum',
+                    label_smoothing=label_smoothing
+                )
 
         lm_prior_lambda = opt.lm_prior_lambda
         lm_prior_tau = opt.lm_prior_tau
@@ -120,15 +118,7 @@ class LossCompute(nn.Module):
             lm_generator = None
             lm_prior_model = None
 
-        # if the loss function operates on vectors of raw logits instead
-        # of probabilities, only the first part of the generator needs to
-        # be passed to the NMTLossCompute. At the moment, the only
-        # supported loss function of this kind is the sparsemax loss.
-        use_raw_logits = isinstance(criterion, SparsemaxLoss)
-        loss_gen = model.generator[0] if use_raw_logits \
-            else model.generator
-
-        compute = cls(criterion, loss_gen,
+        compute = cls(criterion, model.generator,
                       normalization=opt.normalization,
                       copy_attn=opt.copy_attn,
                       lambda_coverage=opt.lambda_coverage,
@@ -188,9 +178,8 @@ class LossCompute(nn.Module):
         /fairseq_extension/user/lm_prior/lm_prior.py#L131-L133
         """
 
-        # we use the raw logits, rescale with tau (temperature) and
-        # apply the log_softmax. reminder generator[0] is just the nn.Linear
-        scores = self.generator[0](self._bottle(output)) / self.lm_prior_tau
+        # rescale with tau (temperature) and apply the log_softmax.
+        scores = self.generator(self._bottle(output)) / self.lm_prior_tau
         scores = F.log_softmax(scores.to(torch.float32), dim=-1)
 
         src = target.detach().clone()
@@ -223,9 +212,8 @@ class LossCompute(nn.Module):
         /fairseq_extension/user/lm_prior/lm_prior.py#L131-L133
         """
 
-        # we use the raw logits, rescale with tau (temperature) and
-        # apply the log_softmax. reminder generator[0] is just the nn.Linear
-        scores = self.generator[0](self._bottle(output)) / self.lm_prior_tau
+        # rescale with tau (temperature) and apply the log_softmax.
+        scores = self.generator(self._bottle(output)) / self.lm_prior_tau
         scores = F.log_softmax(scores.to(torch.float32), dim=-1)
 
         src = target.detach().clone()
@@ -234,7 +222,7 @@ class LossCompute(nn.Module):
         # ct2 expects src with lengths without padding
         lm_outs, _ = self.lm_prior_model(src, None, src_len,
                                          with_align=False)
-        lm_scores = self.lm_prior_model.generator[0](
+        lm_scores = self.lm_prior_model.generator(
             self._bottle(lm_outs)) / self.lm_prior_tau
         # again we use raw probs to rescale with tau and apply log_softmax
         lm_scores = F.log_softmax(lm_scores.to(torch.float32), dim=-1)
@@ -308,7 +296,9 @@ class LossCompute(nn.Module):
         else:
 
             scores = self.generator(self._bottle(output))
-            loss = self.criterion(scores, flat_tgt)
+            if isinstance(self.criterion, SparsemaxLoss):
+                scores = LogSparsemax(scores.to(torch.float32), dim=-1)
+            loss = self.criterion(scores.to(torch.float32), flat_tgt)
 
             if self.lambda_align != 0.0:
                 align_head = attns['align']
@@ -374,33 +364,3 @@ class LossCompute(nn.Module):
                                      n_sents=bsz,
                                      n_words=num_non_padding,
                                      n_correct=num_correct)
-
-
-class LabelSmoothingLoss(nn.Module):
-    """
-    With label smoothing,
-    KL-divergence between q_{smoothed ground truth prob.}(w)
-    and p_{prob. computed by model}(w) is minimized.
-    """
-    def __init__(self, label_smoothing, tgt_vocab_size, ignore_index=-100):
-        assert 0.0 < label_smoothing <= 1.0
-        self.ignore_index = ignore_index
-        super(LabelSmoothingLoss, self).__init__()
-
-        smoothing_value = label_smoothing / (tgt_vocab_size - 2)
-        one_hot = torch.full((tgt_vocab_size,), smoothing_value)
-        one_hot[self.ignore_index] = 0
-        self.register_buffer('one_hot', one_hot.unsqueeze(0))
-
-        self.confidence = 1.0 - label_smoothing
-
-    def forward(self, output, target):
-        """
-        output (FloatTensor): ``(batch_size, n_classes)``
-        target (LongTensor): ``(batch_size)``
-        """
-        model_prob = self.one_hot.repeat(target.size(0), 1)
-        model_prob.scatter_(1, target.unsqueeze(1), self.confidence)
-        model_prob.masked_fill_((target == self.ignore_index).unsqueeze(1), 0)
-
-        return F.kl_div(output, model_prob, reduction='sum')

@@ -253,6 +253,8 @@ class Trainer(object):
         total_stats = onmt.utils.Statistics()
         report_stats = onmt.utils.Statistics()
         self._start_report_manager(start_time=total_stats.start_time)
+        # Let's clean the GPUs before training loop
+        torch.cuda.empty_cache()
 
         for i, batches in enumerate(
                 self._accum_batches(train_iter)):
@@ -277,7 +279,7 @@ class Trainer(object):
                 valid_stats = self.validate(
                     valid_iter, moving_average=self.moving_average)
 
-            if step % valid_steps == 0:
+            if step % valid_steps == 0 and self.gpu_rank <= 0:
                 self._report_step(self.optim.learning_rate(),
                                   step, valid_stats=valid_stats,
                                   train_stats=total_stats)
@@ -488,6 +490,7 @@ class Trainer(object):
                     if "CUDA out of memory" in trace_content:
                         logger.info("Step %d, cuda OOM - batch removed",
                                     self.optim.training_step)
+                        torch.cuda.empty_cache()
                     else:
                         traceback.print_exc()
                         raise exc

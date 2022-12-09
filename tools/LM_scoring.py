@@ -64,9 +64,9 @@ def main():
 
     vocabs, model, model_opt = load_test_model(opt)
     padding_idx = vocabs['tgt'][DefaultTokens.PAD]
-    criterion = torch.nn.NLLLoss(ignore_index=padding_idx, reduction='none')
-    loss_gen = model.generator
-    valid_loss = LossCompute(criterion, loss_gen,
+    criterion = torch.nn.CrossEntropyLoss(ignore_index=padding_idx,
+                                          reduction='none')
+    valid_loss = LossCompute(criterion, model.generator,
                              normalization="tokens",
                              tgt_shift_index=0,
                              lambda_coverage=model_opt.lambda_coverage,
