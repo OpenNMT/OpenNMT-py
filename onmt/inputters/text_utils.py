@@ -58,21 +58,25 @@ def process(task, bucket, **kwargs):
     _, transform, cid = bucket[0]
     # We apply the same TransformPipe to all the bucket
     processed_bucket = transform.batch_apply(
-        bucket, is_train=(task == CorpusTask.TRAIN), corpus_name=cid)
-    for i in range(len(processed_bucket)):
-        (example, transform, cid) = processed_bucket[i]
-        if example is not None:
+       bucket, is_train=(task == CorpusTask.TRAIN), corpus_name=cid)
+    if processed_bucket:
+        for i in range(len(processed_bucket)):
+            (example, transform, cid) = processed_bucket[i]
             example = clean_example(example)
-        processed_bucket[i] = example
-    # at this point an example looks like:
-    # {'src': {'src': ..., 'feat1': ...., 'feat2': ....},
-    #  'tgt': {'tgt': ...},
-    #  'src_original': ['tok1', ...'tokn'],
-    #  'tgt_original': ['tok1', ...'tokm'],
-    #  'indices' : seq in bucket
-    #  'align': ...,
-    # }
-    return processed_bucket
+            processed_bucket[i] = example
+        with open('processed_bucket_clean', "w") as w:
+            w.write(str(processed_bucket))
+        # at this point an example looks like:
+        # {'src': {'src': ..., 'feat1': ...., 'feat2': ....},
+        #  'tgt': {'tgt': ...},
+        #  'src_original': ['tok1', ...'tokn'],
+        #  'tgt_original': ['tok1', ...'tokm'],
+        #  'indices' : seq in bucket
+        #  'align': ...,
+        # }
+        return processed_bucket
+    else:
+        return None
 
 
 def numericalize(vocabs, example):
