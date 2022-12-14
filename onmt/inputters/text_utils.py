@@ -286,11 +286,13 @@ def _addcopykeys(vocabs, example):
     example['src_ex_vocab'] = src_ex_vocab
 
     if example['tgt'] is not None:
+        tgt = None
         if vocabs['data_task'] == ModelTask.SEQ2SEQ:
             tgt = [DefaultTokens.UNK] + example['tgt']['tgt'].split() \
                   + [DefaultTokens.UNK]
         elif vocabs['data_task'] == ModelTask.LANGUAGE_MODEL:
             tgt = example['tgt']['tgt'].split() \
                   + [DefaultTokens.UNK]
-        example['alignment'] = src_ex_vocab(tgt)
+        if tgt:
+            example['alignment'] = src_ex_vocab(tgt)
     return example

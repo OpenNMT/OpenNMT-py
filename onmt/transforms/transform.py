@@ -72,7 +72,7 @@ class Transform(object):
                 transformed_batch.append((example, self, cid))
         return transformed_batch
 
-    def apply_reverse(self, translated):
+    def apply_reverse(self, translated, side="tgt"):
         return translated
 
     def __getstate__(self):
@@ -224,9 +224,9 @@ class TransformPipe(Transform):
                 break
         return batch
 
-    def apply_reverse(self, translated):
+    def apply_reverse(self, translated, side="tgt"):
         for transform in self.transforms:
-            translated = transform.apply_reverse(translated)
+            translated = transform.apply_reverse(translated, side)
         return translated
 
     def __getstate__(self):
