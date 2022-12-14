@@ -136,11 +136,14 @@ class LossCompute(nn.Module):
     def padding_idx(self):
         return self.criterion.ignore_index
 
-    def _compute_coverage_loss(self, std_attn, coverage_attn):
+    def _compute_coverage_loss(self, std_attn, cov_attn, tgt):
         """compute coverage loss"""
-        covloss = torch.min(std_attn, coverage_attn).sum()
-        covloss *= self.lambda_coverage
-        return covloss
+        zero_attn = torch.zeros(cov_attn.size()[1:], device=cov_attn.device)
+        cov_attn = torch.cat((zero_attn.unsqueeze(0), cov_attn[:-1]), 0)
+        covloss = torch.min(std_attn, cov_attn).sum(dim=-1).view(-1)
+
+        covloss[tgt == self.padding_idx] = 0
+        return covloss.sum()
 
     def _compute_alignement_loss(self, align_head, ref_align):
         """Compute loss between 2 partial alignment matrix."""
@@ -320,7 +323,7 @@ class LossCompute(nn.Module):
 
         if self.lambda_coverage != 0.0:
             coverage_loss = self._compute_coverage_loss(
-                std_attn=attns['std'], coverage_attn=attns['coverage'])
+                attns['std'], attns['coverage'], flat_tgt)
             loss += coverage_loss
 
         if self.normalization == "tokens":
