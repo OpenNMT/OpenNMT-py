@@ -202,12 +202,12 @@ class SentencePieceTransform(TokenizerTransform):
         example['src'], example['tgt'] = src_out, tgt_out
         return example
 
-    def apply_reverse(self, translated, side='tgt'):
+    def apply_reverse(self, translated):
         """Apply SentencePiece Detokenizer."""
         if isinstance(translated, list):
-            return self._detokenize(translated, side)
+            return self._detokenize(translated, "tgt")
         else:
-            return self._detokenize(translated.split(), side)
+            return self._detokenize(translated.split(), "tgt")
 
     def _repr_args(self):
         """Return str represent key arguments for class."""
@@ -287,12 +287,12 @@ class BPETransform(TokenizerTransform):
         example['src'], example['tgt'] = src_out, tgt_out
         return example
 
-    def apply_reverse(self, translated, side='tgt'):
+    def apply_reverse(self, translated):
         """Apply bpe subword detokenizer"""
         if isinstance(translated, list):
-            return self._detokenize(translated, side)
+            return self._detokenize(translated, "tgt")
         else:
-            return self._detokenize(translated.split(), side)
+            return self._detokenize(translated.split(), "tgt")
 
 
 @register_transform(name='onmt_tokenize')
@@ -461,12 +461,12 @@ class ONMTTokenizerTransform(TokenizerTransform):
         example['src'], example['tgt'] = src_out, tgt_out
         return example
 
-    def apply_reverse(self, translated, side='tgt'):
+    def apply_reverse(self, translated):
         """Apply OpenNMT Tokenizer to src & tgt."""
         if isinstance(translated, list):
-            return self._detokenize(translated, side)
+            return self._detokenize(translated, "tgt")
         else:
-            return self._detokenize(translated.split(), side)
+            return self._detokenize(translated.split(), "tgt")
 
     def _repr_args(self):
         """Return str represent key arguments for class."""

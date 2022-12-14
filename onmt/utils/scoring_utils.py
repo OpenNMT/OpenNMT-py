@@ -70,13 +70,13 @@ class ScoringPreparator():
                                   self.tokenize_batch_side(batch, 'tgt'))]
         return tokenized_batch
 
-    def translate(self, model, tokenized_batchs, gpu_rank, step, mode):
+    def translate(self, model, tokenized_batches, gpu_rank, step, mode):
         """Compute and save the sentences predicted by the
         current model's state related to a batch.
 
         Args:
             model (:obj:`onmt.models.NMTModel`): The current model's state.
-            tokenized_batchs(list of lists): A list of tokenized batchs.
+            tokenized_batches(list of lists): A list of tokenized batches.
             gpu_rank (int): Ordinal rank of the gpu where the
                 translation is to be done.
             step: The current training step.
@@ -110,7 +110,7 @@ class ScoringPreparator():
         preds = []
         raw_sources = []
         raw_refs = []
-        for batch in tokenized_batchs:
+        for batch in tokenized_batches:
             # for validation we build an infer_iter per batch
             # in order to avoid oom issues because there is no
             # batching strategy in `textbatch_to_tensor`
@@ -139,9 +139,9 @@ class ScoringPreparator():
             preds += preds_
         # detokenize refs and predicitons
         if self.transforms:
-            texts_ref = [self.transform.apply_reverse(raw_ref, "tgt")
+            texts_ref = [self.transform.apply_reverse(raw_ref)
                          for raw_ref in raw_refs]
-            preds = [self.transform.apply_reverse(preds_, "tgt")
+            preds = [self.transform.apply_reverse(preds_)
                      for preds_ in preds]
         else:
             texts_ref = [" ".join(raw_ref) for raw_ref in raw_refs]

@@ -266,7 +266,6 @@ def _addcopykeys(vocabs, example):
     Returns:
         ``example``, changed as described.
     """
-
     src = example['src']['src'].split()
     src_ex_vocab = pyonmttok.build_vocab_from_tokens(
         Counter(src),
@@ -284,13 +283,11 @@ def _addcopykeys(vocabs, example):
     example['src_ex_vocab'] = src_ex_vocab
 
     if example['tgt'] is not None:
-        tgt = None
         if vocabs['data_task'] == ModelTask.SEQ2SEQ:
             tgt = [DefaultTokens.UNK] + example['tgt']['tgt'].split() \
                   + [DefaultTokens.UNK]
         elif vocabs['data_task'] == ModelTask.LANGUAGE_MODEL:
             tgt = example['tgt']['tgt'].split() \
                   + [DefaultTokens.UNK]
-        if tgt:
-            example['alignment'] = src_ex_vocab(tgt)
+        example['alignment'] = src_ex_vocab(tgt)
     return example
