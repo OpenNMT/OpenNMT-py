@@ -64,8 +64,6 @@ def process(task, bucket, **kwargs):
             (example, transform, cid) = processed_bucket[i]
             example = clean_example(example)
             processed_bucket[i] = example
-        with open('processed_bucket_clean', "w") as w:
-            w.write(str(processed_bucket))
         # at this point an example looks like:
         # {'src': {'src': ..., 'feat1': ...., 'feat2': ....},
         #  'tgt': {'tgt': ...},

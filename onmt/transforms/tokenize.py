@@ -1,4 +1,5 @@
 """Transforms relate to tokenization/subword."""
+import re
 from onmt.utils.logging import logger
 from onmt.transforms import register_transform
 from .transform import Transform, ObservableStats
@@ -202,7 +203,7 @@ class SentencePieceTransform(TokenizerTransform):
         return example
 
     def apply_reverse(self, translated, side='tgt'):
-        """Apply OpenNMT Tokenizer to src & tgt."""
+        """Apply SentencePiece Detokenizer."""
         if isinstance(translated, list):
             return self._detokenize(translated, side)
         else:
@@ -270,6 +271,11 @@ class BPETransform(TokenizerTransform):
         segmented = bpe_model.segment_tokens(tokens, dropout=dropout)
         return segmented
 
+    def _detokenize(self, tokens, side="src", is_train=False):
+        """"Apply bpe subword detokenizer"""
+        detokenized = re.sub(r"(@@ )|(@@ ?$)", r'', " ".join(tokens))
+        return detokenized
+
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Apply bpe subword encode to src & tgt."""
         src_out = self._tokenize(example['src'], 'src', is_train)
@@ -280,6 +286,13 @@ class BPETransform(TokenizerTransform):
             stats.update(SubwordStats(n_subwords, n_words))
         example['src'], example['tgt'] = src_out, tgt_out
         return example
+
+    def apply_reverse(self, translated, side='tgt'):
+        """Apply bpe subword detokenizer"""
+        if isinstance(translated, list):
+            return self._detokenize(translated, side)
+        else:
+            return self._detokenize(translated.split(), side)
 
 
 @register_transform(name='onmt_tokenize')
@@ -450,7 +463,10 @@ class ONMTTokenizerTransform(TokenizerTransform):
 
     def apply_reverse(self, translated, side='tgt'):
         """Apply OpenNMT Tokenizer to src & tgt."""
-        return self._detokenize(translated.split(), side)
+        if isinstance(translated, list):
+            return self._detokenize(translated, side)
+        else:
+            return self._detokenize(translated.split(), side)
 
     def _repr_args(self):
         """Return str represent key arguments for class."""
