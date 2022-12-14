@@ -20,12 +20,14 @@ class ScoringPreparator():
         if self.opt.dump_preds is not None:
             if not os.path.exists(self.opt.dump_preds):
                 os.makedirs(self.opt.dump_preds)
-        transforms_cls = get_transforms_cls(opt.transforms)
+        self.transforms = opt.transforms
+        transforms_cls = get_transforms_cls(self.transforms)
         transforms = make_transforms(self.opt, transforms_cls, self.vocabs)
         self.transform = TransformPipe.build_from(transforms.values())
 
     def warm_up(self, transforms):
-        transforms_cls = get_transforms_cls(transforms)
+        self.transforms = transforms
+        transforms_cls = get_transforms_cls(self.transforms)
         transforms = make_transforms(self.opt, transforms_cls, self.vocabs)
         self.transform = TransformPipe.build_from(transforms.values())
 
@@ -83,9 +85,6 @@ class ScoringPreparator():
             preds (list): Detokenized predictions
             texts_ref (list): Detokenized target sentences
         """
-        with open("tokenized_batchs", "w") as f:
-            f.write(str(type(tokenized_batchs)) + "/n")
-            f.write(str(tokenized_batchs) + "/n")
         model_opt = self.opt
         parser = ArgumentParser()
         translate_opts(parser)
@@ -117,7 +116,6 @@ class ScoringPreparator():
             # batching strategy in `textbatch_to_tensor`
             numeric = []
             for i, ex in enumerate(batch):
-                # ex =  self.transform.apply(ex)
                 if ex is not None:
                     raw_sources.append(ex['src'])
                     raw_refs.append(ex['tgt'])
@@ -139,12 +137,15 @@ class ScoringPreparator():
             _, preds_ = translator._translate(
                         infer_iter, transform=self.transform)
             preds += preds_
-        # apply_reverse on raw references
-        texts_ref = [self.transform.apply_reverse(raw_ref, "tgt")
-                     for raw_ref in raw_refs]
-        # apply_reverse on predictions
-        preds = [self.transform.apply_reverse(preds_, "tgt")
-                 for preds_ in preds]
+        # detokenize refs and predicitons
+        if self.transforms:
+            texts_ref = [self.transform.apply_reverse(raw_ref, "tgt")
+                         for raw_ref in raw_refs]
+            preds = [self.transform.apply_reverse(preds_, "tgt")
+                     for preds_ in preds]
+        else:
+            texts_ref = [" ".join(raw_ref) for raw_ref in raw_refs]
+            preds = [" ".join(preds_) for preds_ in preds]
 
         # save results
         if len(preds) > 0 and self.opt.scoring_debug:
