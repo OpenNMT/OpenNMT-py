@@ -162,6 +162,8 @@ class RNNDecoderBase(DecoderBase):
     def detach_state(self):
         self.state["hidden"] = tuple(h.detach() for h in self.state["hidden"])
         self.state["input_feed"] = self.state["input_feed"].detach()
+        if self._coverage and self.state["coverage"] is not None:
+            self.state["coverage"] = self.state["coverage"].detach()
 
     def forward(self, tgt, enc_out, src_len=None, step=None,
                 **kwargs):
@@ -204,7 +206,7 @@ class RNNDecoderBase(DecoderBase):
         self.state["input_feed"] = dec_outs[:, -1, :].unsqueeze(0)
         self.state["coverage"] = None
         if "coverage" in attns:
-            self.state["coverage"] = attns["coverage"][:, -1, :].unsqueeze(0)
+            self.state["coverage"] = attns["coverage"][-1, :, :].unsqueeze(0)
 
         return dec_outs, attns
 
@@ -359,6 +361,8 @@ class InputFeedRNNDecoder(RNNDecoderBase):
             dec_outs += [dec_out]
 
             # Update the coverage attention.
+            # attns["coverage"] is actually c^(t+1) of See et al(2017)
+            # 1-index shifted
             if self._coverage:
                 coverage = p_attn if coverage is None else p_attn + coverage
                 attns["coverage"] += [coverage]

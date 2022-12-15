@@ -34,6 +34,15 @@ class TranslationBuilder(object):
                         DefaultTokens.PHRASE_TABLE_SEPARATOR)
                     self.phrase_table_dict[phrase_src] = phrase_trg
 
+    def _build_source_tokens(self, src):
+        tokens = []
+        for tok in src:
+            tokens.append(self.vocabs['src'].lookup_index(tok))
+            if tokens[-1] == DefaultTokens.PAD:
+                tokens = tokens[:-1]
+                break
+        return tokens
+
     def _build_target_tokens(self, src, src_raw, pred, attn):
         tokens = []
 
@@ -87,8 +96,10 @@ class TranslationBuilder(object):
         translations = []
 
         for b in range(batch_size):
-            # src_raw = self.data.examples[inds[b]].src[0]
-            src_raw = None
+            if src is not None:
+                src_raw = self._build_source_tokens(src[b, :])
+            else:
+                src_raw = None
             pred_sents = [self._build_target_tokens(
                 src[b, :] if src is not None else None,
                 src_raw,
