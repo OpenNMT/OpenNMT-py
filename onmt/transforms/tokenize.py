@@ -1,4 +1,5 @@
 """Transforms relate to tokenization/subword."""
+import re
 from onmt.utils.logging import logger
 from onmt.transforms import register_transform
 from .transform import Transform, ObservableStats
@@ -185,6 +186,11 @@ class SentencePieceTransform(TokenizerTransform):
                 alpha=alpha, nbest_size=nbest_size)
         return segmented
 
+    def _detokenize(self, tokens, side="src"):
+        """Apply SentencePiece Detokenizer"""
+        sp_model = self.load_models[side]
+        return sp_model.DecodePieces(tokens)
+
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Apply sentencepiece subword encode to src & tgt."""
         src_out = self._tokenize(example['src'], 'src', is_train)
@@ -195,6 +201,13 @@ class SentencePieceTransform(TokenizerTransform):
             stats.update(SubwordStats(n_subwords, n_words))
         example['src'], example['tgt'] = src_out, tgt_out
         return example
+
+    def apply_reverse(self, translated):
+        """Apply SentencePiece Detokenizer."""
+        if isinstance(translated, list):
+            return self._detokenize(translated, "tgt")
+        else:
+            return self._detokenize(translated.split(), "tgt")
 
     def _repr_args(self):
         """Return str represent key arguments for class."""
@@ -258,6 +271,11 @@ class BPETransform(TokenizerTransform):
         segmented = bpe_model.segment_tokens(tokens, dropout=dropout)
         return segmented
 
+    def _detokenize(self, tokens, side="src", is_train=False):
+        """"Apply bpe subword detokenizer"""
+        detokenized = re.sub(r"(@@ )|(@@ ?$)", r'', " ".join(tokens))
+        return detokenized
+
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Apply bpe subword encode to src & tgt."""
         src_out = self._tokenize(example['src'], 'src', is_train)
@@ -268,6 +286,13 @@ class BPETransform(TokenizerTransform):
             stats.update(SubwordStats(n_subwords, n_words))
         example['src'], example['tgt'] = src_out, tgt_out
         return example
+
+    def apply_reverse(self, translated):
+        """Apply bpe subword detokenizer"""
+        if isinstance(translated, list):
+            return self._detokenize(translated, "tgt")
+        else:
+            return self._detokenize(translated.split(), "tgt")
 
 
 @register_transform(name='onmt_tokenize')
@@ -438,7 +463,10 @@ class ONMTTokenizerTransform(TokenizerTransform):
 
     def apply_reverse(self, translated):
         """Apply OpenNMT Tokenizer to src & tgt."""
-        return self._detokenize(translated.split(), 'tgt')
+        if isinstance(translated, list):
+            return self._detokenize(translated, "tgt")
+        else:
+            return self._detokenize(translated.split(), "tgt")
 
     def _repr_args(self):
         """Return str represent key arguments for class."""

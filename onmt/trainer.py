@@ -38,7 +38,10 @@ def build_trainer(opt, device_id, model, vocabs, optim, model_saver=None):
     train_loss = LossCompute.from_opts(opt, model, vocabs['tgt'])
     valid_loss = LossCompute.from_opts(opt, model, vocabs['tgt'], train=False)
 
-    scoring_preparator = ScoringPreparator(vocabs, opt)
+    scoring_preparator = ScoringPreparator(vocabs=vocabs, opt=opt)
+    validset_transforms = opt.data.get("valid", {}).get("transforms", None)
+    if validset_transforms:
+        scoring_preparator.warm_up(validset_transforms)
     scorers_cls = get_scorers_cls(opt.train_metrics)
     train_scorers = build_scorers(opt, scorers_cls)
     scorers_cls = get_scorers_cls(opt.valid_metrics)
@@ -249,6 +252,8 @@ class Trainer(object):
         else:
             logger.info('Start training loop and validate every %d steps...',
                         valid_steps)
+        logger.info(
+            "Scoring with: {}".format(self.scoring_preparator.transform))
 
         total_stats = onmt.utils.Statistics()
         report_stats = onmt.utils.Statistics()
@@ -324,8 +329,7 @@ class Trainer(object):
         # Set model in validating mode.
         valid_model.eval()
 
-        sources = []
-        refs = []
+        transformed_batches = []
         with torch.no_grad():
             stats = onmt.utils.Statistics()
             start = time.time()
@@ -334,10 +338,9 @@ class Trainer(object):
                 src_len = batch['srclen']
                 tgt = batch['tgt']
                 if self.valid_scorers:
-                    sources_, refs_ = self.scoring_preparator.\
-                        build_sources_and_refs(batch)
-                    sources.append(sources_)
-                    refs += refs_
+                    transformed_batch = self.scoring_preparator.\
+                        ids_to_tokens_batch(batch)
+                    transformed_batches.append(transformed_batch)
                 with torch.cuda.amp.autocast(enabled=self.optim.amp):
                     # F-prop through the model.
                     model_out, attns = valid_model(src, tgt, src_len,
@@ -347,7 +350,7 @@ class Trainer(object):
                     _, batch_stats = self.valid_loss(batch, model_out, attns)
 
                     stats.update(batch_stats)
-            logger.info("""valid stats calculation and batchs detokenization
+            logger.info("""valid stats calculation and sentences rebuilding
                            took: {} s.""".format(time.time() - start))
 
             # Compute validation metrics (at batch.dataset level)
@@ -356,8 +359,7 @@ class Trainer(object):
                 start = time.time()
                 preds, texts_ref = self.scoring_preparator.translate(
                     model=self.model,
-                    sources=sources,
-                    refs=refs,
+                    transformed_batches=transformed_batches,
                     gpu_rank=self.gpu_rank,
                     step=self.optim.training_step,
                     mode="valid")
@@ -451,12 +453,11 @@ class Trainer(object):
                     ):
                         # Compute and save stats
                         computed_metrics = {}
-                        sources_, refs_ = self.scoring_preparator.\
-                            build_sources_and_refs(batch)
+                        transformed_batch = self.scoring_preparator.\
+                            ids_to_tokens_batch(batch)
                         preds, texts_ref = self.scoring_preparator.translate(
                             model=self.model,
-                            sources=[sources_],
-                            refs=refs_,
+                            transformed_batches=[transformed_batch],
                             gpu_rank=self.gpu_rank,
                             step=self.optim.training_step,
                             mode="train")
