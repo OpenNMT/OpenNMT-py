@@ -31,14 +31,14 @@ class ScoringPreparator():
         transforms = make_transforms(self.opt, transforms_cls, self.vocabs)
         self.transform = TransformPipe.build_from(transforms.values())
 
-    def tokenize_batch_side(self, batch, side):
-        """Convert a batch into a list of tokenized sentences
+    def ids_to_tokens_batch_side(self, batch, side):
+        """Convert a batch into a list of transformed sentences
         Args:
             batch: batch yielded from `DynamicDatasetIter` object
             side (string): 'src' or 'tgt'.
         Returns
-            tokenized_sentences (list): List of lists of tokens.
-                Each list is a tokenized sentence.
+            transformed_sentences (list): List of lists of tokens.
+                Each list is a transformed sentence.
         """
         vocab = self.vocabs[side]
         batch_side = batch[side]
@@ -48,35 +48,37 @@ class ScoringPreparator():
                              for token in [DefaultTokens.PAD,
                                            DefaultTokens.EOS,
                                            DefaultTokens.BOS]]
-        tokenized_sentences = []
+        transformed_sentences = []
         for i in range(nb_sentences):
             tokens = [vocab.lookup_index(batch_side[i, t, 0])
                       for t in range(nb_tokens_per_sentence)
                       if batch_side[i, t, 0] not in indices_to_remove]
-            tokenized_sentences.append(tokens)
-        return tokenized_sentences
+            transformed_sentences.append(tokens)
+        return transformed_sentences
 
-    def tokenize_batch(self, batch):
-        """Reconstruct raw sources and references from a batch
+    def ids_to_tokens_batch(self, batch):
+        """Reconstruct transformed source and reference
+        sentences from a batch.
         Args:
             batch: batch yielded from `DynamicDatasetIter` object
         Returns:
-            tokenized_batch(list): A list of examples
+            transformed_batch(list): A list of examples
         with the fields "src" and "tgt"
         """
-        tokenized_batch = [{'src': src_ex, 'tgt': tgt_ex}
-                           for src_ex, tgt_ex
-                           in zip(self.tokenize_batch_side(batch, 'src'),
-                                  self.tokenize_batch_side(batch, 'tgt'))]
-        return tokenized_batch
+        transformed_batch = [{'src': src_ex, 'tgt': tgt_ex}
+                             for src_ex, tgt_ex
+                             in zip(
+                                self.ids_to_tokens_batch_side(batch, 'src'),
+                                self.ids_to_tokens_batch_side(batch, 'tgt'))]
+        return transformed_batch
 
-    def translate(self, model, tokenized_batches, gpu_rank, step, mode):
+    def translate(self, model, transformed_batches, gpu_rank, step, mode):
         """Compute and save the sentences predicted by the
         current model's state related to a batch.
 
         Args:
             model (:obj:`onmt.models.NMTModel`): The current model's state.
-            tokenized_batches(list of lists): A list of tokenized batches.
+            transformed_batches(list of lists): A list of transformed batches.
             gpu_rank (int): Ordinal rank of the gpu where the
                 translation is to be done.
             step: The current training step.
@@ -110,7 +112,7 @@ class ScoringPreparator():
         preds = []
         raw_sources = []
         raw_refs = []
-        for batch in tokenized_batches:
+        for batch in transformed_batches:
             # for validation we build an infer_iter per batch
             # in order to avoid oom issues because there is no
             # batching strategy in `textbatch_to_tensor`

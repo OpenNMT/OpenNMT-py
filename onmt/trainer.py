@@ -329,7 +329,7 @@ class Trainer(object):
         # Set model in validating mode.
         valid_model.eval()
 
-        tokenized_batches = []
+        transformed_batches = []
         with torch.no_grad():
             stats = onmt.utils.Statistics()
             start = time.time()
@@ -338,9 +338,9 @@ class Trainer(object):
                 src_len = batch['srclen']
                 tgt = batch['tgt']
                 if self.valid_scorers:
-                    tokenized_batch = self.scoring_preparator.\
-                        tokenize_batch(batch)
-                    tokenized_batches.append(tokenized_batch)
+                    transformed_batch = self.scoring_preparator.\
+                        ids_to_tokens_batch(batch)
+                    transformed_batches.append(transformed_batch)
                 with torch.cuda.amp.autocast(enabled=self.optim.amp):
                     # F-prop through the model.
                     model_out, attns = valid_model(src, tgt, src_len,
@@ -350,7 +350,7 @@ class Trainer(object):
                     _, batch_stats = self.valid_loss(batch, model_out, attns)
 
                     stats.update(batch_stats)
-            logger.info("""valid stats calculation and batches detokenization
+            logger.info("""valid stats calculation and sentences rebuilding
                            took: {} s.""".format(time.time() - start))
 
             # Compute validation metrics (at batch.dataset level)
@@ -359,7 +359,7 @@ class Trainer(object):
                 start = time.time()
                 preds, texts_ref = self.scoring_preparator.translate(
                     model=self.model,
-                    tokenized_batches=tokenized_batches,
+                    transformed_batches=transformed_batches,
                     gpu_rank=self.gpu_rank,
                     step=self.optim.training_step,
                     mode="valid")
@@ -453,11 +453,11 @@ class Trainer(object):
                     ):
                         # Compute and save stats
                         computed_metrics = {}
-                        tokenized_batch = self.scoring_preparator.\
-                            tokenize_batch(batch)
+                        transformed_batch = self.scoring_preparator.\
+                            ids_to_tokens_batch(batch)
                         preds, texts_ref = self.scoring_preparator.translate(
                             model=self.model,
-                            tokenized_batches=[tokenized_batch],
+                            transformed_batches=[transformed_batch],
                             gpu_rank=self.gpu_rank,
                             step=self.optim.training_step,
                             mode="train")
