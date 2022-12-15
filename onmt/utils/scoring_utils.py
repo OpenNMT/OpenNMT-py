@@ -137,12 +137,15 @@ class ScoringPreparator():
             _, preds_ = translator._translate(
                         infer_iter, transform=self.transform)
             preds += preds_
-        # detokenize refs and predicitons
+            with open("x", "a") as f:
+                f.write(str(len(preds_)))
+
+        # detokenize refs
         if self.transforms:
             texts_ref = [self.transform.apply_reverse(raw_ref)
                          for raw_ref in raw_refs]
-            preds = [self.transform.apply_reverse(preds_)
-                     for preds_ in preds]
+            # flatten preds
+            preds = [item for preds_ in preds for item in preds_]
         else:
             texts_ref = [" ".join(raw_ref) for raw_ref in raw_refs]
             preds = [" ".join(preds_) for preds_ in preds]
