@@ -48,6 +48,7 @@ def build_trainer(opt, device_id, model, vocabs, optim, model_saver=None):
     valid_scorers = build_scorers(opt, scorers_cls)
 
     trunc_size = opt.truncated_decoder  # Badly named...
+    norm_method = opt.normalization
     accum_count = opt.accum_count
     accum_steps = opt.accum_steps
     n_gpu = opt.world_size
@@ -70,7 +71,7 @@ def build_trainer(opt, device_id, model, vocabs, optim, model_saver=None):
     trainer = onmt.Trainer(model,
                            train_loss, valid_loss,
                            scoring_preparator, train_scorers, valid_scorers,
-                           optim, trunc_size,
+                           optim, trunc_size, norm_method,
                            accum_count, accum_steps,
                            n_gpu, gpu_rank,
                            opt.train_eval_steps, report_manager,
@@ -132,6 +133,7 @@ class Trainer(object):
                  scoring_preparator, train_scorers, valid_scorers,
                  optim,
                  trunc_size=0,
+                 norm_method='sents',
                  accum_count=[1],
                  accum_steps=[0],
                  n_gpu=1, gpu_rank=1,
@@ -151,6 +153,7 @@ class Trainer(object):
         self.valid_scorers = valid_scorers
         self.optim = optim
         self.trunc_size = trunc_size
+        self.norm_method = norm_method
         self.accum_count_l = accum_count
         self.accum_count = accum_count[0]
         self.accum_steps = accum_steps
@@ -202,15 +205,24 @@ class Trainer(object):
 
     def _accum_batches(self, iterator):
         batches = []
+        normalization = 0
         self.accum_count = self._accum_count(self.optim.training_step)
         for batch in iterator:
             batches.append(batch)
+            if self.norm_method == "tokens":
+                num_tokens = batch['tgt'][:, 1:, 0].ne(
+                    self.train_loss.padding_idx).sum()
+                normalization += num_tokens.item()
+                normalization -= len(batch['tgt'])  # don't count for EOS
+            else:
+                normalization += len(batch['tgt'])
             if len(batches) == self.accum_count:
-                yield batches
+                yield batches, normalization
                 self.accum_count = self._accum_count(self.optim.training_step)
                 batches = []
+                normalization = 0
         if batches:
-            yield batches
+            yield batches, normalization
 
     def _update_average(self, step):
         if self.moving_average is None:
@@ -261,14 +273,19 @@ class Trainer(object):
         # Let's clean the GPUs before training loop
         torch.cuda.empty_cache()
 
-        for i, batches in enumerate(
+        for i, (batches, normalization) in enumerate(
                 self._accum_batches(train_iter)):
             step = self.optim.training_step
             # UPDATE DROPOUT
             self._maybe_update_dropout(step)
 
+            if self.n_gpu > 1:
+                normalization = sum(onmt.utils.distributed
+                                    .all_gather_list
+                                    (normalization))
+
             self._gradient_accumulation(
-                batches, total_stats,
+                batches, normalization, total_stats,
                 report_stats)
 
             if self.average_decay > 0 and i % self.average_every == 0:
@@ -396,7 +413,7 @@ class Trainer(object):
 
         return stats
 
-    def _gradient_accumulation(self, true_batches, total_stats,
+    def _gradient_accumulation(self, true_batches, normalization, total_stats,
                                report_stats):
         """Function that iterates over big batches = ``true_batches``
         perform a backward on the loss of each sub_batch and
@@ -480,7 +497,7 @@ class Trainer(object):
                     if loss is not None:
                         # in theory we should divide by accum_count and bptt
                         # to rescale for each sub batch
-                        loss /= self.accum_count
+                        loss /= normalization
                         self.optim.backward(loss)
 
                     total_stats.update(batch_stats)

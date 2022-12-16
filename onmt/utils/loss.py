@@ -25,7 +25,6 @@ class LossCompute(nn.Module):
     Args:
         criterion (:obj:`nn. loss function`) : NLLoss or customed loss
         generator (:obj:`nn.Module`) :
-        normalization (str): "tokens" or "sents"
         copy_attn (bool): whether copy attention mechanism is on/off
         lambda_coverage: Hyper-param to apply coverage attention if any
         lambda_align: Hyper-param for alignment loss
@@ -37,7 +36,7 @@ class LossCompute(nn.Module):
         lm_prior_lambda (float): weight of LM model in loss
         lm_prior_tau (float): scaler for LM loss
     """
-    def __init__(self, criterion, generator, normalization="tokens",
+    def __init__(self, criterion, generator,
                  copy_attn=False, lambda_coverage=0.0, lambda_align=0.0,
                  tgt_shift_index=1, vocab=None, lm_generator=None,
                  lm_prior_lambda=None, lm_prior_tau=None,
@@ -45,7 +44,6 @@ class LossCompute(nn.Module):
         super(LossCompute, self).__init__()
         self.criterion = criterion
         self.generator = generator
-        self.normalization = normalization
         self.lambda_coverage = lambda_coverage
         self.lambda_align = lambda_align
         self.tgt_shift_index = tgt_shift_index
@@ -119,7 +117,6 @@ class LossCompute(nn.Module):
             lm_prior_model = None
 
         compute = cls(criterion, model.generator,
-                      normalization=opt.normalization,
                       copy_attn=opt.copy_attn,
                       lambda_coverage=opt.lambda_coverage,
                       lambda_align=opt.lambda_align,
@@ -326,13 +323,6 @@ class LossCompute(nn.Module):
                 attns['std'], attns['coverage'], flat_tgt)
             loss += coverage_loss
 
-        if self.normalization == "tokens":
-            normfactor = batch['tgt'][:,
-                                      :,
-                                      0].ne(self.padding_idx).sum()
-        elif self.normalization == "sents":
-            normfactor = batch['tgt'].size(0)
-
         if self.lm_generator is not None:
             lm_loss = self._compute_lm_loss_ct2(output, target)
             loss = loss + lm_loss * self.lm_prior_lambda
@@ -344,7 +334,7 @@ class LossCompute(nn.Module):
         stats = self._stats(len(batch['srclen']), loss.sum().item(),
                             scores, flat_tgt)
 
-        return loss / float(normfactor), stats
+        return loss, stats
 
     def _stats(self, bsz, loss, scores, target):
         """
