@@ -76,7 +76,7 @@ class LossCompute(nn.Module):
                 "order to use --lambda_coverage != 0"
 
         tgt_shift_idx = 1 if opt.model_task == ModelTask.SEQ2SEQ else 0
-        label_smoothing = opt.label_smoothing if train else 0
+
         if opt.copy_attn:
             criterion = onmt.modules.CopyGeneratorLoss(
                 len(vocab), opt.copy_attn_force,
@@ -90,7 +90,7 @@ class LossCompute(nn.Module):
                 criterion = nn.CrossEntropyLoss(
                     ignore_index=padding_idx,
                     reduction='sum',
-                    label_smoothing=label_smoothing
+                    label_smoothing=opt.label_smoothing
                 )
 
         lm_prior_lambda = opt.lm_prior_lambda
