@@ -253,7 +253,7 @@ def save_transformed_sample(opts, transforms, n_sample=3):
                 open(dest_base + ".tgt", 'w', encoding="utf-8") as f_tgt:
             for i, item in enumerate(c_iter):
                 maybe_example = process(CorpusTask.TRAIN, [item])
-                if len(maybe_example) > 0:
+                if maybe_example is not None:
                     maybe_example = maybe_example[0]
                     src_line, tgt_line = (maybe_example['src']['src'],
                                           maybe_example['tgt']['tgt'])

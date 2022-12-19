@@ -139,10 +139,8 @@ class ScoringPreparator():
             _, preds_ = translator._translate(
                         infer_iter, transform=self.transform)
             preds += preds_
-            with open("x", "a") as f:
-                f.write(str(len(preds_)))
 
-        # detokenize refs
+        # apply_reverse refs
         if self.transforms:
             texts_ref = [self.transform.apply_reverse(raw_ref)
                          for raw_ref in raw_refs]
