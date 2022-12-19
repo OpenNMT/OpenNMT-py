@@ -58,7 +58,7 @@ def build_torch_optimizer(model, opt):
             params,
             lr=opt.learning_rate,
             betas=betas,
-            eps=1e-9)
+            eps=1e-8)
     elif opt.optim == 'sparseadam':
         dense = []
         sparse = []

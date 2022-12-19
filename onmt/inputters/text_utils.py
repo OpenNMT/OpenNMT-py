@@ -9,7 +9,7 @@ from collections import Counter
 def text_sort_key(ex):
     """Sort using the number of tokens in the sequence."""
     if ex['tgt']:
-        return len(ex['src']['src_ids']), len(ex['tgt']['tgt_ids'])
+        return max(len(ex['src']['src_ids']), len(ex['tgt']['tgt_ids']))
     return len(ex['src']['src_ids'])
 
 

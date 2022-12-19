@@ -3,6 +3,12 @@
 
 
 ## [Unreleased]
+## [3.0.3](https://github.com/OpenNMT/OpenNMT-py/tree/3.0.3) (2022-12-16)
+* fix loss normalization when using accum or nb GPU > 1
+* use native CrossEntropyLoss with Label Smoothing. reported loss/ppl impacted by LS
+* fix long-time coverage loss bug thanks Sanghyuk-Choi
+* fix detok at scoring / fix tokenization Subword_nmt + Sentencepiece
+* various small bugs fixed
 
 ## [3.0.2](https://github.com/OpenNMT/OpenNMT-py/tree/3.0.2) (2022-12-07)
 * pyonmttok.Vocab is now pickable. dataloader switched to spawn. (MacOS/Windows compatible)
