@@ -326,7 +326,7 @@ with the source lengths vector. It is a decoder only LM (cf GPT-2)</p>
 <h2>Trainer<a class="headerlink" href="#trainer" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.Trainer">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.</code><code class="sig-name descname">Trainer</code><span class="sig-paren">(</span><em class="sig-param">model, train_loss, valid_loss, scoring_preparator, train_scorers, valid_scorers, optim, trunc_size=0, accum_count=[1], accum_steps=[0], n_gpu=1, gpu_rank=1, train_eval_steps=200, report_manager=None, with_align=False, model_saver=None, average_decay=0, average_every=1, model_dtype='fp32', earlystopper=None, dropout=[0.3], attention_dropout=[0.1], dropout_steps=[0]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.</code><code class="sig-name descname">Trainer</code><span class="sig-paren">(</span><em class="sig-param">model, train_loss, valid_loss, scoring_preparator, train_scorers, valid_scorers, optim, trunc_size=0, norm_method='sents', accum_count=[1], accum_steps=[0], n_gpu=1, gpu_rank=1, train_eval_steps=200, report_manager=None, with_align=False, model_saver=None, average_decay=0, average_every=1, model_dtype='fp32', earlystopper=None, dropout=[0.3], attention_dropout=[0.1], dropout_steps=[0]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/trainer.html#Trainer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.Trainer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Class that controls the training process.</p>
 <dl class="field-list simple">
@@ -526,7 +526,7 @@ or not</p></li>
 <h2>Loss<a class="headerlink" href="#loss" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.utils.loss.LossCompute">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.utils.loss.</code><code class="sig-name descname">LossCompute</code><span class="sig-paren">(</span><em class="sig-param">criterion</em>, <em class="sig-param">generator</em>, <em class="sig-param">normalization='tokens'</em>, <em class="sig-param">copy_attn=False</em>, <em class="sig-param">lambda_coverage=0.0</em>, <em class="sig-param">lambda_align=0.0</em>, <em class="sig-param">tgt_shift_index=1</em>, <em class="sig-param">vocab=None</em>, <em class="sig-param">lm_generator=None</em>, <em class="sig-param">lm_prior_lambda=None</em>, <em class="sig-param">lm_prior_tau=None</em>, <em class="sig-param">lm_prior_model=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/loss.html#LossCompute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.loss.LossCompute" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.utils.loss.</code><code class="sig-name descname">LossCompute</code><span class="sig-paren">(</span><em class="sig-param">criterion</em>, <em class="sig-param">generator</em>, <em class="sig-param">copy_attn=False</em>, <em class="sig-param">lambda_coverage=0.0</em>, <em class="sig-param">lambda_align=0.0</em>, <em class="sig-param">tgt_shift_index=1</em>, <em class="sig-param">vocab=None</em>, <em class="sig-param">lm_generator=None</em>, <em class="sig-param">lm_prior_lambda=None</em>, <em class="sig-param">lm_prior_tau=None</em>, <em class="sig-param">lm_prior_model=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/loss.html#LossCompute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.loss.LossCompute" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.module.Module</span></code></p>
 <p>Class for managing efficient loss computation. Handles
 accumulating multiple loss computations.</p>
@@ -535,7 +535,6 @@ accumulating multiple loss computations.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>criterion</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">nn.</span> <span class="pre">loss</span> <span class="pre">function</span></code>) – NLLoss or customed loss</p></li>
 <li><p><strong>generator</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">nn.Module</span></code>) – </p></li>
-<li><p><strong>normalization</strong> (<em>str</em>) – “tokens” or “sents”</p></li>
 <li><p><strong>copy_attn</strong> (<em>bool</em>) – whether copy attention mechanism is on/off</p></li>
 <li><p><strong>lambda_coverage</strong> – Hyper-param to apply coverage attention if any</p></li>
 <li><p><strong>lambda_align</strong> – Hyper-param for alignment loss</p></li>
@@ -583,22 +582,6 @@ memory required in the RNN buffers.</p>
 object passes relevant data to a Statistics object which handles
 training/validation logging.
 The Criterion and LossCompute options are triggered by opt settings.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="onmt.utils.loss.LabelSmoothingLoss">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.utils.loss.</code><code class="sig-name descname">LabelSmoothingLoss</code><span class="sig-paren">(</span><em class="sig-param">label_smoothing</em>, <em class="sig-param">tgt_vocab_size</em>, <em class="sig-param">ignore_index=-100</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/loss.html#LabelSmoothingLoss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.loss.LabelSmoothingLoss" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.module.Module</span></code></p>
-<p>With label smoothing,
-KL-divergence between q_{smoothed ground truth prob.}(w)
-and p_{prob. computed by model}(w) is minimized.</p>
-<dl class="method">
-<dt id="onmt.utils.loss.LabelSmoothingLoss.forward">
-<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">output</em>, <em class="sig-param">target</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/utils/loss.html#LabelSmoothingLoss.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.utils.loss.LabelSmoothingLoss.forward" title="Permalink to this definition">¶</a></dt>
-<dd><p>output (FloatTensor): <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">n_classes)</span></code>
-target (LongTensor): <code class="docutils literal notranslate"><span class="pre">(batch_size)</span></code></p>
 </dd></dl>
 
 </dd></dl>

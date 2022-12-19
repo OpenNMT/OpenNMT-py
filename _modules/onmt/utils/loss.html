@@ -210,7 +210,6 @@
 <span class="sd">    Args:</span>
 <span class="sd">        criterion (:obj:`nn. loss function`) : NLLoss or customed loss</span>
 <span class="sd">        generator (:obj:`nn.Module`) :</span>
-<span class="sd">        normalization (str): &quot;tokens&quot; or &quot;sents&quot;</span>
 <span class="sd">        copy_attn (bool): whether copy attention mechanism is on/off</span>
 <span class="sd">        lambda_coverage: Hyper-param to apply coverage attention if any</span>
 <span class="sd">        lambda_align: Hyper-param for alignment loss</span>
@@ -222,7 +221,7 @@
 <span class="sd">        lm_prior_lambda (float): weight of LM model in loss</span>
 <span class="sd">        lm_prior_tau (float): scaler for LM loss</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">criterion</span><span class="p">,</span> <span class="n">generator</span><span class="p">,</span> <span class="n">normalization</span><span class="o">=</span><span class="s2">&quot;tokens&quot;</span><span class="p">,</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">criterion</span><span class="p">,</span> <span class="n">generator</span><span class="p">,</span>
                  <span class="n">copy_attn</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">lambda_coverage</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">lambda_align</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
                  <span class="n">tgt_shift_index</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">vocab</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lm_generator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">lm_prior_lambda</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lm_prior_tau</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -230,7 +229,6 @@
         <span class="nb">super</span><span class="p">(</span><span class="n">LossCompute</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">criterion</span> <span class="o">=</span> <span class="n">criterion</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">generator</span> <span class="o">=</span> <span class="n">generator</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">normalization</span> <span class="o">=</span> <span class="n">normalization</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lambda_coverage</span> <span class="o">=</span> <span class="n">lambda_coverage</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lambda_align</span> <span class="o">=</span> <span class="n">lambda_align</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tgt_shift_index</span> <span class="o">=</span> <span class="n">tgt_shift_index</span>
@@ -268,17 +266,15 @@
                 <span class="n">unk_index</span><span class="o">=</span><span class="n">unk_idx</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="n">padding_idx</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">label_smoothing</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">train</span><span class="p">:</span>
-                <span class="n">criterion</span> <span class="o">=</span> <span class="n">LabelSmoothingLoss</span><span class="p">(</span>
-                    <span class="n">opt</span><span class="o">.</span><span class="n">label_smoothing</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">vocab</span><span class="p">),</span>
-                    <span class="n">ignore_index</span><span class="o">=</span><span class="n">padding_idx</span>
-                <span class="p">)</span>
-            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">generator</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">LogSparsemax</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">generator_function</span> <span class="o">==</span> <span class="s1">&#39;sparsemax&#39;</span><span class="p">:</span>
                 <span class="n">criterion</span> <span class="o">=</span> <span class="n">SparsemaxLoss</span><span class="p">(</span><span class="n">ignore_index</span><span class="o">=</span><span class="n">padding_idx</span><span class="p">,</span>
                                           <span class="n">reduction</span><span class="o">=</span><span class="s1">&#39;sum&#39;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">criterion</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">NLLLoss</span><span class="p">(</span><span class="n">ignore_index</span><span class="o">=</span><span class="n">padding_idx</span><span class="p">,</span>
-                                       <span class="n">reduction</span><span class="o">=</span><span class="s1">&#39;sum&#39;</span><span class="p">)</span>
+                <span class="n">criterion</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">CrossEntropyLoss</span><span class="p">(</span>
+                    <span class="n">ignore_index</span><span class="o">=</span><span class="n">padding_idx</span><span class="p">,</span>
+                    <span class="n">reduction</span><span class="o">=</span><span class="s1">&#39;sum&#39;</span><span class="p">,</span>
+                    <span class="n">label_smoothing</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">label_smoothing</span>
+                <span class="p">)</span>
 
         <span class="n">lm_prior_lambda</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">lm_prior_lambda</span>
         <span class="n">lm_prior_tau</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">lm_prior_tau</span>
@@ -305,16 +301,7 @@
             <span class="n">lm_generator</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="n">lm_prior_model</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="c1"># if the loss function operates on vectors of raw logits instead</span>
-        <span class="c1"># of probabilities, only the first part of the generator needs to</span>
-        <span class="c1"># be passed to the NMTLossCompute. At the moment, the only</span>
-        <span class="c1"># supported loss function of this kind is the sparsemax loss.</span>
-        <span class="n">use_raw_logits</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">criterion</span><span class="p">,</span> <span class="n">SparsemaxLoss</span><span class="p">)</span>
-        <span class="n">loss_gen</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">generator</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">use_raw_logits</span> \
-            <span class="k">else</span> <span class="n">model</span><span class="o">.</span><span class="n">generator</span>
-
-        <span class="n">compute</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">criterion</span><span class="p">,</span> <span class="n">loss_gen</span><span class="p">,</span>
-                      <span class="n">normalization</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">normalization</span><span class="p">,</span>
+        <span class="n">compute</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">criterion</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">generator</span><span class="p">,</span>
                       <span class="n">copy_attn</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">copy_attn</span><span class="p">,</span>
                       <span class="n">lambda_coverage</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">lambda_coverage</span><span class="p">,</span>
                       <span class="n">lambda_align</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">lambda_align</span><span class="p">,</span>
@@ -331,11 +318,14 @@
     <span class="k">def</span> <span class="nf">padding_idx</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">criterion</span><span class="o">.</span><span class="n">ignore_index</span>
 
-    <span class="k">def</span> <span class="nf">_compute_coverage_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">std_attn</span><span class="p">,</span> <span class="n">coverage_attn</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_compute_coverage_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">std_attn</span><span class="p">,</span> <span class="n">cov_attn</span><span class="p">,</span> <span class="n">tgt</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;compute coverage loss&quot;&quot;&quot;</span>
-        <span class="n">covloss</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">std_attn</span><span class="p">,</span> <span class="n">coverage_attn</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-        <span class="n">covloss</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lambda_coverage</span>
-        <span class="k">return</span> <span class="n">covloss</span>
+        <span class="n">zero_attn</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">cov_attn</span><span class="o">.</span><span class="n">size</span><span class="p">()[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">device</span><span class="o">=</span><span class="n">cov_attn</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">cov_attn</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">zero_attn</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">cov_attn</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">covloss</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">std_attn</span><span class="p">,</span> <span class="n">cov_attn</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">covloss</span><span class="p">[</span><span class="n">tgt</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">padding_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="n">covloss</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">_compute_alignement_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">align_head</span><span class="p">,</span> <span class="n">ref_align</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute loss between 2 partial alignment matrix.&quot;&quot;&quot;</span>
@@ -373,9 +363,8 @@
 <span class="sd">        /fairseq_extension/user/lm_prior/lm_prior.py#L131-L133</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="c1"># we use the raw logits, rescale with tau (temperature) and</span>
-        <span class="c1"># apply the log_softmax. reminder generator[0] is just the nn.Linear</span>
-        <span class="n">scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="p">[</span><span class="mi">0</span><span class="p">](</span><span class="bp">self</span><span class="o">.</span><span class="n">_bottle</span><span class="p">(</span><span class="n">output</span><span class="p">))</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">lm_prior_tau</span>
+        <span class="c1"># rescale with tau (temperature) and apply the log_softmax.</span>
+        <span class="n">scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bottle</span><span class="p">(</span><span class="n">output</span><span class="p">))</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">lm_prior_tau</span>
         <span class="n">scores</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">log_softmax</span><span class="p">(</span><span class="n">scores</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
 
         <span class="n">src</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
@@ -408,9 +397,8 @@
 <span class="sd">        /fairseq_extension/user/lm_prior/lm_prior.py#L131-L133</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="c1"># we use the raw logits, rescale with tau (temperature) and</span>
-        <span class="c1"># apply the log_softmax. reminder generator[0] is just the nn.Linear</span>
-        <span class="n">scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="p">[</span><span class="mi">0</span><span class="p">](</span><span class="bp">self</span><span class="o">.</span><span class="n">_bottle</span><span class="p">(</span><span class="n">output</span><span class="p">))</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">lm_prior_tau</span>
+        <span class="c1"># rescale with tau (temperature) and apply the log_softmax.</span>
+        <span class="n">scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bottle</span><span class="p">(</span><span class="n">output</span><span class="p">))</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">lm_prior_tau</span>
         <span class="n">scores</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">log_softmax</span><span class="p">(</span><span class="n">scores</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
 
         <span class="n">src</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
@@ -419,7 +407,7 @@
         <span class="c1"># ct2 expects src with lengths without padding</span>
         <span class="n">lm_outs</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lm_prior_model</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span>
                                          <span class="n">with_align</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-        <span class="n">lm_scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lm_prior_model</span><span class="o">.</span><span class="n">generator</span><span class="p">[</span><span class="mi">0</span><span class="p">](</span>
+        <span class="n">lm_scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lm_prior_model</span><span class="o">.</span><span class="n">generator</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_bottle</span><span class="p">(</span><span class="n">lm_outs</span><span class="p">))</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">lm_prior_tau</span>
         <span class="c1"># again we use raw probs to rescale with tau and apply log_softmax</span>
         <span class="n">lm_scores</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">log_softmax</span><span class="p">(</span><span class="n">lm_scores</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
@@ -493,7 +481,9 @@
         <span class="k">else</span><span class="p">:</span>
 
             <span class="n">scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bottle</span><span class="p">(</span><span class="n">output</span><span class="p">))</span>
-            <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">criterion</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">flat_tgt</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">criterion</span><span class="p">,</span> <span class="n">SparsemaxLoss</span><span class="p">):</span>
+                <span class="n">scores</span> <span class="o">=</span> <span class="n">LogSparsemax</span><span class="p">(</span><span class="n">scores</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">criterion</span><span class="p">(</span><span class="n">scores</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span> <span class="n">flat_tgt</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lambda_align</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">:</span>
                 <span class="n">align_head</span> <span class="o">=</span> <span class="n">attns</span><span class="p">[</span><span class="s1">&#39;align&#39;</span><span class="p">]</span>
@@ -515,15 +505,8 @@
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lambda_coverage</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">:</span>
             <span class="n">coverage_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_coverage_loss</span><span class="p">(</span>
-                <span class="n">std_attn</span><span class="o">=</span><span class="n">attns</span><span class="p">[</span><span class="s1">&#39;std&#39;</span><span class="p">],</span> <span class="n">coverage_attn</span><span class="o">=</span><span class="n">attns</span><span class="p">[</span><span class="s1">&#39;coverage&#39;</span><span class="p">])</span>
+                <span class="n">attns</span><span class="p">[</span><span class="s1">&#39;std&#39;</span><span class="p">],</span> <span class="n">attns</span><span class="p">[</span><span class="s1">&#39;coverage&#39;</span><span class="p">],</span> <span class="n">flat_tgt</span><span class="p">)</span>
             <span class="n">loss</span> <span class="o">+=</span> <span class="n">coverage_loss</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalization</span> <span class="o">==</span> <span class="s2">&quot;tokens&quot;</span><span class="p">:</span>
-            <span class="n">normfactor</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">][:,</span>
-                                      <span class="p">:,</span>
-                                      <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ne</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">padding_idx</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalization</span> <span class="o">==</span> <span class="s2">&quot;sents&quot;</span><span class="p">:</span>
-            <span class="n">normfactor</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lm_generator</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">lm_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_lm_loss_ct2</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
@@ -536,7 +519,7 @@
         <span class="n">stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stats</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s1">&#39;srclen&#39;</span><span class="p">]),</span> <span class="n">loss</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
                             <span class="n">scores</span><span class="p">,</span> <span class="n">flat_tgt</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">loss</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">normfactor</span><span class="p">),</span> <span class="n">stats</span></div>
+        <span class="k">return</span> <span class="n">loss</span><span class="p">,</span> <span class="n">stats</span></div>
 
     <span class="k">def</span> <span class="nf">_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bsz</span><span class="p">,</span> <span class="n">loss</span><span class="p">,</span> <span class="n">scores</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -559,36 +542,6 @@
                                      <span class="n">n_sents</span><span class="o">=</span><span class="n">bsz</span><span class="p">,</span>
                                      <span class="n">n_words</span><span class="o">=</span><span class="n">num_non_padding</span><span class="p">,</span>
                                      <span class="n">n_correct</span><span class="o">=</span><span class="n">num_correct</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="LabelSmoothingLoss"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.loss.LabelSmoothingLoss">[docs]</a><span class="k">class</span> <span class="nc">LabelSmoothingLoss</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    With label smoothing,</span>
-<span class="sd">    KL-divergence between q_{smoothed ground truth prob.}(w)</span>
-<span class="sd">    and p_{prob. computed by model}(w) is minimized.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label_smoothing</span><span class="p">,</span> <span class="n">tgt_vocab_size</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=-</span><span class="mi">100</span><span class="p">):</span>
-        <span class="k">assert</span> <span class="mf">0.0</span> <span class="o">&lt;</span> <span class="n">label_smoothing</span> <span class="o">&lt;=</span> <span class="mf">1.0</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ignore_index</span> <span class="o">=</span> <span class="n">ignore_index</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">LabelSmoothingLoss</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-
-        <span class="n">smoothing_value</span> <span class="o">=</span> <span class="n">label_smoothing</span> <span class="o">/</span> <span class="p">(</span><span class="n">tgt_vocab_size</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span>
-        <span class="n">one_hot</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">tgt_vocab_size</span><span class="p">,),</span> <span class="n">smoothing_value</span><span class="p">)</span>
-        <span class="n">one_hot</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">ignore_index</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s1">&#39;one_hot&#39;</span><span class="p">,</span> <span class="n">one_hot</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">confidence</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">label_smoothing</span>
-
-<div class="viewcode-block" id="LabelSmoothingLoss.forward"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.loss.LabelSmoothingLoss.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        output (FloatTensor): ``(batch_size, n_classes)``</span>
-<span class="sd">        target (LongTensor): ``(batch_size)``</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">model_prob</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">one_hot</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="n">model_prob</span><span class="o">.</span><span class="n">scatter_</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">target</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">confidence</span><span class="p">)</span>
-        <span class="n">model_prob</span><span class="o">.</span><span class="n">masked_fill_</span><span class="p">((</span><span class="n">target</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignore_index</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">kl_div</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">model_prob</span><span class="p">,</span> <span class="n">reduction</span><span class="o">=</span><span class="s1">&#39;sum&#39;</span><span class="p">)</span></div></div>
 </pre></div>
 
            </div>

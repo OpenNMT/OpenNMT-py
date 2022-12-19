@@ -254,7 +254,8 @@
         <span class="k">if</span> <span class="n">src_len</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">no_pack_padded_seq</span><span class="p">:</span>
             <span class="c1"># src lengths data is wrapped inside a Tensor.</span>
             <span class="n">src_len_list</span> <span class="o">=</span> <span class="n">src_len</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-            <span class="n">packed_emb</span> <span class="o">=</span> <span class="n">pack</span><span class="p">(</span><span class="n">emb</span><span class="p">,</span> <span class="n">src_len_list</span><span class="p">,</span> <span class="n">batch_first</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">packed_emb</span> <span class="o">=</span> <span class="n">pack</span><span class="p">(</span><span class="n">emb</span><span class="p">,</span> <span class="n">src_len_list</span><span class="p">,</span> <span class="n">batch_first</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                              <span class="n">enforce_sorted</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
         <span class="n">enc_out</span><span class="p">,</span> <span class="n">enc_final_hs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rnn</span><span class="p">(</span><span class="n">packed_emb</span><span class="p">)</span>
 

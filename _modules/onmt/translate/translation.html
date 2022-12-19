@@ -219,6 +219,15 @@
                         <span class="n">DefaultTokens</span><span class="o">.</span><span class="n">PHRASE_TABLE_SEPARATOR</span><span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">phrase_table_dict</span><span class="p">[</span><span class="n">phrase_src</span><span class="p">]</span> <span class="o">=</span> <span class="n">phrase_trg</span>
 
+    <span class="k">def</span> <span class="nf">_build_source_tokens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">):</span>
+        <span class="n">tokens</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">tok</span> <span class="ow">in</span> <span class="n">src</span><span class="p">:</span>
+            <span class="n">tokens</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vocabs</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lookup_index</span><span class="p">(</span><span class="n">tok</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">tokens</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">DefaultTokens</span><span class="o">.</span><span class="n">PAD</span><span class="p">:</span>
+                <span class="n">tokens</span> <span class="o">=</span> <span class="n">tokens</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">break</span>
+        <span class="k">return</span> <span class="n">tokens</span>
+
     <span class="k">def</span> <span class="nf">_build_target_tokens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">src_raw</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="n">attn</span><span class="p">):</span>
         <span class="n">tokens</span> <span class="o">=</span> <span class="p">[]</span>
 
@@ -272,8 +281,10 @@
         <span class="n">translations</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">):</span>
-            <span class="c1"># src_raw = self.data.examples[inds[b]].src[0]</span>
-            <span class="n">src_raw</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">src</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">src_raw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_source_tokens</span><span class="p">(</span><span class="n">src</span><span class="p">[</span><span class="n">b</span><span class="p">,</span> <span class="p">:])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">src_raw</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="n">pred_sents</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_build_target_tokens</span><span class="p">(</span>
                 <span class="n">src</span><span class="p">[</span><span class="n">b</span><span class="p">,</span> <span class="p">:]</span> <span class="k">if</span> <span class="n">src</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
                 <span class="n">src_raw</span><span class="p">,</span>
