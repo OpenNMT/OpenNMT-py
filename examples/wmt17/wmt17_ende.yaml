@@ -1,0 +1,79 @@
+# Meta opts:
+## IO
+save_data: wmt17_en_de/data
+overwrite: True
+
+### vocab:
+src_vocab: wmt17_en_de/vocab.shared
+tgt_vocab: wmt17_en_de/vocab.shared
+src_vocab_size: 36000
+tgt_vocab_size: 36000
+vocab_size_multiple: 8
+src_words_min_frequency: 2
+tgt_words_min_frequency: 2
+share_vocab: True
+n_sample: 0
+
+#### Filter
+src_seq_length: 96
+tgt_seq_length: 96
+
+# Corpus opts:
+data:
+    corpus_1:
+        path_src: wmt17_en_de/train.src.bpe.shuf
+        path_tgt: wmt17_en_de/train.trg.bpe.shuf
+    valid:
+        path_src: wmt17_en_de/dev.src.bpe
+        path_tgt: wmt17_en_de/dev.trg.bpe
+
+# Model configuration
+save_model: wmt17_en_de/bigwmt17
+keep_checkpoint: 50
+save_checkpoint_steps: 5000
+average_decay: 0
+seed: 1
+report_every: 100
+train_steps: 50000
+valid_steps: 5000
+
+bucket_size: 262144
+num_workers: 4
+prefetch_factor: 400
+world_size: 1
+gpu_ranks: [0]
+batch_type: "tokens"
+batch_size: 5000
+valid_batch_size: 4096
+batch_size_multiple: 8
+accum_count: [10]
+accum_steps: [0]
+
+model_dtype: "fp16"
+#apex_opt_level: "O2"
+optim: "fusedadam"
+learning_rate: 2
+warmup_steps: 4000
+decay_method: "noam"
+adam_beta2: 0.998
+max_grad_norm: 0
+label_smoothing: 0.1
+param_init: 0
+param_init_glorot: true
+normalization: "tokens"
+
+encoder_type: transformer
+decoder_type: transformer
+enc_layers: 6
+dec_layers: 6
+heads: 16
+hidden_size: 1024
+word_vec_size: 1024
+transformer_ff: 4096
+dropout_steps: [0]
+dropout: [0.1]
+attention_dropout: [0.1]
+share_decoder_embeddings: true
+share_embeddings: true
+position_encoding: true
+
