@@ -13,31 +13,6 @@ def text_sort_key(ex):
     return len(ex['src']['src_ids'])
 
 
-def max_tok_len(new, count, sofar):
-    """
-    In token batching scheme, the number of sequences is limited
-    such that the total number of src/tgt tokens (including padding)
-    in a batch <= batch_size
-    """
-    # Maintains the longest src and tgt length in the current batch
-    global max_src_in_batch, max_tgt_in_batch  # this is a hack
-    # Reset current longest length at a new batch (count=1)
-    if count == 1:
-        max_src_in_batch = 0
-        max_tgt_in_batch = 0
-    # Src: [<bos> w1 ... wN <eos>]
-    max_src_in_batch = max(max_src_in_batch, len(new['src']['src_ids']) + 2)
-    src_elements = count * max_src_in_batch
-    # Tgt: [w1 ... wM <eos>]
-    if new['tgt'] is not None:
-        max_tgt_in_batch = max(max_tgt_in_batch,
-                               len(new['tgt']['tgt_ids']) + 1)
-        tgt_elements = count * max_tgt_in_batch
-    else:
-        tgt_elements = 0
-    return max(src_elements, tgt_elements)
-
-
 def clean_example(maybe_example):
     maybe_example['src'] = {"src": ' '.join(maybe_example['src'])}
     # Make features part of src like

@@ -23,11 +23,15 @@ class FilterTooLongTransform(Transform):
 
     @classmethod
     def add_options(cls, parser):
-        """Avalailable options relate to this Transform."""
+        """
+        Available options relate to this Transform.
+        For performance it is better to use multiple of 8
+        On target side, since we'll add BOS/EOS, we filter with minus 2
+        """
         group = parser.add_argument_group("Transform/Filter")
-        group.add("--src_seq_length", "-src_seq_length", type=int, default=200,
+        group.add("--src_seq_length", "-src_seq_length", type=int, default=192,
                   help="Maximum source sequence length.")
-        group.add("--tgt_seq_length", "-tgt_seq_length", type=int, default=200,
+        group.add("--tgt_seq_length", "-tgt_seq_length", type=int, default=192,
                   help="Maximum target sequence length.")
 
     def _parse_opts(self):
@@ -37,7 +41,7 @@ class FilterTooLongTransform(Transform):
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Return None if too long else return as is."""
         if (len(example['src']) > self.src_seq_length or
-                len(example['tgt']) > self.tgt_seq_length):
+                len(example['tgt']) > self.tgt_seq_length - 2):
             if stats is not None:
                 stats.update(FilterTooLongStats())
             return None
