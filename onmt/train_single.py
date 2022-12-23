@@ -108,7 +108,7 @@ def _build_valid_iter(opt, transforms_cls, vocabs):
     """Build iterator used for validation."""
     validset_transforms = opt.data.get("valid", {}).get("transforms", None)
     if validset_transforms:
-        opt.tansforms = validset_transforms
+        opt.transforms = validset_transforms
     valid_iter = build_dynamic_dataset_iter(
         opt, transforms_cls, vocabs, task=CorpusTask.VALID,
         copy=opt.copy_attn)
