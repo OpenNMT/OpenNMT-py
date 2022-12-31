@@ -106,7 +106,7 @@ def main():
         loss, _ = valid_loss(batch, outputs, attns)
         ppl = torch.exp(loss)
         cumul_loss += loss.sum().item()
-        cumul_length += batch['tgt'][:,1:, 0].ne(padding_idx).sum().cpu()
+        cumul_length += batch['tgt'][:, 1:, 0].ne(padding_idx).sum().cpu()
         # Now we need to rearrange the batch of ppl
         # in the original order with indices
         sent_ppl_orig = ppl.gather(0, batch['indices'].argsort(0))
