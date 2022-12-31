@@ -67,7 +67,6 @@ def main():
     criterion = torch.nn.CrossEntropyLoss(ignore_index=padding_idx,
                                           reduction='none')
     valid_loss = LossCompute(criterion, model.generator,
-                             normalization="tokens",
                              tgt_shift_index=0,
                              lambda_coverage=model_opt.lambda_coverage,
                              lambda_align=model_opt.lambda_align)
@@ -104,18 +103,13 @@ def main():
         outputs, attns = model(src, None, src_len,
                                with_align=False)
         # Compute and retrieve the loss for EACH sentence
-        lossflat, _ = valid_loss(batch, outputs, attns)
-        loss = lossflat.view(batch_size, -1)
-        mask = (loss != 0)
-        # loss is returned normalized by tokens
-        sent_loss = torch.sum(loss, dim=1)
-        sent_ppl = torch.exp(sent_loss)
-        # we unnormalize to cumulate at doc level
-        cumul_loss += loss.sum().item() * mask.sum().cpu()
-        cumul_length += mask.sum().cpu()
+        loss, _ = valid_loss(batch, outputs, attns)
+        ppl = torch.exp(loss)
+        cumul_loss += loss.sum().item()
+        cumul_length += batch['tgt'][:, 1:, 0].ne(padding_idx).sum().cpu()
         # Now we need to rearrange the batch of ppl
         # in the original order with indices
-        sent_ppl_orig = sent_ppl.gather(0, batch['indices'].argsort(0))
+        sent_ppl_orig = ppl.gather(0, batch['indices'].argsort(0))
         for j in range(batch_size):
             ppl_file.write(str(sent_ppl_orig[j].item()) + "\n")
     logger.info("Loss: %.2f Tokens: %d Corpus PPL: %.2f" %
