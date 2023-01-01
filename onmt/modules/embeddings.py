@@ -20,11 +20,10 @@ class PositionalEncoding(nn.Module):
     :cite:`DBLP:journals/corr/VaswaniSPUJGKP17`
 
     Args:
-       dropout (float): dropout parameter
        dim (int): embedding size
     """
 
-    def __init__(self, dropout, dim, max_len=5000):
+    def __init__(self, dim, max_len=5000):
         if dim % 2 != 0:
             raise ValueError("Cannot use sin/cos positional encoding with "
                              "odd dim (got dim={:d})".format(dim))
@@ -37,7 +36,6 @@ class PositionalEncoding(nn.Module):
         pe = pe.unsqueeze(1)  # we keep pe (len x batch x dim) for back comp
         super(PositionalEncoding, self).__init__()
         self.register_buffer('pe', pe)
-        self.dropout = nn.Dropout(p=dropout)
         self.dim = dim
 
     def forward(self, emb, step=None):
@@ -58,7 +56,7 @@ class PositionalEncoding(nn.Module):
                 f" limited to {self.pe.size(1)}. See max_len argument."
             )
         emb = emb + pe[:, step:emb.size(1)+step, :]
-        emb = self.dropout(emb)
+
         return emb
 
 
@@ -172,9 +170,10 @@ class Embeddings(nn.Module):
             self.make_embedding.add_module('mlp', mlp)
 
         self.position_encoding = position_encoding
+        self.dropout = nn.Dropout(p=dropout)
 
         if self.position_encoding:
-            pe = PositionalEncoding(dropout, self.embedding_size)
+            pe = PositionalEncoding(self.embedding_size)
             self.make_embedding.add_module('pe', pe)
 
         if freeze_word_vecs:
@@ -254,11 +253,10 @@ class Embeddings(nn.Module):
         else:
             source = self.make_embedding(source)
 
-        return source
+        return self.dropout(source)
 
     def update_dropout(self, dropout):
-        if self.position_encoding:
-            self._modules['make_embedding'][1].dropout.p = dropout
+        self.dropout.p = dropout
 
 
 # Some utilitary functions for pretrained embeddings
