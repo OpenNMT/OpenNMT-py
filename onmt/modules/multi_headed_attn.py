@@ -142,6 +142,8 @@ class MultiHeadedAttention(nn.Module):
                 vocab_size, self.dim_per_head)
         else:
             self.relative_positions_embeddings = None
+        if attn_type == 'self':
+            self.alibi = AlibiPositionalBias(head_count)
 
     def update_dropout(self, dropout: float) -> None:
         self.dropout.p = dropout
@@ -226,7 +228,9 @@ class MultiHeadedAttention(nn.Module):
                 relative_positions_matrix)
             scores = query_key + relative_matmul(query, relations_keys, True)
         else:
-            scores = query_key
+            scores = query_key        
+        if self.attn_type == 'self':
+            scores = self.alibi(query_key)
 
         scores = scores.float()
 

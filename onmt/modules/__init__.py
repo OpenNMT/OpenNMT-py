@@ -8,10 +8,11 @@ from onmt.modules.multi_headed_attn import MultiHeadedAttention
 from onmt.modules.embeddings import Embeddings, PositionalEncoding
 from onmt.modules.weight_norm import WeightNormConv2d
 from onmt.modules.average_attn import AverageAttention
+from onmt.modules.alibi_position_bias import AlibiPositionalBias
 
 __all__ = ["Elementwise", "context_gate_factory", "ContextGate",
            "GlobalAttention", "ConvMultiStepAttention", "CopyGenerator",
            "CopyGeneratorLoss",
            "MultiHeadedAttention", "Embeddings", "PositionalEncoding",
-           "WeightNormConv2d", "AverageAttention",
+           "WeightNormConv2d", "AverageAttention", "AlibiPositionalBias"
            "CopyGeneratorLMLossCompute"]
