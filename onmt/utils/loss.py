@@ -184,6 +184,7 @@ class LossCompute(nn.Module):
 
         src = target.detach().clone()
         src[src == self.vocab[DefaultTokens.EOS]] = self.padding_idx
+        src = src[:, :-1, :]
         src_len = src[:, :, 0].ne(self.padding_idx).sum(1)
         # ct2 expects src with lengths without padding
         lm_scores = self.lm_generator.forward_batch(
@@ -197,7 +198,7 @@ class LossCompute(nn.Module):
         lm_scores[:, self.vocab[DefaultTokens.UNK]] = -50
         lm_scores[:, self.vocab[DefaultTokens.EOS]] -= 20
         # lm_scores are in log space so log_target=True
-        lm_loss = F.kl_div(scores, lm_scores.detach().clone(),
+        lm_loss = F.kl_div(scores, lm_scores,
                            reduction='none',
                            log_target=True).sum(-1)
         non_padding = self._bottle(output).ne(self.padding_idx)[:, 0]
@@ -211,13 +212,13 @@ class LossCompute(nn.Module):
         https://github.com/cbaziotis/lm-prior-for-nmt/blob/master
         /fairseq_extension/user/lm_prior/lm_prior.py#L131-L133
         """
-
         # rescale with tau (temperature) and apply the log_softmax.
         scores = self.generator(self._bottle(output)) / self.lm_prior_tau
         scores = F.log_softmax(scores.to(torch.float32), dim=-1)
 
         src = target.detach().clone()
         src[src == self.vocab[DefaultTokens.EOS]] = self.padding_idx
+        src = src[:, :-1, :]
         src_len = src[:, :, 0].ne(self.padding_idx).sum(1)
         # ct2 expects src with lengths without padding
         lm_outs, _ = self.lm_prior_model(src, None, src_len,
@@ -229,7 +230,7 @@ class LossCompute(nn.Module):
         lm_scores[:, self.vocab[DefaultTokens.UNK]] = -50
         lm_scores[:, self.vocab[DefaultTokens.EOS]] -= 20
         # lm_scores are in log space so log_target=True
-        lm_loss = F.kl_div(scores, lm_scores.detach().clone(),
+        lm_loss = F.kl_div(scores, lm_scores,
                            reduction='none', log_target=True).sum(-1)
         non_padding = self._bottle(output).ne(self.padding_idx)[:, 0]
         lm_loss = lm_loss.masked_select(non_padding).sum()
@@ -324,11 +325,11 @@ class LossCompute(nn.Module):
             loss += coverage_loss
 
         if self.lm_generator is not None:
-            lm_loss = self._compute_lm_loss_ct2(output, target)
+            lm_loss = self._compute_lm_loss_ct2(output, batch['tgt'])
             loss = loss + lm_loss * self.lm_prior_lambda
 
         if self.lm_prior_model is not None:
-            lm_loss = self._compute_lm_loss(output, target)
+            lm_loss = self._compute_lm_loss(output, batch['tgt'])
             loss = loss + lm_loss * self.lm_prior_lambda
 
         stats = self._stats(len(batch['srclen']), loss.sum().item(),
