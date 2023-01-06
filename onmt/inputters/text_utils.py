@@ -66,8 +66,8 @@ def process(task, bucket, **kwargs):
             example = clean_example(example)
             processed_bucket[i] = example
         # at this point an example looks like:
-        # {'src': {'src': ..., 'feat1': ...., 'feat2': ....},
-        #  'tgt': {'tgt': ..., 'feat1': ...., 'feat2': ....},
+        # {'src': {'src': ..., 'feats': [....]},
+        #  'tgt': {'tgt': ..., 'feats': [....]},
         #  'indices' : seq in bucket
         #  'align': ...,
         # }
