@@ -3,6 +3,7 @@
 
 This portal provides a detailed documentation of the OpenNMT-py toolkit. It describes how to use the PyTorch project and how it works.
 
+If you need a step-by-step and overview, please read here: [Tutorial](https://github.com/ymoslem/OpenNMT-Tutorial)
 
 
 ## Installation

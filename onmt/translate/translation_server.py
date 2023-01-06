@@ -446,7 +446,7 @@ class ServerModel(object):
                     self.ct2_model,
                     ct2_translator_args=self.ct2_translator_args,
                     ct2_translate_batch_args=self.ct2_translate_batch_args,
-                    target_prefix=self.opt.tgt_prefix,
+                    target_prefix=self.opt.tgt_file_prefix,
                     preload=preload)
             else:
                 self.translator = build_translator(
@@ -541,11 +541,15 @@ class ServerModel(object):
 
         if len(texts_to_translate) > 0:
             try:
-                infer_iter = textbatch_to_tensor(self.translator.vocabs,
-                                                 texts_to_translate)
-
-                scores, predictions = self.translator._translate(
-                    infer_iter)
+                if isinstance(self.translator, CTranslate2Translator):
+                    scores, predictions = self.translator.translate(
+                        texts_to_translate)
+                else:
+                    infer_iter = textbatch_to_tensor(
+                        self.translator.vocabs,
+                        texts_to_translate)
+                    scores, predictions = self.translator._translate(
+                        infer_iter)
             except (RuntimeError, Exception) as e:
                 err = "Error: %s" % str(e)
                 self.logger.error(err)

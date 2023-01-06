@@ -8,6 +8,7 @@ from onmt.constants import CorpusTask
 from onmt.transforms import make_transforms, save_transforms, \
     get_specials, get_transforms_cls
 from onmt.inputters import build_vocab, IterOnDevice
+from onmt.inputters.inputter import dict_to_vocabs
 from onmt.inputters.dynamic_iterator import build_dynamic_dataset_iter
 from onmt.inputters.text_corpus import save_transformed_sample
 from onmt.model_builder import build_model
@@ -51,7 +52,7 @@ def _init_train(opt):
     if opt.train_from:
         # Load checkpoint if we resume from a previous training.
         checkpoint = load_checkpoint(ckpt_path=opt.train_from)
-
+        vocabs = dict_to_vocabs(checkpoint['vocab'])
         transforms_cls = get_transforms_cls(opt._all_transform)
         if (hasattr(checkpoint["opt"], '_all_transform') and
                 len(opt._all_transform.symmetric_difference(
@@ -105,6 +106,9 @@ def _get_model_opts(opt, checkpoint=None):
 
 def _build_valid_iter(opt, transforms_cls, vocabs):
     """Build iterator used for validation."""
+    validset_transforms = opt.data.get("valid", {}).get("transforms", None)
+    if validset_transforms:
+        opt.transforms = validset_transforms
     valid_iter = build_dynamic_dataset_iter(
         opt, transforms_cls, vocabs, task=CorpusTask.VALID,
         copy=opt.copy_attn)

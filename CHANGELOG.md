@@ -3,6 +3,40 @@
 
 
 ## [Unreleased]
+## [3.0.3](https://github.com/OpenNMT/OpenNMT-py/tree/3.0.3) (2022-12-16)
+* fix loss normalization when using accum or nb GPU > 1
+* use native CrossEntropyLoss with Label Smoothing. reported loss/ppl impacted by LS
+* fix long-time coverage loss bug thanks Sanghyuk-Choi
+* fix detok at scoring / fix tokenization Subword_nmt + Sentencepiece
+* various small bugs fixed
+
+## [3.0.2](https://github.com/OpenNMT/OpenNMT-py/tree/3.0.2) (2022-12-07)
+* pyonmttok.Vocab is now pickable. dataloader switched to spawn. (MacOS/Windows compatible)
+* fix scoring with specific metrics (BLEU, TER)
+* fix tensorboard logging
+* fix dedup in batch iterator (only for TRAIN, was happening at inference also)
+* New: Change: tgt_prefix renamed to tgt_file_prefix
+* New: tgt_prefix / src_prefix used for "prefix" Transform (onmt/transforms/misc.py)
+* New: process transforms of buckets in batches (vs per example) / faster
+
+## [3.0.1](https://github.com/OpenNMT/OpenNMT-py/tree/3.0.1) (2022-11-23)
+
+* fix dynamic scoring
+* reinstate apex.amp level O1/O2 for benchmarking
+* New: LM distillation for NMT training
+* New: bucket_size ramp-up to avoid slow start
+* fix special tokens order
+* remove Library and add link to Yasmin's Tuto
+
+## [3.0.0](https://github.com/OpenNMT/OpenNMT-py/tree/3.0.0) (2022-11-3)
+
+* Removed completely torchtext. Use [Vocab object of pyonmttok](https://github.com/OpenNMT/Tokenizer/tree/master/bindings/python#vocabulary) instead
+* Dataloading changed accordingly with the use of pytorch Dataloader (num_workers)
+* queue_size / pool_factor no longer needed. bucket_size optimal value > 64K
+* options renamed: rnn_size => hidden_size (enc/dec_rnn_size => enc/dec_hid_size)
+* new tools/convertv2_v3.py to upgrade v2 models.pt
+* inference with length_penalty=avg is now the default
+* add_qkvbias (default false, but true for old model)
 
 ## [2.3.0](https://github.com/OpenNMT/OpenNMT-py/tree/2.3.0) (2022-09-14)
 

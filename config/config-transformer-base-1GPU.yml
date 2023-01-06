@@ -11,7 +11,7 @@ report_every: 100
 decoder_type: transformer
 encoder_type: transformer
 word_vec_size: 512
-rnn_size: 512
+hidden_size: 512
 layers: 6
 transformer_ff: 2048
 heads: 8
@@ -29,8 +29,6 @@ batch_type: tokens
 normalization: tokens
 dropout: 0.1
 label_smoothing: 0.1
-
-max_generator_batches: 2
 
 param_init: 0.0
 param_init_glorot: 'true'

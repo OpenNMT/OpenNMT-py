@@ -71,8 +71,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'OpenNMT-py'
-copyright = '2017, srush'
-author = 'srush'
+copyright = '2017, OpenNMT'
+author = 'team'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -176,7 +176,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'OpenNMT-py.tex', 'OpenNMT-py Documentation',
-     'srush', 'manual'),
+     'team', 'manual'),
 ]
 
 

@@ -21,7 +21,6 @@ Contents
       :caption: Examples
       :maxdepth: 2
 
-      examples/Library.md
       examples/Translation.md
       examples/Summarization.md
       examples/LanguageModelGeneration.md

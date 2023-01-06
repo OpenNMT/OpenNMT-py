@@ -8,7 +8,7 @@ from onmt.utils.logging import init_logger, logger
 from onmt.utils.parse import ArgumentParser
 from onmt.inputters.dynamic_iterator import build_dynamic_dataset_iter
 from onmt.inputters.inputter import IterOnDevice
-from onmt.utils.loss import LMLossCompute
+from onmt.utils.loss import LossCompute
 from onmt.constants import DefaultTokens, CorpusTask
 from onmt.transforms import get_transforms_cls, TransformPipe
 from onmt.model_builder import load_test_model
@@ -64,11 +64,12 @@ def main():
 
     vocabs, model, model_opt = load_test_model(opt)
     padding_idx = vocabs['tgt'][DefaultTokens.PAD]
-    criterion = torch.nn.NLLLoss(ignore_index=padding_idx, reduction='none')
-    loss_gen = model.generator
-    valid_loss = LMLossCompute(criterion, loss_gen,
-                               lambda_coverage=model_opt.lambda_coverage,
-                               lambda_align=model_opt.lambda_align)
+    criterion = torch.nn.CrossEntropyLoss(ignore_index=padding_idx,
+                                          reduction='none')
+    valid_loss = LossCompute(criterion, model.generator,
+                             tgt_shift_index=0,
+                             lambda_coverage=model_opt.lambda_coverage,
+                             lambda_align=model_opt.lambda_align)
     valid_loss.to(device)
 
     transforms_cls = get_transforms_cls(opt._all_transform)
@@ -77,14 +78,14 @@ def main():
         opt, transforms_cls, vocabs, task=CorpusTask.INFER,
         copy=False)
 
-    if infer_iter is not None:
-        infer_iter = IterOnDevice(infer_iter, opt.gpu)
-
     data_transform = [
         infer_iter.transforms[name] for name in
         opt.transforms if name in infer_iter.transforms
     ]
     _ = TransformPipe.build_from(data_transform)
+
+    if infer_iter is not None:
+        infer_iter = IterOnDevice(infer_iter, opt.gpu)
 
     model.to(device)
     model.eval()
@@ -97,22 +98,18 @@ def main():
         # reminder a batch includes .src .tgt .indices and it is sorted
         batch_size = len(batch['srclen'])
         src = batch['src']
-        src_lengths = batch['srclen']
-        tgt = batch['tgt']
+        src_len = batch['srclen']
 
-        outputs, attns = model(src, tgt, src_lengths,
+        outputs, attns = model(src, None, src_len,
                                with_align=False)
         # Compute and retrieve the loss for EACH sentence
-        lossflat, _ = valid_loss(batch, outputs, attns)
-        loss = lossflat.view(-1, batch_size)
-        mask = (loss != 0)
-        sent_loss = torch.sum(loss, dim=0) / mask.sum(dim=0)
-        sent_ppl = torch.exp(sent_loss)
+        loss, _ = valid_loss(batch, outputs, attns)
+        ppl = torch.exp(loss)
         cumul_loss += loss.sum().item()
-        cumul_length += mask.sum().cpu()
+        cumul_length += batch['tgt'][:, 1:, 0].ne(padding_idx).sum().cpu()
         # Now we need to rearrange the batch of ppl
         # in the original order with indices
-        sent_ppl_orig = sent_ppl.gather(0, batch['indices'].argsort(0))
+        sent_ppl_orig = ppl.gather(0, batch['indices'].argsort(0))
         for j in range(batch_size):
             ppl_file.write(str(sent_ppl_orig[j].item()) + "\n")
     logger.info("Loss: %.2f Tokens: %d Corpus PPL: %.2f" %
@@ -120,7 +117,8 @@ def main():
                  np.exp(cumul_loss / cumul_length)))
     ppl_file.close()
 
-    os.system("paste " + opt.src + " " + opt.output + ".ppl > " + opt.output)
+    os.system('paste "' + opt.src + '" "' + opt.output +
+              '".ppl > "' + opt.output + '"')
 
 
 if __name__ == "__main__":

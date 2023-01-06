@@ -30,45 +30,12 @@ def parse_features(line, n_feats=0, defaults=None):
 def text_sort_key(ex):
     """Sort using the number of tokens in the sequence."""
     if ex['tgt']:
-        return len(ex['src']['src_ids']), len(ex['tgt']['tgt_ids'])
+        return max(len(ex['src']['src_ids']), len(ex['tgt']['tgt_ids']))
     return len(ex['src']['src_ids'])
 
 
-def max_tok_len(new, count, sofar):
-    """
-    In token batching scheme, the number of sequences is limited
-    such that the total number of src/tgt tokens (including padding)
-    in a batch <= batch_size
-    """
-    # Maintains the longest src and tgt length in the current batch
-    global max_src_in_batch, max_tgt_in_batch  # this is a hack
-    # Reset current longest length at a new batch (count=1)
-    if count == 1:
-        max_src_in_batch = 0
-        max_tgt_in_batch = 0
-    # Src: [<bos> w1 ... wN <eos>]
-    max_src_in_batch = max(max_src_in_batch, len(new['src']['src_ids']) + 2)
-    # Tgt: [w1 ... wM <eos>]
-    max_tgt_in_batch = max(max_tgt_in_batch, len(new['tgt']['tgt_ids']) + 1)
-    src_elements = count * max_src_in_batch
-    tgt_elements = count * max_tgt_in_batch
-    return max(src_elements, tgt_elements)
-
-
-def process(task, item):
-    """Return valid transformed example from `item`."""
-    example, transform, cid = item
-    # this is a hack: appears quicker to apply it here
-    # than in the ParallelCorpusIterator
-    maybe_example = transform.apply(example,
-                                    is_train=(task
-                                              == CorpusTask.TRAIN),
-                                    corpus_name=cid)
-    if maybe_example is None:
-        return None
-
+def clean_example(maybe_example):
     maybe_example['src'] = {"src": ' '.join(maybe_example['src'])}
-
     # Make features part of src like
     # {'src': {'src': ..., 'feats': ....}
     maybe_example['src']['feats'] = [' '.join(x) for x in maybe_example["src_feats"]]
@@ -84,14 +51,29 @@ def process(task, item):
     del maybe_example['src_feats']
     del maybe_example['tgt_feats']
 
-    # at this point an example looks like:
-    # {'src': {'src': ..., 'feats': ....},
-    #  'tgt': {'tgt': ..., 'feats': ....},
-    #  'indices' : seq in bucket
-    #  'align': ...,
-    # }
-
     return maybe_example
+
+
+def process(task, bucket, **kwargs):
+    """Returns valid transformed bucket from bucket."""
+    _, transform, cid = bucket[0]
+    # We apply the same TransformPipe to all the bucket
+    processed_bucket = transform.batch_apply(
+       bucket, is_train=(task == CorpusTask.TRAIN), corpus_name=cid)
+    if processed_bucket:
+        for i in range(len(processed_bucket)):
+            (example, transform, cid) = processed_bucket[i]
+            example = clean_example(example)
+            processed_bucket[i] = example
+        # at this point an example looks like:
+        # {'src': {'src': ..., 'feat1': ...., 'feat2': ....},
+        #  'tgt': {'tgt': ..., 'feat1': ...., 'feat2': ....},
+        #  'indices' : seq in bucket
+        #  'align': ...,
+        # }
+        return processed_bucket
+    else:
+        return None
 
 
 def numericalize(vocabs, example):
@@ -173,7 +155,8 @@ def tensorify(vocabs, minibatch):
     tensor_batch = {}
     tbatchsrc = [torch.LongTensor(ex['src']['src_ids']) for ex in minibatch]
     padidx = vocabs['src'][DefaultTokens.PAD]
-    tbatchsrc = pad_sequence(tbatchsrc, padding_value=padidx)
+    tbatchsrc = pad_sequence(tbatchsrc, batch_first=True,
+                             padding_value=padidx)
     if len(minibatch[0]['src'].keys()) > 2:
         tbatchfs = [tbatchsrc]
         for feat in minibatch[0]['src'].keys():
@@ -181,7 +164,8 @@ def tensorify(vocabs, minibatch):
                 tbatchfeat = [torch.LongTensor(ex['src'][feat])
                               for ex in minibatch]
                 padidx = vocabs['src_feats'][feat][DefaultTokens.PAD]
-                tbatchfeat = pad_sequence(tbatchfeat, padding_value=padidx)
+                tbatchfeat = pad_sequence(tbatchfeat, batch_first=True,
+                                          padding_value=padidx)
                 tbatchfs.append(tbatchfeat)
         tbatchsrc = torch.stack(tbatchfs, dim=2)
     else:
@@ -198,7 +182,8 @@ def tensorify(vocabs, minibatch):
         tbatchtgt = [torch.LongTensor(ex['tgt']['tgt_ids'])
                      for ex in minibatch]
         padidx = vocabs['tgt'][DefaultTokens.PAD]
-        tbatchtgt = pad_sequence(tbatchtgt, padding_value=padidx)
+        tbatchtgt = pad_sequence(tbatchtgt, batch_first=True,
+                                 padding_value=padidx)
         tbatchtgt = tbatchtgt[:, :, None]
         tbatchtgtlen = torch.LongTensor([len(ex['tgt']['tgt_ids'])
                                          for ex in minibatch])
@@ -215,29 +200,30 @@ def tensorify(vocabs, minibatch):
 
     if 'src_map' in minibatch[0].keys():
         src_vocab_size = max([max(ex['src_map']) for ex in minibatch]) + 1
-        src_map = torch.zeros(tbatchsrc.size(0),
-                              len(tensor_batch['srclen']),
+        src_map = torch.zeros(len(tensor_batch['srclen']),
+                              tbatchsrc.size(1),
                               src_vocab_size)
         for i, ex in enumerate(minibatch):
             for j, t in enumerate(ex['src_map']):
-                src_map[j, i, t] = 1
+                src_map[i, j, t] = 1
         tensor_batch['src_map'] = src_map
 
     if 'alignment' in minibatch[0].keys():
-        alignment = torch.zeros(tbatchtgt.size(0),
-                                len(tensor_batch['srclen'])).long()
+        alignment = torch.zeros(len(tensor_batch['srclen']),
+                                tbatchtgt.size(1)).long()
         for i, ex in enumerate(minibatch):
-            alignment[:len(ex['alignment']), i] = \
+            alignment[i, :len(ex['alignment'])] = \
                 torch.LongTensor(ex['alignment'])
         tensor_batch['alignment'] = alignment
 
     if 'src_ex_vocab' in minibatch[0].keys():
         tensor_batch['src_ex_vocab'] = [ex['src_ex_vocab']
                                         for ex in minibatch]
+
     return tensor_batch
 
 
-def textbatch_to_tensor(vocabs, batch):
+def textbatch_to_tensor(vocabs, batch, is_train=False):
     """
     This is a hack to transform a simple batch of texts
     into a tensored batch to pass through _translate()
@@ -247,12 +233,15 @@ def textbatch_to_tensor(vocabs, batch):
     for i, ex in enumerate(batch):
         if isinstance(ex, bytes):
             ex = ex.decode("utf-8")
-        toks = ex.strip("\n").split()
+        if is_train:
+            toks = ex
+        else:
+            toks = ex.strip("\n").split()
         idxs = vocabs['src'](toks)
         # Need to add features also in 'src'
-        numeric.append({'src': {'src': ex.strip("\n").split(),
-                                'src_ids': idxs},
-                        'srclen': len(ex.strip("\n").split()),
+        numeric.append({'src': {'src': toks,
+                        'src_ids': idxs},
+                        'srclen': len(toks),
                         'tgt': None,
                         'indices': i,
                         'align': None})
@@ -276,7 +265,6 @@ def _addcopykeys(vocabs, example):
     Returns:
         ``example``, changed as described.
     """
-
     src = example['src']['src'].split()
     src_ex_vocab = pyonmttok.build_vocab_from_tokens(
         Counter(src),

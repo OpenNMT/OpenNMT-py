@@ -1,7 +1,7 @@
 """ Implementation of all available options """
 import configargparse
 
-from onmt.models.sru import CheckSRU
+from onmt.modules.sru import CheckSRU
 from onmt.transforms import AVAILABLE_TRANSFORMS
 from onmt.constants import ModelTask
 from onmt.modules.position_ffn import ACTIVATION_FUNCTIONS
@@ -34,7 +34,7 @@ def _add_logging_opts(parser, is_train=True):
     if is_train:
         group.add('--train_eval_steps', '-train_eval_steps',
                   type=int, default=200,
-                  help="Print stats at this interval.")
+                  help="calculate training metrics at this interval")
         group.add('--train_metrics', '-train_metrics',
                   default=[], nargs="+",
                   help='List of names of additional training metrics')
@@ -43,7 +43,7 @@ def _add_logging_opts(parser, is_train=True):
                   help='List of names of additional validation metrics')
         group.add('--scoring_debug', '-scoring_debug', action="store_true",
                   help='Dump the src/ref/pred of the current batch')
-        group.add('--dump_preds', '-dump_preds',  type=str, default="",
+        group.add('--dump_preds', '-dump_preds',  type=str, default=None,
                   help='Folder to dump predictions to.')
         group.add('--report_every', '-report_every', type=int, default=50,
                   help="Print stats at this interval.")
@@ -155,13 +155,13 @@ def _add_dynamic_vocab_opts(parser, build_vocab_only=False):
 
     if not build_vocab_only:
         group.add("-src_vocab_size", "--src_vocab_size",
-                  type=int, default=50000,
+                  type=int, default=32768,
                   help="Maximum size of the source vocabulary.")
         group.add("-tgt_vocab_size", "--tgt_vocab_size",
-                  type=int, default=50000,
+                  type=int, default=32768,
                   help="Maximum size of the target vocabulary")
         group.add("-vocab_size_multiple", "--vocab_size_multiple",
-                  type=int, default=1,
+                  type=int, default=8,
                   help="Make the vocabulary size a multiple of this value.")
 
         group.add("-src_words_min_frequency", "--src_words_min_frequency",
@@ -313,12 +313,12 @@ def model_opts(parser):
               help='Number of layers in the encoder')
     group.add('--dec_layers', '-dec_layers', type=int, default=2,
               help='Number of layers in the decoder')
-    group.add('--rnn_size', '-rnn_size', type=int, default=-1,
+    group.add('--hidden_size', '-hidden_size', type=int, default=-1,
               help="Size of rnn hidden states. Overwrites "
-                   "enc_rnn_size and dec_rnn_size")
-    group.add('--enc_rnn_size', '-enc_rnn_size', type=int, default=500,
+                   "enc_hid_size and dec_hid_size")
+    group.add('--enc_hid_size', '-enc_hid_size', type=int, default=500,
               help="Size of encoder rnn hidden states.")
-    group.add('--dec_rnn_size', '-dec_rnn_size', type=int, default=500,
+    group.add('--dec_hid_size', '-dec_hid_size', type=int, default=500,
               help="Size of decoder rnn hidden states.")
     group.add('--cnn_kernel_width', '-cnn_kernel_width', type=int, default=3,
               help="Size of windows in the cnn, the kernel_size is "
@@ -390,6 +390,9 @@ def model_opts(parser):
               help='Size of hidden transformer feed-forward')
     group.add('--aan_useffn', '-aan_useffn', action="store_true",
               help='Turn on the FFN layer in the AAN decoder')
+    group.add('--add_qkvbias', '-add_qkvbias', action="store_true",
+              help='Add bias to nn.linear of Query/Key/Value in MHA'
+                   'Note: this will add bias to output proj layer too')
 
     # Alignement options
     group = parser.add_argument_group('Model - Alignement')
@@ -430,11 +433,17 @@ def model_opts(parser):
               help='Train a coverage attention layer.')
     group.add('--lambda_coverage', '-lambda_coverage', type=float, default=0.0,
               help='Lambda value for coverage loss of See et al (2017)')
+    group.add('--lm_prior_model', '-lm_prior_model', type=str, default=None,
+              help='LM model to used to train the TM')
+    group.add('--lm_prior_lambda', '-lambda_prior_lambda',
+              type=float, default=0.0, help='LM Prior Lambda')
+    group.add('--lm_prior_tau', '-lambda_prior_tau', type=float, default=1.0,
+              help='LM Prior Tau')
     group.add('--loss_scale', '-loss_scale', type=float, default=0,
               help="For FP16 training, the static loss scale to use. If not "
                    "set, the loss scale is dynamically computed.")
-    group.add('--apex_opt_level', '-apex_opt_level', type=str, default="O1",
-              choices=["O0", "O1", "O2", "O3"],
+    group.add('--apex_opt_level', '-apex_opt_level', type=str, default="",
+              choices=["", "O0", "O1", "O2", "O3"],
               help="For FP16 training, the opt_level to use."
                    "See https://nvidia.github.io/apex/amp.html#opt-levels.")
 
@@ -510,12 +519,12 @@ def _add_train_general_opts(parser):
 
     # Optimization options
     group = parser.add_argument_group('Optimization- Type')
-    group.add('--num_workers', '-num_workers', type=int, default=0,
+    group.add('--num_workers', '-num_workers', type=int, default=2,
               help='pytorch DataLoader num_workers')
     group.add('--batch_size', '-batch_size', type=int, default=64,
               help='Maximum batch size for training')
     group.add('--batch_size_multiple', '-batch_size_multiple',
-              type=int, default=None,
+              type=int, default=1,
               help='Batch size multiple for token batches.')
     group.add('--batch_type', '-batch_type', default='sents',
               choices=["sents", "tokens"],
@@ -632,10 +641,20 @@ def _add_train_general_opts(parser):
 
 def _add_train_dynamic_data(parser):
     group = parser.add_argument_group("Dynamic data")
-    group.add("-bucket_size", "--bucket_size", type=int, default=2048,
+    group.add("-bucket_size", "--bucket_size", type=int, default=262144,
               help="""A bucket is a buffer of bucket_size examples to pick
                    from the various Corpora. The dynamic iterator batches
                    batch_size batchs from the bucket and shuffle them.""")
+    group.add("-bucket_size_init", "--bucket_size_init", type=int, default=-1,
+              help="""The bucket is initalized with this awith this
+               amount of examples (optional)""")
+    group.add("-bucket_size_increment", "--bucket_size_increment",
+              type=int, default=0,
+              help="""The bucket size is incremented with this
+              amount of examples (optional)""")
+    group.add("-prefetch_factor", "--prefetch_factor", type=int, default=200,
+              help="""number of mini-batches loaded in advance to avoid the
+                   GPU waiting during the refilling of the bucket.""")
 
 
 def train_opts(parser):
@@ -681,7 +700,7 @@ def _add_decoding_opts(parser):
     # Alpha and Beta values for Google Length + Coverage penalty
     # Described here: https://arxiv.org/pdf/1609.08144.pdf, Section 7
     # Length penalty options
-    group.add('--length_penalty', '-length_penalty', default='none',
+    group.add('--length_penalty', '-length_penalty', default='avg',
               choices=['none', 'wu', 'avg'],
               help="Length Penalty to use.")
     group.add('--alpha', '-alpha', type=float, default=1.,
@@ -705,7 +724,7 @@ def _add_decoding_opts(parser):
     # Decoding Length constraint
     group.add('--min_length', '-min_length', type=int, default=0,
               help='Minimum prediction length')
-    group.add('--max_length', '-max_length', type=int, default=100,
+    group.add('--max_length', '-max_length', type=int, default=250,
               help='Maximum prediction length.')
     # Decoding content constraint
     group.add('--block_ngram_repeat', '-block_ngram_repeat',
@@ -767,7 +786,7 @@ def translate_opts(parser, dynamic=False):
                    "Ex: {'feat_0': '../data.txt.feats0', 'feat_1': '../data.txt.feats1'}")  # noqa: E501
     group.add('--tgt', '-tgt',
               help='True target sequence (optional)')
-    group.add('--tgt_prefix', '-tgt_prefix', action='store_true',
+    group.add('--tgt_file_prefix', '-tgt_file_prefix', action='store_true',
               help='Generate predictions using provided `-tgt` as prefix.')
     group.add('--output', '-output', default='pred.txt',
               help="Path to output the predictions (each line will "

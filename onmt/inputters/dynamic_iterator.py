@@ -3,7 +3,7 @@ import torch
 from itertools import cycle
 from onmt.constants import CorpusTask, ModelTask
 from onmt.inputters.text_corpus import get_corpora, build_corpora_iters
-from onmt.inputters.text_utils import text_sort_key, max_tok_len, process,\
+from onmt.inputters.text_utils import text_sort_key, process,\
     numericalize, tensorify, _addcopykeys
 from onmt.transforms import make_transforms
 from onmt.utils.logging import logger
@@ -99,20 +99,24 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
         batch_size_multiple (int): make batch size multiply of this;
         data_type (str): input data type, currently only text;
         bucket_size (int): accum this number of examples in a dynamic dataset;
+        bucket_size_init (int): initialize the bucket with this
+        amount of examples;
+        bucket_size_increment (int): increment the bucket
+        size with this amount of examples;
         copy (Bool): if True, will add specific items for copy_attn
         skip_empty_level (str): security level when encouter empty line;
         stride (int): iterate data files with this stride;
         offset (int): iterate data files with this offset.
 
     Attributes:
-        batch_size_fn (function): functions to calculate batch_size;
         sort_key (function): functions define how to sort examples;
         mixer (MixingStrategy): the strategy to iterate corpora.
     """
 
     def __init__(self, corpora, corpora_info, transforms, vocabs, task,
                  batch_type, batch_size, batch_size_multiple, data_type="text",
-                 bucket_size=2048, copy=False,
+                 bucket_size=2048, bucket_size_init=-1,
+                 bucket_size_increment=0, copy=False,
                  skip_empty_level='warning', stride=1, offset=0):
         super(DynamicDatasetIter).__init__()
         self.corpora = corpora
@@ -122,11 +126,13 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
         self.task = task
         self.init_iterators = False
         self.batch_size = batch_size
-        self.batch_size_fn = max_tok_len if batch_type == "tokens" else None
+        self.batch_type = batch_type
         self.batch_size_multiple = batch_size_multiple
         self.device = 'cpu'
         self.sort_key = text_sort_key
         self.bucket_size = bucket_size
+        self.bucket_size_init = bucket_size_init
+        self.bucket_size_increment = bucket_size_increment
         self.copy = copy
         if stride <= 0:
             raise ValueError(f"Invalid argument for stride={stride}.")
@@ -152,6 +158,8 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
                 batch_size_multiple = 8 if opt.model_dtype == "fp16" else 1
             corpora_info = opt.data
             bucket_size = opt.bucket_size
+            bucket_size_init = opt.bucket_size_init
+            bucket_size_increment = opt.bucket_size_increment
             skip_empty_level = opt.skip_empty_level
         else:
             batch_size_multiple = 1
@@ -159,6 +167,8 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
             corpora_info[CorpusTask.INFER]['weight'] = 1
             # bucket_size = batch_size
             bucket_size = 16384
+            bucket_size_init = -1
+            bucket_size_increment = 0
             skip_empty_level = 'warning'
         if task == CorpusTask.INFER and \
            vocabs['data_task'] == ModelTask.LANGUAGE_MODEL:
@@ -168,7 +178,9 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
         return cls(
             corpora, corpora_info, transforms, vocabs, task, opt.batch_type,
             batch_size, batch_size_multiple, data_type=opt.data_type,
-            bucket_size=bucket_size, copy=copy,
+            bucket_size=bucket_size, bucket_size_init=bucket_size_init,
+            bucket_size_increment=bucket_size_increment,
+            copy=copy,
             skip_empty_level=skip_empty_level,
             stride=stride, offset=offset
         )
@@ -196,8 +208,8 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
 
     def _tuple_to_json_with_tokIDs(self, tuple_bucket):
         bucket = []
-        for item in tuple_bucket:
-            example = process(self.task, item)
+        tuple_bucket = process(self.task, tuple_bucket)
+        for example in tuple_bucket:
             if example is not None:
                 if self.copy:
                     example = _addcopykeys(self.vocabs, example)
@@ -211,49 +223,73 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
         tokens numericalized.
         """
         bucket = []
+        if self.bucket_size_init > 0:
+            _bucket_size = self.bucket_size_init
+        else:
+            _bucket_size = self.bucket_size
         for ex in self.mixer:
             bucket.append(ex)
-            if len(bucket) == self.bucket_size:
+            if len(bucket) == _bucket_size:
                 yield self._tuple_to_json_with_tokIDs(bucket)
                 bucket = []
+                if _bucket_size < self.bucket_size:
+                    _bucket_size += self.bucket_size_increment
+                else:
+                    _bucket_size = self.bucket_size
         if bucket:
             yield self._tuple_to_json_with_tokIDs(bucket)
 
-    def batch_iter(self, data, batch_size, batch_size_fn=None,
+    def batch_iter(self, data, batch_size, batch_type="sents",
                    batch_size_multiple=1):
         """Yield elements from data in chunks of batch_size,
         where each chunk size is a multiple of batch_size_multiple.
         """
-        if batch_size_fn is None:
-            def batch_size_fn(new, count, sofar):
-                return count
-        minibatch, size_so_far = [], 0
+        def batch_size_fn(nbsents, maxlen):
+            if batch_type == 'sents':
+                return nbsents
+            elif batch_type == 'tokens':
+                return nbsents * maxlen
+            else:
+                raise ValueError(
+                    f"Invalid argument batch_type={batch_type}")
+
+        minibatch, maxlen, size_so_far, seen = [], 0, 0, []
         for ex in data:
-            minibatch.append(ex)
-            size_so_far = batch_size_fn(ex, len(minibatch), size_so_far)
-            if size_so_far >= batch_size:
-                overflowed = 0
-                if size_so_far > batch_size:
-                    overflowed += 1
-                if batch_size_multiple > 1:
-                    overflowed += (
-                        (len(minibatch) - overflowed) % batch_size_multiple)
-                if overflowed == 0:
-                    yield minibatch
-                    minibatch, size_so_far = [], 0
-                else:
-                    if overflowed == len(minibatch):
-                        logger.warning(
-                            "The batch will be filled until we reach %d,"
-                            "its size may exceed %d tokens"
-                            % (batch_size_multiple, batch_size)
-                            )
+            if (
+                   (ex['src']['src'] not in seen) or
+                   (self.task != CorpusTask.TRAIN)
+            ):
+                seen.append(ex['src']['src'])
+                minibatch.append(ex)
+                nbsents = len(minibatch)
+                maxlen = max(text_sort_key(ex), maxlen)
+                size_so_far = batch_size_fn(nbsents, maxlen)
+                if size_so_far >= batch_size:
+                    overflowed = 0
+                    if size_so_far > batch_size:
+                        overflowed += 1
+                    if batch_size_multiple > 1:
+                        overflowed += (
+                            (len(minibatch) - overflowed)
+                            % batch_size_multiple)
+                    if overflowed == 0:
+                        yield minibatch
+                        minibatch, maxlen, size_so_far, seen = [], 0, 0, []
                     else:
-                        yield minibatch[:-overflowed]
-                        minibatch = minibatch[-overflowed:]
-                        size_so_far = 0
-                        for i, ex in enumerate(minibatch):
-                            size_so_far = batch_size_fn(ex, i + 1, size_so_far)
+                        if overflowed == len(minibatch):
+                            logger.warning(
+                                 "The batch will be filled until we reach"
+                                 " %d, its size may exceed %d tokens"
+                                 % (batch_size_multiple, batch_size)
+                                 )
+                        else:
+                            yield minibatch[:-overflowed]
+                            minibatch = minibatch[-overflowed:]
+                            maxlen, size_so_far, seen = 0, 0, []
+                            for i, ex in enumerate(minibatch):
+                                maxlen = max(text_sort_key(ex), maxlen)
+                                size_so_far = batch_size_fn(i + 1, maxlen)
+
         if minibatch:
             yield minibatch
 
@@ -266,7 +302,7 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
             p_batch = list(self.batch_iter(
                 bucket,
                 self.batch_size,
-                batch_size_fn=self.batch_size_fn,
+                batch_type=self.batch_type,
                 batch_size_multiple=self.batch_size_multiple))
             # For TRAIN we shuffle batches within the bucket
             # otherwise sequential
@@ -286,6 +322,15 @@ def build_dynamic_dataset_iter(opt, transforms_cls, vocabs, copy=False,
     Build `DynamicDatasetIter` from opt.
     Typically this function is called for CorpusTask.[TRAIN,VALID,INFER]
     from the main tain / translate scripts
+    We disable automatic batching in the DataLoader.
+    The custom optimized batching is performed by the
+    custom class DynamicDatasetIter inherited from IterableDataset
+    (and not by a custom collate function).
+    We load opt.bucket_size examples, sort them and yield
+    mini-batchs of size opt.batch_size.
+    The bucket_size must be large enough to ensure homogeneous batches.
+    Each worker will load opt.prefetch_factor mini-batches in
+    advance to avoid the GPU waiting during the refilling of the bucket.
     """
     transforms = make_transforms(opt, transforms_cls, vocabs)
     corpora = get_corpora(opt, task)
@@ -303,7 +348,8 @@ def build_dynamic_dataset_iter(opt, transforms_cls, vocabs, copy=False,
     else:
         data_loader = DataLoader(data_iter, batch_size=None,
                                  pin_memory=True,
-                                 multiprocessing_context="fork",
+                                 multiprocessing_context="spawn",
                                  num_workers=data_iter.num_workers,
-                                 worker_init_fn=data_iter._init_datasets)
+                                 worker_init_fn=data_iter._init_datasets,
+                                 prefetch_factor=opt.prefetch_factor)
     return data_loader

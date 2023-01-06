@@ -136,7 +136,7 @@ def get_corpora(opts, task=CorpusTask.TRAIN):
 
 
 class ParallelCorpusIterator(object):
-    """An iterator dedicate for ParallelCorpus.
+    """An iterator dedicated to ParallelCorpus.
 
     Args:
         corpus (ParallelCorpus): corpus to iterate;
@@ -226,7 +226,6 @@ def build_corpora_iters(corpora, transforms, corpora_info,
             transforms[name] for name in transform_names if name in transforms
         ]
         transform_pipe = TransformPipe.build_from(corpus_transform)
-        logger.info(f"{c_id}'s transforms: {str(transform_pipe)}")
         corpus_iter = ParallelCorpusIterator(
             corpus, transform_pipe,
             skip_empty_level=skip_empty_level, stride=stride, offset=offset)
@@ -260,12 +259,12 @@ def save_transformed_sample(opts, transforms, n_sample=3):
         with open(dest_base + ".src", 'w', encoding="utf-8") as f_src,\
                 open(dest_base + ".tgt", 'w', encoding="utf-8") as f_tgt:
             for i, item in enumerate(c_iter):
-                maybe_example = process(CorpusTask.TRAIN, item)
-                if maybe_example is None:
-                    continue
-                src_line, tgt_line = (maybe_example['src']['src'],
-                                      maybe_example['tgt']['tgt'])
-                f_src.write(src_line + '\n')
-                f_tgt.write(tgt_line + '\n')
-                if n_sample > 0 and i >= n_sample:
-                    break
+                maybe_example = process(CorpusTask.TRAIN, [item])
+                if maybe_example is not None:
+                    maybe_example = maybe_example[0]
+                    src_line, tgt_line = (maybe_example['src']['src'],
+                                          maybe_example['tgt']['tgt'])
+                    f_src.write(src_line + '\n')
+                    f_tgt.write(tgt_line + '\n')
+                    if n_sample > 0 and i >= n_sample:
+                        break

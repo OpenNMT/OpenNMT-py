@@ -88,23 +88,22 @@ train_steps: 100000
 valid_steps: 5000
 
 # Batching
-bucket_size: 32768
+bucket_size: 262144
 world_size: 2
 gpu_ranks: [0, 1]
-num_workers: 4
+num_workers: 2
 batch_type: "tokens"
 batch_size: 4096
-valid_batch_size: 16
-batch_size_multiple: 1
-max_generator_batches: 0
+valid_batch_size: 2048
+batch_size_multiple: 8
 accum_count: [3]
 accum_steps: [0]
 
 # Optimization
-model_dtype: "fp32"
+model_dtype: "fp16"
 optim: "adam"
 learning_rate: 2
-warmup_steps: 8000
+warmup_steps: 4000
 decay_method: "noam"
 adam_beta2: 0.998
 max_grad_norm: 0
@@ -116,10 +115,11 @@ normalization: "tokens"
 # Model
 encoder_type: transformer
 decoder_type: transformer
+position_encoding: true
 enc_layers: 6
 dec_layers: 6
 heads: 8
-rnn_size: 512
+hidden_size: 512
 word_vec_size: 512
 transformer_ff: 2048
 dropout_steps: [0]

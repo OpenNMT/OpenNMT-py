@@ -217,9 +217,9 @@ class ArgumentParser(cfargparse.ArgumentParser, DataOptsCheckerMixin):
             model_opt.enc_layers = model_opt.layers
             model_opt.dec_layers = model_opt.layers
 
-        if model_opt.rnn_size > 0:
-            model_opt.enc_rnn_size = model_opt.rnn_size
-            model_opt.dec_rnn_size = model_opt.rnn_size
+        if model_opt.hidden_size > 0:
+            model_opt.enc_hid_size = model_opt.hidden_size
+            model_opt.dec_hid_size = model_opt.hidden_size
 
         model_opt.brnn = model_opt.encoder_type == "brnn"
 
@@ -237,7 +237,7 @@ class ArgumentParser(cfargparse.ArgumentParser, DataOptsCheckerMixin):
             "Unsupported model type %s" % model_opt.model_type
 
         # encoder and decoder should be same sizes
-        same_size = model_opt.enc_rnn_size == model_opt.dec_rnn_size
+        same_size = model_opt.enc_hid_size == model_opt.dec_hid_size
         assert same_size, \
             "The encoder and decoder rnns must be the same size for now"
 
@@ -270,8 +270,6 @@ class ArgumentParser(cfargparse.ArgumentParser, DataOptsCheckerMixin):
 
     @classmethod
     def validate_train_opts(cls, opt):
-        if opt.truncated_decoder > 0 and max(opt.accum_count) > 1:
-            raise AssertionError("BPTT is not compatible with -accum > 1")
 
         if torch.cuda.is_available() and not opt.gpu_ranks:
             logger.warn("You have a CUDA device, should run with -gpu_ranks")

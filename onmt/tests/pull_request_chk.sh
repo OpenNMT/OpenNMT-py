@@ -23,6 +23,7 @@ clean_up()
         ls $TMP_OUT_DIR/*.pt | xargs -I {} rm -f $TMP_OUT_DIR/{}
     else
         # delete all .pt's
+        rm -r $TMP_OUT_DIR/dump_pred
         rm -f $TMP_OUT_DIR/*.pt
         rm -rf $TMP_OUT_DIR/sample
         rm -d $TMP_OUT_DIR
@@ -109,25 +110,35 @@ ${PYTHON} onmt/bin/train.py \
             -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
             -src_vocab_size 1000 \
             -tgt_vocab_size 1000 \
-            -rnn_size 2 -batch_size 10 \
-            -word_vec_size 5 -report_every 5        \
-            -rnn_size 10 -train_steps 10 >> ${LOG_FILE} 2>&1
+            -hidden_size 2 -batch_size 10 \
+            -num_workers 0 -bucket_size 1024 \
+            -word_vec_size 5 -report_every 5 \
+            -hidden_size 10 -train_steps 10 \
+            -tensorboard "true" \
+            -tensorboard_log_dir $TMP_OUT_DIR/logs_train >> ${LOG_FILE} 2>&1
+${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_train -tensorboard_checks train
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
+rm -r $TMP_OUT_DIR/logs_train
 
-echo -n "  [+] Testing NMT training w/ copy..."
+echo -n "  [+] Testing NMT training and validation w/ copy..."
 ${PYTHON} onmt/bin/train.py \
             -config ${DATA_DIR}/data.yaml \
             -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
             -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
             -src_vocab_size 1000 \
             -tgt_vocab_size 1000 \
-            -rnn_size 2 -batch_size 10 \
-            -word_vec_size 5 -report_every 5        \
-            -rnn_size 10 -train_steps 10 \
+            -hidden_size 2 -batch_size 10 \
+            -num_workers 0 -bucket_size 1024 \
+            -word_vec_size 5 -report_every 2 \
+            -hidden_size 10 -train_steps 10 -valid_steps 5 \
+            -tensorboard "true" \
+            -tensorboard_log_dir $TMP_OUT_DIR/logs_train_valid \
             -copy_attn >> ${LOG_FILE} 2>&1
+${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_train_valid -tensorboard_checks train_valid
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
+rm -r $TMP_OUT_DIR/logs_train_valid
 
 echo -n "  [+] Testing NMT training w/ align..."
 ${PYTHON} onmt/bin/train.py \
@@ -136,9 +147,9 @@ ${PYTHON} onmt/bin/train.py \
             -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
             -src_vocab_size 1000 \
             -tgt_vocab_size 1000 \
-            -max_generator_batches 0 \
+            -num_workers 0 -bucket_size 1024 \
             -encoder_type transformer -decoder_type transformer \
-            -layers 4 -word_vec_size 16 -rnn_size 16 -heads 2 -transformer_ff 64 \
+            -layers 4 -word_vec_size 16 -hidden_size 16 -heads 2 -transformer_ff 64 \
             -lambda_align 0.05 -alignment_layer 2 -alignment_heads 0 \
             -report_every 5 -train_steps 10 >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
@@ -151,12 +162,72 @@ ${PYTHON} onmt/bin/train.py \
             -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
             -src_vocab_size 1000 \
             -tgt_vocab_size 1000 \
-            -rnn_size 2 -batch_size 10 \
+            -hidden_size 2 -batch_size 10 \
+            -num_workers 0 -bucket_size 1024 \
             -word_vec_size 5 -report_every 5        \
             -coverage_attn true -lambda_coverage 0.1 \
-            -rnn_size 10 -train_steps 10 >> ${LOG_FILE} 2>&1
+            -hidden_size 10 -train_steps 10 >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
+
+echo -n "  [+] Testing NMT training w/ dynamic scoring..."
+${PYTHON} onmt/bin/train.py \
+            -config ${DATA_DIR}/data.yaml \
+            -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
+            -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
+            -src_vocab_size 1000 \
+            -tgt_vocab_size 1000 \
+            -encoder_type transformer \
+            -decoder_type transformer \
+            -layers 4 \
+            -word_vec_size 16 \
+            -hidden_size 16 \
+            -heads 2 \
+            -transformer_ff 64 \
+            -num_workers 0 -bucket_size 1024 \
+            -train_steps 20 \
+            -report_every 5 \
+            -train_eval_steps 10 \
+            -train_metrics "BLEU" "TER" \
+            -tensorboard "true" \
+            -scoring_debug "true" \
+            -tensorboard_log_dir $TMP_OUT_DIR/logs_train_metrics \
+            -dump_preds $TMP_OUT_DIR/dump_pred >> ${LOG_FILE} 2>&1
+${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_train_metrics -tensorboard_checks train_metrics
+[ "$?" -eq 0 ] || error_exit
+echo "Succeeded" | tee -a ${LOG_FILE}
+rm -r $TMP_OUT_DIR/logs_train_metrics
+
+echo -n "  [+] Testing NMT training w/ dynamic scoring with validation and copy ..."
+${PYTHON} onmt/bin/train.py \
+            -config ${DATA_DIR}/data.yaml \
+            -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
+            -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
+            -src_vocab_size 1000 \
+            -tgt_vocab_size 1000 \
+            -encoder_type transformer \
+            -decoder_type transformer \
+            -layers 4 \
+            -word_vec_size 16 \
+            -hidden_size 16 \
+            -num_workers 0 -bucket_size 1024 \
+            -heads 2 \
+            -transformer_ff 64 \
+            -bucket_size 1024 \
+            -train_steps 10 \
+            -report_every 2 \
+            -train_eval_steps 8 -valid_steps 5 \
+            -train_metrics "BLEU" "TER" \
+            -valid_metrics "BLEU" "TER" \
+            -tensorboard "true" \
+            -scoring_debug "true" \
+            -dump_preds $TMP_OUT_DIR/dump_pred \
+            -copy_attn \
+            -tensorboard_log_dir $TMP_OUT_DIR/logs_train_valid_metrics >> ${LOG_FILE} 2>&1
+${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_train_valid_metrics -tensorboard_checks train_valid_metrics
+[ "$?" -eq 0 ] || error_exit
+echo "Succeeded" | tee -a ${LOG_FILE}
+rm -r $TMP_OUT_DIR/logs_train_valid_metrics
 
 echo -n "  [+] Testing LM training..."
 ${PYTHON} onmt/bin/train.py \
@@ -168,10 +239,11 @@ ${PYTHON} onmt/bin/train.py \
             -decoder_type transformer_lm \
             -src_vocab_size 1000 \
             -tgt_vocab_size 1000 \
+            -num_workers 0 -bucket_size 1024 \
             -dec_layers 2 -batch_size 10 \
             -heads 4 -transformer_ff 64 \
             -word_vec_size 16 -report_every 5        \
-            -rnn_size 16 -train_steps 10 >> ${LOG_FILE} 2>&1
+            -hidden_size 16 -train_steps 10 >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 
@@ -187,8 +259,9 @@ ${PYTHON} onmt/bin/train.py \
             -tgt_vocab_size 1000 \
             -dec_layers 2 -batch_size 10 \
             -heads 4 -transformer_ff 64 \
+            -num_workers 0 -bucket_size 1024 \
             -word_vec_size 16 -report_every 5        \
-            -rnn_size 16 -train_steps 10 \
+            -hidden_size 16 -train_steps 10 \
             -copy_attn >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}*
@@ -199,8 +272,9 @@ ${PYTHON} onmt/bin/train.py \
             -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
             -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
             -src_vocab_size 1000 -tgt_vocab_size 1000 \
-            -rnn_size 2 -batch_size 10 \
-            -word_vec_size 5 -rnn_size 10 \
+            -hidden_size 2 -batch_size 10 \
+            -word_vec_size 5 -hidden_size 10 \
+            -num_workers 0 -bucket_size 1024 \
             -report_every 5 -train_steps 10 \
             -save_model $TMP_OUT_DIR/onmt.model \
             -save_checkpoint_steps 10 >> ${LOG_FILE} 2>&1
@@ -210,8 +284,9 @@ ${PYTHON} onmt/bin/train.py \
             -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
             -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
             -src_vocab_size 1000 -tgt_vocab_size 1000 \
-            -rnn_size 2 -batch_size 10 \
-            -word_vec_size 5 -rnn_size 10 \
+            -hidden_size 2 -batch_size 10 \
+            -word_vec_size 5 -hidden_size 10 \
+            -num_workers 0 -bucket_size 1024 \
             -report_every 5 -train_steps 20 \
             -update_vocab -reset_optim "states" \
             -train_from $TMP_OUT_DIR/onmt.model_step_10.pt >> ${LOG_FILE} 2>&1
@@ -230,10 +305,11 @@ ${PYTHON} onmt/bin/train.py \
             -tgt_vocab_size 1000 \
             -dec_layers 2 -batch_size 10 \
             -heads 4 -transformer_ff 64 \
+            -num_workers 0 -bucket_size 1024 \
             -word_vec_size 16 -report_every 5 \
             -save_model $TMP_OUT_DIR/lm.onmt.model \
             -save_checkpoint_steps 10 \
-            -rnn_size 16 -train_steps 10 >> ${LOG_FILE} 2>&1
+            -hidden_size 16 -train_steps 10 >> ${LOG_FILE} 2>&1
 sed -i '1s/^/new_tok2\t100000000\n/' $TMP_OUT_DIR/onmt.vocab.src >> ${LOG_FILE} 2>&1
 ${PYTHON} onmt/bin/train.py \
             -config ${DATA_DIR}/lm_data.yaml \
@@ -245,9 +321,10 @@ ${PYTHON} onmt/bin/train.py \
             -src_vocab_size 1000 \
             -tgt_vocab_size 1000 \
             -dec_layers 2 -batch_size 10 \
+            -num_workers 0 -bucket_size 1024 \
             -heads 4 -transformer_ff 64 \
             -word_vec_size 16 -report_every 5 \
-            -rnn_size 16  -train_steps 20 \
+            -hidden_size 16  -train_steps 20 \
             -update_vocab -reset_optim "states" \
             -train_from $TMP_OUT_DIR/lm.onmt.model_step_10.pt >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
@@ -258,8 +335,9 @@ ${PYTHON} onmt/bin/train.py \
             -config ${DATA_DIR}/ggnn_data.yaml \
             -src_seq_length 1000 -tgt_seq_length 30 \
             -encoder_type ggnn -layers 2 \
-            -decoder_type rnn -rnn_size 256 \
+            -decoder_type rnn -hidden_size 256 \
             -learning_rate 0.1 -learning_rate_decay 0.8 \
+            -num_workers 0 -bucket_size 1024 \
             -global_attention general -batch_size 32 -word_vec_size 256 \
             -bridge -train_steps 10 -n_edge_types 9 -state_dim 256 \
             -n_steps 10 -n_node 64 >> ${LOG_FILE} 2>&1
@@ -273,8 +351,9 @@ ${PYTHON} onmt/bin/train.py \
             -tgt_vocab $TMP_OUT_DIR/onmt_feat.vocab.tgt \
             -src_feats_vocab "{\"feat0\": \"${TMP_OUT_DIR}/onmt_feat.vocab.feat0\"}" \
             -src_vocab_size 1000 -tgt_vocab_size 1000 \
-            -rnn_size 2 -batch_size 10 \
-            -word_vec_size 5 -rnn_size 10 \
+            -hidden_size 2 -batch_size 10 \
+            -word_vec_size 5 -hidden_size 10 \
+            -num_workers 0 -bucket_size 1024 \
             -report_every 5 -train_steps 10 \
             -save_model $TMP_OUT_DIR/onmt.features.model \
             -save_checkpoint_steps 10 >> ${LOG_FILE} 2>&1
@@ -357,6 +436,7 @@ ${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
             -verbose -batch_size 10     \
             -beam_size 10 \
             -ban_unk_token \
+            -length_penalty none \
             -out $TMP_OUT_DIR/gen_beam  >> ${LOG_FILE} 2>&1
 diff ${DATA_DIR}/data_lm/gen-beam-sol.txt $TMP_OUT_DIR/gen_beam
 [ "$?" -eq 0 ] || error_exit
@@ -372,6 +452,7 @@ ${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
             -random_sampling_topk -1    \
             -random_sampling_temp 0.0001    \
             -ban_unk_token \
+            -length_penalty none \
             -out $TMP_OUT_DIR/gen_sampling  >> ${LOG_FILE} 2>&1
 diff ${DATA_DIR}/data_lm/gen-sampling-sol.txt $TMP_OUT_DIR/gen_sampling
 [ "$?" -eq 0 ] || error_exit
@@ -388,6 +469,7 @@ ${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
             -random_sampling_topp 0.95    \
             -random_sampling_temp 1    \
             -ban_unk_token \
+            -length_penalty none \
             -out $TMP_OUT_DIR/gen_sampling  >> ${LOG_FILE} 2>&1
 diff ${DATA_DIR}/data_lm/gen-nucleus-sampling-sol.txt $TMP_OUT_DIR/gen_sampling
 [ "$?" -eq 0 ] || error_exit

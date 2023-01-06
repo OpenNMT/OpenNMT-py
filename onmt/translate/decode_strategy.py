@@ -99,33 +99,34 @@ class DecodeStrategy(object):
 
         self.done = False
 
-    def get_device_from_memory_bank(self, memory_bank):
-        if isinstance(memory_bank, tuple):
-            mb_device = memory_bank[0].device
+    def get_device_from_enc_out(self, enc_out):
+        if isinstance(enc_out, tuple):
+            mb_device = enc_out[0].device
         else:
-            mb_device = memory_bank.device
+            mb_device = enc_out.device
         return mb_device
 
-    def initialize_tile(self, memory_bank, src_lengths, src_map=None,
+    def initialize_tile(self, enc_out, src_len, src_map=None,
                         target_prefix=None):
         def fn_map_state(state, dim):
             return tile(state, self.beam_size, dim=dim)
 
-        if isinstance(memory_bank, tuple):
-            memory_bank = tuple(tile(x, self.beam_size, dim=1)
-                                for x in memory_bank)
-        elif memory_bank is not None:
-            memory_bank = tile(memory_bank, self.beam_size, dim=1)
+        if isinstance(enc_out, tuple):
+            enc_out = tuple(tile(x, self.beam_size, dim=0)
+                            for x in enc_out)
+        elif enc_out is not None:
+            enc_out = tile(enc_out, self.beam_size, dim=0)
+
         if src_map is not None:
-            src_map = tile(src_map, self.beam_size, dim=1)
+            src_map = tile(src_map, self.beam_size, dim=0)
 
-        self.memory_lengths = tile(src_lengths, self.beam_size)
+        self.src_len = tile(src_len, self.beam_size)
         if target_prefix is not None:
-            target_prefix = tile(target_prefix, self.beam_size, dim=1)
+            target_prefix = tile(target_prefix, self.beam_size, dim=0)
 
-        return fn_map_state, memory_bank, src_map, target_prefix
+        return fn_map_state, enc_out, src_map, target_prefix
 
-    def initialize(self, memory_bank, src_lengths, src_map=None, device=None,
+    def initialize(self, enc_out, src_len, src_map=None, device=None,
                    target_prefix=None):
         """DecodeStrategy subclasses should override :func:`initialize()`.
 
@@ -153,7 +154,7 @@ class DecodeStrategy(object):
             self.min_length += min(prefix_non_pad)-1
 
         self.target_prefix = target_prefix  # NOTE: forced prefix words
-        return None, memory_bank, src_lengths, src_map
+        return None, enc_out, src_len, src_map
 
     def __len__(self):
         return self.alive_seq.shape[1]
