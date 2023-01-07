@@ -12,6 +12,7 @@ class DecodeStrategy(object):
         bos (int): Magic integer in output vocab.
         eos (int): Magic integer in output vocab.
         unk (int): Magic integer in output vocab.
+        start (int): Magic integer in output vocab.
         batch_size (int): Current batch size.
         parallel_paths (int): Decoding strategies like beam search
             use parallel paths. Each batch is repeated ``parallel_paths``
@@ -34,6 +35,7 @@ class DecodeStrategy(object):
         bos (int): See above.
         eos (int): See above.
         unk (int): See above.
+        start (int): See above.
         predictions (list[list[LongTensor]]): For each batch, holds a
             list of beam prediction sequences.
         scores (list[list[FloatTensor]]): For each batch, holds a
@@ -63,7 +65,7 @@ class DecodeStrategy(object):
         done (bool): See above.
     """
 
-    def __init__(self, pad, bos, eos, unk, batch_size, parallel_paths,
+    def __init__(self, pad, bos, eos, unk, start, batch_size, parallel_paths,
                  global_scorer, min_length, block_ngram_repeat,
                  exclusion_tokens, return_attention, max_length,
                  ban_unk_token):
@@ -73,6 +75,7 @@ class DecodeStrategy(object):
         self.bos = bos
         self.eos = eos
         self.unk = unk
+        self.start = start
 
         self.batch_size = batch_size
         self.parallel_paths = parallel_paths
@@ -135,17 +138,18 @@ class DecodeStrategy(object):
         """
         if device is None:
             device = torch.device('cpu')
+        # Here we set the decoder to start with self.start (BOS or EOS)
         self.alive_seq = torch.full(
-            [self.batch_size * self.parallel_paths, 1], self.bos,
+            [self.batch_size * self.parallel_paths, 1], self.start,
             dtype=torch.long, device=device)
         self.is_finished = torch.zeros(
             [self.batch_size, self.parallel_paths],
             dtype=torch.uint8, device=device)
         if target_prefix is not None:
-            seq_len, batch_size, n_feats = target_prefix.size()
+            batch_size, seq_len, n_feats = target_prefix.size()
             assert batch_size == self.batch_size * self.parallel_paths,\
                 "forced target_prefix should've extend to same number of path!"
-            target_prefix_words = target_prefix[:, :, 0].transpose(0, 1)
+            target_prefix_words = target_prefix[:, :, 0]  # no features
             target_prefix = target_prefix_words[:, 1:]  # remove bos
 
             # fix length constraint and remove eos from count

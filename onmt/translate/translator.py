@@ -128,7 +128,8 @@ class Inference(object):
         report_score=True,
         logger=None,
         seed=-1,
-        with_score=False
+        with_score=False,
+        start_decoder_tok=DefaultTokens.BOS
     ):
         self.model = model
         self.vocabs = vocabs
@@ -137,6 +138,8 @@ class Inference(object):
         self._tgt_pad_idx = self.vocabs['tgt'].lookup_token(DefaultTokens.PAD)
         self._tgt_bos_idx = self.vocabs['tgt'].lookup_token(DefaultTokens.BOS)
         self._tgt_unk_idx = self.vocabs['tgt'].lookup_token(DefaultTokens.UNK)
+        self._tgt_start_with =\
+            self.vocabs['tgt'].lookup_token(start_decoder_tok)
         self._tgt_vocab_len = len(self._tgt_vocab)
 
         self._gpu = gpu
@@ -269,7 +272,8 @@ class Inference(object):
             report_score=report_score,
             logger=logger,
             seed=opt.seed,
-            with_score=opt.with_score
+            with_score=opt.with_score,
+            start_decoder_tok=opt.start_decoder_tok
         )
 
     def _log(self, msg):
@@ -687,6 +691,7 @@ class Translator(Inference):
                     bos=self._tgt_bos_idx,
                     eos=self._tgt_eos_idx,
                     unk=self._tgt_unk_idx,
+                    start=self._tgt_start_with,
                     batch_size=len(batch['srclen']),
                     global_scorer=self.global_scorer,
                     min_length=self.min_length,
@@ -710,6 +715,7 @@ class Translator(Inference):
                     bos=self._tgt_bos_idx,
                     eos=self._tgt_eos_idx,
                     unk=self._tgt_unk_idx,
+                    start=self._tgt_start_with,
                     n_best=self.n_best,
                     global_scorer=self.global_scorer,
                     min_length=self.min_length,
@@ -906,6 +912,7 @@ class GeneratorLM(Inference):
                     bos=self._tgt_bos_idx,
                     eos=self._tgt_eos_idx,
                     unk=self._tgt_unk_idx,
+                    start=self._tgt_start_with,
                     batch_size=len(batch['srclen']),
                     global_scorer=self.global_scorer,
                     min_length=self.min_length,
@@ -929,6 +936,7 @@ class GeneratorLM(Inference):
                     bos=self._tgt_bos_idx,
                     eos=self._tgt_eos_idx,
                     unk=self._tgt_unk_idx,
+                    start=self._tgt_start_with,
                     n_best=self.n_best,
                     global_scorer=self.global_scorer,
                     min_length=self.min_length,
