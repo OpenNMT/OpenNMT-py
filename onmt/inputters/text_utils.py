@@ -105,12 +105,20 @@ def numericalize(vocabs, example):
                 f"Something went wrong with task {vocabs['data_task']}"
         )
 
+    # Numericalize src feats
     if 'src_feats' in vocabs.keys():
-        for featname in vocabs['src_feats'].keys():
-            src_feat = example['src'][featname].split()
-            vf = vocabs['src_feats'][featname]
-            # we'll need to change this if we introduce tgt feat
-            numeric['src'][featname] = vf(src_feat)
+        numeric_feats = []
+        for feat_vocab, feat in zip(vocabs['src_feats'], example['src']['feats']):
+            numeric_feats.append(feat_vocab(feat.split()))
+        numeric['src']['feats'] = numeric_feats
+
+    # Numericalize tgt feats
+    if 'tgt_feats' in vocabs.keys():
+        numeric_feats = []
+        for feat_vocab, feat in zip(vocabs['tgt_feats'], example['tgt']['feats']):
+            numeric_feats.append(feat_vocab([DefaultTokens.BOS] + feat.split()
+                                            + [DefaultTokens.EOS]))
+        numeric['tgt']['feats'] = numeric_feats
 
     return numeric
 
@@ -136,16 +144,14 @@ def tensorify(vocabs, minibatch):
     """
     This function transforms a batch of example in tensors
     Each example looks like
-    {'src': {'src': ..., 'feat1': ..., 'feat2': ..., 'src_ids': ...},
-     'tgt': {'tgt': ..., 'tgt_ids': ...},
-     'src_original': ['tok1', ...'tokn'],
-     'tgt_original': ['tok1', ...'tokm'],
+    {'src': {'src': ..., 'feats': [...], 'src_ids': ...},
+     'tgt': {'tgt': ..., 'feats': [...], 'tgt_ids': ...},
      'indices' : seq in bucket
      'align': ...,
     }
     Returns  Dict of batch Tensors
-        {'src': [seqlen, batchsize, n_feats],
-         'tgt' : [seqlen, batchsize, n_feats=1],
+        {'src': [batchsize, seq_len, n_feats+1],
+         'tgt' : [batchsize, seq_len, n_feats+1],
          'indices' : [batchsize],
          'srclen': [batchsize],
          'tgtlen': [batchsize],
@@ -157,20 +163,19 @@ def tensorify(vocabs, minibatch):
     padidx = vocabs['src'][DefaultTokens.PAD]
     tbatchsrc = pad_sequence(tbatchsrc, batch_first=True,
                              padding_value=padidx)
-    if len(minibatch[0]['src'].keys()) > 2:
+    if "feats" in minibatch[0]['src']:
         tbatchfs = [tbatchsrc]
-        for feat in minibatch[0]['src'].keys():
-            if feat not in ['src', 'src_ids']:
-                tbatchfeat = [torch.LongTensor(ex['src'][feat])
-                              for ex in minibatch]
-                padidx = vocabs['src_feats'][feat][DefaultTokens.PAD]
-                tbatchfeat = pad_sequence(tbatchfeat, batch_first=True,
-                                          padding_value=padidx)
-                tbatchfs.append(tbatchfeat)
+        for feat_id in range(len(minibatch[0]['src']["feats"])):
+            tbatchfeat = [torch.LongTensor(ex['src']['feats'][feat_id])
+                          for ex in minibatch]
+            padidx = vocabs['src_feats'][feat_id][DefaultTokens.PAD]
+            tbatchfeat = pad_sequence(tbatchfeat, batch_first=True,
+                                      padding_value=padidx)
+            tbatchfs.append(tbatchfeat)
         tbatchsrc = torch.stack(tbatchfs, dim=2)
     else:
+        # Need to add features in last dimensions
         tbatchsrc = tbatchsrc[:, :, None]
-    # Need to add features in last dimensions
 
     tensor_batch['src'] = tbatchsrc
     tensor_batch['indices'] = torch.LongTensor([ex['indices']
@@ -178,13 +183,26 @@ def tensorify(vocabs, minibatch):
     tensor_batch['srclen'] = torch.LongTensor([len(ex['src']['src_ids'])
                                                for ex in minibatch])
 
+
     if minibatch[0]['tgt'] is not None:
         tbatchtgt = [torch.LongTensor(ex['tgt']['tgt_ids'])
                      for ex in minibatch]
         padidx = vocabs['tgt'][DefaultTokens.PAD]
         tbatchtgt = pad_sequence(tbatchtgt, batch_first=True,
                                  padding_value=padidx)
-        tbatchtgt = tbatchtgt[:, :, None]
+        if "feats" in minibatch[0]["tgt"]:
+            tbatchfs = [tbatchtgt]
+            for feat_id in range(len(minibatch[0]['tgt']["feats"])):
+                tbatchfeat = [torch.LongTensor(ex['tgt']['feats'][feat_id])
+                              for ex in minibatch]
+                padidx = vocabs['tgt_feats'][feat_id][DefaultTokens.PAD]
+                tbatchfeat = pad_sequence(tbatchfeat, batch_first=True,
+                                          padding_value=padidx)
+                tbatchfs.append(tbatchfeat)
+            tbatchtgt = torch.stack(tbatchfs, dim=2)
+        else:
+            tbatchtgt = tbatchtgt[:, :, None]
+
         tbatchtgtlen = torch.LongTensor([len(ex['tgt']['tgt_ids'])
                                          for ex in minibatch])
         tensor_batch['tgt'] = tbatchtgt

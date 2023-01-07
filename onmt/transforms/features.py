@@ -34,6 +34,7 @@ class InferFeatsTransform(Transform):
 
         if "src_feats" not in example:
             # Do nothing
+            assert False, "TODO"
             return example
 
         if self.reversible_tokenization == "joiner":
@@ -56,6 +57,18 @@ class InferFeatsTransform(Transform):
                 new_src_feats[i].append(inferred_feat)
         example["src_feats"] = new_src_feats
 
+        # Security checks
+        for feat in example["src_feats"]:
+            assert len(example["src"]) == len(feat)
+
+        if self.reversible_tokenization == "joiner":
+            original_tgt = example["tgt_original"] \
+                if self.prior_tokenization else None
+            word_to_subword_mapping = subword_map_by_joiner(
+                example["tgt"], original_subwords=original_tgt)
+        else:  # Spacer
+            word_to_subword_mapping = subword_map_by_spacer(example["tgt"])
+
         new_tgt_feats = [[] for _ in range(len(example["tgt_feats"]))]
         for subword, word_id in zip(example["tgt"], word_to_subword_mapping):
             for i, feat_values in enumerate(example["tgt_feats"]):
@@ -67,6 +80,10 @@ class InferFeatsTransform(Transform):
                     inferred_feat = feat_values[word_id]
                 new_tgt_feats[i].append(inferred_feat)
         example["tgt_feats"] = new_tgt_feats
+
+        # Security checks
+        for feat in example["tgt_feats"]:
+            assert len(example["tgt"]) == len(feat)
 
         return example
 

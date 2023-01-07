@@ -11,7 +11,7 @@ import onmt.modules
 from onmt.encoders import str2enc
 from onmt.decoders import str2dec
 from onmt.inputters.inputter import dict_to_vocabs
-from onmt.modules import Embeddings, CopyGenerator
+from onmt.modules import Embeddings, Generator
 from onmt.utils.misc import use_gpu
 from onmt.utils.logging import logger
 from onmt.utils.parse import ArgumentParser
@@ -31,14 +31,13 @@ def build_embeddings(opt, vocabs, for_encoder=True):
         emb_dim = opt.src_word_vec_size
         word_padding_idx = vocabs['src'][DefaultTokens.PAD]
         num_word_embeddings = len(vocabs['src'])
-        if 'src_feats' in vocabs.keys():
-            feat_pad_indices = [vocabs['src_feats'][feat][DefaultTokens.PAD]
-                                for feat in vocabs['src_feats'].keys()]
-            num_feat_embeddings = [len(vocabs['src_feats'][feat])
-                                   for feat in vocabs['src_feats'].keys()]
+        if 'src_feats' in vocabs:
+            feat_pad_indices = [feat_vocab[DefaultTokens.PAD]
+                                for feat_vocab in vocabs['src_feats']]
+            num_feat_embeddings = [len(feat_vocab)
+                                   for feat_vocab in vocabs['src_feats']]
         freeze_word_vecs = opt.freeze_word_vecs_enc
     else:
-
         emb_dim = opt.tgt_word_vec_size
         word_padding_idx = vocabs['tgt'][DefaultTokens.PAD]
         num_word_embeddings = len(vocabs['tgt'])
@@ -206,6 +205,33 @@ def use_embeddings_from_checkpoint(vocabs, model, generator, checkpoint):
     del checkpoint['generator']['weight'], checkpoint['generator']['bias']
 
 
+def build_generator(model_opt, vocabs, decoder):
+    gen_sizes = [len(vocabs['tgt'])]
+    if 'tgt_feats' in vocabs:
+        gen_sizes += [len(feat_vocab) for feat_vocab in vocabs['tgt_feats']]
+
+    if model_opt.share_decoder_embeddings:
+        hid_sizes = ([model_opt.dec_hid_size -
+                      (model_opt.feat_vec_size * (len(gen_sizes) - 1))]
+                     + [model_opt.feat_vec_size] * (len(gen_sizes) - 1))
+    else:
+        hid_sizes = [model_opt.dec_hid_size] * len(gen_sizes)
+
+    pad_idx = vocabs['tgt'][DefaultTokens.PAD]
+    generator = Generator(hid_sizes, gen_sizes,
+                          shared=model_opt.share_decoder_embeddings,
+                          copy_attn=model_opt.copy_attn,
+                          pad_idx=pad_idx)
+
+    if model_opt.share_decoder_embeddings:
+        if not model_opt.share_decoder_embeddings:
+            generator.generators[0].weight = model.decoder.embeddings.word_lut.weight
+        else:
+            generator.generators[0].linear.weight = model.decoder.embeddings.word_lut.weight
+
+    return generator
+
+
 def build_base_model(model_opt, vocabs, gpu, checkpoint=None, gpu_id=None):
     """Build a model from opts.
 
@@ -240,18 +266,8 @@ def build_base_model(model_opt, vocabs, gpu, checkpoint=None, gpu_id=None):
 
     model = build_task_specific_model(model_opt, vocabs)
 
-    # Build Generator.
-    if not model_opt.copy_attn:
-        generator = nn.Linear(model_opt.dec_hid_size,
-                              len(vocabs['tgt']))
-        if model_opt.share_decoder_embeddings:
-            generator.weight = model.decoder.embeddings.word_lut.weight
-    else:
-        vocab_size = len(vocabs['tgt'])
-        pad_idx = vocabs['tgt'][DefaultTokens.PAD]
-        generator = CopyGenerator(model_opt.dec_hid_size, vocab_size, pad_idx)
-        if model_opt.share_decoder_embeddings:
-            generator.linear.weight = model.decoder.embeddings.word_lut.weight
+    # Build Generators (Next token prediction and possibly target features generators)
+    generator = build_generator(model_opt, vocabs, model.decoder)
 
     # Load the model states from checkpoint or initialize them.
     if checkpoint is None or model_opt.update_vocab:

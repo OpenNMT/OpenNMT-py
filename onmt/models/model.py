@@ -66,7 +66,7 @@ class NMTModel(BaseModel):
             * enc_out + enc_final_hs in the case of CNNs
             * src in the case of Transformer
         """
-        dec_in = tgt[:, :-1, :]
+        dec_in = tgt[:, :-1, :1]
         enc_out, enc_final_hs, src_len = self.encoder(src, src_len)
         if not bptt:
             self.decoder.init_state(src, enc_out, enc_final_hs)

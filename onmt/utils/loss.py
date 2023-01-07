@@ -36,13 +36,13 @@ class LossCompute(nn.Module):
         lm_prior_lambda (float): weight of LM model in loss
         lm_prior_tau (float): scaler for LM loss
     """
-    def __init__(self, criterion, generator,
+    def __init__(self, criterions, generator,
                  copy_attn=False, lambda_coverage=0.0, lambda_align=0.0,
                  tgt_shift_index=1, vocab=None, lm_generator=None,
                  lm_prior_lambda=None, lm_prior_tau=None,
                  lm_prior_model=None):
         super(LossCompute, self).__init__()
-        self.criterion = criterion
+        self.criterions = criterions
         self.generator = generator
         self.lambda_coverage = lambda_coverage
         self.lambda_align = lambda_align
@@ -55,7 +55,7 @@ class LossCompute(nn.Module):
         self.lm_prior_model = lm_prior_model
 
     @classmethod
-    def from_opts(cls, opt, model, vocab, train=True):
+    def from_opts(cls, opt, model, vocabs, train=True):
         """
         Returns a subclass which wraps around an nn.Module subclass
         (such as nn.NLLLoss) which defines the loss criterion. The LossCompute
@@ -66,8 +66,9 @@ class LossCompute(nn.Module):
         device = torch.device("cuda" if onmt.utils.misc.use_gpu(opt)
                               else "cpu")
 
-        padding_idx = vocab[DefaultTokens.PAD]
-        unk_idx = vocab[DefaultTokens.UNK]
+        tgt_vocab = vocabs['tgt']
+        padding_idx = tgt_vocab[DefaultTokens.PAD]
+        unk_idx = tgt_vocab[DefaultTokens.UNK]
 
         if opt.lambda_coverage != 0:
             assert opt.coverage_attn, "--coverage_attn needs to be set in " \
@@ -75,20 +76,31 @@ class LossCompute(nn.Module):
 
         tgt_shift_idx = 1 if opt.model_task == ModelTask.SEQ2SEQ else 0
 
+
         if opt.copy_attn:
-            criterion = onmt.modules.CopyGeneratorLoss(
-                len(vocab), opt.copy_attn_force,
+            criterions = [onmt.modules.CopyGeneratorLoss(
+                len(tgt_vocab), opt.copy_attn_force,
                 unk_index=unk_idx, ignore_index=padding_idx
-            )
+            )]
         else:
             if opt.generator_function == 'sparsemax':
-                criterion = SparsemaxLoss(ignore_index=padding_idx,
-                                          reduction='sum')
+                criterions = [SparsemaxLoss(ignore_index=padding_idx,
+                                          reduction='sum')]
             else:
-                criterion = nn.CrossEntropyLoss(
+                criterions = [nn.CrossEntropyLoss(
                     ignore_index=padding_idx,
                     reduction='sum',
                     label_smoothing=opt.label_smoothing
+                )]
+
+        # Add as many criterios as tgt features we have
+        if 'tgt_feats' in vocabs:
+            for feat_vocab in vocabs["tgt_feats"]:
+                padding_idx = feat_vocab[DefaultTokens.PAD]
+                criterions.append(
+                    nn.CrossEntropyLoss(
+                        ignore_index=padding_idx,
+                        reduction='sum')
                 )
 
         lm_prior_lambda = opt.lm_prior_lambda
@@ -116,12 +128,12 @@ class LossCompute(nn.Module):
             lm_generator = None
             lm_prior_model = None
 
-        compute = cls(criterion, model.generator,
+        compute = cls(criterions, model.generator,
                       copy_attn=opt.copy_attn,
                       lambda_coverage=opt.lambda_coverage,
                       lambda_align=opt.lambda_align,
                       tgt_shift_index=tgt_shift_idx,
-                      vocab=vocab, lm_generator=lm_generator,
+                      vocab=tgt_vocab, lm_generator=lm_generator,
                       lm_prior_lambda=lm_prior_lambda,
                       lm_prior_tau=lm_prior_tau,
                       lm_prior_model=lm_prior_model)
@@ -131,7 +143,7 @@ class LossCompute(nn.Module):
 
     @property
     def padding_idx(self):
-        return self.criterion.ignore_index
+        return self.criterions[0].ignore_index
 
     def _compute_coverage_loss(self, std_attn, cov_attn, tgt):
         """compute coverage loss"""
@@ -297,9 +309,15 @@ class LossCompute(nn.Module):
         else:
 
             scores = self.generator(self._bottle(output))
-            if isinstance(self.criterion, SparsemaxLoss):
-                scores = LogSparsemax(scores.to(torch.float32), dim=-1)
-            loss = self.criterion(scores.to(torch.float32), flat_tgt)
+            assert len(scores) == len(self.criterions) # Security check
+            if isinstance(self.criterions[0], SparsemaxLoss):
+                scores[0] = LogSparsemax(scores[0].to(torch.float32), dim=-1)
+
+            loss = self.criterions[0](scores[0].to(torch.float32), flat_tgt)
+            # Compute target features losses
+            if len(scores) > 1:
+                for i, (score, criterion) in enumerate(zip(scores[1:], self.criterions[1:])):
+                    loss += criterion(score.to(torch.float32), target[:, :, i+1].contiguous().view(-1))
 
             if self.lambda_align != 0.0:
                 align_head = attns['align']
@@ -347,7 +365,7 @@ class LossCompute(nn.Module):
         Returns:
             :obj:`onmt.utils.Statistics` : statistics for this batch.
         """
-        pred = scores.max(1)[1]
+        pred = scores[0].max(1)[1]
         non_padding = target.ne(self.padding_idx)
         num_correct = pred.eq(target).masked_select(non_padding).sum().item()
         num_non_padding = non_padding.sum().item()
