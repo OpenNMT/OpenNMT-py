@@ -1,5 +1,5 @@
 from onmt.transforms import register_transform
-from .transform import Transform, ObservableStats
+from .transform import Transform
 import unicodedata
 import random
 
@@ -13,7 +13,7 @@ class UpperCaseTransform(Transform):
 
     @classmethod
     def add_options(cls, parser):
-        """Avalailable options relate to this Transform."""
+        """Add an option for the corpus ratio to apply this transform."""
 
         group = parser.add_argument_group("Transform/Uppercase")
         group.add("--upper_corpus_ratio", "-upper_corpus_ratio", type=float,
@@ -23,7 +23,7 @@ class UpperCaseTransform(Transform):
         self.upper_corpus_ratio = self.opts.upper_corpus_ratio
 
     def apply(self, example, is_train=False, stats=None, **kwargs):
-        """Convert source and target to uppercase."""
+        """Convert source and target examples to uppercase."""
 
         if random.random() > self.upper_corpus_ratio:
             return example
