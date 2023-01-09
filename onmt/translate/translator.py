@@ -129,7 +129,7 @@ class Inference(object):
         logger=None,
         seed=-1,
         with_score=False,
-        start_decoder_tok=DefaultTokens.BOS
+        decoder_start_token=DefaultTokens.BOS
     ):
         self.model = model
         self.vocabs = vocabs
@@ -139,7 +139,7 @@ class Inference(object):
         self._tgt_bos_idx = self.vocabs['tgt'].lookup_token(DefaultTokens.BOS)
         self._tgt_unk_idx = self.vocabs['tgt'].lookup_token(DefaultTokens.UNK)
         self._tgt_start_with =\
-            self.vocabs['tgt'].lookup_token(start_decoder_tok)
+            self.vocabs['tgt'].lookup_token(decoder_start_token)
         self._tgt_vocab_len = len(self._tgt_vocab)
 
         self._gpu = gpu
@@ -273,7 +273,7 @@ class Inference(object):
             logger=logger,
             seed=opt.seed,
             with_score=opt.with_score,
-            start_decoder_tok=opt.start_decoder_tok
+            decoder_start_token=opt.decoder_start_token
         )
 
     def _log(self, msg):
@@ -292,7 +292,7 @@ class Inference(object):
         batch_size,
         src,
     ):
-        if 'tgt' in batch.keys():
+        if 'tgt' in batch.keys() and not self.tgt_file_prefix:
             gs = self._score_target(
                 batch,
                 enc_out,
@@ -440,7 +440,7 @@ class Inference(object):
                 "PRED", pred_score_total, len(all_scores)
             )
             self._log(msg)
-            if 'tgt' in batch.keys():
+            if 'tgt' in batch.keys() and not self.tgt_file_prefix:
                 msg = self._report_score(
                     "GOLD", gold_score_total, len(all_scores)
                 )

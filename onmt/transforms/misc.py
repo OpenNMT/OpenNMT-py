@@ -139,7 +139,7 @@ class PrefixTransform(Transform):
     def apply_reverse(self, translated):
         def _removeprefix(s, prefix):
             if s.startswith(prefix):
-                return s[len(prefix):]
+                return s[len(prefix) + 1:]
             else:
                 return s
         corpus_prefix = self.prefix_dict.get('infer', None)

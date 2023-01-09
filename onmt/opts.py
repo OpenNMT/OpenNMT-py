@@ -754,7 +754,7 @@ def _add_decoding_opts(parser):
                    "corresponding target token. If it is not provided "
                    "(or the identified source token does not exist in "
                    "the table), then it will copy the source token.")
-    group.add('--start_decoder_tok', '-start_decoder_tok', type=str,
+    group.add('--decoder_start_token', '-decoder_start_token', type=str,
               default=DefaultTokens.BOS,
               help="Default decoder start token "
                    "for most ONMT models it is <s> = BOS "
