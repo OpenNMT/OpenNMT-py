@@ -6,6 +6,7 @@ from onmt.transforms import AVAILABLE_TRANSFORMS
 from onmt.constants import ModelTask
 from onmt.modules.position_ffn import ACTIVATION_FUNCTIONS
 from onmt.modules.position_ffn import ActivationFunction
+from onmt.constants import DefaultTokens
 
 
 def config_opts(parser):
@@ -244,6 +245,12 @@ def model_opts(parser):
     group.add('--position_encoding', '-position_encoding', action='store_true',
               help="Use a sin to mark relative words positions. "
                    "Necessary for non-RNN style models.")
+    group.add('--position_encoding_type', '-position_encoding_type',
+              type=str, default='SinusoidalInterleaved',
+              choices=['SinusoidalInterleaved', 'SinusoidalConcat'],
+              help="Type of positional encoding. At the moment: "
+                   "Sinusoidal fixed, Interleaved or Concat")
+
     group.add("-update_vocab", "--update_vocab", action="store_true",
               help="Update source and target existing vocabularies")
 
@@ -747,6 +754,11 @@ def _add_decoding_opts(parser):
                    "corresponding target token. If it is not provided "
                    "(or the identified source token does not exist in "
                    "the table), then it will copy the source token.")
+    group.add('--decoder_start_token', '-decoder_start_token', type=str,
+              default=DefaultTokens.BOS,
+              help="Default decoder start token "
+                   "for most ONMT models it is <s> = BOS "
+                   "it happens that for some Fairseq model it requires </s> ")
 
 
 def translate_opts(parser, dynamic=False):

@@ -47,6 +47,7 @@ def build_embeddings(opt, vocabs, for_encoder=True):
     emb = Embeddings(
         word_vec_size=emb_dim,
         position_encoding=opt.position_encoding,
+        position_encoding_type=opt.position_encoding_type,
         feat_merge=opt.feat_merge,
         feat_vec_exponent=opt.feat_vec_exponent,
         feat_vec_size=opt.feat_vec_size,
@@ -91,9 +92,11 @@ def load_test_model(opt, model_path=None):
                             map_location=lambda storage, loc: storage)
 
     model_opt = ArgumentParser.ckpt_model_opts(checkpoint['opt'])
-    # this patch is no longer needed, included in converter
-    # if hasattr(model_opt, 'rnn_size'):
-    #     model_opt.hidden_size = model_opt.rnn_size
+    # Patch for NLLB200 model loading
+    if ('encoder.embeddings.make_embedding.pe.pe' not in
+            checkpoint['model'].keys()):
+        model_opt.position_encoding_type = 'SinusoidalConcat'
+
     ArgumentParser.update_model_opts(model_opt)
     ArgumentParser.validate_model_opts(model_opt)
     vocabs = dict_to_vocabs(checkpoint['vocab'])
