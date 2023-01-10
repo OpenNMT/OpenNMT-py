@@ -303,6 +303,18 @@ data:
         src_prefix: __some_src_prefix__
         tgt_prefix: __some_tgt_prefix__
 ```
+#### Convert examples to uppercase
+
+Transform name: `uppercase`
+
+Class: `onmt.transforms.uppercase.UpperCaseTransform`
+
+Converts source and target (if present) examples to uppercase so the model can learn better to translate
+sentences in all caps. This transform normalizes the examples so the uppercased strings are stripped from
+any diacritics and accents. Usually this is desirable for most languages, although there are few exceptions.
+
+The following option can be added to the configuration :
+- `upper_corpus_ratio`: ratio of the corpus that will be transformed to uppercase (default: 0.01);
 
 ### Tokenization
 

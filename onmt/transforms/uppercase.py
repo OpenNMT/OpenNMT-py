@@ -6,7 +6,14 @@ import random
 
 @register_transform(name='uppercase')
 class UpperCaseTransform(Transform):
-    """Convert source and target examples to uppercase."""
+    """
+    Convert source and target examples to uppercase.
+    
+    This transform uses `unicodedata` to normalize the converted uppercase strings 
+    as this is needed for some languages (e.g. Greek). One issue is that the normalization 
+    removes all diacritics and accents from the uppercased strings, even though in 
+    few occasions some diacritics should be kept even in the uppercased form.
+    """
 
     def __init__(self, opts):
         super().__init__(opts)
@@ -29,14 +36,14 @@ class UpperCaseTransform(Transform):
             return example
 
         src_str = ' '.join(example['src'])
-        tgt_str = ' '.join(example['tgt'])
-
         src_str = ''.join(c for c in unicodedata.normalize('NFD',
                           src_str.upper()) if unicodedata.category(c) != 'Mn')
-        tgt_str = ''.join(c for c in unicodedata.normalize('NFD',
-                          tgt_str.upper()) if unicodedata.category(c) != 'Mn')
-
         example['src'] = src_str.split()
-        example['tgt'] = tgt_str.split()
+
+        if example['tgt'] is not None:
+            tgt_str = ' '.join(example['tgt'])
+            tgt_str = ''.join(c for c in unicodedata.normalize('NFD',
+                              tgt_str.upper()) if unicodedata.category(c) != 'Mn')
+            example['tgt'] = tgt_str.split()
 
         return example
