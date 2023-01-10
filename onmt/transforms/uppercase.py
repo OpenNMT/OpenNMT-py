@@ -8,11 +8,12 @@ import random
 class UpperCaseTransform(Transform):
     """
     Convert source and target examples to uppercase.
-    
-    This transform uses `unicodedata` to normalize the converted uppercase strings 
-    as this is needed for some languages (e.g. Greek). One issue is that the normalization 
-    removes all diacritics and accents from the uppercased strings, even though in 
-    few occasions some diacritics should be kept even in the uppercased form.
+
+    This transform uses `unicodedata` to normalize the converted
+    uppercase strings as this is needed for some languages (e.g. Greek).
+    One issue is that the normalization removes all diacritics and
+    accents from the uppercased strings, even though in few occasions some
+    diacritics should be kept even in the uppercased form.
     """
 
     def __init__(self, opts):
@@ -43,7 +44,8 @@ class UpperCaseTransform(Transform):
         if example['tgt'] is not None:
             tgt_str = ' '.join(example['tgt'])
             tgt_str = ''.join(c for c in unicodedata.normalize('NFD',
-                              tgt_str.upper()) if unicodedata.category(c) != 'Mn')
+                              tgt_str.upper()) if unicodedata.category(c) !=
+                              'Mn')
             example['tgt'] = tgt_str.split()
 
         return example
