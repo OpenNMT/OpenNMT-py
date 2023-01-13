@@ -6,7 +6,7 @@ from onmt.inputters.text_corpus import get_corpora, build_corpora_iters
 from onmt.inputters.text_utils import text_sort_key, process,\
     numericalize, tensorify, _addcopykeys
 from onmt.transforms import make_transforms
-from onmt.utils.logging import logger
+from onmt.utils.logging import init_logger, logger
 from onmt.utils.misc import RandomShuffler
 from torch.utils.data import DataLoader
 
@@ -58,6 +58,8 @@ class WeightedMixer(MixingStrategy):
     def _logging(self):
         """Report corpora loading statistics."""
         msgs = []
+        # patch to log stdout spawned processes of dataloader
+        logger = init_logger()
         for ds_name, ds_count in self._counts.items():
             msgs.append(f"\t\t\t* {ds_name}: {ds_count}")
         logger.info("Weighted corpora loaded so far:\n"+"\n".join(msgs))
