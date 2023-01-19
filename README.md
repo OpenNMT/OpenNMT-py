@@ -264,7 +264,7 @@ The predictions are going to be quite terrible, as the demo dataset is small. Tr
 When you are satisfied with your trained model, you can release it for inference. The release process will remove training-only parameters from the checkpoint:
 
 ```bash
-onmt_release_model -model toy-ende/run/model_step_1000.pt -output toy-ende/run/model_step_1000_release.pt
+onmt_release_model --model toy-ende/run/model_step_1000.pt --output toy-ende/run/model_step_1000_release.pt
 ```
 
 The release script can also export checkpoints to [CTranslate2](https://github.com/OpenNMT/CTranslate2), a fast inference engine for Transformer models. See the `-format` command line option.
