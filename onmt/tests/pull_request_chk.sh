@@ -433,7 +433,7 @@ echo -n "  [+] Testing LM generation w/ Beam search..."
 echo "  [+] Testing LM generation w/ Beam search..." | tee -a ${LOG_FILE}
 ${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
             -src ${DATA_DIR}/data_lm/src-gen.txt   \
-            -verbose -batch_size 10     \
+            -verbose -batch_size 1     \
             -beam_size 10 \
             -ban_unk_token \
             -length_penalty none \
@@ -446,7 +446,7 @@ rm $TMP_OUT_DIR/gen_beam
 echo -n "  [+] Testing LM generation w/ Random Sampling..."
 ${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
             -src ${DATA_DIR}/data_lm/src-gen.txt   \
-            -verbose -batch_size 10     \
+            -verbose -batch_size 1     \
             -beam_size 1                \
             -seed 1                     \
             -random_sampling_topk -1    \
@@ -462,7 +462,7 @@ rm $TMP_OUT_DIR/gen_sampling
 echo -n "  [+] Testing LM generation w/ Random Top-k/Nucleus Sampling..."
 ${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
             -src ${DATA_DIR}/data_lm/src-gen.txt   \
-            -verbose -batch_size 10     \
+            -verbose -batch_size 1     \
             -beam_size 1                \
             -seed 3                     \
             -random_sampling_topk -1    \
@@ -479,7 +479,7 @@ rm $TMP_OUT_DIR/gen_sampling
 echo -n "  [+] Testing LM generation w/ Random Top-k/Nucleus Sampling and multi beams..."
 ${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
             -src ${DATA_DIR}/data_lm/src-gen.txt   \
-            -verbose -batch_size 10     \
+            -verbose -batch_size 1     \
             -beam_size 10                \
             -seed 2                     \
             -random_sampling_topk 50    \
