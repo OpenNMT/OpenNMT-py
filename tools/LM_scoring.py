@@ -104,7 +104,10 @@ def main():
                                with_align=False)
         # Compute and retrieve the loss for EACH sentence
         loss, _ = valid_loss(batch, outputs, attns)
-        ppl = torch.exp(loss)
+        loss = loss.view(batch_size, -1)  # (B, T)
+        losspertoken = loss.sum(1) / batch['tgt'][:, 1:,
+                                                  0].ne(padding_idx).sum(1)
+        ppl = torch.exp(losspertoken)
         cumul_loss += loss.sum().item()
         cumul_length += batch['tgt'][:, 1:, 0].ne(padding_idx).sum().cpu()
         # Now we need to rearrange the batch of ppl

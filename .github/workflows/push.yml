@@ -326,7 +326,7 @@ jobs:
         python translate.py \
           -model onmt/tests/test_model_lm.pt \
           -src data/data_lm/src-gen.txt \
-          -verbose -batch_size 10 \
+          -verbose -batch_size 1 \
           -beam_size 10 \
           -ban_unk_token \
           -length_penalty none \
@@ -336,7 +336,7 @@ jobs:
       run: |
         python translate.py -model onmt/tests/test_model_lm.pt \
           -src data/data_lm/src-gen.txt \
-          -verbose -batch_size 10 \
+          -verbose -batch_size 1 \
           -beam_size 1 \
           -seed 1 \
           -random_sampling_topk -1 \
@@ -349,7 +349,7 @@ jobs:
       run: |
         python translate.py -model onmt/tests/test_model_lm.pt \
           -src data/data_lm/src-gen.txt \
-          -verbose -batch_size 10 \
+          -verbose -batch_size 1 \
           -beam_size 1 \
           -seed 3 \
           -random_sampling_topk -1 \
@@ -363,7 +363,7 @@ jobs:
       run: |
         python translate.py -model onmt/tests/test_model_lm.pt \
           -src data/data_lm/src-gen.txt \
-          -verbose -batch_size 10 \
+          -verbose -batch_size 1 \
           -beam_size 10 \
           -seed 2 \
           -random_sampling_topk 50 \
