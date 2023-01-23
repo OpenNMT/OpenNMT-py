@@ -138,7 +138,7 @@ class PrefixTransform(Transform):
 
     def apply_reverse(self, translated):
         def _removeprefix(s, prefix):
-            if s.startswith(prefix):
+            if s.startswith(prefix) and len(prefix) > 0:
                 return s[len(prefix) + 1:]
             else:
                 return s
