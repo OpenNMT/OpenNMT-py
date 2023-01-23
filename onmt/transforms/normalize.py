@@ -226,16 +226,45 @@ class NormalizeTransform(Transform):
                   default="", help="Source language code")
         group.add("--tgt_lang", "-tgt_lang", type=str,
                   default="", help="Target language code")
+        group.add("--penn", "-penn", type=bool,
+                  default=True, help="Penn substitution")
+        group.add("--norm_quote_commas", "-norm_quote_commas", type=bool,
+                  default=True, help="Normalize quotations and commas")
+        group.add("--norm_numbers", "-norm_numbers", type=bool,
+                  default=True, help="Normalize numbers")
+        group.add("--pre_replace_unicode_punct", "-pre_replace_unicode_punct",
+                  type=bool, default=False, help="Replace unicode punct")
+        group.add("--post_remove_control_chars", "-post_remove_control_chars",
+                  type=bool, default=False, help="Remove control chars")
 
     def _parse_opts(self):
         self.src_lang = self.opts.src_lang
         self.tgt_lang = self.opts.tgt_lang
+        self.penn = self.opts.penn
+        self.norm_quote_commas = self.opts.norm_quote_commas
+        self.norm_numbers = self.opts.norm_numbers
+        self.pre_replace_unicode_punct = self.opts.pre_replace_unicode_punct
+        self.post_remove_control_chars = self.opts.post_remove_control_chars
 
     def warm_up(self, vocabs=None):
         """Load subword models."""
         super().warm_up(None)
-        self.src_mpn = MosesPunctNormalizer(lang=self.src_lang)
-        self.tgt_mpn = MosesPunctNormalizer(lang=self.tgt_lang)
+        self.src_mpn =\
+            MosesPunctNormalizer(
+                lang=self.src_lang,
+                penn=self.penn,
+                norm_quote_commas=self.norm_quote_commas,
+                norm_numbers=self.norm_numbers,
+                pre_replace_unicode_punct=self.pre_replace_unicode_punct,
+                post_remove_control_chars=self.post_remove_control_chars)
+        self.tgt_mpn =\
+            MosesPunctNormalizer(
+                lang=self.tgt_lang,
+                penn=self.penn,
+                norm_quote_commas=self.norm_quote_commas,
+                norm_numbers=self.norm_numbers,
+                pre_replace_unicode_punct=self.pre_replace_unicode_punct,
+                post_remove_control_chars=self.post_remove_control_chars)
 
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Normalize source and target examples."""
