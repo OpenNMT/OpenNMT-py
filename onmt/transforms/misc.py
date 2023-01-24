@@ -160,14 +160,14 @@ class SuffixTransform(Transform):
     @classmethod
     def add_options(cls, parser):
         """Avalailable options relate to this Transform."""
-        group = parser.add_argument_group("Transform/Prefix")
+        group = parser.add_argument_group("Transform/Suffix")
         group.add("--src_suffix", "-src_suffix", type=str, default="",
                   help="String to append to all source example.")
         group.add("--tgt_suffix", "-tgt_suffix", type=str, default="",
                   help="String to append to all target example.")
 
     @staticmethod
-    def _get_prefix(corpus):
+    def _get_suffix(corpus):
         """Get suffix string of a `corpus`."""
         if 'suffix' in corpus['transforms']:
             suffix = {
