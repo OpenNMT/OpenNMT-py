@@ -343,6 +343,23 @@ any diacritics and accents. Usually this is desirable for most languages, althou
 The following option can be added to the configuration :
 - `upper_corpus_ratio`: ratio of the corpus that will be transformed to uppercase (default: 0.01);
 
+#### Normalize punctuation
+
+Transform name: `normalize`
+
+Class: `onmt.transforms.normalize.NormalizeTransform`
+
+Normalizes source and target (if present) examples using the same rules as Moses punctuation normalizer.
+
+The following options can be added to the configuration :
+- `src_lang`: en, de, cz/cs, fr (default=en)
+- `tgt_lang`: en, de, cz/cs, fr (default=en)
+- `penn`: Penn substitution (default=True)
+- `norm_quote_commas`: Normalize quotations and commas (default=True)
+- `norm_numbers`: Normalize numbers (default=True)
+- `pre_replace_unicode_punct`: Replace unicode punct (default=False)
+- `post_remove_control_chars`: Remove control chars (default=False)
+
 ### Tokenization
 
 Common options for the tokenization transforms are the following:
