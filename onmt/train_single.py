@@ -109,6 +109,10 @@ def _build_valid_iter(opt, transforms_cls, vocabs):
     validset_transforms = opt.data.get("valid", {}).get("transforms", None)
     if validset_transforms:
         opt.transforms = validset_transforms
+        if opt.data.get("valid", {}).get("tgt_prefix", None):
+            opt.tgt_prefix = opt.data.get("valid", {}).get("tgt_prefix", None)
+        if opt.data.get("valid", {}).get("src_prefix", None):
+            opt.tgt_prefix = opt.data.get("valid", {}).get("src_prefix", None)
     valid_iter = build_dynamic_dataset_iter(
         opt, transforms_cls, vocabs, task=CorpusTask.VALID,
         copy=opt.copy_attn)

@@ -94,9 +94,16 @@ class PrefixTransform(Transform):
                 if prefix is not None:
                     logger.info(f"Get prefix for {c_name}: {prefix}")
                     prefix_dict[c_name] = prefix
-        else:
-            prefix_dict['infer'] = {'src': opts.src_prefix,
-                                    'tgt': opts.tgt_prefix}
+
+        if hasattr(opts, 'src_prefix'):
+            if 'infer' not in prefix_dict.keys():
+                prefix_dict['infer'] = {}
+            prefix_dict['infer']['src'] = opts.src_prefix
+        if hasattr(opts, 'tgt_prefix'):
+            if 'infer' not in prefix_dict.keys():
+                prefix_dict['infer'] = {}
+            prefix_dict['infer']['tgt'] = opts.tgt_prefix
+
         return prefix_dict
 
     @classmethod
