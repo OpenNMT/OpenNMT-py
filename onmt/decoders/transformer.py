@@ -635,6 +635,11 @@ class TransformerLMDecoder(TransformerDecoderBase):
         """Decode, possibly stepwise."""
         if step == 0:
             self._init_cache(tgt)
+        elif step is None:
+            for layer in self.transformer_layers:
+                layer.self_attn.layer_cache = (
+                    False, {'keys': torch.tensor([]),
+                            'values': torch.tensor([])})
 
         tgt_words = tgt[:, :, 0]
 
