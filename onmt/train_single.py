@@ -86,19 +86,22 @@ def configure_process(opt, device_id):
 def _get_model_opts(opt, checkpoint=None):
     """Get `model_opt` to build model, may load from `checkpoint` if any."""
     if checkpoint is not None:
-        model_opt = ArgumentParser.ckpt_model_opts(checkpoint["opt"])
-        ArgumentParser.update_model_opts(model_opt)
-        ArgumentParser.validate_model_opts(model_opt)
-        if (opt.tensorboard_log_dir == model_opt.tensorboard_log_dir and
-                hasattr(model_opt, 'tensorboard_log_dir_dated')):
-            # ensure tensorboard output is written in the directory
-            # of previous checkpoints
-            opt.tensorboard_log_dir_dated = model_opt.tensorboard_log_dir_dated
-        # Override checkpoint's update_embeddings as it defaults to false
-        model_opt.update_vocab = opt.update_vocab
-        # Override checkpoint's freezing settings as it defaults to false
-        model_opt.freeze_encoder = opt.freeze_encoder
-        model_opt.freeze_decoder = opt.freeze_decoder
+        if opt.override_opts:
+            model_opt = opt
+        else:
+            model_opt = ArgumentParser.ckpt_model_opts(checkpoint["opt"])
+            ArgumentParser.update_model_opts(model_opt)
+            ArgumentParser.validate_model_opts(model_opt)
+            if (opt.tensorboard_log_dir == model_opt.tensorboard_log_dir and
+                    hasattr(model_opt, 'tensorboard_log_dir_dated')):
+                # ensure tensorboard output is written in the directory
+                # of previous checkpoints
+                opt.tensorboard_log_dir_dated = model_opt.tensorboard_log_dir_dated  # noqa: E501
+            # Override checkpoint's update_embeddings as it defaults to false
+            model_opt.update_vocab = opt.update_vocab
+            # Override checkpoint's freezing settings as it defaults to false
+            model_opt.freeze_encoder = opt.freeze_encoder
+            model_opt.freeze_decoder = opt.freeze_decoder
     else:
         model_opt = opt
     return model_opt

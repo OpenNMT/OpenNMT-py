@@ -60,6 +60,8 @@ def _add_logging_opts(parser, is_train=True):
                   type=str, default="runs/onmt",
                   help="Log directory for Tensorboard. "
                        "This is also the name of the run.")
+        group.add("--override_opts", "-override-opts",  action="store_true",
+                  help="Allow to override some checkpoint opts")
     else:
         # Options only during inference
         group.add('--attn_debug', '-attn_debug', action="store_true",
