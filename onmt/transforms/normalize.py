@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+# Most code taken from: https://github.com/alvations/sacremoses
+# Which in turn is based on the Moses punctuation normalizer.
+# https://github.com/moses-smt/mosesdecoder/blob/master/scripts/
+# tokenizer/normalize-punctuation.perl
+
+
 import re
 import regex
 
@@ -12,9 +18,7 @@ from .transform import Transform
 
 class MosesPunctNormalizer:
     """
-    This is a Python port of the Moses punctuation normalizer from
-    https://github.com/moses-smt/mosesdecoder/blob/master/scripts/
-    tokenizer/normalize-punctuation.perl
+    This is a Python port of the Moses punctuation normalizer
     """
 
     EXTRA_WHITESPACE = [
@@ -211,7 +215,6 @@ class MosesPunctNormalizer:
 class NormalizeTransform(Transform):
     """
     Normalize source and target based on Moses script.
-    code taken from: https://github.com/alvations/sacremoses
     """
 
     def __init__(self, opts):

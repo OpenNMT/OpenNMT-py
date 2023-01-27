@@ -33,6 +33,10 @@ def prepare_transforms_vocabs(opt):
             opt.tgt_prefix = opt.data.get("valid", {}).get("tgt_prefix", None)
         if opt.data.get("valid", {}).get("src_prefix", None):
             opt.src_prefix = opt.data.get("valid", {}).get("src_prefix", None)
+        if opt.data.get("valid", {}).get("tgt_suffix", None):
+            opt.tgt_suffix = opt.data.get("valid", {}).get("tgt_suffix", None)
+        if opt.data.get("valid", {}).get("src_suffix", None):
+            opt.src_suffix = opt.data.get("valid", {}).get("src_suffix", None)
     specials = get_specials(opt, transforms_cls)
 
     vocabs = build_vocab(opt, specials)
