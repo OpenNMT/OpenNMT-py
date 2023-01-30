@@ -204,6 +204,7 @@ def use_embeddings_from_checkpoint(vocabs, model, generator, checkpoint):
                 # Just for debugging purposes
                 new_tokens.append(tok)
         logger.info("%s: %d new tokens" % (side, len(new_tokens)))
+
         # Remove old vocabulary associated embeddings
         del checkpoint['model'][emb_name]
     del checkpoint['generator']['weight'], checkpoint['generator']['bias']

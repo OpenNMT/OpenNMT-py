@@ -23,6 +23,20 @@ from onmt.modules.embeddings import prepare_pretrained_embeddings
 def prepare_transforms_vocabs(opt):
     """Prepare or dump transforms before training."""
     transforms_cls = get_transforms_cls(opt._all_transform)
+
+    # if transform + options set in 'valid' we need to copy in main
+    # transform / options for scoring considered as inference
+    validset_transforms = opt.data.get("valid", {}).get("transforms", None)
+    if validset_transforms:
+        opt.transforms = validset_transforms
+        if opt.data.get("valid", {}).get("tgt_prefix", None):
+            opt.tgt_prefix = opt.data.get("valid", {}).get("tgt_prefix", None)
+        if opt.data.get("valid", {}).get("src_prefix", None):
+            opt.src_prefix = opt.data.get("valid", {}).get("src_prefix", None)
+        if opt.data.get("valid", {}).get("tgt_suffix", None):
+            opt.tgt_suffix = opt.data.get("valid", {}).get("tgt_suffix", None)
+        if opt.data.get("valid", {}).get("src_suffix", None):
+            opt.src_suffix = opt.data.get("valid", {}).get("src_suffix", None)
     specials = get_specials(opt, transforms_cls)
 
     vocabs = build_vocab(opt, specials)
@@ -67,6 +81,7 @@ def _init_train(opt):
             if len(old_transf) != 0:
                 _msg += f" -{old_transf}."
             logger.warning(_msg)
+            vocabs, transforms_cls = prepare_transforms_vocabs(opt)
         if opt.update_vocab:
             logger.info("Updating checkpoint vocabulary with new vocabulary")
             vocabs, transforms_cls = prepare_transforms_vocabs(opt)
@@ -109,9 +124,6 @@ def _get_model_opts(opt, checkpoint=None):
 
 def _build_valid_iter(opt, transforms_cls, vocabs):
     """Build iterator used for validation."""
-    validset_transforms = opt.data.get("valid", {}).get("transforms", None)
-    if validset_transforms:
-        opt.transforms = validset_transforms
     valid_iter = build_dynamic_dataset_iter(
         opt, transforms_cls, vocabs, task=CorpusTask.VALID,
         copy=opt.copy_attn)

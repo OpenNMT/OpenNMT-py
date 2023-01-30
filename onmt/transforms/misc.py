@@ -94,9 +94,16 @@ class PrefixTransform(Transform):
                 if prefix is not None:
                     logger.info(f"Get prefix for {c_name}: {prefix}")
                     prefix_dict[c_name] = prefix
-        else:
-            prefix_dict['infer'] = {'src': opts.src_prefix,
-                                    'tgt': opts.tgt_prefix}
+
+        if hasattr(opts, 'src_prefix'):
+            if 'infer' not in prefix_dict.keys():
+                prefix_dict['infer'] = {}
+            prefix_dict['infer']['src'] = opts.src_prefix
+        if hasattr(opts, 'tgt_prefix'):
+            if 'infer' not in prefix_dict.keys():
+                prefix_dict['infer'] = {}
+            prefix_dict['infer']['tgt'] = opts.tgt_prefix
+
         return prefix_dict
 
     @classmethod
@@ -138,7 +145,7 @@ class PrefixTransform(Transform):
 
     def apply_reverse(self, translated):
         def _removeprefix(s, prefix):
-            if s.startswith(prefix):
+            if s.startswith(prefix) and len(prefix) > 0:
                 return s[len(prefix) + 1:]
             else:
                 return s
@@ -160,14 +167,14 @@ class SuffixTransform(Transform):
     @classmethod
     def add_options(cls, parser):
         """Avalailable options relate to this Transform."""
-        group = parser.add_argument_group("Transform/Prefix")
+        group = parser.add_argument_group("Transform/Suffix")
         group.add("--src_suffix", "-src_suffix", type=str, default="",
                   help="String to append to all source example.")
         group.add("--tgt_suffix", "-tgt_suffix", type=str, default="",
                   help="String to append to all target example.")
 
     @staticmethod
-    def _get_prefix(corpus):
+    def _get_suffix(corpus):
         """Get suffix string of a `corpus`."""
         if 'suffix' in corpus['transforms']:
             suffix = {
