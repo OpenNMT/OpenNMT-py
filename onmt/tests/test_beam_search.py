@@ -37,7 +37,7 @@ class TestBeamSearch(unittest.TestCase):
         device_init = torch.zeros(1, 1)
         for batch_sz in [1, 3]:
             beam = BeamSearch(
-                beam_sz, batch_sz, 0, 1, 2, 3, 2,
+                beam_sz, batch_sz, 0, 1, 2, 3, 1, 2,
                 GlobalScorerStub(), 0, 30,
                 False, ngram_repeat, set(),
                 False, 0., False)
@@ -86,7 +86,7 @@ class TestBeamSearch(unittest.TestCase):
         device_init = torch.zeros(1, 1)
         for batch_sz in [1, 3]:
             beam = BeamSearch(
-                beam_sz, batch_sz, 0, 1, 2, 3, 2,
+                beam_sz, batch_sz, 0, 1, 2, 3, 1, 2,
                 GlobalScorerStub(), 0, 30,
                 False, ngram_repeat, set(),
                 False, 0., False)
@@ -150,7 +150,7 @@ class TestBeamSearch(unittest.TestCase):
         device_init = torch.zeros(1, 1)
         for batch_sz in [1, 3]:
             beam = BeamSearch(
-                beam_sz, batch_sz, 0, 1, 2, 3, 2,
+                beam_sz, batch_sz, 0, 1, 2, 3, 1, 2,
                 GlobalScorerStub(), 0, 30,
                 False, ngram_repeat, {repeat_idx_ignored},
                 False, 0., False)
@@ -207,7 +207,7 @@ class TestBeamSearch(unittest.TestCase):
             min_length = 5
             eos_idx = 2
             lengths = torch.randint(0, 30, (batch_sz,))
-            beam = BeamSearch(beam_sz, batch_sz, 0, 1, 2, 3, 2,
+            beam = BeamSearch(beam_sz, batch_sz, 0, 1, 2, 3, 1, 2,
                               GlobalScorerStub(),
                               min_length, 30, False, 0, set(),
                               False, 0., False)
@@ -264,7 +264,7 @@ class TestBeamSearch(unittest.TestCase):
         min_length = 5
         eos_idx = 2
         beam = BeamSearch(
-            beam_sz, batch_sz, 0, 1, 2, 3, 2,
+            beam_sz, batch_sz, 0, 1, 2, 3, 1, 2,
             GlobalScorerStub(),
             min_length, 30, False, 0, set(),
             False, 0., False)
@@ -319,7 +319,7 @@ class TestBeamSearch(unittest.TestCase):
         eos_idx = 2
         inp_lens = torch.randint(1, 30, (batch_sz,))
         beam = BeamSearch(
-            beam_sz, batch_sz, 0, 1, 2, 3, 2,
+            beam_sz, batch_sz, 0, 1, 2, 3, 1, 2,
             GlobalScorerStub(),
             min_length, 30, True, 0, set(),
             False, 0., False)
@@ -530,7 +530,7 @@ class TestBeamSearchAgainstReferenceCase(unittest.TestCase):
 
     def test_beam_advance_against_known_reference(self):
         beam = BeamSearch(
-            self.BEAM_SZ, self.BATCH_SZ, 0, 1, 2, 3, self.N_BEST,
+            self.BEAM_SZ, self.BATCH_SZ, 0, 1, 2, 3, 1, self.N_BEST,
             GlobalScorerStub(),
             0, 30, False, 0, set(),
             False, 0., False)
@@ -549,7 +549,7 @@ class TestBeamWithLengthPenalty(TestBeamSearchAgainstReferenceCase):
     def test_beam_advance_against_known_reference(self):
         scorer = GNMTGlobalScorer(1.0, 0., "avg", "none")
         beam = BeamSearch(
-            self.BEAM_SZ, self.BATCH_SZ, 0, 1, 2, 3, self.N_BEST,
+            self.BEAM_SZ, self.BATCH_SZ, 0, 1, 2, 3, 1, self.N_BEST,
             scorer,
             0, 30, False, 0, set(),
             False, 0., False)
@@ -580,7 +580,7 @@ class TestBeamSearchLM(TestBeamSearchAgainstReferenceCase):
 
     def test_beam_lm_increase_src_len(self):
         beam = BeamSearchLM(
-            self.BEAM_SZ, self.BATCH_SZ, 0, 1, 2, 3, self.N_BEST,
+            self.BEAM_SZ, self.BATCH_SZ, 0, 1, 2, 3, 1, self.N_BEST,
             GlobalScorerStub(),
             0, 30, False, 0, set(),
             False, 0., False)
@@ -598,7 +598,7 @@ class TestBeamSearchLM(TestBeamSearchAgainstReferenceCase):
 
     def test_beam_lm_update_src_len_when_finished(self):
         beam = BeamSearchLM(
-            self.BEAM_SZ, self.BATCH_SZ, 0, 1, 2, 3, self.N_BEST,
+            self.BEAM_SZ, self.BATCH_SZ, 0, 1, 2, 3, 1, self.N_BEST,
             GlobalScorerStub(),
             0, 30, False, 0, set(),
             False, 0., False)

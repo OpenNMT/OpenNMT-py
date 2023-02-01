@@ -259,7 +259,8 @@ class Optimizer(object):
         optim_opt = opt
         optim_state_dict = None
 
-        if opt.train_from and checkpoint is not None:
+        if (opt.train_from and checkpoint is not None and
+                'optim' in checkpoint.keys()):
             optim = checkpoint['optim']
             ckpt_opt = checkpoint['opt']
             ckpt_state_dict = {}

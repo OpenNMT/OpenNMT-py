@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 import logging
 from logging.handlers import RotatingFileHandler
-logger = logging.getLogger()
+
+# placing this here make it easier to call logger.info
+# from anywhere, just 'from onmt.utils.logging import logger'
+logger = logging.getLogger("onmt")
 
 
 def init_logger(
@@ -11,7 +14,7 @@ def init_logger(
     log_level=logging.INFO,
 ):
     log_format = logging.Formatter("[%(asctime)s %(levelname)s] %(message)s")
-    logger = logging.getLogger()
+    logger = logging.getLogger("onmt")
     logger.setLevel(log_level)
 
     console_handler = logging.StreamHandler()

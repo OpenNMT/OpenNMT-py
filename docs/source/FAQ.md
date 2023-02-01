@@ -304,6 +304,62 @@ data:
         tgt_prefix: __some_tgt_prefix__
 ```
 
+At inference if you want to use the target prefix feature to prefix your target segment with a unique prefix (as opposed to a target prefix coming from a line-by-line file)
+you need to set your yaml file as follow (example given with a target language as in the NLLB-200 case):
+``` yaml
+tgt_prefix: "spa_Latn" 
+tgt_file_prefix: true
+```
+
+#### Add custom suffix to examples
+
+Transform name: `suffix`
+
+Class: `onmt.transforms.misc.SuffixTransform`
+
+For each dataset that the `suffix` transform is applied to, you can set the additional `src_suffix` and `tgt_suffix` parameters in its data configuration:
+
+```yaml
+data:
+    corpus_1:
+        path_src: toy-ende/src-train1.txt
+        path_tgt: toy-ende/tgt-train1.txt
+        transforms: [suffix]
+        weight: 1
+        src_suffix: __some_src_suffix__
+        tgt_suffix: __some_tgt_suffix__
+```
+
+#### Convert examples to uppercase
+
+Transform name: `uppercase`
+
+Class: `onmt.transforms.uppercase.UpperCaseTransform`
+
+Converts source and target (if present) examples to uppercase so the model can learn better to translate
+sentences in all caps. This transform normalizes the examples so the uppercased strings are stripped from
+any diacritics and accents. Usually this is desirable for most languages, although there are few exceptions.
+
+The following option can be added to the configuration :
+- `upper_corpus_ratio`: ratio of the corpus that will be transformed to uppercase (default: 0.01);
+
+#### Normalize punctuation
+
+Transform name: `normalize`
+
+Class: `onmt.transforms.normalize.NormalizeTransform`
+
+Normalizes source and target (if present) examples using the same rules as Moses punctuation normalizer.
+
+The following options can be added to the configuration :
+- `src_lang`: en, de, cz/cs, fr (default=en)
+- `tgt_lang`: en, de, cz/cs, fr (default=en)
+- `penn`: Penn substitution (default=True)
+- `norm_quote_commas`: Normalize quotations and commas (default=True)
+- `norm_numbers`: Normalize numbers (default=True)
+- `pre_replace_unicode_punct`: Replace unicode punct (default=False)
+- `post_remove_control_chars`: Remove control chars (default=False)
+
 ### Tokenization
 
 Common options for the tokenization transforms are the following:

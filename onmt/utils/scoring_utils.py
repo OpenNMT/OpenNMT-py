@@ -1,6 +1,5 @@
 import codecs
 import os
-import torch
 from onmt.utils.parse import ArgumentParser
 from onmt.translate import GNMTGlobalScorer, Translator
 from onmt.opts import translate_opts
@@ -160,14 +159,4 @@ class ScoringPreparator():
                     file.write("SOURCE: {}\n".format(raw_sources[i]))
                     file.write("REF: {}\n".format(texts_ref[i]))
                     file.write("PRED: {}\n\n".format(preds[i]))
-        # We deactivate the decoder's cache
-        # as we use teacher forcing at training time.
-        if hasattr(model.decoder, 'transformer_layers'):
-            for layer in model.decoder.transformer_layers:
-                layer.self_attn.layer_cache = (False,
-                                               {'keys': torch.tensor([]),
-                                                'values': torch.tensor([])})
-                layer.context_attn.layer_cache = (False,
-                                                  {'keys': torch.tensor([]),
-                                                   'values': torch.tensor([])})
         return preds, texts_ref
