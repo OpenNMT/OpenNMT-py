@@ -16,7 +16,7 @@ class FuzzyMatcher(object):
         self.threshold = threshold
         self.corpus_ratio = corpus_ratio
         self.tm_delimiter = tm_delimiter
-        self.dict_tm = self._create_tm(tm_path)
+        self.internal_tm = self._create_tm(tm_path)
 
     def _create_tm(self, tm_path):
         src_segments, tgt_segments = list(), list()
@@ -35,41 +35,25 @@ class FuzzyMatcher(object):
                     f'{len(src_segments)}')
         return [src_segments, tgt_segments]
 
-    def _get_match(self, query):
-        """Not used. We use the `_get_batch_match` method
-        in conjuction with the transform's `batch_apply`
-        for acceptable performance."""
-
-        # We can speed things up a bit by addding the argument
-        # `processor=None` to avoid preprocessing the string
-        result = process.extractOne(
-            query, self.dict_tm, scorer=fuzz.ratio, score_cutoff=self.threshold
-        )
-        if result is not None and result[1] < 100:  # We don't want exact match
-            target_match = result[2]
-            return self._concatenated_example(query, target_match)
-        else:
-            return query
-
-    def _get_batch_match(self, query_list):
-        logger.info(f'Starting fuzzy matching on {len(query_list)} examples')
+    def _get_batch_matches(self, batch):
+        logger.info(f'Starting fuzzy matching on {len(batch)} examples')
         fuzzy_count = 0
         start = time.time()
         augmented = list()
 
-        # We split the bucket (`query_list`) and perform fuzzy matching
+        # We split the `batch` and perform fuzzy matching
         # in smaller batches in order to reduce memory usage.
         # Perfomance is not affected.
         portion = 25
-        corpus_batches = np.array_split(query_list, portion)
-        for corpus_batch in corpus_batches:
-            plist = list(corpus_batch)
-            if fuzzy_count >= len(query_list) * self.corpus_ratio:
+        mini_batches = np.array_split(batch, portion)
+        for mini_batch in mini_batches:
+            plist = list(mini_batch)
+            if fuzzy_count >= len(batch) * self.corpus_ratio:
                 augmented.extend(plist)
                 continue
 
             results = process.cdist(plist,
-                                    self.dict_tm[0],
+                                    self.internal_tm[0],
                                     scorer=fuzz.ratio,
                                     dtype=np.uint8,
                                     score_cutoff=self.threshold,
@@ -83,10 +67,10 @@ class FuzzyMatcher(object):
                     continue
                 # We don't want exact matches
                 if matches[idx] and results[idx][argmax[idx]] < 100:
-                    if fuzzy_count >= len(query_list) * self.corpus_ratio:
+                    if fuzzy_count >= len(batch) * self.corpus_ratio:
                         break
                     plist[idx] = s + _FUZZY_TOKEN + \
-                        self.dict_tm[1][argmax[idx]]
+                        self.internal_tm[1][argmax[idx]]
                     fuzzy_count += 1
             augmented.extend(plist)
 
@@ -96,19 +80,12 @@ class FuzzyMatcher(object):
 
         return augmented
 
-    # Only used for single example fuzzy matching with `_get_match`
-    def _concatenated_example(self, query, target_match):
-        if target_match is None:
-            return query
-        return query + _FUZZY_TOKEN + target_match
-
 
 @register_transform(name='fuzzymatching')
 class FuzzyTransform(Transform):
     """Perform fuzzy matching against a translation memory and
-    augment source examples with target matches for Neural Fuzzy Adaptation.
-
-    TODO: cite <https://aclanthology.org/P19-1175>"
+    augment source examples with target matches for Neural Fuzzy Repair.
+    :cite:`bulte-tezcan-2019-neural`
     """
 
     def __init__(self, opts):
@@ -139,6 +116,7 @@ class FuzzyTransform(Transform):
     @classmethod
     def get_specials(cls, opts):
         """Add the fuzzy mark token to the src vocab."""
+
         return ([_FUZZY_TOKEN], list())
 
     def warm_up(self, vocabs=None):
@@ -156,14 +134,13 @@ class FuzzyTransform(Transform):
     def batch_apply(self, batch, is_train=False, stats=None, **kwargs):
         src_segments = list()
         for (ex, _, _) in batch:
-
             # Apply a basic filtering to leave out very short or very long
             # sentences and speed up things a bit during fuzzy matching
             if len(' '.join(ex['src'])) > 4 and len(' '.join(ex['src'])) < 70:
                 src_segments.append(' '.join(ex['src']))
             else:
                 src_segments.append('')
-        fuzzied_src = self.matcher._get_batch_match(src_segments)
+        fuzzied_src = self.matcher._get_batch_matches(src_segments)
         assert (len(src_segments) == len(fuzzied_src))
         for idx, (example, _, _) in enumerate(batch):
             if fuzzied_src[idx] != '':
