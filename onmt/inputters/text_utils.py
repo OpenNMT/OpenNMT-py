@@ -16,9 +16,13 @@ def parse_features(line, n_feats=0, defaults=None):
         if not fts and defaults is not None:
             if isinstance(defaults, str):
                 defaults = defaults.split("￨")
-            assert len(defaults) == n_feats, "The number of provided defaults does not match the number of feats"
+            assert len(defaults) == n_feats, \
+                "The number of provided defaults does not " \
+                "match the number of feats"
             fts = defaults
-        assert len(fts) == n_feats, "The number of fetures does not match the expected number of features"
+        assert len(fts) == n_feats, \
+            "The number of fetures does not match the " \
+            "expected number of features"
         text.append(tok)
         for i in range(n_feats):
             feats[i].append(fts[i])
@@ -38,10 +42,12 @@ def clean_example(maybe_example):
     maybe_example['src'] = {"src": ' '.join(maybe_example['src'])}
     # Make features part of src like
     # {'src': {'src': ..., 'feats': ....}
-    maybe_example['src']['feats'] = [' '.join(x) for x in maybe_example["src_feats"]]
+    maybe_example['src']['feats'] = \
+        [' '.join(x) for x in maybe_example["src_feats"]]
     if maybe_example['tgt'] is not None:
         maybe_example['tgt'] = {'tgt': ' '.join(maybe_example['tgt'])}
-        maybe_example['tgt']['feats'] = [' '.join(x) for x in maybe_example["tgt_feats"]]
+        maybe_example['tgt']['feats'] = \
+            [' '.join(x) for x in maybe_example["tgt_feats"]]
     if 'align' in maybe_example:
         maybe_example['align'] = ' '.join(maybe_example['align'])
 
@@ -108,14 +114,16 @@ def numericalize(vocabs, example):
     # Numericalize src feats
     if 'src_feats' in vocabs.keys():
         numeric_feats = []
-        for feat_vocab, feat in zip(vocabs['src_feats'], example['src']['feats']):
+        for feat_vocab, feat in zip(
+                vocabs['src_feats'], example['src']['feats']):
             numeric_feats.append(feat_vocab(feat.split()))
         numeric['src']['feats'] = numeric_feats
 
     # Numericalize tgt feats
     if 'tgt_feats' in vocabs.keys():
         numeric_feats = []
-        for feat_vocab, feat in zip(vocabs['tgt_feats'], example['tgt']['feats']):
+        for feat_vocab, feat in zip(
+                vocabs['tgt_feats'], example['tgt']['feats']):
             numeric_feats.append(feat_vocab([DefaultTokens.BOS] + feat.split()
                                             + [DefaultTokens.EOS]))
         numeric['tgt']['feats'] = numeric_feats
@@ -182,7 +190,6 @@ def tensorify(vocabs, minibatch):
                                                 for ex in minibatch])
     tensor_batch['srclen'] = torch.LongTensor([len(ex['src']['src_ids'])
                                                for ex in minibatch])
-
 
     if minibatch[0]['tgt'] is not None:
         tbatchtgt = [torch.LongTensor(ex['tgt']['tgt_ids'])

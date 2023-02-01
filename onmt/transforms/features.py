@@ -1,9 +1,7 @@
-from onmt.utils.logging import logger
 from onmt.transforms import register_transform
 from .transform import Transform
 from onmt.utils.alignment import subword_map_by_joiner, subword_map_by_spacer
 import re
-from collections import defaultdict
 
 
 @register_transform(name='inferfeats')

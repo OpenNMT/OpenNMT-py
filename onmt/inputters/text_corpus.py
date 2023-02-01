@@ -163,12 +163,14 @@ class ParallelCorpusIterator(object):
             example['src'] = example['src'].strip('\n').split()
             example['src_original'] = \
                 example['src_original'].strip("\n").split()
-            example["src_feats"] = [feat.split() for feat in example["src_feats"]]
+            example["src_feats"] = \
+                [feat.split() for feat in example["src_feats"]]
             if example['tgt'] is not None:
                 example['tgt'] = example['tgt'].strip('\n').split()
                 example['tgt_original'] = \
                     example['tgt_original'].strip("\n").split()
-                example["tgt_feats"] = [feat.split() for feat in example["tgt_feats"]]
+                example["tgt_feats"] = \
+                    [feat.split() for feat in example["tgt_feats"]]
             if 'align' in example:
                 example['align'] = example['align'].strip('\n').split()
             yield example

@@ -1,5 +1,4 @@
 """ Onmt NMT Model base class definition """
-import torch
 import torch.nn as nn
 
 from onmt.modules.copy_generator import CopyGenerator
@@ -20,7 +19,7 @@ class Generator(nn.Module):
         # First generator: next token prediction
         if copy_attn:
             self.generators.append(
-                CopyGenerator(rnn_sizes[0], gen_sizes[0], pad_idx))
+                CopyGenerator(hid_sizes[0], gen_sizes[0], pad_idx))
         else:
             self.generators.append(
                 simple_generator(hid_sizes[0], gen_sizes[0]))

@@ -76,7 +76,6 @@ class LossCompute(nn.Module):
 
         tgt_shift_idx = 1 if opt.model_task == ModelTask.SEQ2SEQ else 0
 
-
         if opt.copy_attn:
             criterions = [onmt.modules.CopyGeneratorLoss(
                 len(tgt_vocab), opt.copy_attn_force,
@@ -84,14 +83,14 @@ class LossCompute(nn.Module):
             )]
         else:
             if opt.generator_function == 'sparsemax':
-                criterions = [SparsemaxLoss(ignore_index=padding_idx,
-                                          reduction='sum')]
+                criterions = [SparsemaxLoss(
+                    ignore_index=padding_idx,
+                    reduction='sum')]
             else:
                 criterions = [nn.CrossEntropyLoss(
                     ignore_index=padding_idx,
                     reduction='sum',
-                    label_smoothing=opt.label_smoothing
-                )]
+                    label_smoothing=opt.label_smoothing)]
 
         # Add as many criterios as tgt features we have
         if 'tgt_feats' in vocabs:
@@ -309,15 +308,18 @@ class LossCompute(nn.Module):
         else:
 
             scores = self.generator(self._bottle(output))
-            assert len(scores) == len(self.criterions) # Security check
+            assert len(scores) == len(self.criterions)  # Security check
             if isinstance(self.criterions[0], SparsemaxLoss):
                 scores[0] = LogSparsemax(scores[0].to(torch.float32), dim=-1)
 
             loss = self.criterions[0](scores[0].to(torch.float32), flat_tgt)
             # Compute target features losses
             if len(scores) > 1:
-                for i, (score, criterion) in enumerate(zip(scores[1:], self.criterions[1:])):
-                    loss += criterion(score.to(torch.float32), target[:, :, i+1].contiguous().view(-1))
+                for i, (score, criterion) in enumerate(
+                        zip(scores[1:], self.criterions[1:])):
+                    loss += criterion(
+                        score.to(torch.float32),
+                        target[:, :, i+1].contiguous().view(-1))
 
             if self.lambda_align != 0.0:
                 align_head = attns['align']

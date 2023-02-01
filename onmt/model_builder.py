@@ -4,7 +4,6 @@ and creates each encoder and decoder accordingly.
 """
 import re
 import torch
-import torch.nn as nn
 from torch.nn.init import xavier_uniform_
 
 import onmt.modules
@@ -225,9 +224,11 @@ def build_generator(model_opt, vocabs, decoder):
 
     if model_opt.share_decoder_embeddings:
         if not model_opt.share_decoder_embeddings:
-            generator.generators[0].weight = model.decoder.embeddings.word_lut.weight
+            generator.generators[0].weight = \
+                decoder.embeddings.word_lut.weight
         else:
-            generator.generators[0].linear.weight = model.decoder.embeddings.word_lut.weight
+            generator.generators[0].linear.weight = \
+                decoder.embeddings.word_lut.weight
 
     return generator
 
@@ -266,7 +267,8 @@ def build_base_model(model_opt, vocabs, gpu, checkpoint=None, gpu_id=None):
 
     model = build_task_specific_model(model_opt, vocabs)
 
-    # Build Generators (Next token prediction and possibly target features generators)
+    # Build Generators
+    # Next token prediction and possibly target features generators
     generator = build_generator(model_opt, vocabs, model.decoder)
 
     # Load the model states from checkpoint or initialize them.

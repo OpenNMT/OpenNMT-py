@@ -77,7 +77,6 @@ class DataOptsCheckerMixin(object):
                 corpus['weight'] = 1
 
             # Check features
-            src_feats = corpus.get("src_feats", None)
             if opt.n_src_feats > 0 or opt.n_tgt_feats > 0:
                 if 'inferfeats' not in corpus["transforms"]:
                     raise ValueError(
