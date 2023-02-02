@@ -99,14 +99,31 @@ class EnsembleGenerator(nn.Module):
         by averaging distributions from models in the ensemble.
         All models in the ensemble must share a target vocabulary.
         """
-        distributions = torch.stack(
-                [mg(h) if attn is None else mg(h, attn, src_map)
-                 for h, mg in zip(hidden, self.model_generators)]
-            )
+
+        distributions, feats_distributions = [], []
+        n_feats = len(self.model_generators[0].feats_generators)
+        for h, mg in zip(hidden, self.model_generators):
+            scores, feats_scores = \
+                (mg(h) if attn is None else mg(h, attn, src_map))
+            distributions.append(scores)
+            feats_distributions.append(feats_distributions)
+
+        distributions = torch.stack(distributions)
+
+        stacked_feats_distributions = []
+        for i in range(n_feats):
+            stacked_feats_distributions.append(
+                torch.stack([feats_distributions[i]
+                             for feat_distribution in feats_distributions
+                             for i in range(n_feats)]))
+
         if self._raw_probs:
-            return torch.log(torch.exp(distributions).mean(0))
+            return (torch.log(torch.exp(distributions).mean(0)),
+                    [torch.log(torch.exp(d).mean(0))
+                     for d in stacked_feats_distributions])
         else:
-            return distributions.mean(0)
+            return (distributions.mean(0),
+                    [d.mean(0) for d in stacked_feats_distributions])
 
 
 class EnsembleModel(NMTModel):

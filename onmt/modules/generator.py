@@ -5,10 +5,11 @@ from onmt.modules.copy_generator import CopyGenerator
 
 
 class Generator(nn.Module):
+
     def __init__(self, hid_sizes, gen_sizes,
                  shared=False, copy_attn=False, pad_idx=None):
         super(Generator, self).__init__()
-        self.generators = nn.ModuleList()
+        self.feats_generators = nn.ModuleList()
         self.shared = shared
         self.hid_sizes = hid_sizes
         self.gen_sizes = gen_sizes
@@ -18,33 +19,22 @@ class Generator(nn.Module):
 
         # First generator: next token prediction
         if copy_attn:
-            self.generators.append(
-                CopyGenerator(hid_sizes[0], gen_sizes[0], pad_idx))
+            self.tgt_generator = \
+                CopyGenerator(hid_sizes[0], gen_sizes[0], pad_idx)
         else:
-            self.generators.append(
-                simple_generator(hid_sizes[0], gen_sizes[0]))
+            self.tgt_generator = \
+                simple_generator(hid_sizes[0], gen_sizes[0])
 
         # Additional generators: target features
         for hid_size, gen_size in zip(hid_sizes[1:], gen_sizes[1:]):
-            self.generators.append(
+            self.feats_generators.append(
                 simple_generator(hid_size, gen_size))
 
-    def forward(self, dec_out):
-        # if shared_decoder_embeddings, we slice the decoder output
-        if self.shared:
-            raise NotImplementedError()
-            '''
-            outs = []
-            offset = 0
-            for generator, s in zip(self.generators, self.rnn_sizes):
-                sliced_dec_out = dec_out[:, offset:offset+s]
-                out = generator(sliced_dec_out)
-                offset += s
-                outs.append(out)
-            return outs
-            '''
-        else:
-            return [generator(dec_out) for generator in self.generators]
+    def forward(self, dec_out, *args):
+        scores = self.tgt_generator(dec_out, *args)
 
-    def __getitem__(self, i):
-        return self.generators[0][i]
+        feats_scores = []
+        for generator in self.feats_generators:
+            feats_scores.append(generator(dec_out))
+
+        return scores, feats_scores

@@ -74,6 +74,8 @@ class ParallelCorpus(object):
                             tline,
                             n_feats=self.n_tgt_feats,
                             defaults=self.tgt_feats_defaults)
+                    else:
+                        tfeats = None
                     # 'src_original' and 'tgt_original' store the
                     # original line before tokenization. These
                     # fields are used later on in the feature

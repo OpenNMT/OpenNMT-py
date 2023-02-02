@@ -1,0 +1,18 @@
+# Corpus opts:
+data:
+    corpus_1:
+        path_src: data/data_features/src-train.txt
+        path_tgt: data/data_features/tgt-train-with-feats.txt
+        transforms: [inferfeats]
+    corpus_2:
+        path_src: data/data_features/src-train.txt
+        path_tgt: data/data_features/tgt-train.txt
+        transforms: [inferfeats]
+    valid:
+        path_src: data/data_features/src-val.txt
+        path_tgt: data/data_features/tgt-val-with-feats.txt
+        transforms: [inferfeats]
+
+# # Feats options
+n_tgt_feats: 1
+tgt_feats_defaults: "0"

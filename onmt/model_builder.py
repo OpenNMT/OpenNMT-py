@@ -192,12 +192,11 @@ def use_embeddings_from_checkpoint(vocabs, model, generator, checkpoint):
                     emb_name
                 ][old_i]
                 if side == 'tgt':
-                    generator.state_dict()['weight'][i] = checkpoint[
-                        'generator'
-                    ]['weight'][old_i]
-                    generator.state_dict()['bias'][i] = checkpoint[
-                        'generator'
-                    ]['bias'][old_i]
+                    # TODO: check feats generators
+                    generator.state_dict()['tgt_generator.weight'][i] = \
+                        checkpoint['generator']['tgt_generator.weight'][old_i]
+                    generator.state_dict()['tgt_generator.bias'][i] = \
+                        checkpoint['generator']['tgt_generator.bias'][old_i]
             else:
                 # Just for debugging purposes
                 new_tokens.append(tok)
@@ -205,7 +204,8 @@ def use_embeddings_from_checkpoint(vocabs, model, generator, checkpoint):
 
         # Remove old vocabulary associated embeddings
         del checkpoint['model'][emb_name]
-    del checkpoint['generator']['weight'], checkpoint['generator']['bias']
+    del checkpoint['generator']['tgt_generator.weight']
+    del checkpoint['generator']['tgt_generator.bias']
 
 
 def build_generator(model_opt, vocabs, decoder):

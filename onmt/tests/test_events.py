@@ -49,5 +49,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
     test_event = TestEvents()
     scalars = test_event.scalars[args.tensorboard_checks]
-    print("looking for scalars: ", scalars)
+    print("\nlooking for scalars: ", scalars)
     test_event.check_scalars(scalars, args.logdir)

@@ -551,13 +551,13 @@ class Inference(object):
             else:
                 attn = None
 
-            scores = self.model.generator(dec_out.squeeze(1))
+            scores, feats_scores = self.model.generator(dec_out.squeeze(1))
             log_probs = F.log_softmax(scores.to(torch.float32), dim=-1)
             # returns [(batch_size x beam_size) , vocab ] when 1 step
             # or [batch_size, tgt_len, vocab ] when full sentence
         else:
             attn = dec_attn["copy"]
-            scores = self.model.generator(
+            scores, feats_scores = self.model.generator(
                 dec_out.view(-1, dec_out.size(2)),
                 attn.view(-1, attn.size(2)),
                 src_map,
