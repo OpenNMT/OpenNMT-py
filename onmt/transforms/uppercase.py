@@ -36,16 +36,16 @@ class UpperCaseTransform(Transform):
         if random.random() > self.upper_corpus_ratio:
             return example
 
-        src_str = ' '.join(example['src'])
+        src_str = ' '.join(example.src)
         src_str = ''.join(c for c in unicodedata.normalize('NFD',
                           src_str.upper()) if unicodedata.category(c) != 'Mn')
-        example['src'] = src_str.split()
+        example.src = src_str.split()
 
-        if example['tgt'] is not None:
-            tgt_str = ' '.join(example['tgt'])
+        if example.tgt is not None:
+            tgt_str = ' '.join(example.tgt)
             tgt_str = ''.join(c for c in unicodedata.normalize('NFD',
                               tgt_str.upper()) if unicodedata.category(c) !=
                               'Mn')
-            example['tgt'] = tgt_str.split()
+            example.tgt = tgt_str.split()
 
         return example

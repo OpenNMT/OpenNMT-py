@@ -28,60 +28,41 @@ class InferFeatsTransform(Transform):
         self.reversible_tokenization = self.opts.reversible_tokenization
         self.prior_tokenization = self.opts.prior_tokenization
 
+    def _infer(self, example, side):
+        if self.reversible_tokenization == "joiner":
+            original_text = getattr(example, f"{side}_original") \
+                if self.prior_tokenization else None
+            word_to_subword_mapping = subword_map_by_joiner(
+                getattr(example, side), original_subwords=original_text)
+        else:  # Spacer
+            word_to_subword_mapping = subword_map_by_spacer(
+                getattr(example, side))
+
+        new_feats = [[] for _ in range(len(getattr(example, f"{side}_feats")))]
+        for subword, word_id in zip(
+                getattr(example, side), word_to_subword_mapping):
+            for i, feat_values in enumerate(getattr(example, f"{side}_feats")):
+                # Punctuation only
+                if not re.sub(r'(\W)+', '', subword).strip() \
+                        and not self.prior_tokenization:
+                    inferred_feat = "<null>"
+                else:
+                    inferred_feat = feat_values[word_id]
+                new_feats[i].append(inferred_feat)
+        setattr(example, f"{side}_feats", new_feats)
+
+        # Security checks
+        for feat in getattr(example, f"{side}_feats"):
+            assert len(getattr(example, side)) == len(feat)
+
+        return example
+
     def apply(self, example, is_train=False, stats=None, **kwargs):
+        if example.src_feats is not None:
+            example = self._infer(example, "src")
 
-        if "src_feats" not in example:
-            # Do nothing
-            assert False, "TODO"
-            return example
-
-        if self.reversible_tokenization == "joiner":
-            original_src = example["src_original"] \
-                if self.prior_tokenization else None
-            word_to_subword_mapping = subword_map_by_joiner(
-                example["src"], original_subwords=original_src)
-        else:  # Spacer
-            word_to_subword_mapping = subword_map_by_spacer(example["src"])
-
-        new_src_feats = [[] for _ in range(len(example["src_feats"]))]
-        for subword, word_id in zip(example["src"], word_to_subword_mapping):
-            for i, feat_values in enumerate(example["src_feats"]):
-                # Punctuation only
-                if not re.sub(r'(\W)+', '', subword).strip() \
-                        and not self.prior_tokenization:
-                    inferred_feat = "<null>"
-                else:
-                    inferred_feat = feat_values[word_id]
-                new_src_feats[i].append(inferred_feat)
-        example["src_feats"] = new_src_feats
-
-        # Security checks
-        for feat in example["src_feats"]:
-            assert len(example["src"]) == len(feat)
-
-        if self.reversible_tokenization == "joiner":
-            original_tgt = example["tgt_original"] \
-                if self.prior_tokenization else None
-            word_to_subword_mapping = subword_map_by_joiner(
-                example["tgt"], original_subwords=original_tgt)
-        else:  # Spacer
-            word_to_subword_mapping = subword_map_by_spacer(example["tgt"])
-
-        new_tgt_feats = [[] for _ in range(len(example["tgt_feats"]))]
-        for subword, word_id in zip(example["tgt"], word_to_subword_mapping):
-            for i, feat_values in enumerate(example["tgt_feats"]):
-                # Punctuation only
-                if not re.sub(r'(\W)+', '', subword).strip() \
-                        and not self.prior_tokenization:
-                    inferred_feat = "<null>"
-                else:
-                    inferred_feat = feat_values[word_id]
-                new_tgt_feats[i].append(inferred_feat)
-        example["tgt_feats"] = new_tgt_feats
-
-        # Security checks
-        for feat in example["tgt_feats"]:
-            assert len(example["tgt"]) == len(feat)
+        if example.tgt_feats is not None:
+            example = self._infer(example, "tgt")
 
         return example
 

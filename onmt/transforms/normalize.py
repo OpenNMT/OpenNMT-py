@@ -272,11 +272,11 @@ class NormalizeTransform(Transform):
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Normalize source and target examples."""
 
-        src_str = self.src_mpn.normalize(' '.join(example['src']))
-        example['src'] = src_str.split()
+        src_str = self.src_mpn.normalize(' '.join(example.src))
+        example.src = src_str.split()
 
-        if example['tgt'] is not None:
-            tgt_str = self.tgt_mpn.normalize(' '.join(example['tgt']))
-            example['tgt'] = tgt_str.split()
+        if example.tgt is not None:
+            tgt_str = self.tgt_mpn.normalize(' '.join(example.tgt))
+            example.tgt = tgt_str.split()
 
         return example

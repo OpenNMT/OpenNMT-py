@@ -75,10 +75,10 @@ def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
                 if opts.dump_samples:
                     build_sub_vocab.queues[c_name][offset].put("blank")
                 continue
-            src_line = maybe_example['src']['src']
-            tgt_line = maybe_example['tgt']['tgt']
-            src_feats_lines = maybe_example['src']['feats']
-            tgt_feats_lines = maybe_example['tgt']['feats']
+            src_line = maybe_example.src
+            tgt_line = maybe_example.tgt
+            src_feats_lines = maybe_example.src_feats
+            tgt_feats_lines = maybe_example.tgt_feats
 
             sub_counter_src.update(src_line.split(' '))
             sub_counter_tgt.update(tgt_line.split(' '))

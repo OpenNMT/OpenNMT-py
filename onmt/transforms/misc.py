@@ -40,8 +40,8 @@ class FilterTooLongTransform(Transform):
 
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Return None if too long else return as is."""
-        if (len(example['src']) > self.src_seq_length or
-                len(example['tgt']) > self.tgt_seq_length - 2):
+        if (len(example.src) > self.src_seq_length or
+                len(example.tgt) > self.tgt_seq_length - 2):
             if stats is not None:
                 stats.update(FilterTooLongStats())
             return None
@@ -124,10 +124,11 @@ class PrefixTransform(Transform):
     def _prepend(self, example, prefix):
         """Prepend `prefix` to `tokens`."""
         for side, side_prefix in prefix.items():
-            if example.get(side) is not None:
-                example[side] = side_prefix.split() + example[side]
+            if getattr(example, side) is not None:
+                setattr(example, side,
+                        side_prefix.split() + getattr(example, side))
             elif len(side_prefix) > 0:
-                example[side] = side_prefix.split()
+                setattr(example, side, side_prefix.split())
         return example
 
     def apply(self, example, is_train=False, stats=None, **kwargs):
@@ -218,10 +219,11 @@ class SuffixTransform(Transform):
     def _append(self, example, suffix):
         """Prepend `suffix` to `tokens`."""
         for side, side_suffix in suffix.items():
-            if example.get(side) is not None:
-                example[side] = example[side] + side_suffix.split()
+            if getattr(example, side) is not None:
+                setattr(example, side,
+                        getattr(example, side) + side_suffix.split())
             elif len(side_suffix) > 0:
-                example[side] = side_suffix.split()
+                setattr(example, side, side_suffix.split())
         return example
 
     def apply(self, example, is_train=False, stats=None, **kwargs):

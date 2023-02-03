@@ -5,6 +5,7 @@ from onmt.constants import CorpusName, CorpusTask
 from onmt.transforms import TransformPipe
 from onmt.inputters.text_utils import process, parse_features
 from contextlib import contextmanager
+from onmt.inputters.example import Example
 
 
 @contextmanager
@@ -68,34 +69,36 @@ class ParallelCorpus(object):
                         sline,
                         n_feats=self.n_src_feats,
                         defaults=self.src_feats_defaults)
-                    example = {
-                        'src': sline,
-                        'src_original': sline,
-                        'src_feats': sfeats
-                    }
                     if tline is not None:
                         tline = tline.decode('utf-8')
                         tline, tfeats = parse_features(
                             tline,
                             n_feats=self.n_tgt_feats,
                             defaults=self.tgt_feats_defaults)
-                        example['tgt'] = tline
-                        example['tgt_original'] = sline
-                        example['tgt_feats'] = tfeats
-                    # 'src_original' and 'tgt_original' store the
-                    # original line before tokenization. These
-                    # fields are used later on in the feature
-                    # transforms.
+                    else:
+                        tfeats = None
 
                     if align is not None:
-                        example['align'] = align.decode('utf-8')
+                        align = align.decode('utf-8')
+
+                    example = Example(
+                        src=sline,
+                        src_original=sline,
+                        src_feats=sfeats,
+                        tgt=tline,
+                        tgt_original=tline,
+                        tgt_feats=tfeats,
+                        align=align)
                     yield example
 
     def __str__(self):
         cls_name = type(self).__name__
-        return '{}({}, {}, align={}, n_src_feats={}, n_tgt_feats={})'.format(
-            cls_name, self.src, self.tgt, self.align,
-            self.n_src_feats, self.n_tgt_feats)
+        return f'{cls_name}({self.id}, {self.src}, {self.tgt}, ' \
+               f'align={self.align}, ' \
+               f'n_src_feats={self.n_src_feats}, ' \
+               f'n_tgt_feats={self.n_tgt_feats}, ' \
+               f'src_feats_defaults="{self.src_feats_defaults}", ' \
+               f'tgt_feats_defaults="{self.tgt_feats_defaults}")'
 
 
 def get_corpora(opts, task=CorpusTask.TRAIN):
@@ -162,19 +165,7 @@ class ParallelCorpusIterator(object):
 
     def _tokenize(self, stream):
         for example in stream:
-            example['src'] = example['src'].strip('\n').split()
-            example['src_original'] = \
-                example['src_original'].strip("\n").split()
-            example["src_feats"] = \
-                [feat.split() for feat in example["src_feats"]]
-            if 'tgt' in example:
-                example['tgt'] = example['tgt'].strip('\n').split()
-                example['tgt_original'] = \
-                    example['tgt_original'].strip("\n").split()
-                example["tgt_feats"] = \
-                    [feat.split() for feat in example["tgt_feats"]]
-            if 'align' in example:
-                example['align'] = example['align'].strip('\n').split()
+            example.tokenize()
             yield example
 
     def _transform(self, stream):
@@ -197,17 +188,15 @@ class ParallelCorpusIterator(object):
         for i, item in enumerate(stream):
             example = item[0]
             line_number = i * self.stride + self.offset
-            example['indices'] = line_number
-            if 'tgt' in example:
-                if (len(example['src']) == 0 or len(example['tgt']) == 0 or
-                        ('align' in example and example['align'] == 0)):
-                    # empty example: skip
-                    empty_msg = f"Empty line  in {self.cid}#{line_number}."
-                    if self.skip_empty_level == 'error':
-                        raise IOError(empty_msg)
-                    elif self.skip_empty_level == 'warning':
-                        logger.warning(empty_msg)
-                    continue
+            example.add_index(line_number)
+            if example.is_empty():
+                # empty example: skip
+                empty_msg = f"Empty line  in {self.cid}#{line_number}."
+                if self.skip_empty_level == 'error':
+                    raise IOError(empty_msg)
+                elif self.skip_empty_level == 'warning':
+                    logger.warning(empty_msg)
+                continue
             yield item
 
     def __iter__(self):

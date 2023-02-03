@@ -193,20 +193,20 @@ class SentencePieceTransform(TokenizerTransform):
 
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Apply sentencepiece subword encode to src & tgt."""
-        src_out = self._tokenize(example['src'], 'src', is_train)
-        if example['tgt'] is not None:
-            tgt_out = self._tokenize(example['tgt'], 'tgt', is_train)
+        src_out = self._tokenize(example.src, 'src', is_train)
+        if example.tgt is not None:
+            tgt_out = self._tokenize(example.tgt, 'tgt', is_train)
             if stats is not None:
-                n_words = len(example['src']) + len(example['tgt'])
+                n_words = len(example.src) + len(example.tgt)
                 n_subwords = len(src_out) + len(tgt_out)
                 stats.update(SubwordStats(n_subwords, n_words))
         else:
             tgt_out = None
             if stats is not None:
-                n_words = len(example['src'])
+                n_words = len(example.src)
                 n_subwords = len(src_out)
                 stats.update(SubwordStats(n_subwords, n_words))
-        example['src'], example['tgt'] = src_out, tgt_out
+        example.src, example.tgt = src_out, tgt_out
         return example
 
     def apply_reverse(self, translated):
@@ -285,20 +285,20 @@ class BPETransform(TokenizerTransform):
 
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Apply bpe subword encode to src & tgt."""
-        src_out = self._tokenize(example['src'], 'src', is_train)
-        if example['tgt'] is not None:
-            tgt_out = self._tokenize(example['tgt'], 'tgt', is_train)
+        src_out = self._tokenize(example.src, 'src', is_train)
+        if example.tgt is not None:
+            tgt_out = self._tokenize(example.tgt, 'tgt', is_train)
             if stats is not None:
-                n_words = len(example['src']) + len(example['tgt'])
+                n_words = len(example.src) + len(example.tgt)
                 n_subwords = len(src_out) + len(tgt_out)
                 stats.update(SubwordStats(n_subwords, n_words))
         else:
             tgt_out = None
             if stats is not None:
-                n_words = len(example['src'])
+                n_words = len(example.src)
                 n_subwords = len(src_out)
                 stats.update(SubwordStats(n_subwords, n_words))
-        example['src'], example['tgt'] = src_out, tgt_out
+        example.src, example.tgt = src_out, tgt_out
         return example
 
     def apply_reverse(self, translated):
@@ -459,20 +459,20 @@ class ONMTTokenizerTransform(TokenizerTransform):
 
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Apply OpenNMT Tokenizer to src & tgt."""
-        src_out = self._tokenize(example['src'], 'src')
-        if example['tgt'] is not None:
-            tgt_out = self._tokenize(example['tgt'], 'tgt')
+        src_out = self._tokenize(example.src, 'src')
+        if example.tgt is not None:
+            tgt_out = self._tokenize(example.tgt, 'tgt')
             if stats is not None:
-                n_words = len(example['src']) + len(example['tgt'])
+                n_words = len(example.src) + len(example.tgt)
                 n_subwords = len(src_out) + len(tgt_out)
                 stats.update(SubwordStats(n_subwords, n_words))
         else:
             tgt_out = None
             if stats is not None:
-                n_words = len(example['src'])
+                n_words = len(example.src)
                 n_subwords = len(src_out)
                 stats.update(SubwordStats(n_subwords, n_words))
-        example['src'], example['tgt'] = src_out, tgt_out
+        example.src, example.tgt = src_out, tgt_out
         return example
 
     def apply_reverse(self, translated):

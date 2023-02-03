@@ -407,8 +407,8 @@ class BARTNoiseTransform(Transform):
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Apply BART noise to src side tokens."""
         if is_train:
-            src = self.bart_noise.apply(example['src'])
-            example['src'] = src
+            src = self.bart_noise.apply(example.src)
+            example.src = src
         return example
 
     def _repr_args(self):

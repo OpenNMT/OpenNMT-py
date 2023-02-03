@@ -4,7 +4,7 @@ from itertools import cycle
 from onmt.constants import CorpusTask
 from onmt.inputters.text_corpus import get_corpora, build_corpora_iters
 from onmt.inputters.text_utils import text_sort_key, process,\
-    numericalize, tensorify, _addcopykeys
+    tensorify
 from onmt.transforms import make_transforms
 from onmt.utils.logging import init_logger, logger
 from onmt.utils.misc import RandomShuffler
@@ -209,8 +209,9 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
         for example in tuple_bucket:
             if example is not None:
                 if self.copy:
-                    example = _addcopykeys(self.vocabs, example)
-                bucket.append(numericalize(self.vocabs, example))
+                    example.addcopykeys(self.vocabs)
+                example.numericalize(self.vocabs)
+                bucket.append(example)
         return bucket
 
     def _bucketing(self):
@@ -252,11 +253,8 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
 
         minibatch, maxlen, size_so_far, seen = [], 0, 0, []
         for ex in data:
-            if (
-                   (ex['src']['src'] not in seen) or
-                   (self.task != CorpusTask.TRAIN)
-            ):
-                seen.append(ex['src']['src'])
+            if ((ex.src not in seen) or (self.task != CorpusTask.TRAIN)):
+                seen.append(ex.src)
                 minibatch.append(ex)
                 nbsents = len(minibatch)
                 maxlen = max(text_sort_key(ex), maxlen)
