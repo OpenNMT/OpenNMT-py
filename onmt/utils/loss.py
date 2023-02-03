@@ -224,7 +224,7 @@ class LossCompute(nn.Module):
         lm_outs, _ = self.lm_prior_model(src, None, src_len,
                                          with_align=False)
         lm_scores = self.lm_prior_model.generator(
-            self._bottle(lm_outs)) / self.lm_prior_tau
+            self._bottle(lm_outs)).detach().clone() / self.lm_prior_tau
         # again we use raw probs to rescale with tau and apply log_softmax
         lm_scores = F.log_softmax(lm_scores.to(torch.float32), dim=-1)
         lm_scores[:, self.vocab[DefaultTokens.UNK]] = -50

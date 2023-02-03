@@ -99,10 +99,12 @@ class PrefixTransform(Transform):
             if 'infer' not in prefix_dict.keys():
                 prefix_dict['infer'] = {}
             prefix_dict['infer']['src'] = opts.src_prefix
+            logger.info(f"Get prefix for src infer: {opts.src_prefix}")
         if hasattr(opts, 'tgt_prefix'):
             if 'infer' not in prefix_dict.keys():
                 prefix_dict['infer'] = {}
             prefix_dict['infer']['tgt'] = opts.tgt_prefix
+            logger.info(f"Get prefix for tgt infer: {opts.tgt_prefix}")
 
         return prefix_dict
 
