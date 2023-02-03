@@ -61,7 +61,8 @@ class FuzzyMatcher(object):
         # reduce memory usage.
         # Perfomance is not affected.
         chunk_size = 10000
-        mini_batches = np.array_split(batch, len(batch) // chunk_size)
+        mini_batches = np.array_split(batch, len(batch) // chunk_size
+                                      if len(batch) > chunk_size else 1)
         for mini_batch in mini_batches:
             plist = list(mini_batch)
             if fuzzy_count >= len(batch) * self.corpus_ratio:
