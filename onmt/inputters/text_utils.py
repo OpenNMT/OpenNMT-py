@@ -7,6 +7,10 @@ from collections import Counter
 
 
 def parse_features(line, n_feats=0, defaults=None):
+    """
+    Parses text lines with features appended to each token.
+    Ex.: This￨A￨B is￨A￨A a￨C￨A test￨A￨B
+    """
     text, feats = [], [[] for _ in range(n_feats)]
     check, count = 0, 0
     for token in line.split(' '):
@@ -21,8 +25,9 @@ def parse_features(line, n_feats=0, defaults=None):
                 "match the number of feats"
             fts = defaults
         assert len(fts) == n_feats, \
-            "The number of fetures does not match the " \
-            "expected number of features"
+            f"The number of fetures does not match the " \
+            f"expected number of features. Found {len(fts)} " \
+            f"features in the data but {n_feats} were expected"
         text.append(tok)
         for i in range(n_feats):
             feats[i].append(fts[i])
@@ -33,7 +38,8 @@ def parse_features(line, n_feats=0, defaults=None):
 
 def text_sort_key(ex):
     """Sort using the number of tokens in the sequence."""
-    if ex['tgt']:
+    if 'tgt' in ex:
+        print(ex)
         return max(len(ex['src']['src_ids']), len(ex['tgt']['tgt_ids']))
     return len(ex['src']['src_ids'])
 
@@ -44,19 +50,16 @@ def clean_example(maybe_example):
     # {'src': {'src': ..., 'feats': ....}
     maybe_example['src']['feats'] = \
         [' '.join(x) for x in maybe_example["src_feats"]]
-    if maybe_example['tgt'] is not None:
+    del maybe_example['src_original']
+    del maybe_example['src_feats']
+    if 'tgt' in maybe_example:
         maybe_example['tgt'] = {'tgt': ' '.join(maybe_example['tgt'])}
         maybe_example['tgt']['feats'] = \
             [' '.join(x) for x in maybe_example["tgt_feats"]]
+        del maybe_example['tgt_original']
+        del maybe_example['tgt_feats']
     if 'align' in maybe_example:
         maybe_example['align'] = ' '.join(maybe_example['align'])
-
-    # Delete these fields as they are no longer needed
-    del maybe_example['src_original']
-    del maybe_example['tgt_original']
-    del maybe_example['src_feats']
-    del maybe_example['tgt_feats']
-
     return maybe_example
 
 
@@ -86,47 +89,50 @@ def numericalize(vocabs, example):
     """
     """
     numeric = example
-    numeric['src']['src_ids'] = []
-    if vocabs['data_task'] == ModelTask.SEQ2SEQ:
-        src_text = example['src']['src'].split()
+
+    data_task = vocabs['data_task']
+    assert data_task in [ModelTask.SEQ2SEQ, ModelTask.LANGUAGE_MODEL], \
+        f"Something went wrong with task {vocabs['data_task']}"
+
+    src_text = example['src']['src'].split()
+    if data_task == ModelTask.SEQ2SEQ:
         numeric['src']['src_ids'] = vocabs['src'](src_text)
-        if example['tgt'] is not None:
-            numeric['tgt']['tgt_ids'] = []
-            tgt_text = example['tgt']['tgt'].split()
+    elif data_task == ModelTask.LANGUAGE_MODEL:
+        numeric['src']['src_ids'] = \
+            vocabs['src']([DefaultTokens.BOS] + src_text)
+
+    numeric['src']['feats_ids'] = []
+    for feat_vocab, feat in zip(
+            vocabs['src_feats'], example['src']['feats']):
+        feat_text = feat.split()
+        if data_task == ModelTask.SEQ2SEQ:
+            numeric['src']['feats_ids'].append(
+                feat_vocab(feat_text))
+        else:
+            numeric['src']['feats_ids'].append(
+                feat_vocab([DefaultTokens.BOS] + feat_text))
+
+    if 'tgt' in example:
+        tgt_text = example['tgt']['tgt'].split()
+        if data_task == ModelTask.SEQ2SEQ:
             numeric['tgt']['tgt_ids'] = \
                 vocabs['tgt']([DefaultTokens.BOS] + tgt_text
                               + [DefaultTokens.EOS])
-
-    elif vocabs['data_task'] == ModelTask.LANGUAGE_MODEL:
-        src_text = example['src']['src'].split()
-        numeric['src']['src_ids'] = \
-            vocabs['src']([DefaultTokens.BOS] + src_text)
-        if example['tgt'] is not None:
-            numeric['tgt']['tgt_ids'] = []
-            tgt_text = example['tgt']['tgt'].split()
+        elif data_task == ModelTask.LANGUAGE_MODEL:
             numeric['tgt']['tgt_ids'] = \
                 vocabs['tgt'](tgt_text + [DefaultTokens.EOS])
-    else:
-        raise ValueError(
-                f"Something went wrong with task {vocabs['data_task']}"
-        )
 
-    # Numericalize src feats
-    if 'src_feats' in vocabs.keys():
-        numeric_feats = []
-        for feat_vocab, feat in zip(
-                vocabs['src_feats'], example['src']['feats']):
-            numeric_feats.append(feat_vocab(feat.split()))
-        numeric['src']['feats'] = numeric_feats
-
-    # Numericalize tgt feats
-    if 'tgt_feats' in vocabs.keys():
-        numeric_feats = []
+        numeric['tgt']['feats_ids'] = []
         for feat_vocab, feat in zip(
                 vocabs['tgt_feats'], example['tgt']['feats']):
-            numeric_feats.append(feat_vocab([DefaultTokens.BOS] + feat.split()
-                                            + [DefaultTokens.EOS]))
-        numeric['tgt']['feats'] = numeric_feats
+            feat_text = feat.split()
+            if data_task == ModelTask.SEQ2SEQ:
+                numeric['tgt']['feats_ids'].append(
+                    feat_vocab([DefaultTokens.BOS] + feat_text
+                               + [DefaultTokens.EOS]))
+            else:
+                numeric['tgt']['feats_ids'].append(
+                    feat_vocab(feat_text + [DefaultTokens.EOS]))
 
     return numeric
 
@@ -152,8 +158,8 @@ def tensorify(vocabs, minibatch):
     """
     This function transforms a batch of example in tensors
     Each example looks like
-    {'src': {'src': ..., 'feats': [...], 'src_ids': ...},
-     'tgt': {'tgt': ..., 'feats': [...], 'tgt_ids': ...},
+    {'src': {'src': ..., 'src_ids': ..., 'feats': [...], 'feats_ids': [...]},
+     'tgt': {'tgt': ..., 'tgt_ids': ..., 'feats': [...], 'feats_ids': [...]},
      'indices' : seq in bucket
      'align': ...,
     }
@@ -171,49 +177,43 @@ def tensorify(vocabs, minibatch):
     padidx = vocabs['src'][DefaultTokens.PAD]
     tbatchsrc = pad_sequence(tbatchsrc, batch_first=True,
                              padding_value=padidx)
-    if "feats" in minibatch[0]['src']:
-        tbatchfs = [tbatchsrc]
-        for feat_id in range(len(minibatch[0]['src']["feats"])):
-            tbatchfeat = [torch.LongTensor(ex['src']['feats'][feat_id])
-                          for ex in minibatch]
-            padidx = vocabs['src_feats'][feat_id][DefaultTokens.PAD]
-            tbatchfeat = pad_sequence(tbatchfeat, batch_first=True,
-                                      padding_value=padidx)
-            tbatchfs.append(tbatchfeat)
-        tbatchsrc = torch.stack(tbatchfs, dim=2)
-    else:
-        # Need to add features in last dimensions
-        tbatchsrc = tbatchsrc[:, :, None]
 
+    tbatchfs = [tbatchsrc]
+    for feat_id in range(len(minibatch[0]['src']["feats_ids"])):
+        tbatchfeat = [torch.LongTensor(ex['src']['feats_ids'][feat_id])
+                      for ex in minibatch]
+        padidx = vocabs['src_feats'][feat_id][DefaultTokens.PAD]
+        tbatchfeat = pad_sequence(tbatchfeat, batch_first=True,
+                                  padding_value=padidx)
+        tbatchfs.append(tbatchfeat)
+    tbatchsrc = torch.stack(tbatchfs, dim=2)
     tensor_batch['src'] = tbatchsrc
+
     tensor_batch['indices'] = torch.LongTensor([ex['indices']
                                                 for ex in minibatch])
     tensor_batch['srclen'] = torch.LongTensor([len(ex['src']['src_ids'])
                                                for ex in minibatch])
 
-    if minibatch[0]['tgt'] is not None:
+    if 'tgt' in minibatch[0]:
         tbatchtgt = [torch.LongTensor(ex['tgt']['tgt_ids'])
                      for ex in minibatch]
         padidx = vocabs['tgt'][DefaultTokens.PAD]
         tbatchtgt = pad_sequence(tbatchtgt, batch_first=True,
                                  padding_value=padidx)
-        if "feats" in minibatch[0]["tgt"]:
-            tbatchfs = [tbatchtgt]
-            for feat_id in range(len(minibatch[0]['tgt']["feats"])):
-                tbatchfeat = [torch.LongTensor(ex['tgt']['feats'][feat_id])
-                              for ex in minibatch]
-                padidx = vocabs['tgt_feats'][feat_id][DefaultTokens.PAD]
-                tbatchfeat = pad_sequence(tbatchfeat, batch_first=True,
-                                          padding_value=padidx)
-                tbatchfs.append(tbatchfeat)
-            tbatchtgt = torch.stack(tbatchfs, dim=2)
-        else:
-            tbatchtgt = tbatchtgt[:, :, None]
 
-        tbatchtgtlen = torch.LongTensor([len(ex['tgt']['tgt_ids'])
-                                         for ex in minibatch])
+        tbatchfs = [tbatchtgt]
+        for feat_id in range(len(minibatch[0]['tgt']["feats_ids"])):
+            tbatchfeat = [torch.LongTensor(ex['tgt']['feats_ids'][feat_id])
+                          for ex in minibatch]
+            padidx = vocabs['tgt_feats'][feat_id][DefaultTokens.PAD]
+            tbatchfeat = pad_sequence(tbatchfeat, batch_first=True,
+                                      padding_value=padidx)
+            tbatchfs.append(tbatchfeat)
+        tbatchtgt = torch.stack(tbatchfs, dim=2)
         tensor_batch['tgt'] = tbatchtgt
-        tensor_batch['tgtlen'] = tbatchtgtlen
+
+        tensor_batch['tgtlen'] = torch.LongTensor([len(ex['tgt']['tgt_ids'])
+                                                   for ex in minibatch])
 
     if 'align' in minibatch[0].keys() and minibatch[0]['align'] is not None:
         sparse_idx = []
@@ -267,9 +267,7 @@ def textbatch_to_tensor(vocabs, batch, is_train=False):
         numeric.append({'src': {'src': toks,
                         'src_ids': idxs},
                         'srclen': len(toks),
-                        'tgt': None,
-                        'indices': i,
-                        'align': None})
+                        'indices': i})
     numeric.sort(key=text_sort_key, reverse=True)
     infer_iter = [tensorify(vocabs, numeric)]
     return infer_iter
@@ -306,7 +304,7 @@ def _addcopykeys(vocabs, example):
     example['src_map'] = src_ex_vocab(src)
     example['src_ex_vocab'] = src_ex_vocab
 
-    if example['tgt'] is not None:
+    if "tgt" in example:
         if vocabs['data_task'] == ModelTask.SEQ2SEQ:
             tgt = [DefaultTokens.UNK] + example['tgt']['tgt'].split() \
                   + [DefaultTokens.UNK]

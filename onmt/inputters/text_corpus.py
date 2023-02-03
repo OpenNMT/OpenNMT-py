@@ -68,34 +68,34 @@ class ParallelCorpus(object):
                         sline,
                         n_feats=self.n_src_feats,
                         defaults=self.src_feats_defaults)
+                    example = {
+                        'src': sline,
+                        'src_original': sline,
+                        'src_feats': sfeats
+                    }
                     if tline is not None:
                         tline = tline.decode('utf-8')
                         tline, tfeats = parse_features(
                             tline,
                             n_feats=self.n_tgt_feats,
                             defaults=self.tgt_feats_defaults)
-                    else:
-                        tfeats = None
+                        example['tgt'] = tline
+                        example['tgt_original'] = sline
+                        example['tgt_feats'] = tfeats
                     # 'src_original' and 'tgt_original' store the
                     # original line before tokenization. These
                     # fields are used later on in the feature
                     # transforms.
-                    example = {
-                        'src': sline,
-                        'tgt': tline,
-                        'src_original': sline,
-                        'tgt_original': tline,
-                        'src_feats': sfeats,
-                        'tgt_feats': tfeats
-                    }
+
                     if align is not None:
                         example['align'] = align.decode('utf-8')
                     yield example
 
     def __str__(self):
         cls_name = type(self).__name__
-        return '{}({}, {}, align={})'.format(
-            cls_name, self.src, self.tgt, self.align)
+        return '{}({}, {}, align={}, n_src_feats={}, n_tgt_feats={})'.format(
+            cls_name, self.src, self.tgt, self.align,
+            self.n_src_feats, self.n_tgt_feats)
 
 
 def get_corpora(opts, task=CorpusTask.TRAIN):
@@ -167,7 +167,7 @@ class ParallelCorpusIterator(object):
                 example['src_original'].strip("\n").split()
             example["src_feats"] = \
                 [feat.split() for feat in example["src_feats"]]
-            if example['tgt'] is not None:
+            if 'tgt' in example:
                 example['tgt'] = example['tgt'].strip('\n').split()
                 example['tgt_original'] = \
                     example['tgt_original'].strip("\n").split()
@@ -198,7 +198,7 @@ class ParallelCorpusIterator(object):
             example = item[0]
             line_number = i * self.stride + self.offset
             example['indices'] = line_number
-            if example['tgt'] is not None:
+            if 'tgt' in example:
                 if (len(example['src']) == 0 or len(example['tgt']) == 0 or
                         ('align' in example and example['align'] == 0)):
                     # empty example: skip

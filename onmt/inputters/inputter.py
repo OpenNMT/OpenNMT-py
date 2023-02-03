@@ -103,6 +103,8 @@ def build_vocab(opt, specials):
                                                      opt.vocab_size_multiple)
             src_feats_vocabs.append(src_f_vocab)
         vocabs["src_feats"] = src_feats_vocabs
+    else:
+        vocabs["src_feats"] = []
 
     if opt.n_tgt_feats > 0:
         tgt_feats_vocabs = []
@@ -122,6 +124,8 @@ def build_vocab(opt, specials):
                                                      opt.vocab_size_multiple)
             tgt_feats_vocabs.append(tgt_f_vocab)
         vocabs["tgt_feats"] = tgt_feats_vocabs
+    else:
+        vocabs["tgt_feats"] = []
 
     vocabs['data_task'] = opt.data_task
 
@@ -190,6 +194,10 @@ def dict_to_vocabs(vocabs_dict):
         vocabs['src_feats'] = []
         for feat_vocab in vocabs_dict['src_feats']:
             vocabs['src_feats'].append(
-                pyonmttok.build_vocab_from_tokens(
-                    feat_vocab))
+                pyonmttok.build_vocab_from_tokens(feat_vocab))
+    if 'tgt_feats' in vocabs_dict.keys():
+        vocabs['tgt_feats'] = []
+        for feat_vocab in vocabs_dict['tgt_feats']:
+            vocabs['tgt_feats'].append(
+                pyonmttok.build_vocab_from_tokens(feat_vocab))
     return vocabs
