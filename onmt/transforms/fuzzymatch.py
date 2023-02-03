@@ -6,19 +6,33 @@ from rapidfuzz import fuzz, process
 import numpy as np
 import time
 
-_FUZZY_TOKEN = '｟fuzzy｠'
-
 
 class FuzzyMatcher(object):
     """Class for creating and setting up fuzzy matchers."""
 
-    def __init__(self, tm_path, corpus_ratio, threshold=70, tm_delimiter='\t'):
+    def __init__(self, tm_path,
+                 corpus_ratio,
+                 threshold=70,
+                 tm_delimiter='\t',
+                 fuzzy_token='｟fuzzy｠',
+                 tm_unit_min_lentgh=4,
+                 tm_unit_max_length=70):
         self.threshold = threshold
         self.corpus_ratio = corpus_ratio
         self.tm_delimiter = tm_delimiter
+        self.fuzzy_token = fuzzy_token
+        self.tm_unit_min_length = tm_unit_min_lentgh
+        self.tm_unit_max_length = tm_unit_max_length
         self.internal_tm = self._create_tm(tm_path)
 
     def _create_tm(self, tm_path):
+        """The TM should be a utf-8 text file with each line
+        containing a source sentence and its translation, separated
+        by the `self.tm_delimiter`. A TM size of 200k-250k pairs should
+        provide enough matches and good performance, but this may
+        depend on overall system specs (RAM, CPU)
+        """
+
         src_segments, tgt_segments = list(), list()
         with open(tm_path, mode='r', encoding='utf-8') as file:
             pairs = file.readlines()
@@ -27,11 +41,12 @@ class FuzzyMatcher(object):
 
                 # Filter out very short or very long sentences
                 # from the TM for better performance
-                if len(source) < 4 or len(source) > 70:
+                if len(source) < self.tm_unit_min_length or \
+                        len(source) > self.tm_unit_max_length:
                     continue
                 src_segments.append(source.strip())
                 tgt_segments.append(target.strip())
-        logger.info(f'Translation Memory size for fuzzymatching transform: '
+        logger.info(f'Translation Memory size for FuzzyMatch transform: '
                     f'{len(src_segments)}')
         return [src_segments, tgt_segments]
 
@@ -42,10 +57,11 @@ class FuzzyMatcher(object):
         augmented = list()
 
         # We split the `batch` and perform fuzzy matching
-        # in smaller batches in order to reduce memory usage.
+        # in smaller chunks of 10.000 examples in order to
+        # reduce memory usage.
         # Perfomance is not affected.
-        portion = 25
-        mini_batches = np.array_split(batch, portion)
+        chunk_size = 10000
+        mini_batches = np.array_split(batch, len(batch) // chunk_size)
         for mini_batch in mini_batches:
             plist = list(mini_batch)
             if fuzzy_count >= len(batch) * self.corpus_ratio:
@@ -62,27 +78,29 @@ class FuzzyMatcher(object):
             matches = np.any(results, 1)
             argmax = np.argmax(results, axis=1)
             for idx, s in enumerate(plist):
-                # Probably redundant
-                if _FUZZY_TOKEN in s:
+                # Probably redundant but let's be safe
+                # in case some examples are already fuzzied
+                # (e.g. from another pipeline or workflow)
+                if self.fuzzy_token in s:
                     continue
                 # We don't want exact matches
                 if matches[idx] and results[idx][argmax[idx]] < 100:
                     if fuzzy_count >= len(batch) * self.corpus_ratio:
                         break
-                    plist[idx] = s + _FUZZY_TOKEN + \
+                    plist[idx] = s + self.fuzzy_token + \
                         self.internal_tm[1][argmax[idx]]
                     fuzzy_count += 1
             augmented.extend(plist)
 
         end = time.time()
-        logger.info(f'FuzzyMatching Transform: Added {fuzzy_count} '
+        logger.info(f'FuzzyMatch Transform: Added {fuzzy_count} '
                     f'fuzzies in {end-start} secs')
 
         return augmented
 
 
-@register_transform(name='fuzzymatching')
-class FuzzyTransform(Transform):
+@register_transform(name='fuzzymatch')
+class FuzzyMatchTransform(Transform):
     """Perform fuzzy matching against a translation memory and
     augment source examples with target matches for Neural Fuzzy Repair.
     :cite:`bulte-tezcan-2019-neural`
@@ -98,26 +116,39 @@ class FuzzyTransform(Transform):
         group = parser.add_argument_group("Transform/FuzzyMatching")
         group.add("--tm_path", "-tm_path",
                   type=str, help="Path to a flat text TM.")
-        group.add("--fuzzy_corpus_ratio", "-fuzzy_corpus_ratio", type=float,
-                  default=0.1,
+        group.add("--fuzzy_corpus_ratio", "-fuzzy_corpus_ratio",
+                  type=float, default=0.1,
                   help="Ratio of corpus to augment with fuzzy matches.")
-        group.add("--fuzzy_threshold", "-fuzzy_threshold", type=int,
-                  default=70, help="The fuzzy matching threshold.")
+        group.add("--fuzzy_threshold", "-fuzzy_threshold",
+                  type=int, default=70,
+                  help="The fuzzy matching threshold.")
         group.add("--tm_delimiter", "-tm_delimiter",
                   type=str, default="\t",
                   help="The delimiter used in the flat text TM.")
+        group.add("--fuzzy_token", "-fuzzy_token",
+                  type=str, default="｟fuzzy｠",
+                  help="The fuzzy token to be added with the matches.")
+        group.add("--fuzzymatch_min_length", "-fuzzymatch_min_length",
+                  type=int, default=4,
+                  help="Min length for TM entries and examples to match.")
+        group.add("--fuzzymatch_max_length", "-fuzzymatch_max_length",
+                  type=int, default=70,
+                  help="Max length for TM entries and examples to match.")
 
     def _parse_opts(self):
         self.tm_path = self.opts.tm_path
         self.fuzzy_corpus_ratio = self.opts.fuzzy_corpus_ratio
         self.fuzzy_threshold = self.opts.fuzzy_threshold
         self.tm_delimiter = self.opts.tm_delimiter
+        self.fuzy_token = self.opts.fuzzy_token
+        self.fuzzymatch_min_length = self.opts.fuzzymatch_min_length
+        self.fuzzymatch_max_length = self.opts.fuzzymatch_max_length
 
     @classmethod
     def get_specials(cls, opts):
-        """Add the fuzzy mark token to the src vocab."""
+        """Add the fuzzy match token to the src vocab."""
 
-        return ([_FUZZY_TOKEN], list())
+        return ([opts.fuzzy_token], list())
 
     def warm_up(self, vocabs=None):
         """Create the fuzzy matcher."""
@@ -126,7 +157,10 @@ class FuzzyTransform(Transform):
         self.matcher = FuzzyMatcher(self.tm_path,
                                     self.fuzzy_corpus_ratio,
                                     self.fuzzy_threshold,
-                                    self.tm_delimiter)
+                                    self.tm_delimiter,
+                                    self.fuzy_token,
+                                    self.fuzzymatch_min_length,
+                                    self.fuzzymatch_max_length)
 
     def apply(self, example, is_train=False, stats=None, **kwargs):
         return example
@@ -136,7 +170,8 @@ class FuzzyTransform(Transform):
         for (ex, _, _) in batch:
             # Apply a basic filtering to leave out very short or very long
             # sentences and speed up things a bit during fuzzy matching
-            if len(' '.join(ex['src'])) > 4 and len(' '.join(ex['src'])) < 70:
+            if len(' '.join(ex['src'])) > self.fuzzymatch_min_length and \
+                    len(' '.join(ex['src'])) < self.fuzzymatch_max_length:
                 src_segments.append(' '.join(ex['src']))
             else:
                 src_segments.append('')
