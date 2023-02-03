@@ -556,7 +556,8 @@ class Inference(object):
 
             scores, feats_scores = self.model.generator(dec_out.squeeze(1))
             log_probs = F.log_softmax(scores.to(torch.float32), dim=-1)
-            feats_log_probs = [F.log_softmax(s.to(torch.float32), dim=-1) for s in feats_scores]
+            feats_log_probs = [F.log_softmax(s.to(torch.float32), dim=-1)
+                               for s in feats_scores]
             # returns [(batch_size x beam_size) , vocab ] when 1 step
             # or [batch_size, tgt_len, vocab ] when full sentence
         else:
@@ -864,7 +865,7 @@ class Translator(Inference):
         tgt = batch['tgt']
         tgt_in = tgt[:, :-1, :]
 
-        log_probs, attn = self._decode_and_generate(
+        log_probs, attn, feats_log_probs = self._decode_and_generate(
             tgt_in,
             enc_out,
             batch,

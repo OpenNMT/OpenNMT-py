@@ -153,12 +153,15 @@ class BeamSearchBase(DecodeStrategy):
         return topk_scores, topk_ids
 
     def _pick_features(self, log_probs):
-        features_id = []
-        for logits in log_probs:
-            _, topk_ids = logits.topk(1, dim=-1)
-            features_id.append(topk_ids)
-        features_id = torch.cat(features_id, dim=-1)
-        return features_id
+        if len(log_probs) > 0:
+            features_id = []
+            for probs in log_probs:
+                _, topk_ids = probs.topk(1, dim=-1)
+                features_id.append(topk_ids)
+            features_id = torch.cat(features_id, dim=-1)
+            return features_id
+        else:
+            return None
 
     def update_finished(self):
         # Penalize beams that finished.
@@ -302,7 +305,7 @@ class BeamSearchBase(DecodeStrategy):
         self.topk_ids.fmod_(vocab_size)  # resolve true word ids
 
         # Concatenate topk_ids for tokens and feats.
-        if features_ids.size(0) > 0:
+        if features_ids is not None:
             topk_ids = torch.cat((
                 self.topk_ids.view(_B * self.beam_size, 1),
                 features_ids), dim=1)

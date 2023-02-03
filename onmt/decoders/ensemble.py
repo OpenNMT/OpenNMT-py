@@ -106,14 +106,14 @@ class EnsembleGenerator(nn.Module):
             scores, feats_scores = \
                 (mg(h) if attn is None else mg(h, attn, src_map))
             distributions.append(scores)
-            feats_distributions.append(feats_distributions)
+            feats_distributions.append(feats_scores)
 
         distributions = torch.stack(distributions)
 
         stacked_feats_distributions = []
         for i in range(n_feats):
             stacked_feats_distributions.append(
-                torch.stack([feats_distributions[i]
+                torch.stack([feat_distribution[i]
                              for feat_distribution in feats_distributions
                              for i in range(n_feats)]))
 

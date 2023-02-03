@@ -45,24 +45,24 @@ class TranslationBuilder(object):
 
     def _build_target_tokens(self, src, src_raw, pred, attn, feats):
         tokens = []
-        for tok, *tok_feats in zip(pred, *feats):
+
+        if feats is not None:
+            pred_iter = zip(pred, *feats)
+        else:
+            pred_iter = [(item,) for item in pred]
+
+        for tok, *tok_feats in pred_iter:
             if tok < len(self.vocabs['tgt']):
                 token = self.vocabs['tgt'].lookup_index(tok)
             else:
                 vl = len(self.vocabs['tgt'])
                 token = self.vocabs['src'].lookup_index(tok - vl)
-
-            if len(tok_feats) > 0:
-                str_feats = []
-                for feat, fv in zip(tok_feats, self.vocabs['tgt_feats']):
-                    str_feats.append(fv.lookup_index(feat))
             if token == DefaultTokens.EOS:
                 break
-            else:
-                if str_feats:
-                    tokens.append(token + "￨" + "￨".join(str_feats))
-                else:
-                    tokens.append(token)
+            if len(tok_feats) > 0:
+                for feat, fv in zip(tok_feats, self.vocabs['tgt_feats']):
+                    token += "￨" + fv.lookup_index(feat)
+            tokens.append(token)
         if self.replace_unk and attn is not None and src is not None:
             assert False, "TODO"
             for i in range(len(tokens)):

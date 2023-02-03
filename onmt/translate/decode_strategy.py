@@ -143,8 +143,8 @@ class DecodeStrategy(object):
             device = torch.device('cpu')
         # Here we set the decoder to start with self.start (BOS or EOS)
         self.alive_seq = torch.full(
-            [self.batch_size * self.parallel_paths, self.n_tgt_feats+1, 1], self.start,
-            dtype=torch.long, device=device)
+            [self.batch_size * self.parallel_paths, self.n_tgt_feats+1, 1],
+            self.start, dtype=torch.long, device=device)
         self.is_finished = torch.zeros(
             [self.batch_size, self.parallel_paths],
             dtype=torch.uint8, device=device)

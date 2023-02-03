@@ -102,15 +102,16 @@ def numericalize(vocabs, example):
             vocabs['src']([DefaultTokens.BOS] + src_text)
 
     numeric['src']['feats_ids'] = []
-    for feat_vocab, feat in zip(
-            vocabs['src_feats'], example['src']['feats']):
-        feat_text = feat.split()
-        if data_task == ModelTask.SEQ2SEQ:
-            numeric['src']['feats_ids'].append(
-                feat_vocab(feat_text))
-        else:
-            numeric['src']['feats_ids'].append(
-                feat_vocab([DefaultTokens.BOS] + feat_text))
+    if 'src_feats' in vocabs and example['src']['feats']:
+        for feat_vocab, feat in zip(
+                vocabs['src_feats'], example['src']['feats']):
+            feat_text = feat.split()
+            if data_task == ModelTask.SEQ2SEQ:
+                numeric['src']['feats_ids'].append(
+                    feat_vocab(feat_text))
+            else:
+                numeric['src']['feats_ids'].append(
+                    feat_vocab([DefaultTokens.BOS] + feat_text))
 
     if 'tgt' in example:
         tgt_text = example['tgt']['tgt'].split()
@@ -123,16 +124,17 @@ def numericalize(vocabs, example):
                 vocabs['tgt'](tgt_text + [DefaultTokens.EOS])
 
         numeric['tgt']['feats_ids'] = []
-        for feat_vocab, feat in zip(
-                vocabs['tgt_feats'], example['tgt']['feats']):
-            feat_text = feat.split()
-            if data_task == ModelTask.SEQ2SEQ:
-                numeric['tgt']['feats_ids'].append(
-                    feat_vocab([DefaultTokens.BOS] + feat_text
-                               + [DefaultTokens.EOS]))
-            else:
-                numeric['tgt']['feats_ids'].append(
-                    feat_vocab(feat_text + [DefaultTokens.EOS]))
+        if 'tgt_feats' in vocabs and example['tgt']['feats']:
+            for feat_vocab, feat in zip(
+                    vocabs['tgt_feats'], example['tgt']['feats']):
+                feat_text = feat.split()
+                if data_task == ModelTask.SEQ2SEQ:
+                    numeric['tgt']['feats_ids'].append(
+                        feat_vocab([DefaultTokens.BOS] + feat_text
+                                   + [DefaultTokens.EOS]))
+                else:
+                    numeric['tgt']['feats_ids'].append(
+                        feat_vocab(feat_text + [DefaultTokens.EOS]))
 
     return numeric
 
