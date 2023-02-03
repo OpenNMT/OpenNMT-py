@@ -140,7 +140,7 @@ class FuzzyMatchTransform(Transform):
         self.fuzzy_corpus_ratio = self.opts.fuzzy_corpus_ratio
         self.fuzzy_threshold = self.opts.fuzzy_threshold
         self.tm_delimiter = self.opts.tm_delimiter
-        self.fuzy_token = self.opts.fuzzy_token
+        self.fuzzy_token = self.opts.fuzzy_token
         self.fuzzymatch_min_length = self.opts.fuzzymatch_min_length
         self.fuzzymatch_max_length = self.opts.fuzzymatch_max_length
 
