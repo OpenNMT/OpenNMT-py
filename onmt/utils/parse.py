@@ -171,15 +171,6 @@ class DataOptsCheckerMixin(object):
             ), "The number source features defaults does not match \
                 -n_src_feats"
 
-        '''
-        if opt.feat_merge == "concat" and opt.feat_vec_size > 0:
-            assert (
-                (opt.feat_vec_size * opt.n_src_feats) + opt.src_word_vec_size
-                == opt.hidden_size), "(feat_vec_size * n_src_feats) + " \
-                "src_word_vec_size should be equal to hidden_size with " \
-                "-feat_merge concat mode."
-        '''
-
     @classmethod
     def validate_prepare_opts(cls, opt, build_vocab_only=False):
         """Validate all options relate to prepare (data/transform/vocab)."""
@@ -276,6 +267,14 @@ class ArgumentParser(cfargparse.ArgumentParser, DataOptsCheckerMixin):
                             model_opt.alignment_layer,
                             model_opt.alignment_heads,
                             model_opt.full_context_alignment))
+
+        if model_opt.feat_merge == "concat" and model_opt.feat_vec_size > 0:
+            assert (
+                (model_opt.feat_vec_size * model_opt.n_src_feats)
+                + model_opt.src_word_vec_size == model_opt.hidden_size), \
+                "(feat_vec_size * n_src_feats) + " \
+                "src_word_vec_size should be equal to hidden_size with " \
+                "-feat_merge concat mode."
 
     @classmethod
     def ckpt_model_opts(cls, ckpt_opt):
