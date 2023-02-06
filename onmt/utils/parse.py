@@ -164,6 +164,23 @@ class DataOptsCheckerMixin(object):
         ), "Only transformer decoder is supported for LM task"
 
     @classmethod
+    def _validate_source_features_opts(cls, opt):
+        if opt.src_feats_defaults is not None:
+            assert (
+                opt.n_src_feats == len(opt.src_feats_defaults.split("￨"))
+            ), "The number source features defaults does not match \
+                -n_src_feats"
+
+        '''
+        if opt.feat_merge == "concat" and opt.feat_vec_size > 0:
+            assert (
+                (opt.feat_vec_size * opt.n_src_feats) + opt.src_word_vec_size
+                == opt.hidden_size), "(feat_vec_size * n_src_feats) + " \
+                "src_word_vec_size should be equal to hidden_size with " \
+                "-feat_merge concat mode."
+        '''
+
+    @classmethod
     def validate_prepare_opts(cls, opt, build_vocab_only=False):
         """Validate all options relate to prepare (data/transform/vocab)."""
         if opt.n_sample != 0:
@@ -173,6 +190,7 @@ class DataOptsCheckerMixin(object):
         cls._get_all_transform(opt)
         cls._validate_transforms_opts(opt)
         cls._validate_vocab_opts(opt, build_vocab_only=build_vocab_only)
+        cls._validate_source_features_opts(opt)
 
     @classmethod
     def validate_model_opts(cls, opt):

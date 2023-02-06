@@ -358,6 +358,23 @@ ${PYTHON} onmt/bin/train.py \
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 
+
+echo -n "  [+] Testing training with features and dynamic scoring..."
+${PYTHON} onmt/bin/train.py \
+            -config ${DATA_DIR}/features_data.yaml \
+            -src_vocab $TMP_OUT_DIR/onmt_feat.vocab.src \
+            -tgt_vocab $TMP_OUT_DIR/onmt_feat.vocab.tgt \
+            -src_vocab_size 1000 -tgt_vocab_size 1000 \
+            -hidden_size 2 -batch_size 10 \
+            -word_vec_size 5 -hidden_size 10 \
+            -num_workers 0 -bucket_size 1024 \
+            -report_every 5 -train_steps 10 \
+            -train_metrics "BLEU" "TER" \
+            -valid_metrics "BLEU" "TER" \
+            -save_model $TMP_OUT_DIR/onmt.features.model \
+            -save_checkpoint_steps 10 >> ${LOG_FILE} 2>&1
+[ "$?" -eq 0 ] || error_exit
+echo "Succeeded" | tee -a ${LOG_FILE}
 rm -f $TMP_OUT_DIR/onmt.vocab*
 rm -f $TMP_OUT_DIR/onmt.model*
 rm -f $TMP_OUT_DIR/onmt_feat.vocab.*

@@ -3,7 +3,8 @@ import os
 from onmt.utils.logging import logger
 from onmt.constants import CorpusName, CorpusTask
 from onmt.transforms import TransformPipe
-from onmt.inputters.text_utils import process, parse_features
+from onmt.inputters.text_utils import (
+    process, parse_features, append_features_to_text)
 from contextlib import contextmanager
 
 
@@ -80,8 +81,7 @@ class ParallelCorpus(object):
                     if align is not None:
                         example['align'] = align.decode('utf-8')
 
-                    # TODO: check this
-                    if sfeats:
+                    if sfeats is not None:
                         example['src_feats'] = [f for f in sfeats]
                     yield example
 
@@ -256,7 +256,16 @@ def save_transformed_sample(opts, transforms, n_sample=3):
                     maybe_example = maybe_example[0]
                     src_line, tgt_line = (maybe_example['src']['src'],
                                           maybe_example['tgt']['tgt'])
-                    f_src.write(src_line + '\n')
+
+                    if 'feats' in maybe_example['src']:
+                        src_feats_lines = maybe_example['src']['feats']
+                    else:
+                        src_feats_lines = []
+
+                    src_pretty_line = append_features_to_text(
+                        src_line, src_feats_lines)
+
+                    f_src.write(src_pretty_line + '\n')
                     f_tgt.write(tgt_line + '\n')
                     if n_sample > 0 and i >= n_sample:
                         break

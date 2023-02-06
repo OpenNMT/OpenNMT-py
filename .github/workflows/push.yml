@@ -265,6 +265,21 @@ jobs:
           -report_every 5 -train_steps 10 \
           -save_model /tmp/onmt.model \
           -save_checkpoint_steps 10
+    - name: Testing training with features and dynamic scoring
+      run: |
+        python onmt/bin/train.py \
+          -config data/features_data.yaml \
+          -src_vocab /tmp/onmt_feat.vocab.src \
+          -tgt_vocab /tmp/onmt_feat.vocab.tgt \
+          -src_vocab_size 1000 -tgt_vocab_size 1000 \
+          -hidden_size 2 -batch_size 10 \
+          -word_vec_size 5 -hidden_size 10 \
+          -num_workers 0 -bucket_size 1024 \
+          -report_every 5 -train_steps 10 \
+          -train_metrics "BLEU" "TER" \
+          -valid_metrics "BLEU" "TER" \
+          -save_model /tmp/onmt.model \
+          -save_checkpoint_steps 10
     - name: Testing translation with features
       run: |
         python translate.py \

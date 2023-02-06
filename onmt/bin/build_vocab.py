@@ -6,7 +6,7 @@ from onmt.utils.misc import set_random_seed, check_path
 from onmt.utils.parse import ArgumentParser
 from onmt.opts import dynamic_prepare_opts
 from onmt.inputters.text_corpus import build_corpora_iters, get_corpora
-from onmt.inputters.text_utils import process
+from onmt.inputters.text_utils import process, append_features_to_text
 from onmt.transforms import make_transforms, get_transforms_cls
 from onmt.constants import CorpusName, CorpusTask
 from collections import Counter
@@ -38,22 +38,6 @@ def write_files_from_queues(sample_path, queues):
                     f_tgt.write(tgt_line + '\n')
                 if _next:
                     break
-
-
-# Just for debugging purposes
-# It appends features to subwords when dumping to file
-def append_features_to_text(text, features):
-    text_tok = text.split(' ')
-    feats_tok = [x.split(' ') for x in features]
-
-    pretty_toks = []
-    for tok, *feats in zip(text_tok, *feats_tok):
-        feats = '￨'.join(feats)
-        if feats:
-            pretty_toks.append(f"{tok}￨{feats}")
-        else:
-            pretty_toks.append(tok)
-    return " ".join(pretty_toks)
 
 
 def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):

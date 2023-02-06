@@ -7,6 +7,7 @@ from onmt.constants import DefaultTokens
 from onmt.inputters.text_utils import _addcopykeys, tensorify, text_sort_key
 from onmt.inputters.inputter import IterOnDevice
 from onmt.transforms import get_transforms_cls, make_transforms, TransformPipe
+from itertools import repeat
 
 
 class ScoringPreparator():
@@ -43,6 +44,8 @@ class ScoringPreparator():
         batch_side = batch[side]
         nb_sentences = batch_side.shape[0]
         nb_tokens_per_sentence = batch_side.shape[1]
+        nb_feats = batch_side.shape[2] - 1
+
         indices_to_remove = [vocab.lookup_token(token)
                              for token in [DefaultTokens.PAD,
                                            DefaultTokens.EOS,
@@ -53,7 +56,27 @@ class ScoringPreparator():
                       for t in range(nb_tokens_per_sentence)
                       if batch_side[i, t, 0] not in indices_to_remove]
             transformed_sentences.append(tokens)
-        return transformed_sentences
+
+        if nb_feats > 0:
+            transformed_feats = []
+            for i_feat in range(nb_feats):
+                fv = self.vocabs["src_feats"][i_feat]
+                indices_to_remove = [fv.lookup_token(token)
+                                     for token in [DefaultTokens.PAD,
+                                                   DefaultTokens.EOS,
+                                                   DefaultTokens.BOS]]
+                transformed_feat = []
+                for i in range(nb_sentences):
+                    tokens = [fv.lookup_index(batch_side[i, t, i_feat+1])
+                              for t in range(nb_tokens_per_sentence)
+                              if batch_side[i, t, i_feat+1]
+                              not in indices_to_remove]
+                    transformed_feat.append(tokens)
+                transformed_feats.append(transformed_feat)
+        else:
+            transformed_feats = [repeat(None)]
+
+        return transformed_sentences, transformed_feats
 
     def ids_to_tokens_batch(self, batch):
         """Reconstruct transformed source and reference
@@ -64,11 +87,24 @@ class ScoringPreparator():
             transformed_batch(list): A list of examples
         with the fields "src" and "tgt"
         """
-        transformed_batch = [{'src': src_ex, 'tgt': tgt_ex}
-                             for src_ex, tgt_ex
-                             in zip(
-                                self.ids_to_tokens_batch_side(batch, 'src'),
-                                self.ids_to_tokens_batch_side(batch, 'tgt'))]
+
+        transformed_srcs, transformed_src_feats = \
+            self.ids_to_tokens_batch_side(batch, 'src')
+        transformed_tgts, _ = \
+            self.ids_to_tokens_batch_side(batch, 'tgt')
+
+        transformed_batch = []
+        for src, tgt, *src_feats in zip(transformed_srcs,
+                                        transformed_tgts,
+                                        *transformed_src_feats):
+            ex = {
+                "src": src,
+                "tgt": tgt
+            }
+            if src_feats[0] is not None:
+                ex["src_feats"] = src_feats
+            transformed_batch.append(ex)
+
         return transformed_batch
 
     def translate(self, model, transformed_batches, gpu_rank, step, mode):
@@ -129,6 +165,11 @@ class ScoringPreparator():
                               'tgt': None,
                               'indices': i,
                               'align': None}
+                    if "src_feats" in ex:
+                        fs_idxs = [fv(f) for fv, f in
+                                   zip(translator.vocabs["src_feats"],
+                                       ex["src_feats"])]
+                        num_ex["src"]["feats"] = fs_idxs
                     num_ex = _addcopykeys(translator.vocabs["src"], num_ex)
                     num_ex["src"]["src"] = ex['src']
                     numeric.append(num_ex)

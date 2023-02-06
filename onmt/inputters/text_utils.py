@@ -20,21 +20,37 @@ def parse_features(line, n_feats=0, defaults=None):
         if not fts and defaults is not None:
             if isinstance(defaults, str):
                 defaults = defaults.split("￨")
-            assert len(defaults) == n_feats, \
-                "The number of provided defaults does not " \
-                "match the number of feats"
+            assert len(defaults) == n_feats  # Security check
             fts = defaults
         assert len(fts) == n_feats, \
             f"The number of fetures does not match the " \
             f"expected number of features. Found {len(fts)} " \
-            f"features in the data but {n_feats} were expected"
+            f"features in the data but {n_feats} were expected."
         text.append(tok)
         for i in range(n_feats):
             feats[i].append(fts[i])
     # Check if all tokens have features or none at all
-    assert check == 0 or check == count*n_feats, "Some features are missing"
+    assert check == 0 or check == count*n_feats, \
+        "Some tokens are missing features. Please check your data."
     feats = [" ".join(x) for x in feats] if n_feats > 0 else None
     return " ".join(text), feats
+
+
+def append_features_to_text(text, features):
+    """
+    It appends features to subwords when dumping to file
+    """
+    text_tok = text.split(' ')
+    feats_tok = [x.split(' ') for x in features]
+
+    pretty_toks = []
+    for tok, *feats in zip(text_tok, *feats_tok):
+        feats = '￨'.join(feats)
+        if feats:
+            pretty_toks.append(f"{tok}￨{feats}")
+        else:
+            pretty_toks.append(tok)
+    return " ".join(pretty_toks)
 
 
 def text_sort_key(ex):
@@ -112,6 +128,7 @@ def numericalize(vocabs, example):
                 f"Something went wrong with task {vocabs['data_task']}"
         )
 
+    # TODO: check this if statement
     if 'src_feats' in vocabs.keys():
         numeric_feats = []
         for fv, feat in zip(vocabs["src_feats"],
@@ -245,6 +262,7 @@ def textbatch_to_tensor(vocabs, batch, is_train=False):
             toks = ex.strip("\n").split()
         idxs = vocabs['src'](toks)
         # Need to add features also in 'src'
+        # TODO
         numeric.append({'src': {'src': toks,
                         'src_ids': idxs},
                         'srclen': len(toks),
