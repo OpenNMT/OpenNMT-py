@@ -372,7 +372,8 @@ The Translation Memory (TM) format should be a flat text file, with each line co
 - Depending on your system's specs, you may have to experiment with the options `bucket_size`, `bucket_size_init`, and `bucket_size_increment`;
 - You should increase the `num_workers` and `prefetch_factor` so your GPU does not have to wait for the batches to be augmented with fuzzy matches;
 - Try to use a sensible Translation Memory size. 200k-250k translation units should be enough for yielding a sufficient number of matches;
-- Although the transform performs some basic filtering both in the TM and in the corpus for very short or very long segments, some examples may still be long enough, so you should increase a bit the `src_seq_length`.
+- Although the transform performs some basic filtering both in the TM and in the corpus for very short or very long segments, some examples may still be long enough, so you should increase a bit the `src_seq_length`;
+- Currently, when using `n_sample`, examples are always processed one by one and not in batches.
 
 The following options can be added to the configuration:
 - `tm_path`: The path to the Translation Memory text file;
