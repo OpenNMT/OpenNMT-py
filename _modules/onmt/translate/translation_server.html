@@ -214,7 +214,7 @@
 
 
 <span class="k">def</span> <span class="nf">critical</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Decorator for critical section (mutually exclusive code)&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorator for critical section (mutually exclusive code)&quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="n">server_model</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">server_model</span><span class="o">.</span><span class="n">running_lock</span><span class="o">.</span><span class="n">acquire</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="mi">120</span><span class="p">):</span>
@@ -264,7 +264,7 @@
 
 
 <span class="k">class</span> <span class="nc">CTranslate2Translator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This class wraps the ctranslate2.Translator object to</span>
 <span class="sd">    reproduce the onmt.translate.translator API.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -356,7 +356,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">next_id</span> <span class="o">=</span> <span class="mi">0</span>
 
 <div class="viewcode-block" id="TranslationServer.start"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.TranslationServer.start">[docs]</a>    <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_file</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Read the config file and pre-/load the models.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read the config file and pre-/load the models.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config_file</span> <span class="o">=</span> <span class="n">config_file</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">confs</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
@@ -393,7 +393,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">preload_model</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">model_id</span><span class="o">=</span><span class="n">model_id</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="TranslationServer.clone_model"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.TranslationServer.clone_model">[docs]</a>    <span class="k">def</span> <span class="nf">clone_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_id</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Clone a model `model_id`.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Clone a model `model_id`.</span>
 
 <span class="sd">        Different options may be passed. If `opt` is None, it will use the</span>
 <span class="sd">        same set of options</span>
@@ -407,7 +407,7 @@
             <span class="k">raise</span> <span class="n">ServerModelError</span><span class="p">(</span><span class="s2">&quot;No such model &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">model_id</span><span class="p">))</span></div>
 
 <div class="viewcode-block" id="TranslationServer.load_model"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.TranslationServer.load_model">[docs]</a>    <span class="k">def</span> <span class="nf">load_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">model_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">model_kwargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Load a model given a set of options</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load a model given a set of options</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">model_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">preload_model</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">model_id</span><span class="o">=</span><span class="n">model_id</span><span class="p">,</span> <span class="o">**</span><span class="n">model_kwargs</span><span class="p">)</span>
         <span class="n">load_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="n">model_id</span><span class="p">]</span><span class="o">.</span><span class="n">load_time</span>
@@ -415,7 +415,7 @@
         <span class="k">return</span> <span class="n">model_id</span><span class="p">,</span> <span class="n">load_time</span></div>
 
 <div class="viewcode-block" id="TranslationServer.preload_model"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.TranslationServer.preload_model">[docs]</a>    <span class="k">def</span> <span class="nf">preload_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">model_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">model_kwargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Preloading the model: updating internal datastructure</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Preloading the model: updating internal datastructure</span>
 
 <span class="sd">        It will effectively load the model if `load` is set</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -434,7 +434,7 @@
         <span class="k">return</span> <span class="n">model_id</span></div>
 
 <div class="viewcode-block" id="TranslationServer.run"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.TranslationServer.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Translate `inputs`</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Translate `inputs`</span>
 
 <span class="sd">        We keep the same format as the Lua version i.e.</span>
 <span class="sd">        ``[{&quot;id&quot;: model_id, &quot;src&quot;: &quot;sequence to translate&quot;},{ ...}]``</span>
@@ -450,7 +450,7 @@
             <span class="k">raise</span> <span class="n">ServerModelError</span><span class="p">(</span><span class="s2">&quot;No such model &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">model_id</span><span class="p">))</span></div>
 
 <div class="viewcode-block" id="TranslationServer.unload_model"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.TranslationServer.unload_model">[docs]</a>    <span class="k">def</span> <span class="nf">unload_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Manually unload a model.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Manually unload a model.</span>
 
 <span class="sd">        It will free the memory and cancel the timer</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -461,7 +461,7 @@
             <span class="k">raise</span> <span class="n">ServerModelError</span><span class="p">(</span><span class="s2">&quot;No such model &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">model_id</span><span class="p">))</span></div>
 
 <div class="viewcode-block" id="TranslationServer.list_models"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.TranslationServer.list_models">[docs]</a>    <span class="k">def</span> <span class="nf">list_models</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Return the list of available models</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the list of available models</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">models</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">model</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -470,7 +470,7 @@
 
 
 <div class="viewcode-block" id="ServerModel"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel">[docs]</a><span class="k">class</span> <span class="nc">ServerModel</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Wrap a model with server functionality.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrap a model with server functionality.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        opt (dict): Options for the Translator</span>
@@ -574,7 +574,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">stop_unload_timer</span><span class="p">()</span>
 
 <div class="viewcode-block" id="ServerModel.parse_opt"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.parse_opt">[docs]</a>    <span class="k">def</span> <span class="nf">parse_opt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">opt</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Parse the option set passed by the user using `onmt.opts`</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parse the option set passed by the user using `onmt.opts`</span>
 
 <span class="sd">       Args:</span>
 <span class="sd">           opt (dict): Options passed by the user</span>
@@ -647,7 +647,7 @@
 
     <span class="nd">@critical</span>
     <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Translate `inputs` using this model</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Translate `inputs` using this model</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            inputs (List[dict[str, str]]): [{&quot;src&quot;: &quot;...&quot;},{&quot;src&quot;: ...}]</span>
@@ -791,7 +791,7 @@
 
 <div class="viewcode-block" id="ServerModel.rebuild_seg_packages"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.rebuild_seg_packages">[docs]</a>    <span class="k">def</span> <span class="nf">rebuild_seg_packages</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">all_preprocessed</span><span class="p">,</span> <span class="n">results</span><span class="p">,</span>
                              <span class="n">scores</span><span class="p">,</span> <span class="n">aligns</span><span class="p">,</span> <span class="n">n_best</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Rebuild proper segment packages based on initial n_seg.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">offset</span> <span class="o">=</span> <span class="mi">0</span>
@@ -816,7 +816,7 @@
         <span class="k">return</span> <span class="n">rebuilt_segs</span><span class="p">,</span> <span class="n">avg_scores</span><span class="p">,</span> <span class="n">merged_aligns</span></div>
 
 <div class="viewcode-block" id="ServerModel.do_timeout"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.do_timeout">[docs]</a>    <span class="k">def</span> <span class="nf">do_timeout</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Timeout function that frees GPU memory.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Timeout function that frees GPU memory.</span>
 
 <span class="sd">        Moves the model to CPU or unloads it; depending on</span>
 <span class="sd">        attr`self.on_timemout` value</span>
@@ -866,7 +866,7 @@
 
     <span class="nd">@critical</span>
     <span class="k">def</span> <span class="nf">to_cpu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Move the model to CPU and clear CUDA cache.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Move the model to CPU and clear CUDA cache.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="p">)</span> <span class="o">==</span> <span class="n">CTranslate2Translator</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">to_cpu</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
@@ -875,7 +875,7 @@
                 <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">empty_cache</span><span class="p">()</span>
 
 <div class="viewcode-block" id="ServerModel.to_gpu"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.to_gpu">[docs]</a>    <span class="k">def</span> <span class="nf">to_gpu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Move the model to GPU.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Move the model to GPU.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="p">)</span> <span class="o">==</span> <span class="n">CTranslate2Translator</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">to_gpu</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
@@ -883,7 +883,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="ServerModel.maybe_preprocess"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.maybe_preprocess">[docs]</a>    <span class="k">def</span> <span class="nf">maybe_preprocess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Preprocess the sequence (or not)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Preprocess the sequence (or not)</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">sequence</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;src&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -898,7 +898,7 @@
         <span class="k">return</span> <span class="n">sequence</span></div>
 
 <div class="viewcode-block" id="ServerModel.preprocess"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.preprocess">[docs]</a>    <span class="k">def</span> <span class="nf">preprocess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Preprocess a single sequence.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Preprocess a single sequence.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            sequence (str): The sequence to preprocess.</span>
@@ -913,7 +913,7 @@
         <span class="k">return</span> <span class="n">sequence</span></div>
 
 <div class="viewcode-block" id="ServerModel.transform_feats"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.transform_feats">[docs]</a>    <span class="k">def</span> <span class="nf">transform_feats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw_src</span><span class="p">,</span> <span class="n">tok_src</span><span class="p">,</span> <span class="n">feats</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Apply InferFeatsTransform to features&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply InferFeatsTransform to features&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">feats_transform</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">feats</span>
         <span class="n">ex</span> <span class="o">=</span> <span class="p">{</span>
@@ -930,7 +930,7 @@
         <span class="k">return</span> <span class="n">transformed_feats</span></div>
 
 <div class="viewcode-block" id="ServerModel.build_tokenizer"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.build_tokenizer">[docs]</a>    <span class="k">def</span> <span class="nf">build_tokenizer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tokenizer_opt</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Build tokenizer described by `tokenizer_opt`.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build tokenizer described by `tokenizer_opt`.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="s2">&quot;type&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tokenizer_opt</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s2">&quot;Missing mandatory tokenizer option &#39;type&#39;&quot;</span><span class="p">)</span>
@@ -966,7 +966,7 @@
         <span class="k">return</span> <span class="n">tokenizer</span></div>
 
 <div class="viewcode-block" id="ServerModel.maybe_tokenize"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.maybe_tokenize">[docs]</a>    <span class="k">def</span> <span class="nf">maybe_tokenize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">&#39;src&#39;</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Tokenize the sequence (or not).</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Tokenize the sequence (or not).</span>
 
 <span class="sd">        Same args/returns as `tokenize`</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -976,7 +976,7 @@
         <span class="k">return</span> <span class="n">sequence</span></div>
 
 <div class="viewcode-block" id="ServerModel.tokenize"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.tokenize">[docs]</a>    <span class="k">def</span> <span class="nf">tokenize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">&#39;src&#39;</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Tokenize a single sequence.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Tokenize a single sequence.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            sequence (str): The sequence to tokenize.</span>
@@ -997,7 +997,7 @@
         <span class="k">return</span> <span class="n">tok</span></div>
 
 <div class="viewcode-block" id="ServerModel.tokenizer_marker"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.tokenizer_marker">[docs]</a>    <span class="k">def</span> <span class="nf">tokenizer_marker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">&#39;src&#39;</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Return marker used in `side` tokenizer.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return marker used in `side` tokenizer.&quot;&quot;&quot;</span>
         <span class="n">marker</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizers_opt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">tokenizer_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizers_opt</span><span class="p">[</span><span class="n">side</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;type&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
@@ -1013,7 +1013,7 @@
         <span class="k">return</span> <span class="n">marker</span></div>
 
 <div class="viewcode-block" id="ServerModel.maybe_detokenize_with_align"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.maybe_detokenize_with_align">[docs]</a>    <span class="k">def</span> <span class="nf">maybe_detokenize_with_align</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">&#39;tgt&#39;</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;De-tokenize (or not) the sequence (with alignment).</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;De-tokenize (or not) the sequence (with alignment).</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            sequence (str): The sequence to detokenize, possible with</span>
@@ -1034,7 +1034,7 @@
         <span class="k">return</span> <span class="p">(</span><span class="n">sequence</span><span class="p">,</span> <span class="n">align</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="ServerModel.maybe_detokenize"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.maybe_detokenize">[docs]</a>    <span class="k">def</span> <span class="nf">maybe_detokenize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">&#39;tgt&#39;</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;De-tokenize the sequence (or not)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;De-tokenize the sequence (or not)</span>
 
 <span class="sd">        Same args/returns as :func:`tokenize()`</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1044,7 +1044,7 @@
         <span class="k">return</span> <span class="n">sequence</span></div>
 
 <div class="viewcode-block" id="ServerModel.detokenize"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.detokenize">[docs]</a>    <span class="k">def</span> <span class="nf">detokenize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">&#39;tgt&#39;</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Detokenize a single sequence</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Detokenize a single sequence</span>
 
 <span class="sd">        Same args/returns as :func:`tokenize()`</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1060,7 +1060,7 @@
         <span class="k">return</span> <span class="n">detok</span></div>
 
 <div class="viewcode-block" id="ServerModel.maybe_convert_align"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.maybe_convert_align">[docs]</a>    <span class="k">def</span> <span class="nf">maybe_convert_align</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">align</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Convert alignment to match detokenized src/tgt (or not).</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert alignment to match detokenized src/tgt (or not).</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            src (str): The tokenized source sequence.</span>
@@ -1081,7 +1081,7 @@
         <span class="k">return</span> <span class="n">align</span></div>
 
 <div class="viewcode-block" id="ServerModel.maybe_postprocess"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.maybe_postprocess">[docs]</a>    <span class="k">def</span> <span class="nf">maybe_postprocess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Postprocess the sequence (or not)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Postprocess the sequence (or not)</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">postprocess_opt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -1090,7 +1090,7 @@
             <span class="k">return</span> <span class="n">sequence</span><span class="p">[</span><span class="s2">&quot;seg&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span></div>
 
 <div class="viewcode-block" id="ServerModel.postprocess"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.postprocess">[docs]</a>    <span class="k">def</span> <span class="nf">postprocess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Preprocess a single sequence.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Preprocess a single sequence.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            sequence (str): The sequence to process.</span>

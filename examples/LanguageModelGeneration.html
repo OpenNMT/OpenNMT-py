@@ -202,7 +202,7 @@
 <div class="section" id="step-0-download-and-clean-the-data">
 <h2>Step 0: Download and clean the data<a class="headerlink" href="#step-0-download-and-clean-the-data" title="Permalink to this headline">¶</a></h2>
 <p>Preliminary steps are defined in the <a class="reference external" href="https://github.com/OpenNMT/OpenNMT-py/tree/master/examples/scripts/prepare_wikitext-103_data.sh"><code class="docutils literal notranslate"><span class="pre">examples/scripts/prepare_wikitext-103_data.sh</span></code></a>. The following command will download the <a class="reference external" href="https://blog.einstein.ai/the-wikitext-long-term-dependency-language-modeling-dataset/">WikiText103 dataset</a>, remove empty lines and shuffle the training corpus:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>chmod u+x prepare_wikitext-103_data.sh
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>chmod<span class="w"> </span>u+x<span class="w"> </span>prepare_wikitext-103_data.sh
 ./prepare_wikitext-103_data.sh
 </pre></div>
 </div>
@@ -244,9 +244,9 @@ BPE and language modeling specificities are explained in the following sections.
 <div class="section" id="language-model-specificities">
 <h3>Language Model specificities<a class="headerlink" href="#language-model-specificities" title="Permalink to this headline">¶</a></h3>
 <p>In LM tasks we expect a single source, therefore path_tgt is not required for LM tasks.</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">data</span><span class="p">:</span><span class="w"></span>
-<span class="w">    </span><span class="nt">corpus_1</span><span class="p">:</span><span class="w"></span>
-<span class="w">        </span><span class="nt">path_src</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">data/wikitext-103-raw/wiki.train.raw</span><span class="w"></span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">data</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">corpus_1</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">path_src</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">data/wikitext-103-raw/wiki.train.raw</span>
 </pre></div>
 </div>
 </div>
@@ -254,19 +254,19 @@ BPE and language modeling specificities are explained in the following sections.
 <h3>BPE specificities<a class="headerlink" href="#bpe-specificities" title="Permalink to this headline">¶</a></h3>
 <p>To use BPE tokenization on the fly, the following parameters must be in the config file.
 Slight differences between on the fly tokenization and outputed tokenized files from step 1 can be observed.</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">src_subword_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bpe</span><span class="w"></span>
-<span class="nt">src_subword_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">data/wikitext-103-raw/subwords.bpe</span><span class="w"></span>
-<span class="nt">src_onmttok_kwargs</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;{&quot;mode&quot;:</span><span class="nv"> </span><span class="s">&quot;aggressive&quot;,</span><span class="nv"> </span><span class="s">&quot;joiner_annotate&quot;:</span><span class="nv"> </span><span class="s">True,</span><span class="nv"> </span><span class="s">&quot;preserve_placeholders&quot;:</span><span class="w"></span>
-<span class="w">  </span><span class="s">True,</span><span class="nv"> </span><span class="s">&quot;case_markup&quot;:</span><span class="nv"> </span><span class="s">True,</span><span class="nv"> </span><span class="s">&quot;soft_case_regions&quot;:</span><span class="nv"> </span><span class="s">True,</span><span class="nv"> </span><span class="s">&quot;preserve_segmented_tokens&quot;:</span><span class="w"></span>
-<span class="w">  </span><span class="s">True}&#39;</span><span class="w"></span>
-<span class="nt">transforms</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">onmt_tokenize</span><span class="p p-Indicator">]</span><span class="w"></span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">src_subword_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bpe</span>
+<span class="nt">src_subword_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">data/wikitext-103-raw/subwords.bpe</span>
+<span class="nt">src_onmttok_kwargs</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;{&quot;mode&quot;:</span><span class="nv"> </span><span class="s">&quot;aggressive&quot;,</span><span class="nv"> </span><span class="s">&quot;joiner_annotate&quot;:</span><span class="nv"> </span><span class="s">True,</span><span class="nv"> </span><span class="s">&quot;preserve_placeholders&quot;:</span>
+<span class="w">  </span><span class="s">True,</span><span class="nv"> </span><span class="s">&quot;case_markup&quot;:</span><span class="nv"> </span><span class="s">True,</span><span class="nv"> </span><span class="s">&quot;soft_case_regions&quot;:</span><span class="nv"> </span><span class="s">True,</span><span class="nv"> </span><span class="s">&quot;preserve_segmented_tokens&quot;:</span>
+<span class="w">  </span><span class="s">True}&#39;</span>
+<span class="nt">transforms</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">onmt_tokenize</span><span class="p p-Indicator">]</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="build-vocabulary-command">
 <h3>Build vocabulary command<a class="headerlink" href="#build-vocabulary-command" title="Permalink to this headline">¶</a></h3>
 <p>The vocabulary is built using:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_build_vocab -config examples/wiki_103.yaml -n_sample -1
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_build_vocab<span class="w"> </span>-config<span class="w"> </span>examples/wiki_103.yaml<span class="w"> </span>-n_sample<span class="w"> </span>-1
 </pre></div>
 </div>
 </div>
@@ -280,15 +280,15 @@ Slight differences between on the fly tokenization and outputed tokenized files 
 <li><p><em>encoder_type</em> is not useful but need to be mentionned</p></li>
 <li><p><em>share_vocab</em> must be true. The slided source will play the role of the target hence vocabulary must be shared.</p></li>
 </ul>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">model_task</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">lm</span><span class="w"></span>
-<span class="nt">encoder_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">transformer_lm</span><span class="w"></span>
-<span class="nt">decoder_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">transformer_lm</span><span class="w"></span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">model_task</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">lm</span>
+<span class="nt">encoder_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">transformer_lm</span>
+<span class="nt">decoder_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">transformer_lm</span>
 
-<span class="nt">share_vocab</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w"></span>
+<span class="nt">share_vocab</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </pre></div>
 </div>
 <p>The training is launched using:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_train -config examples/wiki_103.yaml
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_train<span class="w"> </span>-config<span class="w"> </span>examples/wiki_103.yaml
 </pre></div>
 </div>
 <p>Tensorboard can be used to monitor the training.</p>
@@ -298,12 +298,12 @@ Slight differences between on the fly tokenization and outputed tokenized files 
 <h2>Step 4: Generate output<a class="headerlink" href="#step-4-generate-output" title="Permalink to this headline">¶</a></h2>
 <p>Options contained in the loaded model will trigger language modeling specific inference.</p>
 <p><code class="docutils literal notranslate"><span class="pre">input.txt</span></code> must contain already tokenized examples, with the same method as the training data. Here, part of validation data will be used:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>head data/wikitext-103-raw/wiki.valid.bpe <span class="p">|</span> cut -d<span class="s2">&quot; &quot;</span> -f-15 &gt; data/wikitext-103-raw/lm_input.txt
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>head<span class="w"> </span>data/wikitext-103-raw/wiki.valid.bpe<span class="w"> </span><span class="p">|</span><span class="w"> </span>cut<span class="w"> </span>-d<span class="s2">&quot; &quot;</span><span class="w"> </span>-f-15<span class="w"> </span>&gt;<span class="w"> </span>data/wikitext-103-raw/lm_input.txt
 </pre></div>
 </div>
 <p>To proceed with LM inference, sampling methods such as top-k sampling or nucleus sampling are usually applied. Details and options about inference methods can be found in <a class="reference external" href="https://github.com/OpenNMT/OpenNMT-py/tree/master/onmt/opts.py"><code class="docutils literal notranslate"><span class="pre">onmt/opts.py</span></code></a>.</p>
 <p>The following command will provide inference with nucleus sampling of p=0.9 and return the 3 sequences with the lowest perplexity out of the 10 generated sequences:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_translate -model data/wikitext-103-raw/run/model-lm_step_1000000.pt -src data/wikitext-103-raw/lm_input.txt -output data/wikitext-103-raw/lm_pred_input.txt -verbose -n_best <span class="m">3</span> -random_sampling_topp <span class="m">0</span>.9 -beam_size <span class="m">10</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_translate<span class="w"> </span>-model<span class="w"> </span>data/wikitext-103-raw/run/model-lm_step_1000000.pt<span class="w"> </span>-src<span class="w"> </span>data/wikitext-103-raw/lm_input.txt<span class="w"> </span>-output<span class="w"> </span>data/wikitext-103-raw/lm_pred_input.txt<span class="w"> </span>-verbose<span class="w"> </span>-n_best<span class="w"> </span><span class="m">3</span><span class="w"> </span>-random_sampling_topp<span class="w"> </span><span class="m">0</span>.9<span class="w"> </span>-beam_size<span class="w"> </span><span class="m">10</span>
 </pre></div>
 </div>
 </div>

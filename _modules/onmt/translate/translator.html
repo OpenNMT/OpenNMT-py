@@ -245,7 +245,7 @@
 
 
 <span class="k">class</span> <span class="nc">Inference</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Translate a batch of sentences with a saved model.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Translate a batch of sentences with a saved model.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        model (onmt.modules.NMTModel): NMT model to use for translation</span>
@@ -313,7 +313,8 @@
         <span class="n">report_score</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">logger</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">seed</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
-        <span class="n">with_score</span><span class="o">=</span><span class="kc">False</span>
+        <span class="n">with_score</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">decoder_start_token</span><span class="o">=</span><span class="n">DefaultTokens</span><span class="o">.</span><span class="n">BOS</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vocabs</span> <span class="o">=</span> <span class="n">vocabs</span>
@@ -322,6 +323,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_pad_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vocabs</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lookup_token</span><span class="p">(</span><span class="n">DefaultTokens</span><span class="o">.</span><span class="n">PAD</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_bos_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vocabs</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lookup_token</span><span class="p">(</span><span class="n">DefaultTokens</span><span class="o">.</span><span class="n">BOS</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_unk_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vocabs</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lookup_token</span><span class="p">(</span><span class="n">DefaultTokens</span><span class="o">.</span><span class="n">UNK</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_start_with</span> <span class="o">=</span>\
+            <span class="bp">self</span><span class="o">.</span><span class="n">vocabs</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lookup_token</span><span class="p">(</span><span class="n">decoder_start_token</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_vocab_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_vocab</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_gpu</span> <span class="o">=</span> <span class="n">gpu</span>
@@ -404,7 +407,7 @@
         <span class="n">report_score</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">logger</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Alternate constructor.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Alternate constructor.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            model (onmt.modules.NMTModel): See :func:`__init__()`.</span>
@@ -454,7 +457,8 @@
             <span class="n">report_score</span><span class="o">=</span><span class="n">report_score</span><span class="p">,</span>
             <span class="n">logger</span><span class="o">=</span><span class="n">logger</span><span class="p">,</span>
             <span class="n">seed</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">seed</span><span class="p">,</span>
-            <span class="n">with_score</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">with_score</span>
+            <span class="n">with_score</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">with_score</span><span class="p">,</span>
+            <span class="n">decoder_start_token</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">decoder_start_token</span>
         <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
@@ -473,7 +477,7 @@
         <span class="n">batch_size</span><span class="p">,</span>
         <span class="n">src</span><span class="p">,</span>
     <span class="p">):</span>
-        <span class="k">if</span> <span class="s1">&#39;tgt&#39;</span> <span class="ow">in</span> <span class="n">batch</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">if</span> <span class="s1">&#39;tgt&#39;</span> <span class="ow">in</span> <span class="n">batch</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">tgt_file_prefix</span><span class="p">:</span>
             <span class="n">gs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_score_target</span><span class="p">(</span>
                 <span class="n">batch</span><span class="p">,</span>
                 <span class="n">enc_out</span><span class="p">,</span>
@@ -493,7 +497,7 @@
         <span class="n">align_debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">phrase_table</span><span class="o">=</span><span class="s2">&quot;&quot;</span>
     <span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Translate content of ``src`` and get gold scores from ``tgt``.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Translate content of ``src`` and get gold scores from ``tgt``.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            infer_iter: tensored batch iterator from DynamicDatasetIter</span>
@@ -621,7 +625,7 @@
                 <span class="s2">&quot;PRED&quot;</span><span class="p">,</span> <span class="n">pred_score_total</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_scores</span><span class="p">)</span>
             <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
-            <span class="k">if</span> <span class="s1">&#39;tgt&#39;</span> <span class="ow">in</span> <span class="n">batch</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="s1">&#39;tgt&#39;</span> <span class="ow">in</span> <span class="n">batch</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">tgt_file_prefix</span><span class="p">:</span>
                 <span class="n">msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_report_score</span><span class="p">(</span>
                     <span class="s2">&quot;GOLD&quot;</span><span class="p">,</span> <span class="n">gold_score_total</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_scores</span><span class="p">)</span>
                 <span class="p">)</span>
@@ -648,7 +652,7 @@
         <span class="k">return</span> <span class="n">all_scores</span><span class="p">,</span> <span class="n">all_predictions</span>
 
     <span class="k">def</span> <span class="nf">_align_pad_prediction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">predictions</span><span class="p">,</span> <span class="n">bos</span><span class="p">,</span> <span class="n">pad</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Padding predictions in batch and add BOS.</span>
 
 <span class="sd">        Args:</span>
@@ -765,7 +769,7 @@
         <span class="k">return</span> <span class="n">log_probs</span><span class="p">,</span> <span class="n">attn</span>
 
     <span class="k">def</span> <span class="nf">translate_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">attn_debug</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Translate a batch of sentences.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Translate a batch of sentences.&quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 
     <span class="k">def</span> <span class="nf">_score_target</span><span class="p">(</span>
@@ -813,7 +817,7 @@
             <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_align_forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">predictions</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        For a batch of input and its prediction, return a list of batch predict</span>
 <span class="sd">        alignment src indice Tensor in size ``(batch, n_best,)``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -864,7 +868,7 @@
         <span class="k">return</span> <span class="n">alignement</span>
 
 <div class="viewcode-block" id="Translator.translate_batch"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.Translator.translate_batch">[docs]</a>    <span class="k">def</span> <span class="nf">translate_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">attn_debug</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Translate a batch of sentences.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Translate a batch of sentences.&quot;&quot;&quot;</span>
         <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_from_topk</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_from_topp</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">decode_strategy</span> <span class="o">=</span> <span class="n">GreedySearch</span><span class="p">(</span>
@@ -872,6 +876,7 @@
                     <span class="n">bos</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_bos_idx</span><span class="p">,</span>
                     <span class="n">eos</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_eos_idx</span><span class="p">,</span>
                     <span class="n">unk</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_unk_idx</span><span class="p">,</span>
+                    <span class="n">start</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_start_with</span><span class="p">,</span>
                     <span class="n">batch_size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s1">&#39;srclen&#39;</span><span class="p">]),</span>
                     <span class="n">global_scorer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">global_scorer</span><span class="p">,</span>
                     <span class="n">min_length</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">min_length</span><span class="p">,</span>
@@ -895,6 +900,7 @@
                     <span class="n">bos</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_bos_idx</span><span class="p">,</span>
                     <span class="n">eos</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_eos_idx</span><span class="p">,</span>
                     <span class="n">unk</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_unk_idx</span><span class="p">,</span>
+                    <span class="n">start</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_start_with</span><span class="p">,</span>
                     <span class="n">n_best</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_best</span><span class="p">,</span>
                     <span class="n">global_scorer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">global_scorer</span><span class="p">,</span>
                     <span class="n">min_length</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">min_length</span><span class="p">,</span>
@@ -934,7 +940,7 @@
     <span class="k">def</span> <span class="nf">_translate_batch_with_strategy</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">decode_strategy</span>
     <span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Translate a batch of sentences step by step using cache.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Translate a batch of sentences step by step using cache.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            batch: a batch of sentences, yield by data iterator.</span>
@@ -1065,14 +1071,14 @@
             <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_align_forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">predictions</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        For a batch of input and its prediction, return a list of batch predict</span>
 <span class="sd">        alignment src indice Tensor in size ``(batch, n_best,)``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 
     <span class="k">def</span> <span class="nf">translate_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">attn_debug</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Translate a batch of sentences.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Translate a batch of sentences.&quot;&quot;&quot;</span>
         <span class="n">batch_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s1">&#39;srclen&#39;</span><span class="p">])</span>
         <span class="k">if</span> <span class="n">batch_size</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">warning_msg</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;GeneratorLM does not support batch_size != 1&quot;</span>
@@ -1091,6 +1097,7 @@
                     <span class="n">bos</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_bos_idx</span><span class="p">,</span>
                     <span class="n">eos</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_eos_idx</span><span class="p">,</span>
                     <span class="n">unk</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_unk_idx</span><span class="p">,</span>
+                    <span class="n">start</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_start_with</span><span class="p">,</span>
                     <span class="n">batch_size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s1">&#39;srclen&#39;</span><span class="p">]),</span>
                     <span class="n">global_scorer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">global_scorer</span><span class="p">,</span>
                     <span class="n">min_length</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">min_length</span><span class="p">,</span>
@@ -1114,6 +1121,7 @@
                     <span class="n">bos</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_bos_idx</span><span class="p">,</span>
                     <span class="n">eos</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_eos_idx</span><span class="p">,</span>
                     <span class="n">unk</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_unk_idx</span><span class="p">,</span>
+                    <span class="n">start</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_start_with</span><span class="p">,</span>
                     <span class="n">n_best</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_best</span><span class="p">,</span>
                     <span class="n">global_scorer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">global_scorer</span><span class="p">,</span>
                     <span class="n">min_length</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">min_length</span><span class="p">,</span>
@@ -1149,7 +1157,7 @@
     <span class="k">def</span> <span class="nf">_translate_batch_with_strategy</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">decode_strategy</span>
     <span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Translate a batch of sentences step by step using cache.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Translate a batch of sentences step by step using cache.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            batch: a batch of sentences, yield by data iterator.</span>

@@ -194,7 +194,7 @@
 
 <span class="nd">@contextmanager</span>
 <span class="k">def</span> <span class="nf">exfile_open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Extended file opener enables open(filename=None).</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extended file opener enables open(filename=None).</span>
 
 <span class="sd">    This context manager enables open(filename=None) as well as regular file.</span>
 <span class="sd">    filename None will produce endlessly None for each iterate,</span>
@@ -221,10 +221,10 @@
 
 
 <div class="viewcode-block" id="ParallelCorpus"><a class="viewcode-back" href="../../../onmt.inputters.html#onmt.inputters.ParallelCorpus">[docs]</a><span class="k">class</span> <span class="nc">ParallelCorpus</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;A parallel corpus file pair that can be loaded to iterate.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A parallel corpus file pair that can be loaded to iterate.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">align</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">src_feats</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Initialize src &amp; tgt side file path.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize src &amp; tgt side file path.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">src</span> <span class="o">=</span> <span class="n">src</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tgt</span> <span class="o">=</span> <span class="n">tgt</span>
@@ -232,7 +232,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">src_feats</span> <span class="o">=</span> <span class="n">src_feats</span>
 
 <div class="viewcode-block" id="ParallelCorpus.load"><a class="viewcode-back" href="../../../onmt.inputters.html#onmt.inputters.ParallelCorpus.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Load file and iterate by lines.</span>
 <span class="sd">        `offset` and `stride` allow to iterate only on every</span>
 <span class="sd">        `stride` example, starting from `offset`.</span>
@@ -312,7 +312,7 @@
 
 
 <div class="viewcode-block" id="ParallelCorpusIterator"><a class="viewcode-back" href="../../../onmt.inputters.html#onmt.inputters.ParallelCorpusIterator">[docs]</a><span class="k">class</span> <span class="nc">ParallelCorpusIterator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;An iterator dedicated to ParallelCorpus.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An iterator dedicated to ParallelCorpus.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        corpus (ParallelCorpus): corpus to iterate;</span>
@@ -396,7 +396,7 @@
 
 <span class="k">def</span> <span class="nf">build_corpora_iters</span><span class="p">(</span><span class="n">corpora</span><span class="p">,</span> <span class="n">transforms</span><span class="p">,</span> <span class="n">corpora_info</span><span class="p">,</span>
                         <span class="n">skip_empty_level</span><span class="o">=</span><span class="s1">&#39;warning&#39;</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Return `ParallelCorpusIterator` for all corpora defined in opts.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return `ParallelCorpusIterator` for all corpora defined in opts.&quot;&quot;&quot;</span>
     <span class="n">corpora_iters</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
     <span class="k">for</span> <span class="n">c_id</span><span class="p">,</span> <span class="n">corpus</span> <span class="ow">in</span> <span class="n">corpora</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="n">transform_names</span> <span class="o">=</span> <span class="n">corpora_info</span><span class="p">[</span><span class="n">c_id</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;transforms&#39;</span><span class="p">,</span> <span class="p">[])</span>
@@ -412,7 +412,7 @@
 
 
 <span class="k">def</span> <span class="nf">save_transformed_sample</span><span class="p">(</span><span class="n">opts</span><span class="p">,</span> <span class="n">transforms</span><span class="p">,</span> <span class="n">n_sample</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Save transformed data sample as specified in opts.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Save transformed data sample as specified in opts.&quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">n_sample</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;n_sample=</span><span class="si">{</span><span class="n">n_sample</span><span class="si">}</span><span class="s2">: Save full transformed corpus.&quot;</span><span class="p">)</span>

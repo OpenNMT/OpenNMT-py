@@ -201,7 +201,7 @@
 
 
 <div class="viewcode-block" id="PositionwiseFeedForward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.position_ffn.PositionwiseFeedForward">[docs]</a><span class="k">class</span> <span class="nc">PositionwiseFeedForward</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; A two-layer Feed-Forward-Network with residual layer norm.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; A two-layer Feed-Forward-Network with residual layer norm.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        d_model (int): the size of input for the first-layer of the FFN.</span>
@@ -222,7 +222,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">dropout_2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span>
 
 <div class="viewcode-block" id="PositionwiseFeedForward.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.position_ffn.PositionwiseFeedForward.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Layer definition.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Layer definition.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            x: ``(batch_size, input_len, model_dim)``</span>

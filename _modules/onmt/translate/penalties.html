@@ -187,7 +187,7 @@
 
 
 <div class="viewcode-block" id="PenaltyBuilder"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.penalties.PenaltyBuilder">[docs]</a><span class="k">class</span> <span class="nc">PenaltyBuilder</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Returns the Length and Coverage Penalty function for Beam Search.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the Length and Coverage Penalty function for Beam Search.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        length_pen (str): option name of length pen</span>
@@ -243,7 +243,7 @@
     <span class="c1"># Divide topk log probs by length penalty.</span>
 
 <div class="viewcode-block" id="PenaltyBuilder.coverage_wu"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.penalties.PenaltyBuilder.coverage_wu">[docs]</a>    <span class="k">def</span> <span class="nf">coverage_wu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cov</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;GNMT coverage re-ranking score.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;GNMT coverage re-ranking score.</span>
 
 <span class="sd">        See &quot;Google&#39;s Neural Machine Translation System&quot; :cite:`wu2016google`.</span>
 <span class="sd">        ``cov`` is expected to be sized ``(*, seq_len)``, where ``*`` is</span>
@@ -256,13 +256,13 @@
         <span class="k">return</span> <span class="n">beta</span> <span class="o">*</span> <span class="n">penalty</span></div>
 
 <div class="viewcode-block" id="PenaltyBuilder.coverage_summary"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.penalties.PenaltyBuilder.coverage_summary">[docs]</a>    <span class="k">def</span> <span class="nf">coverage_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cov</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Our summary penalty.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Our summary penalty.&quot;&quot;&quot;</span>
         <span class="n">penalty</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">cov</span><span class="p">,</span> <span class="n">cov</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">fill_</span><span class="p">(</span><span class="mf">1.0</span><span class="p">))</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">penalty</span> <span class="o">-=</span> <span class="n">cov</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">beta</span> <span class="o">*</span> <span class="n">penalty</span></div>
 
 <div class="viewcode-block" id="PenaltyBuilder.coverage_none"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.penalties.PenaltyBuilder.coverage_none">[docs]</a>    <span class="k">def</span> <span class="nf">coverage_none</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cov</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns zero as penalty&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns zero as penalty&quot;&quot;&quot;</span>
         <span class="n">none</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,),</span> <span class="n">device</span><span class="o">=</span><span class="n">cov</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
                            <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">cov</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
@@ -270,7 +270,7 @@
         <span class="k">return</span> <span class="n">none</span></div>
 
 <div class="viewcode-block" id="PenaltyBuilder.length_wu"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.penalties.PenaltyBuilder.length_wu">[docs]</a>    <span class="k">def</span> <span class="nf">length_wu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cur_len</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;GNMT length re-ranking score.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;GNMT length re-ranking score.</span>
 
 <span class="sd">        See &quot;Google&#39;s Neural Machine Translation System&quot; :cite:`wu2016google`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -278,11 +278,11 @@
         <span class="k">return</span> <span class="p">((</span><span class="mi">5</span> <span class="o">+</span> <span class="n">cur_len</span><span class="p">)</span> <span class="o">/</span> <span class="mf">6.0</span><span class="p">)</span> <span class="o">**</span> <span class="n">alpha</span></div>
 
 <div class="viewcode-block" id="PenaltyBuilder.length_average"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.penalties.PenaltyBuilder.length_average">[docs]</a>    <span class="k">def</span> <span class="nf">length_average</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cur_len</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns the current sequence length.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the current sequence length.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">cur_len</span> <span class="o">**</span> <span class="n">alpha</span></div>
 
 <div class="viewcode-block" id="PenaltyBuilder.length_none"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.penalties.PenaltyBuilder.length_none">[docs]</a>    <span class="k">def</span> <span class="nf">length_none</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cur_len</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns unmodified scores.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns unmodified scores.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="mf">1.0</span></div></div>
 </pre></div>
 

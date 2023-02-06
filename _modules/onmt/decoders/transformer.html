@@ -214,7 +214,7 @@
         <span class="n">pos_ffn_activation_fn</span><span class="o">=</span><span class="n">ActivationFunction</span><span class="o">.</span><span class="n">relu</span><span class="p">,</span>
         <span class="n">add_qkvbias</span><span class="o">=</span><span class="kc">False</span>
     <span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            d_model (int): the dimension of keys/values/queries in</span>
 <span class="sd">                :class:`MultiHeadedAttention`, also the input size of</span>
@@ -268,7 +268,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">alignment_heads</span> <span class="o">=</span> <span class="n">alignment_heads</span>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Extend `_forward` for (possibly) multiple decoder pass:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extend `_forward` for (possibly) multiple decoder pass:</span>
 <span class="sd">        Always a default (future masked) decoder forward pass,</span>
 <span class="sd">        Possibly a second future aware decoder pass for joint learn</span>
 <span class="sd">        full context alignement, :cite:`garg2019jointly`.</span>
@@ -348,7 +348,7 @@
 
 
 <span class="k">class</span> <span class="nc">TransformerDecoderLayer</span><span class="p">(</span><span class="n">TransformerDecoderLayerBase</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Transformer Decoder layer block in Pre-Norm style.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Transformer Decoder layer block in Pre-Norm style.</span>
 <span class="sd">    Pre-Norm style is an improvement w.r.t. Original paper&#39;s Post-Norm style,</span>
 <span class="sd">    providing better converge speed and performance. This is also the actual</span>
 <span class="sd">    implementation in tensor2tensor and also avalable in fairseq.</span>
@@ -371,7 +371,7 @@
         <span class="n">pos_ffn_activation_fn</span><span class="o">=</span><span class="n">ActivationFunction</span><span class="o">.</span><span class="n">relu</span><span class="p">,</span>
         <span class="n">add_qkvbias</span><span class="o">=</span><span class="kc">False</span>
     <span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            See TransformerDecoderLayerBase</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -411,7 +411,7 @@
         <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">future</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;A naive forward pass for transformer decoder.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;A naive forward pass for transformer decoder.</span>
 
 <span class="sd">        # T: could be 1 in the case of stepwise decoding or tgt_len</span>
 
@@ -482,7 +482,7 @@
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_opt</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Alternate constructor.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Alternate constructor.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">dec_layers</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">dec_hid_size</span><span class="p">,</span>
@@ -505,7 +505,7 @@
         <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">init_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span> <span class="n">enc_final_hs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Initialize decoder state.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize decoder state.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">src</span>
 
     <span class="k">def</span> <span class="nf">map_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fn</span><span class="p">):</span>
@@ -543,7 +543,7 @@
 
 
 <div class="viewcode-block" id="TransformerDecoder"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.decoders.TransformerDecoder">[docs]</a><span class="k">class</span> <span class="nc">TransformerDecoder</span><span class="p">(</span><span class="n">TransformerDecoderBase</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;The Transformer decoder from &quot;Attention is All You Need&quot;.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The Transformer decoder from &quot;Attention is All You Need&quot;.</span>
 <span class="sd">    :cite:`DBLP:journals/corr/VaswaniSPUJGKP17`</span>
 
 <span class="sd">    Args:</span>
@@ -615,7 +615,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
 
 <div class="viewcode-block" id="TransformerDecoder.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.decoders.TransformerDecoder.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">enc_out</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Decode, possibly stepwise.</span>
 <span class="sd">        when training step is always None, when decoding, step increases</span>
 <span class="sd">        tgt (Tensor): batch x tlen x feats</span>
@@ -625,6 +625,14 @@
             <span class="n">enc_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span><span class="p">(</span><span class="n">tgt</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">step</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_init_cache</span><span class="p">(</span><span class="n">enc_out</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">step</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer_layers</span><span class="p">:</span>
+                <span class="n">layer</span><span class="o">.</span><span class="n">self_attn</span><span class="o">.</span><span class="n">layer_cache</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="kc">False</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;keys&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([]),</span>
+                            <span class="s1">&#39;values&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([])})</span>
+                <span class="n">layer</span><span class="o">.</span><span class="n">context_attn</span><span class="o">.</span><span class="n">layer_cache</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="kc">False</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;keys&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([]),</span>
+                            <span class="s1">&#39;values&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([])})</span>
 
         <span class="n">tgt_words</span> <span class="o">=</span> <span class="n">tgt</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span>
 
@@ -692,7 +700,7 @@
 
 
 <span class="k">class</span> <span class="nc">TransformerLMDecoderLayer</span><span class="p">(</span><span class="n">TransformerDecoderLayerBase</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Transformer Decoder only layer block in GPT style.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Transformer Decoder only layer block in GPT style.</span>
 <span class="sd">   Args:</span>
 <span class="sd">        See TransformerDecoderLayerBase</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -700,7 +708,7 @@
     <span class="k">def</span> <span class="nf">_forward</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">layer_in</span><span class="p">,</span> <span class="n">tgt_pad_mask</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">future</span><span class="o">=</span><span class="kc">False</span>
     <span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;A naive forward pass for transformer decoder.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;A naive forward pass for transformer decoder.</span>
 
 <span class="sd">        # T: could be 1 in the case of stepwise decoding or tgt_len</span>
 
@@ -742,7 +750,7 @@
 
 
 <span class="k">class</span> <span class="nc">TransformerLMDecoder</span><span class="p">(</span><span class="n">TransformerDecoderBase</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;The Transformer decoder from GPT-2</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The Transformer decoder from GPT-2</span>
 <span class="sd">   Args:</span>
 <span class="sd">        num_layers (int): number of decoder layers.</span>
 <span class="sd">        d_model (int): size of the model</span>
@@ -809,9 +817,14 @@
         <span class="k">pass</span>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">enc_out</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Decode, possibly stepwise.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Decode, possibly stepwise.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">step</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_init_cache</span><span class="p">(</span><span class="n">tgt</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">step</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer_layers</span><span class="p">:</span>
+                <span class="n">layer</span><span class="o">.</span><span class="n">self_attn</span><span class="o">.</span><span class="n">layer_cache</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="kc">False</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;keys&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([]),</span>
+                            <span class="s1">&#39;values&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([])})</span>
 
         <span class="n">tgt_words</span> <span class="o">=</span> <span class="n">tgt</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span>
 

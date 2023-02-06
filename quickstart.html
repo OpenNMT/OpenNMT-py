@@ -196,8 +196,8 @@
 <h1>Quickstart<a class="headerlink" href="#quickstart" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="step-0-install-opennmt-py">
 <h2>Step 0: Install OpenNMT-py<a class="headerlink" href="#step-0-install-opennmt-py" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install --upgrade pip
-pip install OpenNMT-py
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>--upgrade<span class="w"> </span>pip
+pip<span class="w"> </span>install<span class="w"> </span>OpenNMT-py
 </pre></div>
 </div>
 <p>If you want a very detailed tutorial on how to use OpenNMT-py please have a look to this [Tuto]: https://github.com/ymoslem/OpenNMT-Tutorial
@@ -206,9 +206,9 @@ Thanks to Yasmin Moslem.</p>
 <div class="section" id="step-1-prepare-the-data">
 <h2>Step 1: Prepare the data<a class="headerlink" href="#step-1-prepare-the-data" title="Permalink to this headline">¶</a></h2>
 <p>To get started, we propose to download a toy English-German dataset for machine translation containing 10k tokenized sentences:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>wget https://s3.amazonaws.com/opennmt-trainingdata/toy-ende.tar.gz
-tar xf toy-ende.tar.gz
-<span class="nb">cd</span> toy-ende
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>wget<span class="w"> </span>https://s3.amazonaws.com/opennmt-trainingdata/toy-ende.tar.gz
+tar<span class="w"> </span>xf<span class="w"> </span>toy-ende.tar.gz
+<span class="nb">cd</span><span class="w"> </span>toy-ende
 </pre></div>
 </div>
 <p>The data consists of parallel source (<code class="docutils literal notranslate"><span class="pre">src</span></code>) and target (<code class="docutils literal notranslate"><span class="pre">tgt</span></code>) data containing one sentence per line with tokens separated by a space:</p>
@@ -225,29 +225,29 @@ Federal Master Trainer and Senior Instructor of the Italian Federation of Aerobi
 </pre></div>
 </div>
 <p>We need to build a <strong>YAML configuration file</strong> to specify the data that will be used:</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># toy_en_de.yaml</span><span class="w"></span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># toy_en_de.yaml</span>
 
-<span class="c1">## Where the samples will be written</span><span class="w"></span>
-<span class="nt">save_data</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/run/example</span><span class="w"></span>
-<span class="c1">## Where the vocab(s) will be written</span><span class="w"></span>
-<span class="nt">src_vocab</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/run/example.vocab.src</span><span class="w"></span>
-<span class="nt">tgt_vocab</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/run/example.vocab.tgt</span><span class="w"></span>
-<span class="c1"># Prevent overwriting existing files in the folder</span><span class="w"></span>
-<span class="nt">overwrite</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span><span class="w"></span>
+<span class="c1">## Where the samples will be written</span>
+<span class="nt">save_data</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/run/example</span>
+<span class="c1">## Where the vocab(s) will be written</span>
+<span class="nt">src_vocab</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/run/example.vocab.src</span>
+<span class="nt">tgt_vocab</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/run/example.vocab.tgt</span>
+<span class="c1"># Prevent overwriting existing files in the folder</span>
+<span class="nt">overwrite</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
 
-<span class="c1"># Corpus opts:</span><span class="w"></span>
-<span class="nt">data</span><span class="p">:</span><span class="w"></span>
-<span class="w">    </span><span class="nt">corpus_1</span><span class="p">:</span><span class="w"></span>
-<span class="w">        </span><span class="nt">path_src</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/src-train.txt</span><span class="w"></span>
-<span class="w">        </span><span class="nt">path_tgt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/tgt-train.txt</span><span class="w"></span>
-<span class="w">    </span><span class="nt">valid</span><span class="p">:</span><span class="w"></span>
-<span class="w">        </span><span class="nt">path_src</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/src-val.txt</span><span class="w"></span>
-<span class="w">        </span><span class="nt">path_tgt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/tgt-val.txt</span><span class="w"></span>
-<span class="nn">...</span><span class="w"></span>
+<span class="c1"># Corpus opts:</span>
+<span class="nt">data</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">corpus_1</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">path_src</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/src-train.txt</span>
+<span class="w">        </span><span class="nt">path_tgt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/tgt-train.txt</span>
+<span class="w">    </span><span class="nt">valid</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">path_src</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/src-val.txt</span>
+<span class="w">        </span><span class="nt">path_tgt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/tgt-val.txt</span>
+<span class="nn">...</span>
 </pre></div>
 </div>
 <p>From this configuration, we can build the vocab(s), that will be necessary to train the model:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_build_vocab -config toy_en_de.yaml -n_sample <span class="m">10000</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_build_vocab<span class="w"> </span>-config<span class="w"> </span>toy_en_de.yaml<span class="w"> </span>-n_sample<span class="w"> </span><span class="m">10000</span>
 </pre></div>
 </div>
 <p><strong>Notes</strong>:</p>
@@ -263,27 +263,27 @@ Federal Master Trainer and Senior Instructor of the Italian Federation of Aerobi
 <li><p>the vocabulary path(s) that will be used: can be that generated by onmt_build_vocab;</p></li>
 <li><p>training specific parameters.</p></li>
 </ul>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># toy_en_de.yaml</span><span class="w"></span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># toy_en_de.yaml</span>
 
-<span class="nn">...</span><span class="w"></span>
+<span class="nn">...</span>
 
-<span class="c1"># Vocabulary files that were just created</span><span class="w"></span>
-<span class="nt">src_vocab</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/run/example.vocab.src</span><span class="w"></span>
-<span class="nt">tgt_vocab</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/run/example.vocab.tgt</span><span class="w"></span>
+<span class="c1"># Vocabulary files that were just created</span>
+<span class="nt">src_vocab</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/run/example.vocab.src</span>
+<span class="nt">tgt_vocab</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/run/example.vocab.tgt</span>
 
-<span class="c1"># Train on a single GPU</span><span class="w"></span>
-<span class="nt">world_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span><span class="w"></span>
-<span class="nt">gpu_ranks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0</span><span class="p p-Indicator">]</span><span class="w"></span>
+<span class="c1"># Train on a single GPU</span>
+<span class="nt">world_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="nt">gpu_ranks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0</span><span class="p p-Indicator">]</span>
 
-<span class="c1"># Where to save the checkpoints</span><span class="w"></span>
-<span class="nt">save_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/run/model</span><span class="w"></span>
-<span class="nt">save_checkpoint_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">500</span><span class="w"></span>
-<span class="nt">train_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1000</span><span class="w"></span>
-<span class="nt">valid_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">500</span><span class="w"></span>
+<span class="c1"># Where to save the checkpoints</span>
+<span class="nt">save_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/run/model</span>
+<span class="nt">save_checkpoint_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">500</span>
+<span class="nt">train_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1000</span>
+<span class="nt">valid_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">500</span>
 </pre></div>
 </div>
 <p>Then you can simply run:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_train -config toy_en_de.yaml
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_train<span class="w"> </span>-config<span class="w"> </span>toy_en_de.yaml
 </pre></div>
 </div>
 <p>This configuration will run the default model, which consists of a 2-layer LSTM with 500 hidden units on both the encoder and decoder. It will run on a single GPU (<code class="docutils literal notranslate"><span class="pre">world_size</span> <span class="pre">1</span></code> &amp; <code class="docutils literal notranslate"><span class="pre">gpu_ranks</span> <span class="pre">[0]</span></code>).</p>
@@ -292,7 +292,7 @@ Federal Master Trainer and Senior Instructor of the Italian Federation of Aerobi
 </div>
 <div class="section" id="step-3-translate">
 <h2>Step 3: Translate<a class="headerlink" href="#step-3-translate" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_translate -model toy-ende/run/model_step_1000.pt -src toy-ende/src-test.txt -output toy-ende/pred_1000.txt -gpu <span class="m">0</span> -verbose
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_translate<span class="w"> </span>-model<span class="w"> </span>toy-ende/run/model_step_1000.pt<span class="w"> </span>-src<span class="w"> </span>toy-ende/src-test.txt<span class="w"> </span>-output<span class="w"> </span>toy-ende/pred_1000.txt<span class="w"> </span>-gpu<span class="w"> </span><span class="m">0</span><span class="w"> </span>-verbose
 </pre></div>
 </div>
 <p>Now you have a model which you can use to predict on new data. We do this by running beam search. This will output predictions into <code class="docutils literal notranslate"><span class="pre">toy-ende/pred_1000.txt</span></code>.</p>

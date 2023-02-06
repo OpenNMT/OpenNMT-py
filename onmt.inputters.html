@@ -223,7 +223,6 @@
 </dd>
 <dt class="field-even">Variables</dt>
 <dd class="field-even"><ul class="simple">
-<li><p><strong>batch_size_fn</strong> (<em>function</em>) – functions to calculate batch_size;</p></li>
 <li><p><strong>sort_key</strong> (<em>function</em>) – functions define how to sort examples;</p></li>
 <li><p><strong>mixer</strong> (<a class="reference internal" href="#onmt.inputters.MixingStrategy" title="onmt.inputters.MixingStrategy"><em>MixingStrategy</em></a>) – the strategy to iterate corpora.</p></li>
 </ul>
@@ -231,7 +230,7 @@
 </dl>
 <dl class="method">
 <dt id="onmt.inputters.DynamicDatasetIter.batch_iter">
-<code class="sig-name descname">batch_iter</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">batch_size</em>, <em class="sig-param">batch_size_fn=None</em>, <em class="sig-param">batch_size_multiple=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/dynamic_iterator.html#DynamicDatasetIter.batch_iter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.DynamicDatasetIter.batch_iter" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">batch_iter</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">batch_size</em>, <em class="sig-param">batch_type='sents'</em>, <em class="sig-param">batch_size_multiple=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/dynamic_iterator.html#DynamicDatasetIter.batch_iter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.DynamicDatasetIter.batch_iter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Yield elements from data in chunks of batch_size,
 where each chunk size is a multiple of batch_size_multiple.</p>
 </dd></dl>

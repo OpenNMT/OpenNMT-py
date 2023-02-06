@@ -227,7 +227,7 @@
 
 
 <div class="viewcode-block" id="sample_with_temperature"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.greedy_search.sample_with_temperature">[docs]</a><span class="k">def</span> <span class="nf">sample_with_temperature</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">sampling_temp</span><span class="p">,</span> <span class="n">keep_topk</span><span class="p">,</span> <span class="n">keep_topp</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Select next tokens randomly from the top k possible next tokens.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Select next tokens randomly from the top k possible next tokens.</span>
 
 <span class="sd">    Samples from a categorical distribution over the ``keep_topk`` words using</span>
 <span class="sd">    the category probabilities ``logits / sampling_temp``.</span>
@@ -275,7 +275,7 @@
 
 
 <div class="viewcode-block" id="GreedySearch"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.greedy_search.GreedySearch">[docs]</a><span class="k">class</span> <span class="nc">GreedySearch</span><span class="p">(</span><span class="n">DecodeStrategy</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Select next tokens randomly from the top k possible next tokens.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Select next tokens randomly from the top k possible next tokens.</span>
 
 <span class="sd">    The ``scores`` attribute&#39;s lists are the score, after applying temperature,</span>
 <span class="sd">    of the final prediction (either EOS or the final token in the event</span>
@@ -286,6 +286,7 @@
 <span class="sd">        bos (int): See base.</span>
 <span class="sd">        eos (int): See base.</span>
 <span class="sd">        unk (int): See base.</span>
+<span class="sd">        start (int): See base.</span>
 <span class="sd">        batch_size (int): See base.</span>
 <span class="sd">        global_scorer (onmt.translate.GNMTGlobalScorer): Scorer instance.</span>
 <span class="sd">        min_length (int): See base.</span>
@@ -304,12 +305,12 @@
 <span class="sd">        beam_size (int): Number of beams to use.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pad</span><span class="p">,</span> <span class="n">bos</span><span class="p">,</span> <span class="n">eos</span><span class="p">,</span> <span class="n">unk</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">global_scorer</span><span class="p">,</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pad</span><span class="p">,</span> <span class="n">bos</span><span class="p">,</span> <span class="n">eos</span><span class="p">,</span> <span class="n">unk</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">global_scorer</span><span class="p">,</span>
                  <span class="n">min_length</span><span class="p">,</span> <span class="n">block_ngram_repeat</span><span class="p">,</span> <span class="n">exclusion_tokens</span><span class="p">,</span>
                  <span class="n">return_attention</span><span class="p">,</span> <span class="n">max_length</span><span class="p">,</span> <span class="n">sampling_temp</span><span class="p">,</span> <span class="n">keep_topk</span><span class="p">,</span>
                  <span class="n">keep_topp</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="n">ban_unk_token</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">GreedySearch</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">pad</span><span class="p">,</span> <span class="n">bos</span><span class="p">,</span> <span class="n">eos</span><span class="p">,</span> <span class="n">unk</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="n">global_scorer</span><span class="p">,</span>
+            <span class="n">pad</span><span class="p">,</span> <span class="n">bos</span><span class="p">,</span> <span class="n">eos</span><span class="p">,</span> <span class="n">unk</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">beam_size</span><span class="p">,</span> <span class="n">global_scorer</span><span class="p">,</span>
             <span class="n">min_length</span><span class="p">,</span> <span class="n">block_ngram_repeat</span><span class="p">,</span> <span class="n">exclusion_tokens</span><span class="p">,</span>
             <span class="n">return_attention</span><span class="p">,</span> <span class="n">max_length</span><span class="p">,</span> <span class="n">ban_unk_token</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sampling_temp</span> <span class="o">=</span> <span class="n">sampling_temp</span>
@@ -320,7 +321,7 @@
 
 <div class="viewcode-block" id="GreedySearch.initialize"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.greedy_search.GreedySearch.initialize">[docs]</a>    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span> <span class="n">src_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                    <span class="n">target_prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Initialize for decoding.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize for decoding.&quot;&quot;&quot;</span>
         <span class="p">(</span><span class="n">fn_map_state</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span>
             <span class="n">src_map</span><span class="p">,</span> <span class="n">target_prefix</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">initialize_tile</span><span class="p">(</span>
                 <span class="n">enc_out</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span> <span class="n">src_map</span><span class="p">,</span> <span class="n">target_prefix</span><span class="p">)</span>
@@ -346,7 +347,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">select_indices</span>
 
     <span class="k">def</span> <span class="nf">_pick</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log_probs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Function used to pick next tokens.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Function used to pick next tokens.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            log_probs (FloatTensor): ``(batch_size, vocab_size)``.</span>
@@ -366,7 +367,7 @@
                 <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">select_indices</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
 
 <div class="viewcode-block" id="GreedySearch.advance"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.greedy_search.GreedySearch.advance">[docs]</a>    <span class="k">def</span> <span class="nf">advance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log_probs</span><span class="p">,</span> <span class="n">attn</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Select next tokens randomly from the top k possible next tokens.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Select next tokens randomly from the top k possible next tokens.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            log_probs (FloatTensor): Shaped ``(batch_size, vocab_size)``.</span>
@@ -398,7 +399,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">ensure_max_length</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="GreedySearch.update_finished"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.greedy_search.GreedySearch.update_finished">[docs]</a>    <span class="k">def</span> <span class="nf">update_finished</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Finalize scores and predictions.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Finalize scores and predictions.&quot;&quot;&quot;</span>
         <span class="c1"># shape: (sum(~ self.is_finished), 1)</span>
         <span class="n">finished_batches</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">as_tuple</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="n">step</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
@@ -451,7 +452,7 @@
 
     <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span> <span class="n">src_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                    <span class="n">target_prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Initialize for decoding.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize for decoding.&quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="n">device</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">device</span> <span class="o">=</span> <span class="n">src</span><span class="o">.</span><span class="n">device</span>

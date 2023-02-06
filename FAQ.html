@@ -113,6 +113,10 @@
 <li class="toctree-l3"><a class="reference internal" href="#general-purpose">General purpose</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#filter-examples-by-length">Filter examples by length</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#add-custom-prefix-to-examples">Add custom prefix to examples</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#add-custom-suffix-to-examples">Add custom suffix to examples</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#convert-examples-to-uppercase">Convert examples to uppercase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#normalize-punctuation">Normalize punctuation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#augment-source-segments-with-fuzzy-matches-for-neural-fuzzy-repair">Augment source segments with fuzzy matches for Neural Fuzzy Repair</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#tokenization">Tokenization</a><ul>
@@ -287,52 +291,52 @@ It will make the vocab consistent with v3 structure.</p>
 <h2>How do I train the Transformer model?<a class="headerlink" href="#how-do-i-train-the-transformer-model" title="Permalink to this headline">¶</a></h2>
 <p>The transformer model is very sensitive to hyperparameters. To run it
 effectively you need to set different options that mimic the <a class="reference external" href="https://arxiv.org/abs/1706.03762">Google</a> setup. We have confirmed the following configuration can replicate their WMT results.</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">&lt;data configuration&gt;</span><span class="w"></span>
-<span class="nn">...</span><span class="w"></span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">&lt;data configuration&gt;</span>
+<span class="nn">...</span>
 
-<span class="c1"># General opts</span><span class="w"></span>
-<span class="nt">save_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mybasemodel</span><span class="w"></span>
-<span class="nt">save_checkpoint_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10000</span><span class="w"></span>
-<span class="nt">valid_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10000</span><span class="w"></span>
-<span class="nt">train_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">200000</span><span class="w"></span>
+<span class="c1"># General opts</span>
+<span class="nt">save_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mybasemodel</span>
+<span class="nt">save_checkpoint_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10000</span>
+<span class="nt">valid_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10000</span>
+<span class="nt">train_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">200000</span>
 
-<span class="c1"># Batching</span><span class="w"></span>
-<span class="nt">bucket_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">262144</span><span class="w"></span>
-<span class="nt">world_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span><span class="w"></span>
-<span class="nt">gpu_ranks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">1</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">3</span><span class="p p-Indicator">]</span><span class="w"></span>
-<span class="nt">num_workers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span><span class="w"></span>
-<span class="nt">batch_type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;tokens&quot;</span><span class="w"></span>
-<span class="nt">batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4096</span><span class="w"></span>
-<span class="nt">valid_batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2048</span><span class="w"></span>
-<span class="nt">accum_count</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">4</span><span class="p p-Indicator">]</span><span class="w"></span>
-<span class="nt">accum_steps</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0</span><span class="p p-Indicator">]</span><span class="w"></span>
+<span class="c1"># Batching</span>
+<span class="nt">bucket_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">262144</span>
+<span class="nt">world_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span>
+<span class="nt">gpu_ranks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">1</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">3</span><span class="p p-Indicator">]</span>
+<span class="nt">num_workers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+<span class="nt">batch_type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;tokens&quot;</span>
+<span class="nt">batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4096</span>
+<span class="nt">valid_batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2048</span>
+<span class="nt">accum_count</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">4</span><span class="p p-Indicator">]</span>
+<span class="nt">accum_steps</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0</span><span class="p p-Indicator">]</span>
 
-<span class="c1"># Optimization</span><span class="w"></span>
-<span class="nt">model_dtype</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;fp16&quot;</span><span class="w"></span>
-<span class="nt">optim</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;adam&quot;</span><span class="w"></span>
-<span class="nt">learning_rate</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span><span class="w"></span>
-<span class="nt">warmup_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8000</span><span class="w"></span>
-<span class="nt">decay_method</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;noam&quot;</span><span class="w"></span>
-<span class="nt">adam_beta2</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.998</span><span class="w"></span>
-<span class="nt">max_grad_norm</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span><span class="w"></span>
-<span class="nt">label_smoothing</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1</span><span class="w"></span>
-<span class="nt">param_init</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span><span class="w"></span>
-<span class="nt">param_init_glorot</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w"></span>
-<span class="nt">normalization</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;tokens&quot;</span><span class="w"></span>
+<span class="c1"># Optimization</span>
+<span class="nt">model_dtype</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;fp16&quot;</span>
+<span class="nt">optim</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;adam&quot;</span>
+<span class="nt">learning_rate</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+<span class="nt">warmup_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8000</span>
+<span class="nt">decay_method</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;noam&quot;</span>
+<span class="nt">adam_beta2</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.998</span>
+<span class="nt">max_grad_norm</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
+<span class="nt">label_smoothing</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1</span>
+<span class="nt">param_init</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
+<span class="nt">param_init_glorot</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="nt">normalization</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;tokens&quot;</span>
 
-<span class="c1"># Model</span><span class="w"></span>
-<span class="nt">encoder_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">transformer</span><span class="w"></span>
-<span class="nt">decoder_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">transformer</span><span class="w"></span>
-<span class="nt">position_encoding</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w"></span>
-<span class="nt">enc_layers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">6</span><span class="w"></span>
-<span class="nt">dec_layers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">6</span><span class="w"></span>
-<span class="nt">heads</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8</span><span class="w"></span>
-<span class="nt">hidden_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">512</span><span class="w"></span>
-<span class="nt">word_vec_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">512</span><span class="w"></span>
-<span class="nt">transformer_ff</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2048</span><span class="w"></span>
-<span class="nt">dropout_steps</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0</span><span class="p p-Indicator">]</span><span class="w"></span>
-<span class="nt">dropout</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0.1</span><span class="p p-Indicator">]</span><span class="w"></span>
-<span class="nt">attention_dropout</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0.1</span><span class="p p-Indicator">]</span><span class="w"></span>
+<span class="c1"># Model</span>
+<span class="nt">encoder_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">transformer</span>
+<span class="nt">decoder_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">transformer</span>
+<span class="nt">position_encoding</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="nt">enc_layers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">6</span>
+<span class="nt">dec_layers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">6</span>
+<span class="nt">heads</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8</span>
+<span class="nt">hidden_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">512</span>
+<span class="nt">word_vec_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">512</span>
+<span class="nt">transformer_ff</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2048</span>
+<span class="nt">dropout_steps</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0</span><span class="p p-Indicator">]</span>
+<span class="nt">dropout</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0.1</span><span class="p p-Indicator">]</span>
+<span class="nt">attention_dropout</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0.1</span><span class="p p-Indicator">]</span>
 </pre></div>
 </div>
 <p>Here are what the most important parameters mean:</p>
@@ -385,37 +389,37 @@ effectively you need to set different options that mimic the <a class="reference
 <ol class="simple">
 <li><p>Get GloVe files:</p></li>
 </ol>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir <span class="s2">&quot;glove_dir&quot;</span>
-wget http://nlp.stanford.edu/data/glove.6B.zip
-unzip glove.6B.zip -d <span class="s2">&quot;glove_dir&quot;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span><span class="s2">&quot;glove_dir&quot;</span>
+wget<span class="w"> </span>http://nlp.stanford.edu/data/glove.6B.zip
+unzip<span class="w"> </span>glove.6B.zip<span class="w"> </span>-d<span class="w"> </span><span class="s2">&quot;glove_dir&quot;</span>
 </pre></div>
 </div>
 <ol class="simple">
 <li><p>Adapt the configuration:</p></li>
 </ol>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># &lt;your_config&gt;.yaml</span><span class="w"></span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># &lt;your_config&gt;.yaml</span>
 
-<span class="l l-Scalar l-Scalar-Plain">&lt;Your data config...&gt;</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">&lt;Your data config...&gt;</span>
 
-<span class="nn">...</span><span class="w"></span>
+<span class="nn">...</span>
 
-<span class="c1"># this means embeddings will be used for both encoder and decoder sides</span><span class="w"></span>
-<span class="nt">both_embeddings</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">glove_dir/glove.6B.100d.txt</span><span class="w"></span>
-<span class="c1"># to set src and tgt embeddings separately:</span><span class="w"></span>
-<span class="c1"># src_embeddings: ...</span><span class="w"></span>
-<span class="c1"># tgt_embeddings: ...</span><span class="w"></span>
+<span class="c1"># this means embeddings will be used for both encoder and decoder sides</span>
+<span class="nt">both_embeddings</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">glove_dir/glove.6B.100d.txt</span>
+<span class="c1"># to set src and tgt embeddings separately:</span>
+<span class="c1"># src_embeddings: ...</span>
+<span class="c1"># tgt_embeddings: ...</span>
 
-<span class="c1"># supported types: GloVe, word2vec</span><span class="w"></span>
-<span class="nt">embeddings_type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;GloVe&quot;</span><span class="w"></span>
+<span class="c1"># supported types: GloVe, word2vec</span>
+<span class="nt">embeddings_type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;GloVe&quot;</span>
 
-<span class="c1"># word_vec_size need to match with the pretrained embeddings dimensions</span><span class="w"></span>
-<span class="nt">word_vec_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span><span class="w"></span>
+<span class="c1"># word_vec_size need to match with the pretrained embeddings dimensions</span>
+<span class="nt">word_vec_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span>
 </pre></div>
 </div>
 <ol class="simple">
 <li><p>Train:</p></li>
 </ol>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_train -config &lt;your_config&gt;.yaml
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_train<span class="w"> </span>-config<span class="w"> </span>&lt;your_config&gt;.yaml
 </pre></div>
 </div>
 <p>Notes:</p>
@@ -437,24 +441,24 @@ Bear in mind that your models must share the same target vocabulary.</p>
 <div class="section" id="id1">
 <h3>Example<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
 <p>In the following example, we will sequentially sample 7 examples from <em>corpus_1</em>, and 3 examples from <em>corpus_2</em>, and so on:</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># &lt;your_config&gt;.yaml</span><span class="w"></span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># &lt;your_config&gt;.yaml</span>
 
-<span class="nn">...</span><span class="w"></span>
+<span class="nn">...</span>
 
-<span class="c1"># Corpus opts:</span><span class="w"></span>
-<span class="nt">data</span><span class="p">:</span><span class="w"></span>
-<span class="w">    </span><span class="nt">corpus_1</span><span class="p">:</span><span class="w"></span>
-<span class="w">        </span><span class="nt">path_src</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/src-train1.txt</span><span class="w"></span>
-<span class="w">        </span><span class="nt">path_tgt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/tgt-train1.txt</span><span class="w"></span>
-<span class="w">        </span><span class="nt">weight</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">7</span><span class="w"></span>
-<span class="w">    </span><span class="nt">corpus_2</span><span class="p">:</span><span class="w"></span>
-<span class="w">        </span><span class="nt">path_src</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/src-train1.txt</span><span class="w"></span>
-<span class="w">        </span><span class="nt">path_tgt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/tgt-train1.txt</span><span class="w"></span>
-<span class="w">        </span><span class="nt">weight</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span><span class="w"></span>
-<span class="w">    </span><span class="nt">valid</span><span class="p">:</span><span class="w"></span>
-<span class="w">        </span><span class="nt">path_src</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/src-val.txt</span><span class="w"></span>
-<span class="w">        </span><span class="nt">path_tgt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/tgt-val.txt</span><span class="w"></span>
-<span class="nn">...</span><span class="w"></span>
+<span class="c1"># Corpus opts:</span>
+<span class="nt">data</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">corpus_1</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">path_src</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/src-train1.txt</span>
+<span class="w">        </span><span class="nt">path_tgt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/tgt-train1.txt</span>
+<span class="w">        </span><span class="nt">weight</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">7</span>
+<span class="w">    </span><span class="nt">corpus_2</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">path_src</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/src-train1.txt</span>
+<span class="w">        </span><span class="nt">path_tgt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/tgt-train1.txt</span>
+<span class="w">        </span><span class="nt">weight</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
+<span class="w">    </span><span class="nt">valid</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">path_src</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/src-val.txt</span>
+<span class="w">        </span><span class="nt">path_tgt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/tgt-val.txt</span>
+<span class="nn">...</span>
 </pre></div>
 </div>
 </div>
@@ -465,36 +469,36 @@ Bear in mind that your models must share the same target vocabulary.</p>
 <div class="section" id="id2">
 <h3>Example<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
 <p>This example applies sentencepiece tokenization with <code class="docutils literal notranslate"><span class="pre">pyonmttok</span></code>, with <code class="docutils literal notranslate"><span class="pre">nbest=20</span></code> and <code class="docutils literal notranslate"><span class="pre">alpha=0.1</span></code>.</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># &lt;your_config&gt;.yaml</span><span class="w"></span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># &lt;your_config&gt;.yaml</span>
 
-<span class="nn">...</span><span class="w"></span>
+<span class="nn">...</span>
 
-<span class="c1"># Tokenization options</span><span class="w"></span>
-<span class="nt">src_subword_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sentencepiece</span><span class="w"></span>
-<span class="nt">src_subword_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">examples/subword.spm.model</span><span class="w"></span>
-<span class="nt">tgt_subword_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sentencepiece</span><span class="w"></span>
-<span class="nt">tgt_subword_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">examples/subword.spm.model</span><span class="w"></span>
+<span class="c1"># Tokenization options</span>
+<span class="nt">src_subword_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sentencepiece</span>
+<span class="nt">src_subword_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">examples/subword.spm.model</span>
+<span class="nt">tgt_subword_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sentencepiece</span>
+<span class="nt">tgt_subword_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">examples/subword.spm.model</span>
 
-<span class="c1"># Number of candidates for SentencePiece sampling</span><span class="w"></span>
-<span class="nt">subword_nbest</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">20</span><span class="w"></span>
-<span class="c1"># Smoothing parameter for SentencePiece sampling</span><span class="w"></span>
-<span class="nt">subword_alpha</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1</span><span class="w"></span>
-<span class="c1"># Specific arguments for pyonmttok</span><span class="w"></span>
-<span class="nt">src_onmttok_kwargs</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{&#39;mode&#39;:</span><span class="nv"> </span><span class="s">&#39;none&#39;,</span><span class="nv"> </span><span class="s">&#39;spacer_annotate&#39;:</span><span class="nv"> </span><span class="s">True}&quot;</span><span class="w"></span>
-<span class="nt">tgt_onmttok_kwargs</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{&#39;mode&#39;:</span><span class="nv"> </span><span class="s">&#39;none&#39;,</span><span class="nv"> </span><span class="s">&#39;spacer_annotate&#39;:</span><span class="nv"> </span><span class="s">True}&quot;</span><span class="w"></span>
+<span class="c1"># Number of candidates for SentencePiece sampling</span>
+<span class="nt">subword_nbest</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">20</span>
+<span class="c1"># Smoothing parameter for SentencePiece sampling</span>
+<span class="nt">subword_alpha</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1</span>
+<span class="c1"># Specific arguments for pyonmttok</span>
+<span class="nt">src_onmttok_kwargs</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{&#39;mode&#39;:</span><span class="nv"> </span><span class="s">&#39;none&#39;,</span><span class="nv"> </span><span class="s">&#39;spacer_annotate&#39;:</span><span class="nv"> </span><span class="s">True}&quot;</span>
+<span class="nt">tgt_onmttok_kwargs</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{&#39;mode&#39;:</span><span class="nv"> </span><span class="s">&#39;none&#39;,</span><span class="nv"> </span><span class="s">&#39;spacer_annotate&#39;:</span><span class="nv"> </span><span class="s">True}&quot;</span>
 
-<span class="c1"># Corpus opts:</span><span class="w"></span>
-<span class="nt">data</span><span class="p">:</span><span class="w"></span>
-<span class="w">    </span><span class="nt">corpus_1</span><span class="p">:</span><span class="w"></span>
-<span class="w">        </span><span class="nt">path_src</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/src-train1.txt</span><span class="w"></span>
-<span class="w">        </span><span class="nt">path_tgt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/tgt-train1.txt</span><span class="w"></span>
-<span class="w">        </span><span class="nt">transforms</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">onmt_tokenize</span><span class="p p-Indicator">]</span><span class="w"></span>
-<span class="w">        </span><span class="nt">weight</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span><span class="w"></span>
-<span class="w">    </span><span class="nt">valid</span><span class="p">:</span><span class="w"></span>
-<span class="w">        </span><span class="nt">path_src</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/src-val.txt</span><span class="w"></span>
-<span class="w">        </span><span class="nt">path_tgt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/tgt-val.txt</span><span class="w"></span>
-<span class="w">        </span><span class="nt">transforms</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">onmt_tokenize</span><span class="p p-Indicator">]</span><span class="w"></span>
-<span class="nn">...</span><span class="w"></span>
+<span class="c1"># Corpus opts:</span>
+<span class="nt">data</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">corpus_1</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">path_src</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/src-train1.txt</span>
+<span class="w">        </span><span class="nt">path_tgt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/tgt-train1.txt</span>
+<span class="w">        </span><span class="nt">transforms</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">onmt_tokenize</span><span class="p p-Indicator">]</span>
+<span class="w">        </span><span class="nt">weight</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">    </span><span class="nt">valid</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">path_src</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/src-val.txt</span>
+<span class="w">        </span><span class="nt">path_tgt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/tgt-val.txt</span>
+<span class="w">        </span><span class="nt">transforms</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">onmt_tokenize</span><span class="p p-Indicator">]</span>
+<span class="nn">...</span>
 </pre></div>
 </div>
 <p>Other tokenization methods and transforms are readily available. See the dedicated docs for more details.</p>
@@ -521,16 +525,90 @@ Bear in mind that your models must share the same target vocabulary.</p>
 <p>Transform name: <code class="docutils literal notranslate"><span class="pre">prefix</span></code></p>
 <p>Class: <code class="docutils literal notranslate"><span class="pre">onmt.transforms.misc.PrefixTransform</span></code></p>
 <p>For each dataset that the <code class="docutils literal notranslate"><span class="pre">prefix</span></code> transform is applied to, you can set the additional <code class="docutils literal notranslate"><span class="pre">src_prefix</span></code> and <code class="docutils literal notranslate"><span class="pre">tgt_prefix</span></code> parameters in its data configuration:</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">data</span><span class="p">:</span><span class="w"></span>
-<span class="w">    </span><span class="nt">corpus_1</span><span class="p">:</span><span class="w"></span>
-<span class="w">        </span><span class="nt">path_src</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/src-train1.txt</span><span class="w"></span>
-<span class="w">        </span><span class="nt">path_tgt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/tgt-train1.txt</span><span class="w"></span>
-<span class="w">        </span><span class="nt">transforms</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">prefix</span><span class="p p-Indicator">]</span><span class="w"></span>
-<span class="w">        </span><span class="nt">weight</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span><span class="w"></span>
-<span class="w">        </span><span class="nt">src_prefix</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">__some_src_prefix__</span><span class="w"></span>
-<span class="w">        </span><span class="nt">tgt_prefix</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">__some_tgt_prefix__</span><span class="w"></span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">data</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">corpus_1</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">path_src</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/src-train1.txt</span>
+<span class="w">        </span><span class="nt">path_tgt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/tgt-train1.txt</span>
+<span class="w">        </span><span class="nt">transforms</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">prefix</span><span class="p p-Indicator">]</span>
+<span class="w">        </span><span class="nt">weight</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">        </span><span class="nt">src_prefix</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">__some_src_prefix__</span>
+<span class="w">        </span><span class="nt">tgt_prefix</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">__some_tgt_prefix__</span>
 </pre></div>
 </div>
+<p>At inference if you want to use the target prefix feature to prefix your target segment with a unique prefix (as opposed to a target prefix coming from a line-by-line file)
+you need to set your yaml file as follow (example given with a target language as in the NLLB-200 case):</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">tgt_prefix</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;spa_Latn&quot;</span><span class="w"> </span>
+<span class="nt">tgt_file_prefix</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="add-custom-suffix-to-examples">
+<h4>Add custom suffix to examples<a class="headerlink" href="#add-custom-suffix-to-examples" title="Permalink to this headline">¶</a></h4>
+<p>Transform name: <code class="docutils literal notranslate"><span class="pre">suffix</span></code></p>
+<p>Class: <code class="docutils literal notranslate"><span class="pre">onmt.transforms.misc.SuffixTransform</span></code></p>
+<p>For each dataset that the <code class="docutils literal notranslate"><span class="pre">suffix</span></code> transform is applied to, you can set the additional <code class="docutils literal notranslate"><span class="pre">src_suffix</span></code> and <code class="docutils literal notranslate"><span class="pre">tgt_suffix</span></code> parameters in its data configuration:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">data</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">corpus_1</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">path_src</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/src-train1.txt</span>
+<span class="w">        </span><span class="nt">path_tgt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/tgt-train1.txt</span>
+<span class="w">        </span><span class="nt">transforms</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">suffix</span><span class="p p-Indicator">]</span>
+<span class="w">        </span><span class="nt">weight</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">        </span><span class="nt">src_suffix</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">__some_src_suffix__</span>
+<span class="w">        </span><span class="nt">tgt_suffix</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">__some_tgt_suffix__</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="convert-examples-to-uppercase">
+<h4>Convert examples to uppercase<a class="headerlink" href="#convert-examples-to-uppercase" title="Permalink to this headline">¶</a></h4>
+<p>Transform name: <code class="docutils literal notranslate"><span class="pre">uppercase</span></code></p>
+<p>Class: <code class="docutils literal notranslate"><span class="pre">onmt.transforms.uppercase.UpperCaseTransform</span></code></p>
+<p>Converts source and target (if present) examples to uppercase so the model can learn better to translate
+sentences in all caps. This transform normalizes the examples so the uppercased strings are stripped from
+any diacritics and accents. Usually this is desirable for most languages, although there are few exceptions.</p>
+<p>The following option can be added to the configuration :</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">upper_corpus_ratio</span></code>: ratio of the corpus that will be transformed to uppercase (default: 0.01);</p></li>
+</ul>
+</div>
+<div class="section" id="normalize-punctuation">
+<h4>Normalize punctuation<a class="headerlink" href="#normalize-punctuation" title="Permalink to this headline">¶</a></h4>
+<p>Transform name: <code class="docutils literal notranslate"><span class="pre">normalize</span></code></p>
+<p>Class: <code class="docutils literal notranslate"><span class="pre">onmt.transforms.normalize.NormalizeTransform</span></code></p>
+<p>Normalizes source and target (if present) examples using the same rules as Moses punctuation normalizer.</p>
+<p>The following options can be added to the configuration :</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">src_lang</span></code>: en, de, cz/cs, fr (default=en)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tgt_lang</span></code>: en, de, cz/cs, fr (default=en)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">penn</span></code>: Penn substitution (default=True)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">norm_quote_commas</span></code>: Normalize quotations and commas (default=True)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">norm_numbers</span></code>: Normalize numbers (default=True)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pre_replace_unicode_punct</span></code>: Replace unicode punct (default=False)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">post_remove_control_chars</span></code>: Remove control chars (default=False)</p></li>
+</ul>
+</div>
+<div class="section" id="augment-source-segments-with-fuzzy-matches-for-neural-fuzzy-repair">
+<h4>Augment source segments with fuzzy matches for Neural Fuzzy Repair<a class="headerlink" href="#augment-source-segments-with-fuzzy-matches-for-neural-fuzzy-repair" title="Permalink to this headline">¶</a></h4>
+<p>Transform name: <code class="docutils literal notranslate"><span class="pre">fuzzymatch</span></code></p>
+<p>Class: <code class="docutils literal notranslate"><span class="pre">onmt.transforms.fuzzymatch.FuzzyMatchTransform</span></code></p>
+<p>Augments source segments with fuzzy matches for Neural Fuzzy Repair, as described in <a class="reference external" href="https://aclanthology.org/P19-1175">Neural Fuzzy Repair: Integrating Fuzzy Matches into Neural Machine Translation</a>. Currently, the transform augments source segments with only a single fuzzy match.
+The Translation Memory (TM) format should be a flat text file, with each line containing the source and the target segment separated by a delimiter. As fuzzy matching during training is computational intensive, we offer some advice to achieve good performance and minimize overhead:</p>
+<ul class="simple">
+<li><p>Depending on your system’s specs, you may have to experiment with the options <code class="docutils literal notranslate"><span class="pre">bucket_size</span></code>, <code class="docutils literal notranslate"><span class="pre">bucket_size_init</span></code>, and <code class="docutils literal notranslate"><span class="pre">bucket_size_increment</span></code>;</p></li>
+<li><p>You should increase the <code class="docutils literal notranslate"><span class="pre">num_workers</span></code> and <code class="docutils literal notranslate"><span class="pre">prefetch_factor</span></code> so your GPU does not have to wait for the batches to be augmented with fuzzy matches;</p></li>
+<li><p>Try to use a sensible Translation Memory size. 200k-250k translation units should be enough for yielding a sufficient number of matches;</p></li>
+<li><p>Although the transform performs some basic filtering both in the TM and in the corpus for very short or very long segments, some examples may still be long enough, so you should increase a bit the <code class="docutils literal notranslate"><span class="pre">src_seq_length</span></code>;</p></li>
+<li><p>Currently, when using <code class="docutils literal notranslate"><span class="pre">n_sample</span></code>, examples are always processed one by one and not in batches.</p></li>
+</ul>
+<p>The following options can be added to the configuration:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">tm_path</span></code>: The path to the Translation Memory text file;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fuzzy_corpus_ratio</span></code>: Ratio of corpus to augment with fuzzy matches (default: 0.1);</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fuzzy_threshold</span></code>: The fuzzy matching threshold (default: 70);</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tm_delimiter</span></code>: The delimiter used in the flat text TM (default: “\t”);</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fuzzy_token</span></code>: The fuzzy token to be added with the matches (default: “｟fuzzy｠”);</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fuzzymatch_min_length</span></code>: Min length for TM entries and examples to match (default: 4);</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fuzzymatch_max_length</span></code>: Max length for TM entries and examples to match (default: 70).</p></li>
+</ul>
 </div>
 </div>
 <div class="section" id="tokenization">
@@ -621,11 +699,11 @@ Bear in mind that your models must share the same target vocabulary.</p>
 <p>You can for instance have a look at the <code class="docutils literal notranslate"><span class="pre">FilterTooLongTransform</span></code> class as a template:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@register_transform</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;filtertoolong&#39;</span><span class="p">)</span>
 <span class="k">class</span> <span class="nc">FilterTooLongTransform</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Filter out sentence that are too long.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Filter out sentence that are too long.&quot;&quot;&quot;</span>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">add_options</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">parser</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Avalilable options relate to this Transform.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Avalilable options relate to this Transform.&quot;&quot;&quot;</span>
         <span class="n">group</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="s2">&quot;Transform/Filter&quot;</span><span class="p">)</span>
         <span class="n">group</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;--src_seq_length&quot;</span><span class="p">,</span> <span class="s2">&quot;-src_seq_length&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
                   <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Maximum source sequence length.&quot;</span><span class="p">)</span>
@@ -637,7 +715,7 @@ Bear in mind that your models must share the same target vocabulary.</p>
         <span class="bp">self</span><span class="o">.</span><span class="n">tgt_seq_length</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opts</span><span class="o">.</span><span class="n">tgt_seq_length</span>
 
     <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">example</span><span class="p">,</span> <span class="n">is_train</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">stats</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Return None if too long else return as is.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return None if too long else return as is.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">example</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_seq_length</span> <span class="ow">or</span>
                 <span class="nb">len</span><span class="p">(</span><span class="n">example</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">tgt_seq_length</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">stats</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -647,7 +725,7 @@ Bear in mind that your models must share the same target vocabulary.</p>
             <span class="k">return</span> <span class="n">example</span>
 
     <span class="k">def</span> <span class="nf">_repr_args</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Return str represent key arguments for class.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return str represent key arguments for class.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">=</span><span class="si">{}</span><span class="s1">, </span><span class="si">{}</span><span class="s1">=</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="s1">&#39;src_seq_length&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_seq_length</span><span class="p">,</span>
             <span class="s1">&#39;tgt_seq_length&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tgt_seq_length</span>
@@ -664,7 +742,7 @@ Bear in mind that your models must share the same target vocabulary.</p>
 <p>As you can see, there is the <code class="docutils literal notranslate"><span class="pre">&#64;register_transform</span></code> wrapper before the class definition. This will allow for the class to be automatically detected (if put in the proper <code class="docutils literal notranslate"><span class="pre">transforms</span></code> folder) and usable in your training configurations through its <code class="docutils literal notranslate"><span class="pre">name</span></code> argument.</p>
 <p>You could also collect statistics for your custom transform by creating a class inheriting <code class="docutils literal notranslate"><span class="pre">ObservableStats</span></code>:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">FilterTooLongStats</span><span class="p">(</span><span class="n">ObservableStats</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Runing statistics for FilterTooLongTransform.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Runing statistics for FilterTooLongTransform.&quot;&quot;&quot;</span>
     <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;filtered&quot;</span><span class="p">]</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -711,25 +789,25 @@ Note: The <em>second to last</em> default behaviour was empirically determined. 
 <p>The data need to be preprocessed with the reference alignments in order to learn the supervised task.
 The reference alignment file(s) can for instance be generated by <a class="reference external" href="https://github.com/moses-smt/mgiza/">GIZA++</a> or <a class="reference external" href="https://github.com/clab/fast_align">fast_align</a>.</p>
 <p>In order to learn the supervised task, you can set for each dataset the path of its alignment file in the YAML configuration file:</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">&lt;your_config&gt;.yaml</span><span class="w"></span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">&lt;your_config&gt;.yaml</span>
 
-<span class="nn">...</span><span class="w"></span>
+<span class="nn">...</span>
 
-<span class="c1"># Corpus opts:</span><span class="w"></span>
-<span class="nt">data</span><span class="p">:</span><span class="w"></span>
-<span class="w">    </span><span class="nt">corpus_1</span><span class="p">:</span><span class="w"></span>
-<span class="w">        </span><span class="nt">path_src</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/src-train1.txt</span><span class="w"></span>
-<span class="w">        </span><span class="nt">path_tgt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/tgt-train1.txt</span><span class="w"></span>
-<span class="w">        </span><span class="c1"># src - tgt alignments in pharaoh format</span><span class="w"></span>
-<span class="w">        </span><span class="nt">path_align</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/src-tgt.align</span><span class="w"></span>
-<span class="w">        </span><span class="nt">transforms</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span><span class="w"></span>
-<span class="w">        </span><span class="nt">weight</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span><span class="w"></span>
-<span class="w">    </span><span class="nt">valid</span><span class="p">:</span><span class="w"></span>
-<span class="w">        </span><span class="nt">path_src</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/src-val.txt</span><span class="w"></span>
-<span class="w">        </span><span class="nt">path_tgt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/tgt-val.txt</span><span class="w"></span>
-<span class="w">        </span><span class="nt">transforms</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span><span class="w"></span>
+<span class="c1"># Corpus opts:</span>
+<span class="nt">data</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">corpus_1</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">path_src</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/src-train1.txt</span>
+<span class="w">        </span><span class="nt">path_tgt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/tgt-train1.txt</span>
+<span class="w">        </span><span class="c1"># src - tgt alignments in pharaoh format</span>
+<span class="w">        </span><span class="nt">path_align</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/src-tgt.align</span>
+<span class="w">        </span><span class="nt">transforms</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">        </span><span class="nt">weight</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">    </span><span class="nt">valid</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">path_src</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/src-val.txt</span>
+<span class="w">        </span><span class="nt">path_tgt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">toy-ende/tgt-val.txt</span>
+<span class="w">        </span><span class="nt">transforms</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
 
-<span class="nn">...</span><span class="w"></span>
+<span class="nn">...</span>
 </pre></div>
 </div>
 <p><strong>Notes</strong>:</p>
@@ -824,7 +902,7 @@ RESULT: A A A B A
 </pre></div>
 </div>
 <p><strong>Important note!</strong> During inference, input sentence is expected to be tokenized. Therefore feature inferring should be handled prior to running the translate command. Example:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python translate.py -model model_step_10.pt -src ../data.txt.tok -output ../data.out --src_feats <span class="s2">&quot;{&#39;feat_0&#39;: &#39;../data.txt.feats0&#39;, &#39;feat_1&#39;: &#39;../data.txt.feats1&#39;}&quot;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>translate.py<span class="w"> </span>-model<span class="w"> </span>model_step_10.pt<span class="w"> </span>-src<span class="w"> </span>../data.txt.tok<span class="w"> </span>-output<span class="w"> </span>../data.out<span class="w"> </span>--src_feats<span class="w"> </span><span class="s2">&quot;{&#39;feat_0&#39;: &#39;../data.txt.feats0&#39;, &#39;feat_1&#39;: &#39;../data.txt.feats1&#39;}&quot;</span>
 </pre></div>
 </div>
 <p>When using the Transformer architecture make sure the following options are appropriately set:</p>
@@ -868,35 +946,35 @@ RESULT: A A A B A
 </div>
 <div class="section" id="id3">
 <h4>Example<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h4>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;models_root&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;./available_models&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;models&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;models_root&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;./available_models&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;models&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">        </span><span class="p">{</span><span class="w">   </span>
-<span class="w">            </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">,</span><span class="w"></span>
-<span class="w">            </span><span class="nt">&quot;model&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;model_0.pt&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="w">            </span><span class="nt">&quot;timeout&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">600</span><span class="p">,</span><span class="w"></span>
-<span class="w">            </span><span class="nt">&quot;on_timeout&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;to_cpu&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="w">            </span><span class="nt">&quot;load&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"></span>
-<span class="w">            </span><span class="nt">&quot;opt&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">                </span><span class="nt">&quot;gpu&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"></span>
-<span class="w">                </span><span class="nt">&quot;beam_size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;model&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;model_0.pt&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;timeout&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">600</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;on_timeout&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;to_cpu&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;load&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;opt&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="nt">&quot;gpu&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">                </span><span class="nt">&quot;beam_size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span>
 <span class="w">            </span><span class="p">},</span><span class="w">  </span>
-<span class="w">            </span><span class="nt">&quot;tokenizer&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">                </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;sentencepiece&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="w">                </span><span class="nt">&quot;model&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;wmtenfr.model&quot;</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;tokenizer&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;sentencepiece&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="nt">&quot;model&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;wmtenfr.model&quot;</span>
 <span class="w">            </span><span class="p">}</span><span class="w">   </span>
 <span class="w">        </span><span class="p">},{</span><span class="w"> </span>
-<span class="w">            </span><span class="nt">&quot;model&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;model_0.light.pt&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;model&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;model_0.light.pt&quot;</span><span class="p">,</span>
 <span class="w">            </span><span class="nt">&quot;timeout&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">-1</span><span class="p">,</span><span class="w"> </span>
-<span class="w">            </span><span class="nt">&quot;on_timeout&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;unload&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="w">            </span><span class="nt">&quot;model_root&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;../other_models&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="w">            </span><span class="nt">&quot;opt&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">                </span><span class="nt">&quot;batch_size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"></span>
-<span class="w">                </span><span class="nt">&quot;beam_size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;on_timeout&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;unload&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;model_root&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;../other_models&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;opt&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="nt">&quot;batch_size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">                </span><span class="nt">&quot;beam_size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span>
 <span class="w">            </span><span class="p">}</span><span class="w">   </span>
 <span class="w">        </span><span class="p">}</span><span class="w">   </span>
 <span class="w">    </span><span class="p">]</span><span class="w">   </span>
-<span class="p">}</span><span class="w"></span>
+<span class="p">}</span>
 </pre></div>
 </div>
 </div>
@@ -910,27 +988,27 @@ Keep in line with master for last fix / improvements.</p>
 </div>
 <div class="section" id="install-flask">
 <h4>1. Install <code class="docutils literal notranslate"><span class="pre">flask</span></code><a class="headerlink" href="#install-flask" title="Permalink to this headline">¶</a></h4>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install flask
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>flask
 </pre></div>
 </div>
 </div>
 <div class="section" id="put-some-models">
 <h4>2. Put some models<a class="headerlink" href="#put-some-models" title="Permalink to this headline">¶</a></h4>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir available_models/
-cp <span class="nv">$path_to_my_model</span> available_models
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>available_models/
+cp<span class="w"> </span><span class="nv">$path_to_my_model</span><span class="w"> </span>available_models
 </pre></div>
 </div>
 </div>
 <div class="section" id="start-the-server">
 <h4>3. Start the server<a class="headerlink" href="#start-the-server" title="Permalink to this headline">¶</a></h4>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">IP</span><span class="o">=</span><span class="s2">&quot;0.0.0.0&quot;</span>
-<span class="nb">export</span> <span class="nv">PORT</span><span class="o">=</span><span class="m">5000</span>
-<span class="nb">export</span> <span class="nv">URL_ROOT</span><span class="o">=</span><span class="s2">&quot;/translator&quot;</span>
-<span class="nb">export</span> <span class="nv">CONFIG</span><span class="o">=</span><span class="s2">&quot;./available_models/conf.json&quot;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">IP</span><span class="o">=</span><span class="s2">&quot;0.0.0.0&quot;</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">PORT</span><span class="o">=</span><span class="m">5000</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">URL_ROOT</span><span class="o">=</span><span class="s2">&quot;/translator&quot;</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">CONFIG</span><span class="o">=</span><span class="s2">&quot;./available_models/conf.json&quot;</span>
 
 <span class="c1"># NOTE that these parameters are optionnal</span>
 <span class="c1"># here, we explicitely set to default values</span>
-python server.py --ip <span class="nv">$IP</span> --port <span class="nv">$PORT</span> --url_root <span class="nv">$URL_ROOT</span> --config <span class="nv">$CONFIG</span>
+python<span class="w"> </span>server.py<span class="w"> </span>--ip<span class="w"> </span><span class="nv">$IP</span><span class="w"> </span>--port<span class="w"> </span><span class="nv">$PORT</span><span class="w"> </span>--url_root<span class="w"> </span><span class="nv">$URL_ROOT</span><span class="w"> </span>--config<span class="w"> </span><span class="nv">$CONFIG</span>
 </pre></div>
 </div>
 </div>
@@ -954,14 +1032,14 @@ python server.py --ip <span class="nv">$IP</span> --port <span class="nv">$PORT<
 <div class="highlight-docker notranslate"><div class="highlight"><pre><span></span><span class="k">FROM</span><span class="w"> </span><span class="s">pytorch/pytorch:1.6.0-cuda10.1-cudnn7-runtime</span>
 <span class="k">WORKDIR</span><span class="w"> </span><span class="s">/usr/src/app</span>
 
-<span class="k">COPY</span><span class="w"> </span>requirements.docker.txt ./requirements.txt
-<span class="k">RUN</span><span class="w"> </span>pip install --no-cache-dir -r requirements.txt
+<span class="k">COPY</span><span class="w"> </span>requirements.docker.txt<span class="w"> </span>./requirements.txt
+<span class="k">RUN</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--no-cache-dir<span class="w"> </span>-r<span class="w"> </span>requirements.txt
 
 <span class="c"># You can copy or use a docker volume, especially for the model and config data</span>
-<span class="k">COPY</span><span class="w"> </span>server.py ./
-<span class="k">COPY</span><span class="w"> </span>tools ./tools
-<span class="k">COPY</span><span class="w"> </span>available_models ./available_models
-<span class="k">COPY</span><span class="w"> </span>onmt ./onmt
+<span class="k">COPY</span><span class="w"> </span>server.py<span class="w"> </span>./
+<span class="k">COPY</span><span class="w"> </span>tools<span class="w"> </span>./tools
+<span class="k">COPY</span><span class="w"> </span>available_models<span class="w"> </span>./available_models
+<span class="k">COPY</span><span class="w"> </span>onmt<span class="w"> </span>./onmt
 
 <span class="k">CMD</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;python&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;./server.py&quot;</span><span class="p">]</span>
 </pre></div>
@@ -969,8 +1047,8 @@ python server.py --ip <span class="nv">$IP</span> --port <span class="nv">$PORT<
 <ol class="simple">
 <li><p>Build the image and run container</p></li>
 </ol>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker build -t opennmt_server .
-docker run -it --rm -p <span class="m">5000</span>:5000 opennmt_server
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </span>opennmt_server<span class="w"> </span>.
+docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="w"> </span>-p<span class="w"> </span><span class="m">5000</span>:5000<span class="w"> </span>opennmt_server
 </pre></div>
 </div>
 </div>
@@ -979,45 +1057,45 @@ docker run -it --rm -p <span class="m">5000</span>:5000 opennmt_server
 <p>This section contains a fex examples of the API. For details on all routes, see <code class="docutils literal notranslate"><span class="pre">./bin/server.py</span></code>.</p>
 <div class="section" id="set-the-hostname">
 <h4>0. Set the hostname<a class="headerlink" href="#set-the-hostname" title="Permalink to this headline">¶</a></h4>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">HOST</span><span class="o">=</span><span class="s2">&quot;127.0.0.1&quot;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">HOST</span><span class="o">=</span><span class="s2">&quot;127.0.0.1&quot;</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="list-models">
 <h4>1. List models<a class="headerlink" href="#list-models" title="Permalink to this headline">¶</a></h4>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl http://<span class="nv">$HOST</span>:<span class="nv">$PORT$URL_ROOT</span>/models
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl<span class="w"> </span>http://<span class="nv">$HOST</span>:<span class="nv">$PORT$URL_ROOT</span>/models
 </pre></div>
 </div>
 <p><strong>Result (example):</strong></p>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="w"></span>
-<span class="w">  </span><span class="nt">&quot;available&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
-<span class="w">    </span><span class="s2">&quot;wmt14.en-de_acc_69.22_ppl_4.33_e9.pt&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="s2">&quot;wmt14.en-de_acc_69.22_ppl_4.33_e9.light.pt&quot;</span><span class="w"></span>
-<span class="w">  </span><span class="p">],</span><span class="w"></span>
-<span class="w">  </span><span class="nt">&quot;loaded&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;available&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;wmt14.en-de_acc_69.22_ppl_4.33_e9.pt&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;wmt14.en-de_acc_69.22_ppl_4.33_e9.light.pt&quot;</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;loaded&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span>
+<span class="p">}</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="translate">
 <h4>2. Translate<a class="headerlink" href="#translate" title="Permalink to this headline">¶</a></h4>
 <p>(this example involves subwords)</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl -i -X POST -H <span class="s2">&quot;Content-Type: application/json&quot;</span> <span class="se">\</span>
-    -d <span class="s1">&#39;[{&quot;src&quot;: &quot;this is a test for model 0&quot;, &quot;id&quot;: 0}]&#39;</span> <span class="se">\</span>
-    http://<span class="nv">$HOST</span>:<span class="nv">$PORT$URL_ROOT</span>/translate
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl<span class="w"> </span>-i<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-d<span class="w"> </span><span class="s1">&#39;[{&quot;src&quot;: &quot;this is a test for model 0&quot;, &quot;id&quot;: 0}]&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>http://<span class="nv">$HOST</span>:<span class="nv">$PORT$URL_ROOT</span>/translate
 </pre></div>
 </div>
 <p><strong>Result:</strong></p>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="w"></span>
-<span class="w">  </span><span class="nt">&quot;model_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"></span>
-<span class="w">  </span><span class="nt">&quot;result&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;\u2581die \u2581Formen kant en \u2581( K \u00f6r ner ) \u2581des \u2581Stahl g u\u00df form .\n&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="w">  </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ok&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="w">  </span><span class="nt">&quot;time&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;total&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">8.510261535644531</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;translation&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">8.509992599487305</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;writing_src&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.0002689361572265625</span><span class="w"></span>
-<span class="w">  </span><span class="p">}</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;model_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;result&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;\u2581die \u2581Formen kant en \u2581( K \u00f6r ner ) \u2581des \u2581Stahl g u\u00df form .\n&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ok&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;time&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;total&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">8.510261535644531</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;translation&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">8.509992599487305</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;writing_src&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.0002689361572265625</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
 </pre></div>
 </div>
 </div>

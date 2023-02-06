@@ -199,34 +199,45 @@
 
 
 <div class="viewcode-block" id="PositionalEncoding"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.PositionalEncoding">[docs]</a><span class="k">class</span> <span class="nc">PositionalEncoding</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Sinusoidal positional encoding for non-recurrent neural networks.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sinusoidal positional encoding for non-recurrent neural networks.</span>
 
 <span class="sd">    Implementation based on &quot;Attention Is All You Need&quot;</span>
 <span class="sd">    :cite:`DBLP:journals/corr/VaswaniSPUJGKP17`</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">       dropout (float): dropout parameter</span>
 <span class="sd">       dim (int): embedding size</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">max_len</span><span class="o">=</span><span class="mi">5000</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">enc_type</span><span class="p">,</span> <span class="n">max_len</span><span class="o">=</span><span class="mi">5000</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">dim</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot use sin/cos positional encoding with &quot;</span>
                              <span class="s2">&quot;odd dim (got dim=</span><span class="si">{:d}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dim</span><span class="p">))</span>
-        <span class="n">pe</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">max_len</span><span class="p">,</span> <span class="n">dim</span><span class="p">)</span>
-        <span class="n">position</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">max_len</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">div_term</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">((</span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">)</span> <span class="o">*</span>
-                             <span class="o">-</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">10000.0</span><span class="p">)</span> <span class="o">/</span> <span class="n">dim</span><span class="p">)))</span>
-        <span class="n">pe</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">position</span><span class="o">.</span><span class="n">float</span><span class="p">()</span> <span class="o">*</span> <span class="n">div_term</span><span class="p">)</span>
-        <span class="n">pe</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">position</span><span class="o">.</span><span class="n">float</span><span class="p">()</span> <span class="o">*</span> <span class="n">div_term</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">enc_type</span> <span class="o">==</span> <span class="s1">&#39;SinusoidalInterleaved&#39;</span><span class="p">:</span>
+            <span class="n">pe</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">max_len</span><span class="p">,</span> <span class="n">dim</span><span class="p">)</span>
+            <span class="n">position</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">max_len</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">div_term</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">((</span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">)</span> <span class="o">*</span>
+                                 <span class="o">-</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">10000.0</span><span class="p">)</span> <span class="o">/</span> <span class="n">dim</span><span class="p">)))</span>
+            <span class="n">pe</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">position</span><span class="o">.</span><span class="n">float</span><span class="p">()</span> <span class="o">*</span> <span class="n">div_term</span><span class="p">)</span>
+            <span class="n">pe</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">position</span><span class="o">.</span><span class="n">float</span><span class="p">()</span> <span class="o">*</span> <span class="n">div_term</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">enc_type</span> <span class="o">==</span> <span class="s1">&#39;SinusoidalConcat&#39;</span><span class="p">:</span>
+            <span class="n">half_dim</span> <span class="o">=</span> <span class="n">dim</span> <span class="o">//</span> <span class="mi">2</span>
+            <span class="n">pe</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">10000</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">half_dim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">pe</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">half_dim</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">)</span> <span class="o">*</span> <span class="o">-</span><span class="n">pe</span><span class="p">)</span>
+            <span class="n">pe</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">max_len</span><span class="p">,</span>
+                              <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">pe</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">pe</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">torch</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">pe</span><span class="p">),</span>
+                            <span class="n">torch</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">pe</span><span class="p">)],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">max_len</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Choice of Position encoding is SinusoidalInterleaved or&quot;</span>
+                <span class="s2">&quot; SinusoidalConcat.&quot;</span><span class="p">)</span>
         <span class="n">pe</span> <span class="o">=</span> <span class="n">pe</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># we keep pe (len x batch x dim) for back comp</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">PositionalEncoding</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s1">&#39;pe&#39;</span><span class="p">,</span> <span class="n">pe</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="n">dropout</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">=</span> <span class="n">dim</span>
 
 <div class="viewcode-block" id="PositionalEncoding.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.PositionalEncoding.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">emb</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Embed inputs.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Embed inputs.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            emb (FloatTensor): Sequence of word vectors</span>
@@ -239,16 +250,16 @@
         <span class="n">step</span> <span class="o">=</span> <span class="n">step</span> <span class="ow">or</span> <span class="mi">0</span>
         <span class="k">if</span> <span class="n">pe</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">step</span> <span class="o">+</span> <span class="n">emb</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">SequenceTooLongError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Sequence is </span><span class="si">{</span><span class="n">emb</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">step</span><span class="si">}</span><span class="s2"> but PositionalEncoding is&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Sequence is </span><span class="si">{</span><span class="n">emb</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">step</span><span class="si">}</span><span class="s2"> but PositionalEncoding is&quot;</span>
                 <span class="sa">f</span><span class="s2">&quot; limited to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">pe</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2">. See max_len argument.&quot;</span>
             <span class="p">)</span>
         <span class="n">emb</span> <span class="o">=</span> <span class="n">emb</span> <span class="o">+</span> <span class="n">pe</span><span class="p">[:,</span> <span class="n">step</span><span class="p">:</span><span class="n">emb</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">+</span><span class="n">step</span><span class="p">,</span> <span class="p">:]</span>
-        <span class="n">emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">emb</span><span class="p">)</span>
+
         <span class="k">return</span> <span class="n">emb</span></div></div>
 
 
 <div class="viewcode-block" id="Embeddings"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.Embeddings">[docs]</a><span class="k">class</span> <span class="nc">Embeddings</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Words embeddings for encoder/decoder.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Words embeddings for encoder/decoder.</span>
 
 <span class="sd">    Additionally includes ability to add sparse input features</span>
 <span class="sd">    based on &quot;Linguistic Input Features Improve Neural Machine Translation&quot;</span>
@@ -293,6 +304,7 @@
                  <span class="n">word_vocab_size</span><span class="p">,</span>
                  <span class="n">word_padding_idx</span><span class="p">,</span>
                  <span class="n">position_encoding</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">position_encoding_type</span><span class="o">=</span><span class="s1">&#39;SinusoidalInterleaved&#39;</span><span class="p">,</span>
                  <span class="n">feat_merge</span><span class="o">=</span><span class="s2">&quot;concat&quot;</span><span class="p">,</span>
                  <span class="n">feat_vec_exponent</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
                  <span class="n">feat_vec_size</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
@@ -357,9 +369,11 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">make_embedding</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s1">&#39;mlp&#39;</span><span class="p">,</span> <span class="n">mlp</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">position_encoding</span> <span class="o">=</span> <span class="n">position_encoding</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="n">dropout</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">position_encoding</span><span class="p">:</span>
-            <span class="n">pe</span> <span class="o">=</span> <span class="n">PositionalEncoding</span><span class="p">(</span><span class="n">dropout</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_size</span><span class="p">)</span>
+            <span class="n">pe</span> <span class="o">=</span> <span class="n">PositionalEncoding</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_size</span><span class="p">,</span>
+                                    <span class="n">position_encoding_type</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">make_embedding</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s1">&#39;pe&#39;</span><span class="p">,</span> <span class="n">pe</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">freeze_word_vecs</span><span class="p">:</span>
@@ -394,16 +408,16 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">word_lut</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Word look-up table.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Word look-up table.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_embedding</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">emb_luts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Embedding look-up table.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Embedding look-up table.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_embedding</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
 <div class="viewcode-block" id="Embeddings.load_pretrained_vectors"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.Embeddings.load_pretrained_vectors">[docs]</a>    <span class="k">def</span> <span class="nf">load_pretrained_vectors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">emb_file</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Load in pretrained embeddings.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load in pretrained embeddings.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">          emb_file (str) : path to torch serialized embeddings</span>
@@ -421,7 +435,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">word_lut</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy_</span><span class="p">(</span><span class="n">pretrained</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Embeddings.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.Embeddings.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Computes the embeddings for words and features.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Computes the embeddings for words and features.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            source (LongTensor): index tensor ``(batch, len, nfeat)``</span>
@@ -439,17 +453,16 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_embedding</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">source</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">source</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">update_dropout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dropout</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">position_encoding</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_modules</span><span class="p">[</span><span class="s1">&#39;make_embedding&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">dropout</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">dropout</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">dropout</span></div>
 
 
 <span class="c1"># Some utilitary functions for pretrained embeddings</span>
 
 <span class="k">def</span> <span class="nf">read_embeddings</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">skip_lines</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">filter_set</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Read an embeddings file in the glove format.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">embs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>

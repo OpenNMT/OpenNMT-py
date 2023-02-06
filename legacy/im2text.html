@@ -216,50 +216,50 @@
 <ol class="simple">
 <li><p>Download the data.</p></li>
 </ol>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>wget -O data/im2text.tgz http://lstm.seas.harvard.edu/latex/im2text_small.tgz<span class="p">;</span> tar zxf data/im2text.tgz -C data/
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>wget<span class="w"> </span>-O<span class="w"> </span>data/im2text.tgz<span class="w"> </span>http://lstm.seas.harvard.edu/latex/im2text_small.tgz<span class="p">;</span><span class="w"> </span>tar<span class="w"> </span>zxf<span class="w"> </span>data/im2text.tgz<span class="w"> </span>-C<span class="w"> </span>data/
 </pre></div>
 </div>
 <ol class="simple">
 <li><p>Preprocess the data.</p></li>
 </ol>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_preprocess -data_type img <span class="se">\</span>
-                -src_dir data/im2text/images/ <span class="se">\</span>
-                -train_src data/im2text/src-train.txt <span class="se">\</span>
-                -train_tgt data/im2text/tgt-train.txt -valid_src data/im2text/src-val.txt <span class="se">\</span>
-                -valid_tgt data/im2text/tgt-val.txt -save_data data/im2text/demo <span class="se">\</span>
-                -tgt_seq_length <span class="m">150</span> <span class="se">\</span>
-                -tgt_words_min_frequency <span class="m">2</span> <span class="se">\</span>
-                -shard_size <span class="m">500</span> <span class="se">\</span>
-                -image_channel_size <span class="m">1</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_preprocess<span class="w"> </span>-data_type<span class="w"> </span>img<span class="w"> </span><span class="se">\</span>
+<span class="w">                </span>-src_dir<span class="w"> </span>data/im2text/images/<span class="w"> </span><span class="se">\</span>
+<span class="w">                </span>-train_src<span class="w"> </span>data/im2text/src-train.txt<span class="w"> </span><span class="se">\</span>
+<span class="w">                </span>-train_tgt<span class="w"> </span>data/im2text/tgt-train.txt<span class="w"> </span>-valid_src<span class="w"> </span>data/im2text/src-val.txt<span class="w"> </span><span class="se">\</span>
+<span class="w">                </span>-valid_tgt<span class="w"> </span>data/im2text/tgt-val.txt<span class="w"> </span>-save_data<span class="w"> </span>data/im2text/demo<span class="w"> </span><span class="se">\</span>
+<span class="w">                </span>-tgt_seq_length<span class="w"> </span><span class="m">150</span><span class="w"> </span><span class="se">\</span>
+<span class="w">                </span>-tgt_words_min_frequency<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="se">\</span>
+<span class="w">                </span>-shard_size<span class="w"> </span><span class="m">500</span><span class="w"> </span><span class="se">\</span>
+<span class="w">                </span>-image_channel_size<span class="w"> </span><span class="m">1</span>
 </pre></div>
 </div>
 <ol class="simple">
 <li><p>Train the model.</p></li>
 </ol>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_train -model_type img <span class="se">\</span>
-           -data data/im2text/demo <span class="se">\</span>
-           -save_model demo-model <span class="se">\</span>
-           -gpu_ranks <span class="m">0</span> <span class="se">\</span>
-           -batch_size <span class="m">20</span> <span class="se">\</span>
-           -max_grad_norm <span class="m">20</span> <span class="se">\</span>
-           -learning_rate <span class="m">0</span>.1 <span class="se">\</span>
-           -word_vec_size <span class="m">80</span> <span class="se">\</span>
-           -encoder_type brnn <span class="se">\</span>
-           -image_channel_size <span class="m">1</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_train<span class="w"> </span>-model_type<span class="w"> </span>img<span class="w"> </span><span class="se">\</span>
+<span class="w">           </span>-data<span class="w"> </span>data/im2text/demo<span class="w"> </span><span class="se">\</span>
+<span class="w">           </span>-save_model<span class="w"> </span>demo-model<span class="w"> </span><span class="se">\</span>
+<span class="w">           </span>-gpu_ranks<span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="se">\</span>
+<span class="w">           </span>-batch_size<span class="w"> </span><span class="m">20</span><span class="w"> </span><span class="se">\</span>
+<span class="w">           </span>-max_grad_norm<span class="w"> </span><span class="m">20</span><span class="w"> </span><span class="se">\</span>
+<span class="w">           </span>-learning_rate<span class="w"> </span><span class="m">0</span>.1<span class="w"> </span><span class="se">\</span>
+<span class="w">           </span>-word_vec_size<span class="w"> </span><span class="m">80</span><span class="w"> </span><span class="se">\</span>
+<span class="w">           </span>-encoder_type<span class="w"> </span>brnn<span class="w"> </span><span class="se">\</span>
+<span class="w">           </span>-image_channel_size<span class="w"> </span><span class="m">1</span>
 </pre></div>
 </div>
 <ol class="simple">
 <li><p>Translate the images.</p></li>
 </ol>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_translate -data_type img <span class="se">\</span>
-               -model demo-model_acc_x_ppl_x_e13.pt <span class="se">\</span>
-               -src_dir data/im2text/images <span class="se">\</span>
-               -src data/im2text/src-test.txt <span class="se">\</span>
-               -output pred.txt <span class="se">\</span>
-               -max_length <span class="m">150</span> <span class="se">\</span>
-               -beam_size <span class="m">5</span> <span class="se">\</span>
-               -gpu <span class="m">0</span> <span class="se">\</span>
-               -verbose
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_translate<span class="w"> </span>-data_type<span class="w"> </span>img<span class="w"> </span><span class="se">\</span>
+<span class="w">               </span>-model<span class="w"> </span>demo-model_acc_x_ppl_x_e13.pt<span class="w"> </span><span class="se">\</span>
+<span class="w">               </span>-src_dir<span class="w"> </span>data/im2text/images<span class="w"> </span><span class="se">\</span>
+<span class="w">               </span>-src<span class="w"> </span>data/im2text/src-test.txt<span class="w"> </span><span class="se">\</span>
+<span class="w">               </span>-output<span class="w"> </span>pred.txt<span class="w"> </span><span class="se">\</span>
+<span class="w">               </span>-max_length<span class="w"> </span><span class="m">150</span><span class="w"> </span><span class="se">\</span>
+<span class="w">               </span>-beam_size<span class="w"> </span><span class="m">5</span><span class="w"> </span><span class="se">\</span>
+<span class="w">               </span>-gpu<span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="se">\</span>
+<span class="w">               </span>-verbose
 </pre></div>
 </div>
 <p>The above dataset is sampled from the <a class="reference external" href="http://lstm.seas.harvard.edu/latex/im2text.tgz">im2latex-100k-dataset</a>. We provide a trained model <a class="reference external" href="http://lstm.seas.harvard.edu/latex/py-model.pt">[link]</a> on this dataset.</p>

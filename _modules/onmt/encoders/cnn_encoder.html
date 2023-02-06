@@ -195,7 +195,7 @@
 
 
 <div class="viewcode-block" id="CNNEncoder"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.encoders.CNNEncoder">[docs]</a><span class="k">class</span> <span class="nc">CNNEncoder</span><span class="p">(</span><span class="n">EncoderBase</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Encoder based on &quot;Convolutional Sequence to Sequence Learning&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Encoder based on &quot;Convolutional Sequence to Sequence Learning&quot;</span>
 <span class="sd">    :cite:`DBLP:journals/corr/GehringAGYD17`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -211,7 +211,7 @@
 
 <div class="viewcode-block" id="CNNEncoder.from_opt"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.encoders.CNNEncoder.from_opt">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_opt</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Alternate constructor.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Alternate constructor.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">enc_layers</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">enc_hid_size</span><span class="p">,</span>
@@ -220,7 +220,7 @@
             <span class="n">embeddings</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="CNNEncoder.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.encoders.CNNEncoder.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">src_len</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hidden</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;See :func:`EncoderBase.forward()`&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;See :func:`EncoderBase.forward()`&quot;&quot;&quot;</span>
         <span class="c1"># batch x len x dim</span>
         <span class="n">emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
 

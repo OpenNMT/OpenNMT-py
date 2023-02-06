@@ -193,7 +193,7 @@
 
 <span class="k">def</span> <span class="nf">relative_matmul</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
                     <span class="n">transpose</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Helper function for relative positions attention.</span>
 <span class="sd">    https://arxiv.org/pdf/1803.02155.pdf</span>
 <span class="sd">    x shape [batch_size x heads x q_len x k_len]</span>
@@ -216,7 +216,7 @@
                            <span class="n">cache</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
                            <span class="n">device</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
                            <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Generate the clipped relative positions matrix</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate the clipped relative positions matrix</span>
 <span class="sd">       for a given length and maximum relative positions&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">cache</span><span class="p">:</span>
         <span class="n">distance_mat</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="n">length</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span>
@@ -234,7 +234,7 @@
 
 
 <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">dim_per_head</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Projection.</span>
 <span class="sd">    [batchsize x length x modeldim]</span>
 <span class="sd">    -&gt; [batchsize x heads x length x dimperhead]</span>
@@ -244,7 +244,7 @@
 
 
 <span class="k">def</span> <span class="nf">unshape</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Compute context.</span>
 <span class="sd">    [batchsize x heads x length x dimperhead]</span>
 <span class="sd">    -&gt; [batchsize x length x modeldim]</span>
@@ -255,7 +255,7 @@
 
 <div class="viewcode-block" id="MultiHeadedAttention"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.MultiHeadedAttention">[docs]</a><span class="k">class</span> <span class="nc">MultiHeadedAttention</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="c1"># class MultiHeadedAttention(torch.jit.ScriptModule):</span>
-    <span class="sd">&quot;&quot;&quot;Multi-Head Attention module from &quot;Attention is All You Need&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Multi-Head Attention module from &quot;Attention is All You Need&quot;</span>
 <span class="sd">    :cite:`DBLP:journals/corr/VaswaniSPUJGKP17`.</span>
 
 <span class="sd">    Similar to standard `dot` attention but uses</span>
@@ -335,7 +335,7 @@
 <div class="viewcode-block" id="MultiHeadedAttention.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.MultiHeadedAttention.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
                 <span class="n">query</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">mask</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
                 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compute the context vector and the attention vectors.</span>
 
 <span class="sd">        Args:</span>

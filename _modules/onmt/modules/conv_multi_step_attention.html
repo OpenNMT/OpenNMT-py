@@ -193,7 +193,7 @@
 
 
 <span class="k">def</span> <span class="nf">seq_linear</span><span class="p">(</span><span class="n">linear</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; linear transform for 3-d tensor &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; linear transform for 3-d tensor &quot;&quot;&quot;</span>
     <span class="n">batch</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
     <span class="n">h</span> <span class="o">=</span> <span class="n">linear</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span><span class="o">.</span><span class="n">view</span><span class="p">(</span>
         <span class="n">batch</span> <span class="o">*</span> <span class="n">length</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">))</span>
@@ -201,7 +201,7 @@
 
 
 <div class="viewcode-block" id="ConvMultiStepAttention"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.ConvMultiStepAttention">[docs]</a><span class="k">class</span> <span class="nc">ConvMultiStepAttention</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Conv attention takes a key matrix, a value matrix and a query vector.</span>
 <span class="sd">    Attention weight is calculated by key matrix with the query vector</span>
 <span class="sd">    and sum on the value matrix. And the same operation is applied</span>
@@ -214,12 +214,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">mask</span> <span class="o">=</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="ConvMultiStepAttention.apply_mask"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.ConvMultiStepAttention.apply_mask">[docs]</a>    <span class="k">def</span> <span class="nf">apply_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mask</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; Apply mask &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Apply mask &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span></div>
 
 <div class="viewcode-block" id="ConvMultiStepAttention.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.ConvMultiStepAttention.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_target_emb</span><span class="p">,</span> <span class="n">input_from_dec</span><span class="p">,</span> <span class="n">encoder_out_top</span><span class="p">,</span>
                 <span class="n">encoder_out_combine</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            base_target_emb: target emb tensor</span>
 <span class="sd">                ``(batch, channel, height, width)``</span>

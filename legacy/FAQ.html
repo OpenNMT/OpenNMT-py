@@ -212,12 +212,12 @@
 <p>Using vocabularies from OpenNMT-py preprocessing outputs, <code class="docutils literal notranslate"><span class="pre">embeddings_to_torch.py</span></code> to generate encoder and decoder embeddings initialized with GloVe’s values.</p>
 <p>the script is a slightly modified version of ylhsieh’s one2.</p>
 <p>Usage:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>embeddings_to_torch.py <span class="o">[</span>-h<span class="o">]</span> <span class="o">[</span>-emb_file_both EMB_FILE_BOTH<span class="o">]</span>
-                       <span class="o">[</span>-emb_file_enc EMB_FILE_ENC<span class="o">]</span>
-                       <span class="o">[</span>-emb_file_dec EMB_FILE_DEC<span class="o">]</span> -output_file
-                       OUTPUT_FILE -dict_file DICT_FILE <span class="o">[</span>-verbose<span class="o">]</span>
-                       <span class="o">[</span>-skip_lines SKIP_LINES<span class="o">]</span>
-                       <span class="o">[</span>-type <span class="o">{</span>GloVe,word2vec<span class="o">}]</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>embeddings_to_torch.py<span class="w"> </span><span class="o">[</span>-h<span class="o">]</span><span class="w"> </span><span class="o">[</span>-emb_file_both<span class="w"> </span>EMB_FILE_BOTH<span class="o">]</span>
+<span class="w">                       </span><span class="o">[</span>-emb_file_enc<span class="w"> </span>EMB_FILE_ENC<span class="o">]</span>
+<span class="w">                       </span><span class="o">[</span>-emb_file_dec<span class="w"> </span>EMB_FILE_DEC<span class="o">]</span><span class="w"> </span>-output_file
+<span class="w">                       </span>OUTPUT_FILE<span class="w"> </span>-dict_file<span class="w"> </span>DICT_FILE<span class="w"> </span><span class="o">[</span>-verbose<span class="o">]</span>
+<span class="w">                       </span><span class="o">[</span>-skip_lines<span class="w"> </span>SKIP_LINES<span class="o">]</span>
+<span class="w">                       </span><span class="o">[</span>-type<span class="w"> </span><span class="o">{</span>GloVe,word2vec<span class="o">}]</span>
 </pre></div>
 </div>
 <p>Run embeddings_to_torch.py -h for more usagecomplete info.</p>
@@ -225,38 +225,38 @@
 <h3>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h3>
 <ol>
 <li><p>Get GloVe files:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>mkdir <span class="s2">&quot;glove_dir&quot;</span>
-wget http://nlp.stanford.edu/data/glove.6B.zip
-unzip glove.6B.zip -d <span class="s2">&quot;glove_dir&quot;</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span><span class="s2">&quot;glove_dir&quot;</span>
+wget<span class="w"> </span>http://nlp.stanford.edu/data/glove.6B.zip
+unzip<span class="w"> </span>glove.6B.zip<span class="w"> </span>-d<span class="w"> </span><span class="s2">&quot;glove_dir&quot;</span>
 </pre></div>
 </div>
 </li>
 <li><p>Prepare data:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>onmt_preprocess <span class="se">\</span>
--train_src data/train.src.txt <span class="se">\</span>
--train_tgt data/train.tgt.txt <span class="se">\</span>
--valid_src data/valid.src.txt <span class="se">\</span>
--valid_tgt data/valid.tgt.txt <span class="se">\</span>
--save_data data/data
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>onmt_preprocess<span class="w"> </span><span class="se">\</span>
+-train_src<span class="w"> </span>data/train.src.txt<span class="w"> </span><span class="se">\</span>
+-train_tgt<span class="w"> </span>data/train.tgt.txt<span class="w"> </span><span class="se">\</span>
+-valid_src<span class="w"> </span>data/valid.src.txt<span class="w"> </span><span class="se">\</span>
+-valid_tgt<span class="w"> </span>data/valid.tgt.txt<span class="w"> </span><span class="se">\</span>
+-save_data<span class="w"> </span>data/data
 </pre></div>
 </div>
 </li>
 <li><p>Prepare embeddings:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>./tools/embeddings_to_torch.py -emb_file_both <span class="s2">&quot;glove_dir/glove.6B.100d.txt&quot;</span> <span class="se">\</span>
--dict_file <span class="s2">&quot;data/data.vocab.pt&quot;</span> <span class="se">\</span>
--output_file <span class="s2">&quot;data/embeddings&quot;</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>./tools/embeddings_to_torch.py<span class="w"> </span>-emb_file_both<span class="w"> </span><span class="s2">&quot;glove_dir/glove.6B.100d.txt&quot;</span><span class="w"> </span><span class="se">\</span>
+-dict_file<span class="w"> </span><span class="s2">&quot;data/data.vocab.pt&quot;</span><span class="w"> </span><span class="se">\</span>
+-output_file<span class="w"> </span><span class="s2">&quot;data/embeddings&quot;</span>
 </pre></div>
 </div>
 </li>
 <li><p>Train using pre-trained embeddings:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>onmt_train -save_model data/model <span class="se">\</span>
-           -batch_size <span class="m">64</span> <span class="se">\</span>
-           -layers <span class="m">2</span> <span class="se">\</span>
-           -rnn_size <span class="m">200</span> <span class="se">\</span>
-           -word_vec_size <span class="m">100</span> <span class="se">\</span>
-           -pre_word_vecs_enc <span class="s2">&quot;data/embeddings.enc.pt&quot;</span> <span class="se">\</span>
-           -pre_word_vecs_dec <span class="s2">&quot;data/embeddings.dec.pt&quot;</span> <span class="se">\</span>
-           -data data/data
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>onmt_train<span class="w"> </span>-save_model<span class="w"> </span>data/model<span class="w"> </span><span class="se">\</span>
+<span class="w">           </span>-batch_size<span class="w"> </span><span class="m">64</span><span class="w"> </span><span class="se">\</span>
+<span class="w">           </span>-layers<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="se">\</span>
+<span class="w">           </span>-rnn_size<span class="w"> </span><span class="m">200</span><span class="w"> </span><span class="se">\</span>
+<span class="w">           </span>-word_vec_size<span class="w"> </span><span class="m">100</span><span class="w"> </span><span class="se">\</span>
+<span class="w">           </span>-pre_word_vecs_enc<span class="w"> </span><span class="s2">&quot;data/embeddings.enc.pt&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">           </span>-pre_word_vecs_dec<span class="w"> </span><span class="s2">&quot;data/embeddings.dec.pt&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">           </span>-data<span class="w"> </span>data/data
 </pre></div>
 </div>
 </li>
@@ -268,15 +268,15 @@ unzip glove.6B.zip -d <span class="s2">&quot;glove_dir&quot;</span>
 <p>The transformer model is very sensitive to hyperparameters. To run it
 effectively you need to set a bunch of different options that mimic the Google
 setup. We have confirmed the following command can replicate their WMT results.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python  train.py -data /tmp/de2/data -save_model /tmp/extra <span class="se">\</span>
-        -layers <span class="m">6</span> -rnn_size <span class="m">512</span> -word_vec_size <span class="m">512</span> -transformer_ff <span class="m">2048</span> -heads <span class="m">8</span>  <span class="se">\</span>
-        -encoder_type transformer -decoder_type transformer -position_encoding <span class="se">\</span>
-        -train_steps <span class="m">200000</span>  -max_generator_batches <span class="m">2</span> -dropout <span class="m">0</span>.1 <span class="se">\</span>
-        -batch_size <span class="m">4096</span> -batch_type tokens -normalization tokens  -accum_count <span class="m">2</span> <span class="se">\</span>
-        -optim adam -adam_beta2 <span class="m">0</span>.998 -decay_method noam -warmup_steps <span class="m">8000</span> -learning_rate <span class="m">2</span> <span class="se">\</span>
-        -max_grad_norm <span class="m">0</span> -param_init <span class="m">0</span>  -param_init_glorot <span class="se">\</span>
-        -label_smoothing <span class="m">0</span>.1 -valid_steps <span class="m">10000</span> -save_checkpoint_steps <span class="m">10000</span> <span class="se">\</span>
-        -world_size <span class="m">4</span> -gpu_ranks <span class="m">0</span> <span class="m">1</span> <span class="m">2</span> <span class="m">3</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python<span class="w">  </span>train.py<span class="w"> </span>-data<span class="w"> </span>/tmp/de2/data<span class="w"> </span>-save_model<span class="w"> </span>/tmp/extra<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>-layers<span class="w"> </span><span class="m">6</span><span class="w"> </span>-rnn_size<span class="w"> </span><span class="m">512</span><span class="w"> </span>-word_vec_size<span class="w"> </span><span class="m">512</span><span class="w"> </span>-transformer_ff<span class="w"> </span><span class="m">2048</span><span class="w"> </span>-heads<span class="w"> </span><span class="m">8</span><span class="w">  </span><span class="se">\</span>
+<span class="w">        </span>-encoder_type<span class="w"> </span>transformer<span class="w"> </span>-decoder_type<span class="w"> </span>transformer<span class="w"> </span>-position_encoding<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>-train_steps<span class="w"> </span><span class="m">200000</span><span class="w">  </span>-max_generator_batches<span class="w"> </span><span class="m">2</span><span class="w"> </span>-dropout<span class="w"> </span><span class="m">0</span>.1<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>-batch_size<span class="w"> </span><span class="m">4096</span><span class="w"> </span>-batch_type<span class="w"> </span>tokens<span class="w"> </span>-normalization<span class="w"> </span>tokens<span class="w">  </span>-accum_count<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>-optim<span class="w"> </span>adam<span class="w"> </span>-adam_beta2<span class="w"> </span><span class="m">0</span>.998<span class="w"> </span>-decay_method<span class="w"> </span>noam<span class="w"> </span>-warmup_steps<span class="w"> </span><span class="m">8000</span><span class="w"> </span>-learning_rate<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>-max_grad_norm<span class="w"> </span><span class="m">0</span><span class="w"> </span>-param_init<span class="w"> </span><span class="m">0</span><span class="w">  </span>-param_init_glorot<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>-label_smoothing<span class="w"> </span><span class="m">0</span>.1<span class="w"> </span>-valid_steps<span class="w"> </span><span class="m">10000</span><span class="w"> </span>-save_checkpoint_steps<span class="w"> </span><span class="m">10000</span><span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>-world_size<span class="w"> </span><span class="m">4</span><span class="w"> </span>-gpu_ranks<span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">3</span>
 </pre></div>
 </div>
 <p>Here are what each of the parameters mean:</p>
@@ -316,10 +316,10 @@ Bear in mind that your models must share the same target vocabulary.</p>
 <p>We introduced <code class="docutils literal notranslate"><span class="pre">-train_ids</span></code> which is a list of IDs that will be given to the preprocessed shards.</p>
 <p>E.g. we have two corpora : <code class="docutils literal notranslate"><span class="pre">parallel.en</span></code> and  <code class="docutils literal notranslate"><span class="pre">parallel.de</span></code> + <code class="docutils literal notranslate"><span class="pre">from_backtranslation.en</span></code> <code class="docutils literal notranslate"><span class="pre">from_backtranslation.de</span></code>, we can pass the following in the <code class="docutils literal notranslate"><span class="pre">preprocess.py</span></code> command:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>...
--train_src parallel.en from_backtranslation.en <span class="se">\</span>
--train_tgt parallel.de from_backtranslation.de <span class="se">\</span>
--train_ids A B <span class="se">\</span>
--save_data my_data <span class="se">\</span>
+-train_src<span class="w"> </span>parallel.en<span class="w"> </span>from_backtranslation.en<span class="w"> </span><span class="se">\</span>
+-train_tgt<span class="w"> </span>parallel.de<span class="w"> </span>from_backtranslation.de<span class="w"> </span><span class="se">\</span>
+-train_ids<span class="w"> </span>A<span class="w"> </span>B<span class="w"> </span><span class="se">\</span>
+-save_data<span class="w"> </span>my_data<span class="w"> </span><span class="se">\</span>
 ...
 </pre></div>
 </div>
@@ -330,9 +330,9 @@ Bear in mind that your models must share the same target vocabulary.</p>
 <p>We introduced <code class="docutils literal notranslate"><span class="pre">-data_ids</span></code> based on the same principle as above, as well as <code class="docutils literal notranslate"><span class="pre">-data_weights</span></code>, which is the list of the weight each corpus should have.
 E.g.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>...
--data my_data <span class="se">\</span>
--data_ids A B <span class="se">\</span>
--data_weights <span class="m">1</span> <span class="m">7</span> <span class="se">\</span>
+-data<span class="w"> </span>my_data<span class="w"> </span><span class="se">\</span>
+-data_ids<span class="w"> </span>A<span class="w"> </span>B<span class="w"> </span><span class="se">\</span>
+-data_weights<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="m">7</span><span class="w"> </span><span class="se">\</span>
 ...
 </pre></div>
 </div>

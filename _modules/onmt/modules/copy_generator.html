@@ -189,7 +189,7 @@
 
 <span class="k">def</span> <span class="nf">collapse_copy_scores</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">tgt_vocab</span><span class="p">,</span> <span class="n">src_vocabs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                          <span class="n">batch_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">batch_offset</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Given scores from an expanded dictionary</span>
 <span class="sd">    corresponeding to a batch, sums together copies,</span>
 <span class="sd">    with a dictionary word when it is ambiguous.</span>
@@ -222,7 +222,7 @@
 
 
 <div class="viewcode-block" id="CopyGenerator"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.CopyGenerator">[docs]</a><span class="k">class</span> <span class="nc">CopyGenerator</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;An implementation of pointer-generator networks</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An implementation of pointer-generator networks</span>
 <span class="sd">    :cite:`DBLP:journals/corr/SeeLM17`.</span>
 
 <span class="sd">    These networks consider copying words</span>
@@ -255,7 +255,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">pad_idx</span> <span class="o">=</span> <span class="n">pad_idx</span>
 
 <div class="viewcode-block" id="CopyGenerator.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.CopyGenerator.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hidden</span><span class="p">,</span> <span class="n">attn</span><span class="p">,</span> <span class="n">src_map</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compute a distribution over the target dictionary</span>
 <span class="sd">        extended by the dynamic dictionary implied by copying</span>
 <span class="sd">        source words.</span>
@@ -290,7 +290,7 @@
 
 
 <span class="k">class</span> <span class="nc">CopyGeneratorLoss</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Copy generator criterion.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Copy generator criterion.&quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vocab_size</span><span class="p">,</span> <span class="n">force_copy</span><span class="p">,</span> <span class="n">unk_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                  <span class="n">ignore_index</span><span class="o">=-</span><span class="mi">100</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-20</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">CopyGeneratorLoss</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -301,7 +301,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">unk_index</span> <span class="o">=</span> <span class="n">unk_index</span>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scores</span><span class="p">,</span> <span class="n">align</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            scores (FloatTensor): ``(batch_size*tgt_len)`` x dynamic vocab size</span>
 <span class="sd">                whose sum along dim 1 is less than or equal to 1, i.e. cols</span>

@@ -217,12 +217,12 @@ This makes it easy to include your contributions in the Sphinx documentation. An
 to autodoc your contributions in the API <code class="docutils literal notranslate"><span class="pre">.rst</span></code> files in the <code class="docutils literal notranslate"><span class="pre">docs/source</span></code> folder! If you do, check that
 your additions look right.</p>
 <p><strong>How to build the docs locally?</strong></p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> docs
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>docs
 <span class="c1"># install some dependencies if necessary:</span>
 <span class="c1"># recommonmark, sphinx_rtd_theme, sphinxcontrib-bibtex</span>
-pip install requirements.txt
-make html
-firefox build/html/main.html  <span class="c1"># or your browser of choice</span>
+pip<span class="w"> </span>install<span class="w"> </span>requirements.txt
+make<span class="w"> </span>html
+firefox<span class="w"> </span>build/html/main.html<span class="w">  </span><span class="c1"># or your browser of choice</span>
 </pre></div>
 </div>
 <p>Some particular advice:</p>
@@ -239,7 +239,7 @@ very well without additional help, so avoid the clutter.</p></li>
 <li><p><a class="reference external" href="https://stackoverflow.com/questions/29221551/can-sphinx-napoleon-document-function-returning-multiple-arguments">Google docstrings don’t support multiple returns</a>.
 For multiple returns, the following works well with Sphinx and is still very readable.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">foo</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;This is my docstring.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is my docstring.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        a (object): Something.</span>

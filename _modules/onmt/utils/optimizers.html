@@ -201,7 +201,7 @@
 
 
 <span class="k">def</span> <span class="nf">build_torch_optimizer</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">opt</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Builds the PyTorch optimizer.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Builds the PyTorch optimizer.</span>
 
 <span class="sd">    We use the default parameters for Adam that are suggested by</span>
 <span class="sd">    the original paper https://arxiv.org/pdf/1412.6980.pdf</span>
@@ -301,7 +301,7 @@
 
 
 <span class="k">def</span> <span class="nf">make_learning_rate_decay_fn</span><span class="p">(</span><span class="n">opt</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Returns the learning decay function from options.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the learning decay function from options.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">decay_method</span> <span class="o">==</span> <span class="s1">&#39;noam&#39;</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span>
             <span class="n">noam_decay</span><span class="p">,</span>
@@ -327,7 +327,7 @@
 
 
 <span class="k">def</span> <span class="nf">noam_decay</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">warmup_steps</span><span class="p">,</span> <span class="n">model_size</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Learning rate schedule described in</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Learning rate schedule described in</span>
 <span class="sd">    https://arxiv.org/pdf/1706.03762.pdf.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="p">(</span>
@@ -337,7 +337,7 @@
 
 <span class="k">def</span> <span class="nf">noamwd_decay</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">warmup_steps</span><span class="p">,</span>
                  <span class="n">model_size</span><span class="p">,</span> <span class="n">rate</span><span class="p">,</span> <span class="n">decay_steps</span><span class="p">,</span> <span class="n">start_step</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Learning rate schedule optimized for huge batches</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Learning rate schedule optimized for huge batches</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="p">(</span>
         <span class="n">model_size</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span>
@@ -346,22 +346,22 @@
 
 
 <span class="k">def</span> <span class="nf">exponential_decay</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">rate</span><span class="p">,</span> <span class="n">decay_steps</span><span class="p">,</span> <span class="n">start_step</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;A standard exponential decay, scaling the learning rate by :obj:`rate`</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A standard exponential decay, scaling the learning rate by :obj:`rate`</span>
 <span class="sd">    every :obj:`decay_steps` steps.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">rate</span> <span class="o">**</span> <span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">step</span> <span class="o">-</span> <span class="n">start_step</span> <span class="o">+</span> <span class="n">decay_steps</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">//</span> <span class="n">decay_steps</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">rsqrt_decay</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">warmup_steps</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Decay based on the reciprocal of the step square root.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decay based on the reciprocal of the step square root.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">sqrt</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">warmup_steps</span><span class="p">))</span>
 
 
 <span class="k">class</span> <span class="nc">MultipleOptimizer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; Implement multiple optimizers needed for sparse adam &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Implement multiple optimizers needed for sparse adam &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">op</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; ? &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; ? &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">optimizers</span> <span class="o">=</span> <span class="n">op</span>
 
     <span class="nd">@property</span>
@@ -372,33 +372,33 @@
         <span class="k">return</span> <span class="n">param_groups</span>
 
     <span class="k">def</span> <span class="nf">zero_grad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">set_to_none</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; ? &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; ? &quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">op</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimizers</span><span class="p">:</span>
             <span class="n">op</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">(</span><span class="n">set_to_none</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; ? &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; ? &quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">op</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimizers</span><span class="p">:</span>
             <span class="n">op</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; ? &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; ? &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">op</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimizers</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">op</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
 
     <span class="k">def</span> <span class="nf">state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; ? &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; ? &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">op</span><span class="o">.</span><span class="n">state_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">op</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimizers</span><span class="p">]</span>
 
     <span class="k">def</span> <span class="nf">load_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_dicts</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; ? &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; ? &quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">state_dicts</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">optimizers</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">state_dicts</span><span class="p">)):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">optimizers</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dicts</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
 
 
 <div class="viewcode-block" id="Optimizer"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.Optimizer">[docs]</a><span class="k">class</span> <span class="nc">Optimizer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Controller class for optimization. Mostly a thin</span>
 <span class="sd">    wrapper for `optim`, but also useful for implementing</span>
 <span class="sd">    rate scheduling beyond what is currently available.</span>
@@ -430,7 +430,7 @@
 
 <div class="viewcode-block" id="Optimizer.from_opt"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.Optimizer.from_opt">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_opt</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">checkpoint</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Builds the optimizer from options.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Builds the optimizer from options.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">          cls: The ``Optimizer`` class to instantiate.</span>
@@ -444,7 +444,8 @@
         <span class="n">optim_opt</span> <span class="o">=</span> <span class="n">opt</span>
         <span class="n">optim_state_dict</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">train_from</span> <span class="ow">and</span> <span class="n">checkpoint</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">train_from</span> <span class="ow">and</span> <span class="n">checkpoint</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span>
+                <span class="s1">&#39;optim&#39;</span> <span class="ow">in</span> <span class="n">checkpoint</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
             <span class="n">optim</span> <span class="o">=</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s1">&#39;optim&#39;</span><span class="p">]</span>
             <span class="n">ckpt_opt</span> <span class="o">=</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s1">&#39;opt&#39;</span><span class="p">]</span>
             <span class="n">ckpt_state_dict</span> <span class="o">=</span> <span class="p">{}</span>
@@ -492,16 +493,16 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">training_step</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;The current training step.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The current training step.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_training_step</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">amp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;True if use torch amp mix precision training.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;True if use torch amp mix precision training.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fp16</span> <span class="o">==</span> <span class="s2">&quot;amp&quot;</span>
 
 <div class="viewcode-block" id="Optimizer.learning_rate"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.Optimizer.learning_rate">[docs]</a>    <span class="k">def</span> <span class="nf">learning_rate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns the current learning rate.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the current learning rate.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_learning_rate_decay_fn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_learning_rate</span>
         <span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_learning_rate_decay_fn</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_decay_step</span><span class="p">)</span>
@@ -523,14 +524,14 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">[</span><span class="s1">&#39;optimizer&#39;</span><span class="p">])</span>
 
 <div class="viewcode-block" id="Optimizer.zero_grad"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.Optimizer.zero_grad">[docs]</a>    <span class="k">def</span> <span class="nf">zero_grad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">set_to_none</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Zero the gradients of optimized parameters.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Zero the gradients of optimized parameters.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span></div>
         <span class="c1"># should be: self._optimizer.zero_grad(set_to_none)</span>
         <span class="c1"># but apex.amp is not up-to-date:</span>
         <span class="c1"># https://github.com/NVIDIA/apex/blob/master/apex/amp/_process_optimizer.py#L367</span>
 
 <div class="viewcode-block" id="Optimizer.backward"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.Optimizer.backward">[docs]</a>    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loss</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Wrapper for backward pass. Some optimizer requires ownership of the</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Wrapper for backward pass. Some optimizer requires ownership of the</span>
 <span class="sd">        backward pass.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fp16</span> <span class="o">==</span> <span class="s2">&quot;legacy&quot;</span><span class="p">:</span>
             <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{}</span>
@@ -546,7 +547,7 @@
             <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="Optimizer.step"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.Optimizer.step">[docs]</a>    <span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Update the model parameters based on current gradients.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update the model parameters based on current gradients.</span>
 
 <span class="sd">        Optionally, will employ gradient modification or update learning</span>
 <span class="sd">        rate.</span>
@@ -618,7 +619,7 @@
         <span class="k">return</span> <span class="n">new_shape</span><span class="p">,</span> <span class="n">copy</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_check_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        output1 - True - algorithm for matrix, False - vector;</span>
 <span class="sd">        output2 - need reshape</span>
 <span class="sd">        &#39;&#39;&#39;</span>
@@ -754,7 +755,7 @@
 
 <div class="viewcode-block" id="FusedAdam"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.FusedAdam">[docs]</a><span class="k">class</span> <span class="nc">FusedAdam</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Optimizer</span><span class="p">):</span>
 
-    <span class="sd">&quot;&quot;&quot;Implements Adam algorithm. Currently GPU-only.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Implements Adam algorithm. Currently GPU-only.</span>
 <span class="sd">       Requires Apex to be installed via</span>
 <span class="sd">       ``python setup.py install --cuda_ext --cpp_ext``.</span>
 
@@ -794,7 +795,7 @@
 
 <div class="viewcode-block" id="FusedAdam.step"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.FusedAdam.step">[docs]</a>    <span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">closure</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">grads</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
              <span class="n">scale</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">grad_norms</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Performs a single optimization step.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Performs a single optimization step.</span>
 
 <span class="sd">        Arguments:</span>
 <span class="sd">            closure (callable, optional): A closure that reevaluates the model</span>

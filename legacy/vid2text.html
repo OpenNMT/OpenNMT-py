@@ -234,19 +234,19 @@ Use <code class="docutils literal notranslate"><span class="pre">unzip</span> <s
 </pre></div>
 </div>
 <p>Make sure all the videos have the same (low) framerate by changing to the YouTubeClips directory and using</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="k">fi</span> <span class="k">in</span> <span class="k">$(</span> ls <span class="k">)</span><span class="p">;</span> <span class="k">do</span> ffmpeg -y -i <span class="nv">$fi</span> -r <span class="m">2</span> <span class="nv">$fi</span><span class="p">;</span> <span class="k">done</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="k">for</span><span class="w"> </span><span class="k">fi</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span><span class="w"> </span>ls<span class="w"> </span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="k">do</span><span class="w"> </span>ffmpeg<span class="w"> </span>-y<span class="w"> </span>-i<span class="w"> </span><span class="nv">$fi</span><span class="w"> </span>-r<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="nv">$fi</span><span class="p">;</span><span class="w"> </span><span class="k">done</span>
 </pre></div>
 </div>
 <p>Now we want to convert the frames into sequences of CNN feature vectors.
 (We’ll use the environment variable <code class="docutils literal notranslate"><span class="pre">Y2T2</span></code> to refer to the <cite>yt2t</cite> directory, so change directories back and use)</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">YT2T</span><span class="o">=</span><span class="sb">`</span><span class="nb">pwd</span><span class="sb">`</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">YT2T</span><span class="o">=</span><span class="sb">`</span><span class="nb">pwd</span><span class="sb">`</span>
 </pre></div>
 </div>
 <p>Then change directories back to the <cite>OpenNMT-py</cite> directory.
 Use <cite>tools/img_feature_extractor.py</cite>.
 Set the <code class="docutils literal notranslate"><span class="pre">--world_size</span></code> argument to the number of GPUs you have available
 (You can use the environment variable <code class="docutils literal notranslate"><span class="pre">CUDA_VISIBLE_DEVICES</span></code> to restrict the GPUs used).</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">PYTHONPATH</span><span class="o">=</span><span class="nv">$PWD</span>:<span class="nv">$PYTHONPATH</span> python tools/vid_feature_extractor.py --root_dir <span class="nv">$YT2T</span>/YouTubeClips --out_dir <span class="nv">$YT2T</span>/r152
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">PYTHONPATH</span><span class="o">=</span><span class="nv">$PWD</span>:<span class="nv">$PYTHONPATH</span><span class="w"> </span>python<span class="w"> </span>tools/vid_feature_extractor.py<span class="w"> </span>--root_dir<span class="w"> </span><span class="nv">$YT2T</span>/YouTubeClips<span class="w"> </span>--out_dir<span class="w"> </span><span class="nv">$YT2T</span>/r152
 </pre></div>
 </div>
 <p>Ensure the count is equal to 1970.
@@ -258,7 +258,7 @@ train the model on each video + single caption pair. We’ll collect all the cap
 flatten them into files listing the feature vector sequence filenames (repeating for each caption) and the
 annotations. We skip the test videos since they are handled separately at translation time.</p>
 <p>Change directories back to <code class="docutils literal notranslate"><span class="pre">YT2T</span></code>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> <span class="nv">$YT2T</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span><span class="nv">$YT2T</span>
 </pre></div>
 </div>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pickle</span>
@@ -328,11 +328,11 @@ annotations. We skip the test videos since they are handled separately at transl
 We preprocess with a small shard size of 1000. This keeps the amount of data in memory (RAM) to a
 manageable 10 G. If you have more RAM, you can increase the shard size.</p>
 <p>Preprocess the data with</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_preprocess -data_type vec -train_src <span class="nv">$YT2T</span>/yt2t_train_files.txt -src_dir <span class="nv">$YT2T</span>/r152/ -train_tgt <span class="nv">$YT2T</span>/yt2t_train_cap.txt -valid_src <span class="nv">$YT2T</span>/yt2t_val_files.txt -valid_tgt <span class="nv">$YT2T</span>/yt2t_val_cap.txt -save_data data/yt2t --shard_size <span class="m">1000</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_preprocess<span class="w"> </span>-data_type<span class="w"> </span>vec<span class="w"> </span>-train_src<span class="w"> </span><span class="nv">$YT2T</span>/yt2t_train_files.txt<span class="w"> </span>-src_dir<span class="w"> </span><span class="nv">$YT2T</span>/r152/<span class="w"> </span>-train_tgt<span class="w"> </span><span class="nv">$YT2T</span>/yt2t_train_cap.txt<span class="w"> </span>-valid_src<span class="w"> </span><span class="nv">$YT2T</span>/yt2t_val_files.txt<span class="w"> </span>-valid_tgt<span class="w"> </span><span class="nv">$YT2T</span>/yt2t_val_cap.txt<span class="w"> </span>-save_data<span class="w"> </span>data/yt2t<span class="w"> </span>--shard_size<span class="w"> </span><span class="m">1000</span>
 </pre></div>
 </div>
 <p>Train with</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_train -data data/yt2t -save_model yt2t-model -world_size <span class="m">2</span> -gpu_ranks <span class="m">0</span> <span class="m">1</span> -model_type vec -batch_size <span class="m">64</span> -train_steps <span class="m">10000</span> -valid_steps <span class="m">500</span> -save_checkpoint_steps <span class="m">500</span> -encoder_type brnn -optim adam -learning_rate .0001 -feat_vec_size <span class="m">2048</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_train<span class="w"> </span>-data<span class="w"> </span>data/yt2t<span class="w"> </span>-save_model<span class="w"> </span>yt2t-model<span class="w"> </span>-world_size<span class="w"> </span><span class="m">2</span><span class="w"> </span>-gpu_ranks<span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="m">1</span><span class="w"> </span>-model_type<span class="w"> </span>vec<span class="w"> </span>-batch_size<span class="w"> </span><span class="m">64</span><span class="w"> </span>-train_steps<span class="w"> </span><span class="m">10000</span><span class="w"> </span>-valid_steps<span class="w"> </span><span class="m">500</span><span class="w"> </span>-save_checkpoint_steps<span class="w"> </span><span class="m">500</span><span class="w"> </span>-encoder_type<span class="w"> </span>brnn<span class="w"> </span>-optim<span class="w"> </span>adam<span class="w"> </span>-learning_rate<span class="w"> </span>.0001<span class="w"> </span>-feat_vec_size<span class="w"> </span><span class="m">2048</span>
 </pre></div>
 </div>
 <p>Translate with</p>
@@ -347,7 +347,7 @@ at step 7200, but choosing a different validation frequency or random seed could
 <p>Then you can use <a class="reference external" href="https://github.com/tylin/coco-caption/tree/master/pycocoevalcap">coco-caption</a> to evaluate the predictions.
 (Note that the fork <a class="reference external" href="https://github.com/flauted/coco-caption">flauted</a> can be used for Python 3 compatibility).
 Install the git repository with pip using</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install git+&lt;clone URL&gt;
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>git+&lt;clone<span class="w"> </span>URL&gt;
 </pre></div>
 </div>
 <p>Then use the following Python code to evaluate:</p>
@@ -435,7 +435,7 @@ on the MSVD (YouTube2Text) dataset. See Table 3, Base model(R).</p>
 <p>In Section 4.3, the authors report most of their preprocessing and hyperparameters.</p>
 <p>Create a folder called <em>yt2t_2</em>. Copy <em>youtube2text_iccv15</em> directory and <em>YouTubeClips.tar</em> into
 the new directory and untar <em>YouTubeClips</em>. Rerun the renaming code. Subssample at 5 FPS using</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="k">fi</span> <span class="k">in</span> <span class="k">$(</span> ls <span class="k">)</span><span class="p">;</span> <span class="k">do</span> ffmpeg -y -i <span class="nv">$fi</span> -r <span class="m">5</span> <span class="nv">$fi</span><span class="p">;</span> <span class="k">done</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="k">for</span><span class="w"> </span><span class="k">fi</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span><span class="w"> </span>ls<span class="w"> </span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="k">do</span><span class="w"> </span>ffmpeg<span class="w"> </span>-y<span class="w"> </span>-i<span class="w"> </span><span class="nv">$fi</span><span class="w"> </span>-r<span class="w"> </span><span class="m">5</span><span class="w"> </span><span class="nv">$fi</span><span class="p">;</span><span class="w"> </span><span class="k">done</span>
 </pre></div>
 </div>
 <p>Set the environment variable <code class="docutils literal notranslate"><span class="pre">$YT2T</span></code> to this new directory and change to the repo directory.
@@ -532,11 +532,11 @@ tokenization similar to what the authors report.</p>
 </div>
 <p>Then preprocess the data with max-length filtering. (Note you will be prompted to remove the
 old data. Do this, i.e. <code class="docutils literal notranslate"><span class="pre">rm</span> <span class="pre">data/yt2t.*.pt.</span></code>)</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_preprocess -data_type vec -train_src <span class="nv">$YT2T</span>/yt2t_train_files.txt -src_dir <span class="nv">$YT2T</span>/r152/ -train_tgt <span class="nv">$YT2T</span>/yt2t_train_cap.txt -valid_src <span class="nv">$YT2T</span>/yt2t_val_files.txt -valid_tgt <span class="nv">$YT2T</span>/yt2t_val_cap.txt -save_data data/yt2t --shard_size <span class="m">1000</span> --src_seq_length <span class="m">50</span> --tgt_seq_length <span class="m">20</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>onmt_preprocess<span class="w"> </span>-data_type<span class="w"> </span>vec<span class="w"> </span>-train_src<span class="w"> </span><span class="nv">$YT2T</span>/yt2t_train_files.txt<span class="w"> </span>-src_dir<span class="w"> </span><span class="nv">$YT2T</span>/r152/<span class="w"> </span>-train_tgt<span class="w"> </span><span class="nv">$YT2T</span>/yt2t_train_cap.txt<span class="w"> </span>-valid_src<span class="w"> </span><span class="nv">$YT2T</span>/yt2t_val_files.txt<span class="w"> </span>-valid_tgt<span class="w"> </span><span class="nv">$YT2T</span>/yt2t_val_cap.txt<span class="w"> </span>-save_data<span class="w"> </span>data/yt2t<span class="w"> </span>--shard_size<span class="w"> </span><span class="m">1000</span><span class="w"> </span>--src_seq_length<span class="w"> </span><span class="m">50</span><span class="w"> </span>--tgt_seq_length<span class="w"> </span><span class="m">20</span>
 </pre></div>
 </div>
 <p>Delete the old checkpoints and train a transformer model on this data.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>rm -r yt2t-model_step_*.pt<span class="p">;</span> onmt_train -data data/yt2t -save_model yt2t-model -world_size <span class="m">2</span> -gpu_ranks <span class="m">0</span> <span class="m">1</span> -model_type vec -batch_size <span class="m">64</span> -train_steps <span class="m">8000</span> -valid_steps <span class="m">400</span> -save_checkpoint_steps <span class="m">400</span> -optim adam -learning_rate .0001 -feat_vec_size <span class="m">2048</span> -layers <span class="m">4</span> -rnn_size <span class="m">512</span> -word_vec_size <span class="m">512</span> -transformer_ff <span class="m">2048</span> -heads <span class="m">8</span> -encoder_type transformer -decoder_type transformer -position_encoding -dropout <span class="m">0</span>.3 -param_init <span class="m">0</span> -param_init_glorot -report_every <span class="m">400</span> --share_decoder_embedding --seed <span class="m">7000</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>rm<span class="w"> </span>-r<span class="w"> </span>yt2t-model_step_*.pt<span class="p">;</span><span class="w"> </span>onmt_train<span class="w"> </span>-data<span class="w"> </span>data/yt2t<span class="w"> </span>-save_model<span class="w"> </span>yt2t-model<span class="w"> </span>-world_size<span class="w"> </span><span class="m">2</span><span class="w"> </span>-gpu_ranks<span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="m">1</span><span class="w"> </span>-model_type<span class="w"> </span>vec<span class="w"> </span>-batch_size<span class="w"> </span><span class="m">64</span><span class="w"> </span>-train_steps<span class="w"> </span><span class="m">8000</span><span class="w"> </span>-valid_steps<span class="w"> </span><span class="m">400</span><span class="w"> </span>-save_checkpoint_steps<span class="w"> </span><span class="m">400</span><span class="w"> </span>-optim<span class="w"> </span>adam<span class="w"> </span>-learning_rate<span class="w"> </span>.0001<span class="w"> </span>-feat_vec_size<span class="w"> </span><span class="m">2048</span><span class="w"> </span>-layers<span class="w"> </span><span class="m">4</span><span class="w"> </span>-rnn_size<span class="w"> </span><span class="m">512</span><span class="w"> </span>-word_vec_size<span class="w"> </span><span class="m">512</span><span class="w"> </span>-transformer_ff<span class="w"> </span><span class="m">2048</span><span class="w"> </span>-heads<span class="w"> </span><span class="m">8</span><span class="w"> </span>-encoder_type<span class="w"> </span>transformer<span class="w"> </span>-decoder_type<span class="w"> </span>transformer<span class="w"> </span>-position_encoding<span class="w"> </span>-dropout<span class="w"> </span><span class="m">0</span>.3<span class="w"> </span>-param_init<span class="w"> </span><span class="m">0</span><span class="w"> </span>-param_init_glorot<span class="w"> </span>-report_every<span class="w"> </span><span class="m">400</span><span class="w"> </span>--share_decoder_embedding<span class="w"> </span>--seed<span class="w"> </span><span class="m">7000</span>
 </pre></div>
 </div>
 <p>Note we use the hyperparameters described in the paper.
@@ -635,35 +635,35 @@ although this too is not mentioned. You can reproduce our early-stops with these
 </div>
 <div class="literal-block-wrapper docutils container" id="id2">
 <div class="code-block-caption"><span class="caption-text"><cite>find_val_stops.sh</cite></span><a class="headerlink" href="#id2" title="Permalink to this code">¶</a></div>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>rm results.txt
-touch results.txt
-<span class="k">for</span> file <span class="k">in</span> <span class="k">$(</span> ls -1v yt2t-model_step*.pt <span class="k">)</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>rm<span class="w"> </span>results.txt
+touch<span class="w"> </span>results.txt
+<span class="k">for</span><span class="w"> </span>file<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span><span class="w"> </span>ls<span class="w"> </span>-1v<span class="w"> </span>yt2t-model_step*.pt<span class="w"> </span><span class="k">)</span>
 <span class="k">do</span>
-    <span class="nb">echo</span> <span class="nv">$file</span>
-    onmt_translate -model <span class="nv">$file</span> -src <span class="nv">$YT2T</span>/yt2t_val_folded_files.txt -output pred.txt -verbose -data_type vec -src_dir <span class="nv">$YT2T</span>/r152 -gpu <span class="m">0</span> -batch_size <span class="m">16</span> -max_length <span class="m">20</span> &gt;/dev/null <span class="m">2</span>&gt;/dev/null
-    <span class="nb">echo</span> -e <span class="s2">&quot;</span><span class="nv">$file</span><span class="s2">\n&quot;</span> &gt;&gt; results.txt
-    python coco.py -s val &gt;&gt; results.txt
-    <span class="nb">echo</span> -e <span class="s2">&quot;\n\n&quot;</span> &gt;&gt; results.txt
+<span class="w">    </span><span class="nb">echo</span><span class="w"> </span><span class="nv">$file</span>
+<span class="w">    </span>onmt_translate<span class="w"> </span>-model<span class="w"> </span><span class="nv">$file</span><span class="w"> </span>-src<span class="w"> </span><span class="nv">$YT2T</span>/yt2t_val_folded_files.txt<span class="w"> </span>-output<span class="w"> </span>pred.txt<span class="w"> </span>-verbose<span class="w"> </span>-data_type<span class="w"> </span>vec<span class="w"> </span>-src_dir<span class="w"> </span><span class="nv">$YT2T</span>/r152<span class="w"> </span>-gpu<span class="w"> </span><span class="m">0</span><span class="w"> </span>-batch_size<span class="w"> </span><span class="m">16</span><span class="w"> </span>-max_length<span class="w"> </span><span class="m">20</span><span class="w"> </span>&gt;/dev/null<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+<span class="w">    </span><span class="nb">echo</span><span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$file</span><span class="s2">\n&quot;</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>results.txt
+<span class="w">    </span>python<span class="w"> </span>coco.py<span class="w"> </span>-s<span class="w"> </span>val<span class="w"> </span>&gt;&gt;<span class="w"> </span>results.txt
+<span class="w">    </span><span class="nb">echo</span><span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;\n\n&quot;</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>results.txt
 <span class="k">done</span>
-python process_results.py -s <span class="m">10</span> &gt; val_stops.txt
+python<span class="w"> </span>process_results.py<span class="w"> </span>-s<span class="w"> </span><span class="m">10</span><span class="w"> </span>&gt;<span class="w"> </span>val_stops.txt
 </pre></div>
 </div>
 </div>
 <div class="literal-block-wrapper docutils container" id="id3">
 <div class="code-block-caption"><span class="caption-text"><cite>test_early_stops.sh</cite></span><a class="headerlink" href="#id3" title="Permalink to this code">¶</a></div>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>rm test_results.txt
-touch test_results.txt
-<span class="k">while</span> <span class="nv">IFS</span><span class="o">=</span><span class="s1">&#39;&#39;</span> <span class="nb">read</span> -r line <span class="o">||</span> <span class="o">[[</span> -n <span class="s2">&quot;</span><span class="nv">$line</span><span class="s2">&quot;</span> <span class="o">]]</span><span class="p">;</span> <span class="k">do</span>
-    <span class="k">if</span> <span class="o">[[</span> <span class="nv">$line</span> <span class="o">==</span> *<span class="s2">&quot;maxed&quot;</span>* <span class="o">]]</span><span class="p">;</span> <span class="k">then</span>
-        <span class="nv">metric</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span> <span class="nv">$line</span> <span class="p">|</span> awk <span class="s1">&#39;{print $1}&#39;</span><span class="k">)</span>
-    <span class="nv">step</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span> <span class="nv">$line</span> <span class="p">|</span> awk <span class="s1">&#39;{print $NF}&#39;</span><span class="k">)</span>
-    <span class="nb">echo</span> <span class="nv">$metric</span> early stopped @ <span class="nv">$step</span> <span class="p">|</span> tee -a test_results.txt
-    onmt_translate -model <span class="s2">&quot;yt2t-model_step_</span><span class="si">${</span><span class="nv">step</span><span class="si">}</span><span class="s2">.pt&quot;</span> -src <span class="nv">$YT2T</span>/yt2t_test_files.txt -output pred.txt -data_type vec -src_dir <span class="nv">$YT2T</span>/r152 -gpu <span class="m">0</span> -batch_size <span class="m">16</span> -max_length <span class="m">20</span> &gt;/dev/null <span class="m">2</span>&gt;/dev/null
-    python coco.py -s <span class="s1">&#39;test&#39;</span> &gt;&gt; test_results.txt
-    <span class="nb">echo</span> -e <span class="s2">&quot;\n\n&quot;</span> &gt;&gt; test_results.txt
-    <span class="k">fi</span>
-<span class="k">done</span> &lt; val_stops.txt
-cat test_results.txt
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>rm<span class="w"> </span>test_results.txt
+touch<span class="w"> </span>test_results.txt
+<span class="k">while</span><span class="w"> </span><span class="nv">IFS</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="w"> </span><span class="nb">read</span><span class="w"> </span>-r<span class="w"> </span>line<span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">[[</span><span class="w"> </span>-n<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$line</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">]]</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="o">[[</span><span class="w"> </span><span class="nv">$line</span><span class="w"> </span><span class="o">==</span><span class="w"> </span>*<span class="s2">&quot;maxed&quot;</span>*<span class="w"> </span><span class="o">]]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">        </span><span class="nv">metric</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span><span class="w"> </span><span class="nv">$line</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span><span class="s1">&#39;{print $1}&#39;</span><span class="k">)</span>
+<span class="w">    </span><span class="nv">step</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span><span class="w"> </span><span class="nv">$line</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span><span class="s1">&#39;{print $NF}&#39;</span><span class="k">)</span>
+<span class="w">    </span><span class="nb">echo</span><span class="w"> </span><span class="nv">$metric</span><span class="w"> </span>early<span class="w"> </span>stopped<span class="w"> </span>@<span class="w"> </span><span class="nv">$step</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tee<span class="w"> </span>-a<span class="w"> </span>test_results.txt
+<span class="w">    </span>onmt_translate<span class="w"> </span>-model<span class="w"> </span><span class="s2">&quot;yt2t-model_step_</span><span class="si">${</span><span class="nv">step</span><span class="si">}</span><span class="s2">.pt&quot;</span><span class="w"> </span>-src<span class="w"> </span><span class="nv">$YT2T</span>/yt2t_test_files.txt<span class="w"> </span>-output<span class="w"> </span>pred.txt<span class="w"> </span>-data_type<span class="w"> </span>vec<span class="w"> </span>-src_dir<span class="w"> </span><span class="nv">$YT2T</span>/r152<span class="w"> </span>-gpu<span class="w"> </span><span class="m">0</span><span class="w"> </span>-batch_size<span class="w"> </span><span class="m">16</span><span class="w"> </span>-max_length<span class="w"> </span><span class="m">20</span><span class="w"> </span>&gt;/dev/null<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+<span class="w">    </span>python<span class="w"> </span>coco.py<span class="w"> </span>-s<span class="w"> </span><span class="s1">&#39;test&#39;</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>test_results.txt
+<span class="w">    </span><span class="nb">echo</span><span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;\n\n&quot;</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>test_results.txt
+<span class="w">    </span><span class="k">fi</span>
+<span class="k">done</span><span class="w"> </span>&lt;<span class="w"> </span>val_stops.txt
+cat<span class="w"> </span>test_results.txt
 </pre></div>
 </div>
 </div>

@@ -197,7 +197,7 @@
 
 
 <div class="viewcode-block" id="CNNDecoder"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.decoders.CNNDecoder">[docs]</a><span class="k">class</span> <span class="nc">CNNDecoder</span><span class="p">(</span><span class="n">DecoderBase</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Decoder based on &quot;Convolutional Sequence to Sequence Learning&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decoder based on &quot;Convolutional Sequence to Sequence Learning&quot;</span>
 <span class="sd">    :cite:`DBLP:journals/corr/GehringAGYD17`.</span>
 
 <span class="sd">    Consists of residual convolutional layers, with ConvMultiStepAttention.</span>
@@ -235,7 +235,7 @@
 
 <div class="viewcode-block" id="CNNDecoder.from_opt"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.decoders.CNNDecoder.from_opt">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_opt</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Alternate constructor.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Alternate constructor.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">dec_layers</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">dec_hid_size</span><span class="p">,</span>
@@ -247,7 +247,7 @@
             <span class="n">opt</span><span class="o">.</span><span class="n">copy_attn_type</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="CNNDecoder.init_state"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.decoders.CNNDecoder.init_state">[docs]</a>    <span class="k">def</span> <span class="nf">init_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span> <span class="n">enc_hidden</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Init decoder state.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Init decoder state.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">enc_out</span> <span class="o">+</span> <span class="n">enc_hidden</span><span class="p">)</span> <span class="o">*</span> <span class="n">SCALE_WEIGHT</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;previous_input&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
 
@@ -260,7 +260,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;previous_input&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;previous_input&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
 
 <div class="viewcode-block" id="CNNDecoder.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.decoders.CNNDecoder.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; See :obj:`onmt.modules.RNNDecoderBase.forward()`&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; See :obj:`onmt.modules.RNNDecoderBase.forward()`&quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;previous_input&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">tgt</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;previous_input&quot;</span><span class="p">],</span> <span class="n">tgt</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>

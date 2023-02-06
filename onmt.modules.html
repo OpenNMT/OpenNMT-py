@@ -198,7 +198,7 @@
 <h2>Embeddings<a class="headerlink" href="#embeddings" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="onmt.modules.Embeddings">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.modules.</code><code class="sig-name descname">Embeddings</code><span class="sig-paren">(</span><em class="sig-param">word_vec_size</em>, <em class="sig-param">word_vocab_size</em>, <em class="sig-param">word_padding_idx</em>, <em class="sig-param">position_encoding=False</em>, <em class="sig-param">feat_merge='concat'</em>, <em class="sig-param">feat_vec_exponent=0.7</em>, <em class="sig-param">feat_vec_size=-1</em>, <em class="sig-param">feat_padding_idx=[]</em>, <em class="sig-param">feat_vocab_sizes=[]</em>, <em class="sig-param">dropout=0</em>, <em class="sig-param">sparse=False</em>, <em class="sig-param">freeze_word_vecs=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/embeddings.html#Embeddings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.Embeddings" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.modules.</code><code class="sig-name descname">Embeddings</code><span class="sig-paren">(</span><em class="sig-param">word_vec_size</em>, <em class="sig-param">word_vocab_size</em>, <em class="sig-param">word_padding_idx</em>, <em class="sig-param">position_encoding=False</em>, <em class="sig-param">position_encoding_type='SinusoidalInterleaved'</em>, <em class="sig-param">feat_merge='concat'</em>, <em class="sig-param">feat_vec_exponent=0.7</em>, <em class="sig-param">feat_vec_size=-1</em>, <em class="sig-param">feat_padding_idx=[]</em>, <em class="sig-param">feat_vocab_sizes=[]</em>, <em class="sig-param">dropout=0</em>, <em class="sig-param">sparse=False</em>, <em class="sig-param">freeze_word_vecs=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/embeddings.html#Embeddings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.Embeddings" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.module.Module</span></code></p>
 <p>Words embeddings for encoder/decoder.</p>
 <p>Additionally includes ability to add sparse input features
@@ -283,17 +283,14 @@ of embeddings for each feature.</p></li>
 
 <dl class="class">
 <dt id="onmt.modules.PositionalEncoding">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.modules.</code><code class="sig-name descname">PositionalEncoding</code><span class="sig-paren">(</span><em class="sig-param">dropout</em>, <em class="sig-param">dim</em>, <em class="sig-param">max_len=5000</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/embeddings.html#PositionalEncoding"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.PositionalEncoding" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">onmt.modules.</code><code class="sig-name descname">PositionalEncoding</code><span class="sig-paren">(</span><em class="sig-param">dim</em>, <em class="sig-param">enc_type</em>, <em class="sig-param">max_len=5000</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/modules/embeddings.html#PositionalEncoding"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.modules.PositionalEncoding" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.module.Module</span></code></p>
 <p>Sinusoidal positional encoding for non-recurrent neural networks.</p>
 <p>Implementation based on “Attention Is All You Need”
 <a class="bibtex reference internal" href="ref.html#dblp-journals-corr-vaswanispujgkp17" id="id2">[VSP+17]</a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>dropout</strong> (<em>float</em>) – dropout parameter</p></li>
-<li><p><strong>dim</strong> (<em>int</em>) – embedding size</p></li>
-</ul>
+<dd class="field-odd"><p><strong>dim</strong> (<em>int</em>) – embedding size</p>
 </dd>
 </dl>
 <dl class="method">

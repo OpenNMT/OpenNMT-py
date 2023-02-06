@@ -196,7 +196,7 @@
 
 <span class="k">def</span> <span class="nf">cumulative_average_mask</span><span class="p">(</span><span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">t_len</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
                             <span class="n">device</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Builds the mask to compute the cumulative average as described in</span>
 <span class="sd">    :cite:`DBLP:journals/corr/abs-1805-00631` -- Figure 3</span>
 <span class="sd">    Args:</span>
@@ -219,7 +219,7 @@
 
 <span class="k">def</span> <span class="nf">cumulative_average</span><span class="p">(</span><span class="n">layer_in</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">layer_cache</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
                        <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Computes the cumulative average as described in</span>
 <span class="sd">    :cite:`DBLP:journals/corr/abs-1805-00631` -- Equations (1) (5) (6)</span>
 
@@ -246,7 +246,7 @@
 
 <div class="viewcode-block" id="AverageAttention"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.AverageAttention">[docs]</a><span class="k">class</span> <span class="nc">AverageAttention</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="c1"># class AverageAttention(torch.jit.ScriptModule):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Average Attention module from</span>
 <span class="sd">    &quot;Accelerating Neural Transformer via an Average Attention Network&quot;</span>
 <span class="sd">    :cite:`DBLP:journals/corr/abs-1805-00631`.</span>
@@ -274,7 +274,7 @@
 
     <span class="c1"># @torch.jit.script</span>
 <div class="viewcode-block" id="AverageAttention.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.AverageAttention.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer_in</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            layer_in (FloatTensor): ``(batch, t_len, dim)``</span>
 

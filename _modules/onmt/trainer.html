@@ -206,7 +206,7 @@
 
 
 <span class="k">def</span> <span class="nf">build_trainer</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">device_id</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">vocabs</span><span class="p">,</span> <span class="n">optim</span><span class="p">,</span> <span class="n">model_saver</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Simplify `Trainer` creation based on user `opt`s*</span>
 
 <span class="sd">    Args:</span>
@@ -273,7 +273,7 @@
 
 
 <div class="viewcode-block" id="Trainer"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer">[docs]</a><span class="k">class</span> <span class="nc">Trainer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Class that controls the training process.</span>
 
 <span class="sd">    Args:</span>
@@ -364,7 +364,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">_training_eval_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scorer</span><span class="p">,</span> <span class="n">preds</span><span class="p">,</span> <span class="n">texts_ref</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Trigger metrics calculations</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Trigger metrics calculations</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            scorer (:obj:`onmt.scorer.Scorer`): scorer.</span>
@@ -429,7 +429,7 @@
               <span class="n">save_checkpoint_steps</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span>
               <span class="n">valid_iter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
               <span class="n">valid_steps</span><span class="o">=</span><span class="mi">10000</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        The main training loop by iterating over `train_iter` and possibly</span>
 <span class="sd">        running validation on `valid_iter`.</span>
 
@@ -512,7 +512,7 @@
         <span class="k">return</span> <span class="n">total_stats</span></div>
 
 <div class="viewcode-block" id="Trainer.validate"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.validate">[docs]</a>    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">valid_iter</span><span class="p">,</span> <span class="n">moving_average</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; Validate model.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Validate model.</span>
 <span class="sd">            valid_iter: validate data iterator</span>
 <span class="sd">        Returns:</span>
 <span class="sd">            :obj:`nmt.Statistics`: validation loss statistics</span>
@@ -600,7 +600,7 @@
 
     <span class="k">def</span> <span class="nf">_gradient_accumulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">true_batches</span><span class="p">,</span> <span class="n">normalization</span><span class="p">,</span> <span class="n">total_stats</span><span class="p">,</span>
                                <span class="n">report_stats</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Function that iterates over big batches = ``true_batches``</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Function that iterates over big batches = ``true_batches``</span>
 <span class="sd">        perform a backward on the loss of each sub_batch and</span>
 <span class="sd">        finally update the params at the end of the big batch.&quot;&quot;&quot;</span>
 
@@ -725,7 +725,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">_start_report_manager</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_time</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Simple function to start report manager (if any)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_manager</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -736,7 +736,7 @@
 
     <span class="k">def</span> <span class="nf">_maybe_report_training</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">num_steps</span><span class="p">,</span> <span class="n">learning_rate</span><span class="p">,</span>
                                <span class="n">report_stats</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Simple function to report training stats (if report_manager is set)</span>
 <span class="sd">        see `onmt.utils.ReportManagerBase.report_training` for doc</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -752,7 +752,7 @@
 
     <span class="k">def</span> <span class="nf">_report_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">learning_rate</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span>
                      <span class="n">valid_stats</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">train_stats</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Simple function to report stats (if report_manager is set)</span>
 <span class="sd">        see `onmt.utils.ReportManagerBase.report_step` for doc</span>
 <span class="sd">        &quot;&quot;&quot;</span>
