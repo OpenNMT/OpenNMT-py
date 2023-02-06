@@ -360,6 +360,30 @@ The following options can be added to the configuration :
 - `pre_replace_unicode_punct`: Replace unicode punct (default=False)
 - `post_remove_control_chars`: Remove control chars (default=False)
 
+#### Augment source segments with fuzzy matches for Neural Fuzzy Repair
+
+Transform name: `fuzzymatch`
+
+Class: `onmt.transforms.fuzzymatch.FuzzyMatchTransform`
+
+Augments source segments with fuzzy matches for Neural Fuzzy Repair, as described in [Neural Fuzzy Repair: Integrating Fuzzy Matches into Neural Machine Translation](https://aclanthology.org/P19-1175). Currently, the transform augments source segments with only a single fuzzy match.
+The Translation Memory (TM) format should be a flat text file, with each line containing the source and the target segment separated by a delimiter. As fuzzy matching during training is computational intensive, we offer some advice to achieve good performance and minimize overhead:
+
+- Depending on your system's specs, you may have to experiment with the options `bucket_size`, `bucket_size_init`, and `bucket_size_increment`;
+- You should increase the `num_workers` and `prefetch_factor` so your GPU does not have to wait for the batches to be augmented with fuzzy matches;
+- Try to use a sensible Translation Memory size. 200k-250k translation units should be enough for yielding a sufficient number of matches;
+- Although the transform performs some basic filtering both in the TM and in the corpus for very short or very long segments, some examples may still be long enough, so you should increase a bit the `src_seq_length`;
+- Currently, when using `n_sample`, examples are always processed one by one and not in batches.
+
+The following options can be added to the configuration:
+- `tm_path`: The path to the Translation Memory text file;
+- `fuzzy_corpus_ratio`: Ratio of corpus to augment with fuzzy matches (default: 0.1);
+- `fuzzy_threshold`: The fuzzy matching threshold (default: 70);
+- `tm_delimiter`: The delimiter used in the flat text TM (default: "\t");
+- `fuzzy_token`: The fuzzy token to be added with the matches (default: "｟fuzzy｠");
+- `fuzzymatch_min_length`: Min length for TM entries and examples to match (default: 4);
+- `fuzzymatch_max_length`: Max length for TM entries and examples to match (default: 70).
+
 ### Tokenization
 
 Common options for the tokenization transforms are the following:

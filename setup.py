@@ -29,7 +29,8 @@ setup(
         "waitress",
         "pyonmttok>=1.35,<2",
         "pyyaml",
-        "sacrebleu"
+        "sacrebleu",
+        "rapidfuzz"
     ],
     entry_points={
         "console_scripts": [
