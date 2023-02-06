@@ -527,12 +527,10 @@ class TestFeaturesTransform(unittest.TestCase):
         ex_out = inferfeats_transform.apply(ex_in)
         self.assertIs(ex_out, ex_in)
 
-        ex_in["src_feats"] = {
-            "feat_0": ["A", "A", "A", "A", "B", "A", "A", "C"]
-        }
+        ex_in["src_feats"] = [["A", "A", "A", "A", "B", "A", "A", "C"]]
         ex_out = inferfeats_transform.apply(ex_in)
         self.assertEqual(
-            ex_out["src_feats"]["feat_0"],
+            ex_out["src_feats"][0],
             ["A", "<null>", "A", "A", "A", "B", "<null>", "A",
              "A", "C", "<null>", "C", "<null>"])
 
@@ -540,11 +538,9 @@ class TestFeaturesTransform(unittest.TestCase):
                         'according', 'to', 'the', 'logs', '￭,',
                         '｟mrk_begin_case_region_U｠', 'she', 'is', 'hard',
                         '￭-￭', 'working', '｟mrk_end_case_region_U｠', '￭.']
-        ex_in["src_feats"] = {
-            "feat_0": ["A", "A", "A", "A", "B", "A", "A", "C"]
-        }
+        ex_in["src_feats"] = [["A", "A", "A", "A", "B", "A", "A", "C"]]
         ex_out = inferfeats_transform.apply(ex_in)
         self.assertEqual(
-            ex_out["src_feats"]["feat_0"],
+            ex_out["src_feats"][0],
             ["A", "A", "<null>", "A", "A", "A", "B", "<null>",
              "A", "A", "A", "C", "<null>", "C", "C", "<null>"])

@@ -1,42 +1,7 @@
-from onmt.utils.logging import logger
 from onmt.transforms import register_transform
 from .transform import Transform
 from onmt.utils.alignment import subword_map_by_joiner, subword_map_by_spacer
 import re
-from collections import defaultdict
-
-
-@register_transform(name='filterfeats')
-class FilterFeatsTransform(Transform):
-    """Filter out examples with a mismatch between source and features."""
-
-    def __init__(self, opts):
-        super().__init__(opts)
-
-    @classmethod
-    def add_options(cls, parser):
-        pass
-
-    def _parse_opts(self):
-        pass
-
-    def apply(self, example, is_train=False, stats=None, **kwargs):
-        """Return None if mismatch"""
-
-        if 'src_feats' not in example:
-            # Do nothing
-            return example
-
-        for feat_name, feat_values in example['src_feats'].items():
-            if len(example['src']) != len(feat_values):
-                logger.warning(
-                    f"Skipping example due to mismatch "
-                    f"between source and feature {feat_name}")
-                return None
-        return example
-
-    def _repr_args(self):
-        return ''
 
 
 @register_transform(name='inferfeats')
@@ -77,9 +42,9 @@ class InferFeatsTransform(Transform):
         else:  # Spacer
             word_to_subword_mapping = subword_map_by_spacer(example["src"])
 
-        inferred_feats = defaultdict(list)
+        new_src_feats = [[] for _ in range(len(example["src_feats"]))]
         for subword, word_id in zip(example["src"], word_to_subword_mapping):
-            for feat_name, feat_values in example["src_feats"].items():
+            for i, feat_values in enumerate(example["src_feats"]):
                 # Punctuation only
                 if not re.sub(r'(\W)+', '', subword).strip() \
                         and not self.prior_tokenization:
@@ -87,10 +52,8 @@ class InferFeatsTransform(Transform):
                 else:
                     inferred_feat = feat_values[word_id]
 
-                inferred_feats[feat_name].append(inferred_feat)
-
-        for feat_name, feat_values in inferred_feats.items():
-            example["src_feats"][feat_name] = inferred_feats[feat_name]
+                new_src_feats[i].append(inferred_feat)
+        example["src_feats"] = new_src_feats
 
         return example
 

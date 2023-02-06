@@ -47,7 +47,6 @@ jobs:
           -save_data /tmp/onmt_feat \
           -src_vocab /tmp/onmt_feat.vocab.src \
           -tgt_vocab /tmp/onmt_feat.vocab.tgt \
-          -src_feats_vocab '{"feat0": "/tmp/onmt_feat.vocab.feat0"}' \
           -n_sample -1 \
           && rm -rf /tmp/sample
     - name: Test field/transform dump
@@ -259,7 +258,6 @@ jobs:
           -config data/features_data.yaml \
           -src_vocab /tmp/onmt_feat.vocab.src \
           -tgt_vocab /tmp/onmt_feat.vocab.tgt \
-          -src_feats_vocab '{"feat0": "/tmp/onmt_feat.vocab.feat0"}' \
           -src_vocab_size 1000 -tgt_vocab_size 1000 \
           -hidden_size 2 -batch_size 10 \
           -num_workers 0 -bucket_size 1024 \
@@ -271,9 +269,8 @@ jobs:
       run: |
         python translate.py \
             -model /tmp/onmt.model_step_10.pt \
-            -src data/data_features/src-test.txt \
-            -src_feats "{'feat0': 'data/data_features/src-test.feat0'}" \
-            -verbose
+            -src data/data_features/src-test-with-feats.txt \
+            -n_src_feats 1 -verbose
     - name: Test RNN translation
       run: |
         head data/src-test.txt > /tmp/src-test.txt
