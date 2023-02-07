@@ -628,9 +628,8 @@ Word features must be appended to the actual textual data by using the special c
 however￨C ￭,￨N according￨L to￨L the￨L logs￨L ￭,￨N she￨L is￨L hard-working￨L ￭.￨N
 ```
 
-Prior tokenization is not necessary, features will be inferred by using the `FeatInferTransform` transform if tokenization has been applied.
+Prior tokenization is not necessary, features will be inferred by using the `FeatInferTransform` transform if tokenization has been applied. For instace:
 
-No previous tokenization:
 ```
 SRC: however,￨C according￨L to￨L the￨L logs,￨L she￨L is￨L hard-working.￨L
 TOKENIZED SRC: however ￭, according to the logs ￭, she is hard-working ￭.
@@ -638,9 +637,10 @@ RESULT: however￨C ￭,￨C according￨L to￨L the￨L logs￨L ￭,￨L she�
 ```
 
 **Notes**
+- Set `-n_src_feats` to be the number of source features per token.
+- `-src_feats_defaults` option can be used to provide default values for features. This can be really useful when mixing task specific data (with features) with general data which has not been annotated.
 - `FeatInferTransform` transform is required in order to ensure the functionality.
 - Not possible to do shared embeddings (at least with `feat_merge: concat` method)
-- `-src_feats_defaults` option can be used to provide default values for features. This can be really useful when mixing task specific data (with features) with general data which has not been annotated.
 
 Sample config file:
 
