@@ -636,9 +636,17 @@ TOKENIZED SRC: however ￭, according to the logs ￭, she is hard-working ￭.
 RESULT: however￨C ￭,￨C according￨L to￨L the￨L logs￨L ￭,￨L she￨L is￨L hard￨L ￭-￭￨L working￨L ￭.￨L
 ```
 
+**Options**
+- `-n_src_feats`: the expected number of source features per token.
+- `-src_feats_defaults` (optional): provides default values for features. This can be really useful when mixing task specific data (with features) with general data which has not been annotated.
+
+For the Transformer architecture make sure the following options are appropriately set:
+
+- `src_word_vec_size` and `tgt_word_vec_size` or `word_vec_size`
+- `feat_merge`: how to handle features vecs
+- `feat_vec_size` or maybe `feat_vec_exponent`
+
 **Notes**
-- Set `-n_src_feats` to be the number of source features per token.
-- `-src_feats_defaults` option can be used to provide default values for features. This can be really useful when mixing task specific data (with features) with general data which has not been annotated.
 - `FeatInferTransform` transform is required in order to ensure the functionality.
 - Not possible to do shared embeddings (at least with `feat_merge: concat` method)
 
@@ -654,7 +662,7 @@ data:
     valid:
         path_src: data/valid/data.src
         path_tgt: data/valid/data.tgt
-        transforms: [filterfeats, onmt_tokenize, inferfeats]
+        transforms: [onmt_tokenize, inferfeats]
 
 # Transform options
 reversible_tokenization: "joiner"
@@ -668,12 +676,6 @@ n_src_feats: 2
 src_feats_defaults: "0￨1"
 feat_merge: "sum"
 ```
-
-For the Transformer architecture make sure the following options are appropriately set:
-
-- `src_word_vec_size` and `tgt_word_vec_size` or `word_vec_size`
-- `feat_merge`: how to handle features vecs
-- `feat_vec_size` or maybe `feat_vec_exponent`
 
 To allow source features in the server add the following parameters in the server's config file:
 

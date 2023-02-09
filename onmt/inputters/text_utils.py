@@ -20,8 +20,9 @@ def parse_features(line, n_feats=0, defaults=None):
         if not fts and defaults is not None:
             if isinstance(defaults, str):
                 defaults = defaults.split("￨")
-            assert len(defaults) == n_feats  # Security check
-            fts = defaults
+            if n_feats > 0:
+                assert len(defaults) == n_feats  # Security check
+                fts = defaults
         assert len(fts) == n_feats, \
             f"The number of fetures does not match the " \
             f"expected number of features. Found {len(fts)} " \
