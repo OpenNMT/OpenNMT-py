@@ -675,6 +675,16 @@ For the Transformer architecture make sure the following options are appropriate
 - `feat_merge`: how to handle features vecs
 - `feat_vec_size` or maybe `feat_vec_exponent`
 
+To allow source features in the server add the following parameters in the server's config file:
+
+```
+"features": {
+    "n_src_feats": 2,
+    "src_feats_defaults": "0￨1",
+    "reversible_tokenization": "joiner"
+}
+```
+
 ## How can I set up a translation server ?
 A REST server was implemented to serve OpenNMT-py models. A discussion is opened on the OpenNMT forum: [discussion link](https://forum.opennmt.net/t/simple-opennmt-py-rest-server/1392).
 

@@ -128,8 +128,7 @@ def numericalize(vocabs, example):
                 f"Something went wrong with task {vocabs['data_task']}"
         )
 
-    # TODO: check this if statement
-    if 'src_feats' in vocabs.keys():
+    if "feats" in example["src"]:
         numeric_feats = []
         for fv, feat in zip(vocabs["src_feats"],
                             example["src"]["feats"]):
@@ -254,21 +253,11 @@ def textbatch_to_tensor(vocabs, batch, is_train=False):
     numeric = []
     infer_iter = []
     for i, ex in enumerate(batch):
-        if isinstance(ex, bytes):
-            ex = ex.decode("utf-8")
-        if is_train:
-            toks = ex
-        else:
-            toks = ex.strip("\n").split()
-        idxs = vocabs['src'](toks)
-        # Need to add features also in 'src'
-        # TODO
-        numeric.append({'src': {'src': toks,
-                        'src_ids': idxs},
-                        'srclen': len(toks),
-                        'tgt': None,
-                        'indices': i,
-                        'align': None})
+        # Keep it consistent with dynamic data
+        ex["srclen"] = len(ex["src"]["src"].split())
+        ex["indices"] = i
+        ex["align"] = None
+        numeric.append(numericalize(vocabs, ex))
     numeric.sort(key=text_sort_key, reverse=True)
     infer_iter = [tensorify(vocabs, numeric)]
     return infer_iter
