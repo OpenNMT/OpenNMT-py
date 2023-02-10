@@ -25,7 +25,8 @@ from onmt.utils.parse import ArgumentParser
 from onmt.translate.translator import build_translator
 from onmt.transforms.features import InferFeatsTransform
 from onmt.inputters.text_utils import (textbatch_to_tensor,
-                                       parse_features)
+                                       parse_features,
+                                       append_features_to_text)
 from onmt.inputters.inputter import IterOnDevice
 
 
@@ -96,7 +97,7 @@ class CTranslate2Translator(object):
         self.target_prefix = target_prefix
         if preload:
             # perform a first request to initialize everything
-            dummy_translation = self.translate(["a"])
+            dummy_translation = self.translate([{"src": {"src": "a"}}])
             print("Performed a dummy translation to initialize the model",
                   dummy_translation)
             time.sleep(1)
@@ -141,11 +142,14 @@ class CTranslate2Translator(object):
             setdefault_if_exists_must_match(
                 ct2_translate_batch_args, name, value)
 
-    def translate(self, texts_to_translate, batch_size=8,
-                  tgt=None, src_feats=None):
-        assert (src_feats is None) or (src_feats == {}), \
-            "CTranslate2 does not support source features"
-        batch = [item.split(" ") for item in texts_to_translate]
+    def translate(self, examples, batch_size=8, tgt=None):
+        if "feats" in examples[0]["src"]:
+            batch = [append_features_to_text(
+                        ex["src"]["src"],
+                        ex["src"]["feats"]).split(" ")
+                     for ex in examples]
+        else:
+            batch = [ex["src"]["src"].split(" ") for ex in examples]
         if tgt is not None:
             tgt = [item.split(" ") for item in tgt]
         preds = self.translator.translate_batch(
@@ -553,9 +557,8 @@ class ServerModel(object):
         if len(examples) > 0:
             try:
                 if isinstance(self.translator, CTranslate2Translator):
-                    # TODO
                     scores, predictions = self.translator.translate(
-                        examples)  # texts_to_translate)
+                        examples)
                 else:
                     infer_iter = textbatch_to_tensor(
                         self.translator.vocabs, examples)
