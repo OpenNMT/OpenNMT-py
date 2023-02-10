@@ -1,0 +1,3 @@
+however,￨A according￨A to￨A the￨A logs,￨B she￨A is￨A a￨A hard-working.￨C
+however,￨A according￨B to￨C the￨D logs,￨E
+she￨C is￨B a￨A hard-working.￨B

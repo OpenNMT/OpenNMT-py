@@ -3,7 +3,8 @@ import os
 from onmt.utils.logging import logger
 from onmt.constants import CorpusName, CorpusTask
 from onmt.transforms import TransformPipe
-from onmt.inputters.text_utils import process
+from onmt.inputters.text_utils import (
+    process, parse_features, append_features_to_text)
 from contextlib import contextmanager
 
 
@@ -38,13 +39,15 @@ def exfile_open(filename, *args, **kwargs):
 class ParallelCorpus(object):
     """A parallel corpus file pair that can be loaded to iterate."""
 
-    def __init__(self, name, src, tgt, align=None, src_feats=None):
+    def __init__(self, name, src, tgt, align=None,
+                 n_src_feats=0, src_feats_defaults=None):
         """Initialize src & tgt side file path."""
         self.id = name
         self.src = src
         self.tgt = tgt
         self.align = align
-        self.src_feats = src_feats
+        self.n_src_feats = n_src_feats
+        self.src_feats_defaults = src_feats_defaults
 
     def load(self, offset=0, stride=1):
         """
@@ -52,21 +55,17 @@ class ParallelCorpus(object):
         `offset` and `stride` allow to iterate only on every
         `stride` example, starting from `offset`.
         """
-        if self.src_feats:
-            features_names = []
-            features_files = []
-            for feat_name, feat_path in self.src_feats.items():
-                features_names.append(feat_name)
-                features_files.append(open(feat_path, mode='rb'))
-        else:
-            features_files = []
         with exfile_open(self.src, mode='rb') as fs,\
                 exfile_open(self.tgt, mode='rb') as ft,\
                 exfile_open(self.align, mode='rb') as fa:
-            for i, (sline, tline, align, *features) in \
-                    enumerate(zip(fs, ft, fa, *features_files)):
+            for i, (sline, tline, align) in \
+                    enumerate(zip(fs, ft, fa)):
                 if (i % stride) == offset:
                     sline = sline.decode('utf-8')
+                    sline, sfeats = parse_features(
+                        sline,
+                        n_feats=self.n_src_feats,
+                        defaults=self.src_feats_defaults)
                     if tline is not None:
                         tline = tline.decode('utf-8')
                     # 'src_original' and 'tgt_original' store the
@@ -81,19 +80,17 @@ class ParallelCorpus(object):
                     }
                     if align is not None:
                         example['align'] = align.decode('utf-8')
-                    if features:
-                        example['src_feats'] = dict()
-                        for j, feat in enumerate(features):
-                            example['src_feats'][features_names[j]] = \
-                                feat.decode("utf-8")
+
+                    if sfeats is not None:
+                        example['src_feats'] = [f for f in sfeats]
                     yield example
-        for f in features_files:
-            f.close()
 
     def __str__(self):
         cls_name = type(self).__name__
-        return '{}({}, {}, align={}, src_feats={})'.format(
-            cls_name, self.src, self.tgt, self.align, self.src_feats)
+        return f'{cls_name}({self.id}, {self.src}, {self.tgt}, ' \
+               f'align={self.align}, ' \
+               f'n_src_feats={self.n_src_feats}, ' \
+               f'src_feats_defaults="{self.src_feats_defaults}")'
 
 
 def get_corpora(opts, task=CorpusTask.TRAIN):
@@ -106,7 +103,8 @@ def get_corpora(opts, task=CorpusTask.TRAIN):
                     corpus_dict["path_src"],
                     corpus_dict["path_tgt"],
                     corpus_dict["path_align"],
-                    corpus_dict["src_feats"])
+                    n_src_feats=opts.n_src_feats,
+                    src_feats_defaults=opts.src_feats_defaults)
     elif task == CorpusTask.VALID:
         if CorpusName.VALID in opts.data.keys():
             corpora_dict[CorpusName.VALID] = ParallelCorpus(
@@ -114,7 +112,8 @@ def get_corpora(opts, task=CorpusTask.TRAIN):
                 opts.data[CorpusName.VALID]["path_src"],
                 opts.data[CorpusName.VALID]["path_tgt"],
                 opts.data[CorpusName.VALID]["path_align"],
-                opts.data[CorpusName.VALID]["src_feats"])
+                n_src_feats=opts.n_src_feats,
+                src_feats_defaults=opts.src_feats_defaults)
         else:
             return None
     else:
@@ -122,7 +121,8 @@ def get_corpora(opts, task=CorpusTask.TRAIN):
                 CorpusName.INFER,
                 opts.src,
                 opts.tgt,
-                src_feats=opts.src_feats)
+                n_src_feats=opts.n_src_feats,
+                src_feats_defaults=opts.src_feats_defaults)
     return corpora_dict
 
 
@@ -154,16 +154,15 @@ class ParallelCorpusIterator(object):
             example['src'] = example['src'].strip('\n').split()
             example['src_original'] = \
                 example['src_original'].strip("\n").split()
+            if "src_feats" in example:
+                example["src_feats"] = [feat.strip('\n').split()
+                                        for feat in example["src_feats"]]
             if example['tgt'] is not None:
                 example['tgt'] = example['tgt'].strip('\n').split()
                 example['tgt_original'] = \
                     example['tgt_original'].strip("\n").split()
             if 'align' in example:
                 example['align'] = example['align'].strip('\n').split()
-            if 'src_feats' in example:
-                for k in example['src_feats'].keys():
-                    example['src_feats'][k] = \
-                        example['src_feats'][k].strip('\n').split()
             yield example
 
     def _transform(self, stream):
@@ -257,7 +256,16 @@ def save_transformed_sample(opts, transforms, n_sample=3):
                     maybe_example = maybe_example[0]
                     src_line, tgt_line = (maybe_example['src']['src'],
                                           maybe_example['tgt']['tgt'])
-                    f_src.write(src_line + '\n')
+
+                    if 'feats' in maybe_example['src']:
+                        src_feats_lines = maybe_example['src']['feats']
+                    else:
+                        src_feats_lines = []
+
+                    src_pretty_line = append_features_to_text(
+                        src_line, src_feats_lines)
+
+                    f_src.write(src_pretty_line + '\n')
                     f_tgt.write(tgt_line + '\n')
                     if n_sample > 0 and i >= n_sample:
                         break

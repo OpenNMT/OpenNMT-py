@@ -34,11 +34,10 @@ def build_vocab(opt, specials):
     """ Build vocabs dict to be stored in the checkpoint
         based on vocab files having each line [token, count]
     Args:
-        opt: src_vocab, tgt_vocab, src_feats_vocab
+        opt: src_vocab, tgt_vocab, n_src_feats
     Return:
         vocabs: {'src': pyonmttok.Vocab, 'tgt': pyonmttok.Vocab,
-                 'src_feats' : {'feat0': pyonmttok.Vocab,
-                                'feat1': pyonmttok.Vocab, ...},
+                 'src_feats' : [pyonmttok.Vocab, ...]},
                  'data_task': seq2seq or lm
                 }
     """
@@ -85,10 +84,10 @@ def build_vocab(opt, specials):
                                                opt.vocab_size_multiple)
         vocabs['tgt'] = tgt_vocab
 
-    if opt.src_feats_vocab:
-        src_feats = {}
-        for feat_name, filepath in opt.src_feats_vocab.items():
-            src_f_vocab = _read_vocab_file(filepath, 1)
+    if opt.n_src_feats > 0:
+        src_feats_vocabs = []
+        for i in range(opt.n_src_feats):
+            src_f_vocab = _read_vocab_file(f"{opt.src_vocab}_feat{i}", 1)
             src_f_vocab = pyonmttok.build_vocab_from_tokens(
                 src_f_vocab,
                 maximum_size=0,
@@ -101,8 +100,8 @@ def build_vocab(opt, specials):
             if opt.vocab_size_multiple > 1:
                 src_f_vocab = _pad_vocab_to_multiple(src_f_vocab,
                                                      opt.vocab_size_multiple)
-            src_feats[feat_name] = src_f_vocab
-        vocabs['src_feats'] = src_feats
+            src_feats_vocabs.append(src_f_vocab)
+        vocabs["src_feats"] = src_feats_vocabs
 
     vocabs['data_task'] = opt.data_task
 
@@ -146,10 +145,8 @@ def vocabs_to_dict(vocabs):
     vocabs_dict['src'] = vocabs['src'].ids_to_tokens
     vocabs_dict['tgt'] = vocabs['tgt'].ids_to_tokens
     if 'src_feats' in vocabs.keys():
-        vocabs_dict['src_feats'] = {}
-        for feat in vocabs['src_feats'].keys():
-            vocabs_dict['src_feats'][feat] = \
-                vocabs['src_feats'][feat].ids_to_tokens
+        vocabs_dict['src_feats'] = [feat_vocab.ids_to_tokens
+                                    for feat_vocab in vocabs['src_feats']]
     vocabs_dict['data_task'] = vocabs['data_task']
     return vocabs_dict
 
@@ -167,9 +164,8 @@ def dict_to_vocabs(vocabs_dict):
     else:
         vocabs['tgt'] = pyonmttok.build_vocab_from_tokens(vocabs_dict['tgt'])
     if 'src_feats' in vocabs_dict.keys():
-        vocabs['src_feats'] = {}
-        for feat in vocabs_dict['src_feats'].keys():
-            vocabs['src_feats'][feat] = \
-                pyonmttok.build_vocab_from_tokens(
-                    vocabs_dict['src_feats'][feat])
+        vocabs['src_feats'] = []
+        for feat_vocab in vocabs_dict['src_feats']:
+            vocabs['src_feats'].append(
+                pyonmttok.build_vocab_from_tokens(feat_vocab))
     return vocabs

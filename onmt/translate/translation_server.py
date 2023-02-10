@@ -14,7 +14,6 @@ import onmt.opts
 
 from itertools import islice, zip_longest
 from copy import deepcopy
-from collections import defaultdict
 from argparse import Namespace
 
 from onmt.constants import DefaultTokens
@@ -25,7 +24,10 @@ from onmt.utils.alignment import to_word_align
 from onmt.utils.parse import ArgumentParser
 from onmt.translate.translator import build_translator
 from onmt.transforms.features import InferFeatsTransform
-from onmt.inputters.text_utils import textbatch_to_tensor
+from onmt.inputters.text_utils import (textbatch_to_tensor,
+                                       parse_features,
+                                       append_features_to_text)
+from onmt.inputters.inputter import IterOnDevice
 
 
 def critical(func):
@@ -95,7 +97,7 @@ class CTranslate2Translator(object):
         self.target_prefix = target_prefix
         if preload:
             # perform a first request to initialize everything
-            dummy_translation = self.translate(["a"])
+            dummy_translation = self.translate([{"src": {"src": "a"}}])
             print("Performed a dummy translation to initialize the model",
                   dummy_translation)
             time.sleep(1)
@@ -140,11 +142,14 @@ class CTranslate2Translator(object):
             setdefault_if_exists_must_match(
                 ct2_translate_batch_args, name, value)
 
-    def translate(self, texts_to_translate, batch_size=8,
-                  tgt=None, src_feats=None):
-        assert (src_feats is None) or (src_feats == {}), \
-            "CTranslate2 does not support source features"
-        batch = [item.split(" ") for item in texts_to_translate]
+    def translate(self, examples, batch_size=8, tgt=None):
+        if "feats" in examples[0]["src"]:
+            batch = [append_features_to_text(
+                        ex["src"]["src"],
+                        ex["src"]["feats"]).split(" ")
+                     for ex in examples]
+        else:
+            batch = [ex["src"]["src"].split(" ") for ex in examples]
         if tgt is not None:
             tgt = [item.split(" ") for item in tgt]
         preds = self.translator.translate_batch(
@@ -163,6 +168,17 @@ class CTranslate2Translator(object):
 
     def to_gpu(self):
         self.translator.load_model()
+
+
+def parse_features_opts(conf):
+    features_opt = conf.get("features", None)
+    if features_opt is not None:
+        features_opt["n_src_feats"] = features_opt.get("n_src_feats", 0)
+        features_opt["src_feats_defaults"] = \
+            features_opt.get("src_feats_defaults", None)
+        features_opt["reversible_tokenization"] = \
+            features_opt.get("reversible_tokenization", "joiner")
+    return features_opt
 
 
 class TranslationServer(object):
@@ -199,7 +215,7 @@ class TranslationServer(object):
                                                       {}),
                       'ct2_translate_batch_args': conf.get(
                           'ct2_translate_batch_args', {}),
-                      'features_opt': conf.get('features', None)
+                      'features_opt': parse_features_opts(conf)
                       }
             kwargs = {k: v for (k, v) in kwargs.items() if v is not None}
             model_id = conf.get("id", None)
@@ -329,7 +345,6 @@ class ServerModel(object):
         self.unload_timer = None
         self.user_opt = opt
         self.tokenizers = None
-        self.feats_transform = None
 
         if len(self.opt.log_file) > 0:
             log_file = os.path.join(model_root, self.opt.log_file)
@@ -372,6 +387,7 @@ class ServerModel(object):
                     'tgt': tokenizer
                 }
 
+        self.feats_transform = None
         if self.features_opt is not None:
             self.feats_transform = InferFeatsTransform(
                 Namespace(**self.features_opt))
@@ -518,43 +534,42 @@ class ServerModel(object):
                 tok = self.maybe_tokenize(seg)
                 if ref is not None:
                     ref = self.maybe_tokenize(ref, side='tgt')
-                inferred_feats = self.transform_feats(seg, tok, feats)
-                texts.append((tok, ref, inferred_feats))
+                feats = self.maybe_transform_feats(seg, tok, feats)
+                texts.append((tok, ref, feats))
             tail_spaces.append(whitespaces_after)
 
         empty_indices = []
-        texts_to_translate, texts_ref = [], []
-        texts_features = defaultdict(list)
+        examples = []
         for i, (tok, ref_tok, feats) in enumerate(texts):
             if tok == "":
                 empty_indices.append(i)
             else:
-                texts_to_translate.append(tok)
-                texts_ref.append(ref_tok)
-                for feat_name, feat_values in feats.items():
-                    texts_features[feat_name].append(feat_values)
-        if any([item is None for item in texts_ref]):
-            texts_ref = None
+                ex = {
+                    "src": {"src": tok},
+                    "tgt": {"tgt": ref_tok} if ref_tok is not None else None
+                }
+                if feats is not None:
+                    ex["src"]["feats"] = feats
+                examples.append(ex)
 
         scores = []
         predictions = []
-
-        if len(texts_to_translate) > 0:
+        if len(examples) > 0:
             try:
                 if isinstance(self.translator, CTranslate2Translator):
                     scores, predictions = self.translator.translate(
-                        texts_to_translate)
+                        examples)
                 else:
                     infer_iter = textbatch_to_tensor(
-                        self.translator.vocabs,
-                        texts_to_translate)
-                    scores, predictions = self.translator._translate(
-                        infer_iter)
+                        self.translator.vocabs, examples)
+                    infer_iter = IterOnDevice(
+                        infer_iter, (self.translator._dev.index or -1))
+                    scores, predictions = \
+                        self.translator._translate(infer_iter)
             except (RuntimeError, Exception) as e:
                 err = "Error: %s" % str(e)
                 self.logger.error(err)
-                self.logger.error("repr(text_to_translate): "
-                                  + repr(texts_to_translate))
+                self.logger.error("repr(examples): " + repr(examples))
                 self.logger.error("model: #%s" % self.model_id)
                 self.logger.error("model opt: " + str(self.opt.__dict__))
                 self.logger.error(traceback.format_exc())
@@ -569,7 +584,7 @@ class ServerModel(object):
 
         # NOTE: translator returns lists of `n_best` list
         def flatten_list(_list): return sum(_list, [])
-        tiled_texts = [t for t in texts_to_translate
+        tiled_texts = [ex["src"]["src"] for ex in examples
                        for _ in range(self.opt.n_best)]
         results = flatten_list(predictions)
 
@@ -703,10 +718,16 @@ class ServerModel(object):
         """
         if sequence.get("src", None) is not None:
             sequence = deepcopy(sequence)
-            sequence["seg"] = [sequence["src"].strip()]
+            src, src_feats = parse_features(
+                sequence["src"].strip(),
+                n_feats=(self.features_opt["n_src_feats"]
+                         if self.features_opt is not None else 0),
+                defaults=(self.features_opt["src_feats_defaults"]
+                          if self.features_opt is not None else None))
+            sequence["seg"] = [src]
             sequence.pop("src")
             sequence["ref"] = [sequence.get('ref', None)]
-            sequence["src_feats"] = [sequence.get('src_feats', {})]
+            sequence["src_feats"] = [src_feats]
             sequence["n_seg"] = 1
         if self.preprocess_opt is not None:
             return self.preprocess(sequence)
@@ -727,22 +748,19 @@ class ServerModel(object):
             sequence = function(sequence, self)
         return sequence
 
-    def transform_feats(self, raw_src, tok_src, feats):
+    def maybe_transform_feats(self, raw_src, tok_src, feats):
         """Apply InferFeatsTransform to features"""
+        if self.features_opt is None:
+            return feats
         if self.feats_transform is None:
             return feats
         ex = {
             "src": tok_src.split(' '),
             "src_original": raw_src.split(' '),
-            "src_feats": {k:  v.split(' ') for k, v in feats.items()}
+            "src_feats": [f.split(' ') for f in feats]
         }
         transformed_ex = self.feats_transform.apply(ex)
-        if not transformed_ex:
-            raise Exception("Error inferring feats")
-        transformed_feats = dict()
-        for feat_name, feat_values in transformed_ex["src_feats"].items():
-            transformed_feats[feat_name] = " ".join(feat_values)
-        return transformed_feats
+        return [" ".join(f) for f in transformed_ex["src_feats"]]
 
     def build_tokenizer(self, tokenizer_opt):
         """Build tokenizer described by `tokenizer_opt`."""

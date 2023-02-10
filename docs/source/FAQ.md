@@ -620,39 +620,34 @@ Training options to perform vocabulary update are:
 
 ## How can I use source word features?
 
-Extra information can be added to the words in the source sentences by defining word features. 
+Additional word-level information can be incorporated into the model by defining word features in the source sentence. 
 
-Features should be defined in a separate file using blank spaces as a separator and with each row corresponding to a source sentence. An example of the input files:
+Word features must be appended to the actual textual data by using the special character ￨ as a feature separator. For instance:
 
-data.src
 ```
-however, according to the logs, she is hard-working.
-```
-
-feat.txt
-```
-A C C C C A A B
+however￨C ￭,￨N according￨L to￨L the￨L logs￨L ￭,￨N she￨L is￨L hard-working￨L ￭.￨N
 ```
 
-Prior tokenization is not necessary, features will be inferred by using the `FeatInferTransform` transform if tokenization has been applied.
+Prior tokenization is not necessary, features will be inferred by using the `FeatInferTransform` transform if tokenization has been applied. For instace:
 
-No previous tokenization:
 ```
-SRC: this is a test.
-FEATS: A A A B
-TOKENIZED SRC: this is a test ￭.
-RESULT: A A A B <null>
+SRC: however,￨C according￨L to￨L the￨L logs,￨L she￨L is￨L hard-working.￨L
+TOKENIZED SRC: however ￭, according to the logs ￭, she is hard-working ￭.
+RESULT: however￨C ￭,￨C according￨L to￨L the￨L logs￨L ￭,￨L she￨L is￨L hard￨L ￭-￭￨L working￨L ￭.￨L
 ```
 
-Previously tokenized:
-```
-SRC: this is a test ￭.
-FEATS: A A A B A
-RESULT: A A A B A
-```
+**Options**
+- `-n_src_feats`: the expected number of source features per token.
+- `-src_feats_defaults` (optional): provides default values for features. This can be really useful when mixing task specific data (with features) with general data which has not been annotated.
+
+For the Transformer architecture make sure the following options are appropriately set:
+
+- `src_word_vec_size` and `tgt_word_vec_size` or `word_vec_size`
+- `feat_merge`: how to handle features vecs
+- `feat_vec_size` or maybe `feat_vec_exponent`
 
 **Notes**
-- `FilterFeatsTransform` and `FeatInferTransform` are required in order to ensure the functionality.
+- `FeatInferTransform` transform is required in order to ensure the functionality.
 - Not possible to do shared embeddings (at least with `feat_merge: concat` method)
 
 Sample config file:
@@ -662,49 +657,35 @@ data:
     dummy:
         path_src: data/train/data.src
         path_tgt: data/train/data.tgt
-        src_feats:
-            feat_0: data/train/data.src.feat_0
-            feat_1: data/train/data.src.feat_1
-        transforms: [filterfeats, onmt_tokenize, inferfeats, filtertoolong]
+        transforms: [onmt_tokenize, inferfeats, filtertoolong]
         weight: 1
     valid:
         path_src: data/valid/data.src
         path_tgt: data/valid/data.tgt
-        src_feats:
-            feat_0: data/valid/data.src.feat_0
-            feat_1: data/valid/data.src.feat_1
-        transforms: [filterfeats, onmt_tokenize, inferfeats]
+        transforms: [onmt_tokenize, inferfeats]
 
 # Transform options
 reversible_tokenization: "joiner"
-prior_tokenization: true
 
 # Vocab opts
 src_vocab: exp/data.vocab.src
 tgt_vocab: exp/data.vocab.tgt
-src_feats_vocab: 
-    feat_0: exp/data.vocab.feat_0
-    feat_1: exp/data.vocab.feat_1
+
+# Features options
+n_src_feats: 2
+src_feats_defaults: "0￨1"
 feat_merge: "sum"
 ```
 
-During inference you can pass features by using the `--src_feats` argument. `src_feats` is expected to be a Python like dict, mapping feature names with their data file.
+To allow source features in the server add the following parameters in the server's config file:
 
 ```
-{'feat_0': '../data.txt.feats0', 'feat_1': '../data.txt.feats1'}
+"features": {
+    "n_src_feats": 2,
+    "src_feats_defaults": "0￨1",
+    "reversible_tokenization": "joiner"
+}
 ```
-
-**Important note!** During inference, input sentence is expected to be tokenized. Therefore feature inferring should be handled prior to running the translate command. Example:
-
-```bash
-python translate.py -model model_step_10.pt -src ../data.txt.tok -output ../data.out --src_feats "{'feat_0': '../data.txt.feats0', 'feat_1': '../data.txt.feats1'}"
-```
-
-When using the Transformer architecture make sure the following options are appropriately set:
-
-- `src_word_vec_size` and `tgt_word_vec_size` or `word_vec_size`
-- `feat_merge`: how to handle features vecs
-- `feat_vec_size` and maybe `feat_vec_exponent`
 
 ## How can I set up a translation server ?
 A REST server was implemented to serve OpenNMT-py models. A discussion is opened on the OpenNMT forum: [discussion link](https://forum.opennmt.net/t/simple-opennmt-py-rest-server/1392).

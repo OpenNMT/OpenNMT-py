@@ -128,6 +128,15 @@ def _add_dynamic_corpus_opts(parser, build_vocab_only=False):
                   help="Size of queues used in the build_vocab dump path.")
 
 
+def _add_features_opts(parser):
+    group = parser.add_argument_group("Features")
+    group.add("-n_src_feats", "--n_src_feats", type=int,
+              default=0, help="Number of source feats.")
+    group.add("-src_feats_defaults", "--src_feats_defaults",
+              help="Default features to apply in source in case "
+              "there are not annotated")
+
+
 def _add_dynamic_vocab_opts(parser, build_vocab_only=False):
     """Options related to vocabulary and features.
 
@@ -145,12 +154,7 @@ def _add_dynamic_vocab_opts(parser, build_vocab_only=False):
     group.add("-share_vocab", "--share_vocab", action="store_true",
               help="Share source and target vocabulary.")
 
-    group.add("-src_feats_vocab", "--src_feats_vocab",
-              help=("List of paths to save"
-                    if build_vocab_only
-                    else "List of paths to")
-              + " src features vocabulary files. "
-              "Files format: one <word> or <word>\t<count> per line.")
+    _add_features_opts(parser)
 
     if not build_vocab_only:
         group.add("-src_vocab_size", "--src_vocab_size",
@@ -791,9 +795,6 @@ def translate_opts(parser, dynamic=False):
     group.add('--src', '-src', required=True,
               help="Source sequence to decode (one line per "
                    "sequence)")
-    group.add("-src_feats", "--src_feats", required=False,
-              help="Source sequence features (dict format). "
-                   "Ex: {'feat_0': '../data.txt.feats0', 'feat_1': '../data.txt.feats1'}")  # noqa: E501
     group.add('--tgt', '-tgt',
               help='True target sequence (optional)')
     group.add('--tgt_file_prefix', '-tgt_file_prefix', action='store_true',
@@ -805,6 +806,9 @@ def translate_opts(parser, dynamic=False):
               help="Report alignment for each translation.")
     group.add('--report_time', '-report_time', action='store_true',
               help="Report some translation time metrics")
+
+    # Adding options related to source and target features
+    _add_features_opts(parser)
 
     # Adding options relate to decoding strategy
     _add_decoding_opts(parser)
