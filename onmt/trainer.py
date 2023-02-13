@@ -35,8 +35,8 @@ def build_trainer(opt, device_id, model, vocabs, optim, model_saver=None):
             used to save the model
     """
 
-    train_loss = LossCompute.from_opts(opt, model, vocabs['tgt'])
-    valid_loss = LossCompute.from_opts(opt, model, vocabs['tgt'], train=False)
+    train_loss = LossCompute.from_opts(opt, model, vocabs)
+    valid_loss = LossCompute.from_opts(opt, model, vocabs, train=False)
 
     scoring_preparator = ScoringPreparator(vocabs=vocabs, opt=opt)
     validset_transforms = opt.data.get("valid", {}).get("transforms", None)

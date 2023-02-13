@@ -29,19 +29,35 @@ class InferFeatsTransform(Transform):
             # Do nothing
             return example
 
-        if self.reversible_tokenization == "joiner":
-            original_src = example["src_original"]
-            word_to_subword_mapping = subword_map_by_joiner(
-                example["src"], original_subwords=original_src)
-        else:  # Spacer
-            word_to_subword_mapping = subword_map_by_spacer(example["src"])
+        if "src_feats" in example:
+            if self.reversible_tokenization == "joiner":
+                original_src = example["src_original"]
+                word_to_subword_mapping = subword_map_by_joiner(
+                    example["src"], original_subwords=original_src)
+            else:  # Spacer
+                word_to_subword_mapping = subword_map_by_spacer(example["src"])
 
-        new_src_feats = [[] for _ in range(len(example["src_feats"]))]
-        for subword, word_id in zip(example["src"], word_to_subword_mapping):
-            for i, feat_values in enumerate(example["src_feats"]):
-                inferred_feat = feat_values[word_id]
-                new_src_feats[i].append(inferred_feat)
-        example["src_feats"] = new_src_feats
+            new_src_feats = [[] for _ in range(len(example["src_feats"]))]
+            for subword, word_id in zip(example["src"], word_to_subword_mapping):
+                for i, feat_values in enumerate(example["src_feats"]):
+                    inferred_feat = feat_values[word_id]
+                    new_src_feats[i].append(inferred_feat)
+            example["src_feats"] = new_src_feats
+
+        if "tgt_feats" in example:
+            if self.reversible_tokenization == "joiner":
+                original_tgt = example["tgt_original"]
+                word_to_subword_mapping = subword_map_by_joiner(
+                    example["tgt"], original_subwords=original_tgt)
+            else:  # Spacer
+                word_to_subword_mapping = subword_map_by_spacer(example["tgt"])
+
+            new_tgt_feats = [[] for _ in range(len(example["tgt_feats"]))]
+            for subword, word_id in zip(example["tgt"], word_to_subword_mapping):
+                for i, feat_values in enumerate(example["tgt_feats"]):
+                    inferred_feat = feat_values[word_id]
+                    new_tgt_feats[i].append(inferred_feat)
+            example["tgt_feats"] = new_tgt_feats
 
         return example
 

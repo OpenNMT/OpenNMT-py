@@ -68,7 +68,7 @@ class DecodeStrategy(object):
     def __init__(self, pad, bos, eos, unk, start, batch_size, parallel_paths,
                  global_scorer, min_length, block_ngram_repeat,
                  exclusion_tokens, return_attention, max_length,
-                 ban_unk_token):
+                 ban_unk_token, n_tgt_feats):
 
         # magic indices
         self.pad = pad
@@ -86,6 +86,7 @@ class DecodeStrategy(object):
         self.scores = [[] for _ in range(batch_size)]
         self.attention = [[] for _ in range(batch_size)]
         self.hypotheses = [[] for _ in range(batch_size)]
+        self.features = [[] for _ in range(batch_size)]
 
         self.alive_attn = None
 
@@ -101,6 +102,8 @@ class DecodeStrategy(object):
         self.return_attention = return_attention
 
         self.done = False
+
+        self.n_tgt_feats = n_tgt_feats
 
     def get_device_from_enc_out(self, enc_out):
         if isinstance(enc_out, tuple):
@@ -140,8 +143,8 @@ class DecodeStrategy(object):
             device = torch.device('cpu')
         # Here we set the decoder to start with self.start (BOS or EOS)
         self.alive_seq = torch.full(
-            [self.batch_size * self.parallel_paths, 1], self.start,
-            dtype=torch.long, device=device)
+            [self.batch_size * self.parallel_paths, self.n_tgt_feats+1, 1],
+            self.start, dtype=torch.long, device=device)
         self.is_finished = torch.zeros(
             [self.batch_size, self.parallel_paths],
             dtype=torch.uint8, device=device)
@@ -161,13 +164,15 @@ class DecodeStrategy(object):
         return None, enc_out, src_len, src_map
 
     def __len__(self):
-        return self.alive_seq.shape[1]
+        return self.alive_seq.shape[-1]
 
     def ensure_min_length(self, log_probs):
+        # TODO: check if need in target_features probs
         if len(self) <= self.min_length:
             log_probs[:, self.eos] = -1e20
 
     def ensure_unk_removed(self, log_probs):
+        # TODO: check if need in target_features probs
         if self.ban_unk_token:
             log_probs[:, self.unk] = -1e20
 
@@ -296,7 +301,7 @@ class DecodeStrategy(object):
             return
         self.target_prefix = self.target_prefix.index_select(0, select_index)
 
-    def advance(self, log_probs, attn):
+    def advance(self, log_probs, attn, feats_log_probs):
         """DecodeStrategy subclasses should override :func:`advance()`.
 
         Advance is used to update ``self.alive_seq``, ``self.is_finished``,

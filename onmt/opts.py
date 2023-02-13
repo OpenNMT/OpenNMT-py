@@ -135,6 +135,11 @@ def _add_features_opts(parser):
     group.add("-src_feats_defaults", "--src_feats_defaults",
               help="Default features to apply in source in case "
               "there are not annotated")
+    group.add("-n_tgt_feats", "--n_tgt_feats", type=int,
+              default=0, help="Number of target feats.")
+    group.add("-tgt_feats_defaults", "--tgt_feats_defaults",
+              help="Default features to apply in target in case "
+              "there are not annotated")
 
 
 def _add_dynamic_vocab_opts(parser, build_vocab_only=False):

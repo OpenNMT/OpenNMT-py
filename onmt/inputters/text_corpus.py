@@ -40,7 +40,8 @@ class ParallelCorpus(object):
     """A parallel corpus file pair that can be loaded to iterate."""
 
     def __init__(self, name, src, tgt, align=None,
-                 n_src_feats=0, src_feats_defaults=None):
+                 n_src_feats=0, src_feats_defaults=None,
+                 n_tgt_feats=0, tgt_feats_defaults=None):
         """Initialize src & tgt side file path."""
         self.id = name
         self.src = src
@@ -48,6 +49,8 @@ class ParallelCorpus(object):
         self.align = align
         self.n_src_feats = n_src_feats
         self.src_feats_defaults = src_feats_defaults
+        self.n_tgt_feats = n_tgt_feats
+        self.tgt_feats_defaults = tgt_feats_defaults
 
     def load(self, offset=0, stride=1):
         """
@@ -68,6 +71,10 @@ class ParallelCorpus(object):
                         defaults=self.src_feats_defaults)
                     if tline is not None:
                         tline = tline.decode('utf-8')
+                        tline, tfeats = parse_features(
+                            tline,
+                            n_feats=self.n_tgt_feats,
+                            defaults=self.tgt_feats_defaults)
                     # 'src_original' and 'tgt_original' store the
                     # original line before tokenization. These
                     # fields are used later on in the feature
@@ -82,7 +89,9 @@ class ParallelCorpus(object):
                         example['align'] = align.decode('utf-8')
 
                     if sfeats is not None:
-                        example['src_feats'] = [f for f in sfeats]
+                        example['src_feats'] = sfeats
+                    if tline is not None and tfeats is not None:
+                        example['tgt_feats'] = tfeats
                     yield example
 
     def __str__(self):
@@ -90,7 +99,9 @@ class ParallelCorpus(object):
         return f'{cls_name}({self.id}, {self.src}, {self.tgt}, ' \
                f'align={self.align}, ' \
                f'n_src_feats={self.n_src_feats}, ' \
-               f'src_feats_defaults="{self.src_feats_defaults}")'
+               f'src_feats_defaults="{self.src_feats_defaults}", ' \
+               f'n_tgt_feats={self.n_tgt_feats}, ' \
+               f'tgt_feats_defaults="{self.tgt_feats_defaults}")'
 
 
 def get_corpora(opts, task=CorpusTask.TRAIN):
@@ -104,7 +115,9 @@ def get_corpora(opts, task=CorpusTask.TRAIN):
                     corpus_dict["path_tgt"],
                     corpus_dict["path_align"],
                     n_src_feats=opts.n_src_feats,
-                    src_feats_defaults=opts.src_feats_defaults)
+                    src_feats_defaults=opts.src_feats_defaults,
+                    n_tgt_feats=opts.n_tgt_feats,
+                    tgt_feats_defaults=opts.tgt_feats_defaults)
     elif task == CorpusTask.VALID:
         if CorpusName.VALID in opts.data.keys():
             corpora_dict[CorpusName.VALID] = ParallelCorpus(
@@ -113,7 +126,9 @@ def get_corpora(opts, task=CorpusTask.TRAIN):
                 opts.data[CorpusName.VALID]["path_tgt"],
                 opts.data[CorpusName.VALID]["path_align"],
                 n_src_feats=opts.n_src_feats,
-                src_feats_defaults=opts.src_feats_defaults)
+                src_feats_defaults=opts.src_feats_defaults,
+                n_tgt_feats=opts.n_tgt_feats,
+                tgt_feats_defaults=opts.tgt_feats_defaults)
         else:
             return None
     else:
@@ -122,7 +137,9 @@ def get_corpora(opts, task=CorpusTask.TRAIN):
                 opts.src,
                 opts.tgt,
                 n_src_feats=opts.n_src_feats,
-                src_feats_defaults=opts.src_feats_defaults)
+                src_feats_defaults=opts.src_feats_defaults,
+                n_tgt_feats=opts.n_tgt_feats,
+                tgt_feats_defaults=opts.tgt_feats_defaults)
     return corpora_dict
 
 

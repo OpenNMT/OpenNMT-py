@@ -129,7 +129,8 @@ class Inference(object):
         logger=None,
         seed=-1,
         with_score=False,
-        decoder_start_token=DefaultTokens.BOS
+        decoder_start_token=DefaultTokens.BOS,
+        n_tgt_feats=0
     ):
         self.model = model
         self.vocabs = vocabs
@@ -208,6 +209,7 @@ class Inference(object):
 
         set_random_seed(seed, self._use_cuda)
         self.with_score = with_score
+        self.n_tgt_feats = n_tgt_feats
 
     @classmethod
     def from_opt(
@@ -273,7 +275,8 @@ class Inference(object):
             logger=logger,
             seed=opt.seed,
             with_score=opt.with_score,
-            decoder_start_token=opt.decoder_start_token
+            decoder_start_token=opt.decoder_start_token,
+            n_tgt_feats=opt.n_tgt_feats
         )
 
     def _log(self, msg):
@@ -551,17 +554,21 @@ class Inference(object):
             else:
                 attn = None
 
-            scores = self.model.generator(dec_out.squeeze(1))
+            scores, feats_scores = self.model.generator(dec_out.squeeze(1))
             log_probs = F.log_softmax(scores.to(torch.float32), dim=-1)
+            feats_log_probs = [F.log_softmax(s.to(torch.float32), dim=-1)
+                               for s in feats_scores]
             # returns [(batch_size x beam_size) , vocab ] when 1 step
             # or [batch_size, tgt_len, vocab ] when full sentence
         else:
             attn = dec_attn["copy"]
-            scores = self.model.generator(
+            scores, feats_scores = self.model.generator(
                 dec_out.view(-1, dec_out.size(2)),
                 attn.view(-1, attn.size(2)),
                 src_map,
             )
+            # TODO: allow target feats inference with the copy mechanism
+            assert not feats_scores
             # here we have scores [tgt_lenxbatch, vocab] or [beamxbatch, vocab]
             if batch_offset is None:
                 scores = scores.view(-1, len(batch['srclen']),
@@ -581,7 +588,7 @@ class Inference(object):
             log_probs = scores.squeeze(0).log()
             # returns [(batch_size x beam_size) , vocab ] when 1 step
             # or [batch_size, tgt_len, vocab ] when full sentence
-        return log_probs, attn
+        return log_probs, attn, feats_log_probs
 
     def translate_batch(self, batch, attn_debug):
         """Translate a batch of sentences."""
@@ -603,16 +610,14 @@ class Inference(object):
         decode_strategy,
     ):
         results = {
-            "predictions": None,
-            "scores": None,
-            "attention": None,
+            "predictions": decode_strategy.predictions,
+            "scores": decode_strategy.scores,
+            "attention": decode_strategy.attention,
+            "features": decode_strategy.features,
             "batch": batch,
             "gold_score": gold_score,
         }
 
-        results["scores"] = decode_strategy.scores
-        results["predictions"] = decode_strategy.predictions
-        results["attention"] = decode_strategy.attention
         if self.report_align:
             results["alignment"] = self._align_forward(
                 batch, decode_strategy.predictions
@@ -726,6 +731,7 @@ class Translator(Inference):
                     stepwise_penalty=self.stepwise_penalty,
                     ratio=self.ratio,
                     ban_unk_token=self.ban_unk_token,
+                    n_tgt_feats=self.n_tgt_feats,
                 )
             return self._translate_batch_with_strategy(
                 batch, decode_strategy
@@ -803,11 +809,9 @@ class Translator(Inference):
 
         # (3) Begin decoding step by step:
         for step in range(decode_strategy.max_length):
-            # decoder_input = decode_strategy.current_predictions.view(1, -1,
-            #                                                          1)
             decoder_input = decode_strategy.current_predictions.view(-1, 1, 1)
 
-            log_probs, attn = self._decode_and_generate(
+            log_probs, attn, feats_log_probs = self._decode_and_generate(
                 decoder_input,
                 enc_out,
                 batch,
@@ -817,7 +821,7 @@ class Translator(Inference):
                 batch_offset=decode_strategy.batch_offset,
             )
 
-            decode_strategy.advance(log_probs, attn)
+            decode_strategy.advance(log_probs, attn, feats_log_probs)
             any_finished = decode_strategy.is_finished.any()
             if any_finished:
                 decode_strategy.update_finished()
@@ -861,7 +865,7 @@ class Translator(Inference):
         tgt = batch['tgt']
         tgt_in = tgt[:, :-1, :]
 
-        log_probs, attn = self._decode_and_generate(
+        log_probs, attn, feats_log_probs = self._decode_and_generate(
             tgt_in,
             enc_out,
             batch,
