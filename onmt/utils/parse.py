@@ -77,11 +77,11 @@ class DataOptsCheckerMixin(object):
                 corpus['weight'] = 1
 
             # Check features
-            if opt.n_src_feats > 0:
+            if opt.n_src_feats > 0 or opt.n_tgt_feats > 0:
                 if 'inferfeats' not in corpus["transforms"]:
                     raise ValueError(
                         "'inferfeats' transform is required "
-                        "when setting source features")
+                        "when setting source or target features")
 
         logger.info(f"Parsed {len(corpora)} corpora from -data.")
         opt.data = corpora

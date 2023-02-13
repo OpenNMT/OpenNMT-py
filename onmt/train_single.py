@@ -158,6 +158,9 @@ def main(opt, device_id):
     if "src_feats" in vocabs:
         for i, feat_vocab in enumerate(vocabs["src_feats"]):
             logger.info(f'* src_feat {i} vocab size = {len(feat_vocab)}')
+    if "tgt_feats" in vocabs:
+        for i, feat_vocab in enumerate(vocabs["tgt_feats"]):
+            logger.info(f'* tgt_feat {i} vocab size = {len(feat_vocab)}')
 
     # Build optimizer.
     optim = Optimizer.from_opt(model, opt, checkpoint=checkpoint)

@@ -43,19 +43,28 @@ class TranslationBuilder(object):
                 break
         return tokens
 
-    def _build_target_tokens(self, src, src_raw, pred, attn):
+    def _build_target_tokens(self, src, src_raw, pred, attn, feats):
         tokens = []
 
-        for tok in pred:
+        if feats is not None:
+            pred_iter = zip(pred, *feats)
+        else:
+            pred_iter = [(item,) for item in pred]
+
+        for tok, *tok_feats in pred_iter:
             if tok < len(self.vocabs['tgt']):
-                tokens.append(self.vocabs['tgt'].lookup_index(tok))
+                token = self.vocabs['tgt'].lookup_index(tok)
             else:
                 vl = len(self.vocabs['tgt'])
-                tokens.append(self.vocabs['src'].lookup_index(tok - vl))
-            if tokens[-1] == DefaultTokens.EOS:
-                tokens = tokens[:-1]
+                token = self.vocabs['src'].lookup_index(tok - vl)
+            if token == DefaultTokens.EOS:
                 break
+            if len(tok_feats) > 0:
+                for feat, fv in zip(tok_feats, self.vocabs['tgt_feats']):
+                    token += "￨" + fv.lookup_index(feat)
+            tokens.append(token)
         if self.replace_unk and attn is not None and src is not None:
+            assert False, "TODO"
             for i in range(len(tokens)):
                 if tokens[i] == DefaultTokens.UNK:
                     _, max_index = attn[i][:len(src_raw)].max(0)
@@ -72,8 +81,9 @@ class TranslationBuilder(object):
                len(translation_batch["predictions"]))
         batch_size = len(batch['srclen'])
 
-        preds, pred_score, attn, align, gold_score, indices = list(zip(
+        preds, feats, pred_score, attn, align, gold_score, indices = list(zip(
             *sorted(zip(translation_batch["predictions"],
+                        translation_batch["features"],
                         translation_batch["scores"],
                         translation_batch["attention"],
                         translation_batch["alignment"],
@@ -104,7 +114,8 @@ class TranslationBuilder(object):
                 src[b, :] if src is not None else None,
                 src_raw,
                 preds[b][n],
-                align[b][n] if align[b] is not None else attn[b][n])
+                align[b][n] if align[b] is not None else attn[b][n],
+                feats[b][n] if len(feats[0]) > 0 else None)
                 for n in range(self.n_best)]
             gold_sent = None
             if tgt is not None:
