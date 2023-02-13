@@ -233,10 +233,20 @@ class BPETransform(TokenizerTransform):
         """Initialize necessary options for subword_nmt."""
         super().__init__(opts)
 
+    @classmethod
+    def add_options(cls, parser):
+        """Available options relate to Subword."""
+        super().add_options(parser)
+        group = parser.add_argument_group('Transform/Subword/BPE')
+        group.add('-glossaries', '--glossaries',
+                  default=[], nargs="+",
+                  help="List of subword regexp which shouldn't be splitted.")
+
     def _parse_opts(self):
         super()._parse_opts()
         self.dropout = {'src': self.src_subword_alpha,
                         'tgt': self.tgt_subword_alpha}
+        self.glossaries = self.opts.glossaries
 
     def _set_seed(self, seed):
         """set seed to ensure reproducibility."""
@@ -257,7 +267,7 @@ class BPETransform(TokenizerTransform):
                 tgt_vocabulary = read_vocabulary(_tv, self.tgt_vocab_threshold)
         # Load Subword Model
         with open(self.src_subword_model, encoding='utf-8') as src_codes:
-            load_src_model = BPE(codes=src_codes, vocab=src_vocabulary)
+            load_src_model = BPE(codes=src_codes, vocab=src_vocabulary, glossaries=self.glossaries)
         if self.share_vocab and (src_vocabulary == tgt_vocabulary):
             self.load_models = {
                 'src': load_src_model,
@@ -265,7 +275,7 @@ class BPETransform(TokenizerTransform):
             }
         else:
             with open(self.tgt_subword_model, encoding='utf-8') as tgt_codes:
-                load_tgt_model = BPE(codes=tgt_codes, vocab=tgt_vocabulary)
+                load_tgt_model = BPE(codes=tgt_codes, vocab=tgt_vocabulary, glossaries=self.glossaries)
             self.load_models = {
                 'src': load_src_model,
                 'tgt': load_tgt_model
