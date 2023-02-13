@@ -423,6 +423,9 @@ Class: `onmt.transforms.tokenize.BPETransform`
 
 The `src_subword_model` and `tgt_subword_model` should be valid BPE models.
 
+Additional options are available:
+- `glossaries`: list of subwords and/or regular expressions that should always be passed to the output without subword segmentation
+
 ### BART-style noise
 
 BART-style noise is composed of several parts, as described in [BART: Denoising Sequence-to-Sequence Pre-training for Natural Language Generation, Translation, and Comprehension](https://arxiv.org/abs/1910.13461).
