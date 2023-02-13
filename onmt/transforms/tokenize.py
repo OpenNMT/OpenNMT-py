@@ -240,7 +240,9 @@ class BPETransform(TokenizerTransform):
         group = parser.add_argument_group('Transform/Subword/BPE')
         group.add('-glossaries', '--glossaries',
                   default=[], nargs="+",
-                  help="list of subwords and/or regular expressions that should always be passed to the output without subword segmentation.")
+                  help="list of subwords and/or regular expressions that "
+                  "should always be passed to the output without subword "
+                  "segmentation.")
 
     def _parse_opts(self):
         super()._parse_opts()
@@ -267,7 +269,8 @@ class BPETransform(TokenizerTransform):
                 tgt_vocabulary = read_vocabulary(_tv, self.tgt_vocab_threshold)
         # Load Subword Model
         with open(self.src_subword_model, encoding='utf-8') as src_codes:
-            load_src_model = BPE(codes=src_codes, vocab=src_vocabulary, glossaries=self.glossaries)
+            load_src_model = BPE(
+                codes=src_codes, vocab=src_vocabulary, glossaries=self.glossaries)
         if self.share_vocab and (src_vocabulary == tgt_vocabulary):
             self.load_models = {
                 'src': load_src_model,
@@ -275,7 +278,8 @@ class BPETransform(TokenizerTransform):
             }
         else:
             with open(self.tgt_subword_model, encoding='utf-8') as tgt_codes:
-                load_tgt_model = BPE(codes=tgt_codes, vocab=tgt_vocabulary, glossaries=self.glossaries)
+                load_tgt_model = BPE(
+                    codes=tgt_codes, vocab=tgt_vocabulary, glossaries=self.glossaries)
             self.load_models = {
                 'src': load_src_model,
                 'tgt': load_tgt_model
