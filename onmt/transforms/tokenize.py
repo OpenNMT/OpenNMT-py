@@ -240,7 +240,7 @@ class BPETransform(TokenizerTransform):
         group = parser.add_argument_group('Transform/Subword/BPE')
         group.add('-glossaries', '--glossaries',
                   default=[], nargs="+",
-                  help="List of subword regexp which shouldn't be splitted.")
+                  help="list of subwords and/or regular expressions that should always be passed to the output without subword segmentation.")
 
     def _parse_opts(self):
         super()._parse_opts()
