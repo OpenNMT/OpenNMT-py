@@ -65,9 +65,9 @@ def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
 
             if 'feats' in maybe_example['src']:
                 src_feats_lines = maybe_example['src']['feats']
-                for i in range(opts.n_src_feats):
-                    sub_counter_src_feats[i].update(
-                        src_feats_lines[i].split(' '))
+                for k in range(opts.n_src_feats):
+                    sub_counter_src_feats[k].update(
+                        src_feats_lines[k].split(' '))
             else:
                 src_feats_lines = []
 
