@@ -261,4 +261,3 @@ class InlineTagsTransform(Transform):
         example['tgt'] = src_tgt_pair[1]
 
         return example
-
