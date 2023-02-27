@@ -101,6 +101,7 @@ class GreedySearch(DecodeStrategy):
         bos (int): See base.
         eos (int): See base.
         unk (int): See base.
+        start (int): See base.
         batch_size (int): See base.
         global_scorer (onmt.translate.GNMTGlobalScorer): Scorer instance.
         min_length (int): See base.
@@ -119,12 +120,12 @@ class GreedySearch(DecodeStrategy):
         beam_size (int): Number of beams to use.
     """
 
-    def __init__(self, pad, bos, eos, unk, batch_size, global_scorer,
+    def __init__(self, pad, bos, eos, unk, start, batch_size, global_scorer,
                  min_length, block_ngram_repeat, exclusion_tokens,
                  return_attention, max_length, sampling_temp, keep_topk,
                  keep_topp, beam_size, ban_unk_token):
         super(GreedySearch, self).__init__(
-            pad, bos, eos, unk, batch_size, beam_size, global_scorer,
+            pad, bos, eos, unk, start, batch_size, beam_size, global_scorer,
             min_length, block_ngram_repeat, exclusion_tokens,
             return_attention, max_length, ban_unk_token)
         self.sampling_temp = sampling_temp

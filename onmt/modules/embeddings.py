@@ -23,16 +23,29 @@ class PositionalEncoding(nn.Module):
        dim (int): embedding size
     """
 
-    def __init__(self, dim, max_len=5000):
+    def __init__(self, dim, enc_type, max_len=5000):
         if dim % 2 != 0:
             raise ValueError("Cannot use sin/cos positional encoding with "
                              "odd dim (got dim={:d})".format(dim))
-        pe = torch.zeros(max_len, dim)
-        position = torch.arange(0, max_len).unsqueeze(1)
-        div_term = torch.exp((torch.arange(0, dim, 2, dtype=torch.float) *
-                             -(math.log(10000.0) / dim)))
-        pe[:, 0::2] = torch.sin(position.float() * div_term)
-        pe[:, 1::2] = torch.cos(position.float() * div_term)
+        if enc_type == 'SinusoidalInterleaved':
+            pe = torch.zeros(max_len, dim)
+            position = torch.arange(0, max_len).unsqueeze(1)
+            div_term = torch.exp((torch.arange(0, dim, 2, dtype=torch.float) *
+                                 -(math.log(10000.0) / dim)))
+            pe[:, 0::2] = torch.sin(position.float() * div_term)
+            pe[:, 1::2] = torch.cos(position.float() * div_term)
+        elif enc_type == 'SinusoidalConcat':
+            half_dim = dim // 2
+            pe = math.log(10000) / (half_dim - 1)
+            pe = torch.exp(torch.arange(half_dim, dtype=torch.float) * -pe)
+            pe = torch.arange(max_len,
+                              dtype=torch.float).unsqueeze(1) * pe.unsqueeze(0)
+            pe = torch.cat([torch.sin(pe),
+                            torch.cos(pe)], dim=1).view(max_len, -1)
+        else:
+            raise ValueError(
+                "Choice of Position encoding is SinusoidalInterleaved or"
+                " SinusoidalConcat.")
         pe = pe.unsqueeze(1)  # we keep pe (len x batch x dim) for back comp
         super(PositionalEncoding, self).__init__()
         self.register_buffer('pe', pe)
@@ -106,6 +119,7 @@ class Embeddings(nn.Module):
                  word_vocab_size,
                  word_padding_idx,
                  position_encoding=False,
+                 position_encoding_type='SinusoidalInterleaved',
                  feat_merge="concat",
                  feat_vec_exponent=0.7,
                  feat_vec_size=-1,
@@ -173,7 +187,8 @@ class Embeddings(nn.Module):
         self.dropout = nn.Dropout(p=dropout)
 
         if self.position_encoding:
-            pe = PositionalEncoding(self.embedding_size)
+            pe = PositionalEncoding(self.embedding_size,
+                                    position_encoding_type)
             self.make_embedding.add_module('pe', pe)
 
         if freeze_word_vecs:

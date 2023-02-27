@@ -6,6 +6,54 @@ from onmt.utils.logging import logger
 from collections import Counter
 
 
+def parse_features(line, n_feats=0, defaults=None):
+    """
+    Parses text lines with features appended to each token.
+    Ex.: This￨A￨B is￨A￨A a￨C￨A test￨A￨B
+    """
+    text, feats = [], [[] for _ in range(n_feats)]
+    check, count = 0, 0
+    for token in line.split(' '):
+        tok, *fts = token.strip().split("￨")
+        check += len(fts)
+        count += 1
+        if not fts and defaults is not None:
+            if isinstance(defaults, str):
+                defaults = defaults.split("￨")
+            if n_feats > 0:
+                assert len(defaults) == n_feats  # Security check
+                fts = defaults
+        assert len(fts) == n_feats, \
+            f"The number of fetures does not match the " \
+            f"expected number of features. Found {len(fts)} " \
+            f"features in the data but {n_feats} were expected."
+        text.append(tok)
+        for i in range(n_feats):
+            feats[i].append(fts[i])
+    # Check if all tokens have features or none at all
+    assert check == 0 or check == count*n_feats, \
+        "Some tokens are missing features. Please check your data."
+    feats = [" ".join(x) for x in feats] if n_feats > 0 else None
+    return " ".join(text), feats
+
+
+def append_features_to_text(text, features):
+    """
+    It appends features to subwords when dumping to file
+    """
+    text_tok = text.split(' ')
+    feats_tok = [x.split(' ') for x in features]
+
+    pretty_toks = []
+    for tok, *feats in zip(text_tok, *feats_tok):
+        feats = '￨'.join(feats)
+        if feats:
+            pretty_toks.append(f"{tok}￨{feats}")
+        else:
+            pretty_toks.append(tok)
+    return " ".join(pretty_toks)
+
+
 def text_sort_key(ex):
     """Sort using the number of tokens in the sequence."""
     if ex['tgt']:
@@ -16,10 +64,10 @@ def text_sort_key(ex):
 def clean_example(maybe_example):
     maybe_example['src'] = {"src": ' '.join(maybe_example['src'])}
     # Make features part of src like
-    # {'src': {'src': ..., 'feat1': ...., 'feat2': ....}}
+    # {'src': {'src': ..., 'feats': [...., ....]}}
     if 'src_feats' in maybe_example:
-        for feat_name, feat_value in maybe_example['src_feats'].items():
-            maybe_example['src'][feat_name] = ' '.join(feat_value)
+        maybe_example['src']['feats'] = \
+            [' '.join(x) for x in maybe_example["src_feats"]]
         del maybe_example['src_feats']
     if maybe_example['tgt'] is not None:
         maybe_example['tgt'] = {'tgt': ' '.join(maybe_example['tgt'])}
@@ -40,7 +88,7 @@ def process(task, bucket, **kwargs):
             example = clean_example(example)
             processed_bucket[i] = example
         # at this point an example looks like:
-        # {'src': {'src': ..., 'feat1': ...., 'feat2': ....},
+        # {'src': {'src': ..., 'feats': [....]},
         #  'tgt': {'tgt': ...},
         #  'src_original': ['tok1', ...'tokn'],
         #  'tgt_original': ['tok1', ...'tokm'],
@@ -81,12 +129,12 @@ def numericalize(vocabs, example):
                 f"Something went wrong with task {vocabs['data_task']}"
         )
 
-    if 'src_feats' in vocabs.keys():
-        for featname in vocabs['src_feats'].keys():
-            src_feat = example['src'][featname].split()
-            vf = vocabs['src_feats'][featname]
-            # we'll need to change this if we introduce tgt feat
-            numeric['src'][featname] = vf(src_feat)
+    if "feats" in example["src"]:
+        numeric_feats = []
+        for fv, feat in zip(vocabs["src_feats"],
+                            example["src"]["feats"]):
+            numeric_feats.append(fv(feat.split()))
+        numeric['src']['feats'] = numeric_feats
 
     return numeric
 
@@ -112,7 +160,7 @@ def tensorify(vocabs, minibatch):
     """
     This function transforms a batch of example in tensors
     Each example looks like
-    {'src': {'src': ..., 'feat1': ..., 'feat2': ..., 'src_ids': ...},
+    {'src': {'src': ..., 'feats': [...], 'src_ids': ...},
      'tgt': {'tgt': ..., 'tgt_ids': ...},
      'src_original': ['tok1', ...'tokn'],
      'tgt_original': ['tok1', ...'tokm'],
@@ -120,7 +168,7 @@ def tensorify(vocabs, minibatch):
      'align': ...,
     }
     Returns  Dict of batch Tensors
-        {'src': [seqlen, batchsize, n_feats],
+        {'src': [seqlen, batchsize, n_feats+1],
          'tgt' : [seqlen, batchsize, n_feats=1],
          'indices' : [batchsize],
          'srclen': [batchsize],
@@ -133,20 +181,19 @@ def tensorify(vocabs, minibatch):
     padidx = vocabs['src'][DefaultTokens.PAD]
     tbatchsrc = pad_sequence(tbatchsrc, batch_first=True,
                              padding_value=padidx)
-    if len(minibatch[0]['src'].keys()) > 2:
+    if "feats" in minibatch[0]['src']:
         tbatchfs = [tbatchsrc]
-        for feat in minibatch[0]['src'].keys():
-            if feat not in ['src', 'src_ids']:
-                tbatchfeat = [torch.LongTensor(ex['src'][feat])
-                              for ex in minibatch]
-                padidx = vocabs['src_feats'][feat][DefaultTokens.PAD]
-                tbatchfeat = pad_sequence(tbatchfeat, batch_first=True,
-                                          padding_value=padidx)
-                tbatchfs.append(tbatchfeat)
+        for feat_id in range(len(minibatch[0]['src']["feats"])):
+            tbatchfeat = [torch.LongTensor(ex['src']['feats'][feat_id])
+                          for ex in minibatch]
+            padidx = vocabs['src_feats'][feat_id][DefaultTokens.PAD]
+            tbatchfeat = pad_sequence(tbatchfeat, batch_first=True,
+                                      padding_value=padidx)
+            tbatchfs.append(tbatchfeat)
         tbatchsrc = torch.stack(tbatchfs, dim=2)
     else:
+        # Need to add features in last dimensions
         tbatchsrc = tbatchsrc[:, :, None]
-    # Need to add features in last dimensions
 
     tensor_batch['src'] = tbatchsrc
     tensor_batch['indices'] = torch.LongTensor([ex['indices']
@@ -207,20 +254,11 @@ def textbatch_to_tensor(vocabs, batch, is_train=False):
     numeric = []
     infer_iter = []
     for i, ex in enumerate(batch):
-        if isinstance(ex, bytes):
-            ex = ex.decode("utf-8")
-        if is_train:
-            toks = ex
-        else:
-            toks = ex.strip("\n").split()
-        idxs = vocabs['src'](toks)
-        # Need to add features also in 'src'
-        numeric.append({'src': {'src': toks,
-                        'src_ids': idxs},
-                        'srclen': len(toks),
-                        'tgt': None,
-                        'indices': i,
-                        'align': None})
+        # Keep it consistent with dynamic data
+        ex["srclen"] = len(ex["src"]["src"].split())
+        ex["indices"] = i
+        ex["align"] = None
+        numeric.append(numericalize(vocabs, ex))
     numeric.sort(key=text_sort_key, reverse=True)
     infer_iter = [tensorify(vocabs, numeric)]
     return infer_iter

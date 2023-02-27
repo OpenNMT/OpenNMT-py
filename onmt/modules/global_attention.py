@@ -109,26 +109,24 @@ class GlobalAttention(nn.Module):
 
         if self.attn_type in ["general", "dot"]:
             if self.attn_type == "general":
-                h_t_ = h_t.view(tgt_batch * tgt_len, tgt_dim)
-                h_t_ = self.linear_in(h_t_)
-                h_t = h_t_.view(tgt_batch, tgt_len, tgt_dim)
+                h_t = self.linear_in(h_t)
             h_s_ = h_s.transpose(1, 2)
             # (batch, t_len, d) x (batch, d, s_len) --> (batch, t_len, s_len)
             return torch.bmm(h_t, h_s_)
         else:
             dim = self.dim
-            wq = self.linear_query(h_t.view(-1, dim))
+            wq = self.linear_query(h_t)
             wq = wq.view(tgt_batch, tgt_len, 1, dim)
             wq = wq.expand(tgt_batch, tgt_len, src_len, dim)
 
-            uh = self.linear_context(h_s.contiguous().view(-1, dim))
+            uh = self.linear_context(h_s.contiguous())
             uh = uh.view(src_batch, 1, src_len, dim)
             uh = uh.expand(src_batch, tgt_len, src_len, dim)
 
             # (batch, t_len, s_len, d)
             wquh = torch.tanh(wq + uh)
 
-            return self.v(wquh.view(-1, dim)).view(tgt_batch, tgt_len, src_len)
+            return self.v(wquh).view(tgt_batch, tgt_len, src_len)
 
     def forward(self, src, enc_out, src_len=None, coverage=None):
         """

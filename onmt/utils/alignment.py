@@ -110,8 +110,8 @@ def to_word_align(src, tgt, subword_align, m_src='joiner', m_tgt='joiner'):
     src_map = (subword_map_by_spacer(src) if m_src == 'spacer'
                else subword_map_by_joiner(src))
 
-    tgt_map = (subword_map_by_spacer(src) if m_tgt == 'spacer'
-               else subword_map_by_joiner(src))
+    tgt_map = (subword_map_by_spacer(tgt) if m_tgt == 'spacer'
+               else subword_map_by_joiner(tgt))
 
     word_align = list({"{}-{}".format(src_map[a], tgt_map[b])
                        for a, b in subword_align})

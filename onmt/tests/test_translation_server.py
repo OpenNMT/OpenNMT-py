@@ -51,6 +51,37 @@ class TestServerModel(unittest.TestCase):
         with self.assertRaises(ValueError):
             sm.detokenize("hello world")
 
+    def test_source_features(self):
+        model_id = 0
+        opt = {"models": ["test_model.pt"]}
+        model_root = TEST_DIR
+        sm = ServerModel(opt, model_id, model_root=model_root, load=True,
+                         features_opt={
+                            "n_src_feats": 1,
+                            "src_feats_defaults": "0",
+                            "reversible_tokenization": "joiner"})
+        feats = sm.maybe_transform_feats("hello world.", "hello world ￭.",
+                                         ["0 1"])
+        self.assertEqual(feats, ["0 1 1"])
+        preprocessed = sm.maybe_preprocess({"src": "hello￨0 world￨1"})
+        self.assertEqual(preprocessed["seg"], ["hello world"])
+        self.assertEqual(preprocessed["src_feats"], [["0 1"]])
+
+    def test_passing_source_features_without_proper_configuration(self):
+        model_id = 0
+        opt = {"models": ["test_model.pt"]}
+        model_root = TEST_DIR
+        sm = ServerModel(opt, model_id, model_root=model_root, load=True)
+        with self.assertRaises(AssertionError):
+            sm.maybe_preprocess({"src": "hello￨0 world￨1"})
+        sm = ServerModel(opt, model_id, model_root=model_root, load=True,
+                         features_opt={
+                            "n_src_feats": 2,
+                            "src_feats_defaults": "0￨0",
+                            "reversible_tokenization": "joiner"})
+        with self.assertRaises(AssertionError):
+            sm.maybe_preprocess({"src": "hello￨0 world￨1"})
+
     if torch.cuda.is_available():
         def test_moving_to_gpu_and_back(self):
             torch.cuda.set_device(torch.device("cuda", 0))

@@ -78,7 +78,6 @@ PYTHONPATH=${PROJECT_ROOT}:${PYTHONPATH} ${PYTHON} onmt/bin/build_vocab.py \
             -save_data $TMP_OUT_DIR/onmt_feat \
             -src_vocab $TMP_OUT_DIR/onmt_feat.vocab.src \
             -tgt_vocab $TMP_OUT_DIR/onmt_feat.vocab.tgt \
-            -src_feats_vocab "{\"feat0\": \"${TMP_OUT_DIR}/onmt_feat.vocab.feat0\"}" \
             -n_sample -1  -overwrite>> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
@@ -349,7 +348,6 @@ ${PYTHON} onmt/bin/train.py \
             -config ${DATA_DIR}/features_data.yaml \
             -src_vocab $TMP_OUT_DIR/onmt_feat.vocab.src \
             -tgt_vocab $TMP_OUT_DIR/onmt_feat.vocab.tgt \
-            -src_feats_vocab "{\"feat0\": \"${TMP_OUT_DIR}/onmt_feat.vocab.feat0\"}" \
             -src_vocab_size 1000 -tgt_vocab_size 1000 \
             -hidden_size 2 -batch_size 10 \
             -word_vec_size 5 -hidden_size 10 \
@@ -360,6 +358,23 @@ ${PYTHON} onmt/bin/train.py \
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 
+
+echo -n "  [+] Testing training with features and dynamic scoring..."
+${PYTHON} onmt/bin/train.py \
+            -config ${DATA_DIR}/features_data.yaml \
+            -src_vocab $TMP_OUT_DIR/onmt_feat.vocab.src \
+            -tgt_vocab $TMP_OUT_DIR/onmt_feat.vocab.tgt \
+            -src_vocab_size 1000 -tgt_vocab_size 1000 \
+            -hidden_size 2 -batch_size 10 \
+            -word_vec_size 5 -hidden_size 10 \
+            -num_workers 0 -bucket_size 1024 \
+            -report_every 5 -train_steps 10 \
+            -train_metrics "BLEU" "TER" \
+            -valid_metrics "BLEU" "TER" \
+            -save_model $TMP_OUT_DIR/onmt.features.model \
+            -save_checkpoint_steps 10 >> ${LOG_FILE} 2>&1
+[ "$?" -eq 0 ] || error_exit
+echo "Succeeded" | tee -a ${LOG_FILE}
 rm -f $TMP_OUT_DIR/onmt.vocab*
 rm -f $TMP_OUT_DIR/onmt.model*
 rm -f $TMP_OUT_DIR/onmt_feat.vocab.*
@@ -379,9 +394,8 @@ rm $TMP_OUT_DIR/src-test.txt
 echo -n "  [+] Testing NMT translation with features..."
 ${PYTHON} translate.py \
             -model ${TMP_OUT_DIR}/onmt.features.model_step_10.pt \
-            -src ${DATA_DIR}/data_features/src-test.txt \
-            -src_feats "{'feat0': '${DATA_DIR}/data_features/src-test.feat0'}" \
-            -verbose >> ${LOG_FILE} 2>&1
+            -src ${DATA_DIR}/data_features/src-test-with-feats.txt \
+            -n_src_feats 1 -verbose >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 rm -f $TMP_OUT_DIR/onmt.features.model*
@@ -433,7 +447,7 @@ echo -n "  [+] Testing LM generation w/ Beam search..."
 echo "  [+] Testing LM generation w/ Beam search..." | tee -a ${LOG_FILE}
 ${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
             -src ${DATA_DIR}/data_lm/src-gen.txt   \
-            -verbose -batch_size 10     \
+            -verbose -batch_size 1     \
             -beam_size 10 \
             -ban_unk_token \
             -length_penalty none \
@@ -446,7 +460,7 @@ rm $TMP_OUT_DIR/gen_beam
 echo -n "  [+] Testing LM generation w/ Random Sampling..."
 ${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
             -src ${DATA_DIR}/data_lm/src-gen.txt   \
-            -verbose -batch_size 10     \
+            -verbose -batch_size 1     \
             -beam_size 1                \
             -seed 1                     \
             -random_sampling_topk -1    \
@@ -462,7 +476,7 @@ rm $TMP_OUT_DIR/gen_sampling
 echo -n "  [+] Testing LM generation w/ Random Top-k/Nucleus Sampling..."
 ${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
             -src ${DATA_DIR}/data_lm/src-gen.txt   \
-            -verbose -batch_size 10     \
+            -verbose -batch_size 1     \
             -beam_size 1                \
             -seed 3                     \
             -random_sampling_topk -1    \
@@ -479,7 +493,7 @@ rm $TMP_OUT_DIR/gen_sampling
 echo -n "  [+] Testing LM generation w/ Random Top-k/Nucleus Sampling and multi beams..."
 ${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
             -src ${DATA_DIR}/data_lm/src-gen.txt   \
-            -verbose -batch_size 10     \
+            -verbose -batch_size 1     \
             -beam_size 10                \
             -seed 2                     \
             -random_sampling_topk 50    \

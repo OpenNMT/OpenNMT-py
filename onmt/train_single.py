@@ -23,6 +23,20 @@ from onmt.modules.embeddings import prepare_pretrained_embeddings
 def prepare_transforms_vocabs(opt):
     """Prepare or dump transforms before training."""
     transforms_cls = get_transforms_cls(opt._all_transform)
+
+    # if transform + options set in 'valid' we need to copy in main
+    # transform / options for scoring considered as inference
+    validset_transforms = opt.data.get("valid", {}).get("transforms", None)
+    if validset_transforms:
+        opt.transforms = validset_transforms
+        if opt.data.get("valid", {}).get("tgt_prefix", None):
+            opt.tgt_prefix = opt.data.get("valid", {}).get("tgt_prefix", None)
+        if opt.data.get("valid", {}).get("src_prefix", None):
+            opt.src_prefix = opt.data.get("valid", {}).get("src_prefix", None)
+        if opt.data.get("valid", {}).get("tgt_suffix", None):
+            opt.tgt_suffix = opt.data.get("valid", {}).get("tgt_suffix", None)
+        if opt.data.get("valid", {}).get("src_suffix", None):
+            opt.src_suffix = opt.data.get("valid", {}).get("src_suffix", None)
     specials = get_specials(opt, transforms_cls)
 
     vocabs = build_vocab(opt, specials)
@@ -67,6 +81,7 @@ def _init_train(opt):
             if len(old_transf) != 0:
                 _msg += f" -{old_transf}."
             logger.warning(_msg)
+            vocabs, transforms_cls = prepare_transforms_vocabs(opt)
         if opt.update_vocab:
             logger.info("Updating checkpoint vocabulary with new vocabulary")
             vocabs, transforms_cls = prepare_transforms_vocabs(opt)
@@ -86,19 +101,22 @@ def configure_process(opt, device_id):
 def _get_model_opts(opt, checkpoint=None):
     """Get `model_opt` to build model, may load from `checkpoint` if any."""
     if checkpoint is not None:
-        model_opt = ArgumentParser.ckpt_model_opts(checkpoint["opt"])
-        ArgumentParser.update_model_opts(model_opt)
-        ArgumentParser.validate_model_opts(model_opt)
-        if (opt.tensorboard_log_dir == model_opt.tensorboard_log_dir and
-                hasattr(model_opt, 'tensorboard_log_dir_dated')):
-            # ensure tensorboard output is written in the directory
-            # of previous checkpoints
-            opt.tensorboard_log_dir_dated = model_opt.tensorboard_log_dir_dated
-        # Override checkpoint's update_embeddings as it defaults to false
-        model_opt.update_vocab = opt.update_vocab
-        # Override checkpoint's freezing settings as it defaults to false
-        model_opt.freeze_encoder = opt.freeze_encoder
-        model_opt.freeze_decoder = opt.freeze_decoder
+        if opt.override_opts:
+            model_opt = opt
+        else:
+            model_opt = ArgumentParser.ckpt_model_opts(checkpoint["opt"])
+            ArgumentParser.update_model_opts(model_opt)
+            ArgumentParser.validate_model_opts(model_opt)
+            if (opt.tensorboard_log_dir == model_opt.tensorboard_log_dir and
+                    hasattr(model_opt, 'tensorboard_log_dir_dated')):
+                # ensure tensorboard output is written in the directory
+                # of previous checkpoints
+                opt.tensorboard_log_dir_dated = model_opt.tensorboard_log_dir_dated  # noqa: E501
+            # Override checkpoint's update_embeddings as it defaults to false
+            model_opt.update_vocab = opt.update_vocab
+            # Override checkpoint's freezing settings as it defaults to false
+            model_opt.freeze_encoder = opt.freeze_encoder
+            model_opt.freeze_decoder = opt.freeze_decoder
     else:
         model_opt = opt
     return model_opt
@@ -106,9 +124,6 @@ def _get_model_opts(opt, checkpoint=None):
 
 def _build_valid_iter(opt, transforms_cls, vocabs):
     """Build iterator used for validation."""
-    validset_transforms = opt.data.get("valid", {}).get("transforms", None)
-    if validset_transforms:
-        opt.transforms = validset_transforms
     valid_iter = build_dynamic_dataset_iter(
         opt, transforms_cls, vocabs, task=CorpusTask.VALID,
         copy=opt.copy_attn)
@@ -140,6 +155,10 @@ def main(opt, device_id):
     model.count_parameters(log=logger.info)
     logger.info(' * src vocab size = %d' % len(vocabs['src']))
     logger.info(' * tgt vocab size = %d' % len(vocabs['tgt']))
+    if "src_feats" in vocabs:
+        for i, feat_vocab in enumerate(vocabs["src_feats"]):
+            logger.info(f'* src_feat {i} vocab size = {len(feat_vocab)}')
+
     # Build optimizer.
     optim = Optimizer.from_opt(model, opt, checkpoint=checkpoint)
 
