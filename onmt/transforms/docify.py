@@ -1,6 +1,5 @@
 from onmt.transforms import register_transform
 from .transform import Transform
-import unicodedata
 import copy
 
 
@@ -50,10 +49,8 @@ class DocifyTransform(Transform):
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Convert source and target examples to uppercase."""
 
-        cur_len = max(len(self.doc['src'] + example['src']), 
+        cur_len = max(len(self.doc['src'] + example['src']),
                       len(self.doc['tgt'] + example['tgt']))
-        #print(cur_len)
-        #print(self.doc['src'])
         if len(self.doc['src']) == 0:
             self.doc['indices'] = example['indices']
         if len(example['src']) == 0 and len(example['tgt']) == 0:
