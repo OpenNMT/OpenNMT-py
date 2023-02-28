@@ -195,6 +195,8 @@ class ParallelCorpusIterator(object):
                         raise IOError(empty_msg)
                     elif self.skip_empty_level == 'warning':
                         logger.warning(empty_msg)
+                    if len(example['src']) == 0 and len(example['tgt']) == 0:
+                        yield item
                     continue
             yield item
 
