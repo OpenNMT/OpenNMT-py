@@ -383,8 +383,8 @@ class Inference(object):
                     ]
 
                 if transform is not None:
-                    n_best_preds = [transform.apply_reverse(x)
-                                    for x in n_best_preds]
+                    n_best_preds = transform.batch_apply_reverse(n_best_preds)
+
                 all_predictions += [n_best_preds]
 
                 out_all = [

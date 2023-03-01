@@ -45,25 +45,56 @@ class DocifyTransform(Transform):
         self.doc = {}
         self.doc['src'] = []
         self.doc['tgt'] = []
+        self.doc['indices'] = 0
 
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Convert source and target examples to uppercase."""
-
-        cur_len = max(len(self.doc['src'] + example['src']),
-                      len(self.doc['tgt'] + example['tgt']))
-        if len(self.doc['src']) == 0:
-            self.doc['indices'] = example['indices']
-        if len(example['src']) == 0 and len(example['tgt']) == 0:
-            doc2 = copy.deepcopy(self.doc)
-            self.doc['src'] = []
-            self.doc['tgt'] = []
-            return doc2
-        elif cur_len > self.doc_length:
-            doc2 = copy.deepcopy(self.doc)
-            self.doc['src'] = example['src']
-            self.doc['tgt'] = example['tgt']
-            return doc2
+        if example['tgt']:
+            cur_len = max(len(self.doc['src'] + example['src']),
+                          len(self.doc['tgt'] + example['tgt']))
         else:
-            self.doc['src'] += example['src'] + [self.paragraph_delimiter]
-            self.doc['tgt'] += example['tgt'] + [self.paragraph_delimiter]
-            return None
+            cur_len = len(self.doc['src'] + example['src'])
+
+        if example['tgt']:
+            if len(example['src']) == 0 and len(example['tgt']) == 0:
+                doc2 = copy.deepcopy(self.doc)
+                self.doc['src'] = []
+                self.doc['tgt'] = []
+                self.doc['indices'] = example['indices']
+                return doc2
+            elif cur_len > self.doc_length:
+                if len(self.doc['src']) == 0:
+                    return example
+                doc2 = copy.deepcopy(self.doc)
+                self.doc['src'] = example['src'] + [self.paragraph_delimiter]
+                self.doc['tgt'] = example['tgt'] + [self.paragraph_delimiter]
+                self.doc['indices'] = example['indices']
+                return doc2
+            else:
+                self.doc['src'] += example['src'] + [self.paragraph_delimiter]
+                self.doc['tgt'] += example['tgt'] + [self.paragraph_delimiter]
+                return None
+        else:
+            self.doc['tgt'] = None
+            if len(example['src']) == 0:
+                doc2 = copy.deepcopy(self.doc)
+                self.doc['src'] = []
+                self.doc['indices'] = example['indices']
+                return doc2
+            elif cur_len > self.doc_length:
+                if len(self.doc['src']) == 0:
+                    return example
+                doc2 = copy.deepcopy(self.doc)
+                self.doc['src'] = example['src'] + [self.paragraph_delimiter]
+                self.doc['indices'] = example['indices']
+                # print(doc2)
+                return doc2
+            else:
+                self.doc['src'] += example['src'] + [self.paragraph_delimiter]
+                return None
+
+    def apply_reverse(self, translated):
+        segments = translated.strip(self.paragraph_delimiter)
+        segments = segments.split(self.paragraph_delimiter)
+        segments = [segment.strip(' ') for segment in segments]
+        return segments

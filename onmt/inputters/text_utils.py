@@ -80,13 +80,14 @@ def process(task, bucket, **kwargs):
     """Returns valid transformed bucket from bucket."""
     _, transform, cid = bucket[0]
     # We apply the same TransformPipe to all the bucket
-    processed_bucket = transform.batch_apply(
+    transf_bucket = transform.batch_apply(
        bucket, is_train=(task == CorpusTask.TRAIN), corpus_name=cid)
-    if processed_bucket:
-        for i in range(len(processed_bucket)):
-            (example, transform, cid) = processed_bucket[i]
+    if transf_bucket:
+        processed_bucket = []
+        for example, transform, cid in transf_bucket:
             example = clean_example(example)
-            processed_bucket[i] = example
+            if len(example['src']['src']) > 0:
+                processed_bucket.append(example)
         # at this point an example looks like:
         # {'src': {'src': ..., 'feats': [....]},
         #  'tgt': {'tgt': ...},
