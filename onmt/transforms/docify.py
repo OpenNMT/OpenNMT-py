@@ -26,7 +26,7 @@ class DocifyTransform(Transform):
         group.add("--paragraph_delimiter", "-paragraph_delimiter", type=str,
                   default='｟newline｠', help="Newline delimiter.")
         group.add("--doc_length", "-doc_length", type=int,
-                  default=1024, help="Number of tokens per doc.")
+                  default=1, help="Number of tokens per doc.")
 
     def _parse_opts(self):
         self.paragraph_delimiter = self.opts.paragraph_delimiter
@@ -49,13 +49,14 @@ class DocifyTransform(Transform):
 
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Convert source and target examples to uppercase."""
-        if example['tgt']:
+
+        if example['tgt'] is not None:
             cur_len = max(len(self.doc['src'] + example['src']),
                           len(self.doc['tgt'] + example['tgt']))
         else:
             cur_len = len(self.doc['src'] + example['src'])
 
-        if example['tgt']:
+        if example['tgt'] is not None:
             if len(example['src']) == 0 and len(example['tgt']) == 0:
                 doc2 = copy.deepcopy(self.doc)
                 self.doc['src'] = []
@@ -87,7 +88,6 @@ class DocifyTransform(Transform):
                 doc2 = copy.deepcopy(self.doc)
                 self.doc['src'] = example['src'] + [self.paragraph_delimiter]
                 self.doc['indices'] = example['indices']
-                # print(doc2)
                 return doc2
             else:
                 self.doc['src'] += example['src'] + [self.paragraph_delimiter]
