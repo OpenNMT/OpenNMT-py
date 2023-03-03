@@ -19,15 +19,25 @@ class InlineTagger(object):
     should give sufficient number of matches."""
 
     def __init__(self, tags_dictionary_path, max_tags,
+                 paired_start_tag='｟ph_#_beg｠',
+                 paired_end_tag='｟ph_#_end｠',
+                 isolated_tag='｟ph_#_std｠',
                  tag_corpus_ratio=0.1, src_delimiter='｟fuzzy｠'):
         self.max_tags = max_tags
         self.tagged_examples = 0
-        self.total_processed_examples = 0
+        self.processed_examples = 0
         self.tag_corpus_ratio = tag_corpus_ratio
         self.src_delimiter = src_delimiter
         self.internal_dictionary = self._create_internal_dictionary(
             tags_dictionary_path
         )
+        self.paired_stag_prefix, self.paired_stag_suffix = \
+            map(str, paired_start_tag.split("#"))
+        self.paired_etag_prefix, self.paired_etag_suffix = \
+            map(str, paired_end_tag.split("#"))
+        self.isolated_tag_prefix, self.isolated_tag_suffix = \
+            map(str, isolated_tag.split("#"))
+
         self.automaton = self._create_automaton()
 
     def _create_internal_dictionary(self, tags_dictionary_path):
@@ -57,7 +67,7 @@ class InlineTagger(object):
         source_only = maybe_augmented[0].strip()
 
         augmented_part = maybe_augmented[1].strip() \
-            if len(maybe_augmented) > 0 else None
+            if len(maybe_augmented) > 1 else None
 
         tokenized_source_string = source_only.split()
         tokenized_target_string = tgt_example.split()
@@ -81,6 +91,7 @@ class InlineTagger(object):
 
         is_match = False
         tag_counter = 0
+
         for src_match_end, pair in self.automaton.iter_long(source_only):
             if tag_counter == self.max_tags:
                 break
@@ -136,22 +147,28 @@ class InlineTagger(object):
 
                 src_single_tags = (
                     f'{source_only[src_offset: src_match_start]}'
-                    f'｟ph_{single_tag_start_num}_std｠{src_term}'
+                    f'{self.isolated_tag_prefix}{single_tag_start_num}'
+                    f'{self.isolated_tag_suffix}{src_term}'
                 )
                 src_paired_tags = (
                     f'{source_only[src_offset: src_match_start]}'
-                    f'｟ph_{paired_tag_start_num}_beg｠{src_term}'
-                    f'｟ph_{paired_tag_start_num}_end｠'
+                    f'{self.paired_stag_prefix}{paired_tag_start_num}'
+                    f'{self.paired_stag_suffix}{src_term}'
+                    f'{self.paired_etag_prefix}{paired_tag_start_num}'
+                    f'{self.paired_etag_suffix}'
                 )
 
                 tgt_single_tags = (
                     f'{tgt_example[tgt_offset: tgt_match_start]}'
-                    f'｟ph_{single_tag_start_num}_std｠{tgt_term} '
+                    f'{self.isolated_tag_prefix}{single_tag_start_num}'
+                    f'{self.isolated_tag_suffix}{tgt_term}'
                 )
                 tgt_paired_tags = (
                     f'{tgt_example[tgt_offset: tgt_match_start]}'
-                    f'｟ph_{paired_tag_start_num}_beg｠{tgt_term}'
-                    f'｟ph_{paired_tag_start_num}_end｠ '
+                    f'{self.paired_etag_prefix}{paired_tag_start_num}'
+                    f'{self.paired_etag_suffix}{tgt_term}'
+                    f'{self.paired_etag_prefix}{paired_tag_start_num}'
+                    f'{self.paired_etag_suffix}'
                 )
 
                 # Make a weighted choice between paired tags or single tags.
@@ -174,7 +191,7 @@ class InlineTagger(object):
                 tgt_offset = tgt_match_end + 1
                 tag_counter += 1
                 is_match = True
-        self.total_processed_examples += 1
+        self.processed_examples += 1
         if is_match:
             self.tagged_examples += 1
             if augmented_part is not None:
@@ -210,6 +227,12 @@ class InlineTagsTransform(Transform):
                   default=0.1, help="Ratio of corpus to augment with tags.")
         group.add("--max_tags", "-max_tags", type=int,
                   default=12, help="Maximum number for numbering tags.")
+        group.add("--paired_stag", "-paired_stag",
+                  type=str, help="The format of an opening paired inline tag.")
+        group.add("--paired_etag", "-paired_etag",
+                  type=str, help="The format of a closing paired inline tag.")
+        group.add("--isolated_tag", "-isolated_tag",
+                  type=str, help="The format of an isolated inline tag.")
         group.add("--src_delimiter", "-src_delimiter", type=str,
                   default='｟fuzzy｠',
                   help="Any special token used for augmented src sentences. "
@@ -226,12 +249,21 @@ class InlineTagsTransform(Transform):
     def get_specials(cls, opts):
         """Add up to 20 placeholders to src and tgt vocabs."""
 
+        # We split the user-defined tags in the # placeholder
+        # in order to number them
+        paired_stag_prefix, paired_stag_suffix = \
+            map(str, opts.paired_stag.split('#'))
+        paired_etag_prefix, paired_etag_suffix = \
+            map(str, opts.paired_etag.split('#'))
+        isolated_tag_prefix, isolated_tag_suffix = \
+            map(str, opts.isolated_tag.split('#'))
+
         src_specials, tgt_specials = list(), list()
         tags = list()
         for i in range(1, 21):
-            tags.extend(['｟ph_' + str(i) + '_beg｠',
-                         '｟ph_' + str(i) + '_end｠',
-                         '｟ph_' + str(i) + '_std｠'])
+            tags.extend([paired_stag_prefix + str(i) + paired_stag_suffix,
+                         paired_etag_prefix + str(i) + paired_etag_suffix,
+                         isolated_tag_prefix + str(i) + isolated_tag_suffix])
 
         src_specials.extend(tags)
         tgt_specials.extend(tags)
@@ -244,13 +276,17 @@ class InlineTagsTransform(Transform):
         super().warm_up(None)
         self.tagger = InlineTagger(self.tags_dictionary_path,
                                    self.max_tags,
+                                   self.opts.paired_stag,
+                                   self.opts.paired_etag,
+                                   self.opts.isolated_tag,
                                    self.tags_corpus_ratio,
                                    self.src_delimiter)
 
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Add tags (placeholders) to source and target segments."""
 
-        if self.tagger.tagged_examples/self.tagger.total_processed_examples \
+        if self.tagger.processed_examples > 0 and \
+                self.tagger.tagged_examples/self.tagger.processed_examples \
                 > self.tags_corpus_ratio:
             return example
 
