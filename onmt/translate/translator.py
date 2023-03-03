@@ -353,9 +353,10 @@ class Inference(object):
             for trans in translations:
                 if (trans.src_raw.count(DefaultTokens.SEP) !=
                         trans.pred_sents[0].count(DefaultTokens.SEP)):
-                    print(trans.src_raw.count(DefaultTokens.SEP),
-                          trans.pred_sents[0].count(DefaultTokens.SEP),
-                          trans.src_raw, trans.pred_sents[0])
+                    self._log(trans.src_raw.count(DefaultTokens.SEP))
+                    self._log(trans.pred_sents[0].count(DefaultTokens.SEP))
+                    self._log(trans.src_raw)
+                    self._log(trans.pred_sents[0])
 
             for trans in translations:
                 all_scores += [trans.pred_scores[: self.n_best]]

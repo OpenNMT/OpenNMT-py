@@ -258,10 +258,8 @@ def save_transformed_sample(opts, transforms, n_sample=3):
                     break
                 else:
                     bucket.append(ex)
-            print(len(bucket))
             pro_bucket = process(CorpusTask.TRAIN, bucket)
             for maybe_example in pro_bucket:
-                print(maybe_example)
                 if maybe_example is not None:
                     src_line, tgt_line = (maybe_example['src']['src'],
                                           maybe_example['tgt']['tgt'])
