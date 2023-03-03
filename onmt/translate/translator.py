@@ -350,6 +350,12 @@ class Inference(object):
                 batch, attn_debug
             )
             translations = xlation_builder.from_batch(batch_data)
+            for trans in translations:
+                if (trans.src_raw.count(DefaultTokens.SEP) !=
+                        trans.pred_sents[0].count(DefaultTokens.SEP)):
+                    print(trans.src_raw.count(DefaultTokens.SEP),
+                          trans.pred_sents[0].count(DefaultTokens.SEP),
+                          trans.src_raw, trans.pred_sents[0])
 
             for trans in translations:
                 all_scores += [trans.pred_scores[: self.n_best]]

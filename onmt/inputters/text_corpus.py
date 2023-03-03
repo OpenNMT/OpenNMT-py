@@ -252,10 +252,17 @@ def save_transformed_sample(opts, transforms, n_sample=3):
             sample_path, "{}.{}".format(c_name, CorpusName.SAMPLE))
         with open(dest_base + ".src", 'w', encoding="utf-8") as f_src,\
                 open(dest_base + ".tgt", 'w', encoding="utf-8") as f_tgt:
-            for i, item in enumerate(c_iter):
-                maybe_example = process(CorpusTask.TRAIN, [item])
+            bucket = []
+            for i, ex in enumerate(c_iter):
+                if i > n_sample:
+                    break
+                else:
+                    bucket.append(ex)
+            print(len(bucket))
+            pro_bucket = process(CorpusTask.TRAIN, bucket)
+            for maybe_example in pro_bucket:
+                print(maybe_example)
                 if maybe_example is not None:
-                    maybe_example = maybe_example[0]
                     src_line, tgt_line = (maybe_example['src']['src'],
                                           maybe_example['tgt']['tgt'])
 
@@ -269,5 +276,3 @@ def save_transformed_sample(opts, transforms, n_sample=3):
 
                     f_src.write(src_pretty_line + '\n')
                     f_tgt.write(tgt_line + '\n')
-                    if n_sample > 0 and i >= n_sample:
-                        break
