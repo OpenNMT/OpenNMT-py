@@ -19,10 +19,11 @@ class InlineTagger(object):
     should give sufficient number of matches."""
 
     def __init__(self, tags_dictionary_path, max_tags,
-                 paired_start_tag='｟ph_#_beg｠',
-                 paired_end_tag='｟ph_#_end｠',
-                 isolated_tag='｟ph_#_std｠',
-                 tag_corpus_ratio=0.1, src_delimiter='｟fuzzy｠'):
+                 paired_start_tag,
+                 paired_end_tag,
+                 isolated_tag,
+                 src_delimiter,
+                 tag_corpus_ratio=0.1):
         self.max_tags = max_tags
         self.tagged_examples = 0
         self.processed_examples = 0
@@ -226,13 +227,21 @@ class InlineTagsTransform(Transform):
         group.add("--tags_corpus_ratio", "-tags_corpus_ratio", type=float,
                   default=0.1, help="Ratio of corpus to augment with tags.")
         group.add("--max_tags", "-max_tags", type=int,
-                  default=12, help="Maximum number for numbering tags.")
+                  default=12,
+                  help="Maximum number of tags that can be added to "
+                  "a single sentence.")
         group.add("--paired_stag", "-paired_stag",
-                  type=str, help="The format of an opening paired inline tag.")
+                  type=str, default='｟ph_#_beg｠',
+                  help="The format of an opening paired inline tag. "
+                  "Must include the character #.")
         group.add("--paired_etag", "-paired_etag",
-                  type=str, help="The format of a closing paired inline tag.")
+                  type=str, default='｟ph_#_end｠',
+                  help="The format of a closing paired inline tag. "
+                  "Must include the character #.")
         group.add("--isolated_tag", "-isolated_tag",
-                  type=str, help="The format of an isolated inline tag.")
+                  type=str, default='｟ph_#_std｠',
+                  help="The format of an isolated inline tag. "
+                  "Must include the character #.")
         group.add("--src_delimiter", "-src_delimiter", type=str,
                   default='｟fuzzy｠',
                   help="Any special token used for augmented src sentences. "
@@ -248,6 +257,14 @@ class InlineTagsTransform(Transform):
     @classmethod
     def get_specials(cls, opts):
         """Add up to 20 placeholders to src and tgt vocabs."""
+
+        # Check if the tags include the
+        # mandatory "#" number placeholder"
+        if "#" not in opts.paired_stag or \
+           "#" not in opts.paired_etag or \
+           "#" not in opts.isolated_tag:
+            logger.error('Inline tags must include the number '
+                         'placeholder \"#\"')
 
         # We split the user-defined tags in the # placeholder
         # in order to number them
@@ -279,8 +296,8 @@ class InlineTagsTransform(Transform):
                                    self.opts.paired_stag,
                                    self.opts.paired_etag,
                                    self.opts.isolated_tag,
-                                   self.tags_corpus_ratio,
-                                   self.src_delimiter)
+                                   self.src_delimiter,
+                                   self.tags_corpus_ratio)
 
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Add tags (placeholders) to source and target segments."""
