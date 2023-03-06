@@ -85,10 +85,10 @@ def process(task, bucket, **kwargs):
         for cid in cid_list:
             sub_bucket = [ex for ex in bucket
                           if (ex[1] == transform) and (ex[2] == cid)]
-            transf_bucket = transform.batch_apply(
-                sub_bucket, is_train=(task == CorpusTask.TRAIN),
-                corpus_name=cid)
             if len(sub_bucket) > 0:
+                transf_bucket = transform.batch_apply(
+                    sub_bucket, is_train=(task == CorpusTask.TRAIN),
+                    corpus_name=cid)
                 for example, transform, cid in transf_bucket:
                     example = clean_example(example)
                     if len(example['src']['src']) > 0:

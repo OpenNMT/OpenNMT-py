@@ -8,6 +8,7 @@ from itertools import count, zip_longest
 
 import torch
 import torch.nn.functional as F
+from torch.nn.utils.rnn import pad_sequence
 from onmt.constants import DefaultTokens
 import onmt.model_builder
 import onmt.decoders.ensemble
@@ -138,6 +139,7 @@ class Inference(object):
         self._tgt_pad_idx = self.vocabs['tgt'].lookup_token(DefaultTokens.PAD)
         self._tgt_bos_idx = self.vocabs['tgt'].lookup_token(DefaultTokens.BOS)
         self._tgt_unk_idx = self.vocabs['tgt'].lookup_token(DefaultTokens.UNK)
+        self._tgt_sep_idx = self.vocabs['tgt'].lookup_token(DefaultTokens.SEP)
         self._tgt_start_with =\
             self.vocabs['tgt'].lookup_token(decoder_start_token)
         self._tgt_vocab_len = len(self._tgt_vocab)
@@ -349,14 +351,59 @@ class Inference(object):
             batch_data = self.translate_batch(
                 batch, attn_debug
             )
+
             translations = xlation_builder.from_batch(batch_data)
-            for trans in translations:
+
+            # Here we handle the cases of mismatch in number of segments
+            # between source and target. We re-translate seg by seg.
+            inds, perm = torch.sort(batch['indices'])
+            for j, trans in enumerate(translations):
                 if (trans.src_raw.count(DefaultTokens.SEP) !=
                         trans.pred_sents[0].count(DefaultTokens.SEP)):
-                    self._log(trans.src_raw.count(DefaultTokens.SEP))
-                    self._log(trans.pred_sents[0].count(DefaultTokens.SEP))
-                    self._log(trans.src_raw)
-                    self._log(trans.pred_sents[0])
+                    self._log("Mismatch in ((newline)) retranslating")
+                    # those two should be the same except feat dim
+                    # batch['src'][perm[j], :, :])
+                    # trans.src
+
+                    # we rebuild a small batch made of the sub-segments
+                    # in the long segment.
+                    idx = (trans.src == self._tgt_sep_idx).nonzero()
+                    sub_src = []
+                    start_idx = 0
+                    for i in range(len(idx)):
+                        end_idx = idx[i]
+                        sub_src.append(batch['src'][perm[j],
+                                                    start_idx:end_idx,
+                                                    :])
+                        start_idx = end_idx + 1
+                    end_idx = batch['src'][perm[j],
+                                           :,
+                                           0].ne(self._tgt_pad_idx).sum() - 1
+                    sub_src.append(batch['src'][perm[j],
+                                                start_idx:end_idx,
+                                                :])
+                    t_sub_src = pad_sequence(sub_src,
+                                             batch_first=True,
+                                             padding_value=self._tgt_pad_idx)
+                    t_sub_src_len = t_sub_src[:,
+                                              :,
+                                              0].ne(self._tgt_pad_idx).sum(1)
+                    t_sub_src_ind = torch.tensor([i for i in
+                                                  range(len(sub_src))],
+                                                 dtype=torch.int16)
+                    device = batch['src'].device
+                    t_sub_batch = {'src': t_sub_src.to(device),
+                                   'srclen': t_sub_src_len.to(device),
+                                   'indices': t_sub_src_ind.to(device)}
+
+                    # new sub-batch ready to be translated
+                    sub_data = self.translate_batch(t_sub_batch, attn_debug)
+                    sub_trans = xlation_builder.from_batch(sub_data)
+
+                    # we re-insert the sub-batch in the initial translations
+                    translations[j] = sub_trans[0]
+                    for i in range(1, len(sub_src)):
+                        translations.insert(j + i, sub_trans[i])
 
             for trans in translations:
                 all_scores += [trans.pred_scores[: self.n_best]]

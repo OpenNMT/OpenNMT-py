@@ -23,11 +23,14 @@ class DocifyTransform(Transform):
 
         group = parser.add_argument_group("Transform/Docify")
         group.add("--doc_length", "-doc_length", type=int,
-                  default=128, help="Number of tokens per doc.")
+                  default=256, help="Number of tokens per doc.")
+        group.add("--max_context", "-max_context", type=int,
+                  default=2, help="Max context segments.")
 
     def _parse_opts(self):
 
         self.doc_length = self.opts.doc_length
+        self.max_context = self.opts.max_context
 
     @classmethod
     def get_specials(cls, opts):
@@ -82,6 +85,13 @@ class DocifyTransform(Transform):
                         doc['tgt'] += [DefaultTokens.SEP] + ex['tgt']
                         doc['tgt_original'] += ([DefaultTokens.SEP] +
                                                 ex['tgt_original'])
+                        nb_ctx = doc['src'].count(DefaultTokens.SEP)
+                        if nb_ctx >= self.max_context:
+                            trf_batch.append((doc, self, cid))
+                            doc = {}
+                            doc['src'] = []
+                            doc['tgt'] = []
+                            doc['indices'] = ex['indices']
             else:
                 cur_len = len(doc['src'] + ex['src'])
                 doc['tgt'] = None
@@ -103,6 +113,12 @@ class DocifyTransform(Transform):
                         doc['src'] += [DefaultTokens.SEP] + ex['src']
                         doc['src_original'] += ([DefaultTokens.SEP] +
                                                 ex['src_original'])
+                        nb_ctx = doc['src'].count(DefaultTokens.SEP)
+                        if nb_ctx >= self.max_context:
+                            trf_batch.append((doc, self, cid))
+                            doc = {}
+                            doc['src'] = []
+                            doc['indices'] = ex['indices']
         if len(doc['src']) > 0:
             trf_batch.append((doc, self, cid))
         return trf_batch
