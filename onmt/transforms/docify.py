@@ -23,9 +23,9 @@ class DocifyTransform(Transform):
 
         group = parser.add_argument_group("Transform/Docify")
         group.add("--doc_length", "-doc_length", type=int,
-                  default=256, help="Number of tokens per doc.")
+                  default=200, help="Number of tokens per doc.")
         group.add("--max_context", "-max_context", type=int,
-                  default=2, help="Max context segments.")
+                  default=1, help="Max context segments.")
 
     def _parse_opts(self):
 
@@ -45,7 +45,8 @@ class DocifyTransform(Transform):
 
     def batch_apply(self, batch, is_train=False, stats=None, **kwargs):
         """Convert source and target examples to doc level segments."""
-
+        if self.max_context == 0:
+            return batch
         trf_batch = []
         doc = {}
         doc['src'] = []
@@ -53,7 +54,7 @@ class DocifyTransform(Transform):
         doc['indices'] = 0
 
         for (ex, _, cid) in batch:
-            if ex['tgt'] is not None:
+            if ex['tgt']:
                 cur_len = max(len(doc['src'] + ex['src']),
                               len(doc['tgt'] + ex['tgt']))
 
