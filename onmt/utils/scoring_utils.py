@@ -182,8 +182,8 @@ class ScoringPreparator():
 
         # apply_reverse refs
         if self.transforms:
-            texts_ref = [self.transform.apply_reverse(raw_ref)
-                         for raw_ref in raw_refs]
+            texts_ref = self.transform.batch_apply_reverse(raw_refs)
+
             # flatten preds
             preds = [item for preds_ in preds for item in preds_]
         else:
