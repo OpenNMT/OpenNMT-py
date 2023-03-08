@@ -84,10 +84,12 @@ class InlineTagger(object):
         # the system will learn to handle a fairly large number of
         # numbered tags (but not an excessively large number)
         paired_tag_start_num = random.choices(
-            range(1, 13), weights=range(12, 0, -1), k=1
+            range(1, self.max_tags + 1),
+            weights=range(self.max_tags, 0, -1), k=1
         )[0]
         single_tag_start_num = random.choices(
-            range(1, 13), weights=range(12, 0, -1), k=1
+            range(1, self.max_tags + 1),
+            weights=range(self.max_tags, 0, -1), k=1
         )[0]
 
         is_match = False
@@ -256,7 +258,7 @@ class InlineTagsTransform(Transform):
 
     @classmethod
     def get_specials(cls, opts):
-        """Add up to 20 placeholders to src and tgt vocabs."""
+        """Add up to self.max_tags * 2 placeholders to src and tgt vocabs."""
 
         # Check if the tags include the
         # mandatory "#" number placeholder"
@@ -277,7 +279,7 @@ class InlineTagsTransform(Transform):
 
         src_specials, tgt_specials = list(), list()
         tags = list()
-        for i in range(1, 21):
+        for i in range(1, opts.max_tags * 2):
             tags.extend([paired_stag_prefix + str(i) + paired_stag_suffix,
                          paired_etag_prefix + str(i) + paired_etag_suffix,
                          isolated_tag_prefix + str(i) + isolated_tag_suffix])
