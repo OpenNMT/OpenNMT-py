@@ -384,6 +384,23 @@ The following options can be added to the configuration:
 - `fuzzymatch_min_length`: Min length for TM entries and examples to match (default: 4);
 - `fuzzymatch_max_length`: Max length for TM entries and examples to match (default: 70).
 
+#### Augment source and target segments with inline tags
+
+Transform name: `inlinetags`
+
+Class: `onmt.transforms.inlinetags.InlineTagsTransform`
+
+Augments source and target segments with inline tags (placeholders). The transform adds 2 kind of tags, paired tags (an opening and a closing tag) and isolated (standalone) tags, and requires a tab-delimited dictionary text file with source and target terms and phrases. A dictionary with 20-30k entries is recommended. User-defined tags must include the number placeholder #, e.g. "｟user_start_tag_#｠".
+
+The following options can be added to the configuration:
+- `tags_dictionary_path`: The path to the dictionary text file;
+- `tags_corpus_ratio`: Ratio of corpus to augment with inline tags (default: 0.1);
+- `max_tags`: Maximum number of tags that can be added to a single sentence. (default: 12);
+- `paired_stag`: The format of an opening paired inline tag. Must include the character # (default: "｟ph_#_beg｠");
+- `paired_etag`: The format of a closing paired inline tag. Must include the character # (default: "｟ph_#_end｠");
+- `isolated_tag`: The format of an isolated inline tag. Must include the character # (default: "｟ph_#_std｠");
+- `src_delimiter`: Any special token used for augmented src sentences (default: "｟fuzzy｠");
+
 ### Tokenization
 
 Common options for the tokenization transforms are the following:
