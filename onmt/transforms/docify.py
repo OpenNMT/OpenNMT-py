@@ -29,6 +29,7 @@ class DocifyTransform(Transform):
 
     def _parse_opts(self):
 
+        self.stride = self.opts.num_workers * self.opts.world_size
         self.doc_length = self.opts.doc_length
         self.max_context = self.opts.max_context
 
@@ -40,8 +41,9 @@ class DocifyTransform(Transform):
         return (src_specials, tgt_specials)
 
     def warm_up(self, vocabs=None):
-
         super().warm_up(None)
+        assert (self.stride % (self.max_context + 1) == 0), \
+            "(max_context+1) must be a multiple of num_workers * world_size"
 
     def batch_apply(self, batch, is_train=False, stats=None, **kwargs):
         """Convert source and target examples to doc level segments."""
@@ -54,7 +56,7 @@ class DocifyTransform(Transform):
         doc['indices'] = 0
 
         for (ex, _, cid) in batch:
-            if ex['tgt']:
+            if ex['tgt'] is not None:
                 cur_len = max(len(doc['src'] + ex['src']),
                               len(doc['tgt'] + ex['tgt']))
 

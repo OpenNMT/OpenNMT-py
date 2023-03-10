@@ -60,7 +60,7 @@ class ParallelCorpus(object):
                 exfile_open(self.align, mode='rb') as fa:
             for i, (sline, tline, align) in \
                     enumerate(zip(fs, ft, fa)):
-                if (i % stride) == offset:
+                if (i // stride) % stride == offset:
                     sline = sline.decode('utf-8')
                     sline, sfeats = parse_features(
                         sline,
