@@ -50,17 +50,19 @@ def build_vocab(opt, specials):
             vocab.add_token(DefaultTokens.VOCAB_PAD + str(i))
         return vocab
 
+    default_specials = [DefaultTokens.UNK,
+                        DefaultTokens.PAD,
+                        DefaultTokens.BOS,
+                        DefaultTokens.EOS]
     vocabs = {}
     src_vocab = _read_vocab_file(opt.src_vocab, opt.src_words_min_frequency)
 
-    src_specials = specials['src']
+    src_specials = [item for item in (default_specials + specials['src'])
+                    if item not in src_vocab]
     src_vocab = pyonmttok.build_vocab_from_tokens(
         src_vocab,
         maximum_size=opt.src_vocab_size,
-        special_tokens=[DefaultTokens.UNK,
-                        DefaultTokens.PAD,
-                        DefaultTokens.BOS,
-                        DefaultTokens.EOS] + src_specials)
+        special_tokens=src_specials)
     src_vocab.default_id = src_vocab[DefaultTokens.UNK]
     if opt.vocab_size_multiple > 1:
         src_vocab = _pad_vocab_to_multiple(src_vocab, opt.vocab_size_multiple)
@@ -70,14 +72,12 @@ def build_vocab(opt, specials):
     else:
         tgt_vocab = _read_vocab_file(opt.tgt_vocab,
                                      opt.tgt_words_min_frequency)
-        tgt_specials = specials['tgt']
+        tgt_specials = [item for item in (default_specials + specials['tgt'])
+                        if item not in tgt_vocab]
         tgt_vocab = pyonmttok.build_vocab_from_tokens(
             tgt_vocab,
             maximum_size=opt.tgt_vocab_size,
-            special_tokens=[DefaultTokens.UNK,
-                            DefaultTokens.PAD,
-                            DefaultTokens.BOS,
-                            DefaultTokens.EOS] + tgt_specials)
+            special_tokens=tgt_specials)
         tgt_vocab.default_id = tgt_vocab[DefaultTokens.UNK]
         if opt.vocab_size_multiple > 1:
             tgt_vocab = _pad_vocab_to_multiple(tgt_vocab,
@@ -92,10 +92,7 @@ def build_vocab(opt, specials):
                 src_f_vocab,
                 maximum_size=0,
                 minimum_frequency=1,
-                special_tokens=[DefaultTokens.UNK,
-                                DefaultTokens.PAD,
-                                DefaultTokens.BOS,
-                                DefaultTokens.EOS])
+                special_tokens=default_specials)
             src_f_vocab.default_id = src_f_vocab[DefaultTokens.UNK]
             if opt.vocab_size_multiple > 1:
                 src_f_vocab = _pad_vocab_to_multiple(src_f_vocab,
