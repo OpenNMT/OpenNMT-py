@@ -78,21 +78,23 @@ def clean_example(maybe_example):
 
 def process(task, bucket, **kwargs):
     """Returns valid transformed bucket from bucket."""
-    trf_list = list(set([x[1] for x in bucket]))
-    cid_list = list(set([x[2] for x in bucket]))
+    transform_cid_to_examples = {}
+    for example in bucket:
+        transform_cid = (example[1], example[2])
+        if transform_cid not in transform_cid_to_examples:
+            transform_cid_to_examples[transform_cid] = []
+        transform_cid_to_examples[transform_cid].append(example)
+
     processed_bucket = []
-    for transform in trf_list:
-        for cid in cid_list:
-            sub_bucket = [ex for ex in bucket
-                          if (ex[1] == transform) and (ex[2] == cid)]
-            if len(sub_bucket) > 0:
-                transf_bucket = transform.batch_apply(
-                    sub_bucket, is_train=(task == CorpusTask.TRAIN),
-                    corpus_name=cid)
-                for example, transform, cid in transf_bucket:
-                    example = clean_example(example)
-                    if len(example['src']['src']) > 0:
-                        processed_bucket.append(example)
+    for (transform, cid), sub_bucket in transform_cid_to_examples.items():
+        transf_bucket = transform.batch_apply(
+            sub_bucket, is_train=(task == CorpusTask.TRAIN),
+            corpus_name=cid)
+        for example, transform, cid in transf_bucket:
+            example = clean_example(example)
+            if len(example['src']['src']) > 0:
+                processed_bucket.append(example)
+
         # at this point an example looks like:
         # {'src': {'src': ..., 'feats': [....]},
         #  'tgt': {'tgt': ...},

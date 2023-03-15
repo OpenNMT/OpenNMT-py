@@ -30,7 +30,8 @@ setup(
         "pyonmttok>=1.35,<2",
         "pyyaml",
         "sacrebleu",
-        "rapidfuzz"
+        "rapidfuzz",
+        "pyahocorasick"
     ],
     entry_points={
         "console_scripts": [
