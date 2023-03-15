@@ -360,6 +360,29 @@ The following options can be added to the configuration :
 - `pre_replace_unicode_punct`: Replace unicode punct (default=False)
 - `post_remove_control_chars`: Remove control chars (default=False)
 
+#### Context / Doc aware transform
+
+Transform name: `docify`
+
+Class: `onmt.transforms.docify.DocifyTransform`
+
+Concatenates several segments into one, separated with a delimiter.
+
+Pre-requisite:
+
+Dataset must be "Docs" separated by an empty line which will make clear a story ends at this empty line.
+
+The following options can be added to the configuration :
+- `doc_length`: max token to be concatenated (default=200)
+- `max_context`: number of delimiter (default=1 , ie 2 segments concatenated)
+
+When working with several workers, this require some precaution in order to make sure "doc" are read linearly.
+
+`max_context + 1` needs to be a multiple of `stride` = `Number of gpu x num_workers`
+
+Example: `max_context=1` and 1 GPU, then num_workers must be 2 or 4.
+
+
 #### Augment source segments with fuzzy matches for Neural Fuzzy Repair
 
 Transform name: `fuzzymatch`
