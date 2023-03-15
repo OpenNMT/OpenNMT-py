@@ -5,6 +5,7 @@ import os
 import time
 import numpy as np
 from itertools import count, zip_longest
+from copy import deepcopy
 
 import torch
 import torch.nn.functional as F
@@ -357,6 +358,8 @@ class Inference(object):
             # Here we handle the cases of mismatch in number of segments
             # between source and target. We re-translate seg by seg.
             inds, perm = torch.sort(batch['indices'])
+            trans_copy = deepcopy(translations)
+            inserted_so_far = 0
             for j, trans in enumerate(translations):
                 if (trans.src_raw.count(DefaultTokens.SEP) !=
                         trans.pred_sents[0].count(DefaultTokens.SEP)):
@@ -401,11 +404,13 @@ class Inference(object):
                     sub_trans = xlation_builder.from_batch(sub_data)
 
                     # we re-insert the sub-batch in the initial translations
-                    translations[j] = sub_trans[0]
+                    trans_copy[j + inserted_so_far] = sub_trans[0]
                     for i in range(1, len(sub_src)):
-                        translations.insert(j + i, sub_trans[i])
+                        trans_copy.insert(j + i + inserted_so_far,
+                                          sub_trans[i])
+                    inserted_so_far += len(sub_src) - 1
 
-            for trans in translations:
+            for j, trans in enumerate(trans_copy):
                 all_scores += [trans.pred_scores[: self.n_best]]
                 pred_score_total += trans.pred_scores[0]
                 pred_words_total += len(trans.pred_sents[0])
@@ -518,6 +523,7 @@ class Inference(object):
                 self.translator.beam_accum,
                 codecs.open(self.dump_beam, "w", "utf-8"),
             )
+
         return all_scores, all_predictions
 
     def _align_pad_prediction(self, predictions, bos, pad):
