@@ -706,7 +706,7 @@ class Translator(Inference):
         # (0) add BOS and padding to tgt prediction
         if 'tgt' in batch.keys() and self.gold_align:
             if self.logger:
-                self.logger.info("Computing alignments with gold target")
+                self._log("Computing alignments with gold target")
             batch_tgt_idxs = batch['tgt'].transpose(1, 2)
         else:
             batch_tgt_idxs = self._align_pad_prediction(
