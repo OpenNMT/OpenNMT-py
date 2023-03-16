@@ -483,7 +483,10 @@ class Inference(object):
                         os.write(1, output.encode("utf-8"))
 
                 if align_debug:
-                    tgts = trans.pred_sents[0]
+                    if self.gold_align:
+                        tgts = trans.gold_sent
+                    else:
+                        tgts = trans.pred_sents[0]
                     align = trans.word_aligns[0].tolist()
                     if self.data_type == "text":
                         srcs = trans.src_raw
