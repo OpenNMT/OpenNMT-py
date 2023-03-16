@@ -563,8 +563,7 @@ class ServerModel(object):
                     infer_iter = textbatch_to_tensor(
                         self.translator.vocabs, examples)
                     device = (self.translator._dev.index
-                              if self.translator._dev.index is not None
-                              else -1)
+                              if self.translator._use_cuda else -1)
                     infer_iter = IterOnDevice(infer_iter, device)
                     scores, predictions = \
                         self.translator._translate(infer_iter)
