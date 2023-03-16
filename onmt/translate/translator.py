@@ -127,6 +127,7 @@ class Inference(object):
         global_scorer=None,
         out_file=None,
         report_align=False,
+        gold_align=False,
         report_score=True,
         logger=None,
         seed=-1,
@@ -192,6 +193,7 @@ class Inference(object):
             )
         self.out_file = out_file
         self.report_align = report_align
+        self.gold_align = gold_align
         self.report_score = report_score
         self.logger = logger
 
@@ -272,6 +274,7 @@ class Inference(object):
             global_scorer=global_scorer,
             out_file=out_file,
             report_align=report_align,
+            gold_align=opt.gold_align,
             report_score=report_score,
             logger=logger,
             seed=opt.seed,
@@ -480,7 +483,10 @@ class Inference(object):
                         os.write(1, output.encode("utf-8"))
 
                 if align_debug:
-                    tgts = trans.pred_sents[0]
+                    if self.gold_align:
+                        tgts = trans.gold_sent
+                    else:
+                        tgts = trans.pred_sents[0]
                     align = trans.word_aligns[0].tolist()
                     if self.data_type == "text":
                         srcs = trans.src_raw
@@ -698,9 +704,12 @@ class Translator(Inference):
         """
 
         # (0) add BOS and padding to tgt prediction
-        batch_tgt_idxs = self._align_pad_prediction(
-            predictions, bos=self._tgt_bos_idx, pad=self._tgt_pad_idx
-        )
+        if 'tgt' in batch.keys() and self.gold_align:
+            self._log("Computing alignments with gold target")
+            batch_tgt_idxs = batch['tgt'].transpose(1, 2)
+        else:
+            batch_tgt_idxs = self._align_pad_prediction(
+                predictions, bos=self._tgt_bos_idx, pad=self._tgt_pad_idx)
         tgt_mask = (
             batch_tgt_idxs.eq(self._tgt_pad_idx)
             | batch_tgt_idxs.eq(self._tgt_eos_idx)
@@ -714,7 +723,11 @@ class Translator(Inference):
         # (2) Repeat src objects `n_best` times.
         # We use batch_size x n_best, get ``(batch * n_best, src_len, nfeat)``
         src = tile(src, n_best, dim=0)
-        enc_states = tile(enc_states, n_best, dim=0)
+        if enc_states is not None:
+            # Quick fix. Transformers return None as enc_states.
+            # enc_states are only used later on to init decoder's state
+            # but are never used in Transformer decoder, so we can skip
+            enc_states = tile(enc_states, n_best, dim=0)
         if isinstance(enc_out, tuple):
             enc_out = tuple(tile(x, n_best, dim=0) for x in enc_out)
         else:

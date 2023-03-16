@@ -317,7 +317,13 @@ class ArgumentParser(cfargparse.ArgumentParser, DataOptsCheckerMixin):
 
     @classmethod
     def validate_translate_opts(cls, opt):
-        pass
+        if opt.gold_align:
+            assert opt.report_align, \
+                "-report_align should be enabled with -gold_align"
+            assert not opt.replace_unk, \
+                "-replace_unk option can not be used with -gold_align enabled"
+            assert opt.tgt, \
+                "-tgt should be specified with -gold_align"
 
     @classmethod
     def validate_translate_opts_dynamic(cls, opt):
