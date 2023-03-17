@@ -26,6 +26,7 @@ from onmt.utils.parse import ArgumentParser
 from onmt.translate.translator import build_translator
 from onmt.transforms.features import InferFeatsTransform
 from onmt.inputters.text_utils import textbatch_to_tensor
+from onmt.utils.alignment import build_align_pharaoh
 
 
 def critical(func):
@@ -86,13 +87,14 @@ class CTranslate2Translator(object):
 
     def __init__(self, model_path, ct2_translator_args,
                  ct2_translate_batch_args, target_prefix=False,
-                 preload=False):
+                 preload=False, report_align=False):
         import ctranslate2
         self.translator = ctranslate2.Translator(
             model_path,
             **ct2_translator_args)
         self.ct2_translate_batch_args = ct2_translate_batch_args
         self.target_prefix = target_prefix
+        self.report_align = report_align
         if preload:
             # perform a first request to initialize everything
             dummy_translation = self.translate(["a"])
@@ -147,6 +149,8 @@ class CTranslate2Translator(object):
         batch = [item.split(" ") for item in texts_to_translate]
         if tgt is not None:
             tgt = [item.split(" ") for item in tgt]
+        if self.report_align:
+            self.ct2_translate_batch_args['return_attention'] = True
         preds = self.translator.translate_batch(
             batch,
             target_prefix=tgt if self.target_prefix else None,
@@ -156,6 +160,23 @@ class CTranslate2Translator(object):
         scores = [[item["score"] for item in ex] for ex in preds]
         predictions = [[" ".join(item["tokens"]) for item in ex]
                        for ex in preds]
+        
+        if self.report_align:
+            attentions = [[torch.Tensor(item["attention"]) for item in ex]
+                            for ex in preds]
+            align_pharaohs = [[build_align_pharaoh(item) for item in ex]
+                            for ex in attentions]
+            aligns = [[' '.join(item) for item in ex]
+                            for ex in align_pharaohs]
+            
+            predictions = [
+                        [pred + DefaultTokens.ALIGNMENT_SEPARATOR + align
+                        for pred, align in zip(*item)]
+                        for item in zip(
+                            predictions, aligns
+                        )   
+            ]
+        
         return scores, predictions
 
     def to_cpu(self):
@@ -447,7 +468,8 @@ class ServerModel(object):
                     ct2_translator_args=self.ct2_translator_args,
                     ct2_translate_batch_args=self.ct2_translate_batch_args,
                     target_prefix=self.opt.tgt_file_prefix,
-                    preload=preload)
+                    preload=preload,
+                    report_align = self.opt.report_align)
             else:
                 self.translator = build_translator(
                     self.opt, report_score=False,
