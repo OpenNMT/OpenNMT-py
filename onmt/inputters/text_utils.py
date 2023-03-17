@@ -112,6 +112,7 @@ def process(task, bucket, **kwargs):
 def numericalize(vocabs, example):
     """
     """
+    decoder_start_token = vocabs['decoder_start_token']
     numeric = example
     numeric['src']['src_ids'] = []
     if vocabs['data_task'] == ModelTask.SEQ2SEQ:
@@ -121,7 +122,7 @@ def numericalize(vocabs, example):
             numeric['tgt']['tgt_ids'] = []
             tgt_text = example['tgt']['tgt'].split()
             numeric['tgt']['tgt_ids'] = \
-                vocabs['tgt']([DefaultTokens.BOS] + tgt_text
+                vocabs['tgt']([decoder_start_token] + tgt_text
                               + [DefaultTokens.EOS])
 
     elif vocabs['data_task'] == ModelTask.LANGUAGE_MODEL:

@@ -132,18 +132,17 @@ class Inference(object):
         logger=None,
         seed=-1,
         with_score=False,
-        decoder_start_token=DefaultTokens.BOS
     ):
         self.model = model
         self.vocabs = vocabs
-        self._tgt_vocab = self.vocabs['tgt']
-        self._tgt_eos_idx = self.vocabs['tgt'].lookup_token(DefaultTokens.EOS)
-        self._tgt_pad_idx = self.vocabs['tgt'].lookup_token(DefaultTokens.PAD)
-        self._tgt_bos_idx = self.vocabs['tgt'].lookup_token(DefaultTokens.BOS)
-        self._tgt_unk_idx = self.vocabs['tgt'].lookup_token(DefaultTokens.UNK)
-        self._tgt_sep_idx = self.vocabs['tgt'].lookup_token(DefaultTokens.SEP)
+        self._tgt_vocab = vocabs['tgt']
+        self._tgt_eos_idx = vocabs['tgt'].lookup_token(DefaultTokens.EOS)
+        self._tgt_pad_idx = vocabs['tgt'].lookup_token(DefaultTokens.PAD)
+        self._tgt_bos_idx = vocabs['tgt'].lookup_token(DefaultTokens.BOS)
+        self._tgt_unk_idx = vocabs['tgt'].lookup_token(DefaultTokens.UNK)
+        self._tgt_sep_idx = vocabs['tgt'].lookup_token(DefaultTokens.SEP)
         self._tgt_start_with =\
-            self.vocabs['tgt'].lookup_token(decoder_start_token)
+            vocabs['tgt'].lookup_token(vocabs['decoder_start_token'])
         self._tgt_vocab_len = len(self._tgt_vocab)
 
         self._gpu = gpu
@@ -279,7 +278,6 @@ class Inference(object):
             logger=logger,
             seed=opt.seed,
             with_score=opt.with_score,
-            decoder_start_token=opt.decoder_start_token
         )
 
     def _log(self, msg):
