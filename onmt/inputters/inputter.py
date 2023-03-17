@@ -39,6 +39,7 @@ def build_vocab(opt, specials):
         vocabs: {'src': pyonmttok.Vocab, 'tgt': pyonmttok.Vocab,
                  'src_feats' : [pyonmttok.Vocab, ...]},
                  'data_task': seq2seq or lm
+                 'decoder_start_token': DefaultTokens.BOS
                 }
     """
     def _pad_vocab_to_multiple(vocab, multiple):
@@ -101,6 +102,7 @@ def build_vocab(opt, specials):
         vocabs["src_feats"] = src_feats_vocabs
 
     vocabs['data_task'] = opt.data_task
+    vocabs['decoder_start_token'] = opt.decoder_start_token
 
     return vocabs
 
@@ -145,6 +147,10 @@ def vocabs_to_dict(vocabs):
         vocabs_dict['src_feats'] = [feat_vocab.ids_to_tokens
                                     for feat_vocab in vocabs['src_feats']]
     vocabs_dict['data_task'] = vocabs['data_task']
+    if 'decoder_start_token' in vocabs.keys():
+        vocabs_dict['decoder_start_token'] = vocabs['decoder_start_token']
+    else:
+        vocabs_dict['decoder_start_token'] = DefaultTokens.BOS
     return vocabs_dict
 
 
@@ -155,6 +161,10 @@ def dict_to_vocabs(vocabs_dict):
     """
     vocabs = {}
     vocabs['data_task'] = vocabs_dict['data_task']
+    if 'decoder_start_token' in vocabs_dict.keys():
+        vocabs['decoder_start_token'] = vocabs_dict['decoder_start_token']
+    else:
+        vocabs['decoder_start_token'] = DefaultTokens.BOS
     vocabs['src'] = pyonmttok.build_vocab_from_tokens(vocabs_dict['src'])
     if vocabs_dict['src'] == vocabs_dict['tgt']:
         vocabs['tgt'] = vocabs['src']
