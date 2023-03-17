@@ -24,15 +24,12 @@ from onmt.utils.alignment import to_word_align
 from onmt.utils.parse import ArgumentParser
 from onmt.translate.translator import build_translator
 from onmt.transforms.features import InferFeatsTransform
-<<<<<<< HEAD
 from onmt.inputters.text_utils import textbatch_to_tensor
 from onmt.utils.alignment import build_align_pharaoh
-=======
 from onmt.inputters.text_utils import (textbatch_to_tensor,
                                        parse_features,
                                        append_features_to_text)
 from onmt.inputters.inputter import IterOnDevice
->>>>>>> 1856a6605806186e06e759388b6392c7d8612ebc
 
 
 def critical(func):
