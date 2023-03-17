@@ -3,6 +3,16 @@
 
 
 ## [Unreleased]
+## [3.0.4](https://github.com/OpenNMT/OpenNMT-py/tree/3.0.4) (2023-02-06)
+* override_opts to override checkpoints opt when training from
+* normalize transform based on (Sacre)Moses scripts
+* uppercase transform for adhoc data augmentation
+* suffix transform
+* Fuzzy match transform
+* WMT17 detailed example
+* NLLB-200 (from Meta/FB) models support (after conversion)
+* various bug fixes
+
 ## [3.0.3](https://github.com/OpenNMT/OpenNMT-py/tree/3.0.3) (2022-12-16)
 * fix loss normalization when using accum or nb GPU > 1
 * use native CrossEntropyLoss with Label Smoothing. reported loss/ppl impacted by LS

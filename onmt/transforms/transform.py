@@ -75,6 +75,16 @@ class Transform(object):
     def apply_reverse(self, translated):
         return translated
 
+    def batch_apply_reverse(self, translated_batch, **kwargs):
+        transformed_batch = []
+        for translated in translated_batch:
+            reversed = self.apply_reverse(translated, **kwargs)
+            if isinstance(reversed, list):
+                transformed_batch += reversed
+            elif reversed is not None:
+                transformed_batch.append(reversed)
+        return transformed_batch
+
     def __getstate__(self):
         """Pickling following for rebuild."""
         state = {"opts": self.opts}

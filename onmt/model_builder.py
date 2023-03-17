@@ -31,14 +31,13 @@ def build_embeddings(opt, vocabs, for_encoder=True):
         emb_dim = opt.src_word_vec_size
         word_padding_idx = vocabs['src'][DefaultTokens.PAD]
         num_word_embeddings = len(vocabs['src'])
-        if 'src_feats' in vocabs.keys():
-            feat_pad_indices = [vocabs['src_feats'][feat][DefaultTokens.PAD]
-                                for feat in vocabs['src_feats'].keys()]
-            num_feat_embeddings = [len(vocabs['src_feats'][feat])
-                                   for feat in vocabs['src_feats'].keys()]
+        if 'src_feats' in vocabs:
+            feat_pad_indices = \
+                [fv[DefaultTokens.PAD] for fv in vocabs['src_feats']]
+            num_feat_embeddings = \
+                [len(fv) for fv in vocabs['src_feats']]
         freeze_word_vecs = opt.freeze_word_vecs_enc
     else:
-
         emb_dim = opt.tgt_word_vec_size
         word_padding_idx = vocabs['tgt'][DefaultTokens.PAD]
         num_word_embeddings = len(vocabs['tgt'])
