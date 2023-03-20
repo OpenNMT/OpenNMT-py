@@ -484,7 +484,7 @@ class ServerModel(object):
                     ct2_translate_batch_args=self.ct2_translate_batch_args,
                     target_prefix=self.opt.tgt_file_prefix,
                     preload=preload,
-                    report_align = self.opt.report_align)
+                    report_align=self.opt.report_align)
             else:
                 self.translator = build_translator(
                     self.opt, report_score=False,
