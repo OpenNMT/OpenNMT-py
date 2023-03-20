@@ -168,8 +168,8 @@ class InlineTagger(object):
                 )
                 tgt_paired_tags = (
                     f'{tgt_example[tgt_offset: tgt_match_start]}'
-                    f'{self.paired_etag_prefix}{paired_tag_start_num}'
-                    f'{self.paired_etag_suffix}{tgt_term}'
+                    f'{self.paired_stag_prefix}{paired_tag_start_num}'
+                    f'{self.paired_stag_suffix}{tgt_term}'
                     f'{self.paired_etag_prefix}{paired_tag_start_num}'
                     f'{self.paired_etag_suffix}'
                 )
