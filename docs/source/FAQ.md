@@ -746,6 +746,7 @@ A server configuration file (`./available_models/conf.json`) is required. It con
   - `load`: (opt) whether to load the model at start [default: False]
   - `on_timeout`: (opt) what to do on timeout: `unload` removes everything; `to_cpu` transfer the model to RAM (from GPU memory) this is faster to reload but takes RAM.
   - `opt`: (opt) dict of translation options (see method `translate_opts` in `./opts.py`)
+    - `report_align`: (bool) return word alignment in pharaoh ('src-tgt') format for every space separated word.
   - `tokenizer`: (opt) set tokenizer options (if any), such as:
     - `type`: (str) value in `{sentencepiece, pyonmttok}`.
     - `model`: (str) path to tokenizer model
