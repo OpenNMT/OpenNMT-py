@@ -17,11 +17,15 @@ import pyonmttok
 def learn_subword(tokenization_type, vocab_size):
     if tokenization_type == "bpe":
         # BPE training
-        tokenizer = pyonmttok.Tokenizer("aggressive", joiner_annotate=True, segment_numbers=True)
-        learner = pyonmttok.BPELearner(tokenizer=tokenizer, symbols=vocab_size)
+        tokenizer = pyonmttok.Tokenizer("aggressive",
+                                        joiner_annotate=True,
+                                        segment_numbers=True)
+        learner = pyonmttok.BPELearner(tokenizer=tokenizer,
+                                       symbols=vocab_size)
     elif tokenization_type == "spm":
         # SentencePiece training
-        learner = pyonmttok.SentencePieceLearner(vocab_size=vocab_size, character_coverage=0.98)
+        learner = pyonmttok.SentencePieceLearner(vocab_size=vocab_size,
+                                                 character_coverage=0.98)
 
     return learner
 
@@ -62,7 +66,7 @@ def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
         corpora, transforms, opts.data,
         skip_empty_level=opts.skip_empty_level,
         stride=stride, offset=offset)
-    
+
     if opts.tokenization_type is not None:
         learner = learn_subword(opts.tokenization_type, opts.src_vocab_size)
         data_dir = os.path.split(opts.save_data)[0]
@@ -95,9 +99,11 @@ def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
             src_line, tgt_line = (maybe_example['src']['src'],
                                   maybe_example['tgt']['tgt'])
             if opts.tokenization_type is not None:
-                src_subwords = tokenizer.tokenize(src_line, as_token_objects=True)
+                src_subwords = tokenizer.tokenize(src_line,
+                                                  as_token_objects=True)
                 src_subwords = tokenizer.serialize_tokens(src_subwords)[0]
-                tgt_subwords = tokenizer.tokenize(tgt_line, as_token_objects=True)
+                tgt_subwords = tokenizer.tokenize(tgt_line,
+                                                  as_token_objects=True)
                 tgt_subwords = tokenizer.serialize_tokens(tgt_subwords)[0]
                 sub_counter_src.update(src_subwords)
                 sub_counter_tgt.update(tgt_subwords)
