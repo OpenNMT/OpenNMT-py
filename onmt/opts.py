@@ -159,15 +159,15 @@ def _add_dynamic_vocab_opts(parser, build_vocab_only=False):
                    "for most ONMT models it is <s> = BOS "
                    "it happens that for some Fairseq model it requires </s> ")
     group.add('-tokenization_type', '--tokenization_type',
-                  type=str, default=None,
-                  choices=["bpe", "spm"],
-                  help="Tokenization type used in build_vocab.")
+              type=str, default=None,
+              choices=["bpe", "spm"],
+              help="Tokenization type used in build_vocab.")
     group.add("-src_vocab_size", "--src_vocab_size",
-                  type=int, default=32768,
-                  help="Maximum size of the source vocabulary.")
+              type=int, default=32768,
+              help="Maximum size of the source vocabulary.")
     group.add("-tgt_vocab_size", "--tgt_vocab_size",
-                  type=int, default=32768,
-                  help="Maximum size of the target vocabulary")
+              type=int, default=32768,
+              help="Maximum size of the target vocabulary")
 
     _add_features_opts(parser)
 
