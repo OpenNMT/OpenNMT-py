@@ -83,7 +83,7 @@ def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
                         build_sub_vocab.queues[c_name][offset].put("blank")
                     continue
                 src_line, tgt_line = (maybe_example['src']['src'],
-                                    maybe_example['tgt']['tgt'])
+                                      maybe_example['tgt']['tgt'])
                 learner.ingest(src_line)
                 learner.ingest(tgt_line)
         tokenizer = learner.learn(tok_path)
