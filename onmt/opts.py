@@ -153,15 +153,9 @@ def _add_dynamic_vocab_opts(parser, build_vocab_only=False):
               "Format: one <word> or <word>\t<count> per line.")
     group.add("-share_vocab", "--share_vocab", action="store_true",
               help="Share source and target vocabulary.")
-    group.add('--decoder_start_token', '-decoder_start_token', type=str,
-              default=DefaultTokens.BOS,
-              help="Default decoder start token "
-                   "for most ONMT models it is <s> = BOS "
-                   "it happens that for some Fairseq model it requires </s> ")
-    group.add('-tokenization_type', '--tokenization_type',
-              type=str, default=None,
-              choices=["bpe", "spm"],
-              help="Tokenization type used in build_vocab.")
+    group.add('-learn_subword', '--learn_subword', action="store_true",
+              help="If true, build_vocab will train a new tokenizer. "
+              "src_subword_type should be set too")
     group.add("-src_vocab_size", "--src_vocab_size",
               type=int, default=32768,
               help="Maximum size of the source vocabulary.")
@@ -769,6 +763,11 @@ def _add_decoding_opts(parser):
                    "corresponding target token. If it is not provided "
                    "(or the identified source token does not exist in "
                    "the table), then it will copy the source token.")
+    group.add('--decoder_start_token', '-decoder_start_token', type=str,
+              default=DefaultTokens.BOS,
+              help="Default decoder start token "
+                   "for most ONMT models it is <s> = BOS "
+                   "it happens that for some Fairseq model it requires </s> ")
 
 
 def translate_opts(parser, dynamic=False):
@@ -808,9 +807,6 @@ def translate_opts(parser, dynamic=False):
                    "be the decoded sequence")
     group.add('--report_align', '-report_align', action='store_true',
               help="Report alignment for each translation.")
-    group.add('--gold_align', '-gold_align', action='store_true',
-              help="Report alignment between source and gold target."
-                   "Useful to test the performance of learnt alignments.")
     group.add('--report_time', '-report_time', action='store_true',
               help="Report some translation time metrics")
 
