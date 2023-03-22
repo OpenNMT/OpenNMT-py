@@ -153,6 +153,11 @@ def _add_dynamic_vocab_opts(parser, build_vocab_only=False):
               "Format: one <word> or <word>\t<count> per line.")
     group.add("-share_vocab", "--share_vocab", action="store_true",
               help="Share source and target vocabulary.")
+    group.add('--decoder_start_token', '-decoder_start_token', type=str,
+              default=DefaultTokens.BOS,
+              help="Default decoder start token "
+                   "for most ONMT models it is <s> = BOS "
+                   "it happens that for some Fairseq model it requires </s> ")
     group.add('-learn_subword', '--learn_subword', action="store_true",
               help="If true, build_vocab will train a new tokenizer. "
               "src_subword_type should be set too")
@@ -763,11 +768,6 @@ def _add_decoding_opts(parser):
                    "corresponding target token. If it is not provided "
                    "(or the identified source token does not exist in "
                    "the table), then it will copy the source token.")
-    group.add('--decoder_start_token', '-decoder_start_token', type=str,
-              default=DefaultTokens.BOS,
-              help="Default decoder start token "
-                   "for most ONMT models it is <s> = BOS "
-                   "it happens that for some Fairseq model it requires </s> ")
 
 
 def translate_opts(parser, dynamic=False):
