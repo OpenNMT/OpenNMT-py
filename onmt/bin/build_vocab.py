@@ -57,6 +57,21 @@ def write_files_from_queues(sample_path, queues):
                     break
 
 
+def get_tokenizer(subword_type, model_path):
+    if subword_type == "bpe":
+        logger.info("Loading BPE model %s" % model_path)
+        tokenizer = pyonmttok.Tokenizer("aggressive",
+                                        bpe_model_path=model_path,
+                                        joiner_annotate=True,
+                                        segment_numbers=True)
+    elif subword_type == "sentencepiece":
+        logger.info("Loading SentencePiece model %s" % model_path)
+        tokenizer = pyonmttok.Tokenizer("aggressive",
+                                        spm_model_path=model_path)
+
+        return tokenizer
+
+
 def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
     """Build vocab on (strided) subpart of the data."""
     sub_counter_src = Counter()
@@ -67,12 +82,16 @@ def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
         skip_empty_level=opts.skip_empty_level,
         stride=stride, offset=offset)
 
-    if opts.tokenization_type is not None:
-        learner = learn_subword(opts.tokenization_type, opts.src_vocab_size)
+    if opts.learn_subword is False:
+        if opts.src_subword_model is not None:
+            get_tokenizer(opts.src_subword_type, opts.src_subword_model)
+    else:
+        logger.info(f"Learning {opts.src_subword_type} model from corpus")
+        learner = learn_subword(opts.src_subword_type, opts.src_vocab_size)
         data_dir = os.path.split(opts.save_data)[0]
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
-        tok_path = os.path.join(data_dir, f"{opts.tokenization_type}.model")
+        tok_path = os.path.join(data_dir, f"{opts.src_subword_type}.model")
         for c_name, c_iter in datasets_iterables.items():
             for i, item in enumerate(c_iter):
                 maybe_example = process(CorpusTask.TRAIN, [item])
@@ -98,7 +117,7 @@ def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
                 continue
             src_line, tgt_line = (maybe_example['src']['src'],
                                   maybe_example['tgt']['tgt'])
-            if opts.tokenization_type is not None:
+            if opts.src_subword_type != "none":
                 src_subwords = tokenizer.tokenize(src_line,
                                                   as_token_objects=True)
                 src_subwords = tokenizer.serialize_tokens(src_subwords)[0]
