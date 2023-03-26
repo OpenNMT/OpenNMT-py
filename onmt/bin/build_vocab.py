@@ -22,7 +22,7 @@ def learn_subword(tokenization_type, vocab_size):
                                         segment_numbers=True)
         learner = pyonmttok.BPELearner(tokenizer=tokenizer,
                                        symbols=vocab_size)
-    elif tokenization_type == "spm":
+    elif tokenization_type == "sentencepiece":
         # SentencePiece training
         learner = pyonmttok.SentencePieceLearner(vocab_size=vocab_size,
                                                  character_coverage=0.98)
@@ -57,21 +57,6 @@ def write_files_from_queues(sample_path, queues):
                     break
 
 
-def get_tokenizer(subword_type, model_path):
-    if subword_type == "bpe":
-        logger.info("Loading BPE model %s" % model_path)
-        tokenizer = pyonmttok.Tokenizer("aggressive",
-                                        bpe_model_path=model_path,
-                                        joiner_annotate=True,
-                                        segment_numbers=True)
-    elif subword_type == "sentencepiece":
-        logger.info("Loading SentencePiece model %s" % model_path)
-        tokenizer = pyonmttok.Tokenizer("aggressive",
-                                        spm_model_path=model_path)
-
-        return tokenizer
-
-
 def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
     """Build vocab on (strided) subpart of the data."""
     sub_counter_src = Counter()
@@ -82,16 +67,16 @@ def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
         skip_empty_level=opts.skip_empty_level,
         stride=stride, offset=offset)
 
-    if opts.learn_subword is False:
-        if opts.src_subword_model is not None:
-            get_tokenizer(opts.src_subword_type, opts.src_subword_model)
-    else:
+    if opts.learn_subword is True:
         logger.info(f"Learning {opts.src_subword_type} model from corpus")
         learner = learn_subword(opts.src_subword_type, opts.src_vocab_size)
-        data_dir = os.path.split(opts.save_data)[0]
-        if not os.path.exists(data_dir):
-            os.makedirs(data_dir)
-        tok_path = os.path.join(data_dir, f"{opts.src_subword_type}.model")
+        if opts.src_subword_model is not None:
+            tok_path = opts.src_subword_model
+        else:
+            data_dir = os.path.split(opts.save_data)[0]
+            if not os.path.exists(data_dir):
+                os.makedirs(data_dir)
+            tok_path = os.path.join(data_dir, f"{opts.src_subword_type}.model")
         for c_name, c_iter in datasets_iterables.items():
             for i, item in enumerate(c_iter):
                 maybe_example = process(CorpusTask.TRAIN, [item])
@@ -105,7 +90,7 @@ def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
                                       maybe_example['tgt']['tgt'])
                 learner.ingest(src_line)
                 learner.ingest(tgt_line)
-        tokenizer = learner.learn(tok_path)
+        opts.src_subword_model = learner.learn(tok_path)
     for c_name, c_iter in datasets_iterables.items():
         for i, item in enumerate(c_iter):
             maybe_example = process(CorpusTask.TRAIN, [item])
@@ -117,18 +102,8 @@ def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
                 continue
             src_line, tgt_line = (maybe_example['src']['src'],
                                   maybe_example['tgt']['tgt'])
-            if opts.src_subword_type != "none":
-                src_subwords = tokenizer.tokenize(src_line,
-                                                  as_token_objects=True)
-                src_subwords = tokenizer.serialize_tokens(src_subwords)[0]
-                tgt_subwords = tokenizer.tokenize(tgt_line,
-                                                  as_token_objects=True)
-                tgt_subwords = tokenizer.serialize_tokens(tgt_subwords)[0]
-                sub_counter_src.update(src_subwords)
-                sub_counter_tgt.update(tgt_subwords)
-            else:
-                sub_counter_src.update(src_line.split(' '))
-                sub_counter_tgt.update(tgt_line.split(' '))
+            sub_counter_src.update(src_line.split(' '))
+            sub_counter_tgt.update(tgt_line.split(' '))
 
             if 'feats' in maybe_example['src']:
                 src_feats_lines = maybe_example['src']['feats']
