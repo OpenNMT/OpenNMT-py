@@ -158,16 +158,19 @@ def _add_dynamic_vocab_opts(parser, build_vocab_only=False):
               help="Default decoder start token "
                    "for most ONMT models it is <s> = BOS "
                    "it happens that for some Fairseq model it requires </s> ")
+    group.add('-learn_subword', '--learn_subword', action="store_true",
+              help="If true, build_vocab will train a new tokenizer. "
+              "src_subword_type should be set too")
+    group.add("-src_vocab_size", "--src_vocab_size",
+              type=int, default=32768,
+              help="Maximum size of the source vocabulary.")
+    group.add("-tgt_vocab_size", "--tgt_vocab_size",
+              type=int, default=32768,
+              help="Maximum size of the target vocabulary")
 
     _add_features_opts(parser)
 
     if not build_vocab_only:
-        group.add("-src_vocab_size", "--src_vocab_size",
-                  type=int, default=32768,
-                  help="Maximum size of the source vocabulary.")
-        group.add("-tgt_vocab_size", "--tgt_vocab_size",
-                  type=int, default=32768,
-                  help="Maximum size of the target vocabulary")
         group.add("-vocab_size_multiple", "--vocab_size_multiple",
                   type=int, default=8,
                   help="Make the vocabulary size a multiple of this value.")
@@ -806,7 +809,7 @@ def translate_opts(parser, dynamic=False):
               help="Report alignment for each translation.")
     group.add('--gold_align', '-gold_align', action='store_true',
               help="Report alignment between source and gold target."
-                   "Useful to test the performance of learnt alignments.")
+              "Useful to test the performance of learnt alignments.")
     group.add('--report_time', '-report_time', action='store_true',
               help="Report some translation time metrics")
 
