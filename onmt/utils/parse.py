@@ -62,12 +62,6 @@ class DataOptsCheckerMixin(object):
                 corpus['path_align'] = None
             else:
                 cls._validate_file(path_align, info=f'{cname}/path_align')
-            # Check prefix: will be used when use prefix transform
-            src_prefix = corpus.get('src_prefix', None)
-            tgt_prefix = corpus.get('tgt_prefix', None)
-            if src_prefix is None or tgt_prefix is None:
-                if 'prefix' in corpus['transforms']:
-                    raise ValueError(f'Corpus {cname} prefix are required.')
             # Check weight
             weight = corpus.get('weight', None)
             if weight is None:

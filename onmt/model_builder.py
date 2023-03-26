@@ -180,7 +180,8 @@ def use_embeddings_from_checkpoint(vocabs, model, generator, checkpoint):
     # Embedding layers
     enc_emb_name = 'encoder.embeddings.make_embedding.emb_luts.0.weight'
     dec_emb_name = 'decoder.embeddings.make_embedding.emb_luts.0.weight'
-
+    model_dict = model.state_dict()
+    generator_dict = generator.state_dict()
     for side, emb_name in [('src', enc_emb_name), ('tgt', dec_emb_name)]:
         if emb_name not in checkpoint['model']:
             continue
@@ -189,14 +190,14 @@ def use_embeddings_from_checkpoint(vocabs, model, generator, checkpoint):
         for i, tok in enumerate(vocabs[side].ids_to_tokens):
             if tok in ckp_vocabs[side]:
                 old_i = ckp_vocabs[side].lookup_token(tok)
-                model.state_dict()[emb_name][i] = checkpoint['model'][
+                model_dict[emb_name][i] = checkpoint['model'][
                     emb_name
                 ][old_i]
                 if side == 'tgt':
-                    generator.state_dict()['weight'][i] = checkpoint[
+                    generator_dict['weight'][i] = checkpoint[
                         'generator'
                     ]['weight'][old_i]
-                    generator.state_dict()['bias'][i] = checkpoint[
+                    generator_dict['bias'][i] = checkpoint[
                         'generator'
                     ]['bias'][old_i]
             else:
@@ -207,6 +208,8 @@ def use_embeddings_from_checkpoint(vocabs, model, generator, checkpoint):
         # Remove old vocabulary associated embeddings
         del checkpoint['model'][emb_name]
     del checkpoint['generator']['weight'], checkpoint['generator']['bias']
+    model.load_state_dict(model_dict)
+    generator.load_state_dict(generator_dict)
 
 
 def build_base_model(model_opt, vocabs, gpu, checkpoint=None, gpu_id=None):

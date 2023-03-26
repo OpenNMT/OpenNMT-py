@@ -52,7 +52,7 @@ def all_reduce_and_rescale_tensors(tensors, rescale_denom,
             offset += numel
 
         # all-reduce and rescale
-        torch.distributed.all_reduce(buffer_t[:offset], async_op=True)
+        torch.distributed.all_reduce(buffer_t[:offset], async_op=False)
         buffer_t.div_(rescale_denom)
 
         # copy all-reduced buffer back into tensors
@@ -68,7 +68,7 @@ def all_reduce_and_rescale_tensors(tensors, rescale_denom,
         # print(filled, sz)
         if sz > buffer_size:
             # tensor is bigger than buffer, all-reduce and rescale directly
-            torch.distributed.all_reduce(t, async_op=True)
+            torch.distributed.all_reduce(t, async_op=False)
             t.div_(rescale_denom)
         elif filled + sz > buffer_size:
             # buffer is full, all-reduce and replace buffer with grad
