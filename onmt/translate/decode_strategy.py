@@ -5,68 +5,64 @@ from onmt.utils.misc import tile
 
 
 class DecodeStrategy(object):
-    """
-    Base class for generation strategies.
+    """Base class for generation strategies.
 
     Args:
-
-    pad (int): Magic integer in output vocab.
-    bos (int): Magic integer in output vocab.
-    eos (int): Magic integer in output vocab.
-    unk (int): Magic integer in output vocab.
-    start (int): Magic integer in output vocab.
-    batch_size (int): Current batch size.
-    parallel_paths (int): Decoding strategies like beam search
-    use parallel paths. Each batch is repeated ``parallel_paths``
-    times in relevant state tensors.
-    min_length (int): Shortest acceptable generation, not counting
-    begin-of-sentence or end-of-sentence.
-    max_length (int): Longest acceptable sequence, not counting
-    begin-of-sentence (presumably there has been no EOS
-    yet if max_length is used as a cutoff).
-    ban_unk_token (Boolean): Whether unk token is forbidden
-    block_ngram_repeat (int): Block beams where
-    ``block_ngram_repeat``-grams repeat.
-    exclusion_tokens (set[int]): If a gram contains any of these
-    tokens, it may repeat.
-    return_attention (bool): Whether to work with attention too. If this
-    is true, it is assumed that the decoder is attentional.
+      pad (int): Magic integer in output vocab.
+      bos (int): Magic integer in output vocab.
+      eos (int): Magic integer in output vocab.
+      unk (int): Magic integer in output vocab.
+      start (int): Magic integer in output vocab.
+      batch_size (int): Current batch size.
+      parallel_paths (int): Decoding strategies like beam search
+        use parallel paths. Each batch is repeated ``parallel_paths``
+        times in relevant state tensors.
+      min_length (int): Shortest acceptable generation, not counting
+        begin-of-sentence or end-of-sentence.
+      max_length (int): Longest acceptable sequence, not counting
+        begin-of-sentence (presumably there has been no EOS
+        yet if max_length is used as a cutoff).
+      ban_unk_token (Boolean): Whether unk token is forbidden
+      block_ngram_repeat (int): Block beams where
+        ``block_ngram_repeat``-grams repeat.
+      exclusion_tokens (set[int]): If a gram contains any of these
+        tokens, it may repeat.
+      return_attention (bool): Whether to work with attention too. If this
+        is true, it is assumed that the decoder is attentional.
 
     Attributes:
-
-    pad (int): See above.
-    bos (int): See above.
-    eos (int): See above.
-    unk (int): See above.
-    start (int): See above.
-    predictions (list[list[LongTensor]]): For each batch, holds a
-    list of beam prediction sequences.
-    scores (list[list[FloatTensor]]): For each batch, holds a
-    list of scores.
-    attention (list[list[FloatTensor or list[]]]): For each
-    batch, holds a list of attention sequence tensors
-    (or empty lists) having shape ``(step, inp_seq_len)`` where
-    ``inp_seq_len`` is the length of the sample (not the max
-    length of all inp seqs).
-    alive_seq (LongTensor): Shape ``(B x parallel_paths, step)``.
-    This sequence grows in the ``step`` axis on each call to
-    :func:``advance()``.
-    is_finished (ByteTensor or NoneType): Shape ``(B, parallel_paths)``.
-    Initialized to ``None``.
-    alive_attn (FloatTensor or NoneType): If tensor, shape is
-    ``(step, B x parallel_paths, inp_seq_len)``, where ``inp_seq_len``
-    is the (max) length of the input sequence.
-    target_prefix (LongTensor or NoneType): If tensor, shape is
-    ``(B x parallel_paths, prefix_seq_len)``, where ``prefix_seq_len``
-    is the (max) length of the pre-fixed prediction.
-    min_length (int): See above.
-    max_length (int): See above.
-    ban_unk_token (Boolean): See above.
-    block_ngram_repeat (int): See above.
-    exclusion_tokens (set[int]): See above.
-    return_attention (bool): See above.
-    done (bool): See above.
-    """
+      pad (int): See above.
+      bos (int): See above.
+      eos (int): See above.
+      unk (int): See above.
+      start (int): See above.
+      predictions (list[list[LongTensor]]): For each batch, holds a
+        list of beam prediction sequences.
+        scores (list[list[FloatTensor]]): For each batch, holds a
+        list of scores.
+      attention (list[list[FloatTensor or list[]]]): For each
+        batch, holds a list of attention sequence tensors
+        (or empty lists) having shape ``(step, inp_seq_len)`` where
+        ``inp_seq_len`` is the length of the sample (not the max
+        length of all inp seqs).
+      alive_seq (LongTensor): Shape ``(B x parallel_paths, step)``.
+        This sequence grows in the ``step`` axis on each call to
+        :func:``advance()``.
+        is_finished (ByteTensor or NoneType): Shape ``(B, parallel_paths)``.
+        Initialized to ``None``.
+      alive_attn (FloatTensor or NoneType): If tensor, shape is
+        ``(step, B x parallel_paths, inp_seq_len)``, where ``inp_seq_len``
+        is the (max) length of the input sequence.
+      target_prefix (LongTensor or NoneType): If tensor, shape is
+        ``(B x parallel_paths, prefix_seq_len)``, where ``prefix_seq_len``
+        is the (max) length of the pre-fixed prediction.
+      min_length (int): See above.
+      max_length (int): See above.
+      ban_unk_token (Boolean): See above.
+      block_ngram_repeat (int): See above.
+      exclusion_tokens (set[int]): See above.
+      return_attention (bool): See above.
+      done (bool): See above."""
 
     def __init__(self, pad, bos, eos, unk, start, batch_size, parallel_paths,
                  global_scorer, min_length, block_ngram_repeat,
@@ -137,8 +133,8 @@ class DecodeStrategy(object):
         """DecodeStrategy subclasses should override :func:`initialize()`.
 
         `initialize` should be called before all actions.
-        used to prepare necessary ingredients for decode.
-        """
+        used to prepare necessary ingredients for decode."""
+
         if device is None:
             device = torch.device('cpu')
         # Here we set the decoder to start with self.start (BOS or EOS)
@@ -181,8 +177,7 @@ class DecodeStrategy(object):
             self.is_finished.fill_(1)
 
     def block_ngram_repeats(self, log_probs):
-        """
-        We prevent the beam from going in any direction that would repeat any
+        """We prevent the beam from going in any direction that would repeat any
         ngram of size <block_ngram_repeat> more thant once.
 
         The way we do it: we maintain a list of all ngrams of size
@@ -197,9 +192,7 @@ class DecodeStrategy(object):
         - Previous version blocks the whole beam, whereas here we only
         block specific tokens.
         - Before the translation would fail when all beams contained
-        repeated ngrams. This is sure to never happen here.
-
-        """
+        repeated ngrams. This is sure to never happen here."""
 
         # we don't block nothing if the user doesn't want it
         if self.block_ngram_repeat <= 0:

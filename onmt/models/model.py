@@ -3,14 +3,12 @@ import torch.nn as nn
 
 
 class BaseModel(nn.Module):
-    """
-    Core trainable object in OpenNMT. Implements a trainable interface
+    """Core trainable object in OpenNMT. Implements a trainable interface
     for a simple, generic encoder / decoder or decoder only model.
 
     Args:
       encoder (onmt.encoders.EncoderBase): an encoder object
-      decoder (onmt.decoders.DecoderBase): a decoder object
-    """
+      decoder (onmt.decoders.DecoderBase): a decoder object"""
 
     def __init__(self, encoder, decoder):
         super(BaseModel, self).__init__()
@@ -35,8 +33,8 @@ class BaseModel(nn.Module):
             (FloatTensor, dict[str, FloatTensor]):
 
             * decoder output ``(batch, tgt_len, hidden)``
-            * dictionary of attention weights ``(batch, tgt_len, src_len)``
-        """
+            * dictionary of attention weights ``(batch, tgt_len, src_len)``"""
+
         raise NotImplementedError
 
     def update_dropout(self, dropout, attention_dropout):
@@ -47,10 +45,8 @@ class BaseModel(nn.Module):
 
 
 class NMTModel(BaseModel):
-    """
-    NMTModel Class
-    See :class:`~onmt.models.BaseModel` for options.
-    """
+    """NMTModel Class
+        See :class:`~onmt.models.BaseModel` for options."""
 
     def __init__(self, encoder, decoder):
         super(NMTModel, self).__init__(encoder, decoder)
@@ -58,15 +54,13 @@ class NMTModel(BaseModel):
         self.decoder = decoder
 
     def forward(self, src, tgt, src_len, bptt=False, with_align=False):
-        """
-        An NMTModel forward the src side to the encoder.
+        """An NMTModel forward the src side to the encoder.
         Then the output of encoder ``enc_out`` is forwarded to the
         decoder along with the target excluding the last token.
         The decoder state is initiliazed with:
         * enc_final_hs in the case of RNNs
         * enc_out + enc_final_hs in the case of CNNs
-        * src in the case of Transformer
-        """
+        * src in the case of Transformer"""
 
         dec_in = tgt[:, :-1, :]
         enc_out, enc_final_hs, src_len = self.encoder(src, src_len)
@@ -87,8 +81,7 @@ class NMTModel(BaseModel):
         Returns:
             (int, int):
             * encoder side parameter count
-            * decoder side parameter count
-        """
+            * decoder side parameter count"""
 
         enc, dec = 0, 0
         for name, param in self.named_parameters():
@@ -104,12 +97,11 @@ class NMTModel(BaseModel):
 
 
 class LanguageModel(BaseModel):
-    """
-    NMTModel Class
+    """NMTModel Class
     Currently TransformerLMDecoder is the only LM decoder implemented
+
     Args:
-    decoder (onmt.decoders.TransformerLMDecoder): a transformer decoder
-    """
+        decoder (onmt.decoders.TransformerLMDecoder): a transformer decoder"""
 
     def __init__(self, encoder=None, decoder=None):
         super(LanguageModel, self).__init__(encoder, decoder)
@@ -120,8 +112,7 @@ class LanguageModel(BaseModel):
 
     def forward(self, src, tgt, src_len, bptt=False, with_align=False):
         """A LanguageModel forward the src side to the decoder along
-        with the source lengths vector. It is a decoder only LM (cf GPT-2)
-        """
+        with the source lengths vector. It is a decoder only LM (cf GPT-2)"""
 
         if not bptt:
             self.decoder.init_state()
@@ -136,10 +127,10 @@ class LanguageModel(BaseModel):
 
     def count_parameters(self, log=print):
         """Count number of parameters in model (& print with `log` callback).
+
         Returns: (int, int)
-        * encoder side parameter count
-        * decoder side parameter count
-        """
+            encoder side parameter count
+            decoder side parameter count"""
 
         enc, dec = 0, 0
         for name, param in self.named_parameters():

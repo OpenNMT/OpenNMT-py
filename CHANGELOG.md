@@ -4,8 +4,8 @@
 
 ## [Unreleased]
 
-## [Unreleased]
 ## [3.1.0](https://github.com/OpenNMT/OpenNMT-py/tree/3.1.0) (2023-03-27)
+* updated docs with Sphinx 6.4
 * Restore source features to v3 (thanks @anderleich)
 * add inline tags transform (thanks @panosk)
 * add docify transform to allow doc-level training / inference
