@@ -207,8 +207,8 @@ class InlineTagger(object):
             tgt_with_tags.append(tgt_example[tgt_offset:])
 
             return (
-                ' '.join(src_with_tags).split(),
-                ' '.join(tgt_with_tags).split(),
+                ''.join(src_with_tags).split(),
+                ''.join(tgt_with_tags).split(),
             )
         else:
             return (src_example.split(), tgt_example.split())
