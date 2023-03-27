@@ -66,5 +66,3 @@ For any user that still need these features, the previous codebase will be retai
 
 Feel free to check it out and let us know what you think of the new paradigm!
 
-----
-

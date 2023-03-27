@@ -58,14 +58,16 @@ class NMTModel(BaseModel):
         self.decoder = decoder
 
     def forward(self, src, tgt, src_len, bptt=False, with_align=False):
-        """An NMTModel forward the src side to the encoder.
+        """
+        An NMTModel forward the src side to the encoder.
         Then the output of encoder ``enc_out`` is forwarded to the
         decoder along with the target excluding the last token.
         The decoder state is initiliazed with:
-            * enc_final_hs in the case of RNNs
-            * enc_out + enc_final_hs in the case of CNNs
-            * src in the case of Transformer
+        * enc_final_hs in the case of RNNs
+        * enc_out + enc_final_hs in the case of CNNs
+        * src in the case of Transformer
         """
+
         dec_in = tgt[:, :-1, :]
         enc_out, enc_final_hs, src_len = self.encoder(src, src_len)
         if not bptt:
@@ -106,7 +108,7 @@ class LanguageModel(BaseModel):
     NMTModel Class
     Currently TransformerLMDecoder is the only LM decoder implemented
     Args:
-      decoder (onmt.decoders.TransformerLMDecoder): a transformer decoder
+    decoder (onmt.decoders.TransformerLMDecoder): a transformer decoder
     """
 
     def __init__(self, encoder=None, decoder=None):
@@ -120,6 +122,7 @@ class LanguageModel(BaseModel):
         """A LanguageModel forward the src side to the decoder along
         with the source lengths vector. It is a decoder only LM (cf GPT-2)
         """
+
         if not bptt:
             self.decoder.init_state()
         dec_out, attns = self.decoder(
@@ -133,10 +136,9 @@ class LanguageModel(BaseModel):
 
     def count_parameters(self, log=print):
         """Count number of parameters in model (& print with `log` callback).
-        Returns:
-            (int, int):
-            * encoder side parameter count
-            * decoder side parameter count
+        Returns: (int, int)
+        * encoder side parameter count
+        * decoder side parameter count
         """
 
         enc, dec = 0, 0

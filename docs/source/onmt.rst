@@ -29,8 +29,6 @@ Loss
 .. autoclass:: onmt.utils.loss.LossCompute
     :members:
 
-.. autoclass:: onmt.utils.loss.LabelSmoothingLoss
-    :members:
 
 Optimizer
 ---------

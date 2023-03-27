@@ -42,8 +42,8 @@ Table of Contents
 
 OpenNMT-py requires:
 
-- Python >= 3.7
-- PyTorch >= 1.9.0
+- Python >= 3.8
+- PyTorch >= 1.13 <2
 
 Install `OpenNMT-py` from `pip`:
 ```bash

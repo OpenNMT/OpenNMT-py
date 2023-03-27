@@ -7,6 +7,7 @@ Contents
 
       main.md
       quickstart.md
+      changes.md
       CONTRIBUTING.md
       ref.rst
 
