@@ -177,8 +177,8 @@ class DecodeStrategy(object):
             self.is_finished.fill_(1)
 
     def block_ngram_repeats(self, log_probs):
-        """We prevent the beam from going in any direction that would repeat any
-        ngram of size <block_ngram_repeat> more thant once.
+        """We prevent the beam from going in any direction that would repeat
+        any ngram of size <block_ngram_repeat> more thant once.
 
         The way we do it: we maintain a list of all ngrams of size
         <block_ngram_repeat> that is updated each time the beam advances, and
