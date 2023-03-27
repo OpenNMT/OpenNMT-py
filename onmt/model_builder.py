@@ -6,7 +6,6 @@ import re
 import torch
 import torch.nn as nn
 from torch.nn.init import xavier_uniform_
-
 import onmt.modules
 from onmt.encoders import str2enc
 from onmt.decoders import str2dec
@@ -16,6 +15,54 @@ from onmt.utils.misc import use_gpu
 from onmt.utils.logging import logger
 from onmt.utils.parse import ArgumentParser
 from onmt.constants import DefaultTokens, ModelTask
+from onmt.modules import Linear, Embedding, mark_only_lora_as_trainable
+
+
+def replace_lora_linear(model, r=2, lora_alpha=1,
+                        lora_dropout=0, layer=""):
+    """
+    Function replacing layers with LoRa layers recursively.
+    Args:
+        model:
+        r: rank of matrix of the Low Rank layer
+        lora_alpha: cf paper
+        lora_dropout: cf paper
+        layer: layer name of the model to be replaced
+    """
+    for name, module in model.named_children():
+        if len(list(module.children())) > 0:
+            replace_lora_linear(module, r, lora_alpha,
+                                lora_dropout, layer)
+        if isinstance(module, nn.Linear) and name == layer:
+            model._modules[name] = Linear(
+                module.in_features,
+                module.out_features,
+                r=r,
+                lora_alpha=lora_alpha,
+                lora_dropout=lora_dropout)
+    return model
+
+
+def replace_lora_embedding(model, r=2, lora_alpha=1):
+    """
+    Function replacing Embeddings with LoRa ones recursively.
+    Args:
+        model:
+        r: rank of matrix of the Low Rank layer
+        lora_alpha: cf paper
+    """
+    for name, module in model.named_children():
+        if len(list(module.children())) > 0:
+            replace_lora_embedding(module, r, lora_alpha)
+        if isinstance(module, nn.Embedding):
+            model._modules[name] = Embedding(
+                module.num_embeddings,
+                module.embedding_dim,
+                r=r,
+                lora_alpha=lora_alpha,
+                padding_idx=module.padding_idx,
+                sparse=module.sparse)
+    return model
 
 
 def build_embeddings(opt, vocabs, for_encoder=True):
@@ -112,6 +159,7 @@ def load_test_model(opt, model_path=None):
             raise ValueError(
                 "Dynamic 8-bit quantization is not supported on GPU")
         torch.quantization.quantize_dynamic(model, inplace=True)
+
     model.eval()
     model.generator.eval()
     return vocabs, model, model_opt
@@ -245,6 +293,21 @@ def build_base_model(model_opt, vocabs, gpu, checkpoint=None, gpu_id=None):
         device = torch.device("cpu")
 
     model = build_task_specific_model(model_opt, vocabs)
+    if hasattr(model_opt, 'lora_layers') and len(model_opt.lora_layers) > 0:
+        if model_opt.freeze_encoder or model_opt.freeze_decoder:
+            raise ValueError("Cannot use LoRa with Enc/Dec-oder freezing")
+        for layer in model_opt.lora_layers:
+            model = replace_lora_linear(model, r=model_opt.lora_rank,
+                                        lora_alpha=model_opt.lora_alpha,
+                                        lora_dropout=model_opt.lora_dropout,
+                                        layer=layer)
+    if hasattr(model_opt, 'lora_embedding') and model_opt.lora_embedding:
+        if model_opt.freeze_encoder or model_opt.freeze_decoder:
+            raise ValueError("Cannot use LoRa with Enc/Dec-oder freezing")
+        model = replace_lora_embedding(model, r=model_opt.lora_rank,
+                                       lora_alpha=model_opt.lora_alpha)
+
+    mark_only_lora_as_trainable(model, bias='lora_only')
 
     # Build Generator.
     if not model_opt.copy_attn:
@@ -308,6 +371,7 @@ def build_base_model(model_opt, vocabs, gpu, checkpoint=None, gpu_id=None):
                                            checkpoint)
 
         model.load_state_dict(checkpoint['model'], strict=False)
+
         generator.load_state_dict(checkpoint['generator'], strict=False)
 
     model.generator = generator
@@ -325,6 +389,7 @@ def build_base_model(model_opt, vocabs, gpu, checkpoint=None, gpu_id=None):
             model_opt.apex_opt_level not in ['O0', 'O1', 'O2', 'O3'] and \
             model_opt.optim == 'fusedadam':
         model.half()
+
     return model
 
 

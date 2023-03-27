@@ -2,6 +2,7 @@
 """Training on a single process."""
 import torch
 import sys
+
 from onmt.utils.logging import init_logger, logger
 from onmt.utils.parse import ArgumentParser
 from onmt.constants import CorpusTask
@@ -147,11 +148,11 @@ def main(opt, device_id):
     init_logger(opt.log_file)
 
     checkpoint, vocabs, transforms_cls = _init_train(opt)
-
     model_opt = _get_model_opts(opt, checkpoint=checkpoint)
 
     # Build model.
     model = build_model(model_opt, opt, vocabs, checkpoint)
+
     model.count_parameters(log=logger.info)
     logger.info(' * src vocab size = %d' % len(vocabs['src']))
     logger.info(' * tgt vocab size = %d' % len(vocabs['tgt']))
