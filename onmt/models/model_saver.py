@@ -113,8 +113,10 @@ class ModelSaver(ModelSaverBase):
     """Simple model saver to filesystem"""
 
     def _save(self, step, model):
-        # model_state_dict = lora.lora_state_dict(model, bias='lora_only')
-        # print(model.state_dict())
+        # for future use?
+        # if we want to save the LoRa model state_dict only
+        # model_state_dict = lora_state_dict(model, bias='lora_only')
+        # and comment the line below
         model_state_dict = model.state_dict()
         model_state_dict = {k: v for k, v in model_state_dict.items()
                             if 'generator' not in k}

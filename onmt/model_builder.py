@@ -293,13 +293,17 @@ def build_base_model(model_opt, vocabs, gpu, checkpoint=None, gpu_id=None):
         device = torch.device("cpu")
 
     model = build_task_specific_model(model_opt, vocabs)
-    if hasattr(model_opt, 'lora_layer') and len(model_opt.lora_layer) > 0:
-        for layer in model_opt.lora_layer:
+    if hasattr(model_opt, 'lora_layers') and len(model_opt.lora_layers) > 0:
+        if model_opt.freeze_encoder or model_opt.freeze_decoder:
+            raise ValueError("Cannot use LoRa with Enc/Dec-oder freezing")
+        for layer in model_opt.lora_layers:
             model = replace_lora_linear(model, r=model_opt.lora_rank,
                                         lora_alpha=model_opt.lora_alpha,
                                         lora_dropout=model_opt.lora_dropout,
                                         layer=layer)
     if hasattr(model_opt, 'lora_embedding') and model_opt.lora_embedding:
+        if model_opt.freeze_encoder or model_opt.freeze_decoder:
+            raise ValueError("Cannot use LoRa with Enc/Dec-oder freezing")
         model = replace_lora_embedding(model, r=model_opt.lora_rank,
                                        lora_alpha=model_opt.lora_alpha)
 

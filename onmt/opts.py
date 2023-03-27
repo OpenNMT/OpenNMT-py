@@ -496,17 +496,18 @@ def _add_train_general_opts(parser):
               help="Port of master for torch.distributed training.")
 
     # LoRa
-    group.add('--lora_layer', '-lora_layer', default=[], nargs='*', type=str,
+    group.add('--lora_layers', '-lora_layers', default=[], nargs='*', type=str,
               help="list of layers to be replaced by LoRa layers."
-                   " ex: ['linear_values', 'linear_query'] ")
+                   " ex: ['linear_values', 'linear_query'] "
+                   " cf paper §4.2 https://arxiv.org/abs/2106.09685")
     group.add("--lora_embedding", "-lora_embedding", action='store_true',
-              help="replace embeddings with LoRa Embeddings")
+              help="replace embeddings with LoRa Embeddings see §5.1")
     group.add('--lora_rank', '-lora_rank', type=int, default=2,
-              help="https://arxiv.org/abs/2106.09685")
+              help="r=2 successfully tested with NLLB-200 3.3B")
     group.add('--lora_alpha', '-lora_alpha', type=int, default=1,
-              help="https://arxiv.org/abs/2106.09685")
+              help="§4.1 https://arxiv.org/abs/2106.09685")
     group.add('--lora_dropout', '-lora_dropout', type=float, default=0.0,
-              help="https://arxiv.org/abs/2106.09685")
+              help="rule of thumb: same value as in main model")
 
     _add_reproducibility_opts(parser)
 
