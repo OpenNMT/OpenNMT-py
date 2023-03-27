@@ -7,7 +7,7 @@ fi
 
 mkdir -p wmt17_en_de
 cd wmt17_en_de
-if false; then
+if true; then
 wget 'http://data.statmt.org/wmt17/translation-task/preprocessed/de-en/corpus.tc.en.gz'
 wget 'http://data.statmt.org/wmt17/translation-task/preprocessed/de-en/corpus.tc.de.gz'
 wget 'http://data.statmt.org/wmt17/translation-task/preprocessed/de-en/dev.tgz'

@@ -21,10 +21,10 @@ Contents
       :caption: Examples
       :maxdepth: 2
 
-      examples/Translation.md
-      examples/Summarization.md
-      examples/LanguageModelGeneration.md
-      examples/GGNN.md
+      examples/wmt17/Translation.md
+      examples/summary/Summarization.md
+      examples/wiki_103/LanguageModelGeneration.md
+      examples/ggnn/GGNN.md
 
 
 .. toctree::
