@@ -608,7 +608,7 @@ The principle is to make only a few layers trainable (hence reducing the amount 
 
 You need to train_from a model (for instance NLLB-200 3.3B) and use the following options:
 
-* `lora_layer: ['linear_values', 'linear_query']` these are the two layers of the Self-Attention module the paper recommend to make trainable.
+* `lora_layers: ['linear_values', 'linear_query']` these are the two layers of the Self-Attention module the paper recommend to make trainable.
 * `lora_rank: 2`
 * `lora_dropout: 0.1` or any value you can test
 * `lora_alpha: 1` or any value you can test
