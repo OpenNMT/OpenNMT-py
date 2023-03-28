@@ -1,4 +1,4 @@
-# WMT17 EN-DE Scripts
+# Translation WMT17 en-de
 
 ## Dependencies
 
@@ -11,6 +11,8 @@ pip3 install torch torchvision torchaudio
 ```
 
 ### Apex
+
+This is highly recommended to have fast performance.
 
 ```bash
 git clone https://github.com/NVIDIA/apex

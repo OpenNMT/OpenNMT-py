@@ -12,7 +12,7 @@ Contents
       ref.rst
 
 .. toctree::
-      :caption: FAQ
+      :caption: Frequently Asked Questions
       :maxdepth: 2
 
       FAQ.md
@@ -23,8 +23,8 @@ Contents
       :maxdepth: 2
 
       examples/wmt17/Translation.md
-      examples/summary/Summarization.md
       examples/wiki_103/LanguageModelGeneration.md
+      examples/summary/Summarization.md
       examples/ggnn/GGNN.md
 
 

@@ -1,8 +1,8 @@
 
 
-# OpenNMT-py 3.0
+# Versions
 
-**We're happy to announce the release v3.0 of OpenNMT-py.**
+**OpenNMT-py v3 release **
 
 This new version does not rely on Torchtext anymore.
 The checkpoint structure is slightly changed but we provide a tool to convert v2 to v3 models (cf tools/convertv2_v3.py)
@@ -19,20 +19,6 @@ These transforms can be specific tokenization methods, filters, noising, or any 
 You can check out how to use this new data loading pipeline in the updated [docs](https://opennmt.net/OpenNMT-py).
 
 All the readily available transforms are described [here](https://opennmt.net/OpenNMT-py/FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms).
-
-### Performance tips
-
-Given sufficient CPU resources according to GPU computing power, most of the transforms should not slow the training down. (Note: for now, one producer process per GPU is spawned -- meaning you would ideally need 2N CPU threads for N GPUs).
-If you want to optimize the training performance:
-- use fp16
-- use batch_size_multiple 8
-- use vocab_size_multiple 8
-- Depending on the number of GPU use num_workers 4 (for 1 GPU) or 2 (for multiple GPU)
-
-- To avoid averaging checkpoints you can use the "during training" average decay system.
-- If you train a transformer we support max_relative_positions (use 20) instead of position_encoding.
-
-- for very fast inference convert your model to [CTranslate2](https://github.com/OpenNMT/CTranslate2) format. 
 
 ### Breaking changes
 
@@ -56,8 +42,6 @@ Inference:
 The translator will use the same dynamic_iterator as the trainer.
 The new default for inference is `length_penalty=avg` which will provide better BLEU scores in most cases (and comparable to other toolkits defaults)
 
-
-
 Reminder: a few features were dropped between v1 and v2:
 
 - audio, image and video inputs;
@@ -66,3 +50,16 @@ For any user that still need these features, the previous codebase will be retai
 
 Feel free to check it out and let us know what you think of the new paradigm!
 
+### Performance tips
+
+Given sufficient CPU resources according to GPU computing power, most of the transforms should not slow the training down. (Note: for now, one producer process per GPU is spawned -- meaning you would ideally need 2N CPU threads for N GPUs).
+If you want to optimize the training performance:
+- use fp16
+- use batch_size_multiple 8
+- use vocab_size_multiple 8
+- Depending on the number of GPU use num_workers 4 (for 1 GPU) or 2 (for multiple GPU)
+
+- To avoid averaging checkpoints you can use the "during training" average decay system.
+- If you train a transformer we support max_relative_positions (use 20) instead of position_encoding.
+
+- for very fast inference convert your model to [CTranslate2](https://github.com/OpenNMT/CTranslate2) format. 
