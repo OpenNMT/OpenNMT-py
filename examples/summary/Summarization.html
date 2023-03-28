@@ -1,46 +1,88 @@
-<!DOCTYPE html>
-<html class="writer-html5" lang="EN" >
-<head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Summarization CNN/DM &mdash; OpenNMT-py  documentation</title>
-      <link rel="stylesheet" href="../../_static/theme_overrides.css" type="text/css" />
-  <!--[if lt IE 9]>
-    <script src="../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="EN" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="EN" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
+  <title>Summarization CNN/DM &mdash; OpenNMT-py  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
         <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
         <script src="../../_static/doctools.js"></script>
         <script src="../../_static/sphinx_highlight.js"></script>
         <script src="https://unpkg.com/mermaid@9.4.0/dist/mermaid.min.js"></script>
         <script>mermaid.initialize({startOnLoad:true});</script>
-    <script src="../../_static/js/theme.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/theme_overrides.css" type="text/css" />
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Gated Graph Neural Networks" href="../ggnn/GGNN.html" />
     <link rel="prev" title="Language Model Wiki-103" href="../wiki_103/LanguageModelGeneration.html" /> 
 </head>
 
-<body class="wy-body-for-nav"> 
+<body class="wy-body-for-nav">
+
+   
   <div class="wy-grid-for-nav">
+    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
+          
 
           
+            <a href="../../index.html" class="icon icon-home"> OpenNMT-py
           
-          <a href="../../index.html" class="icon icon-home">
-            OpenNMT-py
+
+          
           </a>
+
+          
+            
+            
+          
+
+          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
               <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../main.html">Overview</a></li>
@@ -113,30 +155,68 @@
 <li class="toctree-l1"><a class="reference internal" href="../../legacy/vid2text.html">Video to Text</a></li>
 </ul>
 
+            
+          
         </div>
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../index.html">OpenNMT-py</a>
+        
       </nav>
 
+
       <div class="wy-nav-content">
+        
         <div class="rst-content">
-          <div role="navigation" aria-label="Page navigation">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
   <ul class="wy-breadcrumbs">
-      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Summarization CNN/DM</li>
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Summarization CNN/DM</li>
+    
+    
       <li class="wy-breadcrumbs-aside">
+        
+            
             <a href="../../_sources/examples/summary/Summarization.md.txt" rel="nofollow"> View page source</a>
+          
+        
       </li>
+    
   </ul>
+
+  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-             
+            
   <section id="summarization-cnn-dm">
 <h1>Summarization CNN/DM<a class="headerlink" href="#summarization-cnn-dm" title="Permalink to this heading">¶</a></h1>
 <p>Note: The process and results below are presented in the paper <code class="docutils literal notranslate"><span class="pre">Bottom-Up</span> <span class="pre">Abstractive</span> <span class="pre">Summarization</span></code>. Please consider citing it if you follow these instructions.</p>
@@ -373,95 +453,95 @@ The installation instructions can be found <a class="reference external" href="h
 <tr>
 <th>Model Type</th>
 <th>Model</th>
-<th style="text-align: right;">R1 R</th>
-<th style="text-align: right;">R1 P</th>
-<th style="text-align: right;">R1 F</th>
-<th style="text-align: right;">R2 R</th>
-<th style="text-align: right;">R2 P</th>
-<th style="text-align: right;">R2 F</th>
-<th style="text-align: right;">RL R</th>
-<th style="text-align: right;">RL P</th>
-<th style="text-align: right;">RL F</th>
+<th align="right">R1 R</th>
+<th align="right">R1 P</th>
+<th align="right">R1 F</th>
+<th align="right">R2 R</th>
+<th align="right">R2 P</th>
+<th align="right">R2 F</th>
+<th align="right">RL R</th>
+<th align="right">RL P</th>
+<th align="right">RL F</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>Pointer-Generator + Coverage [2]</td>
 <td><a href="https://github.com/abisee/pointer-generator">link</a></td>
-<td style="text-align: right;">39.05</td>
-<td style="text-align: right;">43.02</td>
-<td style="text-align: right;">39.53</td>
-<td style="text-align: right;">17.16</td>
-<td style="text-align: right;">18.77</td>
-<td style="text-align: right;">17.28</td>
-<td style="text-align: right;">35.98</td>
-<td style="text-align: right;">39.56</td>
-<td style="text-align: right;">36.38</td>
+<td align="right">39.05</td>
+<td align="right">43.02</td>
+<td align="right">39.53</td>
+<td align="right">17.16</td>
+<td align="right">18.77</td>
+<td align="right">17.28</td>
+<td align="right">35.98</td>
+<td align="right">39.56</td>
+<td align="right">36.38</td>
 </tr>
 <tr>
 <td>Pointer-Generator [2]</td>
 <td><a href="https://github.com/abisee/pointer-generator">link</a></td>
-<td style="text-align: right;">37.76</td>
-<td style="text-align: right;">37.60</td>
-<td style="text-align: right;">36.44</td>
-<td style="text-align: right;">16.31</td>
-<td style="text-align: right;">16.12</td>
-<td style="text-align: right;">15.66</td>
-<td style="text-align: right;">34.66</td>
-<td style="text-align: right;">34.46</td>
-<td style="text-align: right;">33.42</td>
+<td align="right">37.76</td>
+<td align="right">37.60</td>
+<td align="right">36.44</td>
+<td align="right">16.31</td>
+<td align="right">16.12</td>
+<td align="right">15.66</td>
+<td align="right">34.66</td>
+<td align="right">34.46</td>
+<td align="right">33.42</td>
 </tr>
 <tr>
 <td>OpenNMT BRNN  (1 layer, emb 128, hid 512)</td>
 <td><a href="https://s3.amazonaws.com/opennmt-models/Summary/ada6_bridge_oldcopy_tagged_acc_54.17_ppl_11.17_e20.pt">link</a></td>
-<td style="text-align: right;">40.90</td>
-<td style="text-align: right;">40.20</td>
-<td style="text-align: right;">39.02</td>
-<td style="text-align: right;">17.91</td>
-<td style="text-align: right;">17.99</td>
-<td style="text-align: right;">17.25</td>
-<td style="text-align: right;">37.76</td>
-<td style="text-align: right;">37.18</td>
-<td style="text-align: right;">36.05</td>
+<td align="right">40.90</td>
+<td align="right">40.20</td>
+<td align="right">39.02</td>
+<td align="right">17.91</td>
+<td align="right">17.99</td>
+<td align="right">17.25</td>
+<td align="right">37.76</td>
+<td align="right">37.18</td>
+<td align="right">36.05</td>
 </tr>
 <tr>
 <td>OpenNMT BRNN  (1 layer, emb 128, hid 512, shared embeddings)</td>
 <td><a href="https://s3.amazonaws.com/opennmt-models/Summary/ada6_bridge_oldcopy_tagged_share_acc_54.50_ppl_10.89_e20.pt">link</a></td>
-<td style="text-align: right;">38.59</td>
-<td style="text-align: right;">40.60</td>
-<td style="text-align: right;">37.97</td>
-<td style="text-align: right;">16.75</td>
-<td style="text-align: right;">17.93</td>
-<td style="text-align: right;">16.59</td>
-<td style="text-align: right;">35.67</td>
-<td style="text-align: right;">37.60</td>
-<td style="text-align: right;">35.13</td>
+<td align="right">38.59</td>
+<td align="right">40.60</td>
+<td align="right">37.97</td>
+<td align="right">16.75</td>
+<td align="right">17.93</td>
+<td align="right">16.59</td>
+<td align="right">35.67</td>
+<td align="right">37.60</td>
+<td align="right">35.13</td>
 </tr>
 <tr>
 <td>OpenNMT BRNN (2 layer, emb 256, hid 1024)</td>
 <td><a href="https://s3.amazonaws.com/opennmt-models/Summary/ada6_bridge_oldcopy_tagged_larger_acc_54.84_ppl_10.58_e17.pt">link</a></td>
-<td style="text-align: right;">40.41</td>
-<td style="text-align: right;">40.94</td>
-<td style="text-align: right;">39.12</td>
-<td style="text-align: right;">17.76</td>
-<td style="text-align: right;">18.38</td>
-<td style="text-align: right;">17.35</td>
-<td style="text-align: right;">37.27</td>
-<td style="text-align: right;">37.83</td>
-<td style="text-align: right;">36.12</td>
+<td align="right">40.41</td>
+<td align="right">40.94</td>
+<td align="right">39.12</td>
+<td align="right">17.76</td>
+<td align="right">18.38</td>
+<td align="right">17.35</td>
+<td align="right">37.27</td>
+<td align="right">37.83</td>
+<td align="right">36.12</td>
 </tr>
 <tr>
 <td>OpenNMT Transformer</td>
 <td><a href="https://s3.amazonaws.com/opennmt-models/sum_transformer_model_acc_57.25_ppl_9.22_e16.pt">link</a></td>
-<td style="text-align: right;">40.31</td>
-<td style="text-align: right;">41.09</td>
-<td style="text-align: right;">39.25</td>
-<td style="text-align: right;">17.97</td>
-<td style="text-align: right;">18.46</td>
-<td style="text-align: right;">17.54</td>
-<td style="text-align: right;">37.41</td>
-<td style="text-align: right;">38.18</td>
-<td style="text-align: right;">36.45</td>
+<td align="right">40.31</td>
+<td align="right">41.09</td>
+<td align="right">39.25</td>
+<td align="right">17.97</td>
+<td align="right">18.46</td>
+<td align="right">17.54</td>
+<td align="right">37.41</td>
+<td align="right">38.18</td>
+<td align="right">36.45</td>
 </tr>
 </tbody>
 </table></section>
@@ -472,30 +552,30 @@ The installation instructions can be found <a class="reference external" href="h
 <tr>
 <th>Model Type</th>
 <th>Model</th>
-<th style="text-align: right;">R1 R</th>
-<th style="text-align: right;">R1 P</th>
-<th style="text-align: right;">R1 F</th>
-<th style="text-align: right;">R2 R</th>
-<th style="text-align: right;">R2 P</th>
-<th style="text-align: right;">R2 F</th>
-<th style="text-align: right;">RL R</th>
-<th style="text-align: right;">RL P</th>
-<th style="text-align: right;">RL F</th>
+<th align="right">R1 R</th>
+<th align="right">R1 P</th>
+<th align="right">R1 F</th>
+<th align="right">R2 R</th>
+<th align="right">R2 P</th>
+<th align="right">R2 F</th>
+<th align="right">RL R</th>
+<th align="right">RL P</th>
+<th align="right">RL F</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>OpenNMT, no penalties</td>
 <td><a href="https://s3.amazonaws.com/opennmt-models/gigaword_copy_acc_51.78_ppl_11.71_e20.pt">link</a></td>
-<td style="text-align: right;">?</td>
-<td style="text-align: right;">?</td>
-<td style="text-align: right;">35.51</td>
-<td style="text-align: right;">?</td>
-<td style="text-align: right;">?</td>
-<td style="text-align: right;">17.35</td>
-<td style="text-align: right;">?</td>
-<td style="text-align: right;">?</td>
-<td style="text-align: right;">33.17</td>
+<td align="right">?</td>
+<td align="right">?</td>
+<td align="right">35.51</td>
+<td align="right">?</td>
+<td align="right">?</td>
+<td align="right">17.35</td>
+<td align="right">?</td>
+<td align="right">?</td>
+<td align="right">33.17</td>
 </tr>
 </tbody>
 </table></section>
@@ -511,33 +591,51 @@ The installation instructions can be found <a class="reference external" href="h
 
 
            </div>
+           
           </div>
-          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="../wiki_103/LanguageModelGeneration.html" class="btn btn-neutral float-left" title="Language Model Wiki-103" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="../ggnn/GGNN.html" class="btn btn-neutral float-right" title="Gated Graph Neural Networks" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../ggnn/GGNN.html" class="btn btn-neutral float-right" title="Gated Graph Neural Networks" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../wiki_103/LanguageModelGeneration.html" class="btn btn-neutral float-left" title="Language Model Wiki-103" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
     </div>
+  
 
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2017-2023, OpenNMT.</p>
-  </div>
+    <p>
+        &copy; Copyright 2017-2023, OpenNMT
 
-  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    provided by <a href="https://readthedocs.org">Read the Docs</a>.
-   
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
+
         </div>
       </div>
+
     </section>
+
   </div>
-  <script>
+  
+
+
+  <script type="text/javascript">
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script> 
+  </script>
+
+  
+  
+    
+   
 
 </body>
 </html>

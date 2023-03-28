@@ -1,45 +1,87 @@
-<!DOCTYPE html>
-<html class="writer-html5" lang="EN" >
-<head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Video to Text &mdash; OpenNMT-py  documentation</title>
-      <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
-  <!--[if lt IE 9]>
-    <script src="../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="EN" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="EN" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
+  <title>Video to Text &mdash; OpenNMT-py  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/doctools.js"></script>
         <script src="../_static/sphinx_highlight.js"></script>
         <script src="https://unpkg.com/mermaid@9.4.0/dist/mermaid.min.js"></script>
         <script>mermaid.initialize({startOnLoad:true});</script>
-    <script src="../_static/js/theme.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="prev" title="Speech to Text" href="speech2text.html" /> 
 </head>
 
-<body class="wy-body-for-nav"> 
+<body class="wy-body-for-nav">
+
+   
   <div class="wy-grid-for-nav">
+    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
+          
 
           
+            <a href="../index.html" class="icon icon-home"> OpenNMT-py
           
-          <a href="../index.html" class="icon icon-home">
-            OpenNMT-py
+
+          
           </a>
+
+          
+            
+            
+          
+
+          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
               <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../main.html">Overview</a></li>
@@ -100,30 +142,68 @@
 </li>
 </ul>
 
+            
+          
         </div>
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../index.html">OpenNMT-py</a>
+        
       </nav>
 
+
       <div class="wy-nav-content">
+        
         <div class="rst-content">
-          <div role="navigation" aria-label="Page navigation">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
   <ul class="wy-breadcrumbs">
-      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Video to Text</li>
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li>Video to Text</li>
+    
+    
       <li class="wy-breadcrumbs-aside">
+        
+            
             <a href="../_sources/legacy/vid2text.rst.txt" rel="nofollow"> View page source</a>
+          
+        
       </li>
+    
   </ul>
+
+  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-             
+            
   <section id="video-to-text">
 <h1>Video to Text<a class="headerlink" href="#video-to-text" title="Permalink to this heading">¶</a></h1>
 <p><strong>WARNING</strong>: This example is based on the
@@ -149,7 +229,6 @@ Use <code class="docutils literal notranslate"><span class="pre">unzip</span> <s
 <p>Change directories to <cite>yt2t</cite>. We’ll rename the videos to follow the “vid#.avi” format:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pickle</span>
 <span class="kn">import</span> <span class="nn">os</span>
-
 
 <span class="n">YT</span> <span class="o">=</span> <span class="s2">&quot;youtube2text_iccv15&quot;</span>
 <span class="n">YTC</span> <span class="o">=</span> <span class="s2">&quot;YouTubeClips&quot;</span>
@@ -199,7 +278,6 @@ annotations. We skip the test videos since they are handled separately at transl
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">shuffle</span>
 
-
 <span class="n">YT</span> <span class="o">=</span> <span class="s2">&quot;youtube2text_iccv15&quot;</span>
 <span class="n">SHUFFLE</span> <span class="o">=</span> <span class="kc">True</span>
 
@@ -235,7 +313,6 @@ annotations. We skip the test videos since they are handled separately at transl
 <span class="k">if</span> <span class="n">SHUFFLE</span><span class="p">:</span>
     <span class="n">vid_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">vid_names</span><span class="p">)</span>
     <span class="n">shuffle</span><span class="p">(</span><span class="n">vid_names</span><span class="p">)</span>
-
 
 <span class="k">for</span> <span class="n">vid_name</span> <span class="ow">in</span> <span class="n">vid_names</span><span class="p">:</span>
     <span class="n">anns</span> <span class="o">=</span> <span class="n">vid2anns</span><span class="p">[</span><span class="n">vid_name</span><span class="p">]</span>
@@ -294,7 +371,6 @@ Install the git repository with pip using</p>
 <span class="kn">from</span> <span class="nn">pycocoevalcap.rouge.rouge</span> <span class="kn">import</span> <span class="n">Rouge</span>
 <span class="kn">from</span> <span class="nn">pycocoevalcap.cider.cider</span> <span class="kn">import</span> <span class="n">Cider</span>
 <span class="kn">from</span> <span class="nn">pycocoevalcap.spice.spice</span> <span class="kn">import</span> <span class="n">Spice</span>
-
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
     <span class="n">pred</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;pred.txt&quot;</span><span class="p">)</span>
@@ -387,7 +463,6 @@ tokenization similar to what the authors report.</p>
 <span class="n">seed</span> <span class="o">=</span> <span class="mi">2345</span>
 <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
 
-
 <span class="n">YT</span> <span class="o">=</span> <span class="s2">&quot;youtube2text_iccv15&quot;</span>
 <span class="n">SHUFFLE</span> <span class="o">=</span> <span class="kc">True</span>
 
@@ -402,7 +477,6 @@ tokenization similar to what the authors report.</p>
     <span class="c1"># multiple whitespace</span>
     <span class="n">caption</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">caption</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
     <span class="k">return</span> <span class="n">caption</span>
-
 
 <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">YT</span><span class="p">,</span> <span class="s2">&quot;train.pkl&quot;</span><span class="p">),</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
     <span class="n">train</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;latin-1&quot;</span><span class="p">)</span>
@@ -496,7 +570,6 @@ although this too is not mentioned. You can reproduce our early-stops with these
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
-
 <span class="k">def</span> <span class="nf">load_results</span><span class="p">(</span><span class="n">fname</span><span class="o">=</span><span class="s2">&quot;results.txt&quot;</span><span class="p">):</span>
     <span class="n">index</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
@@ -528,10 +601,8 @@ although this too is not mentioned. You can reproduce our early-stops with these
     <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">index</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">df</span>
 
-
 <span class="k">def</span> <span class="nf">find_absolute_stops</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">df</span><span class="o">.</span><span class="n">idxmax</span><span class="p">()</span>
-
 
 <span class="k">def</span> <span class="nf">find_early_stops</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">stop_count</span><span class="p">):</span>
     <span class="n">maxes</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="mi">0</span><span class="p">)</span>
@@ -554,13 +625,11 @@ although this too is not mentioned. You can reproduce our early-stops with these
                         <span class="k">break</span>
     <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">argmaxes</span><span class="p">)</span>
 
-
 <span class="k">def</span> <span class="nf">find_stops</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">stop_count</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">stop_count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">find_early_stops</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">stop_count</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">find_absolute_stops</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
-
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="s2">&quot;Find locations of best scores&quot;</span><span class="p">)</span>
@@ -649,32 +718,49 @@ and the scores are favorable.</p>
 
 
            </div>
+           
           </div>
-          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="speech2text.html" class="btn btn-neutral float-left" title="Speech to Text" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="speech2text.html" class="btn btn-neutral float-left" title="Speech to Text" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
     </div>
+  
 
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2017-2023, OpenNMT.</p>
-  </div>
+    <p>
+        &copy; Copyright 2017-2023, OpenNMT
 
-  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    provided by <a href="https://readthedocs.org">Read the Docs</a>.
-   
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
+
         </div>
       </div>
+
     </section>
+
   </div>
-  <script>
+  
+
+
+  <script type="text/javascript">
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script> 
+  </script>
+
+  
+  
+    
+   
 
 </body>
 </html>
