@@ -1,112 +1,84 @@
-
-
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html5" lang="EN" >
 <head>
-  <meta charset="utf-8">
-  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>onmt.translate.translator &mdash; OpenNMT-py  documentation</title>
+      <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
   
-
-  
-  
-  
-  
-
-  
-  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-        <script src="../../../_static/jquery.js"></script>
-        <script src="../../../_static/underscore.js"></script>
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
         <script src="../../../_static/doctools.js"></script>
-        <script src="../../../_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-        <script src="https://unpkg.com/mermaid@8.4.8/dist/mermaid.min.js"></script>
-    
-    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
-    
-
-  
-  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+        <script src="../../../_static/sphinx_highlight.js"></script>
+        <script src="https://unpkg.com/mermaid@9.4.0/dist/mermaid.min.js"></script>
+        <script>mermaid.initialize({startOnLoad:true});</script>
+    <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="../../../index.html" class="icon icon-home"> OpenNMT-py
           
-
-          
+          <a href="../../../index.html" class="icon icon-home">
+            OpenNMT-py
           </a>
-
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Getting Started</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../main.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changes.html">Versions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../CONTRIBUTING.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../ref.html">References</a></li>
 </ul>
-<p class="caption"><span class="caption-text">FAQ</span></p>
+<p class="caption" role="heading"><span class="caption-text">Frequently Asked Questions</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">How do I use my v2 models in v3 ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-do-i-train-the-transformer-model">How do I train the Transformer model?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#performance-tips">Performance tips</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-to-use-lora-to-finetune-a-big-model">How to use LoRa to finetune a big model ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Examples</span></p>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../examples/Translation.html">Translation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../examples/Summarization.html">Summarization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../examples/LanguageModelGeneration.html">Language Model Generation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../examples/GGNN.html">Gated Graph Sequence Neural Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/wmt17/Translation.html">Translation WMT17 en-de</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/wiki_103/LanguageModelGeneration.html">Language Model Wiki-103</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/summary/Summarization.html">Summarization CNN/DM</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/ggnn/GGNN.html">Gated Graph Neural Networks</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Scripts</span></p>
+<p class="caption" role="heading"><span class="caption-text">Scripts</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../options/build_vocab.html">Build Vocab</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../options/train.html">Train</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../options/translate.html">Translate</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../options/server.html">Server</a></li>
 </ul>
-<p class="caption"><span class="caption-text">API</span></p>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../onmt.html">Framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../onmt.modules.html">Modules</a></li>
@@ -114,7 +86,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../onmt.translate.translation_server.html">Server</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../onmt.inputters.html">Data Loaders</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Legacy</span></p>
+<p class="caption" role="heading"><span class="caption-text">Legacy</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../legacy/FAQ.html">FAQ (Legacy version)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../legacy/im2text.html">Image to Text</a></li>
@@ -122,66 +94,30 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../legacy/vid2text.html">Video to Text</a></li>
 </ul>
 
-            
-          
         </div>
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">OpenNMT-py</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../../index.html">Docs</a> &raquo;</li>
-        
-          <li><a href="../../index.html">Module code</a> &raquo;</li>
-        
-      <li>onmt.translate.translator</li>
-    
-    
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">onmt.translate.translator</li>
       <li class="wy-breadcrumbs-aside">
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <h1>Source code for onmt.translate.translator</h1><div class="highlight"><pre>
 <span></span><span class="ch">#!/usr/bin/env python</span>
 <span class="sd">&quot;&quot;&quot; Translator Class and builder &quot;&quot;&quot;</span>
@@ -190,9 +126,11 @@
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">count</span><span class="p">,</span> <span class="n">zip_longest</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
+<span class="kn">from</span> <span class="nn">torch.nn.utils.rnn</span> <span class="kn">import</span> <span class="n">pad_sequence</span>
 <span class="kn">from</span> <span class="nn">onmt.constants</span> <span class="kn">import</span> <span class="n">DefaultTokens</span>
 <span class="kn">import</span> <span class="nn">onmt.model_builder</span>
 <span class="kn">import</span> <span class="nn">onmt.decoders.ensemble</span>
@@ -310,21 +248,22 @@
         <span class="n">global_scorer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">out_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">report_align</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">gold_align</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">report_score</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">logger</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">seed</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
         <span class="n">with_score</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="n">decoder_start_token</span><span class="o">=</span><span class="n">DefaultTokens</span><span class="o">.</span><span class="n">BOS</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vocabs</span> <span class="o">=</span> <span class="n">vocabs</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_vocab</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vocabs</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_eos_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vocabs</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lookup_token</span><span class="p">(</span><span class="n">DefaultTokens</span><span class="o">.</span><span class="n">EOS</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_pad_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vocabs</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lookup_token</span><span class="p">(</span><span class="n">DefaultTokens</span><span class="o">.</span><span class="n">PAD</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_bos_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vocabs</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lookup_token</span><span class="p">(</span><span class="n">DefaultTokens</span><span class="o">.</span><span class="n">BOS</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_unk_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vocabs</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lookup_token</span><span class="p">(</span><span class="n">DefaultTokens</span><span class="o">.</span><span class="n">UNK</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_vocab</span> <span class="o">=</span> <span class="n">vocabs</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_eos_idx</span> <span class="o">=</span> <span class="n">vocabs</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lookup_token</span><span class="p">(</span><span class="n">DefaultTokens</span><span class="o">.</span><span class="n">EOS</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_pad_idx</span> <span class="o">=</span> <span class="n">vocabs</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lookup_token</span><span class="p">(</span><span class="n">DefaultTokens</span><span class="o">.</span><span class="n">PAD</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_bos_idx</span> <span class="o">=</span> <span class="n">vocabs</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lookup_token</span><span class="p">(</span><span class="n">DefaultTokens</span><span class="o">.</span><span class="n">BOS</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_unk_idx</span> <span class="o">=</span> <span class="n">vocabs</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lookup_token</span><span class="p">(</span><span class="n">DefaultTokens</span><span class="o">.</span><span class="n">UNK</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_sep_idx</span> <span class="o">=</span> <span class="n">vocabs</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lookup_token</span><span class="p">(</span><span class="n">DefaultTokens</span><span class="o">.</span><span class="n">SEP</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_start_with</span> <span class="o">=</span>\
-            <span class="bp">self</span><span class="o">.</span><span class="n">vocabs</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lookup_token</span><span class="p">(</span><span class="n">decoder_start_token</span><span class="p">)</span>
+            <span class="n">vocabs</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lookup_token</span><span class="p">(</span><span class="n">vocabs</span><span class="p">[</span><span class="s1">&#39;decoder_start_token&#39;</span><span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_vocab_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_vocab</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_gpu</span> <span class="o">=</span> <span class="n">gpu</span>
@@ -374,6 +313,7 @@
             <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">out_file</span> <span class="o">=</span> <span class="n">out_file</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">report_align</span> <span class="o">=</span> <span class="n">report_align</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gold_align</span> <span class="o">=</span> <span class="n">gold_align</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">report_score</span> <span class="o">=</span> <span class="n">report_score</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logger</span>
 
@@ -454,11 +394,11 @@
             <span class="n">global_scorer</span><span class="o">=</span><span class="n">global_scorer</span><span class="p">,</span>
             <span class="n">out_file</span><span class="o">=</span><span class="n">out_file</span><span class="p">,</span>
             <span class="n">report_align</span><span class="o">=</span><span class="n">report_align</span><span class="p">,</span>
+            <span class="n">gold_align</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">gold_align</span><span class="p">,</span>
             <span class="n">report_score</span><span class="o">=</span><span class="n">report_score</span><span class="p">,</span>
             <span class="n">logger</span><span class="o">=</span><span class="n">logger</span><span class="p">,</span>
             <span class="n">seed</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">seed</span><span class="p">,</span>
             <span class="n">with_score</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">with_score</span><span class="p">,</span>
-            <span class="n">decoder_start_token</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">decoder_start_token</span>
         <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
@@ -534,9 +474,65 @@
             <span class="n">batch_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translate_batch</span><span class="p">(</span>
                 <span class="n">batch</span><span class="p">,</span> <span class="n">attn_debug</span>
             <span class="p">)</span>
+
             <span class="n">translations</span> <span class="o">=</span> <span class="n">xlation_builder</span><span class="o">.</span><span class="n">from_batch</span><span class="p">(</span><span class="n">batch_data</span><span class="p">)</span>
 
-            <span class="k">for</span> <span class="n">trans</span> <span class="ow">in</span> <span class="n">translations</span><span class="p">:</span>
+            <span class="c1"># Here we handle the cases of mismatch in number of segments</span>
+            <span class="c1"># between source and target. We re-translate seg by seg.</span>
+            <span class="n">inds</span><span class="p">,</span> <span class="n">perm</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s1">&#39;indices&#39;</span><span class="p">])</span>
+            <span class="n">trans_copy</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">translations</span><span class="p">)</span>
+            <span class="n">inserted_so_far</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">trans</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">translations</span><span class="p">):</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">trans</span><span class="o">.</span><span class="n">src_raw</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">DefaultTokens</span><span class="o">.</span><span class="n">SEP</span><span class="p">)</span> <span class="o">!=</span>
+                        <span class="n">trans</span><span class="o">.</span><span class="n">pred_sents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">DefaultTokens</span><span class="o">.</span><span class="n">SEP</span><span class="p">)):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="s2">&quot;Mismatch in ((newline)) retranslating&quot;</span><span class="p">)</span>
+                    <span class="c1"># those two should be the same except feat dim</span>
+                    <span class="c1"># batch[&#39;src&#39;][perm[j], :, :])</span>
+                    <span class="c1"># trans.src</span>
+
+                    <span class="c1"># we rebuild a small batch made of the sub-segments</span>
+                    <span class="c1"># in the long segment.</span>
+                    <span class="n">idx</span> <span class="o">=</span> <span class="p">(</span><span class="n">trans</span><span class="o">.</span><span class="n">src</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_sep_idx</span><span class="p">)</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()</span>
+                    <span class="n">sub_src</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="n">start_idx</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">idx</span><span class="p">)):</span>
+                        <span class="n">end_idx</span> <span class="o">=</span> <span class="n">idx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                        <span class="n">sub_src</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">][</span><span class="n">perm</span><span class="p">[</span><span class="n">j</span><span class="p">],</span>
+                                                    <span class="n">start_idx</span><span class="p">:</span><span class="n">end_idx</span><span class="p">,</span>
+                                                    <span class="p">:])</span>
+                        <span class="n">start_idx</span> <span class="o">=</span> <span class="n">end_idx</span> <span class="o">+</span> <span class="mi">1</span>
+                    <span class="n">end_idx</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">][</span><span class="n">perm</span><span class="p">[</span><span class="n">j</span><span class="p">],</span>
+                                           <span class="p">:,</span>
+                                           <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ne</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_pad_idx</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span>
+                    <span class="n">sub_src</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">][</span><span class="n">perm</span><span class="p">[</span><span class="n">j</span><span class="p">],</span>
+                                                <span class="n">start_idx</span><span class="p">:</span><span class="n">end_idx</span><span class="p">,</span>
+                                                <span class="p">:])</span>
+                    <span class="n">t_sub_src</span> <span class="o">=</span> <span class="n">pad_sequence</span><span class="p">(</span><span class="n">sub_src</span><span class="p">,</span>
+                                             <span class="n">batch_first</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                             <span class="n">padding_value</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_pad_idx</span><span class="p">)</span>
+                    <span class="n">t_sub_src_len</span> <span class="o">=</span> <span class="n">t_sub_src</span><span class="p">[:,</span>
+                                              <span class="p">:,</span>
+                                              <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ne</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_pad_idx</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="n">t_sub_src_ind</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span>
+                                                  <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sub_src</span><span class="p">))],</span>
+                                                 <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+                    <span class="n">device</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">device</span>
+                    <span class="n">t_sub_batch</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;src&#39;</span><span class="p">:</span> <span class="n">t_sub_src</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">),</span>
+                                   <span class="s1">&#39;srclen&#39;</span><span class="p">:</span> <span class="n">t_sub_src_len</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">),</span>
+                                   <span class="s1">&#39;indices&#39;</span><span class="p">:</span> <span class="n">t_sub_src_ind</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)}</span>
+
+                    <span class="c1"># new sub-batch ready to be translated</span>
+                    <span class="n">sub_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translate_batch</span><span class="p">(</span><span class="n">t_sub_batch</span><span class="p">,</span> <span class="n">attn_debug</span><span class="p">)</span>
+                    <span class="n">sub_trans</span> <span class="o">=</span> <span class="n">xlation_builder</span><span class="o">.</span><span class="n">from_batch</span><span class="p">(</span><span class="n">sub_data</span><span class="p">)</span>
+
+                    <span class="c1"># we re-insert the sub-batch in the initial translations</span>
+                    <span class="n">trans_copy</span><span class="p">[</span><span class="n">j</span> <span class="o">+</span> <span class="n">inserted_so_far</span><span class="p">]</span> <span class="o">=</span> <span class="n">sub_trans</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">sub_src</span><span class="p">)):</span>
+                        <span class="n">trans_copy</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">j</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="n">inserted_so_far</span><span class="p">,</span>
+                                          <span class="n">sub_trans</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                    <span class="n">inserted_so_far</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sub_src</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+
+            <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">trans</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">trans_copy</span><span class="p">):</span>
                 <span class="n">all_scores</span> <span class="o">+=</span> <span class="p">[</span><span class="n">trans</span><span class="o">.</span><span class="n">pred_scores</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_best</span><span class="p">]]</span>
                 <span class="n">pred_score_total</span> <span class="o">+=</span> <span class="n">trans</span><span class="o">.</span><span class="n">pred_scores</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                 <span class="n">pred_words_total</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">trans</span><span class="o">.</span><span class="n">pred_sents</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
@@ -568,8 +564,8 @@
                     <span class="p">]</span>
 
                 <span class="k">if</span> <span class="n">transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">n_best_preds</span> <span class="o">=</span> <span class="p">[</span><span class="n">transform</span><span class="o">.</span><span class="n">apply_reverse</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-                                    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">n_best_preds</span><span class="p">]</span>
+                    <span class="n">n_best_preds</span> <span class="o">=</span> <span class="n">transform</span><span class="o">.</span><span class="n">batch_apply_reverse</span><span class="p">(</span><span class="n">n_best_preds</span><span class="p">)</span>
+
                 <span class="n">all_predictions</span> <span class="o">+=</span> <span class="p">[</span><span class="n">n_best_preds</span><span class="p">]</span>
 
                 <span class="n">out_all</span> <span class="o">=</span> <span class="p">[</span>
@@ -606,7 +602,10 @@
                         <span class="n">os</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">output</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
 
                 <span class="k">if</span> <span class="n">align_debug</span><span class="p">:</span>
-                    <span class="n">tgts</span> <span class="o">=</span> <span class="n">trans</span><span class="o">.</span><span class="n">pred_sents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gold_align</span><span class="p">:</span>
+                        <span class="n">tgts</span> <span class="o">=</span> <span class="n">trans</span><span class="o">.</span><span class="n">gold_sent</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">tgts</span> <span class="o">=</span> <span class="n">trans</span><span class="o">.</span><span class="n">pred_sents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                     <span class="n">align</span> <span class="o">=</span> <span class="n">trans</span><span class="o">.</span><span class="n">word_aligns</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span> <span class="o">==</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span>
                         <span class="n">srcs</span> <span class="o">=</span> <span class="n">trans</span><span class="o">.</span><span class="n">src_raw</span>
@@ -649,6 +648,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">beam_accum</span><span class="p">,</span>
                 <span class="n">codecs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dump_beam</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="s2">&quot;utf-8&quot;</span><span class="p">),</span>
             <span class="p">)</span>
+
         <span class="k">return</span> <span class="n">all_scores</span><span class="p">,</span> <span class="n">all_predictions</span>
 
     <span class="k">def</span> <span class="nf">_align_pad_prediction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">predictions</span><span class="p">,</span> <span class="n">bos</span><span class="p">,</span> <span class="n">pad</span><span class="p">):</span>
@@ -823,9 +823,12 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># (0) add BOS and padding to tgt prediction</span>
-        <span class="n">batch_tgt_idxs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_align_pad_prediction</span><span class="p">(</span>
-            <span class="n">predictions</span><span class="p">,</span> <span class="n">bos</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_bos_idx</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_pad_idx</span>
-        <span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;tgt&#39;</span> <span class="ow">in</span> <span class="n">batch</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">gold_align</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="s2">&quot;Computing alignments with gold target&quot;</span><span class="p">)</span>
+            <span class="n">batch_tgt_idxs</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">batch_tgt_idxs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_align_pad_prediction</span><span class="p">(</span>
+                <span class="n">predictions</span><span class="p">,</span> <span class="n">bos</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_bos_idx</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_pad_idx</span><span class="p">)</span>
         <span class="n">tgt_mask</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">batch_tgt_idxs</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_pad_idx</span><span class="p">)</span>
             <span class="o">|</span> <span class="n">batch_tgt_idxs</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_eos_idx</span><span class="p">)</span>
@@ -839,7 +842,11 @@
         <span class="c1"># (2) Repeat src objects `n_best` times.</span>
         <span class="c1"># We use batch_size x n_best, get ``(batch * n_best, src_len, nfeat)``</span>
         <span class="n">src</span> <span class="o">=</span> <span class="n">tile</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">n_best</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-        <span class="n">enc_states</span> <span class="o">=</span> <span class="n">tile</span><span class="p">(</span><span class="n">enc_states</span><span class="p">,</span> <span class="n">n_best</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">enc_states</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Quick fix. Transformers return None as enc_states.</span>
+            <span class="c1"># enc_states are only used later on to init decoder&#39;s state</span>
+            <span class="c1"># but are never used in Transformer decoder, so we can skip</span>
+            <span class="n">enc_states</span> <span class="o">=</span> <span class="n">tile</span><span class="p">(</span><span class="n">enc_states</span><span class="p">,</span> <span class="n">n_best</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">enc_out</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
             <span class="n">enc_out</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">tile</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">n_best</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">enc_out</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -1283,42 +1290,30 @@
 </pre></div>
 
            </div>
-           
           </div>
           <footer>
-  
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &copy; Copyright 2017, OpenNMT
-
-    </p>
+    <p>&#169; Copyright 2017-2023, OpenNMT.</p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
-
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

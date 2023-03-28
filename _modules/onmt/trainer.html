@@ -1,112 +1,84 @@
-
-
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html5" lang="EN" >
 <head>
-  <meta charset="utf-8">
-  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>onmt.trainer &mdash; OpenNMT-py  documentation</title>
+      <link rel="stylesheet" href="../../_static/theme_overrides.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
   
-
-  
-  
-  
-  
-
-  
-  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
-        <script src="../../_static/jquery.js"></script>
-        <script src="../../_static/underscore.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
         <script src="../../_static/doctools.js"></script>
-        <script src="../../_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-        <script src="https://unpkg.com/mermaid@8.4.8/dist/mermaid.min.js"></script>
-    
-    <script type="text/javascript" src="../../_static/js/theme.js"></script>
-
-    
-
-  
-  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/theme_overrides.css" type="text/css" />
+        <script src="../../_static/sphinx_highlight.js"></script>
+        <script src="https://unpkg.com/mermaid@9.4.0/dist/mermaid.min.js"></script>
+        <script>mermaid.initialize({startOnLoad:true});</script>
+    <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="../../index.html" class="icon icon-home"> OpenNMT-py
           
-
-          
+          <a href="../../index.html" class="icon icon-home">
+            OpenNMT-py
           </a>
-
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Getting Started</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../main.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changes.html">Versions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../CONTRIBUTING.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../ref.html">References</a></li>
 </ul>
-<p class="caption"><span class="caption-text">FAQ</span></p>
+<p class="caption" role="heading"><span class="caption-text">Frequently Asked Questions</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html">How do I use my v2 models in v3 ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-do-i-train-the-transformer-model">How do I train the Transformer model?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#performance-tips">Performance tips</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-to-use-lora-to-finetune-a-big-model">How to use LoRa to finetune a big model ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Examples</span></p>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../examples/Translation.html">Translation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../examples/Summarization.html">Summarization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../examples/LanguageModelGeneration.html">Language Model Generation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../examples/GGNN.html">Gated Graph Sequence Neural Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/wmt17/Translation.html">Translation WMT17 en-de</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/wiki_103/LanguageModelGeneration.html">Language Model Wiki-103</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/summary/Summarization.html">Summarization CNN/DM</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/ggnn/GGNN.html">Gated Graph Neural Networks</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Scripts</span></p>
+<p class="caption" role="heading"><span class="caption-text">Scripts</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../options/build_vocab.html">Build Vocab</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../options/train.html">Train</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../options/translate.html">Translate</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../options/server.html">Server</a></li>
 </ul>
-<p class="caption"><span class="caption-text">API</span></p>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../onmt.html">Framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../onmt.modules.html">Modules</a></li>
@@ -114,7 +86,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../onmt.translate.translation_server.html">Server</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../onmt.inputters.html">Data Loaders</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Legacy</span></p>
+<p class="caption" role="heading"><span class="caption-text">Legacy</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../legacy/FAQ.html">FAQ (Legacy version)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../legacy/im2text.html">Image to Text</a></li>
@@ -122,66 +94,30 @@
 <li class="toctree-l1"><a class="reference internal" href="../../legacy/vid2text.html">Video to Text</a></li>
 </ul>
 
-            
-          
         </div>
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../index.html">OpenNMT-py</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../index.html">Docs</a> &raquo;</li>
-        
-          <li><a href="../index.html">Module code</a> &raquo;</li>
-        
-      <li>onmt.trainer</li>
-    
-    
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">onmt.trainer</li>
       <li class="wy-breadcrumbs-aside">
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <h1>Source code for onmt.trainer</h1><div class="highlight"><pre>
 <span></span>
 <span class="sd">&quot;&quot;&quot;</span>
@@ -273,46 +209,45 @@
 
 
 <div class="viewcode-block" id="Trainer"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer">[docs]</a><span class="k">class</span> <span class="nc">Trainer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Class that controls the training process.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class that controls the training process.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">            model(:py:class:`onmt.models.model.NMTModel`): translation model</span>
-<span class="sd">                to train</span>
-<span class="sd">            train_loss(:obj:`onmt.utils.loss.LossComputeBase`):</span>
-<span class="sd">               training loss computation</span>
-<span class="sd">            valid_loss(:obj:`onmt.utils.loss.LossComputeBase`):</span>
-<span class="sd">               training loss computation</span>
-<span class="sd">            scoring_preparator(:obj:`onmt.translate.utils.ScoringPreparator`):</span>
-<span class="sd">                preparator for the calculation of metrics via the</span>
-<span class="sd">                training_eval_handler method</span>
-<span class="sd">            train_scorers (dict): keeps in memory the current values</span>
-<span class="sd">                of the training metrics</span>
-<span class="sd">            valid_scorers (dict): keeps in memory the current values</span>
-<span class="sd">                of the validation metrics</span>
-<span class="sd">            optim(:obj:`onmt.utils.optimizers.Optimizer`):</span>
-<span class="sd">               the optimizer responsible for update</span>
-<span class="sd">            trunc_size(int): length of truncated back propagation through time</span>
-<span class="sd">            accum_count(list): accumulate gradients this many times.</span>
-<span class="sd">            accum_steps(list): steps for accum gradients changes.</span>
-<span class="sd">            n_gpu (int): number of gpu.</span>
-<span class="sd">            gpu_rank (int): ordinal rank of the gpu in the list.</span>
-<span class="sd">            train_eval_steps (int): process a validation every x steps.</span>
-<span class="sd">            report_manager(:obj:`onmt.utils.ReportMgrBase`):</span>
-<span class="sd">                the object that creates reports, or None</span>
-<span class="sd">            with_align (bool): whether to jointly lear alignment (Transformer)</span>
-<span class="sd">            model_saver(:obj:`onmt.models.ModelSaverBase`): the saver is</span>
-<span class="sd">                used to save a checkpoint.</span>
-<span class="sd">                Thus nothing will be saved if this parameter is None.</span>
-<span class="sd">            average_decay (float): cf opt.average_decay</span>
-<span class="sd">            average_every (int): average model every x steps.</span>
-<span class="sd">            model_dtype (str): fp32 or fp16.</span>
-<span class="sd">            earlystopper (:obj:`onmt.utils.EarlyStopping`): add early</span>
-<span class="sd">                stopping mecanism</span>
-<span class="sd">            dropout (float): dropout value in RNN or FF layers.</span>
-<span class="sd">            attention_dropout (float): dropaout in attention layers.</span>
-<span class="sd">            dropout_steps (list): dropout values scheduling in steps.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        model(:py:class:`onmt.models.model.NMTModel`): model to train</span>
+<span class="sd">        train_loss(:obj:`onmt.utils.loss.LossComputeBase`):</span>
+<span class="sd">          training loss computation</span>
+<span class="sd">        valid_loss(:obj:`onmt.utils.loss.LossComputeBase`):</span>
+<span class="sd">          training loss computation</span>
+<span class="sd">        scoring_preparator(:obj:`onmt.translate.utils.ScoringPreparator`):</span>
+<span class="sd">          preparator for the calculation of metrics via the</span>
+<span class="sd">          training_eval_handler method</span>
+<span class="sd">        train_scorers (dict): keeps in memory the current values</span>
+<span class="sd">          of the training metrics</span>
+<span class="sd">        valid_scorers (dict): keeps in memory the current values</span>
+<span class="sd">          of the validation metrics</span>
+<span class="sd">        optim(:obj:`onmt.utils.optimizers.Optimizer`):</span>
+<span class="sd">          the optimizer responsible for update</span>
+<span class="sd">        trunc_size(int): length of truncated back propagation</span>
+<span class="sd">          through time</span>
+<span class="sd">        accum_count(list): accumulate gradients this many times.</span>
+<span class="sd">        accum_steps(list): steps for accum gradients changes.</span>
+<span class="sd">        n_gpu (int): number of gpu.</span>
+<span class="sd">        gpu_rank (int): ordinal rank of the gpu in the list.</span>
+<span class="sd">        train_eval_steps (int): process a validation every x steps.</span>
+<span class="sd">        report_manager(:obj:`onmt.utils.ReportMgrBase`):</span>
+<span class="sd">          the object that creates reports, or None</span>
+<span class="sd">        with_align (bool): whether to jointly lear alignment</span>
+<span class="sd">          (Transformer)</span>
+<span class="sd">        model_saver(:obj:`onmt.models.ModelSaverBase`): the saver is</span>
+<span class="sd">          used to save a checkpoint.</span>
+<span class="sd">          Thus nothing will be saved if this parameter is None.</span>
+<span class="sd">        average_decay (float): cf opt.average_decay</span>
+<span class="sd">        average_every (int): average model every x steps.</span>
+<span class="sd">        model_dtype (str): fp32 or fp16.</span>
+<span class="sd">        earlystopper (:obj:`onmt.utils.EarlyStopping`): add early</span>
+<span class="sd">          stopping mecanism</span>
+<span class="sd">        dropout (float): dropout value in RNN or FF layers.</span>
+<span class="sd">        attention_dropout (float): dropaout in attention layers.</span>
+<span class="sd">        dropout_steps (list): dropout values scheduling in steps.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">train_loss</span><span class="p">,</span> <span class="n">valid_loss</span><span class="p">,</span>
                  <span class="n">scoring_preparator</span><span class="p">,</span> <span class="n">train_scorers</span><span class="p">,</span> <span class="n">valid_scorers</span><span class="p">,</span>
@@ -367,10 +302,12 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Trigger metrics calculations</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            scorer (:obj:`onmt.scorer.Scorer`): scorer.</span>
+<span class="sd">            scorer (:obj:``onmt.scorer.Scorer``): scorer.</span>
 <span class="sd">            preds, texts_ref: outputs of the scorer&#39;s `translate` method.</span>
-<span class="sd">        Returns: The metric calculated by the scorer.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The metric calculated by the scorer.&quot;&quot;&quot;</span>
+
         <span class="k">return</span> <span class="n">scorer</span><span class="o">.</span><span class="n">compute_score</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="n">texts_ref</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_accum_count</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
@@ -411,7 +348,9 @@
 
     <span class="k">def</span> <span class="nf">_update_average</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">moving_average</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">copy_params</span> <span class="o">=</span> <span class="p">[</span><span class="n">params</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+            <span class="n">copy_params</span> <span class="o">=</span> <span class="p">[</span><span class="n">params</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">half</span><span class="p">()</span>
+                           <span class="k">if</span> <span class="n">params</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">float16</span>
+                           <span class="k">else</span> <span class="n">params</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
                            <span class="k">for</span> <span class="n">params</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">()]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">moving_average</span> <span class="o">=</span> <span class="n">copy_params</span>
         <span class="k">else</span><span class="p">:</span>
@@ -421,6 +360,10 @@
                                      <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">()):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">moving_average</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> \
                     <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">average_decay</span><span class="p">)</span> <span class="o">*</span> <span class="n">avg</span> <span class="o">+</span> \
+                    <span class="n">cpt</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">half</span><span class="p">()</span> <span class="o">*</span> <span class="n">average_decay</span> \
+                    <span class="k">if</span> <span class="n">avg</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">float16</span> \
+                    <span class="k">else</span> \
+                    <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">average_decay</span><span class="p">)</span> <span class="o">*</span> <span class="n">avg</span> <span class="o">+</span> \
                     <span class="n">cpt</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">float</span><span class="p">()</span> <span class="o">*</span> <span class="n">average_decay</span>
 
 <div class="viewcode-block" id="Trainer.train"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.train">[docs]</a>    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
@@ -429,9 +372,8 @@
               <span class="n">save_checkpoint_steps</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span>
               <span class="n">valid_iter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
               <span class="n">valid_steps</span><span class="o">=</span><span class="mi">10000</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        The main training loop by iterating over `train_iter` and possibly</span>
-<span class="sd">        running validation on `valid_iter`.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The main training loop by iterating over ``train_iter`` and possibly</span>
+<span class="sd">        running validation on ``valid_iter``.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            train_iter: An iterator that returns the next training batch.</span>
@@ -440,9 +382,10 @@
 <span class="sd">              iterations.</span>
 <span class="sd">            valid_iter: A generator that returns the next validation batch.</span>
 <span class="sd">            valid_steps: Run evaluation every this many iterations.</span>
+
 <span class="sd">        Returns:</span>
-<span class="sd">            :obj:`nmt.Statistics`: training loss statistics</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            :obj:``nmt.Statistics``: training loss statistics&quot;&quot;&quot;</span>
+
         <span class="k">if</span> <span class="n">valid_iter</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Start training loop without validation...&#39;</span><span class="p">)</span>
             <span class="n">valid_stats</span> <span class="o">=</span> <span class="kc">None</span>
@@ -512,11 +455,14 @@
         <span class="k">return</span> <span class="n">total_stats</span></div>
 
 <div class="viewcode-block" id="Trainer.validate"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.validate">[docs]</a>    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">valid_iter</span><span class="p">,</span> <span class="n">moving_average</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot; Validate model.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate model.</span>
+
+<span class="sd">        Args:</span>
 <span class="sd">            valid_iter: validate data iterator</span>
+
 <span class="sd">        Returns:</span>
-<span class="sd">            :obj:`nmt.Statistics`: validation loss statistics</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            :obj:``nmt.Statistics``: validation loss statistics&quot;&quot;&quot;</span>
+
         <span class="n">valid_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span>
         <span class="k">if</span> <span class="n">moving_average</span><span class="p">:</span>
             <span class="c1"># swap model params w/ moving average</span>
@@ -601,7 +547,8 @@
     <span class="k">def</span> <span class="nf">_gradient_accumulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">true_batches</span><span class="p">,</span> <span class="n">normalization</span><span class="p">,</span> <span class="n">total_stats</span><span class="p">,</span>
                                <span class="n">report_stats</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Function that iterates over big batches = ``true_batches``</span>
-<span class="sd">        perform a backward on the loss of each sub_batch and</span>
+
+<span class="sd">        Perform a backward on the loss of each sub_batch and</span>
 <span class="sd">        finally update the params at the end of the big batch.&quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">accum_count</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
@@ -725,9 +672,8 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">_start_report_manager</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_time</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Simple function to start report manager (if any)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Simple function to start report manager (if any)&quot;&quot;&quot;</span>
+
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_manager</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">start_time</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">report_manager</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
@@ -736,10 +682,9 @@
 
     <span class="k">def</span> <span class="nf">_maybe_report_training</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">num_steps</span><span class="p">,</span> <span class="n">learning_rate</span><span class="p">,</span>
                                <span class="n">report_stats</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Simple function to report training stats (if report_manager is set)</span>
-<span class="sd">        see `onmt.utils.ReportManagerBase.report_training` for doc</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Simple function to report training stats (if report_manager is set)</span>
+<span class="sd">        see ``onmt.utils.ReportManagerBase.report_training`` for doc&quot;&quot;&quot;</span>
+
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_manager</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_manager</span><span class="o">.</span><span class="n">report_training</span><span class="p">(</span>
                 <span class="n">step</span><span class="p">,</span>
@@ -752,10 +697,9 @@
 
     <span class="k">def</span> <span class="nf">_report_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">learning_rate</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span>
                      <span class="n">valid_stats</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">train_stats</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Simple function to report stats (if report_manager is set)</span>
-<span class="sd">        see `onmt.utils.ReportManagerBase.report_step` for doc</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Simple function to report stats (if report_manager is set)</span>
+<span class="sd">        see ``onmt.utils.ReportManagerBase.report_step`` for doc&quot;&quot;&quot;</span>
+
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_manager</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_manager</span><span class="o">.</span><span class="n">report_step</span><span class="p">(</span>
                 <span class="n">learning_rate</span><span class="p">,</span>
@@ -765,42 +709,30 @@
 </pre></div>
 
            </div>
-           
           </div>
           <footer>
-  
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &copy; Copyright 2017, OpenNMT
-
-    </p>
+    <p>&#169; Copyright 2017-2023, OpenNMT.</p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
-
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

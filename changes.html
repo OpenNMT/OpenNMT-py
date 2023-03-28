@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="EN" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Versions &mdash; OpenNMT-py  documentation</title>
+      <link rel="stylesheet" href="_static/theme_overrides.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+        <script src="https://unpkg.com/mermaid@9.4.0/dist/mermaid.min.js"></script>
+        <script>mermaid.initialize({startOnLoad:true});</script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Contributors" href="CONTRIBUTING.html" />
+    <link rel="prev" title="Quickstart" href="quickstart.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            OpenNMT-py
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="main.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Versions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#breaking-changes">Breaking changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#performance-tips">Performance tips</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="CONTRIBUTING.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ref.html">References</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Frequently Asked Questions</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html">How do I use my v2 models in v3 ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-do-i-train-the-transformer-model">How do I train the Transformer model?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#performance-tips">Performance tips</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-to-use-lora-to-finetune-a-big-model">How to use LoRa to finetune a big model ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples/wmt17/Translation.html">Translation WMT17 en-de</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/wiki_103/LanguageModelGeneration.html">Language Model Wiki-103</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/summary/Summarization.html">Summarization CNN/DM</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/ggnn/GGNN.html">Gated Graph Neural Networks</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Scripts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="options/build_vocab.html">Build Vocab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="options/train.html">Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="options/translate.html">Translate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="options/server.html">Server</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="onmt.html">Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.translation.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.translate.translation_server.html">Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="onmt.inputters.html">Data Loaders</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Legacy</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="legacy/FAQ.html">FAQ (Legacy version)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="legacy/im2text.html">Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="legacy/speech2text.html">Speech to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="legacy/vid2text.html">Video to Text</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">OpenNMT-py</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Versions</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/changes.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="versions">
+<h1>Versions<a class="headerlink" href="#versions" title="Permalink to this heading">¶</a></h1>
+<p>**OpenNMT-py v3 release **</p>
+<p>This new version does not rely on Torchtext anymore.
+The checkpoint structure is slightly changed but we provide a tool to convert v2 to v3 models (cf tools/convertv2_v3.py)</p>
+<p>We use the same ‘dynamic’ paradigm as in v2, allowing to apply on-the-fly transforms to the data.</p>
+<p>This has a few advantages, amongst which:</p>
+<ul class="simple">
+<li><p>remove or drastically reduce the preprocessing required to train a model;</p></li>
+<li><p>increase the possibilities of data augmentation and manipulation through on-the fly transforms.</p></li>
+</ul>
+<p>These transforms can be specific tokenization methods, filters, noising, or any custom transform users may want to implement. Custom transform implementation is quite straightforward thanks to the existing base class and example implementations.</p>
+<p>You can check out how to use this new data loading pipeline in the updated <a class="reference external" href="https://opennmt.net/OpenNMT-py">docs</a>.</p>
+<p>All the readily available transforms are described <a class="reference external" href="https://opennmt.net/OpenNMT-py/FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">here</a>.</p>
+<section id="breaking-changes">
+<h2>Breaking changes<a class="headerlink" href="#breaking-changes" title="Permalink to this heading">¶</a></h2>
+<p>Changes between v2 and v3:</p>
+<p>Options removed:
+<code class="docutils literal notranslate"><span class="pre">queue_size</span></code>, <code class="docutils literal notranslate"><span class="pre">pool_factor</span></code> are no longer needed. Only adjust the <code class="docutils literal notranslate"><span class="pre">bucket_size</span></code> to the number of examples to be loaded by each <code class="docutils literal notranslate"><span class="pre">num_workers</span></code> of the pytorch Dataloader.</p>
+<p>New options:
+<code class="docutils literal notranslate"><span class="pre">num_workers</span></code>: number of workers for each process. If you run on one GPU the recommended value is 4. If you run on more than 1 GPU, the recommended value is 2
+<code class="docutils literal notranslate"><span class="pre">add_qkvbias</span></code>: default is false. However old model trained with v2 will be set at true. The original transformer paper used no bias for the Q/K/V nn.Linear of the multihead attention module.</p>
+<p>Options renamed:
+<code class="docutils literal notranslate"><span class="pre">rnn_size</span></code> =&gt; <code class="docutils literal notranslate"><span class="pre">hidden_size</span></code>
+<code class="docutils literal notranslate"><span class="pre">enc_rnn_size</span></code> =&gt; <code class="docutils literal notranslate"><span class="pre">enc_hid_size</span></code>
+<code class="docutils literal notranslate"><span class="pre">dec_rnn_size</span></code> =&gt; <code class="docutils literal notranslate"><span class="pre">dec_hid_size</span></code></p>
+<p>Note: <code class="docutils literal notranslate"><span class="pre">tools/convertv2_v3.py</span></code> will modify these options stored in the checkpoint to make things compatible with v3.0</p>
+<p>Inference:
+The translator will use the same dynamic_iterator as the trainer.
+The new default for inference is <code class="docutils literal notranslate"><span class="pre">length_penalty=avg</span></code> which will provide better BLEU scores in most cases (and comparable to other toolkits defaults)</p>
+<p>Reminder: a few features were dropped between v1 and v2:</p>
+<ul class="simple">
+<li><p>audio, image and video inputs;</p></li>
+</ul>
+<p>For any user that still need these features, the previous codebase will be retained as <code class="docutils literal notranslate"><span class="pre">legacy</span></code> in a separate branch. It will no longer receive extensive development from the core team but PRs may still be accepted.</p>
+<p>Feel free to check it out and let us know what you think of the new paradigm!</p>
+</section>
+<section id="performance-tips">
+<h2>Performance tips<a class="headerlink" href="#performance-tips" title="Permalink to this heading">¶</a></h2>
+<p>Given sufficient CPU resources according to GPU computing power, most of the transforms should not slow the training down. (Note: for now, one producer process per GPU is spawned – meaning you would ideally need 2N CPU threads for N GPUs).
+If you want to optimize the training performance:</p>
+<ul class="simple">
+<li><p>use fp16</p></li>
+<li><p>use batch_size_multiple 8</p></li>
+<li><p>use vocab_size_multiple 8</p></li>
+<li><p>Depending on the number of GPU use num_workers 4 (for 1 GPU) or 2 (for multiple GPU)</p></li>
+<li><p>To avoid averaging checkpoints you can use the “during training” average decay system.</p></li>
+<li><p>If you train a transformer we support max_relative_positions (use 20) instead of position_encoding.</p></li>
+<li><p>for very fast inference convert your model to <a class="reference external" href="https://github.com/OpenNMT/CTranslate2">CTranslate2</a> format.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="quickstart.html" class="btn btn-neutral float-left" title="Quickstart" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="CONTRIBUTING.html" class="btn btn-neutral float-right" title="Contributors" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2017-2023, OpenNMT.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

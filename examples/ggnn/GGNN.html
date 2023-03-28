@@ -1,104 +1,78 @@
-
-
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html5" lang="EN" >
 <head>
-  <meta charset="utf-8">
-  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  <title>Gated Graph Sequence Neural Networks &mdash; OpenNMT-py  documentation</title>
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gated Graph Neural Networks &mdash; OpenNMT-py  documentation</title>
+      <link rel="stylesheet" href="../../_static/theme_overrides.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
   
-  
-  
-  
-
-  
-  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script src="../_static/jquery.js"></script>
-        <script src="../_static/underscore.js"></script>
-        <script src="../_static/doctools.js"></script>
-        <script src="../_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    
-    <script type="text/javascript" src="../_static/js/theme.js"></script>
-
-    
-
-  
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Build Vocab" href="../options/build_vocab.html" />
-    <link rel="prev" title="Language Model Generation" href="LanguageModelGeneration.html" /> 
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+        <script src="https://unpkg.com/mermaid@9.4.0/dist/mermaid.min.js"></script>
+        <script>mermaid.initialize({startOnLoad:true});</script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Build Vocab" href="../../options/build_vocab.html" />
+    <link rel="prev" title="Summarization CNN/DM" href="../summary/Summarization.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="../index.html" class="icon icon-home"> OpenNMT-py
           
-
-          
+          <a href="../../index.html" class="icon icon-home">
+            OpenNMT-py
           </a>
-
-          
-            
-            
-          
-
-          
 <div role="search">
-  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Getting Started</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../main.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../CONTRIBUTING.html">Contributors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../ref.html">References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../main.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changes.html">Versions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../CONTRIBUTING.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../ref.html">References</a></li>
 </ul>
-<p class="caption"><span class="caption-text">FAQ</span></p>
+<p class="caption" role="heading"><span class="caption-text">Frequently Asked Questions</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html">How do I use my v2 models in v3 ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-do-i-train-the-transformer-model">How do I train the Transformer model?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#performance-tips">Performance tips</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-to-use-lora-to-finetune-a-big-model">How to use LoRa to finetune a big model ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Examples</span></p>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="Translation.html">Translation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Summarization.html">Summarization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="LanguageModelGeneration.html">Language Model Generation</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Gated Graph Sequence Neural Networks</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="../wmt17/Translation.html">Translation WMT17 en-de</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../wiki_103/LanguageModelGeneration.html">Language Model Wiki-103</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../summary/Summarization.html">Summarization CNN/DM</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Gated Graph Neural Networks</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#dependencies">Dependencies</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#quick-start">Quick Start</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#graph-data-format">Graph data format</a></li>
@@ -108,104 +82,66 @@
 </ul>
 </li>
 </ul>
-<p class="caption"><span class="caption-text">Scripts</span></p>
+<p class="caption" role="heading"><span class="caption-text">Scripts</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../options/build_vocab.html">Build Vocab</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../options/train.html">Train</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../options/translate.html">Translate</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../options/server.html">Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../options/build_vocab.html">Build Vocab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../options/train.html">Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../options/translate.html">Translate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../options/server.html">Server</a></li>
 </ul>
-<p class="caption"><span class="caption-text">API</span></p>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../onmt.html">Framework</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../onmt.modules.html">Modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../onmt.translation.html">Translation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../onmt.translate.translation_server.html">Server</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../onmt.inputters.html">Data Loaders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../onmt.html">Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../onmt.modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../onmt.translation.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../onmt.translate.translation_server.html">Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../onmt.inputters.html">Data Loaders</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Legacy</span></p>
+<p class="caption" role="heading"><span class="caption-text">Legacy</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../legacy/FAQ.html">FAQ (Legacy version)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../legacy/im2text.html">Image to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../legacy/speech2text.html">Speech to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../legacy/vid2text.html">Video to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../legacy/FAQ.html">FAQ (Legacy version)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../legacy/im2text.html">Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../legacy/speech2text.html">Speech to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../legacy/vid2text.html">Video to Text</a></li>
 </ul>
 
-            
-          
         </div>
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../index.html">OpenNMT-py</a>
-        
+          <a href="../../index.html">OpenNMT-py</a>
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../index.html">Docs</a> &raquo;</li>
-        
-      <li>Gated Graph Sequence Neural Networks</li>
-    
-    
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Gated Graph Neural Networks</li>
       <li class="wy-breadcrumbs-aside">
-        
-            
-            <a href="../_sources/examples/GGNN.md.txt" rel="nofollow"> View page source</a>
-          
-        
+            <a href="../../_sources/examples/ggnn/GGNN.md.txt" rel="nofollow"> View page source</a>
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="gated-graph-sequence-neural-networks">
-<h1>Gated Graph Sequence Neural Networks<a class="headerlink" href="#gated-graph-sequence-neural-networks" title="Permalink to this headline">¶</a></h1>
+             
+  <section id="gated-graph-neural-networks">
+<h1>Gated Graph Neural Networks<a class="headerlink" href="#gated-graph-neural-networks" title="Permalink to this heading">¶</a></h1>
 <p>Graph-to-sequence networks allow information representable as a graph (such as an annotated NLP sentence or computer code structured as an AST) to be connected to a sequence generator to produce output which can benefit from the graph structure of the input.</p>
 <p>The training option <code class="docutils literal notranslate"><span class="pre">-encoder_type</span> <span class="pre">ggnn</span></code> implements a GGNN (Gated Graph Neural Network) based on github.com/JamesChuanggg/ggnn.pytorch.git which is based on the paper “Gated Graph Sequence Neural Networks” by Y. Li, D. Tarlow, M. Brockschmidt, and R. Zemel.</p>
 <p>The ggnn encoder is used for program equivalence proof generation in the paper <a class="reference external" href="https://arxiv.org/abs/2002.06799">Equivalence of Dataflow Graphs via Rewrite Rules Using a Graph-to-Sequence Neural Model</a>. That paper shows the benefit of the graph-to-sequence model over a sequence-to-sequence model for this problem which can be well represented with graphical input. The integration of the ggnn network into the OpenNMT-py system supports attention on the nodes as well as a copy mechanism.</p>
-<div class="section" id="dependencies">
-<h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
+<section id="dependencies">
+<h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>There are no additional dependencies beyond the rnn-to-rnn sequence2sequence requirements.</p></li>
 </ul>
-</div>
-<div class="section" id="quick-start">
-<h2>Quick Start<a class="headerlink" href="#quick-start" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="quick-start">
+<h2>Quick Start<a class="headerlink" href="#quick-start" title="Permalink to this heading">¶</a></h2>
 <p>To get started, we provide a toy graph-to-sequence example. We assume that the working directory is <code class="docutils literal notranslate"><span class="pre">OpenNMT-py</span></code> throughout this document.</p>
 <ol class="simple">
 <li><p>Download the data to a sibling directory.</p></li>
@@ -287,9 +223,9 @@
     <span class="o">&gt;</span> <span class="o">../</span><span class="n">OpenNMT</span><span class="o">-</span><span class="n">py</span><span class="o">-</span><span class="n">ggnn</span><span class="o">-</span><span class="n">example</span><span class="o">/</span><span class="n">run</span><span class="o">/</span><span class="n">translate5</span><span class="o">.</span><span class="n">out</span> <span class="mi">2</span><span class="o">&gt;&amp;</span><span class="mi">1</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="graph-data-format">
-<h2>Graph data format<a class="headerlink" href="#graph-data-format" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="graph-data-format">
+<h2>Graph data format<a class="headerlink" href="#graph-data-format" title="Permalink to this heading">¶</a></h2>
 <p>The GGNN implementation leverages the sequence processing and vocabulary
 interface of OpenNMT. Each graph is provided on an input line, much like
 a sentence is provided on an input line. A graph nearal network input line
@@ -319,14 +255,14 @@ second <code class="docutils literal notranslate"><span class="pre">&lt;EOT&gt;<
 <p>Note that the source vocabulary file needs to include the ‘<EOT>’ token,
 the ‘,’ token, and all of the numbers used for feature flags and node
 identifiers in the edge list.</p>
-</div>
-<div class="section" id="vocabulary-notes">
-<h2>Vocabulary notes<a class="headerlink" href="#vocabulary-notes" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="vocabulary-notes">
+<h2>Vocabulary notes<a class="headerlink" href="#vocabulary-notes" title="Permalink to this heading">¶</a></h2>
 <p>Because edge information and feature data is provided through tokens in the source files, the <code class="docutils literal notranslate"><span class="pre">-src_vocab</span></code> file requires a certain format. The <code class="docutils literal notranslate"><span class="pre">&lt;EOT&gt;</span></code> token should occur in the vocab files after all tokens which are part of the <code class="docutils literal notranslate"><span class="pre">sentence</span> <span class="pre">tokens</span></code> shown above. After the <code class="docutils literal notranslate"><span class="pre">&lt;EOT&gt;</span></code> token, any remaining numerical tokens appropriate for node numbers or feature values can be included too (it is OK for integers to occur in the <code class="docutils literal notranslate"><span class="pre">sentence</span> <span class="pre">tokens</span></code> and such tokens should not be duplicated after the <code class="docutils literal notranslate"><span class="pre">&lt;EOT&gt;</span></code> token). The full size of the vector used as input per node is the number of tokens up to and including <code class="docutils literal notranslate"><span class="pre">&lt;EOT&gt;</span></code> plus the largest feature number used in the input. If the optional <code class="docutils literal notranslate"><span class="pre">src_ggnn_size</span></code> parameter is used to create an embedding layer, then its value must be at or above the full node input vector size; the embedding initializes the lower <code class="docutils literal notranslate"><span class="pre">src_word_vec_size</span></code> dimensions of the node value. If <code class="docutils literal notranslate"><span class="pre">src_ggnn_size</span></code> is not used, then <code class="docutils literal notranslate"><span class="pre">state_dim</span></code> must bet at or above the full node input vector size; as there is no embedding layer in this case, the initial value of the node is set directly.
 Generally, one can use <code class="docutils literal notranslate"><span class="pre">onmt_build_vocab</span></code> to process GGNN input data to create vocab files and then adjust the source vocab appropriately. For an example of generating and adjusting a vocabulary for GGNN, please refer to <a class="reference external" href="https://github.com/SteveKommrusch/OpenNMT-py-ggnn-example#graph-input-processing-end-to-end-example">GGNN end-to-end example</a>.</p>
-</div>
-<div class="section" id="options">
-<h2>Options<a class="headerlink" href="#options" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="options">
+<h2>Options<a class="headerlink" href="#options" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">-rnn_type</span> <span class="pre">(str)</span></code>: style of recurrent unit to use, one of [LSTM]</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">src_ggnn_size</span> <span class="pre">(int)</span></code>: Size of token-to-node embedding input</p></li>
@@ -339,60 +275,42 @@ Generally, one can use <code class="docutils literal notranslate"><span class="p
 <li><p><code class="docutils literal notranslate"><span class="pre">-n_steps</span> <span class="pre">(int)</span></code>: Steps to advance graph encoder for stabilization</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">-src_vocab</span> <span class="pre">(int)</span></code>: Path to source vocabulary</p></li>
 </ul>
-</div>
-<div class="section" id="acknowledgement">
-<h2>Acknowledgement<a class="headerlink" href="#acknowledgement" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="acknowledgement">
+<h2>Acknowledgement<a class="headerlink" href="#acknowledgement" title="Permalink to this heading">¶</a></h2>
 <p>This gated graph neural network is leveraged from https://github.com/JamesChuanggg/ggnn.pytorch.git which is based on the paper <a class="reference external" href="https://arxiv.org/abs/1511.05493">Gated Graph Sequence Neural Networks</a> by Y. Li, D. Tarlow, M. Brockschmidt, and R. Zemel.</p>
-</div>
-</div>
+</section>
+</section>
 
 
            </div>
-           
           </div>
-          <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="../options/build_vocab.html" class="btn btn-neutral float-right" title="Build Vocab" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="LanguageModelGeneration.html" class="btn btn-neutral float-left" title="Language Model Generation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../summary/Summarization.html" class="btn btn-neutral float-left" title="Summarization CNN/DM" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../../options/build_vocab.html" class="btn btn-neutral float-right" title="Build Vocab" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
-  
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &copy; Copyright 2017, OpenNMT
-
-    </p>
+    <p>&#169; Copyright 2017-2023, OpenNMT.</p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
-
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

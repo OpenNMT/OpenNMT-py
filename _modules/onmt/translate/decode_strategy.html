@@ -1,112 +1,84 @@
-
-
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html5" lang="EN" >
 <head>
-  <meta charset="utf-8">
-  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>onmt.translate.decode_strategy &mdash; OpenNMT-py  documentation</title>
+      <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
   
-
-  
-  
-  
-  
-
-  
-  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-        <script src="../../../_static/jquery.js"></script>
-        <script src="../../../_static/underscore.js"></script>
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
         <script src="../../../_static/doctools.js"></script>
-        <script src="../../../_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-        <script src="https://unpkg.com/mermaid@8.4.8/dist/mermaid.min.js"></script>
-    
-    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
-    
-
-  
-  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+        <script src="../../../_static/sphinx_highlight.js"></script>
+        <script src="https://unpkg.com/mermaid@9.4.0/dist/mermaid.min.js"></script>
+        <script>mermaid.initialize({startOnLoad:true});</script>
+    <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="../../../index.html" class="icon icon-home"> OpenNMT-py
           
-
-          
+          <a href="../../../index.html" class="icon icon-home">
+            OpenNMT-py
           </a>
-
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Getting Started</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../main.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changes.html">Versions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../CONTRIBUTING.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../ref.html">References</a></li>
 </ul>
-<p class="caption"><span class="caption-text">FAQ</span></p>
+<p class="caption" role="heading"><span class="caption-text">Frequently Asked Questions</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">How do I use my v2 models in v3 ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-do-i-train-the-transformer-model">How do I train the Transformer model?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#performance-tips">Performance tips</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-to-use-lora-to-finetune-a-big-model">How to use LoRa to finetune a big model ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Examples</span></p>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../examples/Translation.html">Translation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../examples/Summarization.html">Summarization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../examples/LanguageModelGeneration.html">Language Model Generation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../examples/GGNN.html">Gated Graph Sequence Neural Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/wmt17/Translation.html">Translation WMT17 en-de</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/wiki_103/LanguageModelGeneration.html">Language Model Wiki-103</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/summary/Summarization.html">Summarization CNN/DM</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/ggnn/GGNN.html">Gated Graph Neural Networks</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Scripts</span></p>
+<p class="caption" role="heading"><span class="caption-text">Scripts</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../options/build_vocab.html">Build Vocab</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../options/train.html">Train</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../options/translate.html">Translate</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../options/server.html">Server</a></li>
 </ul>
-<p class="caption"><span class="caption-text">API</span></p>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../onmt.html">Framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../onmt.modules.html">Modules</a></li>
@@ -114,7 +86,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../onmt.translate.translation_server.html">Server</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../onmt.inputters.html">Data Loaders</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Legacy</span></p>
+<p class="caption" role="heading"><span class="caption-text">Legacy</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../legacy/FAQ.html">FAQ (Legacy version)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../legacy/im2text.html">Image to Text</a></li>
@@ -122,66 +94,30 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../legacy/vid2text.html">Video to Text</a></li>
 </ul>
 
-            
-          
         </div>
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">OpenNMT-py</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../../index.html">Docs</a> &raquo;</li>
-        
-          <li><a href="../../index.html">Module code</a> &raquo;</li>
-        
-      <li>onmt.translate.decode_strategy</li>
-    
-    
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">onmt.translate.decode_strategy</li>
       <li class="wy-breadcrumbs-aside">
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <h1>Source code for onmt.translate.decode_strategy</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
@@ -193,62 +129,61 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for generation strategies.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        pad (int): Magic integer in output vocab.</span>
-<span class="sd">        bos (int): Magic integer in output vocab.</span>
-<span class="sd">        eos (int): Magic integer in output vocab.</span>
-<span class="sd">        unk (int): Magic integer in output vocab.</span>
-<span class="sd">        start (int): Magic integer in output vocab.</span>
-<span class="sd">        batch_size (int): Current batch size.</span>
-<span class="sd">        parallel_paths (int): Decoding strategies like beam search</span>
-<span class="sd">            use parallel paths. Each batch is repeated ``parallel_paths``</span>
-<span class="sd">            times in relevant state tensors.</span>
-<span class="sd">        min_length (int): Shortest acceptable generation, not counting</span>
-<span class="sd">            begin-of-sentence or end-of-sentence.</span>
-<span class="sd">        max_length (int): Longest acceptable sequence, not counting</span>
-<span class="sd">            begin-of-sentence (presumably there has been no EOS</span>
-<span class="sd">            yet if max_length is used as a cutoff).</span>
-<span class="sd">        ban_unk_token (Boolean): Whether unk token is forbidden</span>
-<span class="sd">        block_ngram_repeat (int): Block beams where</span>
-<span class="sd">            ``block_ngram_repeat``-grams repeat.</span>
-<span class="sd">        exclusion_tokens (set[int]): If a gram contains any of these</span>
-<span class="sd">            tokens, it may repeat.</span>
-<span class="sd">        return_attention (bool): Whether to work with attention too. If this</span>
-<span class="sd">            is true, it is assumed that the decoder is attentional.</span>
+<span class="sd">      pad (int): Magic integer in output vocab.</span>
+<span class="sd">      bos (int): Magic integer in output vocab.</span>
+<span class="sd">      eos (int): Magic integer in output vocab.</span>
+<span class="sd">      unk (int): Magic integer in output vocab.</span>
+<span class="sd">      start (int): Magic integer in output vocab.</span>
+<span class="sd">      batch_size (int): Current batch size.</span>
+<span class="sd">      parallel_paths (int): Decoding strategies like beam search</span>
+<span class="sd">        use parallel paths. Each batch is repeated ``parallel_paths``</span>
+<span class="sd">        times in relevant state tensors.</span>
+<span class="sd">      min_length (int): Shortest acceptable generation, not counting</span>
+<span class="sd">        begin-of-sentence or end-of-sentence.</span>
+<span class="sd">      max_length (int): Longest acceptable sequence, not counting</span>
+<span class="sd">        begin-of-sentence (presumably there has been no EOS</span>
+<span class="sd">        yet if max_length is used as a cutoff).</span>
+<span class="sd">      ban_unk_token (Boolean): Whether unk token is forbidden</span>
+<span class="sd">      block_ngram_repeat (int): Block beams where</span>
+<span class="sd">        ``block_ngram_repeat``-grams repeat.</span>
+<span class="sd">      exclusion_tokens (set[int]): If a gram contains any of these</span>
+<span class="sd">        tokens, it may repeat.</span>
+<span class="sd">      return_attention (bool): Whether to work with attention too. If this</span>
+<span class="sd">        is true, it is assumed that the decoder is attentional.</span>
 
 <span class="sd">    Attributes:</span>
-<span class="sd">        pad (int): See above.</span>
-<span class="sd">        bos (int): See above.</span>
-<span class="sd">        eos (int): See above.</span>
-<span class="sd">        unk (int): See above.</span>
-<span class="sd">        start (int): See above.</span>
-<span class="sd">        predictions (list[list[LongTensor]]): For each batch, holds a</span>
-<span class="sd">            list of beam prediction sequences.</span>
+<span class="sd">      pad (int): See above.</span>
+<span class="sd">      bos (int): See above.</span>
+<span class="sd">      eos (int): See above.</span>
+<span class="sd">      unk (int): See above.</span>
+<span class="sd">      start (int): See above.</span>
+<span class="sd">      predictions (list[list[LongTensor]]): For each batch, holds a</span>
+<span class="sd">        list of beam prediction sequences.</span>
 <span class="sd">        scores (list[list[FloatTensor]]): For each batch, holds a</span>
-<span class="sd">            list of scores.</span>
-<span class="sd">        attention (list[list[FloatTensor or list[]]]): For each</span>
-<span class="sd">            batch, holds a list of attention sequence tensors</span>
-<span class="sd">            (or empty lists) having shape ``(step, inp_seq_len)`` where</span>
-<span class="sd">            ``inp_seq_len`` is the length of the sample (not the max</span>
-<span class="sd">            length of all inp seqs).</span>
-<span class="sd">        alive_seq (LongTensor): Shape ``(B x parallel_paths, step)``.</span>
-<span class="sd">            This sequence grows in the ``step`` axis on each call to</span>
-<span class="sd">            :func:`advance()`.</span>
-<span class="sd">        is_finished (ByteTensor or NoneType): Shape</span>
-<span class="sd">            ``(B, parallel_paths)``. Initialized to ``None``.</span>
-<span class="sd">        alive_attn (FloatTensor or NoneType): If tensor, shape is</span>
-<span class="sd">            ``(step, B x parallel_paths, inp_seq_len)``, where ``inp_seq_len``</span>
-<span class="sd">            is the (max) length of the input sequence.</span>
-<span class="sd">        target_prefix (LongTensor or NoneType): If tensor, shape is</span>
-<span class="sd">            ``(B x parallel_paths, prefix_seq_len)``, where ``prefix_seq_len``</span>
-<span class="sd">            is the (max) length of the pre-fixed prediction.</span>
-<span class="sd">        min_length (int): See above.</span>
-<span class="sd">        max_length (int): See above.</span>
-<span class="sd">        ban_unk_token (Boolean): See above.</span>
-<span class="sd">        block_ngram_repeat (int): See above.</span>
-<span class="sd">        exclusion_tokens (set[int]): See above.</span>
-<span class="sd">        return_attention (bool): See above.</span>
-<span class="sd">        done (bool): See above.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        list of scores.</span>
+<span class="sd">      attention (list[list[FloatTensor or list[]]]): For each</span>
+<span class="sd">        batch, holds a list of attention sequence tensors</span>
+<span class="sd">        (or empty lists) having shape ``(step, inp_seq_len)`` where</span>
+<span class="sd">        ``inp_seq_len`` is the length of the sample (not the max</span>
+<span class="sd">        length of all inp seqs).</span>
+<span class="sd">      alive_seq (LongTensor): Shape ``(B x parallel_paths, step)``.</span>
+<span class="sd">        This sequence grows in the ``step`` axis on each call to</span>
+<span class="sd">        :func:``advance()``.</span>
+<span class="sd">        is_finished (ByteTensor or NoneType): Shape ``(B, parallel_paths)``.</span>
+<span class="sd">        Initialized to ``None``.</span>
+<span class="sd">      alive_attn (FloatTensor or NoneType): If tensor, shape is</span>
+<span class="sd">        ``(step, B x parallel_paths, inp_seq_len)``, where ``inp_seq_len``</span>
+<span class="sd">        is the (max) length of the input sequence.</span>
+<span class="sd">      target_prefix (LongTensor or NoneType): If tensor, shape is</span>
+<span class="sd">        ``(B x parallel_paths, prefix_seq_len)``, where ``prefix_seq_len``</span>
+<span class="sd">        is the (max) length of the pre-fixed prediction.</span>
+<span class="sd">      min_length (int): See above.</span>
+<span class="sd">      max_length (int): See above.</span>
+<span class="sd">      ban_unk_token (Boolean): See above.</span>
+<span class="sd">      block_ngram_repeat (int): See above.</span>
+<span class="sd">      exclusion_tokens (set[int]): See above.</span>
+<span class="sd">      return_attention (bool): See above.</span>
+<span class="sd">      done (bool): See above.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pad</span><span class="p">,</span> <span class="n">bos</span><span class="p">,</span> <span class="n">eos</span><span class="p">,</span> <span class="n">unk</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">parallel_paths</span><span class="p">,</span>
                  <span class="n">global_scorer</span><span class="p">,</span> <span class="n">min_length</span><span class="p">,</span> <span class="n">block_ngram_repeat</span><span class="p">,</span>
@@ -319,8 +254,8 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;DecodeStrategy subclasses should override :func:`initialize()`.</span>
 
 <span class="sd">        `initialize` should be called before all actions.</span>
-<span class="sd">        used to prepare necessary ingredients for decode.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        used to prepare necessary ingredients for decode.&quot;&quot;&quot;</span>
+
         <span class="k">if</span> <span class="n">device</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
         <span class="c1"># Here we set the decoder to start with self.start (BOS or EOS)</span>
@@ -363,24 +298,22 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span><span class="o">.</span><span class="n">fill_</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 
 <div class="viewcode-block" id="DecodeStrategy.block_ngram_repeats"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.DecodeStrategy.block_ngram_repeats">[docs]</a>    <span class="k">def</span> <span class="nf">block_ngram_repeats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log_probs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        We prevent the beam from going in any direction that would repeat any</span>
-<span class="sd">        ngram of size &lt;block_ngram_repeat&gt; more thant once.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;We prevent the beam from going in any direction that would repeat</span>
+<span class="sd">        any ngram of size &lt;block_ngram_repeat&gt; more thant once.</span>
 
 <span class="sd">        The way we do it: we maintain a list of all ngrams of size</span>
 <span class="sd">        &lt;block_ngram_repeat&gt; that is updated each time the beam advances, and</span>
 <span class="sd">        manually put any token that would lead to a repeated ngram to 0.</span>
 
 <span class="sd">        This improves on the previous version&#39;s complexity:</span>
-<span class="sd">           - previous version&#39;s complexity: batch_size * beam_size * len(self)</span>
-<span class="sd">           - current version&#39;s complexity: batch_size * beam_size</span>
+<span class="sd">        - previous version&#39;s complexity: batch_size * beam_size * len(self)</span>
+<span class="sd">        - current version&#39;s complexity: batch_size * beam_size</span>
 
 <span class="sd">        This improves on the previous version&#39;s accuracy;</span>
-<span class="sd">           - Previous version blocks the whole beam, whereas here we only</span>
-<span class="sd">            block specific tokens.</span>
-<span class="sd">           - Before the translation would fail when all beams contained</span>
-<span class="sd">            repeated ngrams. This is sure to never happen here.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        - Previous version blocks the whole beam, whereas here we only</span>
+<span class="sd">        block specific tokens.</span>
+<span class="sd">        - Before the translation would fail when all beams contained</span>
+<span class="sd">        repeated ngrams. This is sure to never happen here.&quot;&quot;&quot;</span>
 
         <span class="c1"># we don&#39;t block nothing if the user doesn&#39;t want it</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_ngram_repeat</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
@@ -437,10 +370,10 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Fix the first part of predictions with `self.target_prefix`.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            log_probs (FloatTensor): logits of size ``(B, vocab_size)``.</span>
+<span class="sd">        log_probs (FloatTensor): logits of size ``(B, vocab_size)``.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            log_probs (FloatTensor): modified logits in ``(B, vocab_size)``.</span>
+<span class="sd">        log_probs (FloatTensor): modified logits in ``(B, vocab_size)``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">_B</span><span class="p">,</span> <span class="n">vocab_size</span> <span class="o">=</span> <span class="n">log_probs</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
         <span class="n">step</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
@@ -501,42 +434,30 @@
 </pre></div>
 
            </div>
-           
           </div>
           <footer>
-  
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &copy; Copyright 2017, OpenNMT
-
-    </p>
+    <p>&#169; Copyright 2017-2023, OpenNMT.</p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
-
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

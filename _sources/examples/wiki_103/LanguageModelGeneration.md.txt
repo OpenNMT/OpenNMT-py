@@ -1,9 +1,9 @@
-# Language Model Generation
+# Language Model Wiki-103
 
 
 ## Step 0: Download and clean the data
 
-Preliminary steps are defined in the [`examples/scripts/prepare_wikitext-103_data.sh`](https://github.com/OpenNMT/OpenNMT-py/tree/master/examples/scripts/prepare_wikitext-103_data.sh). The following command will download the [WikiText103 dataset](https://blog.einstein.ai/the-wikitext-long-term-dependency-language-modeling-dataset/), remove empty lines and shuffle the training corpus:
+Preliminary steps are defined in the [`docs/source/examples/wiki_103/prepare_wikitext-103_data.sh`](https://github.com/OpenNMT/OpenNMT-py/tree/master/docs/sources/examples/wiki_103/prepare_wikitext-103_data.sh). The following command will download the [WikiText103 dataset](https://blog.einstein.ai/the-wikitext-long-term-dependency-language-modeling-dataset/), remove empty lines and shuffle the training corpus:
 ```bash
 chmod u+x prepare_wikitext-103_data.sh
 ./prepare_wikitext-103_data.sh
@@ -42,7 +42,7 @@ for data_file in ["wiki.valid", "wiki.test", "wiki.train"]:
 ```
 
 ## Step 2: Build the vocabulary
-An example of yaml configuration for language modeling task is available in [`examples/wiki_103.yaml`](https://github.com/OpenNMT/OpenNMT-py/tree/master/examples/wiki_103.yaml). This configuration will be used for building the vocabulary and training the model.
+An example of yaml configuration for language modeling task is available in [`examples/wiki_103.yaml`](https://github.com/OpenNMT/OpenNMT-py/tree/master/docs/source/examples/wiki_103/wiki_103.yaml). This configuration will be used for building the vocabulary and training the model.
 BPE and language modeling specificities are explained in the following sections.
 
 ### Language Model specificities

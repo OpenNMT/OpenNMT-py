@@ -1,102 +1,77 @@
-
-
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html5" lang="EN" >
 <head>
-  <meta charset="utf-8">
-  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  <title>Summarization &mdash; OpenNMT-py  documentation</title>
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Summarization CNN/DM &mdash; OpenNMT-py  documentation</title>
+      <link rel="stylesheet" href="../../_static/theme_overrides.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
   
-  
-  
-  
-
-  
-  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script src="../_static/jquery.js"></script>
-        <script src="../_static/underscore.js"></script>
-        <script src="../_static/doctools.js"></script>
-        <script src="../_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    
-    <script type="text/javascript" src="../_static/js/theme.js"></script>
-
-    
-
-  
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Language Model Generation" href="LanguageModelGeneration.html" />
-    <link rel="prev" title="Translation" href="Translation.html" /> 
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+        <script src="https://unpkg.com/mermaid@9.4.0/dist/mermaid.min.js"></script>
+        <script>mermaid.initialize({startOnLoad:true});</script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Gated Graph Neural Networks" href="../ggnn/GGNN.html" />
+    <link rel="prev" title="Language Model Wiki-103" href="../wiki_103/LanguageModelGeneration.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="../index.html" class="icon icon-home"> OpenNMT-py
           
-
-          
+          <a href="../../index.html" class="icon icon-home">
+            OpenNMT-py
           </a>
-
-          
-            
-            
-          
-
-          
 <div role="search">
-  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Getting Started</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../main.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../CONTRIBUTING.html">Contributors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../ref.html">References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../main.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changes.html">Versions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../CONTRIBUTING.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../ref.html">References</a></li>
 </ul>
-<p class="caption"><span class="caption-text">FAQ</span></p>
+<p class="caption" role="heading"><span class="caption-text">Frequently Asked Questions</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html">How do I use my v2 models in v3 ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-do-i-train-the-transformer-model">How do I train the Transformer model?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#performance-tips">Performance tips</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-to-use-lora-to-finetune-a-big-model">How to use LoRa to finetune a big model ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Examples</span></p>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="Translation.html">Translation</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Summarization</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="../wmt17/Translation.html">Translation WMT17 en-de</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../wiki_103/LanguageModelGeneration.html">Language Model Wiki-103</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Summarization CNN/DM</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#preparing-the-data-and-vocab">Preparing the data and vocab</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#training">Training</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#inference">Inference</a></li>
@@ -113,96 +88,57 @@
 <li class="toctree-l2"><a class="reference internal" href="#references">References</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="LanguageModelGeneration.html">Language Model Generation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="GGNN.html">Gated Graph Sequence Neural Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ggnn/GGNN.html">Gated Graph Neural Networks</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Scripts</span></p>
+<p class="caption" role="heading"><span class="caption-text">Scripts</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../options/build_vocab.html">Build Vocab</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../options/train.html">Train</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../options/translate.html">Translate</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../options/server.html">Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../options/build_vocab.html">Build Vocab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../options/train.html">Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../options/translate.html">Translate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../options/server.html">Server</a></li>
 </ul>
-<p class="caption"><span class="caption-text">API</span></p>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../onmt.html">Framework</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../onmt.modules.html">Modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../onmt.translation.html">Translation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../onmt.translate.translation_server.html">Server</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../onmt.inputters.html">Data Loaders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../onmt.html">Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../onmt.modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../onmt.translation.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../onmt.translate.translation_server.html">Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../onmt.inputters.html">Data Loaders</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Legacy</span></p>
+<p class="caption" role="heading"><span class="caption-text">Legacy</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../legacy/FAQ.html">FAQ (Legacy version)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../legacy/im2text.html">Image to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../legacy/speech2text.html">Speech to Text</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../legacy/vid2text.html">Video to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../legacy/FAQ.html">FAQ (Legacy version)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../legacy/im2text.html">Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../legacy/speech2text.html">Speech to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../legacy/vid2text.html">Video to Text</a></li>
 </ul>
 
-            
-          
         </div>
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../index.html">OpenNMT-py</a>
-        
+          <a href="../../index.html">OpenNMT-py</a>
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../index.html">Docs</a> &raquo;</li>
-        
-      <li>Summarization</li>
-    
-    
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Summarization CNN/DM</li>
       <li class="wy-breadcrumbs-aside">
-        
-            
-            <a href="../_sources/examples/Summarization.md.txt" rel="nofollow"> View page source</a>
-          
-        
+            <a href="../../_sources/examples/summary/Summarization.md.txt" rel="nofollow"> View page source</a>
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="summarization">
-<h1>Summarization<a class="headerlink" href="#summarization" title="Permalink to this headline">¶</a></h1>
+             
+  <section id="summarization-cnn-dm">
+<h1>Summarization CNN/DM<a class="headerlink" href="#summarization-cnn-dm" title="Permalink to this heading">¶</a></h1>
 <p>Note: The process and results below are presented in the paper <code class="docutils literal notranslate"><span class="pre">Bottom-Up</span> <span class="pre">Abstractive</span> <span class="pre">Summarization</span></code>. Please consider citing it if you follow these instructions.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@inproceedings</span><span class="p">{</span><span class="n">gehrmann2018bottom</span><span class="p">,</span>
   <span class="n">title</span><span class="o">=</span><span class="p">{</span><span class="n">Bottom</span><span class="o">-</span><span class="n">Up</span> <span class="n">Abstractive</span> <span class="n">Summarization</span><span class="p">},</span>
@@ -220,8 +156,8 @@ In the following, we assume access to a tokenized form of the corpus split into 
 <em>australia ‘s current account deficit shrunk by a record #.## billion dollars -lrb- #.## billion us -rrb- in the june quarter due to soaring commodity prices , figures released monday showed .</em></p>
 <p><strong>Output</strong>
 <em>australian current account deficit narrows sharply</em></p>
-<div class="section" id="preparing-the-data-and-vocab">
-<h2>Preparing the data and vocab<a class="headerlink" href="#preparing-the-data-and-vocab" title="Permalink to this headline">¶</a></h2>
+<section id="preparing-the-data-and-vocab">
+<h2>Preparing the data and vocab<a class="headerlink" href="#preparing-the-data-and-vocab" title="Permalink to this heading">¶</a></h2>
 <p>For CNN-DM we follow See et al. [2] and additionally truncate the source length at 400 tokens and the target at 100. We also note that in CNN-DM, we found models to work better if the target surrounds sentences with tags such that a sentence looks like <code class="docutils literal notranslate"><span class="pre">&lt;t&gt;</span> <span class="pre">w1</span> <span class="pre">w2</span> <span class="pre">w3</span> <span class="pre">.</span> <span class="pre">&lt;/t&gt;</span></code>. If you use this formatting, you can remove the tags after the inference step with the commands <code class="docutils literal notranslate"><span class="pre">sed</span> <span class="pre">-i</span> <span class="pre">'s/</span> <span class="pre">&lt;\/t&gt;//g'</span> <span class="pre">FILE.txt</span></code> and <code class="docutils literal notranslate"><span class="pre">sed</span> <span class="pre">-i</span> <span class="pre">'s/&lt;t&gt;</span> <span class="pre">//g'</span> <span class="pre">FILE.txt</span></code>.</p>
 <p><strong>YAML Configuration</strong>:</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># cnndm.yaml</span>
@@ -257,9 +193,9 @@ In the following, we assume access to a tokenized form of the corpus split into 
 </pre></div>
 </div>
 <p>This command will have written source and target vocabulary to <code class="docutils literal notranslate"><span class="pre">cnndm/run/example.vocab.src</span></code> and <code class="docutils literal notranslate"><span class="pre">cnndm/run/example.vocab.tgt</span></code>. These two files should be the same, as <code class="docutils literal notranslate"><span class="pre">share_vocab</span></code> is set.</p>
-</div>
-<div class="section" id="training">
-<h2>Training<a class="headerlink" href="#training" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="training">
+<h2>Training<a class="headerlink" href="#training" title="Permalink to this heading">¶</a></h2>
 <p>The training procedure described in this section for the most part follows parameter choices and implementation similar to that of See et al. [2].</p>
 <p>Most significant options are:</p>
 <ul class="simple">
@@ -375,9 +311,9 @@ In the following, we assume access to a tokenized form of the corpus split into 
 <span class="nn">...</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="inference">
-<h2>Inference<a class="headerlink" href="#inference" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="inference">
+<h2>Inference<a class="headerlink" href="#inference" title="Permalink to this heading">¶</a></h2>
 <p>During inference, we use beam-search with a beam-size of 10. We also added specific penalties that we can use during decoding, described in the following.</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">stepwise_penalty</span></code>: Applies penalty at every step</p></li>
@@ -408,11 +344,11 @@ In the following, we assume access to a tokenized form of the corpus split into 
                <span class="o">-</span><span class="n">ignore_when_blocking</span> <span class="s2">&quot;.&quot;</span> <span class="s2">&quot;&lt;/t&gt;&quot;</span> <span class="s2">&quot;&lt;t&gt;&quot;</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="evaluation">
-<h2>Evaluation<a class="headerlink" href="#evaluation" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="cnn-dm">
-<h3>CNN-DM<a class="headerlink" href="#cnn-dm" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="evaluation">
+<h2>Evaluation<a class="headerlink" href="#evaluation" title="Permalink to this heading">¶</a></h2>
+<section id="cnn-dm">
+<h3>CNN-DM<a class="headerlink" href="#cnn-dm" title="Permalink to this heading">¶</a></h3>
 <p>To evaluate the ROUGE scores on CNN-DM, we extended the <code class="docutils literal notranslate"><span class="pre">pyrouge</span></code> wrapper with additional evaluations such as the amount of repeated n-grams (typically found in models with copy attention), found <a class="reference external" href="https://github.com/sebastianGehrmann/rouge-baselines">here</a>. The repository includes a sub-repo called pyrouge. Make sure to clone the code with the <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">clone</span> <span class="pre">--recurse-submodules</span> <span class="pre">https://github.com/sebastianGehrmann/rouge-baselines</span></code> command to check this out as well and follow the installation instructions on the pyrouge repository before calling this script.
 The installation instructions can be found <a class="reference external" href="https://github.com/falcondai/pyrouge/tree/9cdbfbda8b8d96e7c2646ffd048743ddcf417ed9#installation">here</a>. Note that on MacOS, we found that the pointer to your perl installation in line 1 of <code class="docutils literal notranslate"><span class="pre">pyrouge/RELEASE-1.5.5/ROUGE-1.5.5.pl</span></code> might be different from the one you have installed. A simple fix is to change this line to <code class="docutils literal notranslate"><span class="pre">#!/usr/local/bin/perl</span> <span class="pre">-w</span></code> if it fails.</p>
 <p>It can be run with the following command:</p>
@@ -420,206 +356,188 @@ The installation instructions can be found <a class="reference external" href="h
 </pre></div>
 </div>
 <p>The <code class="docutils literal notranslate"><span class="pre">sent_tag_verbatim</span></code> option strips <code class="docutils literal notranslate"><span class="pre">&lt;t&gt;</span></code> and <code class="docutils literal notranslate"><span class="pre">&lt;/t&gt;</span></code> tags around sentences - when a sentence previously was <code class="docutils literal notranslate"><span class="pre">&lt;t&gt;</span> <span class="pre">w</span> <span class="pre">w</span> <span class="pre">w</span> <span class="pre">w</span> <span class="pre">.</span> <span class="pre">&lt;/t&gt;</span></code>, it becomes <code class="docutils literal notranslate"><span class="pre">w</span> <span class="pre">w</span> <span class="pre">w</span> <span class="pre">w</span> <span class="pre">.</span></code>.</p>
-</div>
-<div class="section" id="gigaword">
-<h3>Gigaword<a class="headerlink" href="#gigaword" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="gigaword">
+<h3>Gigaword<a class="headerlink" href="#gigaword" title="Permalink to this heading">¶</a></h3>
 <p>For evaluation of large test sets such as Gigaword, we use the a parallel python wrapper around ROUGE, found <a class="reference external" href="https://github.com/pltrdy/files2rouge">here</a>.</p>
 <p><strong>Command used</strong>:
 <code class="docutils literal notranslate"><span class="pre">files2rouge</span> <span class="pre">giga.out</span> <span class="pre">test.title.txt</span> <span class="pre">--verbose</span></code></p>
-</div>
-</div>
-<div class="section" id="scores-and-models">
-<h2>Scores and Models<a class="headerlink" href="#scores-and-models" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="id1">
-<h3>CNN-DM<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+</section>
+</section>
+<section id="scores-and-models">
+<h2>Scores and Models<a class="headerlink" href="#scores-and-models" title="Permalink to this heading">¶</a></h2>
+<section id="id1">
+<h3>CNN-DM<a class="headerlink" href="#id1" title="Permalink to this heading">¶</a></h3>
 <table border="1" class="docutils">
 <thead>
 <tr>
 <th>Model Type</th>
 <th>Model</th>
-<th align="right">R1 R</th>
-<th align="right">R1 P</th>
-<th align="right">R1 F</th>
-<th align="right">R2 R</th>
-<th align="right">R2 P</th>
-<th align="right">R2 F</th>
-<th align="right">RL R</th>
-<th align="right">RL P</th>
-<th align="right">RL F</th>
+<th style="text-align: right;">R1 R</th>
+<th style="text-align: right;">R1 P</th>
+<th style="text-align: right;">R1 F</th>
+<th style="text-align: right;">R2 R</th>
+<th style="text-align: right;">R2 P</th>
+<th style="text-align: right;">R2 F</th>
+<th style="text-align: right;">RL R</th>
+<th style="text-align: right;">RL P</th>
+<th style="text-align: right;">RL F</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>Pointer-Generator + Coverage [2]</td>
 <td><a href="https://github.com/abisee/pointer-generator">link</a></td>
-<td align="right">39.05</td>
-<td align="right">43.02</td>
-<td align="right">39.53</td>
-<td align="right">17.16</td>
-<td align="right">18.77</td>
-<td align="right">17.28</td>
-<td align="right">35.98</td>
-<td align="right">39.56</td>
-<td align="right">36.38</td>
+<td style="text-align: right;">39.05</td>
+<td style="text-align: right;">43.02</td>
+<td style="text-align: right;">39.53</td>
+<td style="text-align: right;">17.16</td>
+<td style="text-align: right;">18.77</td>
+<td style="text-align: right;">17.28</td>
+<td style="text-align: right;">35.98</td>
+<td style="text-align: right;">39.56</td>
+<td style="text-align: right;">36.38</td>
 </tr>
 <tr>
 <td>Pointer-Generator [2]</td>
 <td><a href="https://github.com/abisee/pointer-generator">link</a></td>
-<td align="right">37.76</td>
-<td align="right">37.60</td>
-<td align="right">36.44</td>
-<td align="right">16.31</td>
-<td align="right">16.12</td>
-<td align="right">15.66</td>
-<td align="right">34.66</td>
-<td align="right">34.46</td>
-<td align="right">33.42</td>
+<td style="text-align: right;">37.76</td>
+<td style="text-align: right;">37.60</td>
+<td style="text-align: right;">36.44</td>
+<td style="text-align: right;">16.31</td>
+<td style="text-align: right;">16.12</td>
+<td style="text-align: right;">15.66</td>
+<td style="text-align: right;">34.66</td>
+<td style="text-align: right;">34.46</td>
+<td style="text-align: right;">33.42</td>
 </tr>
 <tr>
 <td>OpenNMT BRNN  (1 layer, emb 128, hid 512)</td>
 <td><a href="https://s3.amazonaws.com/opennmt-models/Summary/ada6_bridge_oldcopy_tagged_acc_54.17_ppl_11.17_e20.pt">link</a></td>
-<td align="right">40.90</td>
-<td align="right">40.20</td>
-<td align="right">39.02</td>
-<td align="right">17.91</td>
-<td align="right">17.99</td>
-<td align="right">17.25</td>
-<td align="right">37.76</td>
-<td align="right">37.18</td>
-<td align="right">36.05</td>
+<td style="text-align: right;">40.90</td>
+<td style="text-align: right;">40.20</td>
+<td style="text-align: right;">39.02</td>
+<td style="text-align: right;">17.91</td>
+<td style="text-align: right;">17.99</td>
+<td style="text-align: right;">17.25</td>
+<td style="text-align: right;">37.76</td>
+<td style="text-align: right;">37.18</td>
+<td style="text-align: right;">36.05</td>
 </tr>
 <tr>
 <td>OpenNMT BRNN  (1 layer, emb 128, hid 512, shared embeddings)</td>
 <td><a href="https://s3.amazonaws.com/opennmt-models/Summary/ada6_bridge_oldcopy_tagged_share_acc_54.50_ppl_10.89_e20.pt">link</a></td>
-<td align="right">38.59</td>
-<td align="right">40.60</td>
-<td align="right">37.97</td>
-<td align="right">16.75</td>
-<td align="right">17.93</td>
-<td align="right">16.59</td>
-<td align="right">35.67</td>
-<td align="right">37.60</td>
-<td align="right">35.13</td>
+<td style="text-align: right;">38.59</td>
+<td style="text-align: right;">40.60</td>
+<td style="text-align: right;">37.97</td>
+<td style="text-align: right;">16.75</td>
+<td style="text-align: right;">17.93</td>
+<td style="text-align: right;">16.59</td>
+<td style="text-align: right;">35.67</td>
+<td style="text-align: right;">37.60</td>
+<td style="text-align: right;">35.13</td>
 </tr>
 <tr>
 <td>OpenNMT BRNN (2 layer, emb 256, hid 1024)</td>
 <td><a href="https://s3.amazonaws.com/opennmt-models/Summary/ada6_bridge_oldcopy_tagged_larger_acc_54.84_ppl_10.58_e17.pt">link</a></td>
-<td align="right">40.41</td>
-<td align="right">40.94</td>
-<td align="right">39.12</td>
-<td align="right">17.76</td>
-<td align="right">18.38</td>
-<td align="right">17.35</td>
-<td align="right">37.27</td>
-<td align="right">37.83</td>
-<td align="right">36.12</td>
+<td style="text-align: right;">40.41</td>
+<td style="text-align: right;">40.94</td>
+<td style="text-align: right;">39.12</td>
+<td style="text-align: right;">17.76</td>
+<td style="text-align: right;">18.38</td>
+<td style="text-align: right;">17.35</td>
+<td style="text-align: right;">37.27</td>
+<td style="text-align: right;">37.83</td>
+<td style="text-align: right;">36.12</td>
 </tr>
 <tr>
 <td>OpenNMT Transformer</td>
 <td><a href="https://s3.amazonaws.com/opennmt-models/sum_transformer_model_acc_57.25_ppl_9.22_e16.pt">link</a></td>
-<td align="right">40.31</td>
-<td align="right">41.09</td>
-<td align="right">39.25</td>
-<td align="right">17.97</td>
-<td align="right">18.46</td>
-<td align="right">17.54</td>
-<td align="right">37.41</td>
-<td align="right">38.18</td>
-<td align="right">36.45</td>
+<td style="text-align: right;">40.31</td>
+<td style="text-align: right;">41.09</td>
+<td style="text-align: right;">39.25</td>
+<td style="text-align: right;">17.97</td>
+<td style="text-align: right;">18.46</td>
+<td style="text-align: right;">17.54</td>
+<td style="text-align: right;">37.41</td>
+<td style="text-align: right;">38.18</td>
+<td style="text-align: right;">36.45</td>
 </tr>
 </tbody>
-</table></div>
-<div class="section" id="id2">
-<h3>Gigaword<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+</table></section>
+<section id="id2">
+<h3>Gigaword<a class="headerlink" href="#id2" title="Permalink to this heading">¶</a></h3>
 <table border="1" class="docutils">
 <thead>
 <tr>
 <th>Model Type</th>
 <th>Model</th>
-<th align="right">R1 R</th>
-<th align="right">R1 P</th>
-<th align="right">R1 F</th>
-<th align="right">R2 R</th>
-<th align="right">R2 P</th>
-<th align="right">R2 F</th>
-<th align="right">RL R</th>
-<th align="right">RL P</th>
-<th align="right">RL F</th>
+<th style="text-align: right;">R1 R</th>
+<th style="text-align: right;">R1 P</th>
+<th style="text-align: right;">R1 F</th>
+<th style="text-align: right;">R2 R</th>
+<th style="text-align: right;">R2 P</th>
+<th style="text-align: right;">R2 F</th>
+<th style="text-align: right;">RL R</th>
+<th style="text-align: right;">RL P</th>
+<th style="text-align: right;">RL F</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>OpenNMT, no penalties</td>
 <td><a href="https://s3.amazonaws.com/opennmt-models/gigaword_copy_acc_51.78_ppl_11.71_e20.pt">link</a></td>
-<td align="right">?</td>
-<td align="right">?</td>
-<td align="right">35.51</td>
-<td align="right">?</td>
-<td align="right">?</td>
-<td align="right">17.35</td>
-<td align="right">?</td>
-<td align="right">?</td>
-<td align="right">33.17</td>
+<td style="text-align: right;">?</td>
+<td style="text-align: right;">?</td>
+<td style="text-align: right;">35.51</td>
+<td style="text-align: right;">?</td>
+<td style="text-align: right;">?</td>
+<td style="text-align: right;">17.35</td>
+<td style="text-align: right;">?</td>
+<td style="text-align: right;">?</td>
+<td style="text-align: right;">33.17</td>
 </tr>
 </tbody>
-</table></div>
-</div>
-<div class="section" id="references">
-<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+</table></section>
+</section>
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this heading">¶</a></h2>
 <p>[1] Vinyals, O., Fortunato, M. and Jaitly, N., 2015. Pointer Network. NIPS</p>
 <p>[2] See, A., Liu, P.J. and Manning, C.D., 2017. Get To The Point: Summarization with Pointer-Generator Networks. ACL</p>
 <p>[3] Bahdanau, D., Cho, K. and Bengio, Y., 2014. Neural machine translation by jointly learning to align and translate. ICLR</p>
 <p>[4] Luong, M.T., Pham, H. and Manning, C.D., 2015. Effective approaches to attention-based neural machine translation. EMNLP</p>
-</div>
-</div>
+</section>
+</section>
 
 
            </div>
-           
           </div>
-          <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="LanguageModelGeneration.html" class="btn btn-neutral float-right" title="Language Model Generation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="Translation.html" class="btn btn-neutral float-left" title="Translation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../wiki_103/LanguageModelGeneration.html" class="btn btn-neutral float-left" title="Language Model Wiki-103" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../ggnn/GGNN.html" class="btn btn-neutral float-right" title="Gated Graph Neural Networks" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
-  
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &copy; Copyright 2017, OpenNMT
-
-    </p>
+    <p>&#169; Copyright 2017-2023, OpenNMT.</p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
-
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

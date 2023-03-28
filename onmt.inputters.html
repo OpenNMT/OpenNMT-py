@@ -1,125 +1,116 @@
-
-
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html5" lang="EN" >
 <head>
-  <meta charset="utf-8">
-  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Data Loaders &mdash; OpenNMT-py  documentation</title>
+      <link rel="stylesheet" href="_static/theme_overrides.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
   
-
-  
-  
-  
-  
-
-  
-  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/doctools.js"></script>
-        <script src="_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    
-    <script type="text/javascript" src="_static/js/theme.js"></script>
-
-    
-
-  
-  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="_static/theme_overrides.css" type="text/css" />
+        <script src="_static/sphinx_highlight.js"></script>
+        <script src="https://unpkg.com/mermaid@9.4.0/dist/mermaid.min.js"></script>
+        <script>mermaid.initialize({startOnLoad:true});</script>
+    <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="FAQ (Legacy version)" href="legacy/FAQ.html" />
     <link rel="prev" title="Server" href="onmt.translate.translation_server.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="index.html" class="icon icon-home"> OpenNMT-py
           
-
-          
+          <a href="index.html" class="icon icon-home">
+            OpenNMT-py
           </a>
-
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Getting Started</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="main.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changes.html">Versions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="CONTRIBUTING.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ref.html">References</a></li>
 </ul>
-<p class="caption"><span class="caption-text">FAQ</span></p>
+<p class="caption" role="heading"><span class="caption-text">Frequently Asked Questions</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html">How do I use my v2 models in v3 ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-do-i-train-the-transformer-model">How do I train the Transformer model?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#performance-tips">Performance tips</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-to-use-lora-to-finetune-a-big-model">How to use LoRa to finetune a big model ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Examples</span></p>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="examples/Translation.html">Translation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/Summarization.html">Summarization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/LanguageModelGeneration.html">Language Model Generation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/GGNN.html">Gated Graph Sequence Neural Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/wmt17/Translation.html">Translation WMT17 en-de</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/wiki_103/LanguageModelGeneration.html">Language Model Wiki-103</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/summary/Summarization.html">Summarization CNN/DM</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/ggnn/GGNN.html">Gated Graph Neural Networks</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Scripts</span></p>
+<p class="caption" role="heading"><span class="caption-text">Scripts</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="options/build_vocab.html">Build Vocab</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/train.html">Train</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/translate.html">Translate</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/server.html">Server</a></li>
 </ul>
-<p class="caption"><span class="caption-text">API</span></p>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="onmt.html">Framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="onmt.modules.html">Modules</a></li>
 <li class="toctree-l1"><a class="reference internal" href="onmt.translation.html">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="onmt.translate.translation_server.html">Server</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Data Loaders</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#data-iterator">Data Iterator</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#dataset">Dataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#data-iterator">Data Iterator</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#onmt.inputters.DynamicDatasetIter"><code class="docutils literal notranslate"><span class="pre">DynamicDatasetIter</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#onmt.inputters.DynamicDatasetIter.batch_iter"><code class="docutils literal notranslate"><span class="pre">DynamicDatasetIter.batch_iter()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#onmt.inputters.DynamicDatasetIter.from_opt"><code class="docutils literal notranslate"><span class="pre">DynamicDatasetIter.from_opt()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#onmt.inputters.MixingStrategy"><code class="docutils literal notranslate"><span class="pre">MixingStrategy</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#onmt.inputters.SequentialMixer"><code class="docutils literal notranslate"><span class="pre">SequentialMixer</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#onmt.inputters.WeightedMixer"><code class="docutils literal notranslate"><span class="pre">WeightedMixer</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#dataset">Dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#onmt.inputters.ParallelCorpus"><code class="docutils literal notranslate"><span class="pre">ParallelCorpus</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#onmt.inputters.ParallelCorpus.load"><code class="docutils literal notranslate"><span class="pre">ParallelCorpus.load()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#onmt.inputters.ParallelCorpusIterator"><code class="docutils literal notranslate"><span class="pre">ParallelCorpusIterator</span></code></a></li>
 </ul>
 </li>
 </ul>
-<p class="caption"><span class="caption-text">Legacy</span></p>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Legacy</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="legacy/FAQ.html">FAQ (Legacy version)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="legacy/im2text.html">Image to Text</a></li>
@@ -127,79 +118,41 @@
 <li class="toctree-l1"><a class="reference internal" href="legacy/vid2text.html">Video to Text</a></li>
 </ul>
 
-            
-          
         </div>
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="index.html">OpenNMT-py</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="index.html">Docs</a> &raquo;</li>
-        
-      <li>Data Loaders</li>
-    
-    
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Data Loaders</li>
       <li class="wy-breadcrumbs-aside">
-        
-            
             <a href="_sources/onmt.inputters.rst.txt" rel="nofollow"> View page source</a>
-          
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="data-loaders">
-<h1>Data Loaders<a class="headerlink" href="#data-loaders" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="data-iterator">
-<h2>Data Iterator<a class="headerlink" href="#data-iterator" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="onmt.inputters.DynamicDatasetIter">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.inputters.</code><code class="sig-name descname">DynamicDatasetIter</code><span class="sig-paren">(</span><em class="sig-param">corpora</em>, <em class="sig-param">corpora_info</em>, <em class="sig-param">transforms</em>, <em class="sig-param">vocabs</em>, <em class="sig-param">task</em>, <em class="sig-param">batch_type</em>, <em class="sig-param">batch_size</em>, <em class="sig-param">batch_size_multiple</em>, <em class="sig-param">data_type='text'</em>, <em class="sig-param">bucket_size=2048</em>, <em class="sig-param">bucket_size_init=-1</em>, <em class="sig-param">bucket_size_increment=0</em>, <em class="sig-param">copy=False</em>, <em class="sig-param">skip_empty_level='warning'</em>, <em class="sig-param">stride=1</em>, <em class="sig-param">offset=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/dynamic_iterator.html#DynamicDatasetIter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.DynamicDatasetIter" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.utils.data.dataset.IterableDataset</span></code></p>
+             
+  <section id="data-loaders">
+<h1>Data Loaders<a class="headerlink" href="#data-loaders" title="Permalink to this heading">¶</a></h1>
+<section id="data-iterator">
+<h2>Data Iterator<a class="headerlink" href="#data-iterator" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="onmt.inputters.DynamicDatasetIter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">onmt.inputters.</span></span><span class="sig-name descname"><span class="pre">DynamicDatasetIter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">corpora</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">corpora_info</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transforms</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vocabs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">task</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size_multiple</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'text'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bucket_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2048</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bucket_size_init</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bucket_size_increment</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_empty_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'warning'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stride</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/dynamic_iterator.html#DynamicDatasetIter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.inputters.DynamicDatasetIter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">IterableDataset</span></code></p>
 <p>Yield batch from (multiple) plain text corpus.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>corpora</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><a class="reference internal" href="#onmt.inputters.ParallelCorpus" title="onmt.inputters.ParallelCorpus"><em>ParallelCorpus</em></a><em>]</em>) – collections of corpora to iterate;</p></li>
 <li><p><strong>corpora_info</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>dict</em><em>]</em>) – corpora infos correspond to corpora;</p></li>
@@ -212,69 +165,69 @@
 <li><p><strong>data_type</strong> (<em>str</em>) – input data type, currently only text;</p></li>
 <li><p><strong>bucket_size</strong> (<em>int</em>) – accum this number of examples in a dynamic dataset;</p></li>
 <li><p><strong>bucket_size_init</strong> (<em>int</em>) – initialize the bucket with this</p></li>
-<li><p><strong>of examples;</strong> (<em>amount</em>) – </p></li>
+<li><p><strong>examples;</strong> (<em>size with this amount of</em>) – </p></li>
 <li><p><strong>bucket_size_increment</strong> (<em>int</em>) – increment the bucket</p></li>
-<li><p><strong>with this amount of examples;</strong> (<em>size</em>) – </p></li>
+<li><p><strong>examples;</strong> – </p></li>
 <li><p><strong>copy</strong> (<em>Bool</em>) – if True, will add specific items for copy_attn</p></li>
 <li><p><strong>skip_empty_level</strong> (<em>str</em>) – security level when encouter empty line;</p></li>
 <li><p><strong>stride</strong> (<em>int</em>) – iterate data files with this stride;</p></li>
 <li><p><strong>offset</strong> (<em>int</em>) – iterate data files with this offset.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Variables</dt>
+<dt class="field-even">Variables<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>sort_key</strong> (<em>function</em>) – functions define how to sort examples;</p></li>
 <li><p><strong>mixer</strong> (<a class="reference internal" href="#onmt.inputters.MixingStrategy" title="onmt.inputters.MixingStrategy"><em>MixingStrategy</em></a>) – the strategy to iterate corpora.</p></li>
 </ul>
 </dd>
 </dl>
-<dl class="method">
-<dt id="onmt.inputters.DynamicDatasetIter.batch_iter">
-<code class="sig-name descname">batch_iter</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">batch_size</em>, <em class="sig-param">batch_type='sents'</em>, <em class="sig-param">batch_size_multiple=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/dynamic_iterator.html#DynamicDatasetIter.batch_iter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.DynamicDatasetIter.batch_iter" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="onmt.inputters.DynamicDatasetIter.batch_iter">
+<span class="sig-name descname"><span class="pre">batch_iter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'sents'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size_multiple</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/dynamic_iterator.html#DynamicDatasetIter.batch_iter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.inputters.DynamicDatasetIter.batch_iter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Yield elements from data in chunks of batch_size,
 where each chunk size is a multiple of batch_size_multiple.</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="onmt.inputters.DynamicDatasetIter.from_opt">
-<em class="property">classmethod </em><code class="sig-name descname">from_opt</code><span class="sig-paren">(</span><em class="sig-param">corpora</em>, <em class="sig-param">transforms</em>, <em class="sig-param">vocabs</em>, <em class="sig-param">opt</em>, <em class="sig-param">task</em>, <em class="sig-param">copy</em>, <em class="sig-param">stride=1</em>, <em class="sig-param">offset=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/dynamic_iterator.html#DynamicDatasetIter.from_opt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.DynamicDatasetIter.from_opt" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="onmt.inputters.DynamicDatasetIter.from_opt">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_opt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">corpora</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transforms</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vocabs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">task</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stride</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/dynamic_iterator.html#DynamicDatasetIter.from_opt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.inputters.DynamicDatasetIter.from_opt" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initilize <cite>DynamicDatasetIter</cite> with options parsed from <cite>opt</cite>.</p>
 </dd></dl>
 
 </dd></dl>
 
-<dl class="class">
-<dt id="onmt.inputters.MixingStrategy">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.inputters.</code><code class="sig-name descname">MixingStrategy</code><span class="sig-paren">(</span><em class="sig-param">iterables</em>, <em class="sig-param">weights</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/dynamic_iterator.html#MixingStrategy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.MixingStrategy" title="Permalink to this definition">¶</a></dt>
+<dl class="py class">
+<dt class="sig sig-object py" id="onmt.inputters.MixingStrategy">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">onmt.inputters.</span></span><span class="sig-name descname"><span class="pre">MixingStrategy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iterables</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/dynamic_iterator.html#MixingStrategy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.inputters.MixingStrategy" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Mixing strategy that should be used in Data Iterator.</p>
 </dd></dl>
 
-<dl class="class">
-<dt id="onmt.inputters.SequentialMixer">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.inputters.</code><code class="sig-name descname">SequentialMixer</code><span class="sig-paren">(</span><em class="sig-param">iterables</em>, <em class="sig-param">weights</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/dynamic_iterator.html#SequentialMixer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.SequentialMixer" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.inputters.dynamic_iterator.MixingStrategy</span></code></p>
+<dl class="py class">
+<dt class="sig sig-object py" id="onmt.inputters.SequentialMixer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">onmt.inputters.</span></span><span class="sig-name descname"><span class="pre">SequentialMixer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iterables</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/dynamic_iterator.html#SequentialMixer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.inputters.SequentialMixer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#onmt.inputters.MixingStrategy" title="onmt.inputters.dynamic_iterator.MixingStrategy"><code class="xref py py-class docutils literal notranslate"><span class="pre">MixingStrategy</span></code></a></p>
 <p>Generate data sequentially from <cite>iterables</cite> which is exhaustible.</p>
 </dd></dl>
 
-<dl class="class">
-<dt id="onmt.inputters.WeightedMixer">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.inputters.</code><code class="sig-name descname">WeightedMixer</code><span class="sig-paren">(</span><em class="sig-param">iterables</em>, <em class="sig-param">weights</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/dynamic_iterator.html#WeightedMixer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.WeightedMixer" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.inputters.dynamic_iterator.MixingStrategy</span></code></p>
+<dl class="py class">
+<dt class="sig sig-object py" id="onmt.inputters.WeightedMixer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">onmt.inputters.</span></span><span class="sig-name descname"><span class="pre">WeightedMixer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iterables</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/dynamic_iterator.html#WeightedMixer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.inputters.WeightedMixer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#onmt.inputters.MixingStrategy" title="onmt.inputters.dynamic_iterator.MixingStrategy"><code class="xref py py-class docutils literal notranslate"><span class="pre">MixingStrategy</span></code></a></p>
 <p>A mixing strategy that mix data weightedly and iterate infinitely.</p>
 </dd></dl>
 
-</div>
-<div class="section" id="dataset">
-<h2>Dataset<a class="headerlink" href="#dataset" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="onmt.inputters.ParallelCorpus">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.inputters.</code><code class="sig-name descname">ParallelCorpus</code><span class="sig-paren">(</span><em class="sig-param">name</em>, <em class="sig-param">src</em>, <em class="sig-param">tgt</em>, <em class="sig-param">align=None</em>, <em class="sig-param">src_feats=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/text_corpus.html#ParallelCorpus"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.ParallelCorpus" title="Permalink to this definition">¶</a></dt>
+</section>
+<section id="dataset">
+<h2>Dataset<a class="headerlink" href="#dataset" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="onmt.inputters.ParallelCorpus">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">onmt.inputters.</span></span><span class="sig-name descname"><span class="pre">ParallelCorpus</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tgt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">align</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_src_feats</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_feats_defaults</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/text_corpus.html#ParallelCorpus"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.inputters.ParallelCorpus" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>A parallel corpus file pair that can be loaded to iterate.</p>
-<dl class="method">
-<dt id="onmt.inputters.ParallelCorpus.load">
-<code class="sig-name descname">load</code><span class="sig-paren">(</span><em class="sig-param">offset=0</em>, <em class="sig-param">stride=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/text_corpus.html#ParallelCorpus.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.ParallelCorpus.load" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="onmt.inputters.ParallelCorpus.load">
+<span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stride</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/text_corpus.html#ParallelCorpus.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.inputters.ParallelCorpus.load" title="Permalink to this definition">¶</a></dt>
 <dd><p>Load file and iterate by lines.
 <cite>offset</cite> and <cite>stride</cite> allow to iterate only on every
 <cite>stride</cite> example, starting from <cite>offset</cite>.</p>
@@ -282,13 +235,13 @@ where each chunk size is a multiple of batch_size_multiple.</p>
 
 </dd></dl>
 
-<dl class="class">
-<dt id="onmt.inputters.ParallelCorpusIterator">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.inputters.</code><code class="sig-name descname">ParallelCorpusIterator</code><span class="sig-paren">(</span><em class="sig-param">corpus</em>, <em class="sig-param">transform</em>, <em class="sig-param">skip_empty_level='warning'</em>, <em class="sig-param">stride=1</em>, <em class="sig-param">offset=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/text_corpus.html#ParallelCorpusIterator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.inputters.ParallelCorpusIterator" title="Permalink to this definition">¶</a></dt>
+<dl class="py class">
+<dt class="sig sig-object py" id="onmt.inputters.ParallelCorpusIterator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">onmt.inputters.</span></span><span class="sig-name descname"><span class="pre">ParallelCorpusIterator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">corpus</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_empty_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'warning'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stride</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/inputters/text_corpus.html#ParallelCorpusIterator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.inputters.ParallelCorpusIterator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>An iterator dedicated to ParallelCorpus.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>corpus</strong> (<a class="reference internal" href="#onmt.inputters.ParallelCorpus" title="onmt.inputters.ParallelCorpus"><em>ParallelCorpus</em></a>) – corpus to iterate;</p></li>
 <li><p><strong>transform</strong> (<em>TransformPipe</em>) – transforms to be applied to corpus;</p></li>
@@ -300,56 +253,38 @@ where each chunk size is a multiple of batch_size_multiple.</p>
 </dl>
 </dd></dl>
 
-</div>
-</div>
+</section>
+</section>
 
 
            </div>
-           
           </div>
-          <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="legacy/FAQ.html" class="btn btn-neutral float-right" title="FAQ (Legacy version)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="onmt.translate.translation_server.html" class="btn btn-neutral float-left" title="Server" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="onmt.translate.translation_server.html" class="btn btn-neutral float-left" title="Server" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="legacy/FAQ.html" class="btn btn-neutral float-right" title="FAQ (Legacy version)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
-  
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &copy; Copyright 2017, OpenNMT
-
-    </p>
+    <p>&#169; Copyright 2017-2023, OpenNMT.</p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
-
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

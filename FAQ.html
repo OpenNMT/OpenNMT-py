@@ -1,187 +1,147 @@
-
-
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html5" lang="EN" >
 <head>
-  <meta charset="utf-8">
-  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  <title>FAQ &mdash; OpenNMT-py  documentation</title>
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How do I use my v2 models in v3 ? &mdash; OpenNMT-py  documentation</title>
+      <link rel="stylesheet" href="_static/theme_overrides.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
   
-  
-  
-  
-
-  
-  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/doctools.js"></script>
-        <script src="_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    
-    <script type="text/javascript" src="_static/js/theme.js"></script>
-
-    
-
-  
-  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="_static/theme_overrides.css" type="text/css" />
+        <script src="_static/sphinx_highlight.js"></script>
+        <script src="https://unpkg.com/mermaid@9.4.0/dist/mermaid.min.js"></script>
+        <script>mermaid.initialize({startOnLoad:true});</script>
+    <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Translation" href="examples/Translation.html" />
+    <link rel="next" title="Translation WMT17 en-de" href="examples/wmt17/Translation.html" />
     <link rel="prev" title="References" href="ref.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="index.html" class="icon icon-home"> OpenNMT-py
           
-
-          
+          <a href="index.html" class="icon icon-home">
+            OpenNMT-py
           </a>
-
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Getting Started</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="main.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changes.html">Versions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="CONTRIBUTING.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ref.html">References</a></li>
 </ul>
-<p class="caption"><span class="caption-text">FAQ</span></p>
+<p class="caption" role="heading"><span class="caption-text">Frequently Asked Questions</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">FAQ</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#how-do-i-use-my-v2-models-in-v3">How do I use my v2 models in v3 ?</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#how-do-i-train-the-transformer-model">How do I train the Transformer model?</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#performance-tips">Performance tips</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#example">Example</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">How do I use my v2 models in v3 ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#how-do-i-train-the-transformer-model">How do I train the Transformer model?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#performance-tips">Performance tips</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#example">Example</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#id1">Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#id1">Example</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#id2">Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#id2">Example</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#general-purpose">General purpose</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#filter-examples-by-length">Filter examples by length</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#add-custom-prefix-to-examples">Add custom prefix to examples</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#add-custom-suffix-to-examples">Add custom suffix to examples</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#convert-examples-to-uppercase">Convert examples to uppercase</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#normalize-punctuation">Normalize punctuation</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#augment-source-segments-with-fuzzy-matches-for-neural-fuzzy-repair">Augment source segments with fuzzy matches for Neural Fuzzy Repair</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#general-purpose">General purpose</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#filter-examples-by-length">Filter examples by length</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#add-custom-prefix-to-examples">Add custom prefix to examples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#add-custom-suffix-to-examples">Add custom suffix to examples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#convert-examples-to-uppercase">Convert examples to uppercase</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#normalize-punctuation">Normalize punctuation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#context-doc-aware-transform">Context / Doc aware transform</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#augment-source-segments-with-fuzzy-matches-for-neural-fuzzy-repair">Augment source segments with fuzzy matches for Neural Fuzzy Repair</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#augment-source-and-target-segments-with-inline-tags">Augment source and target segments with inline tags</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#tokenization">Tokenization</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#opennmt-tokenizer">OpenNMT Tokenizer</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#sentencepiece">SentencePiece</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#bpe-subword-nmt">BPE (subword-nmt)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tokenization">Tokenization</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#opennmt-tokenizer">OpenNMT Tokenizer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sentencepiece">SentencePiece</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#bpe-subword-nmt">BPE subword-nmt</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#bart-style-noise">BART-style noise</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#switchout-and-sampling">SwitchOut and sampling</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#switchout">SwitchOut</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#drop-some-tokens">Drop some tokens</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#mask-some-tokens">Mask some tokens</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#raw-alignments-from-averaging-transformer-attention-heads">Raw alignments from averaging Transformer attention heads</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#supervised-learning-on-a-specific-head">Supervised learning on a specific head</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#how-can-i-use-source-word-features">How can I use source word features?</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#i-how-it-works">I. How it works?</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#configuration">Configuration:</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id3">Example</a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="#ii-how-to-start-the-server-without-docker">II. How to start the server without Docker ?</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#get-the-code">0. Get the code</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#install-flask">1. Install <code class="docutils literal notranslate"><span class="pre">flask</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#put-some-models">2. Put some models</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#start-the-server">3. Start the server</a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="#iii-how-to-start-the-server-with-docker">III. How to start the server with Docker ?</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#iv-how-to-use-the-api">IV. How to use the API ?</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#set-the-hostname">0. Set the hostname</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#list-models">1. List models</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#translate">2. Translate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#bart-style-noise">BART-style noise</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#switchout-and-sampling">SwitchOut and sampling</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#switchout">SwitchOut</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#drop-some-tokens">Drop some tokens</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mask-some-tokens">Mask some tokens</a></li>
 </ul>
 </li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#how-to-use-lora-to-finetune-a-big-model">How to use LoRa to finetune a big model ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#raw-alignments-from-averaging-transformer-attention-heads">Raw alignments from averaging Transformer attention heads</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#supervised-learning-on-a-specific-head">Supervised learning on a specific head</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#how-can-i-use-source-word-features">How can I use source word features?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#i-how-it-works">I. How it works?</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#configuration">Configuration:</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id3">Example</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#ii-how-to-start-the-server-without-docker">II. How to start the server without Docker ?</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#get-the-code">0. Get the code</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#install-flask">1. Install <code class="docutils literal notranslate"><span class="pre">flask</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#put-some-models">2. Put some models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#start-the-server">3. Start the server</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#iii-how-to-start-the-server-with-docker">III. How to start the server with Docker ?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#iv-how-to-use-the-api">IV. How to use the API ?</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#set-the-hostname">0. Set the hostname</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#list-models">1. List models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#translate">2. Translate</a></li>
 </ul>
 </li>
 </ul>
-<p class="caption"><span class="caption-text">Examples</span></p>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="examples/Translation.html">Translation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/Summarization.html">Summarization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/LanguageModelGeneration.html">Language Model Generation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/GGNN.html">Gated Graph Sequence Neural Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/wmt17/Translation.html">Translation WMT17 en-de</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/wiki_103/LanguageModelGeneration.html">Language Model Wiki-103</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/summary/Summarization.html">Summarization CNN/DM</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/ggnn/GGNN.html">Gated Graph Neural Networks</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Scripts</span></p>
+<p class="caption" role="heading"><span class="caption-text">Scripts</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="options/build_vocab.html">Build Vocab</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/train.html">Train</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/translate.html">Translate</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/server.html">Server</a></li>
 </ul>
-<p class="caption"><span class="caption-text">API</span></p>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="onmt.html">Framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="onmt.modules.html">Modules</a></li>
@@ -189,7 +149,7 @@
 <li class="toctree-l1"><a class="reference internal" href="onmt.translate.translation_server.html">Server</a></li>
 <li class="toctree-l1"><a class="reference internal" href="onmt.inputters.html">Data Loaders</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Legacy</span></p>
+<p class="caption" role="heading"><span class="caption-text">Legacy</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="legacy/FAQ.html">FAQ (Legacy version)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="legacy/im2text.html">Image to Text</a></li>
@@ -197,100 +157,62 @@
 <li class="toctree-l1"><a class="reference internal" href="legacy/vid2text.html">Video to Text</a></li>
 </ul>
 
-            
-          
         </div>
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="index.html">OpenNMT-py</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="index.html">Docs</a> &raquo;</li>
-        
-      <li>FAQ</li>
-    
-    
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">How do I use my v2 models in v3 ?</li>
       <li class="wy-breadcrumbs-aside">
-        
-            
             <a href="_sources/FAQ.md.txt" rel="nofollow"> View page source</a>
-          
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="faq">
-<h1>FAQ<a class="headerlink" href="#faq" title="Permalink to this headline">¶</a></h1>
-<p>All the example YAML configurations are partial. To get an overview of what this YAML configuration is you can start by reading the <a class="reference internal" href="quickstart.html"><span class="doc">Quickstart</span></a> section.</p>
+             
+  <p>All the example YAML configurations are partial. To get an overview of what this YAML configuration is you can start by reading the <a class="reference internal" href="quickstart.html"><span class="doc">Quickstart</span></a> section.</p>
 <p>Also you can have a look at this: <a class="reference external" href="https://github.com/ymoslem/OpenNMT-Tutorial">Tutorial</a></p>
-<div class="section" id="how-do-i-use-my-v2-models-in-v3">
-<h2>How do I use my v2 models in v3 ?<a class="headerlink" href="#how-do-i-use-my-v2-models-in-v3" title="Permalink to this headline">¶</a></h2>
-<p>As a reminder, OpenNMT-py v2.x used to rely on Torchtext 0.5
-This torchtext version used “Fields”, “RawFields”, “MultiFields” which were deprecated in trochtext version &gt; 0.5
-In order to convert old models we have to mimic those old Class and as a result you need to install a newer version of torchtext.
-If you use pytorch 1.12.1 then install torchtext 0.13
-If you use pytorch 1.13.0 then install torchtext 0.14</p>
+<section id="how-do-i-use-my-v2-models-in-v3">
+<h1>How do I use my v2 models in v3 ?<a class="headerlink" href="#how-do-i-use-my-v2-models-in-v3" title="Permalink to this heading">¶</a></h1>
+<p>As a reminder, OpenNMT-py v2.x used to rely on Torchtext 0.5</p>
+<p>This torchtext version used “Fields”, “RawFields”, “MultiFields” which were deprecated in torchtext versions &gt; 0.5. In order to convert old models we have to mimic those old Class and as a result you need to install a newer version of torchtext.</p>
+<p>If you use pytorch 1.12.1 then install torchtext 0.13</p>
+<p>If you use pytorch 1.13.0 then install torchtext 0.14</p>
 <p>After the conversion you can eliminate completely torchtext.</p>
-<p>Conversion is:</p>
+<p>Conversion is perfomed using the following script:</p>
 <p>python tools/convertv2_v3.py -v2model myoldmodel.pt -v3model newmodel.pt</p>
 <p>The new checkpoint will no longer have a “fields” key, replaced by “vocab”
-Some model options are modified as follow:
-<code class="docutils literal notranslate"><span class="pre">rnn_size</span></code> is now <code class="docutils literal notranslate"><span class="pre">hidden_size</span></code>
-<code class="docutils literal notranslate"><span class="pre">enc_rnn_size</span></code> is now <code class="docutils literal notranslate"><span class="pre">enc_hid_size</span></code>
-<code class="docutils literal notranslate"><span class="pre">dec_rnn_size</span></code> is now <code class="docutils literal notranslate"><span class="pre">dec_hid_size</span></code></p>
-<p>A new key <code class="docutils literal notranslate"><span class="pre">add_qkvbias</span></code> is set to <code class="docutils literal notranslate"><span class="pre">true</span></code> for old models.
-New models will be trained by default with <code class="docutils literal notranslate"><span class="pre">false</span></code></p>
+Some model options are modified as follow:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">rnn_size</span></code> is now <code class="docutils literal notranslate"><span class="pre">hidden_size</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">enc_rnn_size</span></code> is now <code class="docutils literal notranslate"><span class="pre">enc_hid_size</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dec_rnn_size</span></code> is now <code class="docutils literal notranslate"><span class="pre">dec_hid_size</span></code></p></li>
+</ul>
+<p>A new key <code class="docutils literal notranslate"><span class="pre">add_qkvbias</span></code> is set to <code class="docutils literal notranslate"><span class="pre">true</span></code> for old models.</p>
+<p>New models will be trained by default with <code class="docutils literal notranslate"><span class="pre">false</span></code></p>
 <p>Special note for GPT2 type Language Model trained with v2</p>
 <p>The special tokens of LM in v2 where not in line with NMT type models.
 Only 3 special tokens (<code class="docutils literal notranslate"><span class="pre">&lt;unk&gt;</span></code>, <code class="docutils literal notranslate"><span class="pre">&lt;blank&gt;</span></code>, <code class="docutils literal notranslate"><span class="pre">&lt;/s&gt;</span></code>) were in the the vocab.
 For v3, we aligned LM and NMT models.
 You need to update the vocab by training from v2 converted to v3 checkpoint, with the update_vocab flag.
 It will make the vocab consistent with v3 structure.</p>
-</div>
-<div class="section" id="how-do-i-train-the-transformer-model">
-<h2>How do I train the Transformer model?<a class="headerlink" href="#how-do-i-train-the-transformer-model" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="how-do-i-train-the-transformer-model">
+<h1>How do I train the Transformer model?<a class="headerlink" href="#how-do-i-train-the-transformer-model" title="Permalink to this heading">¶</a></h1>
 <p>The transformer model is very sensitive to hyperparameters. To run it
 effectively you need to set different options that mimic the <a class="reference external" href="https://arxiv.org/abs/1706.03762">Google</a> setup. We have confirmed the following configuration can replicate their WMT results.</p>
+<p>Please have a look at the Example of WMT17 EN-DE.</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">&lt;data configuration&gt;</span>
 <span class="nn">...</span>
 
@@ -348,9 +270,9 @@ effectively you need to set different options that mimic the <a class="reference
 <li><p><code class="docutils literal notranslate"><span class="pre">accum_count</span> <span class="pre">4</span></code>: compute gradients based on four batches;</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">label_smoothing</span> <span class="pre">0.1</span></code>: use label smoothing loss.</p></li>
 </ul>
-</div>
-<div class="section" id="performance-tips">
-<h2>Performance tips<a class="headerlink" href="#performance-tips" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="performance-tips">
+<h1>Performance tips<a class="headerlink" href="#performance-tips" title="Permalink to this heading">¶</a></h1>
 <ul class="simple">
 <li><p>use <code class="docutils literal notranslate"><span class="pre">fp16</span></code></p></li>
 <li><p>use <code class="docutils literal notranslate"><span class="pre">batch_size_multiple</span></code> 8</p></li>
@@ -360,9 +282,9 @@ effectively you need to set different options that mimic the <a class="reference
 <li><p>If you train a transformer we support <code class="docutils literal notranslate"><span class="pre">max_relative_positions</span></code> (use 20) instead of position_encoding.</p></li>
 <li><p>for very fast inference convert your model to CTranslate2 format.</p></li>
 </ul>
-</div>
-<div class="section" id="do-you-support-multi-gpu">
-<h2>Do you support multi-gpu?<a class="headerlink" href="#do-you-support-multi-gpu" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="do-you-support-multi-gpu">
+<h1>Do you support multi-gpu?<a class="headerlink" href="#do-you-support-multi-gpu" title="Permalink to this heading">¶</a></h1>
 <p>First you need to make sure you <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">CUDA_VISIBLE_DEVICES=0,1,2,3</span></code>.</p>
 <p>If you want to use GPU id 1 and 3 of your OS, you will need to <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">CUDA_VISIBLE_DEVICES=1,3</span></code></p>
 <p>Both <code class="docutils literal notranslate"><span class="pre">-world_size</span></code> and <code class="docutils literal notranslate"><span class="pre">-gpu_ranks</span></code> need to be set. E.g. <code class="docutils literal notranslate"><span class="pre">-world_size</span> <span class="pre">4</span> <span class="pre">-gpu_ranks</span> <span class="pre">0</span> <span class="pre">1</span> <span class="pre">2</span> <span class="pre">3</span></code> will use 4 GPU on this node only.</p>
@@ -379,13 +301,13 @@ effectively you need to set different options that mimic the <a class="reference
 <p>In the legacy version, when training on several GPUs, you couldn’t have them in ‘Exclusive’ compute mode (<code class="docutils literal notranslate"><span class="pre">nvidia-smi</span> <span class="pre">-c</span> <span class="pre">3</span></code>).</p>
 <p>The multi-gpu setup relied on a Producer/Consumer setup. This setup means there will be <code class="docutils literal notranslate"><span class="pre">2&lt;n_gpu&gt;</span> <span class="pre">+</span> <span class="pre">1</span></code> processes spawned, with 2 processes per GPU, one for model training and one (Consumer) that hosts a <code class="docutils literal notranslate"><span class="pre">Queue</span></code> of batches that will be processed next. The additional process is the Producer, creating batches and sending them to the Consumers. This setup is beneficial for both wall time and memory, since it loads data shards ‘in advance’, and does not require to load it for each GPU process.</p>
 <p>The new codebase allows GPUs to be in exclusive mode, because batches are moved to the device later in the process. Hence, there is no ‘producer’ process on each GPU.</p>
-</div>
-<div class="section" id="how-do-i-use-pretrained-embeddings-e-g-glove">
-<h2>How do I use Pretrained embeddings (e.g. GloVe)?<a class="headerlink" href="#how-do-i-use-pretrained-embeddings-e-g-glove" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="how-do-i-use-pretrained-embeddings-e-g-glove">
+<h1>How do I use Pretrained embeddings (e.g. GloVe)?<a class="headerlink" href="#how-do-i-use-pretrained-embeddings-e-g-glove" title="Permalink to this heading">¶</a></h1>
 <p>This is handled in the initial steps of the <code class="docutils literal notranslate"><span class="pre">onmt_train</span></code> execution.</p>
 <p>Pretrained embeddings can be configured in the main YAML configuration file.</p>
-<div class="section" id="example">
-<h3>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h3>
+<section id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this heading">¶</a></h2>
 <ol class="simple">
 <li><p>Get GloVe files:</p></li>
 </ol>
@@ -427,19 +349,19 @@ unzip<span class="w"> </span>glove.6B.zip<span class="w"> </span>-d<span class="
 <li><p>the matched embeddings will be saved at <code class="docutils literal notranslate"><span class="pre">&lt;save_data&gt;.enc_embeddings.pt</span></code> and <code class="docutils literal notranslate"><span class="pre">&lt;save_data&gt;.dec_embeddings.pt</span></code>;</p></li>
 <li><p>additional flags <code class="docutils literal notranslate"><span class="pre">freeze_word_vecs_enc</span></code> and <code class="docutils literal notranslate"><span class="pre">freeze_word_vecs_dec</span></code> are available to freeze the embeddings.</p></li>
 </ul>
-</div>
-</div>
-<div class="section" id="how-can-i-ensemble-models-at-inference">
-<h2>How can I ensemble Models at inference?<a class="headerlink" href="#how-can-i-ensemble-models-at-inference" title="Permalink to this headline">¶</a></h2>
+</section>
+</section>
+<section id="how-can-i-ensemble-models-at-inference">
+<h1>How can I ensemble Models at inference?<a class="headerlink" href="#how-can-i-ensemble-models-at-inference" title="Permalink to this heading">¶</a></h1>
 <p>You can specify several models in the <code class="docutils literal notranslate"><span class="pre">onmt_translate</span></code> command line: <code class="docutils literal notranslate"><span class="pre">-model</span> <span class="pre">model1_seed1</span> <span class="pre">model2_seed2</span></code>
 Bear in mind that your models must share the same target vocabulary.</p>
-</div>
-<div class="section" id="how-can-i-weight-different-corpora-at-training">
-<h2>How can I weight different corpora at training?<a class="headerlink" href="#how-can-i-weight-different-corpora-at-training" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="how-can-i-weight-different-corpora-at-training">
+<h1>How can I weight different corpora at training?<a class="headerlink" href="#how-can-i-weight-different-corpora-at-training" title="Permalink to this heading">¶</a></h1>
 <p>This is naturally embedded in the data configuration format introduced in OpenNMT-py 2.0. Each entry of the <code class="docutils literal notranslate"><span class="pre">data</span></code> configuration will have its own <em>weight</em>. When building batches, we’ll sequentially take <em>weight</em> example from each corpus.</p>
 <p><strong>Note</strong>: don’t worry about batch homogeneity/heterogeneity, the bucketing mechanism is here for that reason. Instead of building batches one at a time, we will load <code class="docutils literal notranslate"><span class="pre">bucket_size</span></code> examples, sort them by length, build batches and then yield them in a random order.</p>
-<div class="section" id="id1">
-<h3>Example<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<section id="id1">
+<h2>Example<a class="headerlink" href="#id1" title="Permalink to this heading">¶</a></h2>
 <p>In the following example, we will sequentially sample 7 examples from <em>corpus_1</em>, and 3 examples from <em>corpus_2</em>, and so on:</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># &lt;your_config&gt;.yaml</span>
 
@@ -461,13 +383,13 @@ Bear in mind that your models must share the same target vocabulary.</p>
 <span class="nn">...</span>
 </pre></div>
 </div>
-</div>
-</div>
-<div class="section" id="how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">
-<h2>How can I apply on-the-fly tokenization and subword regularization when training?<a class="headerlink" href="#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training" title="Permalink to this headline">¶</a></h2>
+</section>
+</section>
+<section id="how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">
+<h1>How can I apply on-the-fly tokenization and subword regularization when training?<a class="headerlink" href="#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training" title="Permalink to this heading">¶</a></h1>
 <p>This is naturally embedded in the data configuration format introduced in OpenNMT-py 2.0. Each entry of the <code class="docutils literal notranslate"><span class="pre">data</span></code> configuration will have its own <code class="docutils literal notranslate"><span class="pre">transforms</span></code>. <code class="docutils literal notranslate"><span class="pre">transforms</span></code> basically is a <code class="docutils literal notranslate"><span class="pre">list</span></code> of functions that will be applied sequentially to the examples when read from file.</p>
-<div class="section" id="id2">
-<h3>Example<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<section id="id2">
+<h2>Example<a class="headerlink" href="#id2" title="Permalink to this heading">¶</a></h2>
 <p>This example applies sentencepiece tokenization with <code class="docutils literal notranslate"><span class="pre">pyonmttok</span></code>, with <code class="docutils literal notranslate"><span class="pre">nbest=20</span></code> and <code class="docutils literal notranslate"><span class="pre">alpha=0.1</span></code>.</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># &lt;your_config&gt;.yaml</span>
 
@@ -502,16 +424,16 @@ Bear in mind that your models must share the same target vocabulary.</p>
 </pre></div>
 </div>
 <p>Other tokenization methods and transforms are readily available. See the dedicated docs for more details.</p>
-</div>
-</div>
-<div class="section" id="what-are-the-readily-available-on-the-fly-data-transforms">
-<h2>What are the readily available on-the-fly data transforms?<a class="headerlink" href="#what-are-the-readily-available-on-the-fly-data-transforms" title="Permalink to this headline">¶</a></h2>
+</section>
+</section>
+<section id="what-are-the-readily-available-on-the-fly-data-transforms">
+<h1>What are the readily available on-the-fly data transforms?<a class="headerlink" href="#what-are-the-readily-available-on-the-fly-data-transforms" title="Permalink to this heading">¶</a></h1>
 <p>It’s your lucky day! We already embedded several transforms that can be used easily.</p>
 <p>Note: all the details about every flag and options for each transform can be found in the <a class="reference external" href="#train">train</a> section.</p>
-<div class="section" id="general-purpose">
-<h3>General purpose<a class="headerlink" href="#general-purpose" title="Permalink to this headline">¶</a></h3>
-<div class="section" id="filter-examples-by-length">
-<h4>Filter examples by length<a class="headerlink" href="#filter-examples-by-length" title="Permalink to this headline">¶</a></h4>
+<section id="general-purpose">
+<h2>General purpose<a class="headerlink" href="#general-purpose" title="Permalink to this heading">¶</a></h2>
+<section id="filter-examples-by-length">
+<h3>Filter examples by length<a class="headerlink" href="#filter-examples-by-length" title="Permalink to this heading">¶</a></h3>
 <p>Transform name: <code class="docutils literal notranslate"><span class="pre">filtertoolong</span></code></p>
 <p>Class: <code class="docutils literal notranslate"><span class="pre">onmt.transforms.misc.FilterTooLongTransform</span></code></p>
 <p>The following options can be added to the configuration :</p>
@@ -519,9 +441,9 @@ Bear in mind that your models must share the same target vocabulary.</p>
 <li><p><code class="docutils literal notranslate"><span class="pre">src_seq_length</span></code>: maximum source sequence length;</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">tgt_seq_length</span></code>: maximum target sequence length.</p></li>
 </ul>
-</div>
-<div class="section" id="add-custom-prefix-to-examples">
-<h4>Add custom prefix to examples<a class="headerlink" href="#add-custom-prefix-to-examples" title="Permalink to this headline">¶</a></h4>
+</section>
+<section id="add-custom-prefix-to-examples">
+<h3>Add custom prefix to examples<a class="headerlink" href="#add-custom-prefix-to-examples" title="Permalink to this heading">¶</a></h3>
 <p>Transform name: <code class="docutils literal notranslate"><span class="pre">prefix</span></code></p>
 <p>Class: <code class="docutils literal notranslate"><span class="pre">onmt.transforms.misc.PrefixTransform</span></code></p>
 <p>For each dataset that the <code class="docutils literal notranslate"><span class="pre">prefix</span></code> transform is applied to, you can set the additional <code class="docutils literal notranslate"><span class="pre">src_prefix</span></code> and <code class="docutils literal notranslate"><span class="pre">tgt_prefix</span></code> parameters in its data configuration:</p>
@@ -541,9 +463,9 @@ you need to set your yaml file as follow (example given with a target language a
 <span class="nt">tgt_file_prefix</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="add-custom-suffix-to-examples">
-<h4>Add custom suffix to examples<a class="headerlink" href="#add-custom-suffix-to-examples" title="Permalink to this headline">¶</a></h4>
+</section>
+<section id="add-custom-suffix-to-examples">
+<h3>Add custom suffix to examples<a class="headerlink" href="#add-custom-suffix-to-examples" title="Permalink to this heading">¶</a></h3>
 <p>Transform name: <code class="docutils literal notranslate"><span class="pre">suffix</span></code></p>
 <p>Class: <code class="docutils literal notranslate"><span class="pre">onmt.transforms.misc.SuffixTransform</span></code></p>
 <p>For each dataset that the <code class="docutils literal notranslate"><span class="pre">suffix</span></code> transform is applied to, you can set the additional <code class="docutils literal notranslate"><span class="pre">src_suffix</span></code> and <code class="docutils literal notranslate"><span class="pre">tgt_suffix</span></code> parameters in its data configuration:</p>
@@ -557,9 +479,9 @@ you need to set your yaml file as follow (example given with a target language a
 <span class="w">        </span><span class="nt">tgt_suffix</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">__some_tgt_suffix__</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="convert-examples-to-uppercase">
-<h4>Convert examples to uppercase<a class="headerlink" href="#convert-examples-to-uppercase" title="Permalink to this headline">¶</a></h4>
+</section>
+<section id="convert-examples-to-uppercase">
+<h3>Convert examples to uppercase<a class="headerlink" href="#convert-examples-to-uppercase" title="Permalink to this heading">¶</a></h3>
 <p>Transform name: <code class="docutils literal notranslate"><span class="pre">uppercase</span></code></p>
 <p>Class: <code class="docutils literal notranslate"><span class="pre">onmt.transforms.uppercase.UpperCaseTransform</span></code></p>
 <p>Converts source and target (if present) examples to uppercase so the model can learn better to translate
@@ -569,9 +491,9 @@ any diacritics and accents. Usually this is desirable for most languages, althou
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">upper_corpus_ratio</span></code>: ratio of the corpus that will be transformed to uppercase (default: 0.01);</p></li>
 </ul>
-</div>
-<div class="section" id="normalize-punctuation">
-<h4>Normalize punctuation<a class="headerlink" href="#normalize-punctuation" title="Permalink to this headline">¶</a></h4>
+</section>
+<section id="normalize-punctuation">
+<h3>Normalize punctuation<a class="headerlink" href="#normalize-punctuation" title="Permalink to this heading">¶</a></h3>
 <p>Transform name: <code class="docutils literal notranslate"><span class="pre">normalize</span></code></p>
 <p>Class: <code class="docutils literal notranslate"><span class="pre">onmt.transforms.normalize.NormalizeTransform</span></code></p>
 <p>Normalizes source and target (if present) examples using the same rules as Moses punctuation normalizer.</p>
@@ -585,9 +507,25 @@ any diacritics and accents. Usually this is desirable for most languages, althou
 <li><p><code class="docutils literal notranslate"><span class="pre">pre_replace_unicode_punct</span></code>: Replace unicode punct (default=False)</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">post_remove_control_chars</span></code>: Remove control chars (default=False)</p></li>
 </ul>
-</div>
-<div class="section" id="augment-source-segments-with-fuzzy-matches-for-neural-fuzzy-repair">
-<h4>Augment source segments with fuzzy matches for Neural Fuzzy Repair<a class="headerlink" href="#augment-source-segments-with-fuzzy-matches-for-neural-fuzzy-repair" title="Permalink to this headline">¶</a></h4>
+</section>
+<section id="context-doc-aware-transform">
+<h3>Context / Doc aware transform<a class="headerlink" href="#context-doc-aware-transform" title="Permalink to this heading">¶</a></h3>
+<p>Transform name: <code class="docutils literal notranslate"><span class="pre">docify</span></code></p>
+<p>Class: <code class="docutils literal notranslate"><span class="pre">onmt.transforms.docify.DocifyTransform</span></code></p>
+<p>Concatenates several segments into one, separated with a delimiter.</p>
+<p>Pre-requisite:</p>
+<p>Dataset must be “Docs” separated by an empty line which will make clear a story ends at this empty line.</p>
+<p>The following options can be added to the configuration :</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">doc_length</span></code>: max token to be concatenated (default=200)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">max_context</span></code>: number of delimiter (default=1 , ie 2 segments concatenated)</p></li>
+</ul>
+<p>When working with several workers, this require some precaution in order to make sure “doc” are read linearly.</p>
+<p><code class="docutils literal notranslate"><span class="pre">max_context</span> <span class="pre">+</span> <span class="pre">1</span></code> needs to be a multiple of <code class="docutils literal notranslate"><span class="pre">stride</span></code> = <code class="docutils literal notranslate"><span class="pre">Number</span> <span class="pre">of</span> <span class="pre">gpu</span> <span class="pre">x</span> <span class="pre">num_workers</span></code></p>
+<p>Example: <code class="docutils literal notranslate"><span class="pre">max_context=1</span></code> and 1 GPU, then num_workers must be 2 or 4.</p>
+</section>
+<section id="augment-source-segments-with-fuzzy-matches-for-neural-fuzzy-repair">
+<h3>Augment source segments with fuzzy matches for Neural Fuzzy Repair<a class="headerlink" href="#augment-source-segments-with-fuzzy-matches-for-neural-fuzzy-repair" title="Permalink to this heading">¶</a></h3>
 <p>Transform name: <code class="docutils literal notranslate"><span class="pre">fuzzymatch</span></code></p>
 <p>Class: <code class="docutils literal notranslate"><span class="pre">onmt.transforms.fuzzymatch.FuzzyMatchTransform</span></code></p>
 <p>Augments source segments with fuzzy matches for Neural Fuzzy Repair, as described in <a class="reference external" href="https://aclanthology.org/P19-1175">Neural Fuzzy Repair: Integrating Fuzzy Matches into Neural Machine Translation</a>. Currently, the transform augments source segments with only a single fuzzy match.
@@ -609,10 +547,26 @@ The Translation Memory (TM) format should be a flat text file, with each line co
 <li><p><code class="docutils literal notranslate"><span class="pre">fuzzymatch_min_length</span></code>: Min length for TM entries and examples to match (default: 4);</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">fuzzymatch_max_length</span></code>: Max length for TM entries and examples to match (default: 70).</p></li>
 </ul>
-</div>
-</div>
-<div class="section" id="tokenization">
-<h3>Tokenization<a class="headerlink" href="#tokenization" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="augment-source-and-target-segments-with-inline-tags">
+<h3>Augment source and target segments with inline tags<a class="headerlink" href="#augment-source-and-target-segments-with-inline-tags" title="Permalink to this heading">¶</a></h3>
+<p>Transform name: <code class="docutils literal notranslate"><span class="pre">inlinetags</span></code></p>
+<p>Class: <code class="docutils literal notranslate"><span class="pre">onmt.transforms.inlinetags.InlineTagsTransform</span></code></p>
+<p>Augments source and target segments with inline tags (placeholders). The transform adds 2 kind of tags, paired tags (an opening and a closing tag) and isolated (standalone) tags, and requires a tab-delimited dictionary text file with source and target terms and phrases. A dictionary with 20-30k entries is recommended. User-defined tags must include the number placeholder #, e.g. “｟user_start_tag_#｠”.</p>
+<p>The following options can be added to the configuration:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">tags_dictionary_path</span></code>: The path to the dictionary text file;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tags_corpus_ratio</span></code>: Ratio of corpus to augment with inline tags (default: 0.1);</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">max_tags</span></code>: Maximum number of tags that can be added to a single sentence. (default: 12);</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">paired_stag</span></code>: The format of an opening paired inline tag. Must include the character # (default: “｟ph_#_beg｠”);</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">paired_etag</span></code>: The format of a closing paired inline tag. Must include the character # (default: “｟ph_#_end｠”);</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">isolated_tag</span></code>: The format of an isolated inline tag. Must include the character # (default: “｟ph_#_std｠”);</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src_delimiter</span></code>: Any special token used for augmented src sentences (default: “｟fuzzy｠”);</p></li>
+</ul>
+</section>
+</section>
+<section id="tokenization">
+<h2>Tokenization<a class="headerlink" href="#tokenization" title="Permalink to this heading">¶</a></h2>
 <p>Common options for the tokenization transforms are the following:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">src_subword_model</span></code>: path of source side (or both if shared) subword model;</p></li>
@@ -622,8 +576,8 @@ The Translation Memory (TM) format should be a flat text file, with each line co
 <li><p><code class="docutils literal notranslate"><span class="pre">src_subword_alpha</span></code>: smoothing parameter for sentencepiece regularization / dropout probability for BPE, source side;</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">tgt_subword_alpha</span></code>: smoothing parameter for sentencepiece regularization / dropout probability for BPE, target side.</p></li>
 </ul>
-<div class="section" id="opennmt-tokenizer">
-<h4><a class="reference external" href="https://github.com/opennmt/Tokenizer">OpenNMT Tokenizer</a><a class="headerlink" href="#opennmt-tokenizer" title="Permalink to this headline">¶</a></h4>
+<section id="opennmt-tokenizer">
+<h3><a class="reference external" href="https://github.com/opennmt/Tokenizer">OpenNMT Tokenizer</a><a class="headerlink" href="#opennmt-tokenizer" title="Permalink to this heading">¶</a></h3>
 <p>Transform name: <code class="docutils literal notranslate"><span class="pre">onmt_tokenize</span></code></p>
 <p>Class: <code class="docutils literal notranslate"><span class="pre">onmt.transforms.tokenize.ONMTTokenizerTransform</span></code></p>
 <p>Additional options are available:</p>
@@ -633,22 +587,22 @@ The Translation Memory (TM) format should be a flat text file, with each line co
 <li><p><code class="docutils literal notranslate"><span class="pre">src_onmttok_kwargs</span></code>: additional kwargs for pyonmttok Tokenizer class, source side;</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">tgt_onmttok_kwargs</span></code>: additional kwargs for pyonmttok Tokenizer class, target side.</p></li>
 </ul>
-</div>
-<div class="section" id="sentencepiece">
-<h4><a class="reference external" href="https://github.com/google/sentencepiece">SentencePiece</a><a class="headerlink" href="#sentencepiece" title="Permalink to this headline">¶</a></h4>
+</section>
+<section id="sentencepiece">
+<h3><a class="reference external" href="https://github.com/google/sentencepiece">SentencePiece</a><a class="headerlink" href="#sentencepiece" title="Permalink to this heading">¶</a></h3>
 <p>Transform name: <code class="docutils literal notranslate"><span class="pre">sentencepiece</span></code></p>
 <p>Class: <code class="docutils literal notranslate"><span class="pre">onmt.transforms.tokenize.SentencePieceTransform</span></code></p>
 <p>The <code class="docutils literal notranslate"><span class="pre">src_subword_model</span></code> and <code class="docutils literal notranslate"><span class="pre">tgt_subword_model</span></code> should be valid sentencepiece models.</p>
-</div>
-<div class="section" id="bpe-subword-nmt">
-<h4>BPE (<a class="reference external" href="https://github.com/rsennrich/subword-nmt">subword-nmt</a>)<a class="headerlink" href="#bpe-subword-nmt" title="Permalink to this headline">¶</a></h4>
+</section>
+<section id="bpe-subword-nmt">
+<h3><a class="reference external" href="https://github.com/rsennrich/subword-nmt">BPE subword-nmt</a><a class="headerlink" href="#bpe-subword-nmt" title="Permalink to this heading">¶</a></h3>
 <p>Transform name: <code class="docutils literal notranslate"><span class="pre">bpe</span></code></p>
 <p>Class: <code class="docutils literal notranslate"><span class="pre">onmt.transforms.tokenize.BPETransform</span></code></p>
 <p>The <code class="docutils literal notranslate"><span class="pre">src_subword_model</span></code> and <code class="docutils literal notranslate"><span class="pre">tgt_subword_model</span></code> should be valid BPE models.</p>
-</div>
-</div>
-<div class="section" id="bart-style-noise">
-<h3>BART-style noise<a class="headerlink" href="#bart-style-noise" title="Permalink to this headline">¶</a></h3>
+</section>
+</section>
+<section id="bart-style-noise">
+<h2>BART-style noise<a class="headerlink" href="#bart-style-noise" title="Permalink to this heading">¶</a></h2>
 <p>BART-style noise is composed of several parts, as described in <a class="reference external" href="https://arxiv.org/abs/1910.13461">BART: Denoising Sequence-to-Sequence Pre-training for Natural Language Generation, Translation, and Comprehension</a>.</p>
 <p>These different types of noise can be controlled with the following options:</p>
 <ul class="simple">
@@ -661,40 +615,40 @@ The Translation Memory (TM) format should be a flat text file, with each line co
 <li><p><code class="docutils literal notranslate"><span class="pre">poisson_lambda</span></code>: $\lambda$ value for Poisson distribution to sample span length (in the case of <code class="docutils literal notranslate"><span class="pre">mask_length</span></code> set to <code class="docutils literal notranslate"><span class="pre">span-poisson</span></code>);</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">replace_length</span></code>: when masking N tokens, replace with 0, 1, “ “or N tokens. (set to -1 for N).</p></li>
 </ul>
-</div>
-<div class="section" id="switchout-and-sampling">
-<h3>SwitchOut and sampling<a class="headerlink" href="#switchout-and-sampling" title="Permalink to this headline">¶</a></h3>
-<div class="section" id="switchout">
-<h4><a class="reference external" href="https://arxiv.org/abs/1808.07512">SwitchOut</a><a class="headerlink" href="#switchout" title="Permalink to this headline">¶</a></h4>
+</section>
+<section id="switchout-and-sampling">
+<h2>SwitchOut and sampling<a class="headerlink" href="#switchout-and-sampling" title="Permalink to this heading">¶</a></h2>
+<section id="switchout">
+<h3><a class="reference external" href="https://arxiv.org/abs/1808.07512">SwitchOut</a><a class="headerlink" href="#switchout" title="Permalink to this heading">¶</a></h3>
 <p>Transform name: <code class="docutils literal notranslate"><span class="pre">switchout</span></code></p>
 <p>Class: <code class="docutils literal notranslate"><span class="pre">onmt.transforms.sampling.SwitchOutTransform</span></code></p>
 <p>Options:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">switchout_temperature</span></code>: sampling temperature for SwitchOut.</p></li>
 </ul>
-</div>
-<div class="section" id="drop-some-tokens">
-<h4>Drop some tokens<a class="headerlink" href="#drop-some-tokens" title="Permalink to this headline">¶</a></h4>
+</section>
+<section id="drop-some-tokens">
+<h3>Drop some tokens<a class="headerlink" href="#drop-some-tokens" title="Permalink to this heading">¶</a></h3>
 <p>Transform name: <code class="docutils literal notranslate"><span class="pre">tokendrop</span></code></p>
 <p>Class: <code class="docutils literal notranslate"><span class="pre">onmt.transforms.sampling.TokenDropTransform</span></code></p>
 <p>Options:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">tokendrop_temperature</span></code>: sampling temperature for token deletion.</p></li>
 </ul>
-</div>
-<div class="section" id="mask-some-tokens">
-<h4>Mask some tokens<a class="headerlink" href="#mask-some-tokens" title="Permalink to this headline">¶</a></h4>
+</section>
+<section id="mask-some-tokens">
+<h3>Mask some tokens<a class="headerlink" href="#mask-some-tokens" title="Permalink to this heading">¶</a></h3>
 <p>Transform name: <code class="docutils literal notranslate"><span class="pre">tokenmask</span></code></p>
 <p>Class: <code class="docutils literal notranslate"><span class="pre">onmt.transforms.sampling.TokenMaskTransform</span></code></p>
 <p>Options:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">tokenmask_temperature</span></code>: sampling temperature for token masking.</p></li>
 </ul>
-</div>
-</div>
-</div>
-<div class="section" id="how-can-i-create-custom-on-the-fly-data-transforms">
-<h2>How can I create custom on-the-fly data transforms?<a class="headerlink" href="#how-can-i-create-custom-on-the-fly-data-transforms" title="Permalink to this headline">¶</a></h2>
+</section>
+</section>
+</section>
+<section id="how-can-i-create-custom-on-the-fly-data-transforms">
+<h1>How can I create custom on-the-fly data transforms?<a class="headerlink" href="#how-can-i-create-custom-on-the-fly-data-transforms" title="Permalink to this heading">¶</a></h1>
 <p>The code is easily extendable with custom transforms inheriting from the <code class="docutils literal notranslate"><span class="pre">Transform</span></code> base class.</p>
 <p>You can for instance have a look at the <code class="docutils literal notranslate"><span class="pre">FilterTooLongTransform</span></code> class as a template:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@register_transform</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;filtertoolong&#39;</span><span class="p">)</span>
@@ -769,22 +723,36 @@ The Translation Memory (TM) format should be a flat text file, with each line co
 </pre></div>
 </div>
 <p>This is defined in <code class="docutils literal notranslate"><span class="pre">onmt.inputters.corpus.ParallelCorpus.load</span></code>. This class is not easily extendable for now but it can be considered for future developments. For instance, we could create some <code class="docutils literal notranslate"><span class="pre">CustomParallelCorpus</span></code> class that would handle other kind of inputs.</p>
-</div>
-<div class="section" id="can-i-get-word-alignments-while-translating">
-<h2>Can I get word alignments while translating?<a class="headerlink" href="#can-i-get-word-alignments-while-translating" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="raw-alignments-from-averaging-transformer-attention-heads">
-<h3>Raw alignments from averaging Transformer attention heads<a class="headerlink" href="#raw-alignments-from-averaging-transformer-attention-heads" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="how-to-use-lora-to-finetune-a-big-model">
+<h1>How to use LoRa to finetune a big model ?<a class="headerlink" href="#how-to-use-lora-to-finetune-a-big-model" title="Permalink to this heading">¶</a></h1>
+<p>Cf paper: <a class="reference external" href="https://arxiv.org/abs/2106.09685">LoRa</a></p>
+<p>LoRa is a mechanism that helps to finetune bigger model on a single GPU card by limiting the anmount of VRAM needed.
+The principle is to make only a few layers trainable (hence reducing the amount of required memory especially for the Adam optimizer)</p>
+<p>You need to train_from a model (for instance NLLB-200 3.3B) and use the following options:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">lora_layers:</span> <span class="pre">['linear_values',</span> <span class="pre">'linear_query']</span></code> these are the two layers of the Self-Attention module the paper recommend to make trainable.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lora_rank:</span> <span class="pre">2</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lora_dropout:</span> <span class="pre">0.1</span></code> or any value you can test</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lora_alpha:</span> <span class="pre">1</span></code> or any value you can test</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lora_embedding:</span> <span class="pre">true</span></code> makes Embeddings LoRa compatible, hence trainable in the case you use <code class="docutils literal notranslate"><span class="pre">update_vocab:</span> <span class="pre">true</span></code> or if you want to finetune Embeddings as well.</p></li>
+</ul>
+</section>
+<section id="can-i-get-word-alignments-while-translating">
+<h1>Can I get word alignments while translating?<a class="headerlink" href="#can-i-get-word-alignments-while-translating" title="Permalink to this heading">¶</a></h1>
+<section id="raw-alignments-from-averaging-transformer-attention-heads">
+<h2>Raw alignments from averaging Transformer attention heads<a class="headerlink" href="#raw-alignments-from-averaging-transformer-attention-heads" title="Permalink to this heading">¶</a></h2>
 <p>Currently, we support producing word alignment while translating for Transformer based models. Using <code class="docutils literal notranslate"><span class="pre">-report_align</span></code> when calling <code class="docutils literal notranslate"><span class="pre">translate.py</span></code> will output the inferred alignments in Pharaoh format. Those alignments are computed from an argmax on the average of the attention heads of the <em>second to last</em> decoder layer. The resulting alignment src-tgt (Pharaoh) will be pasted to the translation sentence, separated by <code class="docutils literal notranslate"><span class="pre">|||</span></code>.
 Note: The <em>second to last</em> default behaviour was empirically determined. It is not the same as the paper (they take the <em>penultimate</em> layer), probably because of slight differences in the architecture.</p>
 <ul class="simple">
 <li><p>alignments use the standard “Pharaoh format”, where a pair <code class="docutils literal notranslate"><span class="pre">i-j</span></code> indicates the i<sub>th</sub> word of source language is aligned to j<sub>th</sub> word of target language.</p></li>
-<li><p>Example: {‘src’: ‘das stimmt nicht !’; ‘output’: ‘that is not true ! ||| 0-0 0-1 1-2 2-3 1-4 1-5 3-6’}</p></li>
-<li><p>Using the<code class="docutils literal notranslate"><span class="pre">-tgt</span></code> option when calling <code class="docutils literal notranslate"><span class="pre">translate.py</span></code>, we output alignments between the source and the gold target rather than the inferred target, assuming we’re doing evaluation.</p></li>
+<li><p>Example: {’src’: ‘das stimmt nicht !’; ‘output’: ‘that is not true ! ||| 0-0 0-1 1-2 2-3 1-4 1-5 3-6’}</p></li>
+<li><p>Using <code class="docutils literal notranslate"><span class="pre">-tgt</span></code> and <code class="docutils literal notranslate"><span class="pre">-gold_align</span></code> options when calling <code class="docutils literal notranslate"><span class="pre">translate.py</span></code>, we output alignments between the source and the gold target rather than the inferred target, assuming we’re doing evaluation.</p></li>
 <li><p>To convert subword alignments to word alignments, or symetrize bidirectional alignments, please refer to the <a class="reference external" href="https://github.com/lilt/alignment-scripts">lilt scripts</a>.</p></li>
 </ul>
-</div>
-<div class="section" id="supervised-learning-on-a-specific-head">
-<h3>Supervised learning on a specific head<a class="headerlink" href="#supervised-learning-on-a-specific-head" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="supervised-learning-on-a-specific-head">
+<h2>Supervised learning on a specific head<a class="headerlink" href="#supervised-learning-on-a-specific-head" title="Permalink to this heading">¶</a></h2>
 <p>The quality of output alignments can be further improved by providing reference alignments while training. This will invoke multi-task learning on translation and alignment. This is an implementation based on the paper <a class="reference external" href="https://arxiv.org/abs/1909.02074">Jointly Learning to Align and Translate with Transformer Models</a>.</p>
 <p>The data need to be preprocessed with the reference alignments in order to learn the supervised task.
 The reference alignment file(s) can for instance be generated by <a class="reference external" href="https://github.com/moses-smt/mgiza/">GIZA++</a> or <a class="reference external" href="https://github.com/clab/fast_align">fast_align</a>.</p>
@@ -822,10 +790,10 @@ The reference alignment file(s) can for instance be generated by <a class="refer
 <li><p><code class="docutils literal notranslate"><span class="pre">-alignment_heads</span></code>:  number of alignment heads for the alignment task - should be set to 1 for the supervised task, and preferably kept to default (or same as <code class="docutils literal notranslate"><span class="pre">num_heads</span></code>) for the average task;</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">-full_context_alignment</span></code>: do full context decoder pass (no future mask) when computing alignments. This will slow down the training (~12% in terms of tok/s) but will be beneficial to generate better alignment.</p></li>
 </ul>
-</div>
-</div>
-<div class="section" id="how-can-i-update-a-checkpoint-s-vocabulary">
-<h2>How can I update a checkpoint’s vocabulary?<a class="headerlink" href="#how-can-i-update-a-checkpoint-s-vocabulary" title="Permalink to this headline">¶</a></h2>
+</section>
+</section>
+<section id="how-can-i-update-a-checkpoint-s-vocabulary">
+<h1>How can I update a checkpoint’s vocabulary?<a class="headerlink" href="#how-can-i-update-a-checkpoint-s-vocabulary" title="Permalink to this heading">¶</a></h1>
 <p>New vocabulary can be used to continue training from a checkpoint. Existing vocabulary embeddings will be mapped to the new vocabulary, and new vocabulary tokens will be initialized as usual.</p>
 <p>Run <code class="docutils literal notranslate"><span class="pre">onmt_build_vocab</span></code> as usual with the new dataset. New vocabulary files will be created.</p>
 <p>Training options to perform vocabulary update are:</p>
@@ -834,36 +802,34 @@ The reference alignment file(s) can for instance be generated by <a class="refer
 <li><p><code class="docutils literal notranslate"><span class="pre">-reset_optim</span></code>: set the value to “states”</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">-train_from</span></code>: checkpoint path</p></li>
 </ul>
-</div>
-<div class="section" id="how-can-i-use-source-word-features">
-<h2>How can I use source word features?<a class="headerlink" href="#how-can-i-use-source-word-features" title="Permalink to this headline">¶</a></h2>
-<p>Extra information can be added to the words in the source sentences by defining word features.</p>
-<p>Features should be defined in a separate file using blank spaces as a separator and with each row corresponding to a source sentence. An example of the input files:</p>
-<p>data.src</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">however</span><span class="p">,</span> <span class="n">according</span> <span class="n">to</span> <span class="n">the</span> <span class="n">logs</span><span class="p">,</span> <span class="n">she</span> <span class="ow">is</span> <span class="n">hard</span><span class="o">-</span><span class="n">working</span><span class="o">.</span>
+</section>
+<section id="how-can-i-use-source-word-features">
+<h1>How can I use source word features?<a class="headerlink" href="#how-can-i-use-source-word-features" title="Permalink to this heading">¶</a></h1>
+<p>Additional word-level information can be incorporated into the model by defining word features in the source sentence.</p>
+<p>Word features must be appended to the actual textual data by using the special character ￨ as a feature separator. For instance:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>however￨C ￭,￨N according￨L to￨L the￨L logs￨L ￭,￨N she￨L is￨L hard-working￨L ￭.￨N
 </pre></div>
 </div>
-<p>feat.txt</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">A</span> <span class="n">C</span> <span class="n">C</span> <span class="n">C</span> <span class="n">C</span> <span class="n">A</span> <span class="n">A</span> <span class="n">B</span>
+<p>Prior tokenization is not necessary, features will be inferred by using the <code class="docutils literal notranslate"><span class="pre">FeatInferTransform</span></code> transform if tokenization has been applied. For instace:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>SRC: however,￨C according￨L to￨L the￨L logs,￨L she￨L is￨L hard-working.￨L
+TOKENIZED SRC: however ￭, according to the logs ￭, she is hard-working ￭.
+RESULT: however￨C ￭,￨C according￨L to￨L the￨L logs￨L ￭,￨L she￨L is￨L hard￨L ￭-￭￨L working￨L ￭.￨L
 </pre></div>
 </div>
-<p>Prior tokenization is not necessary, features will be inferred by using the <code class="docutils literal notranslate"><span class="pre">FeatInferTransform</span></code> transform if tokenization has been applied.</p>
-<p>No previous tokenization:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>SRC: this is a test.
-FEATS: A A A B
-TOKENIZED SRC: this is a test ￭.
-RESULT: A A A B &lt;null&gt;
-</pre></div>
-</div>
-<p>Previously tokenized:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>SRC: this is a test ￭.
-FEATS: A A A B A
-RESULT: A A A B A
-</pre></div>
-</div>
+<p><strong>Options</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">-n_src_feats</span></code>: the expected number of source features per token.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-src_feats_defaults</span></code> (optional): provides default values for features. This can be really useful when mixing task specific data (with features) with general data which has not been annotated.</p></li>
+</ul>
+<p>For the Transformer architecture make sure the following options are appropriately set:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">src_word_vec_size</span></code> and <code class="docutils literal notranslate"><span class="pre">tgt_word_vec_size</span></code> or <code class="docutils literal notranslate"><span class="pre">word_vec_size</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">feat_merge</span></code>: how to handle features vecs</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">feat_vec_size</span></code> or maybe <code class="docutils literal notranslate"><span class="pre">feat_vec_exponent</span></code></p></li>
+</ul>
 <p><strong>Notes</strong></p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">FilterFeatsTransform</span></code> and <code class="docutils literal notranslate"><span class="pre">FeatInferTransform</span></code> are required in order to ensure the functionality.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FeatInferTransform</span></code> transform is required in order to ensure the functionality.</p></li>
 <li><p>Not possible to do shared embeddings (at least with <code class="docutils literal notranslate"><span class="pre">feat_merge:</span> <span class="pre">concat</span></code> method)</p></li>
 </ul>
 <p>Sample config file:</p>
@@ -871,56 +837,44 @@ RESULT: A A A B A
     <span class="n">dummy</span><span class="p">:</span>
         <span class="n">path_src</span><span class="p">:</span> <span class="n">data</span><span class="o">/</span><span class="n">train</span><span class="o">/</span><span class="n">data</span><span class="o">.</span><span class="n">src</span>
         <span class="n">path_tgt</span><span class="p">:</span> <span class="n">data</span><span class="o">/</span><span class="n">train</span><span class="o">/</span><span class="n">data</span><span class="o">.</span><span class="n">tgt</span>
-        <span class="n">src_feats</span><span class="p">:</span>
-            <span class="n">feat_0</span><span class="p">:</span> <span class="n">data</span><span class="o">/</span><span class="n">train</span><span class="o">/</span><span class="n">data</span><span class="o">.</span><span class="n">src</span><span class="o">.</span><span class="n">feat_0</span>
-            <span class="n">feat_1</span><span class="p">:</span> <span class="n">data</span><span class="o">/</span><span class="n">train</span><span class="o">/</span><span class="n">data</span><span class="o">.</span><span class="n">src</span><span class="o">.</span><span class="n">feat_1</span>
-        <span class="n">transforms</span><span class="p">:</span> <span class="p">[</span><span class="n">filterfeats</span><span class="p">,</span> <span class="n">onmt_tokenize</span><span class="p">,</span> <span class="n">inferfeats</span><span class="p">,</span> <span class="n">filtertoolong</span><span class="p">]</span>
+        <span class="n">transforms</span><span class="p">:</span> <span class="p">[</span><span class="n">onmt_tokenize</span><span class="p">,</span> <span class="n">inferfeats</span><span class="p">,</span> <span class="n">filtertoolong</span><span class="p">]</span>
         <span class="n">weight</span><span class="p">:</span> <span class="mi">1</span>
     <span class="n">valid</span><span class="p">:</span>
         <span class="n">path_src</span><span class="p">:</span> <span class="n">data</span><span class="o">/</span><span class="n">valid</span><span class="o">/</span><span class="n">data</span><span class="o">.</span><span class="n">src</span>
         <span class="n">path_tgt</span><span class="p">:</span> <span class="n">data</span><span class="o">/</span><span class="n">valid</span><span class="o">/</span><span class="n">data</span><span class="o">.</span><span class="n">tgt</span>
-        <span class="n">src_feats</span><span class="p">:</span>
-            <span class="n">feat_0</span><span class="p">:</span> <span class="n">data</span><span class="o">/</span><span class="n">valid</span><span class="o">/</span><span class="n">data</span><span class="o">.</span><span class="n">src</span><span class="o">.</span><span class="n">feat_0</span>
-            <span class="n">feat_1</span><span class="p">:</span> <span class="n">data</span><span class="o">/</span><span class="n">valid</span><span class="o">/</span><span class="n">data</span><span class="o">.</span><span class="n">src</span><span class="o">.</span><span class="n">feat_1</span>
-        <span class="n">transforms</span><span class="p">:</span> <span class="p">[</span><span class="n">filterfeats</span><span class="p">,</span> <span class="n">onmt_tokenize</span><span class="p">,</span> <span class="n">inferfeats</span><span class="p">]</span>
+        <span class="n">transforms</span><span class="p">:</span> <span class="p">[</span><span class="n">onmt_tokenize</span><span class="p">,</span> <span class="n">inferfeats</span><span class="p">]</span>
 
 <span class="c1"># Transform options</span>
 <span class="n">reversible_tokenization</span><span class="p">:</span> <span class="s2">&quot;joiner&quot;</span>
-<span class="n">prior_tokenization</span><span class="p">:</span> <span class="n">true</span>
 
 <span class="c1"># Vocab opts</span>
 <span class="n">src_vocab</span><span class="p">:</span> <span class="n">exp</span><span class="o">/</span><span class="n">data</span><span class="o">.</span><span class="n">vocab</span><span class="o">.</span><span class="n">src</span>
 <span class="n">tgt_vocab</span><span class="p">:</span> <span class="n">exp</span><span class="o">/</span><span class="n">data</span><span class="o">.</span><span class="n">vocab</span><span class="o">.</span><span class="n">tgt</span>
-<span class="n">src_feats_vocab</span><span class="p">:</span> 
-    <span class="n">feat_0</span><span class="p">:</span> <span class="n">exp</span><span class="o">/</span><span class="n">data</span><span class="o">.</span><span class="n">vocab</span><span class="o">.</span><span class="n">feat_0</span>
-    <span class="n">feat_1</span><span class="p">:</span> <span class="n">exp</span><span class="o">/</span><span class="n">data</span><span class="o">.</span><span class="n">vocab</span><span class="o">.</span><span class="n">feat_1</span>
+
+<span class="c1"># Features options</span>
+<span class="n">n_src_feats</span><span class="p">:</span> <span class="mi">2</span>
+<span class="n">src_feats_defaults</span><span class="p">:</span> <span class="s2">&quot;0￨1&quot;</span>
 <span class="n">feat_merge</span><span class="p">:</span> <span class="s2">&quot;sum&quot;</span>
 </pre></div>
 </div>
-<p>During inference you can pass features by using the <code class="docutils literal notranslate"><span class="pre">--src_feats</span></code> argument. <code class="docutils literal notranslate"><span class="pre">src_feats</span></code> is expected to be a Python like dict, mapping feature names with their data file.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s1">&#39;feat_0&#39;</span><span class="p">:</span> <span class="s1">&#39;../data.txt.feats0&#39;</span><span class="p">,</span> <span class="s1">&#39;feat_1&#39;</span><span class="p">:</span> <span class="s1">&#39;../data.txt.feats1&#39;</span><span class="p">}</span>
+<p>To allow source features in the server add the following parameters in the server’s config file:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;features&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;n_src_feats&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="s2">&quot;src_feats_defaults&quot;</span><span class="p">:</span> <span class="s2">&quot;0￨1&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;reversible_tokenization&quot;</span><span class="p">:</span> <span class="s2">&quot;joiner&quot;</span>
+<span class="p">}</span>
 </pre></div>
 </div>
-<p><strong>Important note!</strong> During inference, input sentence is expected to be tokenized. Therefore feature inferring should be handled prior to running the translate command. Example:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>translate.py<span class="w"> </span>-model<span class="w"> </span>model_step_10.pt<span class="w"> </span>-src<span class="w"> </span>../data.txt.tok<span class="w"> </span>-output<span class="w"> </span>../data.out<span class="w"> </span>--src_feats<span class="w"> </span><span class="s2">&quot;{&#39;feat_0&#39;: &#39;../data.txt.feats0&#39;, &#39;feat_1&#39;: &#39;../data.txt.feats1&#39;}&quot;</span>
-</pre></div>
-</div>
-<p>When using the Transformer architecture make sure the following options are appropriately set:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">src_word_vec_size</span></code> and <code class="docutils literal notranslate"><span class="pre">tgt_word_vec_size</span></code> or <code class="docutils literal notranslate"><span class="pre">word_vec_size</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">feat_merge</span></code>: how to handle features vecs</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">feat_vec_size</span></code> and maybe <code class="docutils literal notranslate"><span class="pre">feat_vec_exponent</span></code></p></li>
-</ul>
-</div>
-<div class="section" id="how-can-i-set-up-a-translation-server">
-<h2>How can I set up a translation server ?<a class="headerlink" href="#how-can-i-set-up-a-translation-server" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="how-can-i-set-up-a-translation-server">
+<h1>How can I set up a translation server ?<a class="headerlink" href="#how-can-i-set-up-a-translation-server" title="Permalink to this heading">¶</a></h1>
 <p>A REST server was implemented to serve OpenNMT-py models. A discussion is opened on the OpenNMT forum: <a class="reference external" href="https://forum.opennmt.net/t/simple-opennmt-py-rest-server/1392">discussion link</a>.</p>
-<div class="section" id="i-how-it-works">
-<h3>I. How it works?<a class="headerlink" href="#i-how-it-works" title="Permalink to this headline">¶</a></h3>
+<section id="i-how-it-works">
+<h2>I. How it works?<a class="headerlink" href="#i-how-it-works" title="Permalink to this heading">¶</a></h2>
 <p>The idea behind the translation server is to make a entry point for translation with multiple models. The server will receive natural text input, tokenize it, translate it following the decoding parameters, detokenize the result and return natural text output.</p>
 <p>A server configuration file (<code class="docutils literal notranslate"><span class="pre">./available_models/conf.json</span></code>) is required. It contains the path of the model checkpoint, the path of tokenizer’s data along with other inference parameters.</p>
-<div class="section" id="configuration">
-<h4>Configuration:<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h4>
+<section id="configuration">
+<h3>Configuration:<a class="headerlink" href="#configuration" title="Permalink to this heading">¶</a></h3>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">models_root</span></code>: (opt) folder containing model checkpoints, [default: <code class="docutils literal notranslate"><span class="pre">./available_models</span></code>]</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">models</span></code>: list of objects such as :</p>
@@ -931,7 +885,11 @@ RESULT: A A A B A
 <li><p><code class="docutils literal notranslate"><span class="pre">timeout</span></code>: (opt) interval (seconds) before unloading, reset at each translation using the model</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">load</span></code>: (opt) whether to load the model at start [default: False]</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">on_timeout</span></code>: (opt) what to do on timeout: <code class="docutils literal notranslate"><span class="pre">unload</span></code> removes everything; <code class="docutils literal notranslate"><span class="pre">to_cpu</span></code> transfer the model to RAM (from GPU memory) this is faster to reload but takes RAM.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">opt</span></code>: (opt) dict of translation options (see method <code class="docutils literal notranslate"><span class="pre">translate_opts</span></code> in <code class="docutils literal notranslate"><span class="pre">./opts.py</span></code>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">opt</span></code>: (opt) dict of translation options (see method <code class="docutils literal notranslate"><span class="pre">translate_opts</span></code> in <code class="docutils literal notranslate"><span class="pre">./opts.py</span></code>)</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">report_align</span></code>: (bool) return word alignment in pharaoh (’src-tgt’) format for every space separated word.</p></li>
+</ul>
+</li>
 <li><p><code class="docutils literal notranslate"><span class="pre">tokenizer</span></code>: (opt) set tokenizer options (if any), such as:</p>
 <ul>
 <li><p><code class="docutils literal notranslate"><span class="pre">type</span></code>: (str) value in <code class="docutils literal notranslate"><span class="pre">{sentencepiece,</span> <span class="pre">pyonmttok}</span></code>.</p></li>
@@ -943,9 +901,9 @@ RESULT: A A A B A
 </ul>
 </li>
 </ul>
-</div>
-<div class="section" id="id3">
-<h4>Example<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h4>
+</section>
+<section id="id3">
+<h3>Example<a class="headerlink" href="#id3" title="Permalink to this heading">¶</a></h3>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
 <span class="w">    </span><span class="nt">&quot;models_root&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;./available_models&quot;</span><span class="p">,</span>
 <span class="w">    </span><span class="nt">&quot;models&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
@@ -977,30 +935,30 @@ RESULT: A A A B A
 <span class="p">}</span>
 </pre></div>
 </div>
-</div>
-</div>
-<div class="section" id="ii-how-to-start-the-server-without-docker">
-<h3>II. How to start the server without Docker ?<a class="headerlink" href="#ii-how-to-start-the-server-without-docker" title="Permalink to this headline">¶</a></h3>
-<div class="section" id="get-the-code">
-<h4>0. Get the code<a class="headerlink" href="#get-the-code" title="Permalink to this headline">¶</a></h4>
+</section>
+</section>
+<section id="ii-how-to-start-the-server-without-docker">
+<h2>II. How to start the server without Docker ?<a class="headerlink" href="#ii-how-to-start-the-server-without-docker" title="Permalink to this heading">¶</a></h2>
+<section id="get-the-code">
+<h3>0. Get the code<a class="headerlink" href="#get-the-code" title="Permalink to this heading">¶</a></h3>
 <p>The translation server has been merged into onmt-py <code class="docutils literal notranslate"><span class="pre">master</span></code> branch.
 Keep in line with master for last fix / improvements.</p>
-</div>
-<div class="section" id="install-flask">
-<h4>1. Install <code class="docutils literal notranslate"><span class="pre">flask</span></code><a class="headerlink" href="#install-flask" title="Permalink to this headline">¶</a></h4>
+</section>
+<section id="install-flask">
+<h3>1. Install <code class="docutils literal notranslate"><span class="pre">flask</span></code><a class="headerlink" href="#install-flask" title="Permalink to this heading">¶</a></h3>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>flask
 </pre></div>
 </div>
-</div>
-<div class="section" id="put-some-models">
-<h4>2. Put some models<a class="headerlink" href="#put-some-models" title="Permalink to this headline">¶</a></h4>
+</section>
+<section id="put-some-models">
+<h3>2. Put some models<a class="headerlink" href="#put-some-models" title="Permalink to this heading">¶</a></h3>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>available_models/
 cp<span class="w"> </span><span class="nv">$path_to_my_model</span><span class="w"> </span>available_models
 </pre></div>
 </div>
-</div>
-<div class="section" id="start-the-server">
-<h4>3. Start the server<a class="headerlink" href="#start-the-server" title="Permalink to this headline">¶</a></h4>
+</section>
+<section id="start-the-server">
+<h3>3. Start the server<a class="headerlink" href="#start-the-server" title="Permalink to this heading">¶</a></h3>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">IP</span><span class="o">=</span><span class="s2">&quot;0.0.0.0&quot;</span>
 <span class="nb">export</span><span class="w"> </span><span class="nv">PORT</span><span class="o">=</span><span class="m">5000</span>
 <span class="nb">export</span><span class="w"> </span><span class="nv">URL_ROOT</span><span class="o">=</span><span class="s2">&quot;/translator&quot;</span>
@@ -1011,10 +969,10 @@ cp<span class="w"> </span><span class="nv">$path_to_my_model</span><span class="
 python<span class="w"> </span>server.py<span class="w"> </span>--ip<span class="w"> </span><span class="nv">$IP</span><span class="w"> </span>--port<span class="w"> </span><span class="nv">$PORT</span><span class="w"> </span>--url_root<span class="w"> </span><span class="nv">$URL_ROOT</span><span class="w"> </span>--config<span class="w"> </span><span class="nv">$CONFIG</span>
 </pre></div>
 </div>
-</div>
-</div>
-<div class="section" id="iii-how-to-start-the-server-with-docker">
-<h3>III. How to start the server with Docker ?<a class="headerlink" href="#iii-how-to-start-the-server-with-docker" title="Permalink to this headline">¶</a></h3>
+</section>
+</section>
+<section id="iii-how-to-start-the-server-with-docker">
+<h2>III. How to start the server with Docker ?<a class="headerlink" href="#iii-how-to-start-the-server-with-docker" title="Permalink to this heading">¶</a></h2>
 <ol class="simple">
 <li><p>Add the following libraries a requirement file <code class="docutils literal notranslate"><span class="pre">requirements.docker.txt</span></code>.</p></li>
 </ol>
@@ -1051,18 +1009,18 @@ python<span class="w"> </span>server.py<span class="w"> </span>--ip<span class="
 docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="w"> </span>-p<span class="w"> </span><span class="m">5000</span>:5000<span class="w"> </span>opennmt_server
 </pre></div>
 </div>
-</div>
-<div class="section" id="iv-how-to-use-the-api">
-<h3>IV. How to use the API ?<a class="headerlink" href="#iv-how-to-use-the-api" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="iv-how-to-use-the-api">
+<h2>IV. How to use the API ?<a class="headerlink" href="#iv-how-to-use-the-api" title="Permalink to this heading">¶</a></h2>
 <p>This section contains a fex examples of the API. For details on all routes, see <code class="docutils literal notranslate"><span class="pre">./bin/server.py</span></code>.</p>
-<div class="section" id="set-the-hostname">
-<h4>0. Set the hostname<a class="headerlink" href="#set-the-hostname" title="Permalink to this headline">¶</a></h4>
+<section id="set-the-hostname">
+<h3>0. Set the hostname<a class="headerlink" href="#set-the-hostname" title="Permalink to this heading">¶</a></h3>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">HOST</span><span class="o">=</span><span class="s2">&quot;127.0.0.1&quot;</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="list-models">
-<h4>1. List models<a class="headerlink" href="#list-models" title="Permalink to this headline">¶</a></h4>
+</section>
+<section id="list-models">
+<h3>1. List models<a class="headerlink" href="#list-models" title="Permalink to this heading">¶</a></h3>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl<span class="w"> </span>http://<span class="nv">$HOST</span>:<span class="nv">$PORT$URL_ROOT</span>/models
 </pre></div>
 </div>
@@ -1076,9 +1034,9 @@ docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </s
 <span class="p">}</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="translate">
-<h4>2. Translate<a class="headerlink" href="#translate" title="Permalink to this headline">¶</a></h4>
+</section>
+<section id="translate">
+<h3>2. Translate<a class="headerlink" href="#translate" title="Permalink to this heading">¶</a></h3>
 <p>(this example involves subwords)</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl<span class="w"> </span>-i<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>-d<span class="w"> </span><span class="s1">&#39;[{&quot;src&quot;: &quot;this is a test for model 0&quot;, &quot;id&quot;: 0}]&#39;</span><span class="w"> </span><span class="se">\</span>
@@ -1098,58 +1056,39 @@ docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </s
 <span class="p">}</span>
 </pre></div>
 </div>
-</div>
-</div>
-</div>
-</div>
+</section>
+</section>
+</section>
 
 
            </div>
-           
           </div>
-          <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="examples/Translation.html" class="btn btn-neutral float-right" title="Translation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="ref.html" class="btn btn-neutral float-left" title="References" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="ref.html" class="btn btn-neutral float-left" title="References" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="examples/wmt17/Translation.html" class="btn btn-neutral float-right" title="Translation WMT17 en-de" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
-  
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &copy; Copyright 2017, OpenNMT
-
-    </p>
+    <p>&#169; Copyright 2017-2023, OpenNMT.</p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
-
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

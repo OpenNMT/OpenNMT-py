@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="EN" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Translation WMT17 en-de &mdash; OpenNMT-py  documentation</title>
+      <link rel="stylesheet" href="../../_static/theme_overrides.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+        <script src="https://unpkg.com/mermaid@9.4.0/dist/mermaid.min.js"></script>
+        <script>mermaid.initialize({startOnLoad:true});</script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Language Model Wiki-103" href="../wiki_103/LanguageModelGeneration.html" />
+    <link rel="prev" title="How do I use my v2 models in v3 ?" href="../../FAQ.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            OpenNMT-py
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../main.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changes.html">Versions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../CONTRIBUTING.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../ref.html">References</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Frequently Asked Questions</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html">How do I use my v2 models in v3 ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-do-i-train-the-transformer-model">How do I train the Transformer model?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#performance-tips">Performance tips</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-to-use-lora-to-finetune-a-big-model">How to use LoRa to finetune a big model ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Translation WMT17 en-de</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#dependencies">Dependencies</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pytorch">PyTorch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#apex">Apex</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#subword-nmt">Subword-NMT</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#opennmt-py">OpenNMT-py</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#running-wmt17-en-de">Running WMT17 EN-DE</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#get-data-and-prepare">Get Data and prepare</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#train">Train</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../wiki_103/LanguageModelGeneration.html">Language Model Wiki-103</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../summary/Summarization.html">Summarization CNN/DM</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ggnn/GGNN.html">Gated Graph Neural Networks</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Scripts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../options/build_vocab.html">Build Vocab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../options/train.html">Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../options/translate.html">Translate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../options/server.html">Server</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../onmt.html">Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../onmt.modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../onmt.translation.html">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../onmt.translate.translation_server.html">Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../onmt.inputters.html">Data Loaders</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Legacy</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../legacy/FAQ.html">FAQ (Legacy version)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../legacy/im2text.html">Image to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../legacy/speech2text.html">Speech to Text</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../legacy/vid2text.html">Video to Text</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">OpenNMT-py</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Translation WMT17 en-de</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/examples/wmt17/Translation.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="translation-wmt17-en-de">
+<h1>Translation WMT17 en-de<a class="headerlink" href="#translation-wmt17-en-de" title="Permalink to this heading">¶</a></h1>
+<section id="dependencies">
+<h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this heading">¶</a></h2>
+<section id="pytorch">
+<h3>PyTorch<a class="headerlink" href="#pytorch" title="Permalink to this heading">¶</a></h3>
+<p><a class="reference external" href="https://pytorch.org/get-started/locally/">https://pytorch.org/get-started/locally/</a></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip3<span class="w"> </span>install<span class="w"> </span>torch<span class="w"> </span>torchvision<span class="w"> </span>torchaudio
+</pre></div>
+</div>
+</section>
+<section id="apex">
+<h3>Apex<a class="headerlink" href="#apex" title="Permalink to this heading">¶</a></h3>
+<p>This is highly recommended to have fast performance.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/NVIDIA/apex
+<span class="nb">cd</span><span class="w"> </span>apex
+pip3<span class="w"> </span>install<span class="w"> </span>-v<span class="w"> </span>--disable-pip-version-check<span class="w"> </span>--no-cache-dir<span class="w"> </span>--global-option<span class="o">=</span><span class="s2">&quot;--cpp_ext&quot;</span><span class="w"> </span>--global-option<span class="o">=</span><span class="s2">&quot;--cuda_ext&quot;</span><span class="w"> </span>--global-option<span class="o">=</span><span class="s2">&quot;--deprecated_fused_adam&quot;</span><span class="w"> </span>--global-option<span class="o">=</span><span class="s2">&quot;--xentropy&quot;</span><span class="w"> </span>--global-option<span class="o">=</span><span class="s2">&quot;--fast_multihead_attn&quot;</span><span class="w"> </span>./
+<span class="nb">cd</span><span class="w"> </span>..
+</pre></div>
+</div>
+</section>
+<section id="subword-nmt">
+<h3>Subword-NMT<a class="headerlink" href="#subword-nmt" title="Permalink to this heading">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip3<span class="w"> </span>install<span class="w"> </span>subword-nmt
+</pre></div>
+</div>
+</section>
+<section id="opennmt-py">
+<h3>OpenNMT-py<a class="headerlink" href="#opennmt-py" title="Permalink to this heading">¶</a></h3>
+<p><a class="reference external" href="https://github.com/OpenNMT/OpenNMT-py">https://github.com/OpenNMT/OpenNMT-py</a></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/OpenNMT/OpenNMT-py.git
+<span class="nb">cd</span><span class="w"> </span>OpenNMT-py
+pip3<span class="w"> </span>install<span class="w"> </span>--editable<span class="w"> </span>./
+</pre></div>
+</div>
+</section>
+</section>
+<section id="running-wmt17-en-de">
+<h2>Running WMT17 EN-DE<a class="headerlink" href="#running-wmt17-en-de" title="Permalink to this heading">¶</a></h2>
+<section id="get-data-and-prepare">
+<h3>Get Data and prepare<a class="headerlink" href="#get-data-and-prepare" title="Permalink to this heading">¶</a></h3>
+<p>WMT17 English-German data set:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>docs/source/examples
+bash<span class="w"> </span>wmt17/prepare_wmt_ende_data.sh
+</pre></div>
+</div>
+</section>
+<section id="train">
+<h3>Train<a class="headerlink" href="#train" title="Permalink to this heading">¶</a></h3>
+<p>Training the following big transformer for 50K steps takes less than 10 hours on a single RTX 4090</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>../../../onmt/bin/build_vocab.py<span class="w"> </span>--config<span class="w"> </span>wmt17/wmt17_ende.yaml<span class="w"> </span>--n_sample<span class="w"> </span>-1
+python3<span class="w"> </span>../../../onmt/bin/train.py<span class="w"> </span>--config<span class="w"> </span>wmt17/wmt17_ende.yaml
+bash<span class="w"> </span>scripts/onmt/train.sh
+</pre></div>
+</div>
+<p>Translate test sets with various settings on local GPU and CPUs.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>../../../onmt/bin/translate.py<span class="w"> </span>--src<span class="w"> </span>wmt17_en_de/test.src.bpe<span class="w"> </span>--model<span class="w"> </span>wmt17_en_de/bigwmt17_step_50000.pt<span class="w"> </span>--beam_size<span class="w"> </span><span class="m">5</span><span class="w"> </span>--batch_size<span class="w"> </span><span class="m">4096</span><span class="w"> </span>--batch_type<span class="w"> </span>tokens<span class="w"> </span>--output<span class="w"> </span>wmt17_en_de/pred.trg.bpe<span class="w"> </span>--gpu<span class="w"> </span><span class="m">0</span>
+sed<span class="w"> </span>-re<span class="w"> </span><span class="s1">&#39;s/@@( |$)//g&#39;</span><span class="w"> </span>&lt;<span class="w"> </span>wmt17_en_de/pred.trg.bpe<span class="w"> </span>&gt;<span class="w"> </span>wmt17_en_de/pred.trg.tok
+sacrebleu<span class="w"> </span>-tok<span class="w"> </span>none<span class="w"> </span>wmt17_en_de/test.trg<span class="w"> </span>&lt;<span class="w"> </span>wmt17_en_de/pred.trg.tok
+</pre></div>
+</div>
+<p>BLEU scored at 40K, 45K, 50K steps on the test set (Newstest2016)</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+ <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;BLEU&quot;</span><span class="p">,</span>
+ <span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="mf">35.4</span><span class="p">,</span>
+ <span class="s2">&quot;signature&quot;</span><span class="p">:</span> <span class="s2">&quot;nrefs:1|case:mixed|eff:no|tok:none|smooth:exp|version:2.0.0&quot;</span><span class="p">,</span>
+ <span class="s2">&quot;verbose_score&quot;</span><span class="p">:</span> <span class="s2">&quot;66.2/41.3/28.5/20.3 (BP = 0.998 ratio = 0.998 hyp_len = 64244 ref_len = 64379)&quot;</span><span class="p">,</span>
+ <span class="s2">&quot;nrefs&quot;</span><span class="p">:</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span>
+ <span class="s2">&quot;case&quot;</span><span class="p">:</span> <span class="s2">&quot;mixed&quot;</span><span class="p">,</span>
+ <span class="s2">&quot;eff&quot;</span><span class="p">:</span> <span class="s2">&quot;no&quot;</span><span class="p">,</span>
+ <span class="s2">&quot;tok&quot;</span><span class="p">:</span> <span class="s2">&quot;none&quot;</span><span class="p">,</span>
+ <span class="s2">&quot;smooth&quot;</span><span class="p">:</span> <span class="s2">&quot;exp&quot;</span><span class="p">,</span>
+ <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;2.0.0&quot;</span>
+<span class="p">}</span>
+<span class="p">{</span>
+ <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;BLEU&quot;</span><span class="p">,</span>
+ <span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="mf">35.2</span><span class="p">,</span>
+ <span class="s2">&quot;signature&quot;</span><span class="p">:</span> <span class="s2">&quot;nrefs:1|case:mixed|eff:no|tok:none|smooth:exp|version:2.0.0&quot;</span><span class="p">,</span>
+ <span class="s2">&quot;verbose_score&quot;</span><span class="p">:</span> <span class="s2">&quot;65.9/41.0/28.3/20.2 (BP = 1.000 ratio = 1.000 hyp_len = 64357 ref_len = 64379)&quot;</span><span class="p">,</span>
+ <span class="s2">&quot;nrefs&quot;</span><span class="p">:</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span>
+ <span class="s2">&quot;case&quot;</span><span class="p">:</span> <span class="s2">&quot;mixed&quot;</span><span class="p">,</span>
+ <span class="s2">&quot;eff&quot;</span><span class="p">:</span> <span class="s2">&quot;no&quot;</span><span class="p">,</span>
+ <span class="s2">&quot;tok&quot;</span><span class="p">:</span> <span class="s2">&quot;none&quot;</span><span class="p">,</span>
+ <span class="s2">&quot;smooth&quot;</span><span class="p">:</span> <span class="s2">&quot;exp&quot;</span><span class="p">,</span>
+ <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;2.0.0&quot;</span>
+<span class="p">}</span>
+<span class="p">{</span>
+ <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;BLEU&quot;</span><span class="p">,</span>
+ <span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="mf">35.1</span><span class="p">,</span>
+ <span class="s2">&quot;signature&quot;</span><span class="p">:</span> <span class="s2">&quot;nrefs:1|case:mixed|eff:no|tok:none|smooth:exp|version:2.0.0&quot;</span><span class="p">,</span>
+ <span class="s2">&quot;verbose_score&quot;</span><span class="p">:</span> <span class="s2">&quot;66.2/41.2/28.4/20.3 (BP = 0.992 ratio = 0.992 hyp_len = 63885 ref_len = 64379)&quot;</span><span class="p">,</span>
+ <span class="s2">&quot;nrefs&quot;</span><span class="p">:</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span>
+ <span class="s2">&quot;case&quot;</span><span class="p">:</span> <span class="s2">&quot;mixed&quot;</span><span class="p">,</span>
+ <span class="s2">&quot;eff&quot;</span><span class="p">:</span> <span class="s2">&quot;no&quot;</span><span class="p">,</span>
+ <span class="s2">&quot;tok&quot;</span><span class="p">:</span> <span class="s2">&quot;none&quot;</span><span class="p">,</span>
+ <span class="s2">&quot;smooth&quot;</span><span class="p">:</span> <span class="s2">&quot;exp&quot;</span><span class="p">,</span>
+ <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;2.0.0&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../../FAQ.html" class="btn btn-neutral float-left" title="How do I use my v2 models in v3 ?" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../wiki_103/LanguageModelGeneration.html" class="btn btn-neutral float-right" title="Language Model Wiki-103" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2017-2023, OpenNMT.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

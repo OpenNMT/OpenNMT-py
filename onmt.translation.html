@@ -1,128 +1,149 @@
-
-
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html5" lang="EN" >
 <head>
-  <meta charset="utf-8">
-  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Translation &mdash; OpenNMT-py  documentation</title>
+      <link rel="stylesheet" href="_static/theme_overrides.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
   
-
-  
-  
-  
-  
-
-  
-  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/doctools.js"></script>
-        <script src="_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-        <script src="https://unpkg.com/mermaid@8.4.8/dist/mermaid.min.js"></script>
-    
-    <script type="text/javascript" src="_static/js/theme.js"></script>
-
-    
-
-  
-  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="_static/theme_overrides.css" type="text/css" />
+        <script src="_static/sphinx_highlight.js"></script>
+        <script src="https://unpkg.com/mermaid@9.4.0/dist/mermaid.min.js"></script>
+        <script>mermaid.initialize({startOnLoad:true});</script>
+    <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Server" href="onmt.translate.translation_server.html" />
     <link rel="prev" title="Modules" href="onmt.modules.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="index.html" class="icon icon-home"> OpenNMT-py
           
-
-          
+          <a href="index.html" class="icon icon-home">
+            OpenNMT-py
           </a>
-
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Getting Started</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="main.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changes.html">Versions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="CONTRIBUTING.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ref.html">References</a></li>
 </ul>
-<p class="caption"><span class="caption-text">FAQ</span></p>
+<p class="caption" role="heading"><span class="caption-text">Frequently Asked Questions</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html">How do I use my v2 models in v3 ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-do-i-train-the-transformer-model">How do I train the Transformer model?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#performance-tips">Performance tips</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-to-use-lora-to-finetune-a-big-model">How to use LoRa to finetune a big model ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Examples</span></p>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="examples/Translation.html">Translation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/Summarization.html">Summarization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/LanguageModelGeneration.html">Language Model Generation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/GGNN.html">Gated Graph Sequence Neural Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/wmt17/Translation.html">Translation WMT17 en-de</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/wiki_103/LanguageModelGeneration.html">Language Model Wiki-103</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/summary/Summarization.html">Summarization CNN/DM</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/ggnn/GGNN.html">Gated Graph Neural Networks</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Scripts</span></p>
+<p class="caption" role="heading"><span class="caption-text">Scripts</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="options/build_vocab.html">Build Vocab</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/train.html">Train</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/translate.html">Translate</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options/server.html">Server</a></li>
 </ul>
-<p class="caption"><span class="caption-text">API</span></p>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="onmt.html">Framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="onmt.modules.html">Modules</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Translation</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#translations">Translations</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#translator-class">Translator Class</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#decoding-strategies">Decoding Strategies</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#scoring">Scoring</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#translations">Translations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#onmt.translate.Translation"><code class="docutils literal notranslate"><span class="pre">Translation</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#onmt.translate.Translation.log"><code class="docutils literal notranslate"><span class="pre">Translation.log()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#translator-class">Translator Class</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#onmt.translate.Translator"><code class="docutils literal notranslate"><span class="pre">Translator</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#onmt.translate.Translator.translate_batch"><code class="docutils literal notranslate"><span class="pre">Translator.translate_batch()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#onmt.translate.TranslationBuilder"><code class="docutils literal notranslate"><span class="pre">TranslationBuilder</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#decoding-strategies">Decoding Strategies</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#onmt.translate.DecodeStrategy"><code class="docutils literal notranslate"><span class="pre">DecodeStrategy</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#onmt.translate.DecodeStrategy.advance"><code class="docutils literal notranslate"><span class="pre">DecodeStrategy.advance()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#onmt.translate.DecodeStrategy.block_ngram_repeats"><code class="docutils literal notranslate"><span class="pre">DecodeStrategy.block_ngram_repeats()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#onmt.translate.DecodeStrategy.initialize"><code class="docutils literal notranslate"><span class="pre">DecodeStrategy.initialize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#onmt.translate.DecodeStrategy.maybe_update_forbidden_tokens"><code class="docutils literal notranslate"><span class="pre">DecodeStrategy.maybe_update_forbidden_tokens()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#onmt.translate.DecodeStrategy.maybe_update_target_prefix"><code class="docutils literal notranslate"><span class="pre">DecodeStrategy.maybe_update_target_prefix()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#onmt.translate.DecodeStrategy.target_prefixing"><code class="docutils literal notranslate"><span class="pre">DecodeStrategy.target_prefixing()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#onmt.translate.DecodeStrategy.update_finished"><code class="docutils literal notranslate"><span class="pre">DecodeStrategy.update_finished()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#onmt.translate.BeamSearch"><code class="docutils literal notranslate"><span class="pre">BeamSearch</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#onmt.translate.BeamSearch.initialize"><code class="docutils literal notranslate"><span class="pre">BeamSearch.initialize()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#onmt.translate.greedy_search.sample_with_temperature"><code class="docutils literal notranslate"><span class="pre">sample_with_temperature()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#onmt.translate.GreedySearch"><code class="docutils literal notranslate"><span class="pre">GreedySearch</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#onmt.translate.GreedySearch.advance"><code class="docutils literal notranslate"><span class="pre">GreedySearch.advance()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#onmt.translate.GreedySearch.initialize"><code class="docutils literal notranslate"><span class="pre">GreedySearch.initialize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#onmt.translate.GreedySearch.update_finished"><code class="docutils literal notranslate"><span class="pre">GreedySearch.update_finished()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#scoring">Scoring</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#onmt.translate.penalties.PenaltyBuilder"><code class="docutils literal notranslate"><span class="pre">PenaltyBuilder</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#onmt.translate.penalties.PenaltyBuilder.coverage_none"><code class="docutils literal notranslate"><span class="pre">PenaltyBuilder.coverage_none()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#onmt.translate.penalties.PenaltyBuilder.coverage_summary"><code class="docutils literal notranslate"><span class="pre">PenaltyBuilder.coverage_summary()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#onmt.translate.penalties.PenaltyBuilder.coverage_wu"><code class="docutils literal notranslate"><span class="pre">PenaltyBuilder.coverage_wu()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#onmt.translate.penalties.PenaltyBuilder.length_average"><code class="docutils literal notranslate"><span class="pre">PenaltyBuilder.length_average()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#onmt.translate.penalties.PenaltyBuilder.length_none"><code class="docutils literal notranslate"><span class="pre">PenaltyBuilder.length_none()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#onmt.translate.penalties.PenaltyBuilder.length_wu"><code class="docutils literal notranslate"><span class="pre">PenaltyBuilder.length_wu()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#onmt.translate.GNMTGlobalScorer"><code class="docutils literal notranslate"><span class="pre">GNMTGlobalScorer</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="onmt.translate.translation_server.html">Server</a></li>
 <li class="toctree-l1"><a class="reference internal" href="onmt.inputters.html">Data Loaders</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Legacy</span></p>
+<p class="caption" role="heading"><span class="caption-text">Legacy</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="legacy/FAQ.html">FAQ (Legacy version)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="legacy/im2text.html">Image to Text</a></li>
@@ -130,79 +151,41 @@
 <li class="toctree-l1"><a class="reference internal" href="legacy/vid2text.html">Video to Text</a></li>
 </ul>
 
-            
-          
         </div>
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="index.html">OpenNMT-py</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="index.html">Docs</a> &raquo;</li>
-        
-      <li>Translation</li>
-    
-    
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Translation</li>
       <li class="wy-breadcrumbs-aside">
-        
-            
             <a href="_sources/onmt.translation.rst.txt" rel="nofollow"> View page source</a>
-          
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="translation">
-<h1>Translation<a class="headerlink" href="#translation" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="translations">
-<h2>Translations<a class="headerlink" href="#translations" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="onmt.translate.Translation">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.translate.</code><code class="sig-name descname">Translation</code><span class="sig-paren">(</span><em class="sig-param">src</em>, <em class="sig-param">src_raw</em>, <em class="sig-param">pred_sents</em>, <em class="sig-param">attn</em>, <em class="sig-param">pred_scores</em>, <em class="sig-param">tgt_sent</em>, <em class="sig-param">gold_score</em>, <em class="sig-param">word_aligns</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation.html#Translation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translation" title="Permalink to this definition">¶</a></dt>
+             
+  <section id="translation">
+<h1>Translation<a class="headerlink" href="#translation" title="Permalink to this heading">¶</a></h1>
+<section id="translations">
+<h2>Translations<a class="headerlink" href="#translations" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="onmt.translate.Translation">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">onmt.translate.</span></span><span class="sig-name descname"><span class="pre">Translation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_raw</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pred_sents</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pred_scores</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tgt_sent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gold_score</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">word_aligns</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation.html#Translation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.translate.Translation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Container for a translated sentence.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Variables</dt>
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>src</strong> (<em>LongTensor</em>) – Source word IDs.</p></li>
 <li><p><strong>src_raw</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – Raw source words.</p></li>
@@ -217,39 +200,39 @@ each translation.</p></li>
 </ul>
 </dd>
 </dl>
-<dl class="method">
-<dt id="onmt.translate.Translation.log">
-<code class="sig-name descname">log</code><span class="sig-paren">(</span><em class="sig-param">sent_number</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation.html#Translation.log"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translation.log" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="onmt.translate.Translation.log">
+<span class="sig-name descname"><span class="pre">log</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sent_number</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation.html#Translation.log"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.translate.Translation.log" title="Permalink to this definition">¶</a></dt>
 <dd><p>Log translation.</p>
 </dd></dl>
 
 </dd></dl>
 
-</div>
-<div class="section" id="translator-class">
-<h2>Translator Class<a class="headerlink" href="#translator-class" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="onmt.translate.Translator">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.translate.</code><code class="sig-name descname">Translator</code><span class="sig-paren">(</span><em class="sig-param">model</em>, <em class="sig-param">vocabs</em>, <em class="sig-param">gpu=-1</em>, <em class="sig-param">n_best=1</em>, <em class="sig-param">min_length=0</em>, <em class="sig-param">max_length=100</em>, <em class="sig-param">ratio=0.0</em>, <em class="sig-param">beam_size=30</em>, <em class="sig-param">random_sampling_topk=0</em>, <em class="sig-param">random_sampling_topp=0.0</em>, <em class="sig-param">random_sampling_temp=1.0</em>, <em class="sig-param">stepwise_penalty=None</em>, <em class="sig-param">dump_beam=False</em>, <em class="sig-param">block_ngram_repeat=0</em>, <em class="sig-param">ignore_when_blocking=frozenset({})</em>, <em class="sig-param">replace_unk=False</em>, <em class="sig-param">ban_unk_token=False</em>, <em class="sig-param">tgt_file_prefix=False</em>, <em class="sig-param">phrase_table=''</em>, <em class="sig-param">data_type='text'</em>, <em class="sig-param">verbose=False</em>, <em class="sig-param">report_time=False</em>, <em class="sig-param">copy_attn=False</em>, <em class="sig-param">global_scorer=None</em>, <em class="sig-param">out_file=None</em>, <em class="sig-param">report_align=False</em>, <em class="sig-param">report_score=True</em>, <em class="sig-param">logger=None</em>, <em class="sig-param">seed=-1</em>, <em class="sig-param">with_score=False</em>, <em class="sig-param">decoder_start_token='&lt;s&gt;'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.translate.translator.Inference</span></code></p>
-<dl class="method">
-<dt id="onmt.translate.Translator.translate_batch">
-<code class="sig-name descname">translate_batch</code><span class="sig-paren">(</span><em class="sig-param">batch</em>, <em class="sig-param">attn_debug</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator.translate_batch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.Translator.translate_batch" title="Permalink to this definition">¶</a></dt>
+</section>
+<section id="translator-class">
+<h2>Translator Class<a class="headerlink" href="#translator-class" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="onmt.translate.Translator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">onmt.translate.</span></span><span class="sig-name descname"><span class="pre">Translator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vocabs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gpu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_best</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beam_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_sampling_topk</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_sampling_topp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_sampling_temp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepwise_penalty</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dump_beam</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">block_ngram_repeat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_when_blocking</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">frozenset({})</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">replace_unk</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ban_unk_token</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tgt_file_prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phrase_table</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'text'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">report_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy_attn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">global_scorer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">report_align</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gold_align</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">report_score</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logger</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_score</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.translate.Translator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Inference</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="onmt.translate.Translator.translate_batch">
+<span class="sig-name descname"><span class="pre">translate_batch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attn_debug</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translator.html#Translator.translate_batch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.translate.Translator.translate_batch" title="Permalink to this definition">¶</a></dt>
 <dd><p>Translate a batch of sentences.</p>
 </dd></dl>
 
 </dd></dl>
 
-<dl class="class">
-<dt id="onmt.translate.TranslationBuilder">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.translate.</code><code class="sig-name descname">TranslationBuilder</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">vocabs</em>, <em class="sig-param">n_best=1</em>, <em class="sig-param">replace_unk=False</em>, <em class="sig-param">phrase_table=''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation.html#TranslationBuilder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.TranslationBuilder" title="Permalink to this definition">¶</a></dt>
+<dl class="py class">
+<dt class="sig sig-object py" id="onmt.translate.TranslationBuilder">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">onmt.translate.</span></span><span class="sig-name descname"><span class="pre">TranslationBuilder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vocabs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_best</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">replace_unk</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phrase_table</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation.html#TranslationBuilder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.translate.TranslationBuilder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Build a word-based translation from the batch output
 of translator and the underlying dictionaries.</p>
 <p>Replacement based on “Addressing the Rare Word
-Problem in Neural Machine Translation” <a class="bibtex reference internal" href="ref.html#luong2015b" id="id1">[LSL+15]</a></p>
+Problem in Neural Machine Translation” <span id="id1">[<a class="reference internal" href="ref.html#id11" title="Minh-Thang Luong, Ilya Sutskever, Quoc Le, Oriol Vinyals, and Wojciech Zaremba. Addressing the Rare Word Problem in Neural Machine Translation. In Proc of ACL. 2015.">LSL+15</a>]</span></p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>(</strong><strong>)</strong> (<em>vocabs</em>) – </p></li>
 <li><p><strong>(</strong><strong>)</strong> – </p></li>
@@ -260,16 +243,16 @@ Problem in Neural Machine Translation” <a class="bibtex reference internal" hr
 </dl>
 </dd></dl>
 
-</div>
-<div class="section" id="decoding-strategies">
-<h2>Decoding Strategies<a class="headerlink" href="#decoding-strategies" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="onmt.translate.DecodeStrategy">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.translate.</code><code class="sig-name descname">DecodeStrategy</code><span class="sig-paren">(</span><em class="sig-param">pad</em>, <em class="sig-param">bos</em>, <em class="sig-param">eos</em>, <em class="sig-param">unk</em>, <em class="sig-param">start</em>, <em class="sig-param">batch_size</em>, <em class="sig-param">parallel_paths</em>, <em class="sig-param">global_scorer</em>, <em class="sig-param">min_length</em>, <em class="sig-param">block_ngram_repeat</em>, <em class="sig-param">exclusion_tokens</em>, <em class="sig-param">return_attention</em>, <em class="sig-param">max_length</em>, <em class="sig-param">ban_unk_token</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/decode_strategy.html#DecodeStrategy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.DecodeStrategy" title="Permalink to this definition">¶</a></dt>
+</section>
+<section id="decoding-strategies">
+<h2>Decoding Strategies<a class="headerlink" href="#decoding-strategies" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="onmt.translate.DecodeStrategy">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">onmt.translate.</span></span><span class="sig-name descname"><span class="pre">DecodeStrategy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pad</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unk</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parallel_paths</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">global_scorer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_length</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">block_ngram_repeat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclusion_tokens</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_attention</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ban_unk_token</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/decode_strategy.html#DecodeStrategy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.translate.DecodeStrategy" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Base class for generation strategies.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>pad</strong> (<em>int</em>) – Magic integer in output vocab.</p></li>
 <li><p><strong>bos</strong> (<em>int</em>) – Magic integer in output vocab.</p></li>
@@ -294,7 +277,7 @@ tokens, it may repeat.</p></li>
 is true, it is assumed that the decoder is attentional.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Variables</dt>
+<dt class="field-even">Variables<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>pad</strong> (<em>int</em>) – See above.</p></li>
 <li><p><strong>bos</strong> (<em>int</em>) – See above.</p></li>
@@ -302,8 +285,8 @@ is true, it is assumed that the decoder is attentional.</p></li>
 <li><p><strong>unk</strong> (<em>int</em>) – See above.</p></li>
 <li><p><strong>start</strong> (<em>int</em>) – See above.</p></li>
 <li><p><strong>predictions</strong> (<em>list</em><em>[</em><em>list</em><em>[</em><em>LongTensor</em><em>]</em><em>]</em>) – For each batch, holds a
-list of beam prediction sequences.</p></li>
-<li><p><strong>scores</strong> (<em>list</em><em>[</em><em>list</em><em>[</em><em>FloatTensor</em><em>]</em><em>]</em>) – For each batch, holds a
+list of beam prediction sequences.
+scores (list[list[FloatTensor]]): For each batch, holds a
 list of scores.</p></li>
 <li><p><strong>attention</strong> (<em>list</em><em>[</em><em>list</em><em>[</em><em>FloatTensor</em><em> or </em><em>list</em><em>[</em><em>]</em><em>]</em><em>]</em>) – For each
 batch, holds a list of attention sequence tensors
@@ -312,9 +295,9 @@ batch, holds a list of attention sequence tensors
 length of all inp seqs).</p></li>
 <li><p><strong>alive_seq</strong> (<em>LongTensor</em>) – Shape <code class="docutils literal notranslate"><span class="pre">(B</span> <span class="pre">x</span> <span class="pre">parallel_paths,</span> <span class="pre">step)</span></code>.
 This sequence grows in the <code class="docutils literal notranslate"><span class="pre">step</span></code> axis on each call to
-<a class="reference internal" href="#onmt.translate.DecodeStrategy.advance" title="onmt.translate.DecodeStrategy.advance"><code class="xref py py-func docutils literal notranslate"><span class="pre">advance()</span></code></a>.</p></li>
-<li><p><strong>is_finished</strong> (<em>ByteTensor</em><em> or </em><em>NoneType</em>) – Shape
-<code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">parallel_paths)</span></code>. Initialized to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+:func:<code class="docutils literal notranslate"><span class="pre">advance()</span></code>.
+is_finished (ByteTensor or NoneType): Shape <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">parallel_paths)</span></code>.
+Initialized to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
 <li><p><strong>alive_attn</strong> (<em>FloatTensor</em><em> or </em><em>NoneType</em>) – If tensor, shape is
 <code class="docutils literal notranslate"><span class="pre">(step,</span> <span class="pre">B</span> <span class="pre">x</span> <span class="pre">parallel_paths,</span> <span class="pre">inp_seq_len)</span></code>, where <code class="docutils literal notranslate"><span class="pre">inp_seq_len</span></code>
 is the (max) length of the input sequence.</p></li>
@@ -331,84 +314,65 @@ is the (max) length of the pre-fixed prediction.</p></li>
 </ul>
 </dd>
 </dl>
-<dl class="method">
-<dt id="onmt.translate.DecodeStrategy.advance">
-<code class="sig-name descname">advance</code><span class="sig-paren">(</span><em class="sig-param">log_probs</em>, <em class="sig-param">attn</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/decode_strategy.html#DecodeStrategy.advance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.DecodeStrategy.advance" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="onmt.translate.DecodeStrategy.advance">
+<span class="sig-name descname"><span class="pre">advance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log_probs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attn</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/decode_strategy.html#DecodeStrategy.advance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.translate.DecodeStrategy.advance" title="Permalink to this definition">¶</a></dt>
 <dd><p>DecodeStrategy subclasses should override <a class="reference internal" href="#onmt.translate.DecodeStrategy.advance" title="onmt.translate.DecodeStrategy.advance"><code class="xref py py-func docutils literal notranslate"><span class="pre">advance()</span></code></a>.</p>
 <p>Advance is used to update <code class="docutils literal notranslate"><span class="pre">self.alive_seq</span></code>, <code class="docutils literal notranslate"><span class="pre">self.is_finished</span></code>,
 and, when appropriate, <code class="docutils literal notranslate"><span class="pre">self.alive_attn</span></code>.</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="onmt.translate.DecodeStrategy.block_ngram_repeats">
-<code class="sig-name descname">block_ngram_repeats</code><span class="sig-paren">(</span><em class="sig-param">log_probs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/decode_strategy.html#DecodeStrategy.block_ngram_repeats"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.DecodeStrategy.block_ngram_repeats" title="Permalink to this definition">¶</a></dt>
-<dd><p>We prevent the beam from going in any direction that would repeat any
-ngram of size &lt;block_ngram_repeat&gt; more thant once.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="onmt.translate.DecodeStrategy.block_ngram_repeats">
+<span class="sig-name descname"><span class="pre">block_ngram_repeats</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log_probs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/decode_strategy.html#DecodeStrategy.block_ngram_repeats"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.translate.DecodeStrategy.block_ngram_repeats" title="Permalink to this definition">¶</a></dt>
+<dd><p>We prevent the beam from going in any direction that would repeat
+any ngram of size &lt;block_ngram_repeat&gt; more thant once.</p>
 <p>The way we do it: we maintain a list of all ngrams of size
 &lt;block_ngram_repeat&gt; that is updated each time the beam advances, and
 manually put any token that would lead to a repeated ngram to 0.</p>
-<dl>
-<dt>This improves on the previous version’s complexity:</dt><dd><ul class="simple">
-<li><p>previous version’s complexity: batch_size * beam_size * len(self)</p></li>
-<li><p>current version’s complexity: batch_size * beam_size</p></li>
-</ul>
-</dd>
-<dt>This improves on the previous version’s accuracy;</dt><dd><ul class="simple">
-<li><p>Previous version blocks the whole beam, whereas here we only</p></li>
-</ul>
-<blockquote>
-<div><p>block specific tokens.</p>
-</div></blockquote>
-<ul class="simple">
-<li><p>Before the translation would fail when all beams contained</p></li>
-</ul>
-<blockquote>
-<div><p>repeated ngrams. This is sure to never happen here.</p>
-</div></blockquote>
-</dd>
-</dl>
+<p>This improves on the previous version’s complexity:
+- previous version’s complexity: batch_size * beam_size * len(self)
+- current version’s complexity: batch_size * beam_size</p>
+<p>This improves on the previous version’s accuracy;
+- Previous version blocks the whole beam, whereas here we only
+block specific tokens.
+- Before the translation would fail when all beams contained
+repeated ngrams. This is sure to never happen here.</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="onmt.translate.DecodeStrategy.initialize">
-<code class="sig-name descname">initialize</code><span class="sig-paren">(</span><em class="sig-param">enc_out</em>, <em class="sig-param">src_len</em>, <em class="sig-param">src_map=None</em>, <em class="sig-param">device=None</em>, <em class="sig-param">target_prefix=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/decode_strategy.html#DecodeStrategy.initialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.DecodeStrategy.initialize" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="onmt.translate.DecodeStrategy.initialize">
+<span class="sig-name descname"><span class="pre">initialize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">enc_out</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_len</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_map</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/decode_strategy.html#DecodeStrategy.initialize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.translate.DecodeStrategy.initialize" title="Permalink to this definition">¶</a></dt>
 <dd><p>DecodeStrategy subclasses should override <a class="reference internal" href="#onmt.translate.DecodeStrategy.initialize" title="onmt.translate.DecodeStrategy.initialize"><code class="xref py py-func docutils literal notranslate"><span class="pre">initialize()</span></code></a>.</p>
 <p><cite>initialize</cite> should be called before all actions.
 used to prepare necessary ingredients for decode.</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="onmt.translate.DecodeStrategy.maybe_update_forbidden_tokens">
-<code class="sig-name descname">maybe_update_forbidden_tokens</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/decode_strategy.html#DecodeStrategy.maybe_update_forbidden_tokens"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.DecodeStrategy.maybe_update_forbidden_tokens" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="onmt.translate.DecodeStrategy.maybe_update_forbidden_tokens">
+<span class="sig-name descname"><span class="pre">maybe_update_forbidden_tokens</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/decode_strategy.html#DecodeStrategy.maybe_update_forbidden_tokens"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.translate.DecodeStrategy.maybe_update_forbidden_tokens" title="Permalink to this definition">¶</a></dt>
 <dd><p>We complete and reorder the list of forbidden_tokens</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="onmt.translate.DecodeStrategy.maybe_update_target_prefix">
-<code class="sig-name descname">maybe_update_target_prefix</code><span class="sig-paren">(</span><em class="sig-param">select_index</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/decode_strategy.html#DecodeStrategy.maybe_update_target_prefix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.DecodeStrategy.maybe_update_target_prefix" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="onmt.translate.DecodeStrategy.maybe_update_target_prefix">
+<span class="sig-name descname"><span class="pre">maybe_update_target_prefix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">select_index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/decode_strategy.html#DecodeStrategy.maybe_update_target_prefix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.translate.DecodeStrategy.maybe_update_target_prefix" title="Permalink to this definition">¶</a></dt>
 <dd><p>We update / reorder <cite>target_prefix</cite> for alive path.</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="onmt.translate.DecodeStrategy.target_prefixing">
-<code class="sig-name descname">target_prefixing</code><span class="sig-paren">(</span><em class="sig-param">log_probs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/decode_strategy.html#DecodeStrategy.target_prefixing"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.DecodeStrategy.target_prefixing" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="onmt.translate.DecodeStrategy.target_prefixing">
+<span class="sig-name descname"><span class="pre">target_prefixing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log_probs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/decode_strategy.html#DecodeStrategy.target_prefixing"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.translate.DecodeStrategy.target_prefixing" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fix the first part of predictions with <cite>self.target_prefix</cite>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>log_probs</strong> (<em>FloatTensor</em>) – logits of size <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">vocab_size)</span></code>.</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>modified logits in <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">vocab_size)</span></code>.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>log_probs (FloatTensor)</p>
-</dd>
-</dl>
+<p>Args:
+log_probs (FloatTensor): logits of size <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">vocab_size)</span></code>.</p>
+<p>Returns:
+log_probs (FloatTensor): modified logits in <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">vocab_size)</span></code>.</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="onmt.translate.DecodeStrategy.update_finished">
-<code class="sig-name descname">update_finished</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/decode_strategy.html#DecodeStrategy.update_finished"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.DecodeStrategy.update_finished" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="onmt.translate.DecodeStrategy.update_finished">
+<span class="sig-name descname"><span class="pre">update_finished</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/decode_strategy.html#DecodeStrategy.update_finished"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.translate.DecodeStrategy.update_finished" title="Permalink to this definition">¶</a></dt>
 <dd><p>DecodeStrategy subclasses should override <a class="reference internal" href="#onmt.translate.DecodeStrategy.update_finished" title="onmt.translate.DecodeStrategy.update_finished"><code class="xref py py-func docutils literal notranslate"><span class="pre">update_finished()</span></code></a>.</p>
 <p><code class="docutils literal notranslate"><span class="pre">update_finished</span></code> is used to update <code class="docutils literal notranslate"><span class="pre">self.predictions</span></code>,
 <code class="docutils literal notranslate"><span class="pre">self.scores</span></code>, and other “output” attributes.</p>
@@ -416,28 +380,28 @@ used to prepare necessary ingredients for decode.</p>
 
 </dd></dl>
 
-<dl class="class">
-<dt id="onmt.translate.BeamSearch">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.translate.</code><code class="sig-name descname">BeamSearch</code><span class="sig-paren">(</span><em class="sig-param">beam_size</em>, <em class="sig-param">batch_size</em>, <em class="sig-param">pad</em>, <em class="sig-param">bos</em>, <em class="sig-param">eos</em>, <em class="sig-param">unk</em>, <em class="sig-param">start</em>, <em class="sig-param">n_best</em>, <em class="sig-param">global_scorer</em>, <em class="sig-param">min_length</em>, <em class="sig-param">max_length</em>, <em class="sig-param">return_attention</em>, <em class="sig-param">block_ngram_repeat</em>, <em class="sig-param">exclusion_tokens</em>, <em class="sig-param">stepwise_penalty</em>, <em class="sig-param">ratio</em>, <em class="sig-param">ban_unk_token</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam_search.html#BeamSearch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.BeamSearch" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.translate.beam_search.BeamSearchBase</span></code></p>
+<dl class="py class">
+<dt class="sig sig-object py" id="onmt.translate.BeamSearch">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">onmt.translate.</span></span><span class="sig-name descname"><span class="pre">BeamSearch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beam_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pad</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unk</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_best</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">global_scorer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_length</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_attention</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">block_ngram_repeat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclusion_tokens</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepwise_penalty</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ratio</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ban_unk_token</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam_search.html#BeamSearch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.translate.BeamSearch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BeamSearchBase</span></code></p>
 <p>Beam search for seq2seq/encoder-decoder models</p>
-<dl class="method">
-<dt id="onmt.translate.BeamSearch.initialize">
-<code class="sig-name descname">initialize</code><span class="sig-paren">(</span><em class="sig-param">enc_out</em>, <em class="sig-param">src_len</em>, <em class="sig-param">src_map=None</em>, <em class="sig-param">device=None</em>, <em class="sig-param">target_prefix=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam_search.html#BeamSearch.initialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.BeamSearch.initialize" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="onmt.translate.BeamSearch.initialize">
+<span class="sig-name descname"><span class="pre">initialize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">enc_out</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_len</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_map</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam_search.html#BeamSearch.initialize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.translate.BeamSearch.initialize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize for decoding.
 Repeat src objects <cite>beam_size</cite> times.</p>
 </dd></dl>
 
 </dd></dl>
 
-<dl class="function">
-<dt id="onmt.translate.greedy_search.sample_with_temperature">
-<code class="sig-prename descclassname">onmt.translate.greedy_search.</code><code class="sig-name descname">sample_with_temperature</code><span class="sig-paren">(</span><em class="sig-param">logits</em>, <em class="sig-param">sampling_temp</em>, <em class="sig-param">keep_topk</em>, <em class="sig-param">keep_topp</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/greedy_search.html#sample_with_temperature"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.greedy_search.sample_with_temperature" title="Permalink to this definition">¶</a></dt>
+<dl class="py function">
+<dt class="sig sig-object py" id="onmt.translate.greedy_search.sample_with_temperature">
+<span class="sig-prename descclassname"><span class="pre">onmt.translate.greedy_search.</span></span><span class="sig-name descname"><span class="pre">sample_with_temperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logits</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sampling_temp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_topk</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_topp</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/greedy_search.html#sample_with_temperature"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.translate.greedy_search.sample_with_temperature" title="Permalink to this definition">¶</a></dt>
 <dd><p>Select next tokens randomly from the top k possible next tokens.</p>
 <p>Samples from a categorical distribution over the <code class="docutils literal notranslate"><span class="pre">keep_topk</span></code> words using
 the category probabilities <code class="docutils literal notranslate"><span class="pre">logits</span> <span class="pre">/</span> <span class="pre">sampling_temp</span></code>.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>logits</strong> (<em>FloatTensor</em>) – Shaped <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">vocab_size)</span></code>.
 These can be logits (<code class="docutils literal notranslate"><span class="pre">(-inf,</span> <span class="pre">inf)</span></code>) or log-probs (<code class="docutils literal notranslate"><span class="pre">(-inf,</span> <span class="pre">0]</span></code>).
@@ -454,7 +418,7 @@ probability is greater than p. If used with keep_topk: both
 conditions will be applied</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><ul class="simple">
 <li><p>topk_ids: Shaped <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">1)</span></code>. These are
 the sampled word indices in the output vocab.</p></li>
@@ -463,22 +427,22 @@ are essentially <code class="docutils literal notranslate"><span class="pre">(lo
 </ul>
 </p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>(LongTensor, FloatTensor)</p>
 </dd>
 </dl>
 </dd></dl>
 
-<dl class="class">
-<dt id="onmt.translate.GreedySearch">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.translate.</code><code class="sig-name descname">GreedySearch</code><span class="sig-paren">(</span><em class="sig-param">pad</em>, <em class="sig-param">bos</em>, <em class="sig-param">eos</em>, <em class="sig-param">unk</em>, <em class="sig-param">start</em>, <em class="sig-param">batch_size</em>, <em class="sig-param">global_scorer</em>, <em class="sig-param">min_length</em>, <em class="sig-param">block_ngram_repeat</em>, <em class="sig-param">exclusion_tokens</em>, <em class="sig-param">return_attention</em>, <em class="sig-param">max_length</em>, <em class="sig-param">sampling_temp</em>, <em class="sig-param">keep_topk</em>, <em class="sig-param">keep_topp</em>, <em class="sig-param">beam_size</em>, <em class="sig-param">ban_unk_token</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/greedy_search.html#GreedySearch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.GreedySearch" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">onmt.translate.decode_strategy.DecodeStrategy</span></code></p>
+<dl class="py class">
+<dt class="sig sig-object py" id="onmt.translate.GreedySearch">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">onmt.translate.</span></span><span class="sig-name descname"><span class="pre">GreedySearch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pad</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unk</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">global_scorer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_length</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">block_ngram_repeat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclusion_tokens</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_attention</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sampling_temp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_topk</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_topp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beam_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ban_unk_token</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/greedy_search.html#GreedySearch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.translate.GreedySearch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#onmt.translate.DecodeStrategy" title="onmt.translate.decode_strategy.DecodeStrategy"><code class="xref py py-class docutils literal notranslate"><span class="pre">DecodeStrategy</span></code></a></p>
 <p>Select next tokens randomly from the top k possible next tokens.</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">scores</span></code> attribute’s lists are the score, after applying temperature,
 of the final prediction (either EOS or the final token in the event
 that <code class="docutils literal notranslate"><span class="pre">max_length</span></code> is reached)</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>pad</strong> (<em>int</em>) – See base.</p></li>
 <li><p><strong>bos</strong> (<em>int</em>) – See base.</p></li>
@@ -504,12 +468,12 @@ that <code class="docutils literal notranslate"><span class="pre">max_length</sp
 </ul>
 </dd>
 </dl>
-<dl class="method">
-<dt id="onmt.translate.GreedySearch.advance">
-<code class="sig-name descname">advance</code><span class="sig-paren">(</span><em class="sig-param">log_probs</em>, <em class="sig-param">attn</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/greedy_search.html#GreedySearch.advance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.GreedySearch.advance" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="onmt.translate.GreedySearch.advance">
+<span class="sig-name descname"><span class="pre">advance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log_probs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attn</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/greedy_search.html#GreedySearch.advance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.translate.GreedySearch.advance" title="Permalink to this definition">¶</a></dt>
 <dd><p>Select next tokens randomly from the top k possible next tokens.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>log_probs</strong> (<em>FloatTensor</em>) – Shaped <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">vocab_size)</span></code>.
 These can be logits (<code class="docutils literal notranslate"><span class="pre">(-inf,</span> <span class="pre">inf)</span></code>) or log-probs
@@ -523,36 +487,36 @@ to 1.)</p></li>
 </dl>
 </dd></dl>
 
-<dl class="method">
-<dt id="onmt.translate.GreedySearch.initialize">
-<code class="sig-name descname">initialize</code><span class="sig-paren">(</span><em class="sig-param">enc_out</em>, <em class="sig-param">src_len</em>, <em class="sig-param">src_map=None</em>, <em class="sig-param">device=None</em>, <em class="sig-param">target_prefix=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/greedy_search.html#GreedySearch.initialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.GreedySearch.initialize" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="onmt.translate.GreedySearch.initialize">
+<span class="sig-name descname"><span class="pre">initialize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">enc_out</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_len</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_map</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/greedy_search.html#GreedySearch.initialize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.translate.GreedySearch.initialize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize for decoding.</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="onmt.translate.GreedySearch.update_finished">
-<code class="sig-name descname">update_finished</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/greedy_search.html#GreedySearch.update_finished"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.GreedySearch.update_finished" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="onmt.translate.GreedySearch.update_finished">
+<span class="sig-name descname"><span class="pre">update_finished</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/greedy_search.html#GreedySearch.update_finished"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.translate.GreedySearch.update_finished" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finalize scores and predictions.</p>
 </dd></dl>
 
 </dd></dl>
 
-</div>
-<div class="section" id="scoring">
-<h2>Scoring<a class="headerlink" href="#scoring" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="onmt.translate.penalties.PenaltyBuilder">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.translate.penalties.</code><code class="sig-name descname">PenaltyBuilder</code><span class="sig-paren">(</span><em class="sig-param">cov_pen</em>, <em class="sig-param">length_pen</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/penalties.html#PenaltyBuilder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.penalties.PenaltyBuilder" title="Permalink to this definition">¶</a></dt>
+</section>
+<section id="scoring">
+<h2>Scoring<a class="headerlink" href="#scoring" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="onmt.translate.penalties.PenaltyBuilder">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">onmt.translate.penalties.</span></span><span class="sig-name descname"><span class="pre">PenaltyBuilder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cov_pen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length_pen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/penalties.html#PenaltyBuilder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.translate.penalties.PenaltyBuilder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Returns the Length and Coverage Penalty function for Beam Search.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>length_pen</strong> (<em>str</em>) – option name of length pen</p></li>
 <li><p><strong>cov_pen</strong> (<em>str</em>) – option name of cov pen</p></li>
 </ul>
 </dd>
-<dt class="field-even">Variables</dt>
+<dt class="field-even">Variables<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>has_cov_pen</strong> (<em>bool</em>) – Whether coverage penalty is None (applying it
 is a no-op). Note that the converse isn’t true. Setting beta
@@ -566,57 +530,57 @@ the length penalty.</p></li>
 </ul>
 </dd>
 </dl>
-<dl class="method">
-<dt id="onmt.translate.penalties.PenaltyBuilder.coverage_none">
-<code class="sig-name descname">coverage_none</code><span class="sig-paren">(</span><em class="sig-param">cov</em>, <em class="sig-param">beta=0.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/penalties.html#PenaltyBuilder.coverage_none"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.penalties.PenaltyBuilder.coverage_none" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="onmt.translate.penalties.PenaltyBuilder.coverage_none">
+<span class="sig-name descname"><span class="pre">coverage_none</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cov</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/penalties.html#PenaltyBuilder.coverage_none"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.translate.penalties.PenaltyBuilder.coverage_none" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns zero as penalty</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="onmt.translate.penalties.PenaltyBuilder.coverage_summary">
-<code class="sig-name descname">coverage_summary</code><span class="sig-paren">(</span><em class="sig-param">cov</em>, <em class="sig-param">beta=0.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/penalties.html#PenaltyBuilder.coverage_summary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.penalties.PenaltyBuilder.coverage_summary" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="onmt.translate.penalties.PenaltyBuilder.coverage_summary">
+<span class="sig-name descname"><span class="pre">coverage_summary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cov</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/penalties.html#PenaltyBuilder.coverage_summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.translate.penalties.PenaltyBuilder.coverage_summary" title="Permalink to this definition">¶</a></dt>
 <dd><p>Our summary penalty.</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="onmt.translate.penalties.PenaltyBuilder.coverage_wu">
-<code class="sig-name descname">coverage_wu</code><span class="sig-paren">(</span><em class="sig-param">cov</em>, <em class="sig-param">beta=0.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/penalties.html#PenaltyBuilder.coverage_wu"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.penalties.PenaltyBuilder.coverage_wu" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="onmt.translate.penalties.PenaltyBuilder.coverage_wu">
+<span class="sig-name descname"><span class="pre">coverage_wu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cov</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/penalties.html#PenaltyBuilder.coverage_wu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.translate.penalties.PenaltyBuilder.coverage_wu" title="Permalink to this definition">¶</a></dt>
 <dd><p>GNMT coverage re-ranking score.</p>
-<p>See “Google’s Neural Machine Translation System” <a class="bibtex reference internal" href="ref.html#wu2016google" id="id2">[WSC+16]</a>.
+<p>See “Google’s Neural Machine Translation System” <span id="id2">[<a class="reference internal" href="ref.html#id12" title="Yonghui Wu, Mike Schuster, Zhifeng Chen, Quoc V Le, Mohammad Norouzi, Wolfgang Macherey, Maxim Krikun, Yuan Cao, Qin Gao, Klaus Macherey, and others. Google's neural machine translation system: bridging the gap between human and machine translation. arXiv preprint arXiv:1609.08144, 2016.">WSC+16</a>]</span>.
 <code class="docutils literal notranslate"><span class="pre">cov</span></code> is expected to be sized <code class="docutils literal notranslate"><span class="pre">(*,</span> <span class="pre">seq_len)</span></code>, where <code class="docutils literal notranslate"><span class="pre">*</span></code> is
 probably <code class="docutils literal notranslate"><span class="pre">batch_size</span> <span class="pre">x</span> <span class="pre">beam_size</span></code> but could be several
 dimensions like <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">beam_size)</span></code>. If <code class="docutils literal notranslate"><span class="pre">cov</span></code> is attention,
 then the <code class="docutils literal notranslate"><span class="pre">seq_len</span></code> axis probably sums to (almost) 1.</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="onmt.translate.penalties.PenaltyBuilder.length_average">
-<code class="sig-name descname">length_average</code><span class="sig-paren">(</span><em class="sig-param">cur_len</em>, <em class="sig-param">alpha=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/penalties.html#PenaltyBuilder.length_average"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.penalties.PenaltyBuilder.length_average" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="onmt.translate.penalties.PenaltyBuilder.length_average">
+<span class="sig-name descname"><span class="pre">length_average</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cur_len</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/penalties.html#PenaltyBuilder.length_average"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.translate.penalties.PenaltyBuilder.length_average" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the current sequence length.</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="onmt.translate.penalties.PenaltyBuilder.length_none">
-<code class="sig-name descname">length_none</code><span class="sig-paren">(</span><em class="sig-param">cur_len</em>, <em class="sig-param">alpha=0.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/penalties.html#PenaltyBuilder.length_none"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.penalties.PenaltyBuilder.length_none" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="onmt.translate.penalties.PenaltyBuilder.length_none">
+<span class="sig-name descname"><span class="pre">length_none</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cur_len</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/penalties.html#PenaltyBuilder.length_none"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.translate.penalties.PenaltyBuilder.length_none" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns unmodified scores.</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="onmt.translate.penalties.PenaltyBuilder.length_wu">
-<code class="sig-name descname">length_wu</code><span class="sig-paren">(</span><em class="sig-param">cur_len</em>, <em class="sig-param">alpha=0.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/penalties.html#PenaltyBuilder.length_wu"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.penalties.PenaltyBuilder.length_wu" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="onmt.translate.penalties.PenaltyBuilder.length_wu">
+<span class="sig-name descname"><span class="pre">length_wu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cur_len</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/penalties.html#PenaltyBuilder.length_wu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.translate.penalties.PenaltyBuilder.length_wu" title="Permalink to this definition">¶</a></dt>
 <dd><p>GNMT length re-ranking score.</p>
-<p>See “Google’s Neural Machine Translation System” <a class="bibtex reference internal" href="ref.html#wu2016google" id="id3">[WSC+16]</a>.</p>
+<p>See “Google’s Neural Machine Translation System” <span id="id3">[<a class="reference internal" href="ref.html#id12" title="Yonghui Wu, Mike Schuster, Zhifeng Chen, Quoc V Le, Mohammad Norouzi, Wolfgang Macherey, Maxim Krikun, Yuan Cao, Qin Gao, Klaus Macherey, and others. Google's neural machine translation system: bridging the gap between human and machine translation. arXiv preprint arXiv:1609.08144, 2016.">WSC+16</a>]</span>.</p>
 </dd></dl>
 
 </dd></dl>
 
-<dl class="class">
-<dt id="onmt.translate.GNMTGlobalScorer">
-<em class="property">class </em><code class="sig-prename descclassname">onmt.translate.</code><code class="sig-name descname">GNMTGlobalScorer</code><span class="sig-paren">(</span><em class="sig-param">alpha</em>, <em class="sig-param">beta</em>, <em class="sig-param">length_penalty</em>, <em class="sig-param">coverage_penalty</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam_search.html#GNMTGlobalScorer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#onmt.translate.GNMTGlobalScorer" title="Permalink to this definition">¶</a></dt>
+<dl class="py class">
+<dt class="sig sig-object py" id="onmt.translate.GNMTGlobalScorer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">onmt.translate.</span></span><span class="sig-name descname"><span class="pre">GNMTGlobalScorer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length_penalty</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coverage_penalty</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/beam_search.html#GNMTGlobalScorer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.translate.GNMTGlobalScorer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>NMT re-ranking.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>alpha</strong> (<em>float</em>) – Length parameter.</p></li>
 <li><p><strong>beta</strong> (<em>float</em>) – Coverage parameter.</p></li>
@@ -624,7 +588,7 @@ then the <code class="docutils literal notranslate"><span class="pre">seq_len</s
 <li><p><strong>coverage_penalty</strong> (<em>str</em>) – Coverage penalty strategy.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Variables</dt>
+<dt class="field-even">Variables<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>alpha</strong> (<em>float</em>) – See above.</p></li>
 <li><p><strong>beta</strong> (<em>float</em>) – See above.</p></li>
@@ -637,56 +601,38 @@ then the <code class="docutils literal notranslate"><span class="pre">seq_len</s
 </dl>
 </dd></dl>
 
-</div>
-</div>
+</section>
+</section>
 
 
            </div>
-           
           </div>
-          <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="onmt.translate.translation_server.html" class="btn btn-neutral float-right" title="Server" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="onmt.modules.html" class="btn btn-neutral float-left" title="Modules" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="onmt.modules.html" class="btn btn-neutral float-left" title="Modules" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="onmt.translate.translation_server.html" class="btn btn-neutral float-right" title="Server" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
-  
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &copy; Copyright 2017, OpenNMT
-
-    </p>
+    <p>&#169; Copyright 2017-2023, OpenNMT.</p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
-
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

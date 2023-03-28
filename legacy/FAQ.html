@@ -1,113 +1,87 @@
-
-
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html5" lang="EN" >
 <head>
-  <meta charset="utf-8">
-  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FAQ (Legacy version) &mdash; OpenNMT-py  documentation</title>
+      <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
   
-
-  
-  
-  
-  
-
-  
-  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script src="../_static/jquery.js"></script>
-        <script src="../_static/underscore.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/doctools.js"></script>
-        <script src="../_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    
-    <script type="text/javascript" src="../_static/js/theme.js"></script>
-
-    
-
-  
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
+        <script src="../_static/sphinx_highlight.js"></script>
+        <script src="https://unpkg.com/mermaid@9.4.0/dist/mermaid.min.js"></script>
+        <script>mermaid.initialize({startOnLoad:true});</script>
+    <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Image to Text" href="im2text.html" />
     <link rel="prev" title="Data Loaders" href="../onmt.inputters.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="../index.html" class="icon icon-home"> OpenNMT-py
           
-
-          
+          <a href="../index.html" class="icon icon-home">
+            OpenNMT-py
           </a>
-
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Getting Started</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../main.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changes.html">Versions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../CONTRIBUTING.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ref.html">References</a></li>
 </ul>
-<p class="caption"><span class="caption-text">FAQ</span></p>
+<p class="caption" role="heading"><span class="caption-text">Frequently Asked Questions</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html">How do I use my v2 models in v3 ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-do-i-train-the-transformer-model">How do I train the Transformer model?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#performance-tips">Performance tips</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-to-use-lora-to-finetune-a-big-model">How to use LoRa to finetune a big model ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Examples</span></p>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../examples/Translation.html">Translation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../examples/Summarization.html">Summarization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../examples/LanguageModelGeneration.html">Language Model Generation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../examples/GGNN.html">Gated Graph Sequence Neural Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/wmt17/Translation.html">Translation WMT17 en-de</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/wiki_103/LanguageModelGeneration.html">Language Model Wiki-103</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/summary/Summarization.html">Summarization CNN/DM</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/ggnn/GGNN.html">Gated Graph Neural Networks</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Scripts</span></p>
+<p class="caption" role="heading"><span class="caption-text">Scripts</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../options/build_vocab.html">Build Vocab</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../options/train.html">Train</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../options/translate.html">Translate</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../options/server.html">Server</a></li>
 </ul>
-<p class="caption"><span class="caption-text">API</span></p>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../onmt.html">Framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../onmt.modules.html">Modules</a></li>
@@ -115,7 +89,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../onmt.translate.translation_server.html">Server</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../onmt.inputters.html">Data Loaders</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Legacy</span></p>
+<p class="caption" role="heading"><span class="caption-text">Legacy</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">FAQ (Legacy version)</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a><ul>
@@ -142,73 +116,35 @@
 <li class="toctree-l1"><a class="reference internal" href="vid2text.html">Video to Text</a></li>
 </ul>
 
-            
-          
         </div>
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../index.html">OpenNMT-py</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../index.html">Docs</a> &raquo;</li>
-        
-      <li>FAQ (Legacy version)</li>
-    
-    
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">FAQ (Legacy version)</li>
       <li class="wy-breadcrumbs-aside">
-        
-            
             <a href="../_sources/legacy/FAQ.md.txt" rel="nofollow"> View page source</a>
-          
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="faq-legacy-version">
-<h1>FAQ (Legacy version)<a class="headerlink" href="#faq-legacy-version" title="Permalink to this headline">¶</a></h1>
-<p>This is the FAQ for the legacy version of OpenNMT-py (prior to OpenNMT-py v2.0 release).</p>
-<div class="section" id="how-do-i-use-pretrained-embeddings-e-g-glove">
-<h2>How do I use Pretrained embeddings (e.g. GloVe)?<a class="headerlink" href="#how-do-i-use-pretrained-embeddings-e-g-glove" title="Permalink to this headline">¶</a></h2>
+             
+  <section id="faq-legacy-version">
+<h1>FAQ (Legacy version)<a class="headerlink" href="#faq-legacy-version" title="Permalink to this heading">¶</a></h1>
+<p>This is the FAQ for the legacy version 1 of OpenNMT-py</p>
+<section id="how-do-i-use-pretrained-embeddings-e-g-glove">
+<h2>How do I use Pretrained embeddings (e.g. GloVe)?<a class="headerlink" href="#how-do-i-use-pretrained-embeddings-e-g-glove" title="Permalink to this heading">¶</a></h2>
 <p>Using vocabularies from OpenNMT-py preprocessing outputs, <code class="docutils literal notranslate"><span class="pre">embeddings_to_torch.py</span></code> to generate encoder and decoder embeddings initialized with GloVe’s values.</p>
 <p>the script is a slightly modified version of ylhsieh’s one2.</p>
 <p>Usage:</p>
@@ -221,8 +157,8 @@
 </pre></div>
 </div>
 <p>Run embeddings_to_torch.py -h for more usagecomplete info.</p>
-<div class="section" id="example">
-<h3>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h3>
+<section id="example">
+<h3>Example<a class="headerlink" href="#example" title="Permalink to this heading">¶</a></h3>
 <ol>
 <li><p>Get GloVe files:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span><span class="s2">&quot;glove_dir&quot;</span>
@@ -261,10 +197,10 @@ unzip<span class="w"> </span>glove.6B.zip<span class="w"> </span>-d<span class="
 </div>
 </li>
 </ol>
-</div>
-</div>
-<div class="section" id="how-do-i-use-the-transformer-model">
-<h2>How do I use the Transformer model?<a class="headerlink" href="#how-do-i-use-the-transformer-model" title="Permalink to this headline">¶</a></h2>
+</section>
+</section>
+<section id="how-do-i-use-the-transformer-model">
+<h2>How do I use the Transformer model?<a class="headerlink" href="#how-do-i-use-the-transformer-model" title="Permalink to this heading">¶</a></h2>
 <p>The transformer model is very sensitive to hyperparameters. To run it
 effectively you need to set a bunch of different options that mimic the Google
 setup. We have confirmed the following command can replicate their WMT results.</p>
@@ -287,9 +223,9 @@ setup. We have confirmed the following command can replicate their WMT results.<
 <li><p><code class="docutils literal notranslate"><span class="pre">batch_type</span> <span class="pre">tokens</span></code>, <code class="docutils literal notranslate"><span class="pre">normalization</span> <span class="pre">tokens</span></code>, <code class="docutils literal notranslate"><span class="pre">accum_count</span> <span class="pre">4</span></code>: batch and normalize based on number of tokens and not sentences. Compute gradients based on four batches.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">label_smoothing</span> <span class="pre">0.1</span></code>: use label smoothing loss.</p></li>
 </ul>
-</div>
-<div class="section" id="do-you-support-multi-gpu">
-<h2>Do you support multi-gpu?<a class="headerlink" href="#do-you-support-multi-gpu" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="do-you-support-multi-gpu">
+<h2>Do you support multi-gpu?<a class="headerlink" href="#do-you-support-multi-gpu" title="Permalink to this heading">¶</a></h2>
 <p>First you need to make sure you <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">CUDA_VISIBLE_DEVICES=0,1,2,3</span></code>.</p>
 <p>If you want to use GPU id 1 and 3 of your OS, you will need to <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">CUDA_VISIBLE_DEVICES=1,3</span></code></p>
 <p>Both <code class="docutils literal notranslate"><span class="pre">-world_size</span></code> and <code class="docutils literal notranslate"><span class="pre">-gpu_ranks</span></code> need to be set. E.g. <code class="docutils literal notranslate"><span class="pre">-world_size</span> <span class="pre">4</span> <span class="pre">-gpu_ranks</span> <span class="pre">0</span> <span class="pre">1</span> <span class="pre">2</span> <span class="pre">3</span></code> will use 4 GPU on this node only.</p>
@@ -303,16 +239,16 @@ setup. We have confirmed the following command can replicate their WMT results.<
 <p><strong>Note:</strong></p>
 <p>When training on several GPUs, you can’t have them in ‘Exclusive’ compute mode (<code class="docutils literal notranslate"><span class="pre">nvidia-smi</span> <span class="pre">-c</span> <span class="pre">3</span></code>).</p>
 <p>The multi-gpu setup relies on a Producer/Consumer setup. This setup means there will be <code class="docutils literal notranslate"><span class="pre">2&lt;n_gpu&gt;</span> <span class="pre">+</span> <span class="pre">1</span></code> processes spawned, with 2 processes per GPU, one for model training and one (Consumer) that hosts a <code class="docutils literal notranslate"><span class="pre">Queue</span></code> of batches that will be processed next. The additional process is the Producer, creating batches and sending them to the Consumers. This setup is beneficial for both wall time and memory, since it loads data shards ‘in advance’, and does not require to load it for each GPU process.</p>
-</div>
-<div class="section" id="how-can-i-ensemble-models-at-inference">
-<h2>How can I ensemble Models at inference?<a class="headerlink" href="#how-can-i-ensemble-models-at-inference" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="how-can-i-ensemble-models-at-inference">
+<h2>How can I ensemble Models at inference?<a class="headerlink" href="#how-can-i-ensemble-models-at-inference" title="Permalink to this heading">¶</a></h2>
 <p>You can specify several models in the translate.py command line: -model model1_seed1 model2_seed2
 Bear in mind that your models must share the same target vocabulary.</p>
-</div>
-<div class="section" id="how-can-i-weight-different-corpora-at-training">
-<h2>How can I weight different corpora at training?<a class="headerlink" href="#how-can-i-weight-different-corpora-at-training" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="preprocessing">
-<h3>Preprocessing<a class="headerlink" href="#preprocessing" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="how-can-i-weight-different-corpora-at-training">
+<h2>How can I weight different corpora at training?<a class="headerlink" href="#how-can-i-weight-different-corpora-at-training" title="Permalink to this heading">¶</a></h2>
+<section id="preprocessing">
+<h3>Preprocessing<a class="headerlink" href="#preprocessing" title="Permalink to this heading">¶</a></h3>
 <p>We introduced <code class="docutils literal notranslate"><span class="pre">-train_ids</span></code> which is a list of IDs that will be given to the preprocessed shards.</p>
 <p>E.g. we have two corpora : <code class="docutils literal notranslate"><span class="pre">parallel.en</span></code> and  <code class="docutils literal notranslate"><span class="pre">parallel.de</span></code> + <code class="docutils literal notranslate"><span class="pre">from_backtranslation.en</span></code> <code class="docutils literal notranslate"><span class="pre">from_backtranslation.de</span></code>, we can pass the following in the <code class="docutils literal notranslate"><span class="pre">preprocess.py</span></code> command:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>...
@@ -324,9 +260,9 @@ Bear in mind that your models must share the same target vocabulary.</p>
 </pre></div>
 </div>
 <p>and it will dump <code class="docutils literal notranslate"><span class="pre">my_data.train_A.X.pt</span></code> based on <code class="docutils literal notranslate"><span class="pre">parallel.en</span></code>//<code class="docutils literal notranslate"><span class="pre">parallel.de</span></code> and <code class="docutils literal notranslate"><span class="pre">my_data.train_B.X.pt</span></code> based on <code class="docutils literal notranslate"><span class="pre">from_backtranslation.en</span></code>//<code class="docutils literal notranslate"><span class="pre">from_backtranslation.de</span></code>.</p>
-</div>
-<div class="section" id="training">
-<h3>Training<a class="headerlink" href="#training" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="training">
+<h3>Training<a class="headerlink" href="#training" title="Permalink to this heading">¶</a></h3>
 <p>We introduced <code class="docutils literal notranslate"><span class="pre">-data_ids</span></code> based on the same principle as above, as well as <code class="docutils literal notranslate"><span class="pre">-data_weights</span></code>, which is the list of the weight each corpus should have.
 E.g.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>...
@@ -338,23 +274,23 @@ E.g.</p>
 </div>
 <p>will mean that we’ll look for <code class="docutils literal notranslate"><span class="pre">my_data.train_A.*.pt</span></code> and <code class="docutils literal notranslate"><span class="pre">my_data.train_B.*.pt</span></code>, and that when building batches, we’ll take 1 example from corpus A, then 7 examples from corpus B, and so on.</p>
 <p><strong>Warning</strong>: This means that we’ll load as many shards as we have <code class="docutils literal notranslate"><span class="pre">-data_ids</span></code>, in order to produce batches containing data from every corpus. It may be a good idea to reduce the <code class="docutils literal notranslate"><span class="pre">-shard_size</span></code> at preprocessing.</p>
-</div>
-</div>
-<div class="section" id="can-i-get-word-alignment-while-translating">
-<h2>Can I get word alignment while translating?<a class="headerlink" href="#can-i-get-word-alignment-while-translating" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="raw-alignments-from-averaging-transformer-attention-heads">
-<h3>Raw alignments from averaging Transformer attention heads<a class="headerlink" href="#raw-alignments-from-averaging-transformer-attention-heads" title="Permalink to this headline">¶</a></h3>
+</section>
+</section>
+<section id="can-i-get-word-alignment-while-translating">
+<h2>Can I get word alignment while translating?<a class="headerlink" href="#can-i-get-word-alignment-while-translating" title="Permalink to this heading">¶</a></h2>
+<section id="raw-alignments-from-averaging-transformer-attention-heads">
+<h3>Raw alignments from averaging Transformer attention heads<a class="headerlink" href="#raw-alignments-from-averaging-transformer-attention-heads" title="Permalink to this heading">¶</a></h3>
 <p>Currently, we support producing word alignment while translating for Transformer based models. Using <code class="docutils literal notranslate"><span class="pre">-report_align</span></code> when calling <code class="docutils literal notranslate"><span class="pre">translate.py</span></code> will output the inferred alignments in Pharaoh format. Those alignments are computed from an argmax on the average of the attention heads of the <em>second to last</em> decoder layer. The resulting alignment src-tgt (Pharaoh) will be pasted to the translation sentence, separated by <code class="docutils literal notranslate"><span class="pre">|||</span></code>.
 Note: The <em>second to last</em> default behaviour was empirically determined. It is not the same as the paper (they take the <em>penultimate</em> layer), probably because of light differences in the architecture.</p>
 <ul class="simple">
 <li><p>alignments use the standard “Pharaoh format”, where a pair <code class="docutils literal notranslate"><span class="pre">i-j</span></code> indicates the i<sub>th</sub> word of source language is aligned to j<sub>th</sub> word of target language.</p></li>
-<li><p>Example: {‘src’: ‘das stimmt nicht !’; ‘output’: ‘that is not true ! ||| 0-0 0-1 1-2 2-3 1-4 1-5 3-6’}</p></li>
+<li><p>Example: {’src’: ‘das stimmt nicht !’; ‘output’: ‘that is not true ! ||| 0-0 0-1 1-2 2-3 1-4 1-5 3-6’}</p></li>
 <li><p>Using the<code class="docutils literal notranslate"><span class="pre">-tgt</span></code> option when calling <code class="docutils literal notranslate"><span class="pre">translate.py</span></code>, we output alignments between the source and the gold target rather than the inferred target, assuming we’re doing evaluation.</p></li>
 <li><p>To convert subword alignments to word alignments, or symetrize bidirectional alignments, please refer to the <a class="reference external" href="https://github.com/lilt/alignment-scripts">lilt scripts</a>.</p></li>
 </ul>
-</div>
-<div class="section" id="supervised-learning-on-a-specific-head">
-<h3>Supervised learning on a specific head<a class="headerlink" href="#supervised-learning-on-a-specific-head" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="supervised-learning-on-a-specific-head">
+<h3>Supervised learning on a specific head<a class="headerlink" href="#supervised-learning-on-a-specific-head" title="Permalink to this heading">¶</a></h3>
 <p>The quality of output alignments can be further improved by providing reference alignments while training. This will invoke multi-task learning on translation and alignment. This is an implementation based on the paper <a class="reference external" href="https://arxiv.org/abs/1909.02074">Jointly Learning to Align and Translate with Transformer Models</a>.</p>
 <p>The data need to be preprocessed with the reference alignments in order to learn the supervised task.</p>
 <p>When calling <code class="docutils literal notranslate"><span class="pre">preprocess.py</span></code>, add:</p>
@@ -371,57 +307,39 @@ The reference alignment file(s) could be generated by <a class="reference extern
 <li><p><code class="docutils literal notranslate"><span class="pre">-alignment_heads</span></code>:  number of alignment heads for the alignment task - should be set to 1 for the supervised task, and preferably kept to default (or same as <code class="docutils literal notranslate"><span class="pre">num_heads</span></code>) for the average task;</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">-full_context_alignment</span></code>: do full context decoder pass (no future mask) when computing alignments. This will slow down the training (~12% in terms of tok/s) but will be beneficial to generate better alignment.</p></li>
 </ul>
-</div>
-</div>
-</div>
+</section>
+</section>
+</section>
 
 
            </div>
-           
           </div>
-          <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="im2text.html" class="btn btn-neutral float-right" title="Image to Text" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="../onmt.inputters.html" class="btn btn-neutral float-left" title="Data Loaders" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../onmt.inputters.html" class="btn btn-neutral float-left" title="Data Loaders" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="im2text.html" class="btn btn-neutral float-right" title="Image to Text" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
-  
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &copy; Copyright 2017, OpenNMT
-
-    </p>
+    <p>&#169; Copyright 2017-2023, OpenNMT.</p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
-
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

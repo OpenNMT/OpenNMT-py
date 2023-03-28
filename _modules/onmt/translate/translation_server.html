@@ -1,112 +1,84 @@
-
-
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html5" lang="EN" >
 <head>
-  <meta charset="utf-8">
-  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>onmt.translate.translation_server &mdash; OpenNMT-py  documentation</title>
+      <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
   
-
-  
-  
-  
-  
-
-  
-  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-        <script src="../../../_static/jquery.js"></script>
-        <script src="../../../_static/underscore.js"></script>
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
         <script src="../../../_static/doctools.js"></script>
-        <script src="../../../_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-        <script src="https://unpkg.com/mermaid@8.4.8/dist/mermaid.min.js"></script>
-    
-    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
-    
-
-  
-  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+        <script src="../../../_static/sphinx_highlight.js"></script>
+        <script src="https://unpkg.com/mermaid@9.4.0/dist/mermaid.min.js"></script>
+        <script>mermaid.initialize({startOnLoad:true});</script>
+    <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="../../../index.html" class="icon icon-home"> OpenNMT-py
           
-
-          
+          <a href="../../../index.html" class="icon icon-home">
+            OpenNMT-py
           </a>
-
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Getting Started</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../main.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changes.html">Versions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../CONTRIBUTING.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../ref.html">References</a></li>
 </ul>
-<p class="caption"><span class="caption-text">FAQ</span></p>
+<p class="caption" role="heading"><span class="caption-text">Frequently Asked Questions</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">How do I use my v2 models in v3 ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-do-i-train-the-transformer-model">How do I train the Transformer model?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#performance-tips">Performance tips</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-to-use-lora-to-finetune-a-big-model">How to use LoRa to finetune a big model ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Examples</span></p>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../examples/Translation.html">Translation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../examples/Summarization.html">Summarization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../examples/LanguageModelGeneration.html">Language Model Generation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../examples/GGNN.html">Gated Graph Sequence Neural Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/wmt17/Translation.html">Translation WMT17 en-de</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/wiki_103/LanguageModelGeneration.html">Language Model Wiki-103</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/summary/Summarization.html">Summarization CNN/DM</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/ggnn/GGNN.html">Gated Graph Neural Networks</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Scripts</span></p>
+<p class="caption" role="heading"><span class="caption-text">Scripts</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../options/build_vocab.html">Build Vocab</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../options/train.html">Train</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../options/translate.html">Translate</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../options/server.html">Server</a></li>
 </ul>
-<p class="caption"><span class="caption-text">API</span></p>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../onmt.html">Framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../onmt.modules.html">Modules</a></li>
@@ -114,7 +86,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../onmt.translate.translation_server.html">Server</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../onmt.inputters.html">Data Loaders</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Legacy</span></p>
+<p class="caption" role="heading"><span class="caption-text">Legacy</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../legacy/FAQ.html">FAQ (Legacy version)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../legacy/im2text.html">Image to Text</a></li>
@@ -122,69 +94,33 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../legacy/vid2text.html">Video to Text</a></li>
 </ul>
 
-            
-          
         </div>
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">OpenNMT-py</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../../index.html">Docs</a> &raquo;</li>
-        
-          <li><a href="../../index.html">Module code</a> &raquo;</li>
-        
-      <li>onmt.translate.translation_server</li>
-    
-    
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">onmt.translate.translation_server</li>
       <li class="wy-breadcrumbs-aside">
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <h1>Source code for onmt.translate.translation_server</h1><div class="highlight"><pre>
 <span></span><span class="ch">#!/usr/bin/env python</span>
-<span class="sd">&quot;&quot;&quot;REST Translation server.&quot;&quot;&quot;</span>
+
 <span class="kn">import</span> <span class="nn">codecs</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">os</span>
@@ -199,7 +135,6 @@
 
 <span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">islice</span><span class="p">,</span> <span class="n">zip_longest</span>
 <span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
 <span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">Namespace</span>
 
 <span class="kn">from</span> <span class="nn">onmt.constants</span> <span class="kn">import</span> <span class="n">DefaultTokens</span>
@@ -210,11 +145,16 @@
 <span class="kn">from</span> <span class="nn">onmt.utils.parse</span> <span class="kn">import</span> <span class="n">ArgumentParser</span>
 <span class="kn">from</span> <span class="nn">onmt.translate.translator</span> <span class="kn">import</span> <span class="n">build_translator</span>
 <span class="kn">from</span> <span class="nn">onmt.transforms.features</span> <span class="kn">import</span> <span class="n">InferFeatsTransform</span>
-<span class="kn">from</span> <span class="nn">onmt.inputters.text_utils</span> <span class="kn">import</span> <span class="n">textbatch_to_tensor</span>
+<span class="kn">from</span> <span class="nn">onmt.inputters.text_utils</span> <span class="kn">import</span> <span class="p">(</span><span class="n">textbatch_to_tensor</span><span class="p">,</span>
+                                       <span class="n">parse_features</span><span class="p">,</span>
+                                       <span class="n">append_features_to_text</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">onmt.inputters.inputter</span> <span class="kn">import</span> <span class="n">IterOnDevice</span>
+<span class="kn">from</span> <span class="nn">onmt.utils.alignment</span> <span class="kn">import</span> <span class="n">build_align_pharaoh</span>
 
 
 <span class="k">def</span> <span class="nf">critical</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorator for critical section (mutually exclusive code)&quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="n">server_model</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">server_model</span><span class="o">.</span><span class="n">running_lock</span><span class="o">.</span><span class="n">acquire</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="mi">120</span><span class="p">):</span>
@@ -264,23 +204,22 @@
 
 
 <span class="k">class</span> <span class="nc">CTranslate2Translator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    This class wraps the ctranslate2.Translator object to</span>
-<span class="sd">    reproduce the onmt.translate.translator API.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This class wraps the ``ctranslate2.Translator`` object to</span>
+<span class="sd">    reproduce the ``onmt.translate.translator`` API.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_path</span><span class="p">,</span> <span class="n">ct2_translator_args</span><span class="p">,</span>
                  <span class="n">ct2_translate_batch_args</span><span class="p">,</span> <span class="n">target_prefix</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                 <span class="n">preload</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+                 <span class="n">preload</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">report_align</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="kn">import</span> <span class="nn">ctranslate2</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">translator</span> <span class="o">=</span> <span class="n">ctranslate2</span><span class="o">.</span><span class="n">Translator</span><span class="p">(</span>
             <span class="n">model_path</span><span class="p">,</span>
             <span class="o">**</span><span class="n">ct2_translator_args</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ct2_translate_batch_args</span> <span class="o">=</span> <span class="n">ct2_translate_batch_args</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">target_prefix</span> <span class="o">=</span> <span class="n">target_prefix</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">report_align</span> <span class="o">=</span> <span class="n">report_align</span>
         <span class="k">if</span> <span class="n">preload</span><span class="p">:</span>
             <span class="c1"># perform a first request to initialize everything</span>
-            <span class="n">dummy_translation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">([</span><span class="s2">&quot;a&quot;</span><span class="p">])</span>
+            <span class="n">dummy_translation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">([{</span><span class="s2">&quot;src&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;src&quot;</span><span class="p">:</span> <span class="s2">&quot;a&quot;</span><span class="p">}}])</span>
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Performed a dummy translation to initialize the model&quot;</span><span class="p">,</span>
                   <span class="n">dummy_translation</span><span class="p">)</span>
             <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
@@ -325,13 +264,18 @@
             <span class="n">setdefault_if_exists_must_match</span><span class="p">(</span>
                 <span class="n">ct2_translate_batch_args</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">translate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">texts_to_translate</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
-                  <span class="n">tgt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">src_feats</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="k">assert</span> <span class="p">(</span><span class="n">src_feats</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">src_feats</span> <span class="o">==</span> <span class="p">{}),</span> \
-            <span class="s2">&quot;CTranslate2 does not support source features&quot;</span>
-        <span class="n">batch</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">texts_to_translate</span><span class="p">]</span>
+    <span class="k">def</span> <span class="nf">translate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">examples</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">tgt</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s2">&quot;feats&quot;</span> <span class="ow">in</span> <span class="n">examples</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;src&quot;</span><span class="p">]:</span>
+            <span class="n">batch</span> <span class="o">=</span> <span class="p">[</span><span class="n">append_features_to_text</span><span class="p">(</span>
+                        <span class="n">ex</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">][</span><span class="s2">&quot;src&quot;</span><span class="p">],</span>
+                        <span class="n">ex</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">][</span><span class="s2">&quot;feats&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
+                     <span class="k">for</span> <span class="n">ex</span> <span class="ow">in</span> <span class="n">examples</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">batch</span> <span class="o">=</span> <span class="p">[</span><span class="n">ex</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">][</span><span class="s2">&quot;src&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">ex</span> <span class="ow">in</span> <span class="n">examples</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">tgt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">tgt</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">tgt</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_align</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ct2_translate_batch_args</span><span class="p">[</span><span class="s1">&#39;return_attention&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="n">preds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">translate_batch</span><span class="p">(</span>
             <span class="n">batch</span><span class="p">,</span>
             <span class="n">target_prefix</span><span class="o">=</span><span class="n">tgt</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_prefix</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
@@ -341,6 +285,22 @@
         <span class="n">scores</span> <span class="o">=</span> <span class="p">[[</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;score&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">ex</span><span class="p">]</span> <span class="k">for</span> <span class="n">ex</span> <span class="ow">in</span> <span class="n">preds</span><span class="p">]</span>
         <span class="n">predictions</span> <span class="o">=</span> <span class="p">[[</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;tokens&quot;</span><span class="p">])</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">ex</span><span class="p">]</span>
                        <span class="k">for</span> <span class="n">ex</span> <span class="ow">in</span> <span class="n">preds</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_align</span><span class="p">:</span>
+            <span class="n">attentions</span> <span class="o">=</span> <span class="p">[[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;attention&quot;</span><span class="p">])</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">ex</span><span class="p">]</span>
+                          <span class="k">for</span> <span class="n">ex</span> <span class="ow">in</span> <span class="n">preds</span><span class="p">]</span>
+            <span class="n">align_pharaohs</span> <span class="o">=</span> <span class="p">[[</span><span class="n">build_align_pharaoh</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">ex</span><span class="p">]</span>
+                              <span class="k">for</span> <span class="n">ex</span> <span class="ow">in</span> <span class="n">attentions</span><span class="p">]</span>
+            <span class="n">aligns</span> <span class="o">=</span> <span class="p">[[</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">ex</span><span class="p">]</span>
+                      <span class="k">for</span> <span class="n">ex</span> <span class="ow">in</span> <span class="n">align_pharaohs</span><span class="p">]</span>
+            <span class="n">predictions</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="p">[</span>
+                    <span class="n">pred</span> <span class="o">+</span> <span class="n">DefaultTokens</span><span class="o">.</span><span class="n">ALIGNMENT_SEPARATOR</span> <span class="o">+</span> <span class="n">align</span>
+                    <span class="k">for</span> <span class="n">pred</span><span class="p">,</span> <span class="n">align</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">item</span><span class="p">)</span>
+                <span class="p">]</span>
+                <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+                    <span class="n">predictions</span><span class="p">,</span> <span class="n">aligns</span>
+                <span class="p">)</span>
+            <span class="p">]</span>
         <span class="k">return</span> <span class="n">scores</span><span class="p">,</span> <span class="n">predictions</span>
 
     <span class="k">def</span> <span class="nf">to_cpu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -350,6 +310,17 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">load_model</span><span class="p">()</span>
 
 
+<span class="k">def</span> <span class="nf">parse_features_opts</span><span class="p">(</span><span class="n">conf</span><span class="p">):</span>
+    <span class="n">features_opt</span> <span class="o">=</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;features&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">features_opt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">features_opt</span><span class="p">[</span><span class="s2">&quot;n_src_feats&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">features_opt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n_src_feats&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">features_opt</span><span class="p">[</span><span class="s2">&quot;src_feats_defaults&quot;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">features_opt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;src_feats_defaults&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">features_opt</span><span class="p">[</span><span class="s2">&quot;reversible_tokenization&quot;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">features_opt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reversible_tokenization&quot;</span><span class="p">,</span> <span class="s2">&quot;joiner&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">features_opt</span>
+
+
 <div class="viewcode-block" id="TranslationServer"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.TranslationServer">[docs]</a><span class="k">class</span> <span class="nc">TranslationServer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">models</span> <span class="o">=</span> <span class="p">{}</span>
@@ -357,6 +328,7 @@
 
 <div class="viewcode-block" id="TranslationServer.start"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.TranslationServer.start">[docs]</a>    <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_file</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Read the config file and pre-/load the models.&quot;&quot;&quot;</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">config_file</span> <span class="o">=</span> <span class="n">config_file</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">confs</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
@@ -384,7 +356,7 @@
                                                       <span class="p">{}),</span>
                       <span class="s1">&#39;ct2_translate_batch_args&#39;</span><span class="p">:</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
                           <span class="s1">&#39;ct2_translate_batch_args&#39;</span><span class="p">,</span> <span class="p">{}),</span>
-                      <span class="s1">&#39;features_opt&#39;</span><span class="p">:</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;features&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                      <span class="s1">&#39;features_opt&#39;</span><span class="p">:</span> <span class="n">parse_features_opts</span><span class="p">(</span><span class="n">conf</span><span class="p">)</span>
                       <span class="p">}</span>
             <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">}</span>
             <span class="n">model_id</span> <span class="o">=</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
@@ -393,11 +365,11 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">preload_model</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">model_id</span><span class="o">=</span><span class="n">model_id</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="TranslationServer.clone_model"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.TranslationServer.clone_model">[docs]</a>    <span class="k">def</span> <span class="nf">clone_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_id</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Clone a model `model_id`.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Clone a model ``model_id``</span>
 
-<span class="sd">        Different options may be passed. If `opt` is None, it will use the</span>
-<span class="sd">        same set of options</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        Different options may be passed. If ``opt`` is None, it will use the</span>
+<span class="sd">        same set of options&quot;&quot;&quot;</span>
+
         <span class="k">if</span> <span class="n">model_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">opt</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">opt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="n">model_id</span><span class="p">]</span><span class="o">.</span><span class="n">user_opt</span>
@@ -407,8 +379,8 @@
             <span class="k">raise</span> <span class="n">ServerModelError</span><span class="p">(</span><span class="s2">&quot;No such model &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">model_id</span><span class="p">))</span></div>
 
 <div class="viewcode-block" id="TranslationServer.load_model"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.TranslationServer.load_model">[docs]</a>    <span class="k">def</span> <span class="nf">load_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">model_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">model_kwargs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load a model given a set of options</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load a model given a set of options&quot;&quot;&quot;</span>
+
         <span class="n">model_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">preload_model</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">model_id</span><span class="o">=</span><span class="n">model_id</span><span class="p">,</span> <span class="o">**</span><span class="n">model_kwargs</span><span class="p">)</span>
         <span class="n">load_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="n">model_id</span><span class="p">]</span><span class="o">.</span><span class="n">load_time</span>
 
@@ -417,8 +389,8 @@
 <div class="viewcode-block" id="TranslationServer.preload_model"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.TranslationServer.preload_model">[docs]</a>    <span class="k">def</span> <span class="nf">preload_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">model_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">model_kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Preloading the model: updating internal datastructure</span>
 
-<span class="sd">        It will effectively load the model if `load` is set</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        It will effectively load the model if ``load`` is set&quot;&quot;&quot;</span>
+
         <span class="k">if</span> <span class="n">model_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">model_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Model ID </span><span class="si">%d</span><span class="s2"> already exists&quot;</span> <span class="o">%</span> <span class="n">model_id</span><span class="p">)</span>
@@ -434,13 +406,12 @@
         <span class="k">return</span> <span class="n">model_id</span></div>
 
 <div class="viewcode-block" id="TranslationServer.run"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.TranslationServer.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Translate `inputs`</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Translate ``inputs``</span>
 
 <span class="sd">        We keep the same format as the Lua version i.e.</span>
 <span class="sd">        ``[{&quot;id&quot;: model_id, &quot;src&quot;: &quot;sequence to translate&quot;},{ ...}]``</span>
 
-<span class="sd">        We use inputs[0][&quot;id&quot;] as the model id</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        We use inputs[0][&quot;id&quot;] as the model id&quot;&quot;&quot;</span>
 
         <span class="n">model_id</span> <span class="o">=</span> <span class="n">inputs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">model_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="n">model_id</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -479,15 +450,14 @@
 <span class="sd">        tokenizer_opt (dict): Options for the tokenizer or None</span>
 <span class="sd">        postprocess_opt (list): Options for postprocess processus or None</span>
 <span class="sd">        custom_opt (dict): Custom options, can be used within preprocess or</span>
-<span class="sd">            postprocess, default None</span>
-<span class="sd">        load (bool): whether to load the model during :func:`__init__()`</span>
-<span class="sd">        timeout (int): Seconds before running :func:`do_timeout()`</span>
-<span class="sd">            Negative values means no timeout</span>
-<span class="sd">        on_timeout (str): Options are [&quot;to_cpu&quot;, &quot;unload&quot;]. Set what to do on</span>
-<span class="sd">            timeout (see :func:`do_timeout()`.)</span>
+<span class="sd">          postprocess, default None</span>
+<span class="sd">        load (bool): whether to load the model during :func: ``__init__()``</span>
+<span class="sd">        timeout (int): Seconds before running :func: ``do_timeout()``</span>
+<span class="sd">          Negative values means no timeout</span>
+<span class="sd">        on_timeout (str): Options are [to_cpu, unload]. Set what to do on</span>
+<span class="sd">        timeout (see :func: ``do_timeout()``.)</span>
 <span class="sd">        model_root (str): Path to the model directory</span>
-<span class="sd">            it must contain the model and tokenizer file</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">          it must contain the model and tokenizer file&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">model_id</span><span class="p">,</span> <span class="n">preprocess_opt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tokenizer_opt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">postprocess_opt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_opt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">load</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
@@ -514,7 +484,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">unload_timer</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">user_opt</span> <span class="o">=</span> <span class="n">opt</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tokenizers</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">feats_transform</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">log_file</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">log_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">model_root</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">log_file</span><span class="p">)</span>
@@ -557,6 +526,7 @@
                     <span class="s1">&#39;tgt&#39;</span><span class="p">:</span> <span class="n">tokenizer</span>
                 <span class="p">}</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">feats_transform</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">features_opt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">feats_transform</span> <span class="o">=</span> <span class="n">InferFeatsTransform</span><span class="p">(</span>
                 <span class="n">Namespace</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">features_opt</span><span class="p">))</span>
@@ -574,13 +544,13 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">stop_unload_timer</span><span class="p">()</span>
 
 <div class="viewcode-block" id="ServerModel.parse_opt"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.parse_opt">[docs]</a>    <span class="k">def</span> <span class="nf">parse_opt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">opt</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parse the option set passed by the user using `onmt.opts`</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parse the option set passed by the user using ``onmt.opts``</span>
 
-<span class="sd">       Args:</span>
-<span class="sd">           opt (dict): Options passed by the user</span>
+<span class="sd">        Args:</span>
+<span class="sd">            opt (dict): Options passed by the user</span>
 
-<span class="sd">       Returns:</span>
-<span class="sd">           opt (argparse.Namespace): full set of options for the Translator</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            opt (argparse.Namespace): full set of options for the Translator</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">prec_argv</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span>
@@ -632,7 +602,8 @@
                     <span class="n">ct2_translator_args</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ct2_translator_args</span><span class="p">,</span>
                     <span class="n">ct2_translate_batch_args</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ct2_translate_batch_args</span><span class="p">,</span>
                     <span class="n">target_prefix</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">tgt_file_prefix</span><span class="p">,</span>
-                    <span class="n">preload</span><span class="o">=</span><span class="n">preload</span><span class="p">)</span>
+                    <span class="n">preload</span><span class="o">=</span><span class="n">preload</span><span class="p">,</span>
+                    <span class="n">report_align</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">report_align</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">translator</span> <span class="o">=</span> <span class="n">build_translator</span><span class="p">(</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="p">,</span> <span class="n">report_score</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
@@ -647,15 +618,14 @@
 
     <span class="nd">@critical</span>
     <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Translate `inputs` using this model</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Translate ``inputs`` using this model</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            inputs (List[dict[str, str]]): [{&quot;src&quot;: &quot;...&quot;},{&quot;src&quot;: ...}]</span>
+<span class="sd">            inputs (List[dict[str, str]]): [{&#39;src&#39;: &#39;...&#39;},{&#39;src&#39;: &#39;...&#39;}]</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            result (list): translations</span>
-<span class="sd">            times (dict): containing times</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            times (dict): containing times&quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">stop_unload_timer</span><span class="p">()</span>
 
@@ -703,43 +673,43 @@
                 <span class="n">tok</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maybe_tokenize</span><span class="p">(</span><span class="n">seg</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">ref</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maybe_tokenize</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">&#39;tgt&#39;</span><span class="p">)</span>
-                <span class="n">inferred_feats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform_feats</span><span class="p">(</span><span class="n">seg</span><span class="p">,</span> <span class="n">tok</span><span class="p">,</span> <span class="n">feats</span><span class="p">)</span>
-                <span class="n">texts</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">tok</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="n">inferred_feats</span><span class="p">))</span>
+                <span class="n">feats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maybe_transform_feats</span><span class="p">(</span><span class="n">seg</span><span class="p">,</span> <span class="n">tok</span><span class="p">,</span> <span class="n">feats</span><span class="p">)</span>
+                <span class="n">texts</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">tok</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="n">feats</span><span class="p">))</span>
             <span class="n">tail_spaces</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">whitespaces_after</span><span class="p">)</span>
 
         <span class="n">empty_indices</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">texts_to_translate</span><span class="p">,</span> <span class="n">texts_ref</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
-        <span class="n">texts_features</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+        <span class="n">examples</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">tok</span><span class="p">,</span> <span class="n">ref_tok</span><span class="p">,</span> <span class="n">feats</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">texts</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">tok</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
                 <span class="n">empty_indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">texts_to_translate</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tok</span><span class="p">)</span>
-                <span class="n">texts_ref</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ref_tok</span><span class="p">)</span>
-                <span class="k">for</span> <span class="n">feat_name</span><span class="p">,</span> <span class="n">feat_values</span> <span class="ow">in</span> <span class="n">feats</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                    <span class="n">texts_features</span><span class="p">[</span><span class="n">feat_name</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">feat_values</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">any</span><span class="p">([</span><span class="n">item</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">texts_ref</span><span class="p">]):</span>
-            <span class="n">texts_ref</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">ex</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;src&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;src&quot;</span><span class="p">:</span> <span class="n">tok</span><span class="p">},</span>
+                    <span class="s2">&quot;tgt&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;tgt&quot;</span><span class="p">:</span> <span class="n">ref_tok</span><span class="p">}</span> <span class="k">if</span> <span class="n">ref_tok</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+                <span class="p">}</span>
+                <span class="k">if</span> <span class="n">feats</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">ex</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">][</span><span class="s2">&quot;feats&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">feats</span>
+                <span class="n">examples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span>
 
         <span class="n">scores</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">predictions</span> <span class="o">=</span> <span class="p">[]</span>
-
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">texts_to_translate</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">examples</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="p">,</span> <span class="n">CTranslate2Translator</span><span class="p">):</span>
                     <span class="n">scores</span><span class="p">,</span> <span class="n">predictions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span>
-                        <span class="n">texts_to_translate</span><span class="p">)</span>
+                        <span class="n">examples</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">infer_iter</span> <span class="o">=</span> <span class="n">textbatch_to_tensor</span><span class="p">(</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">vocabs</span><span class="p">,</span>
-                        <span class="n">texts_to_translate</span><span class="p">)</span>
-                    <span class="n">scores</span><span class="p">,</span> <span class="n">predictions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">_translate</span><span class="p">(</span>
-                        <span class="n">infer_iter</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">vocabs</span><span class="p">,</span> <span class="n">examples</span><span class="p">)</span>
+                    <span class="n">device</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">_dev</span><span class="o">.</span><span class="n">index</span>
+                              <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">_use_cuda</span> <span class="k">else</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="n">infer_iter</span> <span class="o">=</span> <span class="n">IterOnDevice</span><span class="p">(</span><span class="n">infer_iter</span><span class="p">,</span> <span class="n">device</span><span class="p">)</span>
+                    <span class="n">scores</span><span class="p">,</span> <span class="n">predictions</span> <span class="o">=</span> \
+                        <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">_translate</span><span class="p">(</span><span class="n">infer_iter</span><span class="p">)</span>
             <span class="k">except</span> <span class="p">(</span><span class="ne">RuntimeError</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                 <span class="n">err</span> <span class="o">=</span> <span class="s2">&quot;Error: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;repr(text_to_translate): &quot;</span>
-                                  <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="n">texts_to_translate</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;repr(examples): &quot;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="n">examples</span><span class="p">))</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;model: #</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_id</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;model opt: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">))</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">())</span>
@@ -754,7 +724,7 @@
 
         <span class="c1"># NOTE: translator returns lists of `n_best` list</span>
         <span class="k">def</span> <span class="nf">flatten_list</span><span class="p">(</span><span class="n">_list</span><span class="p">):</span> <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">_list</span><span class="p">,</span> <span class="p">[])</span>
-        <span class="n">tiled_texts</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">texts_to_translate</span>
+        <span class="n">tiled_texts</span> <span class="o">=</span> <span class="p">[</span><span class="n">ex</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">][</span><span class="s2">&quot;src&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">ex</span> <span class="ow">in</span> <span class="n">examples</span>
                        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">n_best</span><span class="p">)]</span>
         <span class="n">results</span> <span class="o">=</span> <span class="n">flatten_list</span><span class="p">(</span><span class="n">predictions</span><span class="p">)</span>
 
@@ -791,9 +761,8 @@
 
 <div class="viewcode-block" id="ServerModel.rebuild_seg_packages"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.rebuild_seg_packages">[docs]</a>    <span class="k">def</span> <span class="nf">rebuild_seg_packages</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">all_preprocessed</span><span class="p">,</span> <span class="n">results</span><span class="p">,</span>
                              <span class="n">scores</span><span class="p">,</span> <span class="n">aligns</span><span class="p">,</span> <span class="n">n_best</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Rebuild proper segment packages based on initial n_seg.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Rebuild proper segment packages based on initial n_seg.&quot;&quot;&quot;</span>
+
         <span class="n">offset</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">rebuilt_segs</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">avg_scores</span> <span class="o">=</span> <span class="p">[]</span>
@@ -819,8 +788,7 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Timeout function that frees GPU memory.</span>
 
 <span class="sd">        Moves the model to CPU or unloads it; depending on</span>
-<span class="sd">        attr`self.on_timemout` value</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        attr ``self.on_timemout`` value&quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_timeout</span> <span class="o">==</span> <span class="s2">&quot;unload&quot;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Timeout: unloading model </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_id</span><span class="p">)</span>
@@ -867,6 +835,7 @@
     <span class="nd">@critical</span>
     <span class="k">def</span> <span class="nf">to_cpu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Move the model to CPU and clear CUDA cache.&quot;&quot;&quot;</span>
+
         <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="p">)</span> <span class="o">==</span> <span class="n">CTranslate2Translator</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">to_cpu</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
@@ -876,6 +845,7 @@
 
 <div class="viewcode-block" id="ServerModel.to_gpu"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.to_gpu">[docs]</a>    <span class="k">def</span> <span class="nf">to_gpu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Move the model to GPU.&quot;&quot;&quot;</span>
+
         <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="p">)</span> <span class="o">==</span> <span class="n">CTranslate2Translator</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">to_gpu</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
@@ -883,15 +853,20 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="ServerModel.maybe_preprocess"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.maybe_preprocess">[docs]</a>    <span class="k">def</span> <span class="nf">maybe_preprocess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Preprocess the sequence (or not)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Preprocess the sequence (or not)&quot;&quot;&quot;</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">sequence</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;src&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">sequence</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span>
-            <span class="n">sequence</span><span class="p">[</span><span class="s2">&quot;seg&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">sequence</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
+            <span class="n">src</span><span class="p">,</span> <span class="n">src_feats</span> <span class="o">=</span> <span class="n">parse_features</span><span class="p">(</span>
+                <span class="n">sequence</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span>
+                <span class="n">n_feats</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">features_opt</span><span class="p">[</span><span class="s2">&quot;n_src_feats&quot;</span><span class="p">]</span>
+                         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">features_opt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">0</span><span class="p">),</span>
+                <span class="n">defaults</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">features_opt</span><span class="p">[</span><span class="s2">&quot;src_feats_defaults&quot;</span><span class="p">]</span>
+                          <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">features_opt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">))</span>
+            <span class="n">sequence</span><span class="p">[</span><span class="s2">&quot;seg&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">src</span><span class="p">]</span>
             <span class="n">sequence</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;src&quot;</span><span class="p">)</span>
             <span class="n">sequence</span><span class="p">[</span><span class="s2">&quot;ref&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">sequence</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ref&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)]</span>
-            <span class="n">sequence</span><span class="p">[</span><span class="s2">&quot;src_feats&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">sequence</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;src_feats&#39;</span><span class="p">,</span> <span class="p">{})]</span>
+            <span class="n">sequence</span><span class="p">[</span><span class="s2">&quot;src_feats&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">src_feats</span><span class="p">]</span>
             <span class="n">sequence</span><span class="p">[</span><span class="s2">&quot;n_seg&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">preprocess_opt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">preprocess</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span>
@@ -904,33 +879,32 @@
 <span class="sd">            sequence (str): The sequence to preprocess.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            sequence (str): The preprocessed sequence.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            sequence (str): The preprocessed sequence.&quot;&quot;&quot;</span>
+
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">preprocessor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No preprocessor loaded&quot;</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">function</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">preprocessor</span><span class="p">:</span>
             <span class="n">sequence</span> <span class="o">=</span> <span class="n">function</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">sequence</span></div>
 
-<div class="viewcode-block" id="ServerModel.transform_feats"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.transform_feats">[docs]</a>    <span class="k">def</span> <span class="nf">transform_feats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw_src</span><span class="p">,</span> <span class="n">tok_src</span><span class="p">,</span> <span class="n">feats</span><span class="p">):</span>
+<div class="viewcode-block" id="ServerModel.maybe_transform_feats"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.maybe_transform_feats">[docs]</a>    <span class="k">def</span> <span class="nf">maybe_transform_feats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw_src</span><span class="p">,</span> <span class="n">tok_src</span><span class="p">,</span> <span class="n">feats</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply InferFeatsTransform to features&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">features_opt</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">feats</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">feats_transform</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">feats</span>
         <span class="n">ex</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;src&quot;</span><span class="p">:</span> <span class="n">tok_src</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">),</span>
             <span class="s2">&quot;src_original&quot;</span><span class="p">:</span> <span class="n">raw_src</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">),</span>
-            <span class="s2">&quot;src_feats&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span>  <span class="n">v</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">feats</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+            <span class="s2">&quot;src_feats&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">feats</span><span class="p">]</span>
         <span class="p">}</span>
         <span class="n">transformed_ex</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">feats_transform</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">transformed_ex</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Error inferring feats&quot;</span><span class="p">)</span>
-        <span class="n">transformed_feats</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-        <span class="k">for</span> <span class="n">feat_name</span><span class="p">,</span> <span class="n">feat_values</span> <span class="ow">in</span> <span class="n">transformed_ex</span><span class="p">[</span><span class="s2">&quot;src_feats&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">transformed_feats</span><span class="p">[</span><span class="n">feat_name</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">feat_values</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">transformed_feats</span></div>
+        <span class="k">return</span> <span class="p">[</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">transformed_ex</span><span class="p">[</span><span class="s2">&quot;src_feats&quot;</span><span class="p">]]</span></div>
 
 <div class="viewcode-block" id="ServerModel.build_tokenizer"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.build_tokenizer">[docs]</a>    <span class="k">def</span> <span class="nf">build_tokenizer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tokenizer_opt</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build tokenizer described by `tokenizer_opt`.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build tokenizer described by ``tokenizer_opt``.&quot;&quot;&quot;</span>
+
         <span class="k">if</span> <span class="s2">&quot;type&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tokenizer_opt</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s2">&quot;Missing mandatory tokenizer option &#39;type&#39;&quot;</span><span class="p">)</span>
@@ -968,8 +942,7 @@
 <div class="viewcode-block" id="ServerModel.maybe_tokenize"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.maybe_tokenize">[docs]</a>    <span class="k">def</span> <span class="nf">maybe_tokenize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">&#39;src&#39;</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Tokenize the sequence (or not).</span>
 
-<span class="sd">        Same args/returns as `tokenize`</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        Same args/returns as ``tokenize``&quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizers_opt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenize</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span> <span class="n">side</span><span class="p">)</span>
@@ -982,8 +955,7 @@
 <span class="sd">            sequence (str): The sequence to tokenize.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            tok (str): The tokenized sequence.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            tok (str): The tokenized sequence.&quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizers</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No tokenizer loaded&quot;</span><span class="p">)</span>
@@ -997,7 +969,8 @@
         <span class="k">return</span> <span class="n">tok</span></div>
 
 <div class="viewcode-block" id="ServerModel.tokenizer_marker"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.tokenizer_marker">[docs]</a>    <span class="k">def</span> <span class="nf">tokenizer_marker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">&#39;src&#39;</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return marker used in `side` tokenizer.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return marker used in ``side`` tokenizer.&quot;&quot;&quot;</span>
+
         <span class="n">marker</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizers_opt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">tokenizer_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizers_opt</span><span class="p">[</span><span class="n">side</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;type&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
@@ -1017,13 +990,13 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            sequence (str): The sequence to detokenize, possible with</span>
-<span class="sd">                alignment seperate by ` ||| `.</span>
+<span class="sd">            alignment seperate by &#39;|||&#39;</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            sequence (str): The detokenized sequence.</span>
 <span class="sd">            align (str): The alignment correspand to detokenized src/tgt</span>
-<span class="sd">                sorted or None if no alignment in output.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            sorted or None if no alignment in output.&quot;&quot;&quot;</span>
+
         <span class="n">align</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">report_align</span><span class="p">:</span>
             <span class="c1"># output contain alignment</span>
@@ -1035,9 +1008,7 @@
 
 <div class="viewcode-block" id="ServerModel.maybe_detokenize"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.maybe_detokenize">[docs]</a>    <span class="k">def</span> <span class="nf">maybe_detokenize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">&#39;tgt&#39;</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;De-tokenize the sequence (or not)</span>
-
-<span class="sd">        Same args/returns as :func:`tokenize()`</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        Same args/returns as :func:``tokenize()``&quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizers_opt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">sequence</span><span class="o">.</span><span class="n">split</span><span class="p">())</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">detokenize</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span> <span class="n">side</span><span class="p">)</span>
@@ -1046,8 +1017,7 @@
 <div class="viewcode-block" id="ServerModel.detokenize"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.detokenize">[docs]</a>    <span class="k">def</span> <span class="nf">detokenize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">&#39;tgt&#39;</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Detokenize a single sequence</span>
 
-<span class="sd">        Same args/returns as :func:`tokenize()`</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        Same args/returns as :func:``tokenize()``&quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizers</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No tokenizer loaded&quot;</span><span class="p">)</span>
@@ -1070,6 +1040,7 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            align (str): The alignment correspand to detokenized src/tgt.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizers_opt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">src_marker</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_marker</span><span class="p">(</span><span class="n">side</span><span class="o">=</span><span class="s1">&#39;src&#39;</span><span class="p">)</span>
             <span class="n">tgt_marker</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_marker</span><span class="p">(</span><span class="n">side</span><span class="o">=</span><span class="s1">&#39;tgt&#39;</span><span class="p">)</span>
@@ -1081,9 +1052,8 @@
         <span class="k">return</span> <span class="n">align</span></div>
 
 <div class="viewcode-block" id="ServerModel.maybe_postprocess"><a class="viewcode-back" href="../../../onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.maybe_postprocess">[docs]</a>    <span class="k">def</span> <span class="nf">maybe_postprocess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Postprocess the sequence (or not)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Postprocess the sequence (or not)&quot;&quot;&quot;</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">postprocess_opt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">postprocess</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -1096,8 +1066,8 @@
 <span class="sd">            sequence (str): The sequence to process.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            sequence (str): The postprocessed sequence.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            sequence (str): The postprocessed sequence.&quot;&quot;&quot;</span>
+
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">postprocessor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No postprocessor loaded&quot;</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">function</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">postprocessor</span><span class="p">:</span>
@@ -1118,42 +1088,30 @@
 </pre></div>
 
            </div>
-           
           </div>
           <footer>
-  
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &copy; Copyright 2017, OpenNMT
-
-    </p>
+    <p>&#169; Copyright 2017-2023, OpenNMT.</p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
-
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>
