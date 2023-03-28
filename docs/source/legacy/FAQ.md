@@ -1,6 +1,6 @@
 # FAQ (Legacy version)
 
-This is the FAQ for the legacy version of OpenNMT-py (prior to OpenNMT-py v2.0 release).
+This is the FAQ for the legacy version 1 of OpenNMT-py
 
 ## How do I use Pretrained embeddings (e.g. GloVe)?
 

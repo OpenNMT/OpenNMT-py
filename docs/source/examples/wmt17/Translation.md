@@ -1,4 +1,4 @@
-# WMT17 EN-DE Scripts
+# Translation WMT17 en-de
 
 ## Dependencies
 
@@ -11,6 +11,8 @@ pip3 install torch torchvision torchaudio
 ```
 
 ### Apex
+
+This is highly recommended to have fast performance.
 
 ```bash
 git clone https://github.com/NVIDIA/apex
@@ -42,7 +44,7 @@ pip3 install --editable ./
 WMT17 English-German data set:
 
 ```bash
-cd examples
+cd docs/source/examples
 bash wmt17/prepare_wmt_ende_data.sh
 ```
 
@@ -51,15 +53,15 @@ bash wmt17/prepare_wmt_ende_data.sh
 Training the following big transformer for 50K steps takes less than 10 hours on a single RTX 4090
 
 ```bash
-python3 ../onmt/bin/build_vocab.py --config wmt17/wmt17_ende.yaml --n_sample -1
-python3 ../onmt/bin/train.py --config wmt17/wmt17_ende.yaml
+python3 ../../../onmt/bin/build_vocab.py --config wmt17/wmt17_ende.yaml --n_sample -1
+python3 ../../../onmt/bin/train.py --config wmt17/wmt17_ende.yaml
 bash scripts/onmt/train.sh
 ```
 
 Translate test sets with various settings on local GPU and CPUs.
 
 ```bash
-python3 ../onmt/bin/translate.py --src wmt17_en_de/test.src.bpe --model wmt17_en_de/bigwmt17_step_50000.pt --beam_size 5 --batch_size 4096 --batch_type tokens --output wmt17_en_de/pred.trg.bpe --gpu 0
+python3 ../../../onmt/bin/translate.py --src wmt17_en_de/test.src.bpe --model wmt17_en_de/bigwmt17_step_50000.pt --beam_size 5 --batch_size 4096 --batch_type tokens --output wmt17_en_de/pred.trg.bpe --gpu 0
 sed -re 's/@@( |$)//g' < wmt17_en_de/pred.trg.bpe > wmt17_en_de/pred.trg.tok
 sacrebleu -tok none wmt17_en_de/test.trg < wmt17_en_de/pred.trg.tok
 ```

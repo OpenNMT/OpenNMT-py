@@ -1,4 +1,4 @@
-# FAQ
+
 All the example YAML configurations are partial. To get an overview of what this YAML configuration is you can start by reading the [Quickstart](quickstart) section.
 
 Also you can have a look at this: [Tutorial](https://github.com/ymoslem/OpenNMT-Tutorial)
@@ -6,24 +6,28 @@ Also you can have a look at this: [Tutorial](https://github.com/ymoslem/OpenNMT-
 ## How do I use my v2 models in v3 ?
 
 As a reminder, OpenNMT-py v2.x used to rely on Torchtext 0.5
-This torchtext version used "Fields", "RawFields", "MultiFields" which were deprecated in trochtext version > 0.5
-In order to convert old models we have to mimic those old Class and as a result you need to install a newer version of torchtext.
+
+This torchtext version used "Fields", "RawFields", "MultiFields" which were deprecated in torchtext versions > 0.5. In order to convert old models we have to mimic those old Class and as a result you need to install a newer version of torchtext.
+
 If you use pytorch 1.12.1 then install torchtext 0.13
+
 If you use pytorch 1.13.0 then install torchtext 0.14
 
 After the conversion you can eliminate completely torchtext.
 
-Conversion is:
+Conversion is perfomed using the following script:
 
 python tools/convertv2_v3.py -v2model myoldmodel.pt -v3model newmodel.pt
 
 The new checkpoint will no longer have a "fields" key, replaced by "vocab"
 Some model options are modified as follow:
-`rnn_size` is now `hidden_size`
-`enc_rnn_size` is now `enc_hid_size`
-`dec_rnn_size` is now `dec_hid_size`
+
+* `rnn_size` is now `hidden_size`
+* `enc_rnn_size` is now `enc_hid_size`
+* `dec_rnn_size` is now `dec_hid_size`
 
 A new key `add_qkvbias` is set to `true` for old models.
+
 New models will be trained by default with `false`
 
 Special note for GPT2 type Language Model trained with v2
@@ -39,6 +43,8 @@ It will make the vocab consistent with v3 structure.
 
 The transformer model is very sensitive to hyperparameters. To run it
 effectively you need to set different options that mimic the [Google](https://arxiv.org/abs/1706.03762) setup. We have confirmed the following configuration can replicate their WMT results.
+
+Please have a look at the Example of WMT17 EN-DE.
 
 ```yaml
 <data configuration>
@@ -455,7 +461,7 @@ Class: `onmt.transforms.tokenize.SentencePieceTransform`
 
 The `src_subword_model` and `tgt_subword_model` should be valid sentencepiece models.
 
-#### BPE ([subword-nmt](https://github.com/rsennrich/subword-nmt))
+#### [BPE subword-nmt](https://github.com/rsennrich/subword-nmt)
 
 Transform name: `bpe`
 
@@ -602,11 +608,11 @@ The principle is to make only a few layers trainable (hence reducing the amount 
 
 You need to train_from a model (for instance NLLB-200 3.3B) and use the following options:
 
-`lora_layer: ['linear_values', 'linear_query']` these are the two layers of the Self-Attention module the paper recommend to make trainable.
-`lora_rank: 2`
-`lora_dropout: 0.1` or any value you can test
-`lora_alpha: 1` or any value you can test
-`lora_embedding: true` makes Embeddings LoRa compatible, hence trainable in the case you use `update_vocab: true` or if you want to finetune Embeddings as well.
+* `lora_layers: ['linear_values', 'linear_query']` these are the two layers of the Self-Attention module the paper recommend to make trainable.
+* `lora_rank: 2`
+* `lora_dropout: 0.1` or any value you can test
+* `lora_alpha: 1` or any value you can test
+* `lora_embedding: true` makes Embeddings LoRa compatible, hence trainable in the case you use `update_vocab: true` or if you want to finetune Embeddings as well.
 
 
 ## Can I get word alignments while translating?

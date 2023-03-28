@@ -88,46 +88,45 @@ def build_trainer(opt, device_id, model, vocabs, optim, model_saver=None):
 
 
 class Trainer(object):
-    """
-    Class that controls the training process.
+    """Class that controls the training process.
 
     Args:
-            model(:py:class:`onmt.models.model.NMTModel`): translation model
-                to train
-            train_loss(:obj:`onmt.utils.loss.LossComputeBase`):
-               training loss computation
-            valid_loss(:obj:`onmt.utils.loss.LossComputeBase`):
-               training loss computation
-            scoring_preparator(:obj:`onmt.translate.utils.ScoringPreparator`):
-                preparator for the calculation of metrics via the
-                training_eval_handler method
-            train_scorers (dict): keeps in memory the current values
-                of the training metrics
-            valid_scorers (dict): keeps in memory the current values
-                of the validation metrics
-            optim(:obj:`onmt.utils.optimizers.Optimizer`):
-               the optimizer responsible for update
-            trunc_size(int): length of truncated back propagation through time
-            accum_count(list): accumulate gradients this many times.
-            accum_steps(list): steps for accum gradients changes.
-            n_gpu (int): number of gpu.
-            gpu_rank (int): ordinal rank of the gpu in the list.
-            train_eval_steps (int): process a validation every x steps.
-            report_manager(:obj:`onmt.utils.ReportMgrBase`):
-                the object that creates reports, or None
-            with_align (bool): whether to jointly lear alignment (Transformer)
-            model_saver(:obj:`onmt.models.ModelSaverBase`): the saver is
-                used to save a checkpoint.
-                Thus nothing will be saved if this parameter is None.
-            average_decay (float): cf opt.average_decay
-            average_every (int): average model every x steps.
-            model_dtype (str): fp32 or fp16.
-            earlystopper (:obj:`onmt.utils.EarlyStopping`): add early
-                stopping mecanism
-            dropout (float): dropout value in RNN or FF layers.
-            attention_dropout (float): dropaout in attention layers.
-            dropout_steps (list): dropout values scheduling in steps.
-    """
+        model(:py:class:`onmt.models.model.NMTModel`): model to train
+        train_loss(:obj:`onmt.utils.loss.LossComputeBase`):
+          training loss computation
+        valid_loss(:obj:`onmt.utils.loss.LossComputeBase`):
+          training loss computation
+        scoring_preparator(:obj:`onmt.translate.utils.ScoringPreparator`):
+          preparator for the calculation of metrics via the
+          training_eval_handler method
+        train_scorers (dict): keeps in memory the current values
+          of the training metrics
+        valid_scorers (dict): keeps in memory the current values
+          of the validation metrics
+        optim(:obj:`onmt.utils.optimizers.Optimizer`):
+          the optimizer responsible for update
+        trunc_size(int): length of truncated back propagation
+          through time
+        accum_count(list): accumulate gradients this many times.
+        accum_steps(list): steps for accum gradients changes.
+        n_gpu (int): number of gpu.
+        gpu_rank (int): ordinal rank of the gpu in the list.
+        train_eval_steps (int): process a validation every x steps.
+        report_manager(:obj:`onmt.utils.ReportMgrBase`):
+          the object that creates reports, or None
+        with_align (bool): whether to jointly lear alignment
+          (Transformer)
+        model_saver(:obj:`onmt.models.ModelSaverBase`): the saver is
+          used to save a checkpoint.
+          Thus nothing will be saved if this parameter is None.
+        average_decay (float): cf opt.average_decay
+        average_every (int): average model every x steps.
+        model_dtype (str): fp32 or fp16.
+        earlystopper (:obj:`onmt.utils.EarlyStopping`): add early
+          stopping mecanism
+        dropout (float): dropout value in RNN or FF layers.
+        attention_dropout (float): dropaout in attention layers.
+        dropout_steps (list): dropout values scheduling in steps."""
 
     def __init__(self, model, train_loss, valid_loss,
                  scoring_preparator, train_scorers, valid_scorers,
@@ -182,10 +181,12 @@ class Trainer(object):
         """Trigger metrics calculations
 
         Args:
-            scorer (:obj:`onmt.scorer.Scorer`): scorer.
+            scorer (:obj:``onmt.scorer.Scorer``): scorer.
             preds, texts_ref: outputs of the scorer's `translate` method.
-        Returns: The metric calculated by the scorer.
-        """
+
+        Returns:
+            The metric calculated by the scorer."""
+
         return scorer.compute_score(preds, texts_ref)
 
     def _accum_count(self, step):
@@ -250,9 +251,8 @@ class Trainer(object):
               save_checkpoint_steps=5000,
               valid_iter=None,
               valid_steps=10000):
-        """
-        The main training loop by iterating over `train_iter` and possibly
-        running validation on `valid_iter`.
+        """The main training loop by iterating over ``train_iter`` and possibly
+        running validation on ``valid_iter``.
 
         Args:
             train_iter: An iterator that returns the next training batch.
@@ -261,9 +261,10 @@ class Trainer(object):
               iterations.
             valid_iter: A generator that returns the next validation batch.
             valid_steps: Run evaluation every this many iterations.
+
         Returns:
-            :obj:`nmt.Statistics`: training loss statistics
-        """
+            :obj:``nmt.Statistics``: training loss statistics"""
+
         if valid_iter is None:
             logger.info('Start training loop without validation...')
             valid_stats = None
@@ -333,11 +334,14 @@ class Trainer(object):
         return total_stats
 
     def validate(self, valid_iter, moving_average=None):
-        """ Validate model.
+        """Validate model.
+
+        Args:
             valid_iter: validate data iterator
+
         Returns:
-            :obj:`nmt.Statistics`: validation loss statistics
-        """
+            :obj:``nmt.Statistics``: validation loss statistics"""
+
         valid_model = self.model
         if moving_average:
             # swap model params w/ moving average
@@ -422,7 +426,8 @@ class Trainer(object):
     def _gradient_accumulation(self, true_batches, normalization, total_stats,
                                report_stats):
         """Function that iterates over big batches = ``true_batches``
-        perform a backward on the loss of each sub_batch and
+
+        Perform a backward on the loss of each sub_batch and
         finally update the params at the end of the big batch."""
 
         if self.accum_count > 1:
@@ -546,9 +551,8 @@ class Trainer(object):
             self.optim.step()
 
     def _start_report_manager(self, start_time=None):
-        """
-        Simple function to start report manager (if any)
-        """
+        """Simple function to start report manager (if any)"""
+
         if self.report_manager is not None:
             if start_time is None:
                 self.report_manager.start()
@@ -557,10 +561,9 @@ class Trainer(object):
 
     def _maybe_report_training(self, step, num_steps, learning_rate,
                                report_stats):
-        """
-        Simple function to report training stats (if report_manager is set)
-        see `onmt.utils.ReportManagerBase.report_training` for doc
-        """
+        """Simple function to report training stats (if report_manager is set)
+        see ``onmt.utils.ReportManagerBase.report_training`` for doc"""
+
         if self.report_manager is not None:
             return self.report_manager.report_training(
                 step,
@@ -573,10 +576,9 @@ class Trainer(object):
 
     def _report_step(self, learning_rate, step,
                      valid_stats=None, train_stats=None):
-        """
-        Simple function to report stats (if report_manager is set)
-        see `onmt.utils.ReportManagerBase.report_step` for doc
-        """
+        """Simple function to report stats (if report_manager is set)
+        see ``onmt.utils.ReportManagerBase.report_step`` for doc"""
+
         if self.report_manager is not None:
             return self.report_manager.report_step(
                 learning_rate,

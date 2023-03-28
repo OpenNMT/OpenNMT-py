@@ -3,6 +3,16 @@
 
 
 ## [Unreleased]
+
+## [3.1.0](https://github.com/OpenNMT/OpenNMT-py/tree/3.1.0) (2023-03-27)
+* updated docs with Sphinx 6.4
+* Restore source features to v3 (thanks @anderleich)
+* add inline tags transform (thanks @panosk)
+* add docify transform to allow doc-level training / inference
+* fix NLLB training (decoder_start_token)
+* New! LoRa adapters to finetune big models (egs: NLLB 3.3B)
+* various bug fixes
+
 ## [3.0.4](https://github.com/OpenNMT/OpenNMT-py/tree/3.0.4) (2023-02-06)
 * override_opts to override checkpoints opt when training from
 * normalize transform based on (Sacre)Moses scripts

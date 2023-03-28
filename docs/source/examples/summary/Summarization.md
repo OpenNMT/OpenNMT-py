@@ -1,4 +1,4 @@
-# Summarization
+# Summarization CNN/DM
 
 Note: The process and results below are presented in the paper `Bottom-Up Abstractive Summarization`. Please consider citing it if you follow these instructions.
 
