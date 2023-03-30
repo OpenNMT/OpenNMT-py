@@ -293,7 +293,7 @@ def build_base_model(model_opt, vocabs, gpu, checkpoint=None, gpu_id=None):
         device = torch.device("cpu")
 
     model = build_task_specific_model(model_opt, vocabs)
-    
+
     mark_lora = False
     if hasattr(model_opt, 'lora_layers') and len(model_opt.lora_layers) > 0:
         if model_opt.freeze_encoder or model_opt.freeze_decoder:
