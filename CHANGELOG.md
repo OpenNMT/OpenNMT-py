@@ -3,6 +3,8 @@
 
 
 ## [Unreleased]
+## [3.1.1](https://github.com/OpenNMT/OpenNMT-py/tree/3.1.1) (2023-03-30)
+* fix major bug in 3.1.0 introduced with LoRa (3.1.0 not available)
 
 ## [3.1.0](https://github.com/OpenNMT/OpenNMT-py/tree/3.1.0) (2023-03-27)
 * updated docs with Sphinx 6.4
