@@ -293,6 +293,8 @@ def build_base_model(model_opt, vocabs, gpu, checkpoint=None, gpu_id=None):
         device = torch.device("cpu")
 
     model = build_task_specific_model(model_opt, vocabs)
+
+    mark_lora = False
     if hasattr(model_opt, 'lora_layers') and len(model_opt.lora_layers) > 0:
         if model_opt.freeze_encoder or model_opt.freeze_decoder:
             raise ValueError("Cannot use LoRa with Enc/Dec-oder freezing")
@@ -301,13 +303,16 @@ def build_base_model(model_opt, vocabs, gpu, checkpoint=None, gpu_id=None):
                                         lora_alpha=model_opt.lora_alpha,
                                         lora_dropout=model_opt.lora_dropout,
                                         layer=layer)
+        mark_lora = True
     if hasattr(model_opt, 'lora_embedding') and model_opt.lora_embedding:
         if model_opt.freeze_encoder or model_opt.freeze_decoder:
             raise ValueError("Cannot use LoRa with Enc/Dec-oder freezing")
         model = replace_lora_embedding(model, r=model_opt.lora_rank,
                                        lora_alpha=model_opt.lora_alpha)
+        mark_lora = True
 
-    mark_only_lora_as_trainable(model, bias='lora_only')
+    if mark_lora:
+        mark_only_lora_as_trainable(model, bias='lora_only')
 
     # Build Generator.
     if not model_opt.copy_attn:
