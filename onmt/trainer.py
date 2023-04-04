@@ -227,9 +227,7 @@ class Trainer(object):
 
     def _update_average(self, step):
         if self.moving_average is None:
-            copy_params = [params.detach().half()
-                           if params.dtype == torch.float16
-                           else params.detach().float()
+            copy_params = [params.detach().float()
                            for params in self.model.parameters()]
             self.moving_average = copy_params
         else:
@@ -238,10 +236,6 @@ class Trainer(object):
             for (i, avg), cpt in zip(enumerate(self.moving_average),
                                      self.model.parameters()):
                 self.moving_average[i] = \
-                    (1 - average_decay) * avg + \
-                    cpt.detach().half() * average_decay \
-                    if avg.dtype == torch.float16 \
-                    else \
                     (1 - average_decay) * avg + \
                     cpt.detach().float() * average_decay
 
