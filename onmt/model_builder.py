@@ -389,6 +389,7 @@ def build_base_model(model_opt, vocabs, gpu, checkpoint=None, gpu_id=None):
         model.decoder.requires_grad_(False)
         model.decoder.embeddings.requires_grad_()
 
+    model.half()
     model.to(device)
     if model_opt.model_dtype == 'fp16' and \
             model_opt.apex_opt_level not in ['O0', 'O1', 'O2', 'O3'] and \

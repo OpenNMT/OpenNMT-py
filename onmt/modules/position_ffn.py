@@ -2,16 +2,18 @@
 
 import torch.nn as nn
 import torch.nn.functional as F
-
+from onmt.modules.rmsnorm import RMSNorm
 
 class ActivationFunction(object):
     relu = "relu"
     gelu = "gelu"
+    silu = "silu"
 
 
 ACTIVATION_FUNCTIONS = {
     ActivationFunction.relu: F.relu,
     ActivationFunction.gelu: F.gelu,
+    ActivationFunction.silu: F.silu,
 }
 
 
@@ -31,7 +33,8 @@ class PositionwiseFeedForward(nn.Module):
         super(PositionwiseFeedForward, self).__init__()
         self.w_1 = nn.Linear(d_model, d_ff)
         self.w_2 = nn.Linear(d_ff, d_model)
-        self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
+        # self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
+        self.layer_norm = RMSNorm(d_model, eps=1e-5)
         self.dropout_1 = nn.Dropout(dropout)
         self.activation = ACTIVATION_FUNCTIONS[activation_fn]
         self.dropout_2 = nn.Dropout(dropout)

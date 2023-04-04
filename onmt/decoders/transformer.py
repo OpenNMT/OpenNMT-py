@@ -11,6 +11,7 @@ from onmt.modules import MultiHeadedAttention, AverageAttention
 from onmt.modules.position_ffn import PositionwiseFeedForward
 from onmt.modules.position_ffn import ActivationFunction
 from onmt.utils.misc import sequence_mask
+from onmt.modules.rmsnorm import RMSNorm
 
 
 class TransformerDecoderLayerBase(nn.Module):
@@ -77,7 +78,8 @@ class TransformerDecoderLayerBase(nn.Module):
         self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout,
                                                     pos_ffn_activation_fn
                                                     )
-        self.layer_norm_1 = nn.LayerNorm(d_model, eps=1e-6)
+        # self.layer_norm_1 = nn.LayerNorm(d_model, eps=1e-6)
+        self.layer_norm_1 = RMSNorm(d_model, eps=1e-5)
         self.drop = nn.Dropout(dropout)
         self.full_context_alignment = full_context_alignment
         self.alignment_heads = alignment_heads
@@ -209,7 +211,8 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
             attn_type="context",
             add_qkvbias=add_qkvbias
         )
-        self.layer_norm_2 = nn.LayerNorm(d_model, eps=1e-6)
+        # self.layer_norm_2 = nn.LayerNorm(d_model, eps=1e-6)
+        self.layer_norm_2 = RMSNorm(d_model, eps=1e-5)
 
     def update_dropout(self, dropout, attention_dropout):
         super(TransformerDecoderLayer, self).update_dropout(
@@ -291,7 +294,8 @@ class TransformerDecoderBase(DecoderBase):
         # attention. But it was never actually used -- the "copy" attention
         # just reuses the context attention.
         self._copy = copy_attn
-        self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
+        # self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
+        self.layer_norm = RMSNorm(d_model, eps=1e-5)
 
         self.alignment_layer = alignment_layer
 

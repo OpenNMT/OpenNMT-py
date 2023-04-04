@@ -6,6 +6,37 @@ from typing import Optional, Tuple
 import torch.nn as nn
 
 
+def precompute_freqs_cis(dim: int, end: int, theta: float = 10000.0):
+    freqs = 1.0 / (theta **
+                   (torch.arange(0, dim, 2)[: (dim // 2)].float() / dim))
+    t = torch.arange(end, device=freqs.device)  # type: ignore
+    freqs = torch.outer(t, freqs).float()  # type: ignore
+    freqs_cis = torch.polar(torch.ones_like(freqs), freqs)  # complex64
+    return freqs_cis
+
+
+def reshape_for_broadcast(freqs_cis: torch.Tensor, x: torch.Tensor):
+    ndim = x.ndim
+    assert 0 <= 1 < ndim
+    assert freqs_cis.shape == (x.shape[1], x.shape[-1])
+    shape = [d if i == 1 or i == ndim - 1 else
+             1 for i, d in enumerate(x.shape)]
+    return freqs_cis.view(*shape)
+
+
+def apply_rotary_emb(
+    xq: torch.Tensor,
+    xk: torch.Tensor,
+    freqs_cis: torch.Tensor,
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    xq_ = torch.view_as_complex(xq.float().reshape(*xq.shape[:-1], -1, 2))
+    xk_ = torch.view_as_complex(xk.float().reshape(*xk.shape[:-1], -1, 2))
+    freqs_cis = reshape_for_broadcast(freqs_cis, xq_)
+    xq_out = torch.view_as_real(xq_ * freqs_cis).flatten(3)
+    xk_out = torch.view_as_real(xk_ * freqs_cis).flatten(3)
+    return xq_out.type_as(xq), xk_out.type_as(xk)
+
+
 def relative_matmul(x: Tensor, z: Tensor,
                     transpose: bool) -> Tensor:
     """
@@ -142,6 +173,10 @@ class MultiHeadedAttention(nn.Module):
                 vocab_size, self.dim_per_head)
         else:
             self.relative_positions_embeddings = None
+            if max_relative_positions == -1:
+                self.freqs_cis = precompute_freqs_cis(
+                    self.dim_per_head,
+                    512 * 2)  # 512 = maxseqlen
 
     def update_dropout(self, dropout: float) -> None:
         self.dropout.p = dropout
@@ -208,6 +243,22 @@ class MultiHeadedAttention(nn.Module):
             value = shape(value, self.dim_per_head)
 
         query = shape(query, self.dim_per_head)
+
+        if self.max_relative_positions == -1:
+            start_pos = 0 # query.size(2)
+            seqlen = query.size(2)
+            freqs_cis = self.freqs_cis[start_pos:
+                                       start_pos + seqlen].to(query.device)
+                                       
+            query = query.transpose(1, 2)
+            key = key.transpose(1, 2)
+            print(query.size(), key.size(), freqs_cis.size())
+            print(query.dtype, key.dtype, freqs_cis.dtype)
+            query, key = apply_rotary_emb(query,
+                                          key,
+                                          freqs_cis=freqs_cis)
+            query = query.transpose(1, 2)
+            key = key.transpose(1, 2)
 
         # 2) Calculate and scale scores.
         query = query / math.sqrt(self.dim_per_head)
