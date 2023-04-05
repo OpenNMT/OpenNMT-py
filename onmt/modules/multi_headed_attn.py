@@ -224,7 +224,6 @@ class MultiHeadedAttention(nn.Module):
 
                     query = query.transpose(1, 2)
                     key = key.transpose(1, 2)
-                    # print(query[0, 0])
                     query, key = apply_rotary_emb(query,
                                                   key,
                                                   freqs_cis=freqs_cis)
@@ -262,8 +261,6 @@ class MultiHeadedAttention(nn.Module):
             key = shape(key, self.dim_per_head)
             value = shape(value, self.dim_per_head)
             query = shape(query, self.dim_per_head)
-
-        # query = shape(query, self.dim_per_head)
 
         # 2) Calculate and scale scores.
         query = query / math.sqrt(self.dim_per_head)

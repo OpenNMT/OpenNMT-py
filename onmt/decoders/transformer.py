@@ -85,7 +85,7 @@ class TransformerDecoderLayerBase(nn.Module):
         elif layer_norm == 'rms':
             self.layer_norm_1 = RMSNorm(d_model, eps=1e-6)
         else:
-            raise ValueError('layer_norm type is not supported')
+            raise ValueError(f'{layer_norm} layer norm type is not supported')
         self.drop = nn.Dropout(dropout)
         self.full_context_alignment = full_context_alignment
         self.alignment_heads = alignment_heads
@@ -225,7 +225,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
         elif layer_norm == 'rms':
             self.layer_norm_2 = RMSNorm(d_model, eps=1e-6)
         else:
-            raise ValueError('layer_norm type is not supported')
+            raise ValueError(f'{layer_norm} layer norm type is not supported')
 
     def update_dropout(self, dropout, attention_dropout):
         super(TransformerDecoderLayer, self).update_dropout(
@@ -313,7 +313,7 @@ class TransformerDecoderBase(DecoderBase):
         elif layer_norm == 'rms':
             self.layer_norm = RMSNorm(d_model, eps=1e-6)
         else:
-            raise ValueError('layer_norm type is not supported')
+            raise ValueError(f'{layer_norm} layer norm type is not supported')
 
         self.alignment_layer = alignment_layer
 

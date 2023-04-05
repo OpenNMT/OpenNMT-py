@@ -371,11 +371,10 @@ def build_base_model(model_opt, vocabs, checkpoint=None):
             use_embeddings_from_checkpoint(vocabs, model, generator,
                                            checkpoint)
             # when updating no more embeddings in ckpt => strict=False
-            model.load_state_dict(checkpoint['model'], strict=False)
-            generator.load_state_dict(checkpoint['generator'], strict=False)
-        else:
-            model.load_state_dict(checkpoint['model'], strict=True)
-            generator.load_state_dict(checkpoint['generator'], strict=True)
+        model.load_state_dict(checkpoint['model'],
+                              strict=not model_opt.update_vocab)
+        generator.load_state_dict(checkpoint['generator'],
+                                  strict=not model_opt.update_vocab)
 
     model.generator = generator
 
