@@ -338,6 +338,12 @@ def model_opts(parser):
               help="Size of windows in the cnn, the kernel_size is "
                    "(cnn_kernel_width, 1) in conv layer")
 
+    group.add('--layer_norm', '-layer_norm',
+              type=str, default='standard',
+              choices=['standard', 'rms'], help='The type of layer'
+              ' normalization in the transformer architecture. Choices are'
+              ' standard or rms. Default to standard')
+
     group.add('--pos_ffn_activation_fn', '-pos_ffn_activation_fn',
               type=str, default=ActivationFunction.relu,
               choices=ACTIVATION_FUNCTIONS.keys(), help='The activation'
@@ -792,6 +798,8 @@ def translate_opts(parser, dynamic=False):
     group.add('--fp32', '-fp32', action='store_true',
               help="Force the model to be in FP32 "
                    "because FP16 is very slow on GTX1080(ti).")
+    group.add('--fp16', '-fp16', action='store_true',
+              help="Force the model to be run in FP16 ")
     group.add('--int8', '-int8', action='store_true',
               help="Enable dynamic 8-bit quantization (CPU only).")
     group.add('--avg_raw_probs', '-avg_raw_probs', action='store_true',

@@ -183,7 +183,8 @@ class MultiHeadedAttention(nn.Module):
 
     # @torch.jit.script_method
     def forward(self, key: Tensor, value: Tensor,
-                query: Tensor, mask: Optional[Tensor] = None
+                query: Tensor, mask: Optional[Tensor] = None,
+                step: Optional[int] = 0
                 ) -> Tuple[Tensor, Tensor]:
         """
         Compute the context vector and the attention vectors.
@@ -210,8 +211,26 @@ class MultiHeadedAttention(nn.Module):
                 query, key, value = self.linear_query(query),\
                                     self.linear_keys(query),\
                                     self.linear_values(query)
+                query = shape(query, self.dim_per_head)
                 key = shape(key, self.dim_per_head)
                 value = shape(value, self.dim_per_head)
+
+                if self.max_relative_positions == -1:  # Rotary Embeddings
+                    start_pos = step
+                    seqlen = query.size(2)
+                    freqs_cis = self.freqs_cis[start_pos:
+                                               start_pos +
+                                               seqlen].to(query.device)
+
+                    query = query.transpose(1, 2)
+                    key = key.transpose(1, 2)
+                    # print(query[0, 0])
+                    query, key = apply_rotary_emb(query,
+                                                  key,
+                                                  freqs_cis=freqs_cis)
+                    query = query.transpose(1, 2)
+                    key = key.transpose(1, 2)
+
                 if self.layer_cache[1]['keys'].numel() != 0:
                     key = torch.cat(
                         (self.layer_cache[1]['keys'], key),
@@ -225,6 +244,7 @@ class MultiHeadedAttention(nn.Module):
                 self.layer_cache[1]['values'] = value
             elif self.attn_type == "context":
                 query = self.linear_query(query)
+                query = shape(query, self.dim_per_head)
                 if self.layer_cache[1]['keys'].numel() == 0:
                     key, value = self.linear_keys(key),\
                                  self.linear_values(value)
@@ -241,24 +261,9 @@ class MultiHeadedAttention(nn.Module):
             query = self.linear_query(query)
             key = shape(key, self.dim_per_head)
             value = shape(value, self.dim_per_head)
+            query = shape(query, self.dim_per_head)
 
-        query = shape(query, self.dim_per_head)
-
-        if self.max_relative_positions == -1:
-            start_pos = 0 # query.size(2)
-            seqlen = query.size(2)
-            freqs_cis = self.freqs_cis[start_pos:
-                                       start_pos + seqlen].to(query.device)
-                                       
-            query = query.transpose(1, 2)
-            key = key.transpose(1, 2)
-            print(query.size(), key.size(), freqs_cis.size())
-            print(query.dtype, key.dtype, freqs_cis.dtype)
-            query, key = apply_rotary_emb(query,
-                                          key,
-                                          freqs_cis=freqs_cis)
-            query = query.transpose(1, 2)
-            key = key.transpose(1, 2)
+        # query = shape(query, self.dim_per_head)
 
         # 2) Calculate and scale scores.
         query = query / math.sqrt(self.dim_per_head)
