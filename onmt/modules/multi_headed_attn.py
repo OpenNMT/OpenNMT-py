@@ -6,36 +6,34 @@ from typing import Optional, Tuple
 import torch.nn as nn
 
 
-def precompute_freqs_cis(dim: int, end: int, theta: float = 10000.0):
-    freqs = 1.0 / (theta **
-                   (torch.arange(0, dim, 2)[: (dim // 2)].float() / dim))
-    t = torch.arange(end, device=freqs.device)  # type: ignore
-    freqs = torch.outer(t, freqs).float()  # type: ignore
-    freqs_cis = torch.polar(torch.ones_like(freqs), freqs)  # complex64
-    return freqs_cis
+# Help functions for Rotary Embeddings
+# https://arxiv.org/pdf/2104.09864.pdf
+# too convoluted to make maxseqlen a parameter.
+# we suppose src_seq_len at training and max_length at inference
+# are both < 2048 tokens.
+
+def RotaryEmbeddings(dim: int, maxseqlen=4096, base=10000):
+    inv_freq = 1.0 / (base ** (torch.arange(0, dim, 2).float() / dim))
+    tmax = torch.arange(maxseqlen, device=inv_freq.device)
+    rope = torch.outer(tmax, inv_freq).float()
+    # rope is now matrix [maxseqlen, dim/2]
+    rope = torch.polar(torch.ones_like(rope), rope)
+    return rope
 
 
-def reshape_for_broadcast(freqs_cis: torch.Tensor, x: torch.Tensor):
-    ndim = x.ndim
-    assert 0 <= 1 < ndim
-    assert freqs_cis.shape == (x.shape[1], x.shape[-1])
-    shape = [d if i == 1 or i == ndim - 1 else
-             1 for i, d in enumerate(x.shape)]
-    return freqs_cis.view(*shape)
+def apply_rotary_emb(query, key, rope):
+    query_ = query.float().reshape(*query.shape[:-1], -1, 2)
+    query_ = torch.view_as_complex(query_)
+    key_ = key.float().reshape(*key.shape[:-1], -1, 2)
+    key_ = torch.view_as_complex(key_)
+    rope = rope.view(1, query_.size(1), 1, query_.size(3))
+    query_out = torch.view_as_real(query_ * rope).flatten(3)
+    key_out = torch.view_as_real(key_ * rope).flatten(3)
+    return query_out.type_as(query), key_out.type_as(key)
 
 
-def apply_rotary_emb(
-    xq: torch.Tensor,
-    xk: torch.Tensor,
-    freqs_cis: torch.Tensor,
-) -> Tuple[torch.Tensor, torch.Tensor]:
-    xq_ = torch.view_as_complex(xq.float().reshape(*xq.shape[:-1], -1, 2))
-    xk_ = torch.view_as_complex(xk.float().reshape(*xk.shape[:-1], -1, 2))
-    freqs_cis = reshape_for_broadcast(freqs_cis, xq_)
-    xq_out = torch.view_as_real(xq_ * freqs_cis).flatten(3)
-    xk_out = torch.view_as_real(xk_ * freqs_cis).flatten(3)
-    return xq_out.type_as(xq), xk_out.type_as(xk)
-
+# Help functions for max_relative positions
+# https://arxiv.org/abs/1803.02155
 
 def relative_matmul(x: Tensor, z: Tensor,
                     transpose: bool) -> Tensor:
@@ -78,6 +76,8 @@ def gen_relative_positions(length: int,
     final_mat = distance_mat_clipped + max_relative_positions
     return final_mat
 
+
+# Help functions to split model dim per head
 
 def shape(x: Tensor, dim_per_head: int) -> Tensor:
     """
@@ -173,10 +173,9 @@ class MultiHeadedAttention(nn.Module):
                 vocab_size, self.dim_per_head)
         else:
             self.relative_positions_embeddings = None
-            if max_relative_positions == -1:
-                self.freqs_cis = precompute_freqs_cis(
-                    self.dim_per_head,
-                    512 * 2)  # 512 = maxseqlen
+
+            if max_relative_positions == -1:  # rotary embeddings
+                self.rope = RotaryEmbeddings(self.dim_per_head)
 
     def update_dropout(self, dropout: float) -> None:
         self.dropout.p = dropout
@@ -198,6 +197,7 @@ class MultiHeadedAttention(nn.Module):
                query vectors  ``(batch, query_len, dim)``
            mask: binary mask 1/0 indicating which keys have
                zero / non-zero attention ``(batch, query_len, key_len)``
+           step (int): decoding step (used for Rotary embedding)
         Returns:
            (Tensor, Tensor):
 
@@ -218,15 +218,15 @@ class MultiHeadedAttention(nn.Module):
                 if self.max_relative_positions == -1:  # Rotary Embeddings
                     start_pos = step
                     seqlen = query.size(2)
-                    freqs_cis = self.freqs_cis[start_pos:
-                                               start_pos +
-                                               seqlen].to(query.device)
+                    rope = self.rope[start_pos:
+                                     start_pos +
+                                     seqlen].to(query.device)
 
                     query = query.transpose(1, 2)
                     key = key.transpose(1, 2)
                     query, key = apply_rotary_emb(query,
                                                   key,
-                                                  freqs_cis=freqs_cis)
+                                                  rope=rope)
                     query = query.transpose(1, 2)
                     key = key.transpose(1, 2)
 

@@ -12,6 +12,7 @@ class ActivationFunction(object):
     silu = "silu"
 
 
+# for silu, see: https://arxiv.org/pdf/2002.05202.pdf
 ACTIVATION_FUNCTIONS = {
     ActivationFunction.relu: F.relu,
     ActivationFunction.gelu: F.gelu,
@@ -28,6 +29,7 @@ class PositionwiseFeedForward(nn.Module):
             of the FNN.
         dropout (float): dropout probability in :math:`[0, 1)`.
         activation_fn (ActivationFunction): activation function used.
+        layer_norm (string): 'standard' or 'rms'
     """
 
     def __init__(self, d_model, d_ff, dropout=0.1,

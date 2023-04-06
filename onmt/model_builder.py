@@ -138,10 +138,6 @@ def load_test_model(opt, model_path=None):
                             map_location=lambda storage, loc: storage)
 
     model_opt = ArgumentParser.ckpt_model_opts(checkpoint['opt'])
-    # Patch for NLLB200 model loading
-    # if ('encoder.embeddings.make_embedding.pe.pe' not in
-    #        checkpoint['model'].keys()):
-    #    model_opt.position_encoding_type = 'SinusoidalConcat'
 
     ArgumentParser.update_model_opts(model_opt)
     ArgumentParser.validate_model_opts(model_opt)
@@ -152,11 +148,11 @@ def load_test_model(opt, model_path=None):
 
     model = build_base_model(model_opt, vocabs, checkpoint)
 
-    if opt.fp32:
+    if opt.precision == 'fp32':
         model.float()
-    elif opt.fp16:
+    elif opt.precision == 'fp16':
         model.half()
-    elif opt.int8:
+    elif opt.precision == 'int8':
         if opt.gpu >= 0:
             raise ValueError(
                 "Dynamic 8-bit quantization is not supported on GPU")
@@ -363,20 +359,28 @@ def build_base_model(model_opt, vocabs, checkpoint=None):
         if '0.bias' in checkpoint['generator']:
             checkpoint['generator']['bias'] =\
                 checkpoint['generator'].pop('0.bias')
-
         # end of patch for backward compatibility
+
         if model_opt.update_vocab:
             # Update model embeddings with those from the checkpoint
             # after initialization
             use_embeddings_from_checkpoint(vocabs, model, generator,
                                            checkpoint)
-            # when updating no more embeddings in ckpt => strict=False
+
+        # when updating no more embeddings in ckpt => strict=False
         model.load_state_dict(checkpoint['model'],
                               strict=not model_opt.update_vocab)
         generator.load_state_dict(checkpoint['generator'],
                                   strict=not model_opt.update_vocab)
 
     model.generator = generator
+
+    return model
+
+
+def build_model(model_opt, opt, vocabs, checkpoint):
+    logger.info('Building model...')
+    model = build_base_model(model_opt, vocabs, checkpoint)
 
     if model_opt.freeze_encoder:
         model.encoder.requires_grad_(False)
@@ -391,12 +395,6 @@ def build_base_model(model_opt, vocabs, checkpoint=None):
             model_opt.optim == 'fusedadam':
         model.half()   # with amp pytorch requires NOT to half the model
 
-    return model
-
-
-def build_model(model_opt, opt, vocabs, checkpoint):
-    logger.info('Building model...')
-    model = build_base_model(model_opt, vocabs, checkpoint)
     if use_gpu(opt):
         model.to(torch.device("cuda"))
     logger.info(model)
