@@ -85,9 +85,11 @@ class CleanTransform(Transform):
         self.src_eq_tgt_dict = self.get_opt_dict(self.opts, 'src_eq_tgt', True)
         self.same_char_dict = self.get_opt_dict(self.opts, 'same_char', True)
         self.same_word_dict = self.get_opt_dict(self.opts, 'same_word', True)
-        self.scripts_ok_dict = self.get_opt_dict(self.opts, 'scripts_ok', ['Latin', 'Common'])
+        self.scripts_ok_dict = self.get_opt_dict(self.opts, 'scripts_ok',
+                                                 ['Latin', 'Common'])
         self.scripts_nok_dict = self.get_opt_dict(self.opts, 'scripts_nok', [])
-        self.src_tgt_ratio_dict = self.get_opt_dict(self.opts, 'src_tgt_ratio', 2)
+        self.src_tgt_ratio_dict = self.get_opt_dict(self.opts, 'src_tgt_ratio',
+                                                    2)
         self.avg_tok_min_dict = self.get_opt_dict(self.opts, 'avg_tok_min', 3)
         self.avg_tok_max_dict = self.get_opt_dict(self.opts, 'avg_tok_max', 20)
         self.langid_dict = self.get_opt_dict(self.opts, 'langid', ['en', 'fr'])
