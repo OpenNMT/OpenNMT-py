@@ -358,13 +358,32 @@ Class: `onmt.transforms.normalize.NormalizeTransform`
 Normalizes source and target (if present) examples using the same rules as Moses punctuation normalizer.
 
 The following options can be added to the configuration :
-- `src_lang`: en, de, cz/cs, fr (default=en)
-- `tgt_lang`: en, de, cz/cs, fr (default=en)
+- `src_lang`: en, de, cz/cs, fr (default='')
+- `tgt_lang`: en, de, cz/cs, fr (default='')
 - `penn`: Penn substitution (default=True)
 - `norm_quote_commas`: Normalize quotations and commas (default=True)
 - `norm_numbers`: Normalize numbers (default=True)
 - `pre_replace_unicode_punct`: Replace unicode punct (default=False)
 - `post_remove_control_chars`: Remove control chars (default=False)
+
+#### Clean punctuation
+
+Transform name: `clean`
+
+Class: `onmt.transforms.clean.CleanTransform`
+
+Cleans source and target (if present) examples using a set of rules.
+
+The following options can be added to the configuration :
+- `src_eq_tgt`: Remove example when source=target (default=True)
+- `same_char`: Remove example if the same char is repeated 4 times (default=True)
+- `same_word`: Remove example if the same word is repeated 3 times (default=True)
+- `script_ok`: Remove example which contains chars that do not belong to these scripts (default=['Latin', 'Common'])
+- `script_nok`: Remove example which contains chars that belong to these scripts  (default=[])
+- `src_tgt_ratio`: Remove example for which src/tgt ration is <1/ratio or >ratio (default=2)
+- `avg_tok_min`: Remove example for which the average token length is < X (default=3)
+- `avg_tok_max`: Remove example for which the average token length is > X (default=20)
+- `lang_id`: Remove example for which detected language is not in [] (default=['en', 'fr'])
 
 #### Context / Doc aware transform
 
