@@ -31,7 +31,8 @@ setup(
         "pyyaml",
         "sacrebleu",
         "rapidfuzz",
-        "pyahocorasick"
+        "pyahocorasick",
+        "gcld3"
     ],
     entry_points={
         "console_scripts": [
