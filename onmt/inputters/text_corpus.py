@@ -259,18 +259,19 @@ def save_transformed_sample(opts, transforms, n_sample=3):
                 else:
                     bucket.append(ex)
             pro_bucket = process(CorpusTask.TRAIN, bucket)
-            for maybe_example in pro_bucket:
-                if maybe_example is not None:
-                    src_line, tgt_line = (maybe_example['src']['src'],
-                                          maybe_example['tgt']['tgt'])
+            if pro_bucket is not None:
+                for maybe_example in pro_bucket:
+                    if maybe_example is not None:
+                        src_line, tgt_line = (maybe_example['src']['src'],
+                                              maybe_example['tgt']['tgt'])
 
-                    if 'feats' in maybe_example['src']:
-                        src_feats_lines = maybe_example['src']['feats']
-                    else:
-                        src_feats_lines = []
+                        if 'feats' in maybe_example['src']:
+                            src_feats_lines = maybe_example['src']['feats']
+                        else:
+                            src_feats_lines = []
 
-                    src_pretty_line = append_features_to_text(
-                        src_line, src_feats_lines)
+                        src_pretty_line = append_features_to_text(
+                            src_line, src_feats_lines)
 
-                    f_src.write(src_pretty_line + '\n')
-                    f_tgt.write(tgt_line + '\n')
+                        f_src.write(src_pretty_line + '\n')
+                        f_tgt.write(tgt_line + '\n')

@@ -346,7 +346,7 @@ Converts source and target (if present) examples to uppercase so the model can l
 sentences in all caps. This transform normalizes the examples so the uppercased strings are stripped from
 any diacritics and accents. Usually this is desirable for most languages, although there are few exceptions.
 
-The following option can be added to the configuration :
+The following option can be added to the main configuration (same ratio for all dataset with this transform):
 - `upper_corpus_ratio`: ratio of the corpus that will be transformed to uppercase (default: 0.01);
 
 #### Normalize punctuation
@@ -357,14 +357,33 @@ Class: `onmt.transforms.normalize.NormalizeTransform`
 
 Normalizes source and target (if present) examples using the same rules as Moses punctuation normalizer.
 
-The following options can be added to the configuration :
-- `src_lang`: en, de, cz/cs, fr (default=en)
-- `tgt_lang`: en, de, cz/cs, fr (default=en)
+The following options can be added to the configuration of each dataset:
+- `src_lang`: en, de, cz/cs, fr (default='')
+- `tgt_lang`: en, de, cz/cs, fr (default='')
 - `penn`: Penn substitution (default=True)
 - `norm_quote_commas`: Normalize quotations and commas (default=True)
 - `norm_numbers`: Normalize numbers (default=True)
 - `pre_replace_unicode_punct`: Replace unicode punct (default=False)
 - `post_remove_control_chars`: Remove control chars (default=False)
+
+#### Clean dataset
+
+Transform name: `clean`
+
+Class: `onmt.transforms.clean.CleanTransform`
+
+Cleans source and target (if present) examples using a set of rules.
+
+The following options can be added to the configuration of each dataset:
+- `src_eq_tgt`: Remove example when source=target (default=True)
+- `same_char`: Remove example if the same char is repeated 4 times (default=True)
+- `same_word`: Remove example if the same word is repeated 3 times (default=True)
+- `script_ok`: Remove example which contains chars that do not belong to these scripts (default=['Latin', 'Common'])
+- `script_nok`: Remove example which contains chars that belong to these scripts  (default=[])
+- `src_tgt_ratio`: Remove example for which src/tgt ration is <1/ratio or >ratio (default=2)
+- `avg_tok_min`: Remove example for which the average token length is < X (default=3)
+- `avg_tok_max`: Remove example for which the average token length is > X (default=20)
+- `lang_id`: Remove example for which detected language is not in [] (default=['en', 'fr'])
 
 #### Context / Doc aware transform
 
@@ -378,7 +397,7 @@ Pre-requisite:
 
 Dataset must be "Docs" separated by an empty line which will make clear a story ends at this empty line.
 
-The following options can be added to the configuration :
+The following options can be added to the main configuration (same options for all dataset with this transform):
 - `doc_length`: max token to be concatenated (default=200)
 - `max_context`: number of delimiter (default=1 , ie 2 segments concatenated)
 
@@ -404,7 +423,7 @@ The Translation Memory (TM) format should be a flat text file, with each line co
 - Although the transform performs some basic filtering both in the TM and in the corpus for very short or very long segments, some examples may still be long enough, so you should increase a bit the `src_seq_length`;
 - Currently, when using `n_sample`, examples are always processed one by one and not in batches.
 
-The following options can be added to the configuration:
+The following options can be added to the main configuration (valid for all datasets using this transform):
 - `tm_path`: The path to the Translation Memory text file;
 - `fuzzy_corpus_ratio`: Ratio of corpus to augment with fuzzy matches (default: 0.1);
 - `fuzzy_threshold`: The fuzzy matching threshold (default: 70);
@@ -421,7 +440,7 @@ Class: `onmt.transforms.inlinetags.InlineTagsTransform`
 
 Augments source and target segments with inline tags (placeholders). The transform adds 2 kind of tags, paired tags (an opening and a closing tag) and isolated (standalone) tags, and requires a tab-delimited dictionary text file with source and target terms and phrases. A dictionary with 20-30k entries is recommended. User-defined tags must include the number placeholder #, e.g. "｟user_start_tag_#｠".
 
-The following options can be added to the configuration:
+The following options can be added to the main configuration (valid for all datasets using this transform):
 - `tags_dictionary_path`: The path to the dictionary text file;
 - `tags_corpus_ratio`: Ratio of corpus to augment with inline tags (default: 0.1);
 - `max_tags`: Maximum number of tags that can be added to a single sentence. (default: 12);
