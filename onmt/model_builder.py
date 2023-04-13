@@ -39,7 +39,8 @@ def replace_lora_linear(model, r=2, lora_alpha=1,
                 module.out_features,
                 r=r,
                 lora_alpha=lora_alpha,
-                lora_dropout=lora_dropout)
+                lora_dropout=lora_dropout,
+                bias=False)
     return model
 
 
@@ -367,11 +368,13 @@ def build_base_model(model_opt, vocabs, checkpoint=None):
             use_embeddings_from_checkpoint(vocabs, model, generator,
                                            checkpoint)
 
-        # when updating no more embeddings in ckpt => strict=False
+        # when using LoRa or updating the vocab (no more embeddings in ckpt)
+        # => strict=False when loading state_dict
+        strict = (not model_opt.update_vocab) and (not mark_lora)
         model.load_state_dict(checkpoint['model'],
-                              strict=not model_opt.update_vocab)
+                              strict=strict)
         generator.load_state_dict(checkpoint['generator'],
-                                  strict=not model_opt.update_vocab)
+                                  strict=strict)
 
     model.generator = generator
 
