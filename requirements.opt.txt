@@ -1,5 +1,5 @@
 pyrouge
 git+https://github.com/NVIDIA/apex.git@700d6825e205732c1d6be511306ca4e595297070
-sentencepiece>=0.1.94
+sentencepiece>=0.1.94,<0.1.98
 subword-nmt>=0.3.7
 rapidfuzz
