@@ -12,7 +12,7 @@ import torch.nn as nn
 # we suppose src_seq_len at training and max_length at inference
 # are both < 2048 tokens.
 
-def RotaryEmbeddings(dim: int, maxseqlen=4096, base=10000):
+def rotaryembeddings(dim: int, maxseqlen=4096, base=10000):
     inv_freq = 1.0 / (base ** (torch.arange(0, dim, 2).float() / dim))
     tmax = torch.arange(maxseqlen, device=inv_freq.device)
     rope = torch.outer(tmax, inv_freq).float()
@@ -175,7 +175,7 @@ class MultiHeadedAttention(nn.Module):
             self.relative_positions_embeddings = None
 
             if max_relative_positions == -1:  # rotary embeddings
-                self.rope = RotaryEmbeddings(self.dim_per_head)
+                self.rope = rotaryembeddings(self.dim_per_head)
 
     def update_dropout(self, dropout: float) -> None:
         self.dropout.p = dropout
