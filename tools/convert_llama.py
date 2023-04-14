@@ -98,7 +98,6 @@ if __name__ == "__main__":
     tokenizer = Tokenizer(model_path=opt.tokenizer_model)
     vocabs = {}
     vocab = tokenizer.vocab
-    vocab[13] = DefaultTokens.SEP  # replace 0x0A by specific token for OpenNMT-py
     vocab[3] = DefaultTokens.PAD
     src_vocab = pyonmttok.build_vocab_from_tokens(
         vocab,
