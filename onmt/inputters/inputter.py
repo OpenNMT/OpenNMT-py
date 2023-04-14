@@ -65,6 +65,7 @@ def build_vocab(opt, specials):
         maximum_size=opt.src_vocab_size,
         special_tokens=src_specials)
     src_vocab.default_id = src_vocab[DefaultTokens.UNK]
+
     if opt.vocab_size_multiple > 1:
         src_vocab = _pad_vocab_to_multiple(src_vocab, opt.vocab_size_multiple)
     vocabs['src'] = src_vocab
@@ -122,7 +123,7 @@ def _read_vocab_file(vocab_path, min_count):
             "Vocabulary not found at {}".format(vocab_path))
     else:
         with codecs.open(vocab_path, 'rb', 'utf-8') as f:
-            lines = [line.strip() for line in f if line.strip()]
+            lines = [line.strip('\n') for line in f if line.strip('\n')]
             first_line = lines[0].split(None, 1)
             has_count = (len(first_line) == 2 and first_line[-1].isdigit())
             if has_count:
@@ -131,7 +132,7 @@ def _read_vocab_file(vocab_path, min_count):
                     if int(line.split(None, 1)[1]) >= min_count:
                         vocab.append(line.split(None, 1)[0])
             else:
-                vocab = [line.strip().split()[0] for line in lines]
+                vocab = lines
             return vocab
 
 

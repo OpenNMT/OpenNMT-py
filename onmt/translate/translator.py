@@ -348,23 +348,16 @@ class Inference(object):
 
         start_time = time.time()
 
-        for batch in infer_iter:
-
-            batch_data = self.translate_batch(
-                batch, attn_debug
-            )
-
-            translations = xlation_builder.from_batch(batch_data)
-
-            # Here we handle the cases of mismatch in number of segments
-            # between source and target. We re-translate seg by seg.
+        def _maybe_retranslate(translations, batch):
+            """Here we handle the cases of mismatch in number of segments
+               between source and target. We re-translate seg by seg."""
             inds, perm = torch.sort(batch['indices'])
             trans_copy = deepcopy(translations)
             inserted_so_far = 0
             for j, trans in enumerate(translations):
                 if (trans.src_raw.count(DefaultTokens.SEP) !=
                         trans.pred_sents[0].count(DefaultTokens.SEP)):
-                    self._log("Mismatch in ((newline)) retranslating")
+                    self._log("Mismatch in number of ((newline))")
                     # those two should be the same except feat dim
                     # batch['src'][perm[j], :, :])
                     # trans.src
@@ -399,7 +392,6 @@ class Inference(object):
                     t_sub_batch = {'src': t_sub_src.to(device),
                                    'srclen': t_sub_src_len.to(device),
                                    'indices': t_sub_src_ind.to(device)}
-
                     # new sub-batch ready to be translated
                     sub_data = self.translate_batch(t_sub_batch, attn_debug)
                     sub_trans = xlation_builder.from_batch(sub_data)
@@ -410,8 +402,19 @@ class Inference(object):
                         trans_copy.insert(j + i + inserted_so_far,
                                           sub_trans[i])
                     inserted_so_far += len(sub_src) - 1
+            return trans_copy
 
-            for j, trans in enumerate(trans_copy):
+        for batch in infer_iter:
+
+            batch_data = self.translate_batch(
+                batch, attn_debug
+            )
+
+            translations = xlation_builder.from_batch(batch_data)
+            if not isinstance(self, GeneratorLM):
+                translations = _maybe_retranslate(translations, batch)
+
+            for j, trans in enumerate(translations):
                 all_scores += [trans.pred_scores[: self.n_best]]
                 pred_score_total += trans.pred_scores[0]
                 pred_words_total += len(trans.pred_sents[0])

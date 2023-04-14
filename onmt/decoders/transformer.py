@@ -11,6 +11,7 @@ from onmt.modules import MultiHeadedAttention, AverageAttention
 from onmt.modules.position_ffn import PositionwiseFeedForward
 from onmt.modules.position_ffn import ActivationFunction
 from onmt.utils.misc import sequence_mask
+from onmt.modules.rmsnorm import RMSNorm
 
 
 class TransformerDecoderLayerBase(nn.Module):
@@ -27,7 +28,8 @@ class TransformerDecoderLayerBase(nn.Module):
         full_context_alignment=False,
         alignment_heads=0,
         pos_ffn_activation_fn=ActivationFunction.relu,
-        add_qkvbias=False
+        add_qkvbias=False,
+        layer_norm='standard'
     ):
         """
         Args:
@@ -55,6 +57,7 @@ class TransformerDecoderLayerBase(nn.Module):
             pos_ffn_activation_fn (ActivationFunction):
                 activation function choice for PositionwiseFeedForward layer
             add_qkvbias (bool): whether to add bias to the Key/Value nn.Linear
+            layer_norm (string): type of layer normalization standard/rms
 
         """
         super(TransformerDecoderLayerBase, self).__init__()
@@ -77,7 +80,12 @@ class TransformerDecoderLayerBase(nn.Module):
         self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout,
                                                     pos_ffn_activation_fn
                                                     )
-        self.layer_norm_1 = nn.LayerNorm(d_model, eps=1e-6)
+        if layer_norm == 'standard':
+            self.layer_norm_1 = nn.LayerNorm(d_model, eps=1e-6)
+        elif layer_norm == 'rms':
+            self.layer_norm_1 = RMSNorm(d_model, eps=1e-6)
+        else:
+            raise ValueError(f'{layer_norm} layer norm type is not supported')
         self.drop = nn.Dropout(dropout)
         self.full_context_alignment = full_context_alignment
         self.alignment_heads = alignment_heads
@@ -150,7 +158,8 @@ class TransformerDecoderLayerBase(nn.Module):
                 layer_in_norm,
                 layer_in_norm,
                 layer_in_norm,
-                mask=dec_mask
+                mask=dec_mask,
+                step=step
             )
         elif self.self_attn_type == "average":
             return self.self_attn(
@@ -184,7 +193,8 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
         full_context_alignment=False,
         alignment_heads=0,
         pos_ffn_activation_fn=ActivationFunction.relu,
-        add_qkvbias=False
+        add_qkvbias=False,
+        layer_norm='standard'
     ):
         """
         Args:
@@ -202,14 +212,20 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
             full_context_alignment,
             alignment_heads,
             pos_ffn_activation_fn=pos_ffn_activation_fn,
-            add_qkvbias=add_qkvbias
+            add_qkvbias=add_qkvbias,
+            layer_norm=layer_norm
         )
         self.context_attn = MultiHeadedAttention(
             heads, d_model, dropout=attention_dropout,
             attn_type="context",
             add_qkvbias=add_qkvbias
         )
-        self.layer_norm_2 = nn.LayerNorm(d_model, eps=1e-6)
+        if layer_norm == 'standard':
+            self.layer_norm_2 = nn.LayerNorm(d_model, eps=1e-6)
+        elif layer_norm == 'rms':
+            self.layer_norm_2 = RMSNorm(d_model, eps=1e-6)
+        else:
+            raise ValueError(f'{layer_norm} layer norm type is not supported')
 
     def update_dropout(self, dropout, attention_dropout):
         super(TransformerDecoderLayer, self).update_dropout(
@@ -279,7 +295,8 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
 
 
 class TransformerDecoderBase(DecoderBase):
-    def __init__(self, d_model, copy_attn, embeddings, alignment_layer):
+    def __init__(self, d_model, copy_attn, embeddings, alignment_layer,
+                 layer_norm='standard'):
         super(TransformerDecoderBase, self).__init__()
 
         self.embeddings = embeddings
@@ -291,7 +308,12 @@ class TransformerDecoderBase(DecoderBase):
         # attention. But it was never actually used -- the "copy" attention
         # just reuses the context attention.
         self._copy = copy_attn
-        self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
+        if layer_norm == 'standard':
+            self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
+        elif layer_norm == 'rms':
+            self.layer_norm = RMSNorm(d_model, eps=1e-6)
+        else:
+            raise ValueError(f'{layer_norm} layer norm type is not supported')
 
         self.alignment_layer = alignment_layer
 
@@ -316,7 +338,8 @@ class TransformerDecoderBase(DecoderBase):
             opt.alignment_layer,
             alignment_heads=opt.alignment_heads,
             pos_ffn_activation_fn=opt.pos_ffn_activation_fn,
-            add_qkvbias=opt.add_qkvbias
+            add_qkvbias=opt.add_qkvbias,
+            layer_norm=opt.layer_norm
         )
 
     def init_state(self, src, enc_out, enc_final_hs):
@@ -381,6 +404,7 @@ class TransformerDecoder(TransformerDecoderBase):
         alignment_heads (int):
             N. of cross attention heads to use for alignment guiding
         add_qkvbias (bool): whether to add bias to the Key/Value nn.Linear
+        layer_norm (string): type of layer normalization standard/rms
     """
 
     def __init__(
@@ -400,7 +424,8 @@ class TransformerDecoder(TransformerDecoderBase):
         alignment_layer,
         alignment_heads,
         pos_ffn_activation_fn=ActivationFunction.relu,
-        add_qkvbias=False
+        add_qkvbias=False,
+        layer_norm='standard'
     ):
         super(TransformerDecoder, self).__init__(
             d_model, copy_attn, embeddings, alignment_layer
@@ -420,7 +445,8 @@ class TransformerDecoder(TransformerDecoderBase):
                     full_context_alignment=full_context_alignment,
                     alignment_heads=alignment_heads,
                     pos_ffn_activation_fn=pos_ffn_activation_fn,
-                    add_qkvbias=add_qkvbias
+                    add_qkvbias=add_qkvbias,
+                    layer_norm=layer_norm
                 )
                 for i in range(num_layers)
             ]
@@ -600,7 +626,8 @@ class TransformerLMDecoder(TransformerDecoderBase):
         alignment_layer=None,
         alignment_heads=None,
         pos_ffn_activation_fn=ActivationFunction.relu,
-        add_qkvbias=False
+        add_qkvbias=False,
+        layer_norm='standard'
     ):
         super(TransformerLMDecoder, self).__init__(
             d_model, copy_attn, embeddings, None
@@ -619,7 +646,8 @@ class TransformerLMDecoder(TransformerDecoderBase):
                     full_context_alignment=None,
                     alignment_heads=None,
                     pos_ffn_activation_fn=pos_ffn_activation_fn,
-                    add_qkvbias=add_qkvbias
+                    add_qkvbias=add_qkvbias,
+                    layer_norm=layer_norm
                 )
                 for i in range(num_layers)
             ]
@@ -644,6 +672,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
         tgt_words = tgt[:, :, 0]
 
         dec_out = self.embeddings(tgt, step=step)
+
         assert dec_out.dim() == 3  # batch x len x embedding_dim
 
         pad_idx = self.embeddings.word_padding_idx
