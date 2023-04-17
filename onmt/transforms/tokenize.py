@@ -3,6 +3,7 @@ import re
 from onmt.utils.logging import logger
 from onmt.transforms import register_transform
 from .transform import Transform, ObservableStats
+from onmt.constants import DefaultTokens
 
 
 class TokenizerTransform(Transform):
@@ -170,7 +171,7 @@ class SentencePieceTransform(TokenizerTransform):
     def _tokenize(self, tokens, side='src', is_train=False):
         """Do sentencepiece subword tokenize."""
         sp_model = self.load_models[side]
-        sentence = ' '.join(tokens)
+        sentence = ' '.join(tokens).replace(DefaultTokens.SEP, '\n')
         nbest_size = self.tgt_subword_nbest if side == 'tgt' else \
             self.src_subword_nbest
         if is_train is False or nbest_size in [0, 1]:
@@ -189,7 +190,7 @@ class SentencePieceTransform(TokenizerTransform):
     def _detokenize(self, tokens, side="src"):
         """Apply SentencePiece Detokenizer"""
         sp_model = self.load_models[side]
-        return sp_model.DecodePieces(tokens)
+        return sp_model.DecodePieces(tokens).replace('\n', DefaultTokens.SEP)
 
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Apply sentencepiece subword encode to src & tgt."""

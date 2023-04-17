@@ -7,7 +7,7 @@ import onmt.model_builder
 from onmt.utils.parse import ArgumentParser
 import onmt.opts
 from onmt.inputters.inputter import dict_to_vocabs
-from onmt.utils.misc import use_gpu
+# from onmt.utils.misc import use_gpu
 from onmt.utils.logging import init_logger, logger
 
 parser = argparse.ArgumentParser(description='translate.py')
@@ -60,7 +60,7 @@ def main():
     ArgumentParser.validate_model_opts(model_opt)
 
     model = onmt.model_builder.build_base_model(
-        model_opt, vocabs, use_gpu(opt), checkpoint)
+        model_opt, vocabs, checkpoint)
     encoder = model.encoder  # no encoder for LM task
     decoder = model.decoder
 
