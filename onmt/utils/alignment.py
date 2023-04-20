@@ -76,7 +76,8 @@ def build_align_pharaoh(valid_alignment):
     align_pairs = []
     if isinstance(valid_alignment, torch.Tensor):
         tgt_align_src_id = valid_alignment.argmax(dim=-1)
-        align_scores = valid_alignment.softmax(dim=-1).max(dim=-1).values
+        align_scores = torch.divide(valid_alignment.max(dim=-1).values,
+                                    valid_alignment.sum(dim=-1))
         for tgt_id, src_id in enumerate(tgt_align_src_id.tolist()):
             align_pairs.append(str(src_id) + "-" + str(tgt_id))
         align_scores = ["{0}-{1:.5f}".format(i, s)
