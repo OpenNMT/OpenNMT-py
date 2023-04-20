@@ -46,7 +46,8 @@ def check_path(path, exist_ok=False, log=print):
         else:
             raise IOError(f"path {path} exists, stop.")
     else:
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+        if os.path.dirname(path) != '':
+            os.makedirs(os.path.dirname(path), exist_ok=True)
 
 
 def sequence_mask(lengths, max_len=None):

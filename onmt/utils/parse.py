@@ -270,6 +270,15 @@ class ArgumentParser(cfargparse.ArgumentParser, DataOptsCheckerMixin):
                 "src_word_vec_size should be equal to hidden_size with " \
                 "-feat_merge concat mode."
 
+        if model_opt.position_encoding and \
+                model_opt.max_relative_positions != 0:
+            raise ValueError(
+                "Cannot use absolute and relative position encoding at the"
+                "same time. Use either --position_encoding=true for legacy"
+                "absolute position encoding or --max_realtive_positions with"
+                " -1 for Rotary, or > 0 for Relative Position Representations"
+                "as in https://arxiv.org/pdf/1803.02155.pdf")
+
     @classmethod
     def ckpt_model_opts(cls, ckpt_opt):
         # Load default opt values, then overwrite with the opts in
