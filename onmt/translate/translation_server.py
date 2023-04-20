@@ -617,8 +617,10 @@ class ServerModel(object):
         results = [self.maybe_detokenize_with_align(result, src)
                    for result, src in zip(results, tiled_texts)]
 
-        aligns = [align[0] for _, align in results]
-        align_scores = [align[1] for _, align in results]
+        aligns = [align[0] if align is not None else None
+                  for _, align in results]
+        align_scores = [align[1] if align is not None else None
+                        for _, align in results]
         results = [tokens for tokens, _ in results]
 
         # build back results with empty texts
