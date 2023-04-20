@@ -74,6 +74,7 @@ def build_align_pharaoh(valid_alignment):
     or empty list if it's None.
     """
     align_pairs = []
+    align_scores = []
     if isinstance(valid_alignment, torch.Tensor):
         tgt_align_src_id = valid_alignment.argmax(dim=-1)
         align_scores = torch.divide(valid_alignment.max(dim=-1).values,
