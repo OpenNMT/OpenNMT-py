@@ -506,7 +506,7 @@ def _add_train_general_opts(parser):
               help="Port of master for torch.distributed training.")
 
     # LoRa
-    group.add('--lora_layers', '-lora_layers', default=[], nargs='*', type=str,
+    group.add('--lora_layers', '-lora_layers', default=[], nargs='+', type=str,
               help="list of layers to be replaced by LoRa layers."
                    " ex: ['linear_values', 'linear_query'] "
                    " cf paper §4.2 https://arxiv.org/abs/2106.09685")

@@ -1,10 +1,9 @@
 import os
 import torch
-
 from collections import deque
 from onmt.utils.logging import logger
 from onmt.inputters.inputter import vocabs_to_dict
-from copy import deepcopy
+from onmt.modules.lora import lora_state_dict
 
 
 def build_model_saver(model_opt, opt, model, vocabs, optim):
@@ -113,33 +112,22 @@ class ModelSaver(ModelSaverBase):
     """Simple model saver to filesystem"""
 
     def _save(self, step, model):
-        # for future use?
-        # if we want to save the LoRa model state_dict only
-        # model_state_dict = lora_state_dict(model, bias='lora_only')
-        # and comment the line below
-        model_state_dict = model.state_dict()
-        model_state_dict = {k: v for k, v in model_state_dict.items()
-                            if 'generator' not in k}
-        generator_state_dict = model.generator.state_dict()
-
-        # NOTE: We need to trim the vocab to remove any unk tokens that
-        # were not originally here.
-
-        vocabs = deepcopy(self.vocabs)
-        # for side in ["src", "tgt"]:
-        #    keys_to_pop = []
-        #    if hasattr(vocab[side], "fields"):
-        #        unk_token = vocab[side].fields[0][1].vocab.itos[0]
-        #        for key, value in vocab[side].fields[0][1].vocab.stoi.items():
-        #            if value == 0 and key != unk_token:
-        #                keys_to_pop.append(key)
-        #        for key in keys_to_pop:
-        #            vocab[side].fields[0][1].vocab.stoi.pop(key, None)
+        if (hasattr(self.model_opt, 'lora_layers') and
+                len(self.model_opt.lora_layers) > 0) or \
+                (hasattr(self.model_opt, 'lora_embedding') and
+                 self.model_opt.lora_embedding):
+            model_state_dict = lora_state_dict(model, bias='lora_only')
+            generator_state_dict = None
+        else:
+            model_state_dict = model.state_dict()
+            model_state_dict = {k: v for k, v in model_state_dict.items()
+                                if 'generator' not in k}
+            generator_state_dict = model.generator.state_dict()
 
         checkpoint = {
             'model': model_state_dict,
             'generator': generator_state_dict,
-            'vocab': vocabs_to_dict(vocabs),
+            'vocab': vocabs_to_dict(self.vocabs),
             'opt': self.model_opt,
             'optim': self.optim.state_dict(),
         }
