@@ -25,8 +25,6 @@ class InlineTagger(object):
                  src_delimiter,
                  tag_corpus_ratio=0.1):
         self.max_tags = max_tags
-        self.tagged_examples = 0
-        self.processed_examples = 0
         self.tag_corpus_ratio = tag_corpus_ratio
         self.src_delimiter = src_delimiter
         self.internal_dictionary = self._create_internal_dictionary(
@@ -106,7 +104,7 @@ class InlineTagger(object):
             # Make sure we only search for exact matches (we don't want
             # to match part of words) and perform some bound checking
             if (
-                (pair[1].strip() not in ' '.join(tokenized_target_string))
+                (pair[1] not in ' '.join(tokenized_target_string))
                 or (
                     len(source_only) != src_match_end + 1
                     and not (
@@ -148,14 +146,14 @@ class InlineTagger(object):
                     ]
                 )
 
-                # Create all the possible tag forms. We inject a special
-                # unicode (∥) as a placeholder for whitespace in order
+                # Create all possible tag forms. We inject a special
+                # unicode char (∥) as a placeholder for whitespace in order
                 # to keep the indices unaltered. This char is replaced with
                 # spaces before we return the augmented examples.
                 src_single_tags = (
                     f'{source_only[src_offset: src_match_start]}'
                     f'{self.isolated_tag_prefix}{single_tag_start_num}'
-                    f'{self.isolated_tag_suffix}∥{src_term}'
+                    f'{self.isolated_tag_suffix}∥{src_term}∥'
                 )
                 src_paired_tags = (
                     f'{source_only[src_offset: src_match_start]}'
@@ -168,7 +166,7 @@ class InlineTagger(object):
                 tgt_single_tags = (
                     f'{tgt_example[tgt_offset: tgt_match_start]}'
                     f'{self.isolated_tag_prefix}{single_tag_start_num}'
-                    f'{self.isolated_tag_suffix}∥{tgt_term}'
+                    f'{self.isolated_tag_suffix}∥{tgt_term}∥'
                 )
                 tgt_paired_tags = (
                     f'{tgt_example[tgt_offset: tgt_match_start]}'
@@ -198,9 +196,7 @@ class InlineTagger(object):
                 tgt_offset = tgt_match_end + 1
                 tag_counter += 1
                 is_match = True
-        self.processed_examples += 1
         if is_match:
-            self.tagged_examples += 1
             if augmented_part is not None:
                 src_with_tags.append(source_only[src_offset:] +
                                      self.src_delimiter +
@@ -259,11 +255,13 @@ class InlineTagsTransform(Transform):
         self.tags_corpus_ratio = self.opts.tags_corpus_ratio
         self.max_tags = self.opts.max_tags
         self.src_delimiter = self.opts.src_delimiter
+        self.paired_stag = self.opts.paired_stag,
+        self.paired_etag = self.opts.paired_etag,
+        self.isolated_tag = self.opts.isolated_tag,
 
     @classmethod
     def get_specials(cls, opts):
-        """Check the tag format and then add up to
-        self.max_tags * 2 placeholders to src and tgt vocabs."""
+        """Add up to self.max_tags * 2 placeholders to src and tgt vocabs."""
 
         # Check if the tags include the
         # mandatory "#" number placeholder"
@@ -300,18 +298,16 @@ class InlineTagsTransform(Transform):
         super().warm_up(None)
         self.tagger = InlineTagger(self.tags_dictionary_path,
                                    self.max_tags,
-                                   self.opts.paired_stag,
-                                   self.opts.paired_etag,
-                                   self.opts.isolated_tag,
+                                   self.paired_stag,
+                                   self.paired_etag,
+                                   self.isolated_tag,
                                    self.src_delimiter,
                                    self.tags_corpus_ratio)
 
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Add tags (placeholders) to source and target segments."""
 
-        if self.tagger.processed_examples > 0 and \
-                self.tagger.tagged_examples/self.tagger.processed_examples \
-                > self.tags_corpus_ratio:
+        if random.random() > self.tags_corpus_ratio:
             return example
 
         src_tgt_pair = self.tagger._tagged_src_tgt(
