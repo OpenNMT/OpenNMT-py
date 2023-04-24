@@ -106,7 +106,7 @@ class InlineTagger(object):
             # Make sure we only search for exact matches (we don't want
             # to match part of words) and perform some bound checking
             if (
-                (pair[1].strip() not in ' '.join(tokenized_target_string))
+                (pair[1] not in ' '.join(tokenized_target_string))
                 or (
                     len(source_only) != src_match_end + 1
                     and not (
@@ -149,13 +149,13 @@ class InlineTagger(object):
                 )
 
                 # Create all the possible tag forms. We inject a special
-                # unicode (∥) as a placeholder for whitespace in order
+                # unicode char (∥) as a placeholder for whitespace in order
                 # to keep the indices unaltered. This char is replaced with
                 # spaces before we return the augmented examples.
                 src_single_tags = (
                     f'{source_only[src_offset: src_match_start]}'
                     f'{self.isolated_tag_prefix}{single_tag_start_num}'
-                    f'{self.isolated_tag_suffix}∥{src_term}'
+                    f'{self.isolated_tag_suffix}∥{src_term}∥'
                 )
                 src_paired_tags = (
                     f'{source_only[src_offset: src_match_start]}'
@@ -168,7 +168,7 @@ class InlineTagger(object):
                 tgt_single_tags = (
                     f'{tgt_example[tgt_offset: tgt_match_start]}'
                     f'{self.isolated_tag_prefix}{single_tag_start_num}'
-                    f'{self.isolated_tag_suffix}∥{tgt_term}'
+                    f'{self.isolated_tag_suffix}∥{tgt_term}∥'
                 )
                 tgt_paired_tags = (
                     f'{tgt_example[tgt_offset: tgt_match_start]}'
@@ -262,8 +262,7 @@ class InlineTagsTransform(Transform):
 
     @classmethod
     def get_specials(cls, opts):
-        """Check the tag format and then add up to
-        self.max_tags * 2 placeholders to src and tgt vocabs."""
+        """Add up to self.max_tags * 2 placeholders to src and tgt vocabs."""
 
         # Check if the tags include the
         # mandatory "#" number placeholder"
@@ -309,9 +308,7 @@ class InlineTagsTransform(Transform):
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Add tags (placeholders) to source and target segments."""
 
-        if self.tagger.processed_examples > 0 and \
-                self.tagger.tagged_examples/self.tagger.processed_examples \
-                > self.tags_corpus_ratio:
+        if random.random() > self.tags_corpus_ratio:
             return example
 
         src_tgt_pair = self.tagger._tagged_src_tgt(
