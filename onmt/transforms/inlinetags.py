@@ -25,8 +25,6 @@ class InlineTagger(object):
                  src_delimiter,
                  tag_corpus_ratio=0.1):
         self.max_tags = max_tags
-        self.tagged_examples = 0
-        self.processed_examples = 0
         self.tag_corpus_ratio = tag_corpus_ratio
         self.src_delimiter = src_delimiter
         self.internal_dictionary = self._create_internal_dictionary(
@@ -148,7 +146,7 @@ class InlineTagger(object):
                     ]
                 )
 
-                # Create all the possible tag forms. We inject a special
+                # Create all possible tag forms. We inject a special
                 # unicode char (∥) as a placeholder for whitespace in order
                 # to keep the indices unaltered. This char is replaced with
                 # spaces before we return the augmented examples.
@@ -198,9 +196,7 @@ class InlineTagger(object):
                 tgt_offset = tgt_match_end + 1
                 tag_counter += 1
                 is_match = True
-        self.processed_examples += 1
         if is_match:
-            self.tagged_examples += 1
             if augmented_part is not None:
                 src_with_tags.append(source_only[src_offset:] +
                                      self.src_delimiter +
@@ -259,6 +255,9 @@ class InlineTagsTransform(Transform):
         self.tags_corpus_ratio = self.opts.tags_corpus_ratio
         self.max_tags = self.opts.max_tags
         self.src_delimiter = self.opts.src_delimiter
+        self.paired_stag = self.opts.paired_stag,
+        self.paired_etag = self.opts.paired_etag,
+        self.isolated_tag = self.opts.isolated_tag,
 
     @classmethod
     def get_specials(cls, opts):
@@ -299,9 +298,9 @@ class InlineTagsTransform(Transform):
         super().warm_up(None)
         self.tagger = InlineTagger(self.tags_dictionary_path,
                                    self.max_tags,
-                                   self.opts.paired_stag,
-                                   self.opts.paired_etag,
-                                   self.opts.isolated_tag,
+                                   self.paired_stag,
+                                   self.paired_etag,
+                                   self.isolated_tag,
                                    self.src_delimiter,
                                    self.tags_corpus_ratio)
 
