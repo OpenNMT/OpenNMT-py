@@ -18,6 +18,26 @@ from onmt.constants import DefaultTokens, ModelTask
 from onmt.modules import Linear, Embedding, mark_only_lora_as_trainable
 
 
+def replace_8bit_linear(model, threshold=6.0, module_to_convert=""):
+    try:
+        import bitsandbytes as bnb
+    except ImportError:
+        raise ImportError("Install bitsandbytes to use 8bit compression")
+    for name, module in model.named_children():
+        if len(list(module.children())) > 0:
+            replace_8bit_linear(module, threshold, module_to_convert)
+
+        if isinstance(module, nn.Linear) and name == module_to_convert:
+            model._modules[name] = bnb.nn.Linear8bitLt(
+                module.in_features,
+                module.out_features,
+                module.bias is not None,
+                has_fp16_weights=False,
+                threshold=threshold,
+            )
+    return model
+
+
 def replace_lora_linear(model, r=2, lora_alpha=1,
                         lora_dropout=0, layer=""):
     """
@@ -292,6 +312,7 @@ def build_base_model(model_opt, vocabs, checkpoint=None):
         if model_opt.freeze_encoder or model_opt.freeze_decoder:
             raise ValueError("Cannot use LoRa with Enc/Dec-oder freezing")
         for layer in model_opt.lora_layers:
+            logger.info("Adding LoRa layers for %s" % layer)
             model = replace_lora_linear(model, r=model_opt.lora_rank,
                                         lora_alpha=model_opt.lora_alpha,
                                         lora_dropout=model_opt.lora_dropout,
@@ -300,12 +321,18 @@ def build_base_model(model_opt, vocabs, checkpoint=None):
     if hasattr(model_opt, 'lora_embedding') and model_opt.lora_embedding:
         if model_opt.freeze_encoder or model_opt.freeze_decoder:
             raise ValueError("Cannot use LoRa with Enc/Dec-oder freezing")
+        logger.info("Adding LoRa Embeddings")
         model = replace_lora_embedding(model, r=model_opt.lora_rank,
                                        lora_alpha=model_opt.lora_alpha)
         mark_lora = True
 
     if mark_lora:
-        mark_only_lora_as_trainable(model, bias='lora_only')
+        mark_only_lora_as_trainable(model, bias='none')
+
+    if hasattr(model_opt, 'quant_layers') and len(model_opt.quant_layers) > 0:
+        for layer in model_opt.quant_layers:
+            logger.info("8bit compression of layer %s" % layer)
+            model = replace_8bit_linear(model, module_to_convert=layer)
 
     # Build Generator.
     if not model_opt.copy_attn:

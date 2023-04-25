@@ -519,6 +519,9 @@ def _add_train_general_opts(parser):
     group.add('--lora_dropout', '-lora_dropout', type=float, default=0.0,
               help="rule of thumb: same value as in main model")
 
+    group.add('--quant_layers', '-quant_layers', default=[], nargs='+',
+              type=str, help="list of layers to be compressed in 8bit.")
+
     _add_reproducibility_opts(parser)
 
     # Init options
