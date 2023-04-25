@@ -655,9 +655,11 @@ Also you can read the blog post here: https://huggingface.co/blog/hf-bitsandbyte
 
 You need to add the following option:
 
-* `quant_layers: ['w_1', 'w_2', 'w_3', 'linear_values', 'linear_query', 'linear_keys', 'final_linear']` 
+* `quant_layers: ['w_1', 'w_2']` 
 
-These are the layers of the PositionWise Feed-Forward from the Encoder/Decoder and the Self-Attention module layers.
+These are the layers of the PositionWise Feed-Forward from the Encoder/Decoder.
+
+At the moment, for a given layer you cannot mix LoRa and 8bit compression. (TODO List)
 
 
 ## Can I get word alignments while translating?

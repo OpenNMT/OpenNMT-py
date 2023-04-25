@@ -53,6 +53,7 @@ def replace_lora_linear(model, r=2, lora_alpha=1,
         if len(list(module.children())) > 0:
             replace_lora_linear(module, r, lora_alpha,
                                 lora_dropout, layer)
+
         if isinstance(module, nn.Linear) and name == layer:
             model._modules[name] = Linear(
                 module.in_features,
@@ -307,6 +308,11 @@ def build_base_model(model_opt, vocabs, checkpoint=None):
     # Build Model
     model = build_task_specific_model(model_opt, vocabs)
 
+    if hasattr(model_opt, 'quant_layers') and len(model_opt.quant_layers) > 0:
+        for layer in model_opt.quant_layers:
+            logger.info("8bit compression of layer %s" % layer)
+            model = replace_8bit_linear(model, module_to_convert=layer)
+
     mark_lora = False
     if hasattr(model_opt, 'lora_layers') and len(model_opt.lora_layers) > 0:
         if model_opt.freeze_encoder or model_opt.freeze_decoder:
@@ -328,11 +334,6 @@ def build_base_model(model_opt, vocabs, checkpoint=None):
 
     if mark_lora:
         mark_only_lora_as_trainable(model, bias='none')
-
-    if hasattr(model_opt, 'quant_layers') and len(model_opt.quant_layers) > 0:
-        for layer in model_opt.quant_layers:
-            logger.info("8bit compression of layer %s" % layer)
-            model = replace_8bit_linear(model, module_to_convert=layer)
 
     # Build Generator.
     if not model_opt.copy_attn:

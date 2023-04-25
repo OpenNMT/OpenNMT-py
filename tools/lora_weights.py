@@ -1,5 +1,6 @@
 import torch
 import argparse
+from onmt.utils.logging import init_logger
 from onmt.inputters.inputter import dict_to_vocabs, vocabs_to_dict
 from onmt.model_builder import build_base_model
 """
@@ -26,6 +27,8 @@ if __name__ == "__main__":
                         help="""Path to the output model""")
     opt = parser.parse_args()
 
+    init_logger()
+
     base_checkpoint = torch.load(opt.base_model,
                                  map_location=torch.device('cpu'))
 
@@ -35,6 +38,8 @@ if __name__ == "__main__":
                                  map_location=torch.device('cpu'))
 
     lora_opt = lora_checkpoint['opt']
+
+    lora_opt.quant_layers = []
 
     model = build_base_model(lora_opt, vocabs, base_checkpoint)
 
