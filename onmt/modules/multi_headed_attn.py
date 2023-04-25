@@ -262,6 +262,20 @@ class MultiHeadedAttention(nn.Module):
             value = shape(value, self.dim_per_head)
             query = shape(query, self.dim_per_head)
 
+            if self.max_relative_positions == -1:  # Rotary Embeddings
+                start_pos = 0
+                seqlen = query.size(2)
+                rope = self.rope[start_pos:
+                                 start_pos +
+                                 seqlen].to(query.device)
+
+                query = query.transpose(1, 2)
+                key = key.transpose(1, 2)
+                query, key = apply_rotary_emb(query,
+                                              key,
+                                              rope=rope)
+                query = query.transpose(1, 2)
+                key = key.transpose(1, 2)
         # 2) Calculate and scale scores.
         query = query / math.sqrt(self.dim_per_head)
         # batch x num_heads x query_len x key_len

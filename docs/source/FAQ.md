@@ -635,7 +635,7 @@ The `example` argument of `apply` is a `dict` of the form:
 This is defined in `onmt.inputters.corpus.ParallelCorpus.load`. This class is not easily extendable for now but it can be considered for future developments. For instance, we could create some `CustomParallelCorpus` class that would handle other kind of inputs.
 
 
-## How to use LoRa to finetune a big model ?
+## How to use LoRa and 8bit loading to finetune a big model ?
 
 Cf paper: [LoRa](https://arxiv.org/abs/2106.09685)
 
@@ -649,6 +649,17 @@ You need to train_from a model (for instance NLLB-200 3.3B) and use the followin
 * `lora_dropout: 0.1` or any value you can test
 * `lora_alpha: 1` or any value you can test
 * `lora_embedding: true` makes Embeddings LoRa compatible, hence trainable in the case you use `update_vocab: true` or if you want to finetune Embeddings as well.
+
+Bitsandbytes enables quantization of Linear layers. For more information: https://github.com/TimDettmers/bitsandbytes
+Also you can read the blog post here: https://huggingface.co/blog/hf-bitsandbytes-integration
+
+You need to add the following option:
+
+* `quant_layers: ['w_1', 'w_2']` 
+
+These are the layers of the PositionWise Feed-Forward from the Encoder/Decoder.
+
+At the moment, for a given layer you cannot mix LoRa and 8bit compression. (TODO List)
 
 
 ## Can I get word alignments while translating?

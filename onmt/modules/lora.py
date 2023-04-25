@@ -1,7 +1,9 @@
 #  --------------------------------------------------------------------------
-#  MOstly copied from https://github.com/microsoft/LoRA/
+#  Mostly copied from https://github.com/microsoft/LoRA/
 #  Copyright (c) Microsoft Corporation. All rights reserved.
 #  Licensed under the MIT License (MIT).
+#
+# However some bugs are fixed, cf eval() which is not called by model.eval()
 #  --------------------------------------------------------------------------
 import torch
 import torch.nn as nn
@@ -66,12 +68,20 @@ class Embedding(nn.Embedding, LoRALayer):
 
     def train(self, mode: bool = True):
         nn.Embedding.train(self, mode)
-        if self.merge_weights and self.merged:
-            # Make sure that the weights are not merged
-            if self.r > 0:
-                self.weight.data -= \
-                    (self.lora_B @ self.lora_A).T * self.scaling
-            self.merged = False
+        if mode:
+            if self.merge_weights and self.merged:
+                # Make sure that the weights are not merged
+                if self.r > 0:
+                    self.weight.data -= \
+                        (self.lora_B @ self.lora_A).T * self.scaling
+                self.merged = False
+        else:
+            if self.merge_weights and not self.merged:
+                # Merge the weights and mark it
+                if self.r > 0:
+                    self.weight.data += (self.lora_B @ self.lora_A) *\
+                        self.scaling
+                self.merged = True
 
     def eval(self):
         nn.Embedding.eval(self)
@@ -141,12 +151,20 @@ class Linear(nn.Linear, LoRALayer):
         def T(w):
             return w.T if self.fan_in_fan_out else w
         nn.Linear.train(self, mode)
-        if self.merge_weights and self.merged:
-            # Make sure that the weights are not merged
-            if self.r > 0:
-                self.weight.data -= \
-                    T(self.lora_B @ self.lora_A) * self.scaling
-            self.merged = False
+        if mode:
+            if self.merge_weights and self.merged:
+                # Make sure that the weights are not merged
+                if self.r > 0:
+                    self.weight.data -= \
+                        T(self.lora_B @ self.lora_A) * self.scaling
+                self.merged = False
+        else:
+            if self.merge_weights and not self.merged:
+                # Merge the weights and mark it
+                if self.r > 0:
+                    self.weight.data += \
+                        T(self.lora_B @ self.lora_A) * self.scaling
+                self.merged = True
 
     def eval(self):
         def T(w):
@@ -237,16 +255,30 @@ class MergedLinear(nn.Linear, LoRALayer):
         def T(w):
             return w.T if self.fan_in_fan_out else w
         nn.Linear.train(self, mode)
-        if self.merge_weights and self.merged:
-            # Make sure that the weights are not merged
-            if self.r > 0 and any(self.enable_lora):
-                delta_w = F.conv1d(
-                    self.lora_A.data.unsqueeze(0),
-                    self.lora_B.data.unsqueeze(-1),
-                    groups=sum(self.enable_lora)
-                ).squeeze(0)
-                self.weight.data -= self.zero_pad(T(delta_w * self.scaling))
-            self.merged = False
+        if mode:
+            if self.merge_weights and self.merged:
+                # Make sure that the weights are not merged
+                if self.r > 0 and any(self.enable_lora):
+                    delta_w = F.conv1d(
+                        self.lora_A.data.unsqueeze(0),
+                        self.lora_B.data.unsqueeze(-1),
+                        groups=sum(self.enable_lora)
+                    ).squeeze(0)
+                    self.weight.data -= self.zero_pad(T(delta_w *
+                                                        self.scaling))
+                self.merged = False
+        else:
+            if self.merge_weights and not self.merged:
+                # Merge the weights and mark it
+                if self.r > 0 and any(self.enable_lora):
+                    delta_w = F.conv1d(
+                        self.lora_A.data.unsqueeze(0),
+                        self.lora_B.data.unsqueeze(-1),
+                        groups=sum(self.enable_lora)
+                    ).squeeze(0)
+                    self.weight.data += self.zero_pad(T(delta_w *
+                                                        self.scaling))
+                self.merged = True
 
     def eval(self):
         def T(w):
