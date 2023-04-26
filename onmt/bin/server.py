@@ -90,7 +90,8 @@ def start(config_file,
             logger.info(inputs)
         out = {}
         try:
-            trans, scores, n_best, _, aligns = translation_server.run(inputs)
+            trans, scores, n_best, _, aligns, align_scores = \
+                translation_server.run(inputs)
             assert len(trans) == len(inputs) * n_best
             assert len(scores) == len(inputs) * n_best
             assert len(aligns) == len(inputs) * n_best
@@ -101,6 +102,7 @@ def start(config_file,
                             "n_best": n_best, "pred_score": scores[i]}
                 if len(aligns[i]) > 0 and aligns[i][0] is not None:
                     response["align"] = aligns[i]
+                    response["align_score"] = align_scores[i]
                 out[i % n_best].append(response)
         except ServerModelError as e:
             model_id = inputs[0].get("id")

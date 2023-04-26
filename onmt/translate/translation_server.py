@@ -169,15 +169,18 @@ class CTranslate2Translator(object):
                           for ex in preds]
             align_pharaohs = [[build_align_pharaoh(item) for item in ex]
                               for ex in attentions]
-            aligns = [[' '.join(item) for item in ex]
+            aligns = [[' '.join(item[0]) for item in ex]
                       for ex in align_pharaohs]
+            align_scores = [[' '.join(item[1]) for item in ex]
+                            for ex in align_pharaohs]
             predictions = [
                 [
                     pred + DefaultTokens.ALIGNMENT_SEPARATOR + align
-                    for pred, align in zip(*item)
+                    + DefaultTokens.ALIGNMENT_SEPARATOR + align_score
+                    for pred, align, align_score in zip(*item)
                 ]
                 for item in zip(
-                    predictions, aligns
+                    predictions, aligns, align_scores
                 )
             ]
         return scores, predictions
@@ -614,7 +617,10 @@ class ServerModel(object):
         results = [self.maybe_detokenize_with_align(result, src)
                    for result, src in zip(results, tiled_texts)]
 
-        aligns = [align for _, align in results]
+        aligns = [align[0] if align is not None else None
+                  for _, align in results]
+        align_scores = [align[1] if align is not None else None
+                        for _, align in results]
         results = [tokens for tokens, _ in results]
 
         # build back results with empty texts
@@ -622,10 +628,13 @@ class ServerModel(object):
             j = i * self.opt.n_best
             results = results[:j] + [""] * self.opt.n_best + results[j:]
             aligns = aligns[:j] + [None] * self.opt.n_best + aligns[j:]
+            align_scores = (align_scores[:j] + [None] *
+                            self.opt.n_best + align_scores[j:])
             scores = scores[:j] + [0] * self.opt.n_best + scores[j:]
 
-        rebuilt_segs, scores, aligns = self.rebuild_seg_packages(
-            all_preprocessed, results, scores, aligns, self.opt.n_best)
+        rebuilt_segs, scores, aligns, align_scores = self.rebuild_seg_packages(
+            all_preprocessed, results, scores,
+            aligns, align_scores, self.opt.n_best)
 
         results = [self.maybe_postprocess(seg) for seg in rebuilt_segs]
 
@@ -636,21 +645,26 @@ class ServerModel(object):
 
         self.logger.info("Translation Results: %d", len(results))
 
-        return results, scores, self.opt.n_best, timer.times, aligns
+        return (results, scores, self.opt.n_best, timer.times,
+                aligns, align_scores)
 
     def rebuild_seg_packages(self, all_preprocessed, results,
-                             scores, aligns, n_best):
+                             scores, aligns, align_scores, n_best):
         """Rebuild proper segment packages based on initial n_seg."""
 
         offset = 0
         rebuilt_segs = []
         avg_scores = []
         merged_aligns = []
+        merged_align_scores = []
         for i, seg_dict in enumerate(all_preprocessed):
             n_seg = seg_dict["n_seg"]
             sub_results = results[n_best * offset: (offset + n_seg) * n_best]
             sub_scores = scores[n_best * offset: (offset + n_seg) * n_best]
             sub_aligns = aligns[n_best * offset: (offset + n_seg) * n_best]
+            sub_align_scores = align_scores[
+                n_best * offset: (offset + n_seg) * n_best
+            ]
             for j in range(n_best):
                 _seg_dict = deepcopy(seg_dict)
                 _seg_dict["seg"] = list(islice(sub_results, j, None, n_best))
@@ -660,8 +674,11 @@ class ServerModel(object):
                 avg_scores.append(avg_score)
                 sub_sub_aligns = list(islice(sub_aligns, j, None, n_best))
                 merged_aligns.append(sub_sub_aligns)
+                sub_sub_align_scores = list(islice(sub_align_scores, j,
+                                                   None, n_best))
+                merged_align_scores.append(sub_sub_align_scores)
             offset += n_seg
-        return rebuilt_segs, avg_scores, merged_aligns
+        return rebuilt_segs, avg_scores, merged_aligns, merged_align_scores
 
     def do_timeout(self):
         """Timeout function that frees GPU memory.
@@ -879,9 +896,11 @@ class ServerModel(object):
         align = None
         if self.opt.report_align:
             # output contain alignment
-            sequence, align = sequence.split(DefaultTokens.ALIGNMENT_SEPARATOR)
+            sequence, align, align_scores = sequence.split(
+                DefaultTokens.ALIGNMENT_SEPARATOR)
             if align != '':
-                align = self.maybe_convert_align(src, sequence, align)
+                align = self.maybe_convert_align(src, sequence,
+                                                 align, align_scores)
         sequence = self.maybe_detokenize(sequence, side)
         return (sequence, align)
 
@@ -908,7 +927,7 @@ class ServerModel(object):
 
         return detok
 
-    def maybe_convert_align(self, src, tgt, align):
+    def maybe_convert_align(self, src, tgt, align, align_scores):
         """Convert alignment to match detokenized src/tgt (or not).
 
         Args:
@@ -927,7 +946,8 @@ class ServerModel(object):
                 raise ValueError("To get decoded alignment, joiner/spacer "
                                  "should be used in both side's tokenizer.")
             elif ''.join(tgt.split()) != '':
-                align = to_word_align(src, tgt, align, src_marker, tgt_marker)
+                align = to_word_align(src, tgt, align, align_scores,
+                                      src_marker, tgt_marker)
         return align
 
     def maybe_postprocess(self, sequence):
