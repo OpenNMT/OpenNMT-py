@@ -585,7 +585,7 @@ class FusedAdam(torch.optim.Optimizer):
             numerical stability. (default: 1e-8)
         weight_decay (float, optional): weight decay (L2 penalty) (default: 0)
         amsgrad (boolean, optional): whether to use the AMSGrad variant of this
-            algorithm from the paper `On the Convergence of Adam and Beyond`_
+            algorithm from the paper 'On the Convergence of Adam and Beyond'
             (default: False) NOT SUPPORTED in FusedAdam!
         eps_inside_sqrt (boolean, optional): in the 'update parameters' step,
             adds eps to the bias-corrected second moment estimate before

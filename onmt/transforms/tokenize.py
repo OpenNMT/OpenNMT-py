@@ -3,6 +3,7 @@ import re
 from onmt.utils.logging import logger
 from onmt.transforms import register_transform
 from .transform import Transform, ObservableStats
+from onmt.constants import DefaultTokens
 
 
 class TokenizerTransform(Transform):
@@ -170,26 +171,31 @@ class SentencePieceTransform(TokenizerTransform):
     def _tokenize(self, tokens, side='src', is_train=False):
         """Do sentencepiece subword tokenize."""
         sp_model = self.load_models[side]
-        sentence = ' '.join(tokens)
-        nbest_size = self.tgt_subword_nbest if side == 'tgt' else \
-            self.src_subword_nbest
-        if is_train is False or nbest_size in [0, 1]:
-            # derterministic subwording
-            segmented = sp_model.encode(sentence, out_type=str)
-        else:
-            # subword sampling when nbest_size > 1 or -1
-            # alpha should be 0.0 < alpha < 1.0
-            alpha = self.tgt_subword_alpha if side == 'tgt' else \
-                self.src_subword_alpha
-            segmented = sp_model.encode(
-                sentence, out_type=str, enable_sampling=True,
-                alpha=alpha, nbest_size=nbest_size)
-        return segmented
+        sentence = ' '.join(tokens).replace(DefaultTokens.SEP, '\n')
+        sent_list = sentence.split(DefaultTokens.EOS)
+        segmented = []
+        for sentence in sent_list:
+            nbest_size = self.tgt_subword_nbest if side == 'tgt' else \
+                self.src_subword_nbest
+            if is_train is False or nbest_size in [0, 1]:
+                # derterministic subwording
+                segmented += sp_model.encode(sentence, out_type=str)
+            else:
+                # subword sampling when nbest_size > 1 or -1
+                # alpha should be 0.0 < alpha < 1.0
+                alpha = self.tgt_subword_alpha if side == 'tgt' else \
+                    self.src_subword_alpha
+                segmented += sp_model.encode(
+                    sentence, out_type=str, enable_sampling=True,
+                    alpha=alpha, nbest_size=nbest_size)
+            segmented += [DefaultTokens.EOS]
+
+        return segmented[:-1]
 
     def _detokenize(self, tokens, side="src"):
         """Apply SentencePiece Detokenizer"""
         sp_model = self.load_models[side]
-        return sp_model.DecodePieces(tokens)
+        return sp_model.DecodePieces(tokens).replace('\n', DefaultTokens.SEP)
 
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Apply sentencepiece subword encode to src & tgt."""

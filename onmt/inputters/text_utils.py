@@ -78,15 +78,23 @@ def clean_example(maybe_example):
 
 def process(task, bucket, **kwargs):
     """Returns valid transformed bucket from bucket."""
-    _, transform, cid = bucket[0]
-    # We apply the same TransformPipe to all the bucket
-    processed_bucket = transform.batch_apply(
-       bucket, is_train=(task == CorpusTask.TRAIN), corpus_name=cid)
-    if processed_bucket:
-        for i in range(len(processed_bucket)):
-            (example, transform, cid) = processed_bucket[i]
+    transform_cid_to_examples = {}
+    for example in bucket:
+        transform_cid = (example[1], example[2])
+        if transform_cid not in transform_cid_to_examples:
+            transform_cid_to_examples[transform_cid] = []
+        transform_cid_to_examples[transform_cid].append(example)
+
+    processed_bucket = []
+    for (transform, cid), sub_bucket in transform_cid_to_examples.items():
+        transf_bucket = transform.batch_apply(
+            sub_bucket, is_train=(task == CorpusTask.TRAIN),
+            corpus_name=cid)
+        for example, transform, cid in transf_bucket:
             example = clean_example(example)
-            processed_bucket[i] = example
+            if len(example['src']['src']) > 0:
+                processed_bucket.append(example)
+
         # at this point an example looks like:
         # {'src': {'src': ..., 'feats': [....]},
         #  'tgt': {'tgt': ...},
@@ -95,6 +103,7 @@ def process(task, bucket, **kwargs):
         #  'indices' : seq in bucket
         #  'align': ...,
         # }
+    if len(processed_bucket) > 0:
         return processed_bucket
     else:
         return None
@@ -103,6 +112,7 @@ def process(task, bucket, **kwargs):
 def numericalize(vocabs, example):
     """
     """
+    decoder_start_token = vocabs['decoder_start_token']
     numeric = example
     numeric['src']['src_ids'] = []
     if vocabs['data_task'] == ModelTask.SEQ2SEQ:
@@ -112,13 +122,13 @@ def numericalize(vocabs, example):
             numeric['tgt']['tgt_ids'] = []
             tgt_text = example['tgt']['tgt'].split()
             numeric['tgt']['tgt_ids'] = \
-                vocabs['tgt']([DefaultTokens.BOS] + tgt_text
+                vocabs['tgt']([decoder_start_token] + tgt_text
                               + [DefaultTokens.EOS])
 
     elif vocabs['data_task'] == ModelTask.LANGUAGE_MODEL:
         src_text = example['src']['src'].split()
         numeric['src']['src_ids'] = \
-            vocabs['src']([DefaultTokens.BOS] + src_text)
+            vocabs['src']([decoder_start_token] + src_text)
         if example['tgt'] is not None:
             numeric['tgt']['tgt_ids'] = []
             tgt_text = example['tgt']['tgt'].split()

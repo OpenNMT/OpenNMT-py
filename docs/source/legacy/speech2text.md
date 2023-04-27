@@ -1,10 +1,6 @@
 # Speech to Text
 
----------
-
 **WARNING**: This example is based on the [legacy version of OpenNMT-py](https://github.com/OpenNMT/OpenNMT-py/tree/legacy)!
-
----------
 
 
 A deep learning-based approach to learning the speech-to-text conversion, built on top of the <a href="http://opennmt.net/">OpenNMT</a> system.

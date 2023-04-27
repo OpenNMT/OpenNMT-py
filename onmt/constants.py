@@ -11,6 +11,7 @@ class DefaultTokens(object):
     SENT_FULL_STOPS = [".", "?", "!"]
     PHRASE_TABLE_SEPARATOR = '|||'
     ALIGNMENT_SEPARATOR = ' ||| '
+    SEP = '｟newline｠'
 
 
 class CorpusName(object):

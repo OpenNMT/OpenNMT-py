@@ -5,9 +5,11 @@ import os
 import time
 import numpy as np
 from itertools import count, zip_longest
+from copy import deepcopy
 
 import torch
 import torch.nn.functional as F
+from torch.nn.utils.rnn import pad_sequence
 from onmt.constants import DefaultTokens
 import onmt.model_builder
 import onmt.decoders.ensemble
@@ -125,21 +127,22 @@ class Inference(object):
         global_scorer=None,
         out_file=None,
         report_align=False,
+        gold_align=False,
         report_score=True,
         logger=None,
         seed=-1,
         with_score=False,
-        decoder_start_token=DefaultTokens.BOS
     ):
         self.model = model
         self.vocabs = vocabs
-        self._tgt_vocab = self.vocabs['tgt']
-        self._tgt_eos_idx = self.vocabs['tgt'].lookup_token(DefaultTokens.EOS)
-        self._tgt_pad_idx = self.vocabs['tgt'].lookup_token(DefaultTokens.PAD)
-        self._tgt_bos_idx = self.vocabs['tgt'].lookup_token(DefaultTokens.BOS)
-        self._tgt_unk_idx = self.vocabs['tgt'].lookup_token(DefaultTokens.UNK)
+        self._tgt_vocab = vocabs['tgt']
+        self._tgt_eos_idx = vocabs['tgt'].lookup_token(DefaultTokens.EOS)
+        self._tgt_pad_idx = vocabs['tgt'].lookup_token(DefaultTokens.PAD)
+        self._tgt_bos_idx = vocabs['tgt'].lookup_token(DefaultTokens.BOS)
+        self._tgt_unk_idx = vocabs['tgt'].lookup_token(DefaultTokens.UNK)
+        self._tgt_sep_idx = vocabs['tgt'].lookup_token(DefaultTokens.SEP)
         self._tgt_start_with =\
-            self.vocabs['tgt'].lookup_token(decoder_start_token)
+            vocabs['tgt'].lookup_token(vocabs['decoder_start_token'])
         self._tgt_vocab_len = len(self._tgt_vocab)
 
         self._gpu = gpu
@@ -189,6 +192,7 @@ class Inference(object):
             )
         self.out_file = out_file
         self.report_align = report_align
+        self.gold_align = gold_align
         self.report_score = report_score
         self.logger = logger
 
@@ -269,11 +273,11 @@ class Inference(object):
             global_scorer=global_scorer,
             out_file=out_file,
             report_align=report_align,
+            gold_align=opt.gold_align,
             report_score=report_score,
             logger=logger,
             seed=opt.seed,
             with_score=opt.with_score,
-            decoder_start_token=opt.decoder_start_token
         )
 
     def _log(self, msg):
@@ -344,14 +348,73 @@ class Inference(object):
 
         start_time = time.time()
 
+        def _maybe_retranslate(translations, batch):
+            """Here we handle the cases of mismatch in number of segments
+               between source and target. We re-translate seg by seg."""
+            inds, perm = torch.sort(batch['indices'])
+            trans_copy = deepcopy(translations)
+            inserted_so_far = 0
+            for j, trans in enumerate(translations):
+                if (trans.src_raw.count(DefaultTokens.SEP) !=
+                        trans.pred_sents[0].count(DefaultTokens.SEP)):
+                    self._log("Mismatch in number of ((newline))")
+                    # those two should be the same except feat dim
+                    # batch['src'][perm[j], :, :])
+                    # trans.src
+
+                    # we rebuild a small batch made of the sub-segments
+                    # in the long segment.
+                    idx = (trans.src == self._tgt_sep_idx).nonzero()
+                    sub_src = []
+                    start_idx = 0
+                    for i in range(len(idx)):
+                        end_idx = idx[i]
+                        sub_src.append(batch['src'][perm[j],
+                                                    start_idx:end_idx,
+                                                    :])
+                        start_idx = end_idx + 1
+                    end_idx = batch['src'][perm[j],
+                                           :,
+                                           0].ne(self._tgt_pad_idx).sum() - 1
+                    sub_src.append(batch['src'][perm[j],
+                                                start_idx:end_idx,
+                                                :])
+                    t_sub_src = pad_sequence(sub_src,
+                                             batch_first=True,
+                                             padding_value=self._tgt_pad_idx)
+                    t_sub_src_len = t_sub_src[:,
+                                              :,
+                                              0].ne(self._tgt_pad_idx).sum(1)
+                    t_sub_src_ind = torch.tensor([i for i in
+                                                  range(len(sub_src))],
+                                                 dtype=torch.int16)
+                    device = batch['src'].device
+                    t_sub_batch = {'src': t_sub_src.to(device),
+                                   'srclen': t_sub_src_len.to(device),
+                                   'indices': t_sub_src_ind.to(device)}
+                    # new sub-batch ready to be translated
+                    sub_data = self.translate_batch(t_sub_batch, attn_debug)
+                    sub_trans = xlation_builder.from_batch(sub_data)
+
+                    # we re-insert the sub-batch in the initial translations
+                    trans_copy[j + inserted_so_far] = sub_trans[0]
+                    for i in range(1, len(sub_src)):
+                        trans_copy.insert(j + i + inserted_so_far,
+                                          sub_trans[i])
+                    inserted_so_far += len(sub_src) - 1
+            return trans_copy
+
         for batch in infer_iter:
 
             batch_data = self.translate_batch(
                 batch, attn_debug
             )
-            translations = xlation_builder.from_batch(batch_data)
 
-            for trans in translations:
+            translations = xlation_builder.from_batch(batch_data)
+            if not isinstance(self, GeneratorLM):
+                translations = _maybe_retranslate(translations, batch)
+
+            for j, trans in enumerate(translations):
                 all_scores += [trans.pred_scores[: self.n_best]]
                 pred_score_total += trans.pred_scores[0]
                 pred_words_total += len(trans.pred_sents[0])
@@ -383,8 +446,8 @@ class Inference(object):
                     ]
 
                 if transform is not None:
-                    n_best_preds = [transform.apply_reverse(x)
-                                    for x in n_best_preds]
+                    n_best_preds = transform.batch_apply_reverse(n_best_preds)
+
                 all_predictions += [n_best_preds]
 
                 out_all = [
@@ -421,7 +484,10 @@ class Inference(object):
                         os.write(1, output.encode("utf-8"))
 
                 if align_debug:
-                    tgts = trans.pred_sents[0]
+                    if self.gold_align:
+                        tgts = trans.gold_sent
+                    else:
+                        tgts = trans.pred_sents[0]
                     align = trans.word_aligns[0].tolist()
                     if self.data_type == "text":
                         srcs = trans.src_raw
@@ -464,6 +530,7 @@ class Inference(object):
                 self.translator.beam_accum,
                 codecs.open(self.dump_beam, "w", "utf-8"),
             )
+
         return all_scores, all_predictions
 
     def _align_pad_prediction(self, predictions, bos, pad):
@@ -638,9 +705,12 @@ class Translator(Inference):
         """
 
         # (0) add BOS and padding to tgt prediction
-        batch_tgt_idxs = self._align_pad_prediction(
-            predictions, bos=self._tgt_bos_idx, pad=self._tgt_pad_idx
-        )
+        if 'tgt' in batch.keys() and self.gold_align:
+            self._log("Computing alignments with gold target")
+            batch_tgt_idxs = batch['tgt'].transpose(1, 2)
+        else:
+            batch_tgt_idxs = self._align_pad_prediction(
+                predictions, bos=self._tgt_bos_idx, pad=self._tgt_pad_idx)
         tgt_mask = (
             batch_tgt_idxs.eq(self._tgt_pad_idx)
             | batch_tgt_idxs.eq(self._tgt_eos_idx)
@@ -654,7 +724,11 @@ class Translator(Inference):
         # (2) Repeat src objects `n_best` times.
         # We use batch_size x n_best, get ``(batch * n_best, src_len, nfeat)``
         src = tile(src, n_best, dim=0)
-        enc_states = tile(enc_states, n_best, dim=0)
+        if enc_states is not None:
+            # Quick fix. Transformers return None as enc_states.
+            # enc_states are only used later on to init decoder's state
+            # but are never used in Transformer decoder, so we can skip
+            enc_states = tile(enc_states, n_best, dim=0)
         if isinstance(enc_out, tuple):
             enc_out = tuple(tile(x, n_best, dim=0) for x in enc_out)
         else:

@@ -76,9 +76,11 @@ class PrefixTransform(Transform):
     def _get_prefix(corpus):
         """Get prefix string of a `corpus`."""
         if 'prefix' in corpus['transforms']:
+            src_prefix = corpus.get('src_prefix', "")
+            tgt_prefix = corpus.get('tgt_prefix', "")
             prefix = {
-                'src': corpus['src_prefix'],
-                'tgt': corpus['tgt_prefix']
+                'src': src_prefix,
+                'tgt': tgt_prefix
             }
         else:
             prefix = None
@@ -88,13 +90,14 @@ class PrefixTransform(Transform):
     def get_prefix_dict(cls, opts):
         """Get all needed prefix correspond to corpus in `opts`."""
         prefix_dict = {}
+        # prefix src/tgt for each dataset
         if hasattr(opts, 'data'):
             for c_name, corpus in opts.data.items():
                 prefix = cls._get_prefix(corpus)
                 if prefix is not None:
                     logger.info(f"Get prefix for {c_name}: {prefix}")
                     prefix_dict[c_name] = prefix
-
+        # prefix as general option for inference
         if hasattr(opts, 'src_prefix'):
             if 'infer' not in prefix_dict.keys():
                 prefix_dict['infer'] = {}
@@ -179,9 +182,11 @@ class SuffixTransform(Transform):
     def _get_suffix(corpus):
         """Get suffix string of a `corpus`."""
         if 'suffix' in corpus['transforms']:
+            src_suffix = corpus.get('src_suffix', "")
+            tgt_suffix = corpus.get('tgt_suffix', "")
             suffix = {
-                'src': corpus['src_suffix'],
-                'tgt': corpus['tgt_suffix']
+                'src': src_suffix,
+                'tgt': tgt_suffix
             }
         else:
             suffix = None
@@ -191,15 +196,25 @@ class SuffixTransform(Transform):
     def get_suffix_dict(cls, opts):
         """Get all needed suffix correspond to corpus in `opts`."""
         suffix_dict = {}
+        # suffix src/tgt for each dataset
         if hasattr(opts, 'data'):
             for c_name, corpus in opts.data.items():
                 suffix = cls._get_suffix(corpus)
                 if suffix is not None:
                     logger.info(f"Get suffix for {c_name}: {suffix}")
                     suffix_dict[c_name] = suffix
-        else:
-            suffix_dict['infer'] = {'src': opts.src_suffix,
-                                    'tgt': opts.tgt_suffix}
+        # suffix as general option for inference
+        if hasattr(opts, 'src_suffix'):
+            if 'infer' not in suffix_dict.keys():
+                suffix_dict['infer'] = {}
+            suffix_dict['infer']['src'] = opts.src_suffix
+            logger.info(f"Get suffix for src infer: {opts.src_suffix}")
+        if hasattr(opts, 'tgt_suffix'):
+            if 'infer' not in suffix_dict.keys():
+                suffix_dict['infer'] = {}
+            suffix_dict['infer']['tgt'] = opts.tgt_suffix
+            logger.info(f"Get suffix for tgt infer: {opts.tgt_suffix}")
+
         return suffix_dict
 
     @classmethod

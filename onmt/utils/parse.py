@@ -62,12 +62,6 @@ class DataOptsCheckerMixin(object):
                 corpus['path_align'] = None
             else:
                 cls._validate_file(path_align, info=f'{cname}/path_align')
-            # Check prefix: will be used when use prefix transform
-            src_prefix = corpus.get('src_prefix', None)
-            tgt_prefix = corpus.get('tgt_prefix', None)
-            if src_prefix is None or tgt_prefix is None:
-                if 'prefix' in corpus['transforms']:
-                    raise ValueError(f'Corpus {cname} prefix are required.')
             # Check weight
             weight = corpus.get('weight', None)
             if weight is None:
@@ -276,6 +270,15 @@ class ArgumentParser(cfargparse.ArgumentParser, DataOptsCheckerMixin):
                 "src_word_vec_size should be equal to hidden_size with " \
                 "-feat_merge concat mode."
 
+        if model_opt.position_encoding and \
+                model_opt.max_relative_positions != 0:
+            raise ValueError(
+                "Cannot use absolute and relative position encoding at the"
+                "same time. Use either --position_encoding=true for legacy"
+                "absolute position encoding or --max_realtive_positions with"
+                " -1 for Rotary, or > 0 for Relative Position Representations"
+                "as in https://arxiv.org/pdf/1803.02155.pdf")
+
     @classmethod
     def ckpt_model_opts(cls, ckpt_opt):
         # Load default opt values, then overwrite with the opts in
@@ -317,7 +320,13 @@ class ArgumentParser(cfargparse.ArgumentParser, DataOptsCheckerMixin):
 
     @classmethod
     def validate_translate_opts(cls, opt):
-        pass
+        if opt.gold_align:
+            assert opt.report_align, \
+                "-report_align should be enabled with -gold_align"
+            assert not opt.replace_unk, \
+                "-replace_unk option can not be used with -gold_align enabled"
+            assert opt.tgt, \
+                "-tgt should be specified with -gold_align"
 
     @classmethod
     def validate_translate_opts_dynamic(cls, opt):
