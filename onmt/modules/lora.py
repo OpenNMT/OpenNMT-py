@@ -3,7 +3,6 @@
 #  Copyright (c) Microsoft Corporation. All rights reserved.
 #  Licensed under the MIT License (MIT).
 #
-# However some bugs are fixed, cf eval() which is not called by model.eval()
 #  --------------------------------------------------------------------------
 import torch
 import torch.nn as nn
@@ -73,7 +72,8 @@ class Embedding(nn.Embedding, LoRALayer):
                 # Make sure that the weights are not merged
                 if self.r > 0:
                     self.weight.data -= \
-                        (self.lora_B @ self.lora_A).T * self.scaling
+                        (self.lora_B @
+                         self.lora_A).transpose(0, 1) * self.scaling
                 self.merged = False
         else:
             if self.merge_weights and not self.merged:
@@ -83,23 +83,17 @@ class Embedding(nn.Embedding, LoRALayer):
                         self.scaling
                 self.merged = True
 
-    def eval(self):
-        nn.Embedding.eval(self)
-        if self.merge_weights and not self.merged:
-            # Merge the weights and mark it
-            if self.r > 0:
-                self.weight.data += (self.lora_B @ self.lora_A) * self.scaling
-            self.merged = True
-
     def forward(self, x: torch.Tensor):
         if self.r > 0 and not self.merged:
             result = nn.Embedding.forward(self, x)
             if self.r > 0:
                 after_A = F.embedding(
-                    x, self.lora_A.T, self.padding_idx, self.max_norm,
+                    x, self.lora_A.transpose(0, 1),
+                    self.padding_idx, self.max_norm,
                     self.norm_type, self.scale_grad_by_freq, self.sparse
                 )
-                result += (after_A @ self.lora_B.T) * self.scaling
+                result += (after_A @
+                           self.lora_B.transpose(0, 1)) * self.scaling
             return result
         else:
             return nn.Embedding.forward(self, x)
@@ -137,7 +131,7 @@ class Linear(nn.Linear, LoRALayer):
             self.weight.requires_grad = False
         self.reset_parameters()
         if fan_in_fan_out:
-            self.weight.data = self.weight.data.T
+            self.weight.data = self.weight.data.transpose(0, 1)
 
     def reset_parameters(self):
         nn.Linear.reset_parameters(self)
@@ -149,7 +143,7 @@ class Linear(nn.Linear, LoRALayer):
 
     def train(self, mode: bool = True):
         def T(w):
-            return w.T if self.fan_in_fan_out else w
+            return w.transpose(0, 1) if self.fan_in_fan_out else w
         nn.Linear.train(self, mode)
         if mode:
             if self.merge_weights and self.merged:
@@ -166,26 +160,15 @@ class Linear(nn.Linear, LoRALayer):
                         T(self.lora_B @ self.lora_A) * self.scaling
                 self.merged = True
 
-    def eval(self):
-        def T(w):
-            return w.T if self.fan_in_fan_out else w
-        nn.Linear.eval(self)
-        if self.merge_weights and not self.merged:
-            # Merge the weights and mark it
-            if self.r > 0:
-                self.weight.data += \
-                    T(self.lora_B @ self.lora_A) * self.scaling
-            self.merged = True
-
     def forward(self, x: torch.Tensor):
         def T(w):
-            return w.T if self.fan_in_fan_out else w
+            return w.transpose(0, 1) if self.fan_in_fan_out else w
         if self.r > 0 and not self.merged:
             result = F.linear(x, T(self.weight), bias=self.bias)
             if self.r > 0:
                 result += \
-                    (self.lora_dropout(x) @ self.lora_A.T
-                     @ self.lora_B.T) * self.scaling
+                    (self.lora_dropout(x) @ self.lora_A.transpose(0, 1)
+                     @ self.lora_B.transpose(0, 1)) * self.scaling
             return result
         else:
             return F.linear(x, T(self.weight), bias=self.bias)
@@ -232,7 +215,7 @@ class MergedLinear(nn.Linear, LoRALayer):
             self.lora_ind = self.lora_ind.view(-1)
         self.reset_parameters()
         if fan_in_fan_out:
-            self.weight.data = self.weight.data.T
+            self.weight.data = self.weight.data.transpose(0, 1)
 
     def reset_parameters(self):
         nn.Linear.reset_parameters(self)
@@ -253,7 +236,7 @@ class MergedLinear(nn.Linear, LoRALayer):
 
     def train(self, mode: bool = True):
         def T(w):
-            return w.T if self.fan_in_fan_out else w
+            return w.transpose(0, 1) if self.fan_in_fan_out else w
         nn.Linear.train(self, mode)
         if mode:
             if self.merge_weights and self.merged:
@@ -280,24 +263,9 @@ class MergedLinear(nn.Linear, LoRALayer):
                                                         self.scaling))
                 self.merged = True
 
-    def eval(self):
-        def T(w):
-            return w.T if self.fan_in_fan_out else w
-        nn.Linear.eval(self)
-        if self.merge_weights and not self.merged:
-            # Merge the weights and mark it
-            if self.r > 0 and any(self.enable_lora):
-                delta_w = F.conv1d(
-                    self.lora_A.data.unsqueeze(0),
-                    self.lora_B.data.unsqueeze(-1),
-                    groups=sum(self.enable_lora)
-                ).squeeze(0)
-                self.weight.data += self.zero_pad(T(delta_w * self.scaling))
-            self.merged = True
-
     def forward(self, x: torch.Tensor):
         def T(w):
-            return w.T if self.fan_in_fan_out else w
+            return w.transpose(0, 1) if self.fan_in_fan_out else w
         if self.merged:
             return F.linear(x, T(self.weight), bias=self.bias)
         else:
