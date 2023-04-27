@@ -468,12 +468,16 @@ class TransformerDecoder(TransformerDecoderBase):
             self._init_cache(enc_out)
         elif step is None:
             for layer in self.transformer_layers:
-                layer.self_attn.layer_cache = (
-                    False, {'keys': torch.tensor([]),
-                            'values': torch.tensor([])})
-                layer.context_attn.layer_cache = (
-                    False, {'keys': torch.tensor([]),
-                            'values': torch.tensor([])})
+                if isinstance(layer.self_attn, AverageAttention):
+                    layer.self_attn.layer_cache =\
+                        False, {'prev_g': torch.tensor([])}
+                else:
+                    layer.self_attn.layer_cache = (
+                        False, {'keys': torch.tensor([]),
+                                'values': torch.tensor([])})
+                    layer.context_attn.layer_cache = (
+                        False, {'keys': torch.tensor([]),
+                                'values': torch.tensor([])})
 
         tgt_words = tgt[:, :, 0]
 

@@ -102,7 +102,17 @@ def configure_process(opt, device_id):
 def _get_model_opts(opt, checkpoint=None):
     """Get `model_opt` to build model, may load from `checkpoint` if any."""
     if checkpoint is not None:
+        model_opt = ArgumentParser.ckpt_model_opts(checkpoint["opt"])
         if opt.override_opts:
+            logger.info("Over-ride model option set to true - use with care")
+            args = list(opt.__dict__.keys())
+            model_args = list(model_opt.__dict__.keys())
+            for arg in args:
+                if arg in model_args and \
+                        getattr(opt, arg) != getattr(model_opt, arg):
+                    logger.info("Option: %s , value: %s overiding model: %s"
+                                % (arg, getattr(opt, arg),
+                                   getattr(model_opt, arg)))
             model_opt = opt
         else:
             model_opt = ArgumentParser.ckpt_model_opts(checkpoint["opt"])
