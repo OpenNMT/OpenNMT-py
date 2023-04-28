@@ -500,8 +500,6 @@ class Trainer(object):
                         batch_stats.computed_metrics = computed_metrics
 
                     if loss is not None:
-                        # in theory we should divide by accum_count and bptt
-                        # to rescale for each sub batch
                         loss /= normalization
                         self.optim.backward(loss)
 
@@ -518,31 +516,19 @@ class Trainer(object):
                         traceback.print_exc()
                         raise exc
 
-                # 4. Update the parameters and statistics.
-                if self.accum_count == 1:
-                    # Multi GPU gradient gather
-                    if self.n_gpu > 1:
-                        grads = [p.grad.data for p in self.model.parameters()
-                                 if p.requires_grad
-                                 and p.grad is not None]
-                        onmt.utils.distributed.all_reduce_and_rescale_tensors(
-                            grads, float(self.n_gpu))
-                    self.optim.step()
-
                 # If truncated, don't backprop fully.
                 if self.model.decoder.state != {}:
                     self.model.decoder.detach_state()
 
         # in case of multi step gradient accumulation,
         # update only after accum batches
-        if self.accum_count > 1:
-            if self.n_gpu > 1:
-                grads = [p.grad.data for p in self.model.parameters()
-                         if p.requires_grad
-                         and p.grad is not None]
-                onmt.utils.distributed.all_reduce_and_rescale_tensors(
-                    grads, float(self.n_gpu))
-            self.optim.step()
+        if self.n_gpu > 1:
+            grads = [p.grad.data for p in self.model.parameters()
+                     if p.requires_grad
+                     and p.grad is not None]
+            onmt.utils.distributed.all_reduce_and_rescale_tensors(
+                grads, float(self.n_gpu))
+        self.optim.step()
 
     def _start_report_manager(self, start_time=None):
         """Simple function to start report manager (if any)"""
