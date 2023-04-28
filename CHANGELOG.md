@@ -3,6 +3,34 @@
 
 
 ## [Unreleased]
+## [3.1.1](https://github.com/OpenNMT/OpenNMT-py/tree/3.1.1) (2023-03-30)
+* fix major bug in 3.1.0 introduced with LoRa (3.1.0 not available)
+
+## [3.1.0](https://github.com/OpenNMT/OpenNMT-py/tree/3.1.0) (2023-03-27)
+* updated docs with Sphinx 6.4
+* Restore source features to v3 (thanks @anderleich)
+* add inline tags transform (thanks @panosk)
+* add docify transform to allow doc-level training / inference
+* fix NLLB training (decoder_start_token)
+* New! LoRa adapters to finetune big models (egs: NLLB 3.3B)
+* various bug fixes
+
+## [3.0.4](https://github.com/OpenNMT/OpenNMT-py/tree/3.0.4) (2023-02-06)
+* override_opts to override checkpoints opt when training from
+* normalize transform based on (Sacre)Moses scripts
+* uppercase transform for adhoc data augmentation
+* suffix transform
+* Fuzzy match transform
+* WMT17 detailed example
+* NLLB-200 (from Meta/FB) models support (after conversion)
+* various bug fixes
+
+## [3.0.3](https://github.com/OpenNMT/OpenNMT-py/tree/3.0.3) (2022-12-16)
+* fix loss normalization when using accum or nb GPU > 1
+* use native CrossEntropyLoss with Label Smoothing. reported loss/ppl impacted by LS
+* fix long-time coverage loss bug thanks Sanghyuk-Choi
+* fix detok at scoring / fix tokenization Subword_nmt + Sentencepiece
+* various small bugs fixed
 
 ## [3.0.2](https://github.com/OpenNMT/OpenNMT-py/tree/3.0.2) (2022-12-07)
 * pyonmttok.Vocab is now pickable. dataloader switched to spawn. (MacOS/Windows compatible)

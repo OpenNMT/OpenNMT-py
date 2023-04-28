@@ -6,7 +6,6 @@ import re
 import torch
 import torch.nn as nn
 from torch.nn.init import xavier_uniform_
-
 import onmt.modules
 from onmt.encoders import str2enc
 from onmt.decoders import str2dec
@@ -16,6 +15,76 @@ from onmt.utils.misc import use_gpu
 from onmt.utils.logging import logger
 from onmt.utils.parse import ArgumentParser
 from onmt.constants import DefaultTokens, ModelTask
+from onmt.modules import Linear, Embedding, mark_only_lora_as_trainable
+
+
+def replace_8bit_linear(model, threshold=6.0, module_to_convert=""):
+    try:
+        import bitsandbytes as bnb
+    except ImportError:
+        raise ImportError("Install bitsandbytes to use 8bit compression")
+    for name, module in model.named_children():
+        if len(list(module.children())) > 0:
+            replace_8bit_linear(module, threshold, module_to_convert)
+
+        if isinstance(module, nn.Linear) and name == module_to_convert:
+            model._modules[name] = bnb.nn.Linear8bitLt(
+                module.in_features,
+                module.out_features,
+                module.bias is not None,
+                has_fp16_weights=False,
+                threshold=threshold,
+            )
+    return model
+
+
+def replace_lora_linear(model, r=2, lora_alpha=1,
+                        lora_dropout=0, layer=""):
+    """
+    Function replacing layers with LoRa layers recursively.
+    Args:
+        model:
+        r: rank of matrix of the Low Rank layer
+        lora_alpha: cf paper
+        lora_dropout: cf paper
+        layer: layer name of the model to be replaced
+    """
+    for name, module in model.named_children():
+        if len(list(module.children())) > 0:
+            replace_lora_linear(module, r, lora_alpha,
+                                lora_dropout, layer)
+
+        if isinstance(module, nn.Linear) and name == layer:
+            model._modules[name] = Linear(
+                module.in_features,
+                module.out_features,
+                r=r,
+                lora_alpha=lora_alpha,
+                lora_dropout=lora_dropout,
+                bias=False)
+    return model
+
+
+def replace_lora_embedding(model, r=2, lora_alpha=1):
+    """
+    Function replacing Embeddings with LoRa ones recursively.
+    Args:
+        model:
+        r: rank of matrix of the Low Rank layer
+        lora_alpha: cf paper
+    """
+    for name, module in model.named_children():
+        if len(list(module.children())) > 0:
+            replace_lora_embedding(module, r, lora_alpha)
+        if isinstance(module, nn.Embedding):
+            model._modules[name] = Embedding(
+                module.num_embeddings,
+                module.embedding_dim,
+                r=r,
+                lora_alpha=lora_alpha,
+                padding_idx=module.padding_idx,
+                sparse=module.sparse)
+    return model
 
 
 def build_embeddings(opt, vocabs, for_encoder=True):
@@ -31,14 +100,13 @@ def build_embeddings(opt, vocabs, for_encoder=True):
         emb_dim = opt.src_word_vec_size
         word_padding_idx = vocabs['src'][DefaultTokens.PAD]
         num_word_embeddings = len(vocabs['src'])
-        if 'src_feats' in vocabs.keys():
-            feat_pad_indices = [vocabs['src_feats'][feat][DefaultTokens.PAD]
-                                for feat in vocabs['src_feats'].keys()]
-            num_feat_embeddings = [len(vocabs['src_feats'][feat])
-                                   for feat in vocabs['src_feats'].keys()]
+        if 'src_feats' in vocabs:
+            feat_pad_indices = \
+                [fv[DefaultTokens.PAD] for fv in vocabs['src_feats']]
+            num_feat_embeddings = \
+                [len(fv) for fv in vocabs['src_feats']]
         freeze_word_vecs = opt.freeze_word_vecs_enc
     else:
-
         emb_dim = opt.tgt_word_vec_size
         word_padding_idx = vocabs['tgt'][DefaultTokens.PAD]
         num_word_embeddings = len(vocabs['tgt'])
@@ -47,6 +115,7 @@ def build_embeddings(opt, vocabs, for_encoder=True):
     emb = Embeddings(
         word_vec_size=emb_dim,
         position_encoding=opt.position_encoding,
+        position_encoding_type=opt.position_encoding_type,
         feat_merge=opt.feat_merge,
         feat_vec_exponent=opt.feat_vec_exponent,
         feat_vec_size=opt.feat_vec_size,
@@ -91,9 +160,7 @@ def load_test_model(opt, model_path=None):
                             map_location=lambda storage, loc: storage)
 
     model_opt = ArgumentParser.ckpt_model_opts(checkpoint['opt'])
-    # this patch is no longer needed, included in converter
-    # if hasattr(model_opt, 'rnn_size'):
-    #     model_opt.hidden_size = model_opt.rnn_size
+
     ArgumentParser.update_model_opts(model_opt)
     ArgumentParser.validate_model_opts(model_opt)
     vocabs = dict_to_vocabs(checkpoint['vocab'])
@@ -101,15 +168,21 @@ def load_test_model(opt, model_path=None):
     # Avoid functionality on inference
     model_opt.update_vocab = False
 
-    model = build_base_model(model_opt, vocabs, use_gpu(opt), checkpoint,
-                             opt.gpu)
-    if opt.fp32:
+    model = build_base_model(model_opt, vocabs, checkpoint)
+
+    if opt.precision == 'fp32':
         model.float()
-    elif opt.int8:
+    elif opt.precision == 'fp16':
+        model.half()
+    elif opt.precision == 'int8':
         if opt.gpu >= 0:
             raise ValueError(
                 "Dynamic 8-bit quantization is not supported on GPU")
         torch.quantization.quantize_dynamic(model, inplace=True)
+
+    if use_gpu(opt) and opt.gpu >= 0:
+        model.to(torch.device("cuda", opt.gpu))
+
     model.eval()
     model.generator.eval()
     return vocabs, model, model_opt
@@ -178,7 +251,8 @@ def use_embeddings_from_checkpoint(vocabs, model, generator, checkpoint):
     # Embedding layers
     enc_emb_name = 'encoder.embeddings.make_embedding.emb_luts.0.weight'
     dec_emb_name = 'decoder.embeddings.make_embedding.emb_luts.0.weight'
-
+    model_dict = model.state_dict()
+    generator_dict = generator.state_dict()
     for side, emb_name in [('src', enc_emb_name), ('tgt', dec_emb_name)]:
         if emb_name not in checkpoint['model']:
             continue
@@ -187,26 +261,29 @@ def use_embeddings_from_checkpoint(vocabs, model, generator, checkpoint):
         for i, tok in enumerate(vocabs[side].ids_to_tokens):
             if tok in ckp_vocabs[side]:
                 old_i = ckp_vocabs[side].lookup_token(tok)
-                model.state_dict()[emb_name][i] = checkpoint['model'][
+                model_dict[emb_name][i] = checkpoint['model'][
                     emb_name
                 ][old_i]
                 if side == 'tgt':
-                    generator.state_dict()['weight'][i] = checkpoint[
+                    generator_dict['weight'][i] = checkpoint[
                         'generator'
                     ]['weight'][old_i]
-                    generator.state_dict()['bias'][i] = checkpoint[
+                    generator_dict['bias'][i] = checkpoint[
                         'generator'
                     ]['bias'][old_i]
             else:
                 # Just for debugging purposes
                 new_tokens.append(tok)
         logger.info("%s: %d new tokens" % (side, len(new_tokens)))
+
         # Remove old vocabulary associated embeddings
         del checkpoint['model'][emb_name]
     del checkpoint['generator']['weight'], checkpoint['generator']['bias']
+    model.load_state_dict(model_dict)
+    generator.load_state_dict(generator_dict)
 
 
-def build_base_model(model_opt, vocabs, gpu, checkpoint=None, gpu_id=None):
+def build_base_model(model_opt, vocabs, checkpoint=None):
     """Build a model from opts.
 
     Args:
@@ -215,10 +292,8 @@ def build_base_model(model_opt, vocabs, gpu, checkpoint=None, gpu_id=None):
             :class:`onmt.utils.parse.ArgumentParser`.
         vocabs (dict[str, Vocab]):
             `Field` objects for the model.
-        gpu (bool): whether to use gpu.
         checkpoint: the model generated by train phase, or a resumed snapshot
                     model from a stopped training.
-        gpu_id (int or NoneType): Which GPU to use.
 
     Returns:
         the NMTModel.
@@ -231,14 +306,34 @@ def build_base_model(model_opt, vocabs, gpu, checkpoint=None, gpu_id=None):
         model_opt.attention_dropout = model_opt.dropout
 
     # Build Model
-    if gpu and gpu_id is not None:
-        device = torch.device("cuda", gpu_id)
-    elif gpu and not gpu_id:
-        device = torch.device("cuda")
-    elif not gpu:
-        device = torch.device("cpu")
-
     model = build_task_specific_model(model_opt, vocabs)
+
+    if hasattr(model_opt, 'quant_layers') and len(model_opt.quant_layers) > 0:
+        for layer in model_opt.quant_layers:
+            logger.info("8bit compression of layer %s" % layer)
+            model = replace_8bit_linear(model, module_to_convert=layer)
+
+    mark_lora = False
+    if hasattr(model_opt, 'lora_layers') and len(model_opt.lora_layers) > 0:
+        if model_opt.freeze_encoder or model_opt.freeze_decoder:
+            raise ValueError("Cannot use LoRa with Enc/Dec-oder freezing")
+        for layer in model_opt.lora_layers:
+            logger.info("Adding LoRa layers for %s" % layer)
+            model = replace_lora_linear(model, r=model_opt.lora_rank,
+                                        lora_alpha=model_opt.lora_alpha,
+                                        lora_dropout=model_opt.lora_dropout,
+                                        layer=layer)
+        mark_lora = True
+    if hasattr(model_opt, 'lora_embedding') and model_opt.lora_embedding:
+        if model_opt.freeze_encoder or model_opt.freeze_decoder:
+            raise ValueError("Cannot use LoRa with Enc/Dec-oder freezing")
+        logger.info("Adding LoRa Embeddings")
+        model = replace_lora_embedding(model, r=model_opt.lora_rank,
+                                       lora_alpha=model_opt.lora_alpha)
+        mark_lora = True
+
+    if mark_lora:
+        mark_only_lora_as_trainable(model, bias='none')
 
     # Build Generator.
     if not model_opt.copy_attn:
@@ -293,18 +388,30 @@ def build_base_model(model_opt, vocabs, gpu, checkpoint=None, gpu_id=None):
         if '0.bias' in checkpoint['generator']:
             checkpoint['generator']['bias'] =\
                 checkpoint['generator'].pop('0.bias')
-
         # end of patch for backward compatibility
+
         if model_opt.update_vocab:
             # Update model embeddings with those from the checkpoint
             # after initialization
             use_embeddings_from_checkpoint(vocabs, model, generator,
                                            checkpoint)
 
-        model.load_state_dict(checkpoint['model'], strict=False)
-        generator.load_state_dict(checkpoint['generator'], strict=False)
+        # when using LoRa or updating the vocab (no more embeddings in ckpt)
+        # => strict=False when loading state_dict
+        strict = (not model_opt.update_vocab) and (not mark_lora)
+        model.load_state_dict(checkpoint['model'],
+                              strict=strict)
+        generator.load_state_dict(checkpoint['generator'],
+                                  strict=strict)
 
     model.generator = generator
+
+    return model
+
+
+def build_model(model_opt, opt, vocabs, checkpoint):
+    logger.info('Building model...')
+    model = build_base_model(model_opt, vocabs, checkpoint)
 
     if model_opt.freeze_encoder:
         model.encoder.requires_grad_(False)
@@ -314,16 +421,12 @@ def build_base_model(model_opt, vocabs, gpu, checkpoint=None, gpu_id=None):
         model.decoder.requires_grad_(False)
         model.decoder.embeddings.requires_grad_()
 
-    model.to(device)
     if model_opt.model_dtype == 'fp16' and \
             model_opt.apex_opt_level not in ['O0', 'O1', 'O2', 'O3'] and \
             model_opt.optim == 'fusedadam':
-        model.half()
-    return model
+        model.half()   # with amp pytorch requires NOT to half the model
 
-
-def build_model(model_opt, opt, vocabs, checkpoint):
-    logger.info('Building model...')
-    model = build_base_model(model_opt, vocabs, use_gpu(opt), checkpoint)
+    if use_gpu(opt):
+        model.to(torch.device("cuda"))
     logger.info(model)
     return model

@@ -1,4 +1,4 @@
-# FAQ
+
 All the example YAML configurations are partial. To get an overview of what this YAML configuration is you can start by reading the [Quickstart](quickstart) section.
 
 Also you can have a look at this: [Tutorial](https://github.com/ymoslem/OpenNMT-Tutorial)
@@ -6,24 +6,28 @@ Also you can have a look at this: [Tutorial](https://github.com/ymoslem/OpenNMT-
 ## How do I use my v2 models in v3 ?
 
 As a reminder, OpenNMT-py v2.x used to rely on Torchtext 0.5
-This torchtext version used "Fields", "RawFields", "MultiFields" which were deprecated in trochtext version > 0.5
-In order to convert old models we have to mimic those old Class and as a result you need to install a newer version of torchtext.
+
+This torchtext version used "Fields", "RawFields", "MultiFields" which were deprecated in torchtext versions > 0.5. In order to convert old models we have to mimic those old Class and as a result you need to install a newer version of torchtext.
+
 If you use pytorch 1.12.1 then install torchtext 0.13
+
 If you use pytorch 1.13.0 then install torchtext 0.14
 
 After the conversion you can eliminate completely torchtext.
 
-Conversion is:
+Conversion is perfomed using the following script:
 
 python tools/convertv2_v3.py -v2model myoldmodel.pt -v3model newmodel.pt
 
 The new checkpoint will no longer have a "fields" key, replaced by "vocab"
 Some model options are modified as follow:
-`rnn_size` is now `hidden_size`
-`enc_rnn_size` is now `enc_hid_size`
-`dec_rnn_size` is now `dec_hid_size`
+
+* `rnn_size` is now `hidden_size`
+* `enc_rnn_size` is now `enc_hid_size`
+* `dec_rnn_size` is now `dec_hid_size`
 
 A new key `add_qkvbias` is set to `true` for old models.
+
 New models will be trained by default with `false`
 
 Special note for GPT2 type Language Model trained with v2
@@ -39,6 +43,8 @@ It will make the vocab consistent with v3 structure.
 
 The transformer model is very sensitive to hyperparameters. To run it
 effectively you need to set different options that mimic the [Google](https://arxiv.org/abs/1706.03762) setup. We have confirmed the following configuration can replicate their WMT results.
+
+Please have a look at the Example of WMT17 EN-DE.
 
 ```yaml
 <data configuration>
@@ -105,8 +111,25 @@ Here are what the most important parameters mean:
 * use `vocab_size_multiple` 8
 * Depending on the number of GPU use num_workers 4 (for 1 GPU) or 2 (for multiple GPU)
 * To avoid averaging checkpoints you can use the "during training" average decay system.
-* If you train a transformer we support `max_relative_positions` (use 20) instead of position_encoding.
+* If you train a transformer we support `max_relative_positions` (use 20) instead of position_encoding. 
 * for very fast inference convert your model to CTranslate2 format.
+
+## Position encoding: Absolute vs Relative vs Rotary Embeddings
+
+The basic feature is absolute position encoding stemming from the original Transformer Paper.
+However, even with this, we can use SinusoidalInterleaved (default OpenNMT-py) or SinusoidalConcat (default Fairseq imported models)
+* `position_encoding: true`
+* `position_encoding_type: 'SinusoidalInterleaved'`
+Do not forget to set also `param_init_glorot: true`
+
+If you prefer to use relative position encoding, we support two modes:
+* "Shaw": https://arxiv.org/abs/1803.02155 - you need to set `max_relative_positions: N` where N > 1 (use 16, 20, 32) see paper.
+* "Rope" Rotary Embeddings: https://arxiv.org/abs/2104.09864 - you need to set `max_relative_positions: -1`
+
+In both cases, it is necessary to set `position_encoding: false`
+
+In a nutshell, at the time if this writing (v3.1) absolute position encoding is managed in the Embeddings module, whereas
+the relative position encoding is managed directly in the multi-head self-attention module.
 
 ## Do you support multi-gpu?
 
@@ -304,6 +327,145 @@ data:
         tgt_prefix: __some_tgt_prefix__
 ```
 
+At inference if you want to use the target prefix feature to prefix your target segment with a unique prefix (as opposed to a target prefix coming from a line-by-line file)
+you need to set your yaml file as follow (example given with a target language as in the NLLB-200 case):
+``` yaml
+tgt_prefix: "spa_Latn" 
+tgt_file_prefix: true
+```
+
+#### Add custom suffix to examples
+
+Transform name: `suffix`
+
+Class: `onmt.transforms.misc.SuffixTransform`
+
+For each dataset that the `suffix` transform is applied to, you can set the additional `src_suffix` and `tgt_suffix` parameters in its data configuration:
+
+```yaml
+data:
+    corpus_1:
+        path_src: toy-ende/src-train1.txt
+        path_tgt: toy-ende/tgt-train1.txt
+        transforms: [suffix]
+        weight: 1
+        src_suffix: __some_src_suffix__
+        tgt_suffix: __some_tgt_suffix__
+```
+
+#### Convert examples to uppercase
+
+Transform name: `uppercase`
+
+Class: `onmt.transforms.uppercase.UpperCaseTransform`
+
+Converts source and target (if present) examples to uppercase so the model can learn better to translate
+sentences in all caps. This transform normalizes the examples so the uppercased strings are stripped from
+any diacritics and accents. Usually this is desirable for most languages, although there are few exceptions.
+
+The following option can be added to the main configuration (same ratio for all dataset with this transform):
+- `upper_corpus_ratio`: ratio of the corpus that will be transformed to uppercase (default: 0.01);
+
+#### Normalize punctuation
+
+Transform name: `normalize`
+
+Class: `onmt.transforms.normalize.NormalizeTransform`
+
+Normalizes source and target (if present) examples using the same rules as Moses punctuation normalizer.
+
+The following options can be added to the configuration of each dataset:
+- `src_lang`: en, de, cz/cs, fr (default='')
+- `tgt_lang`: en, de, cz/cs, fr (default='')
+- `penn`: Penn substitution (default=True)
+- `norm_quote_commas`: Normalize quotations and commas (default=True)
+- `norm_numbers`: Normalize numbers (default=True)
+- `pre_replace_unicode_punct`: Replace unicode punct (default=False)
+- `post_remove_control_chars`: Remove control chars (default=False)
+
+#### Clean dataset
+
+Transform name: `clean`
+
+Class: `onmt.transforms.clean.CleanTransform`
+
+Cleans source and target (if present) examples using a set of rules.
+
+The following options can be added to the configuration of each dataset:
+- `src_eq_tgt`: Remove example when source=target (default=True)
+- `same_char`: Remove example if the same char is repeated 4 times (default=True)
+- `same_word`: Remove example if the same word is repeated 3 times (default=True)
+- `script_ok`: Remove example which contains chars that do not belong to these scripts (default=['Latin', 'Common'])
+- `script_nok`: Remove example which contains chars that belong to these scripts  (default=[])
+- `src_tgt_ratio`: Remove example for which src/tgt ration is <1/ratio or >ratio (default=2)
+- `avg_tok_min`: Remove example for which the average token length is < X (default=3)
+- `avg_tok_max`: Remove example for which the average token length is > X (default=20)
+- `lang_id`: Remove example for which detected language is not in [] (default=['en', 'fr'])
+
+#### Context / Doc aware transform
+
+Transform name: `docify`
+
+Class: `onmt.transforms.docify.DocifyTransform`
+
+Concatenates several segments into one, separated with a delimiter.
+
+Pre-requisite:
+
+Dataset must be "Docs" separated by an empty line which will make clear a story ends at this empty line.
+
+The following options can be added to the main configuration (same options for all dataset with this transform):
+- `doc_length`: max token to be concatenated (default=200)
+- `max_context`: number of delimiter (default=1 , ie 2 segments concatenated)
+
+When working with several workers, this require some precaution in order to make sure "doc" are read linearly.
+
+`max_context + 1` needs to be a multiple of `stride` = `Number of gpu x num_workers`
+
+Example: `max_context=1` and 1 GPU, then num_workers must be 2 or 4.
+
+
+#### Augment source segments with fuzzy matches for Neural Fuzzy Repair
+
+Transform name: `fuzzymatch`
+
+Class: `onmt.transforms.fuzzymatch.FuzzyMatchTransform`
+
+Augments source segments with fuzzy matches for Neural Fuzzy Repair, as described in [Neural Fuzzy Repair: Integrating Fuzzy Matches into Neural Machine Translation](https://aclanthology.org/P19-1175). Currently, the transform augments source segments with only a single fuzzy match.
+The Translation Memory (TM) format should be a flat text file, with each line containing the source and the target segment separated by a delimiter. As fuzzy matching during training is computational intensive, we offer some advice to achieve good performance and minimize overhead:
+
+- Depending on your system's specs, you may have to experiment with the options `bucket_size`, `bucket_size_init`, and `bucket_size_increment`;
+- You should increase the `num_workers` and `prefetch_factor` so your GPU does not have to wait for the batches to be augmented with fuzzy matches;
+- Try to use a sensible Translation Memory size. 200k-250k translation units should be enough for yielding a sufficient number of matches;
+- Although the transform performs some basic filtering both in the TM and in the corpus for very short or very long segments, some examples may still be long enough, so you should increase a bit the `src_seq_length`;
+- Currently, when using `n_sample`, examples are always processed one by one and not in batches.
+
+The following options can be added to the main configuration (valid for all datasets using this transform):
+- `tm_path`: The path to the Translation Memory text file;
+- `fuzzy_corpus_ratio`: Ratio of corpus to augment with fuzzy matches (default: 0.1);
+- `fuzzy_threshold`: The fuzzy matching threshold (default: 70);
+- `tm_delimiter`: The delimiter used in the flat text TM (default: "\t");
+- `fuzzy_token`: The fuzzy token to be added with the matches (default: "｟fuzzy｠");
+- `fuzzymatch_min_length`: Min length for TM entries and examples to match (default: 4);
+- `fuzzymatch_max_length`: Max length for TM entries and examples to match (default: 70).
+
+#### Augment source and target segments with inline tags
+
+Transform name: `inlinetags`
+
+Class: `onmt.transforms.inlinetags.InlineTagsTransform`
+
+Augments source and target segments with inline tags (placeholders). The transform adds 2 kind of tags, paired tags (an opening and a closing tag) and isolated (standalone) tags, and requires a tab-delimited dictionary text file with source and target terms and phrases. A dictionary with 20-30k entries is recommended. User-defined tags must include the number placeholder #, e.g. "｟user_start_tag_#｠".
+
+The following options can be added to the main configuration (valid for all datasets using this transform):
+- `tags_dictionary_path`: The path to the dictionary text file;
+- `tags_corpus_ratio`: Ratio of corpus to augment with inline tags (default: 0.1);
+- `max_tags`: Maximum number of tags that can be added to a single sentence. (default: 12);
+- `paired_stag`: The format of an opening paired inline tag. Must include the character # (default: "｟ph_#_beg｠");
+- `paired_etag`: The format of a closing paired inline tag. Must include the character # (default: "｟ph_#_end｠");
+- `isolated_tag`: The format of an isolated inline tag. Must include the character # (default: "｟ph_#_std｠");
+- `src_delimiter`: Any special token used for augmented src sentences (default: "｟fuzzy｠");
+
 ### Tokenization
 
 Common options for the tokenization transforms are the following:
@@ -335,7 +497,7 @@ Class: `onmt.transforms.tokenize.SentencePieceTransform`
 
 The `src_subword_model` and `tgt_subword_model` should be valid sentencepiece models.
 
-#### BPE ([subword-nmt](https://github.com/rsennrich/subword-nmt))
+#### [BPE subword-nmt](https://github.com/rsennrich/subword-nmt)
 
 Transform name: `bpe`
 
@@ -472,6 +634,34 @@ The `example` argument of `apply` is a `dict` of the form:
 
 This is defined in `onmt.inputters.corpus.ParallelCorpus.load`. This class is not easily extendable for now but it can be considered for future developments. For instance, we could create some `CustomParallelCorpus` class that would handle other kind of inputs.
 
+
+## How to use LoRa and 8bit loading to finetune a big model ?
+
+Cf paper: [LoRa](https://arxiv.org/abs/2106.09685)
+
+LoRa is a mechanism that helps to finetune bigger model on a single GPU card by limiting the anmount of VRAM needed.
+The principle is to make only a few layers trainable (hence reducing the amount of required memory especially for the Adam optimizer)
+
+You need to train_from a model (for instance NLLB-200 3.3B) and use the following options:
+
+* `lora_layers: ['linear_values', 'linear_query']` these are the two layers of the Self-Attention module the paper recommend to make trainable.
+* `lora_rank: 2`
+* `lora_dropout: 0.1` or any value you can test
+* `lora_alpha: 1` or any value you can test
+* `lora_embedding: true` makes Embeddings LoRa compatible, hence trainable in the case you use `update_vocab: true` or if you want to finetune Embeddings as well.
+
+Bitsandbytes enables quantization of Linear layers. For more information: https://github.com/TimDettmers/bitsandbytes
+Also you can read the blog post here: https://huggingface.co/blog/hf-bitsandbytes-integration
+
+You need to add the following option:
+
+* `quant_layers: ['w_1', 'w_2']` 
+
+These are the layers of the PositionWise Feed-Forward from the Encoder/Decoder.
+
+At the moment, for a given layer you cannot mix LoRa and 8bit compression. (TODO List)
+
+
 ## Can I get word alignments while translating?
 
 ### Raw alignments from averaging Transformer attention heads
@@ -481,7 +671,7 @@ Note: The *second to last* default behaviour was empirically determined. It is n
 
 * alignments use the standard "Pharaoh format", where a pair `i-j` indicates the i<sub>th</sub> word of source language is aligned to j<sub>th</sub> word of target language.
 * Example: {'src': 'das stimmt nicht !'; 'output': 'that is not true ! ||| 0-0 0-1 1-2 2-3 1-4 1-5 3-6'}
-* Using the`-tgt` option when calling `translate.py`, we output alignments between the source and the gold target rather than the inferred target, assuming we're doing evaluation.
+* Using `-tgt` and `-gold_align` options when calling `translate.py`, we output alignments between the source and the gold target rather than the inferred target, assuming we're doing evaluation.
 * To convert subword alignments to word alignments, or symetrize bidirectional alignments, please refer to the [lilt scripts](https://github.com/lilt/alignment-scripts).
 
 ### Supervised learning on a specific head
@@ -540,39 +730,34 @@ Training options to perform vocabulary update are:
 
 ## How can I use source word features?
 
-Extra information can be added to the words in the source sentences by defining word features. 
+Additional word-level information can be incorporated into the model by defining word features in the source sentence. 
 
-Features should be defined in a separate file using blank spaces as a separator and with each row corresponding to a source sentence. An example of the input files:
+Word features must be appended to the actual textual data by using the special character ￨ as a feature separator. For instance:
 
-data.src
 ```
-however, according to the logs, she is hard-working.
-```
-
-feat.txt
-```
-A C C C C A A B
+however￨C ￭,￨N according￨L to￨L the￨L logs￨L ￭,￨N she￨L is￨L hard-working￨L ￭.￨N
 ```
 
-Prior tokenization is not necessary, features will be inferred by using the `FeatInferTransform` transform if tokenization has been applied.
+Prior tokenization is not necessary, features will be inferred by using the `FeatInferTransform` transform if tokenization has been applied. For instace:
 
-No previous tokenization:
 ```
-SRC: this is a test.
-FEATS: A A A B
-TOKENIZED SRC: this is a test ￭.
-RESULT: A A A B <null>
+SRC: however,￨C according￨L to￨L the￨L logs,￨L she￨L is￨L hard-working.￨L
+TOKENIZED SRC: however ￭, according to the logs ￭, she is hard-working ￭.
+RESULT: however￨C ￭,￨C according￨L to￨L the￨L logs￨L ￭,￨L she￨L is￨L hard￨L ￭-￭￨L working￨L ￭.￨L
 ```
 
-Previously tokenized:
-```
-SRC: this is a test ￭.
-FEATS: A A A B A
-RESULT: A A A B A
-```
+**Options**
+- `-n_src_feats`: the expected number of source features per token.
+- `-src_feats_defaults` (optional): provides default values for features. This can be really useful when mixing task specific data (with features) with general data which has not been annotated.
+
+For the Transformer architecture make sure the following options are appropriately set:
+
+- `src_word_vec_size` and `tgt_word_vec_size` or `word_vec_size`
+- `feat_merge`: how to handle features vecs
+- `feat_vec_size` or maybe `feat_vec_exponent`
 
 **Notes**
-- `FilterFeatsTransform` and `FeatInferTransform` are required in order to ensure the functionality.
+- `FeatInferTransform` transform is required in order to ensure the functionality.
 - Not possible to do shared embeddings (at least with `feat_merge: concat` method)
 
 Sample config file:
@@ -582,49 +767,35 @@ data:
     dummy:
         path_src: data/train/data.src
         path_tgt: data/train/data.tgt
-        src_feats:
-            feat_0: data/train/data.src.feat_0
-            feat_1: data/train/data.src.feat_1
-        transforms: [filterfeats, onmt_tokenize, inferfeats, filtertoolong]
+        transforms: [onmt_tokenize, inferfeats, filtertoolong]
         weight: 1
     valid:
         path_src: data/valid/data.src
         path_tgt: data/valid/data.tgt
-        src_feats:
-            feat_0: data/valid/data.src.feat_0
-            feat_1: data/valid/data.src.feat_1
-        transforms: [filterfeats, onmt_tokenize, inferfeats]
+        transforms: [onmt_tokenize, inferfeats]
 
 # Transform options
 reversible_tokenization: "joiner"
-prior_tokenization: true
 
 # Vocab opts
 src_vocab: exp/data.vocab.src
 tgt_vocab: exp/data.vocab.tgt
-src_feats_vocab: 
-    feat_0: exp/data.vocab.feat_0
-    feat_1: exp/data.vocab.feat_1
+
+# Features options
+n_src_feats: 2
+src_feats_defaults: "0￨1"
 feat_merge: "sum"
 ```
 
-During inference you can pass features by using the `--src_feats` argument. `src_feats` is expected to be a Python like dict, mapping feature names with their data file.
+To allow source features in the server add the following parameters in the server's config file:
 
 ```
-{'feat_0': '../data.txt.feats0', 'feat_1': '../data.txt.feats1'}
+"features": {
+    "n_src_feats": 2,
+    "src_feats_defaults": "0￨1",
+    "reversible_tokenization": "joiner"
+}
 ```
-
-**Important note!** During inference, input sentence is expected to be tokenized. Therefore feature inferring should be handled prior to running the translate command. Example:
-
-```bash
-python translate.py -model model_step_10.pt -src ../data.txt.tok -output ../data.out --src_feats "{'feat_0': '../data.txt.feats0', 'feat_1': '../data.txt.feats1'}"
-```
-
-When using the Transformer architecture make sure the following options are appropriately set:
-
-- `src_word_vec_size` and `tgt_word_vec_size` or `word_vec_size`
-- `feat_merge`: how to handle features vecs
-- `feat_vec_size` and maybe `feat_vec_exponent`
 
 ## How can I set up a translation server ?
 A REST server was implemented to serve OpenNMT-py models. A discussion is opened on the OpenNMT forum: [discussion link](https://forum.opennmt.net/t/simple-opennmt-py-rest-server/1392).
@@ -645,6 +816,7 @@ A server configuration file (`./available_models/conf.json`) is required. It con
   - `load`: (opt) whether to load the model at start [default: False]
   - `on_timeout`: (opt) what to do on timeout: `unload` removes everything; `to_cpu` transfer the model to RAM (from GPU memory) this is faster to reload but takes RAM.
   - `opt`: (opt) dict of translation options (see method `translate_opts` in `./opts.py`)
+    - `report_align`: (bool) return word alignment in pharaoh ('src-tgt') format for every space separated word.
   - `tokenizer`: (opt) set tokenizer options (if any), such as:
     - `type`: (str) value in `{sentencepiece, pyonmttok}`.
     - `model`: (str) path to tokenizer model

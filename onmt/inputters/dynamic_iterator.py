@@ -1,12 +1,12 @@
 """Module that contain iterator used for dynamic data."""
 import torch
 from itertools import cycle
-from onmt.constants import CorpusTask, ModelTask
+from onmt.constants import CorpusTask
 from onmt.inputters.text_corpus import get_corpora, build_corpora_iters
-from onmt.inputters.text_utils import text_sort_key, max_tok_len, process,\
+from onmt.inputters.text_utils import text_sort_key, process,\
     numericalize, tensorify, _addcopykeys
 from onmt.transforms import make_transforms
-from onmt.utils.logging import logger
+from onmt.utils.logging import init_logger, logger
 from onmt.utils.misc import RandomShuffler
 from torch.utils.data import DataLoader
 
@@ -58,6 +58,8 @@ class WeightedMixer(MixingStrategy):
     def _logging(self):
         """Report corpora loading statistics."""
         msgs = []
+        # patch to log stdout spawned processes of dataloader
+        logger = init_logger()
         for ds_name, ds_count in self._counts.items():
             msgs.append(f"\t\t\t* {ds_name}: {ds_count}")
         logger.info("Weighted corpora loaded so far:\n"+"\n".join(msgs))
@@ -109,7 +111,6 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
         offset (int): iterate data files with this offset.
 
     Attributes:
-        batch_size_fn (function): functions to calculate batch_size;
         sort_key (function): functions define how to sort examples;
         mixer (MixingStrategy): the strategy to iterate corpora.
     """
@@ -127,7 +128,7 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
         self.task = task
         self.init_iterators = False
         self.batch_size = batch_size
-        self.batch_size_fn = max_tok_len if batch_type == "tokens" else None
+        self.batch_type = batch_type
         self.batch_size_multiple = batch_size_multiple
         self.device = 'cpu'
         self.sort_key = text_sort_key
@@ -171,11 +172,6 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
             bucket_size_init = -1
             bucket_size_increment = 0
             skip_empty_level = 'warning'
-        if task == CorpusTask.INFER and \
-           vocabs['data_task'] == ModelTask.LANGUAGE_MODEL:
-            # We only support
-            batch_size_multiple = 1
-            batch_size = 1
         return cls(
             corpora, corpora_info, transforms, vocabs, task, opt.batch_type,
             batch_size, batch_size_multiple, data_type=opt.data_type,
@@ -240,15 +236,21 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
         if bucket:
             yield self._tuple_to_json_with_tokIDs(bucket)
 
-    def batch_iter(self, data, batch_size, batch_size_fn=None,
+    def batch_iter(self, data, batch_size, batch_type="sents",
                    batch_size_multiple=1):
         """Yield elements from data in chunks of batch_size,
         where each chunk size is a multiple of batch_size_multiple.
         """
-        if batch_size_fn is None:
-            def batch_size_fn(new, count, sofar):
-                return count
-        minibatch, size_so_far, seen = [], 0, []
+        def batch_size_fn(nbsents, maxlen):
+            if batch_type == 'sents':
+                return nbsents
+            elif batch_type == 'tokens':
+                return nbsents * maxlen
+            else:
+                raise ValueError(
+                    f"Invalid argument batch_type={batch_type}")
+
+        minibatch, maxlen, size_so_far, seen = [], 0, 0, []
         for ex in data:
             if (
                    (ex['src']['src'] not in seen) or
@@ -256,8 +258,9 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
             ):
                 seen.append(ex['src']['src'])
                 minibatch.append(ex)
-                size_so_far = batch_size_fn(ex, len(minibatch),
-                                            size_so_far)
+                nbsents = len(minibatch)
+                maxlen = max(text_sort_key(ex), maxlen)
+                size_so_far = batch_size_fn(nbsents, maxlen)
                 if size_so_far >= batch_size:
                     overflowed = 0
                     if size_so_far > batch_size:
@@ -268,7 +271,7 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
                             % batch_size_multiple)
                     if overflowed == 0:
                         yield minibatch
-                        minibatch, size_so_far, seen = [], 0, []
+                        minibatch, maxlen, size_so_far, seen = [], 0, 0, []
                     else:
                         if overflowed == len(minibatch):
                             logger.warning(
@@ -279,10 +282,11 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
                         else:
                             yield minibatch[:-overflowed]
                             minibatch = minibatch[-overflowed:]
-                            size_so_far, seen = 0, []
+                            maxlen, size_so_far, seen = 0, 0, []
                             for i, ex in enumerate(minibatch):
-                                size_so_far = batch_size_fn(ex, i + 1,
-                                                            size_so_far)
+                                maxlen = max(text_sort_key(ex), maxlen)
+                                size_so_far = batch_size_fn(i + 1, maxlen)
+
         if minibatch:
             yield minibatch
 
@@ -295,7 +299,7 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
             p_batch = list(self.batch_iter(
                 bucket,
                 self.batch_size,
-                batch_size_fn=self.batch_size_fn,
+                batch_type=self.batch_type,
                 batch_size_multiple=self.batch_size_multiple))
             # For TRAIN we shuffle batches within the bucket
             # otherwise sequential

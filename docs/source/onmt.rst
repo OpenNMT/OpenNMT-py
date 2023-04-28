@@ -19,7 +19,6 @@ Trainer
 .. autoclass:: onmt.Trainer
     :members:
 
-
 .. autoclass:: onmt.utils.Statistics
     :members:
 
@@ -27,9 +26,6 @@ Loss
 ----
 
 .. autoclass:: onmt.utils.loss.LossCompute
-    :members:
-
-.. autoclass:: onmt.utils.loss.LabelSmoothingLoss
     :members:
 
 Optimizer

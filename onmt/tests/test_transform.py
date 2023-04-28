@@ -513,38 +513,47 @@ class TestBARTNoising(unittest.TestCase):
 class TestFeaturesTransform(unittest.TestCase):
     def test_inferfeats(self):
         inferfeats_cls = get_transforms_cls(["inferfeats"])["inferfeats"]
-        opt = Namespace(
-            reversible_tokenization="joiner",
-            prior_tokenization=False)
+        opt = Namespace(reversible_tokenization="joiner")
         inferfeats_transform = inferfeats_cls(opt)
 
         ex_in = {
             "src": ['however', '￭,', 'according', 'to', 'the', 'logs',
                     '￭,', 'she', 'is', 'hard', '￭-￭', 'working', '￭.'],
-            "tgt": ['however', '￭,', 'according', 'to', 'the', 'logs',
-                    '￭,', 'she', 'is', 'hard', '￭-￭', 'working', '￭.']
+            "src_original": ['however,', 'according', 'to', 'the',
+                             'logs,', 'she', 'is', 'hard-working.']
         }
         ex_out = inferfeats_transform.apply(ex_in)
         self.assertIs(ex_out, ex_in)
 
-        ex_in["src_feats"] = {
-            "feat_0": ["A", "A", "A", "A", "B", "A", "A", "C"]
-        }
+        ex_in["src_feats"] = [["1", "2", "3", "4", "5", "6", "7", "8"]]
         ex_out = inferfeats_transform.apply(ex_in)
         self.assertEqual(
-            ex_out["src_feats"]["feat_0"],
-            ["A", "<null>", "A", "A", "A", "B", "<null>", "A",
-             "A", "C", "<null>", "C", "<null>"])
+            ex_out["src_feats"][0],
+            ["1", "1", "2", "3", "4", "5", "5", "6", "7", "8", "8",
+             "8", "8"])
 
         ex_in["src"] = ['｟mrk_case_modifier_C｠', 'however', '￭,',
                         'according', 'to', 'the', 'logs', '￭,',
                         '｟mrk_begin_case_region_U｠', 'she', 'is', 'hard',
                         '￭-￭', 'working', '｟mrk_end_case_region_U｠', '￭.']
-        ex_in["src_feats"] = {
-            "feat_0": ["A", "A", "A", "A", "B", "A", "A", "C"]
+        ex_in["src_feats"] = [["1", "2", "3", "4", "5", "6", "7", "8"]]
+        ex_out = inferfeats_transform.apply(ex_in)
+        self.assertEqual(
+            ex_out["src_feats"][0],
+            ["1", "1", "1", "2", "3", "4", "5", "5",
+             "6", "6", "7", "8", "8", "8", "8", "8"])
+
+        ex_in = {
+            "src": ['however', '￭,', 'according', 'to', 'the', 'logs',
+                    '￭,', 'she', 'is', 'hard', '￭-￭', 'working', '￭.'],
+            "src_original": ['however', '￭,', 'according', 'to', 'the',
+                             'logs', '￭,', 'she', 'is', 'hard-working',
+                             '￭.'],
+            "src_feats": [["1", "2", "3", "4", "5", "6", "7", "8",
+                           "9", "10", "11"]]
         }
         ex_out = inferfeats_transform.apply(ex_in)
         self.assertEqual(
-            ex_out["src_feats"]["feat_0"],
-            ["A", "A", "<null>", "A", "A", "A", "B", "<null>",
-             "A", "A", "A", "C", "<null>", "C", "C", "<null>"])
+            ex_out["src_feats"][0],
+            ["1", "2", "3", "4", "5", "6", "7", "8",
+             "9", "10", "10", "10", "11"])

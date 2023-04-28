@@ -7,11 +7,12 @@ Contents
 
       main.md
       quickstart.md
+      changes.md
       CONTRIBUTING.md
       ref.rst
 
 .. toctree::
-      :caption: FAQ
+      :caption: Frequently Asked Questions
       :maxdepth: 2
 
       FAQ.md
@@ -21,10 +22,10 @@ Contents
       :caption: Examples
       :maxdepth: 2
 
-      examples/Translation.md
-      examples/Summarization.md
-      examples/LanguageModelGeneration.md
-      examples/GGNN.md
+      examples/wmt17/Translation.md
+      examples/wiki_103/LanguageModelGeneration.md
+      examples/summary/Summarization.md
+      examples/ggnn/GGNN.md
 
 
 .. toctree::

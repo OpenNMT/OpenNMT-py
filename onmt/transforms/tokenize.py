@@ -1,7 +1,9 @@
 """Transforms relate to tokenization/subword."""
+import re
 from onmt.utils.logging import logger
 from onmt.transforms import register_transform
 from .transform import Transform, ObservableStats
+from onmt.constants import DefaultTokens
 
 
 class TokenizerTransform(Transform):
@@ -169,32 +171,56 @@ class SentencePieceTransform(TokenizerTransform):
     def _tokenize(self, tokens, side='src', is_train=False):
         """Do sentencepiece subword tokenize."""
         sp_model = self.load_models[side]
-        sentence = ' '.join(tokens)
-        nbest_size = self.tgt_subword_nbest if side == 'tgt' else \
-            self.src_subword_nbest
-        if is_train is False or nbest_size in [0, 1]:
-            # derterministic subwording
-            segmented = sp_model.encode(sentence, out_type=str)
-        else:
-            # subword sampling when nbest_size > 1 or -1
-            # alpha should be 0.0 < alpha < 1.0
-            alpha = self.tgt_subword_alpha if side == 'tgt' else \
-                self.src_subword_alpha
-            segmented = sp_model.encode(
-                sentence, out_type=str, enable_sampling=True,
-                alpha=alpha, nbest_size=nbest_size)
-        return segmented
+        sentence = ' '.join(tokens).replace(DefaultTokens.SEP, '\n')
+        sent_list = sentence.split(DefaultTokens.EOS)
+        segmented = []
+        for sentence in sent_list:
+            nbest_size = self.tgt_subword_nbest if side == 'tgt' else \
+                self.src_subword_nbest
+            if is_train is False or nbest_size in [0, 1]:
+                # derterministic subwording
+                segmented += sp_model.encode(sentence, out_type=str)
+            else:
+                # subword sampling when nbest_size > 1 or -1
+                # alpha should be 0.0 < alpha < 1.0
+                alpha = self.tgt_subword_alpha if side == 'tgt' else \
+                    self.src_subword_alpha
+                segmented += sp_model.encode(
+                    sentence, out_type=str, enable_sampling=True,
+                    alpha=alpha, nbest_size=nbest_size)
+            segmented += [DefaultTokens.EOS]
+
+        return segmented[:-1]
+
+    def _detokenize(self, tokens, side="src"):
+        """Apply SentencePiece Detokenizer"""
+        sp_model = self.load_models[side]
+        return sp_model.DecodePieces(tokens).replace('\n', DefaultTokens.SEP)
 
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Apply sentencepiece subword encode to src & tgt."""
         src_out = self._tokenize(example['src'], 'src', is_train)
-        tgt_out = self._tokenize(example['tgt'], 'tgt', is_train)
-        if stats is not None:
-            n_words = len(example['src']) + len(example['tgt'])
-            n_subwords = len(src_out) + len(tgt_out)
-            stats.update(SubwordStats(n_subwords, n_words))
+        if example['tgt'] is not None:
+            tgt_out = self._tokenize(example['tgt'], 'tgt', is_train)
+            if stats is not None:
+                n_words = len(example['src']) + len(example['tgt'])
+                n_subwords = len(src_out) + len(tgt_out)
+                stats.update(SubwordStats(n_subwords, n_words))
+        else:
+            tgt_out = None
+            if stats is not None:
+                n_words = len(example['src'])
+                n_subwords = len(src_out)
+                stats.update(SubwordStats(n_subwords, n_words))
         example['src'], example['tgt'] = src_out, tgt_out
         return example
+
+    def apply_reverse(self, translated):
+        """Apply SentencePiece Detokenizer."""
+        if isinstance(translated, list):
+            return self._detokenize(translated, "tgt")
+        else:
+            return self._detokenize(translated.split(), "tgt")
 
     def _repr_args(self):
         """Return str represent key arguments for class."""
@@ -258,16 +284,35 @@ class BPETransform(TokenizerTransform):
         segmented = bpe_model.segment_tokens(tokens, dropout=dropout)
         return segmented
 
+    def _detokenize(self, tokens, side="src", is_train=False):
+        """"Apply bpe subword detokenizer"""
+        detokenized = re.sub(r"(@@ )|(@@ ?$)", r'', " ".join(tokens))
+        return detokenized
+
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Apply bpe subword encode to src & tgt."""
         src_out = self._tokenize(example['src'], 'src', is_train)
-        tgt_out = self._tokenize(example['tgt'], 'tgt', is_train)
-        if stats is not None:
-            n_words = len(example['src']) + len(example['tgt'])
-            n_subwords = len(src_out) + len(tgt_out)
-            stats.update(SubwordStats(n_subwords, n_words))
+        if example['tgt'] is not None:
+            tgt_out = self._tokenize(example['tgt'], 'tgt', is_train)
+            if stats is not None:
+                n_words = len(example['src']) + len(example['tgt'])
+                n_subwords = len(src_out) + len(tgt_out)
+                stats.update(SubwordStats(n_subwords, n_words))
+        else:
+            tgt_out = None
+            if stats is not None:
+                n_words = len(example['src'])
+                n_subwords = len(src_out)
+                stats.update(SubwordStats(n_subwords, n_words))
         example['src'], example['tgt'] = src_out, tgt_out
         return example
+
+    def apply_reverse(self, translated):
+        """Apply bpe subword detokenizer"""
+        if isinstance(translated, list):
+            return self._detokenize(translated, "tgt")
+        else:
+            return self._detokenize(translated.split(), "tgt")
 
 
 @register_transform(name='onmt_tokenize')
@@ -438,7 +483,10 @@ class ONMTTokenizerTransform(TokenizerTransform):
 
     def apply_reverse(self, translated):
         """Apply OpenNMT Tokenizer to src & tgt."""
-        return self._detokenize(translated.split(), 'tgt')
+        if isinstance(translated, list):
+            return self._detokenize(translated, "tgt")
+        else:
+            return self._detokenize(translated.split(), "tgt")
 
     def _repr_args(self):
         """Return str represent key arguments for class."""

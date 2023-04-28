@@ -58,7 +58,7 @@ def build_torch_optimizer(model, opt):
             params,
             lr=opt.learning_rate,
             betas=betas,
-            eps=1e-9)
+            eps=1e-8)
     elif opt.optim == 'sparseadam':
         dense = []
         sparse = []
@@ -259,7 +259,8 @@ class Optimizer(object):
         optim_opt = opt
         optim_state_dict = None
 
-        if opt.train_from and checkpoint is not None:
+        if (opt.train_from and checkpoint is not None and
+                'optim' in checkpoint.keys()):
             optim = checkpoint['optim']
             ckpt_opt = checkpoint['opt']
             ckpt_state_dict = {}
@@ -584,7 +585,7 @@ class FusedAdam(torch.optim.Optimizer):
             numerical stability. (default: 1e-8)
         weight_decay (float, optional): weight decay (L2 penalty) (default: 0)
         amsgrad (boolean, optional): whether to use the AMSGrad variant of this
-            algorithm from the paper `On the Convergence of Adam and Beyond`_
+            algorithm from the paper 'On the Convergence of Adam and Beyond'
             (default: False) NOT SUPPORTED in FusedAdam!
         eps_inside_sqrt (boolean, optional): in the 'update parameters' step,
             adds eps to the bias-corrected second moment estimate before

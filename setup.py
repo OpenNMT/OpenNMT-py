@@ -11,7 +11,7 @@ setup(
     description='A python implementation of OpenNMT',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    version='3.0.2',
+    version='3.1.1',
     packages=find_packages(),
     project_urls={
         "Documentation": "http://opennmt.net/OpenNMT-py/",
@@ -19,17 +19,20 @@ setup(
         "Gitter": "https://gitter.im/OpenNMT/OpenNMT-py",
         "Source": "https://github.com/OpenNMT/OpenNMT-py/"
     },
-    python_requires=">=3.7",
+    python_requires=">=3.8",
     install_requires=[
-        "torch>=1.12.1",
+        "torch>=1.13,<2",
         "configargparse",
-        "ctranslate2>=3.0,<4",
+        "ctranslate2>=3.2,<4",
         "tensorboard>=2.3",
         "flask",
         "waitress",
         "pyonmttok>=1.35,<2",
         "pyyaml",
-        "sacrebleu"
+        "sacrebleu",
+        "rapidfuzz",
+        "pyahocorasick",
+        "gcld3"
     ],
     entry_points={
         "console_scripts": [

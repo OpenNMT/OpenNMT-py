@@ -47,7 +47,6 @@ jobs:
           -save_data /tmp/onmt_feat \
           -src_vocab /tmp/onmt_feat.vocab.src \
           -tgt_vocab /tmp/onmt_feat.vocab.tgt \
-          -src_feats_vocab '{"feat0": "/tmp/onmt_feat.vocab.feat0"}' \
           -n_sample -1 \
           && rm -rf /tmp/sample
     - name: Test field/transform dump
@@ -259,7 +258,6 @@ jobs:
           -config data/features_data.yaml \
           -src_vocab /tmp/onmt_feat.vocab.src \
           -tgt_vocab /tmp/onmt_feat.vocab.tgt \
-          -src_feats_vocab '{"feat0": "/tmp/onmt_feat.vocab.feat0"}' \
           -src_vocab_size 1000 -tgt_vocab_size 1000 \
           -hidden_size 2 -batch_size 10 \
           -num_workers 0 -bucket_size 1024 \
@@ -267,13 +265,27 @@ jobs:
           -report_every 5 -train_steps 10 \
           -save_model /tmp/onmt.model \
           -save_checkpoint_steps 10
+    - name: Testing training with features and dynamic scoring
+      run: |
+        python onmt/bin/train.py \
+          -config data/features_data.yaml \
+          -src_vocab /tmp/onmt_feat.vocab.src \
+          -tgt_vocab /tmp/onmt_feat.vocab.tgt \
+          -src_vocab_size 1000 -tgt_vocab_size 1000 \
+          -hidden_size 2 -batch_size 10 \
+          -word_vec_size 5 -hidden_size 10 \
+          -num_workers 0 -bucket_size 1024 \
+          -report_every 5 -train_steps 10 \
+          -train_metrics "BLEU" "TER" \
+          -valid_metrics "BLEU" "TER" \
+          -save_model /tmp/onmt.model \
+          -save_checkpoint_steps 10
     - name: Testing translation with features
       run: |
         python translate.py \
             -model /tmp/onmt.model_step_10.pt \
-            -src data/data_features/src-test.txt \
-            -src_feats "{'feat0': 'data/data_features/src-test.feat0'}" \
-            -verbose
+            -src data/data_features/src-test-with-feats.txt \
+            -n_src_feats 1 -verbose
     - name: Test RNN translation
       run: |
         head data/src-test.txt > /tmp/src-test.txt
@@ -326,7 +338,7 @@ jobs:
         python translate.py \
           -model onmt/tests/test_model_lm.pt \
           -src data/data_lm/src-gen.txt \
-          -verbose -batch_size 10 \
+          -verbose -batch_size 1 \
           -beam_size 10 \
           -ban_unk_token \
           -length_penalty none \
@@ -336,7 +348,7 @@ jobs:
       run: |
         python translate.py -model onmt/tests/test_model_lm.pt \
           -src data/data_lm/src-gen.txt \
-          -verbose -batch_size 10 \
+          -verbose -batch_size 1 \
           -beam_size 1 \
           -seed 1 \
           -random_sampling_topk -1 \
@@ -349,7 +361,7 @@ jobs:
       run: |
         python translate.py -model onmt/tests/test_model_lm.pt \
           -src data/data_lm/src-gen.txt \
-          -verbose -batch_size 10 \
+          -verbose -batch_size 1 \
           -beam_size 1 \
           -seed 3 \
           -random_sampling_topk -1 \
@@ -363,7 +375,7 @@ jobs:
       run: |
         python translate.py -model onmt/tests/test_model_lm.pt \
           -src data/data_lm/src-gen.txt \
-          -verbose -batch_size 10 \
+          -verbose -batch_size 1 \
           -beam_size 10 \
           -seed 2 \
           -random_sampling_topk 50 \
@@ -471,10 +483,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - name: Set up Python 3.7
+    - name: Set up Python 3.8
       uses: actions/setup-python@v2
       with:
-        python-version: 3.7
+        python-version: 3.8
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip

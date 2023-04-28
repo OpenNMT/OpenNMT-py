@@ -6,6 +6,7 @@ from onmt.transforms import AVAILABLE_TRANSFORMS
 from onmt.constants import ModelTask
 from onmt.modules.position_ffn import ACTIVATION_FUNCTIONS
 from onmt.modules.position_ffn import ActivationFunction
+from onmt.constants import DefaultTokens
 
 
 def config_opts(parser):
@@ -59,6 +60,8 @@ def _add_logging_opts(parser, is_train=True):
                   type=str, default="runs/onmt",
                   help="Log directory for Tensorboard. "
                        "This is also the name of the run.")
+        group.add("--override_opts", "-override-opts",  action="store_true",
+                  help="Allow to override some checkpoint opts")
     else:
         # Options only during inference
         group.add('--attn_debug', '-attn_debug', action="store_true",
@@ -125,6 +128,15 @@ def _add_dynamic_corpus_opts(parser, build_vocab_only=False):
                   help="Size of queues used in the build_vocab dump path.")
 
 
+def _add_features_opts(parser):
+    group = parser.add_argument_group("Features")
+    group.add("-n_src_feats", "--n_src_feats", type=int,
+              default=0, help="Number of source feats.")
+    group.add("-src_feats_defaults", "--src_feats_defaults",
+              help="Default features to apply in source in case "
+              "there are not annotated")
+
+
 def _add_dynamic_vocab_opts(parser, build_vocab_only=False):
     """Options related to vocabulary and features.
 
@@ -141,13 +153,13 @@ def _add_dynamic_vocab_opts(parser, build_vocab_only=False):
               "Format: one <word> or <word>\t<count> per line.")
     group.add("-share_vocab", "--share_vocab", action="store_true",
               help="Share source and target vocabulary.")
+    group.add('--decoder_start_token', '-decoder_start_token', type=str,
+              default=DefaultTokens.BOS,
+              help="Default decoder start token "
+                   "for most ONMT models it is <s> = BOS "
+                   "it happens that for some Fairseq model it requires </s> ")
 
-    group.add("-src_feats_vocab", "--src_feats_vocab",
-              help=("List of paths to save"
-                    if build_vocab_only
-                    else "List of paths to")
-              + " src features vocabulary files. "
-              "Files format: one <word> or <word>\t<count> per line.")
+    _add_features_opts(parser)
 
     if not build_vocab_only:
         group.add("-src_vocab_size", "--src_vocab_size",
@@ -244,6 +256,12 @@ def model_opts(parser):
     group.add('--position_encoding', '-position_encoding', action='store_true',
               help="Use a sin to mark relative words positions. "
                    "Necessary for non-RNN style models.")
+    group.add('--position_encoding_type', '-position_encoding_type',
+              type=str, default='SinusoidalInterleaved',
+              choices=['SinusoidalInterleaved', 'SinusoidalConcat'],
+              help="Type of positional encoding. At the moment: "
+                   "Sinusoidal fixed, Interleaved or Concat")
+
     group.add("-update_vocab", "--update_vocab", action="store_true",
               help="Update source and target existing vocabularies")
 
@@ -320,6 +338,12 @@ def model_opts(parser):
               help="Size of windows in the cnn, the kernel_size is "
                    "(cnn_kernel_width, 1) in conv layer")
 
+    group.add('--layer_norm', '-layer_norm',
+              type=str, default='standard',
+              choices=['standard', 'rms'], help='The type of layer'
+              ' normalization in the transformer architecture. Choices are'
+              ' standard or rms. Default to standard')
+
     group.add('--pos_ffn_activation_fn', '-pos_ffn_activation_fn',
               type=str, default=ActivationFunction.relu,
               choices=ACTIVATION_FUNCTIONS.keys(), help='The activation'
@@ -376,10 +400,14 @@ def model_opts(parser):
                    'layer -- currently "scaled-dot" or "average" ')
     group.add('--max_relative_positions', '-max_relative_positions',
               type=int, default=0,
-              help="Maximum distance between inputs in relative "
+              help="This setting enable relative position encoding"
+                   "We support two types of encodings:"
+                   "set this -1 to enable Rotary Embeddings"
+                   "more info: https://arxiv.org/abs/2104.09864"
+                   "set this to > 0 (ex: 16, 32) to use"
+                   "Maximum distance between inputs in relative "
                    "positions representations. "
-                   "For more detailed information, see: "
-                   "https://arxiv.org/pdf/1803.02155.pdf")
+                   "more info: https://arxiv.org/pdf/1803.02155.pdf")
     group.add('--heads', '-heads', type=int, default=8,
               help='Number of heads for transformer self-attention')
     group.add('--transformer_ff', '-transformer_ff', type=int, default=2048,
@@ -476,6 +504,23 @@ def _add_train_general_opts(parser):
               help="IP of master for torch.distributed training.")
     group.add('--master_port', '-master_port', default=10000, type=int,
               help="Port of master for torch.distributed training.")
+
+    # LoRa
+    group.add('--lora_layers', '-lora_layers', default=[], nargs='+', type=str,
+              help="list of layers to be replaced by LoRa layers."
+                   " ex: ['linear_values', 'linear_query'] "
+                   " cf paper §4.2 https://arxiv.org/abs/2106.09685")
+    group.add("--lora_embedding", "-lora_embedding", action='store_true',
+              help="replace embeddings with LoRa Embeddings see §5.1")
+    group.add('--lora_rank', '-lora_rank', type=int, default=2,
+              help="r=2 successfully tested with NLLB-200 3.3B")
+    group.add('--lora_alpha', '-lora_alpha', type=int, default=1,
+              help="§4.1 https://arxiv.org/abs/2106.09685")
+    group.add('--lora_dropout', '-lora_dropout', type=float, default=0.0,
+              help="rule of thumb: same value as in main model")
+
+    group.add('--quant_layers', '-quant_layers', default=[], nargs='+',
+              type=str, help="list of layers to be compressed in 8bit.")
 
     _add_reproducibility_opts(parser)
 
@@ -757,11 +802,17 @@ def translate_opts(parser, dynamic=False):
               help="Path to model .pt file(s). "
                    "Multiple models can be specified, "
                    "for ensemble decoding.")
-    group.add('--fp32', '-fp32', action='store_true',
-              help="Force the model to be in FP32 "
-                   "because FP16 is very slow on GTX1080(ti).")
-    group.add('--int8', '-int8', action='store_true',
-              help="Enable dynamic 8-bit quantization (CPU only).")
+    group.add('--precision', '-precision', default='',
+              choices=["", "fp32", "fp16", "int8"],
+              help="Precision to run inference."
+                   "default is model.dtype"
+                   "fp32 to force slow FP16 model on GTX1080"
+                   "int8 enables pytorch native 8-bit quantization"
+                   "(cpu only)")
+    group.add('--fp32', '-fp32', action=DeprecateAction,
+              help="Deprecated use 'precision' instead")
+    group.add('--int8', '-int8', action=DeprecateAction,
+              help="Deprecated use 'precision' instead")
     group.add('--avg_raw_probs', '-avg_raw_probs', action='store_true',
               help="If this is set, during ensembling scores from "
                    "different models will be combined by averaging their "
@@ -777,9 +828,6 @@ def translate_opts(parser, dynamic=False):
     group.add('--src', '-src', required=True,
               help="Source sequence to decode (one line per "
                    "sequence)")
-    group.add("-src_feats", "--src_feats", required=False,
-              help="Source sequence features (dict format). "
-                   "Ex: {'feat_0': '../data.txt.feats0', 'feat_1': '../data.txt.feats1'}")  # noqa: E501
     group.add('--tgt', '-tgt',
               help='True target sequence (optional)')
     group.add('--tgt_file_prefix', '-tgt_file_prefix', action='store_true',
@@ -789,8 +837,14 @@ def translate_opts(parser, dynamic=False):
                    "be the decoded sequence")
     group.add('--report_align', '-report_align', action='store_true',
               help="Report alignment for each translation.")
+    group.add('--gold_align', '-gold_align', action='store_true',
+              help="Report alignment between source and gold target."
+                   "Useful to test the performance of learnt alignments.")
     group.add('--report_time', '-report_time', action='store_true',
               help="Report some translation time metrics")
+
+    # Adding options related to source and target features
+    _add_features_opts(parser)
 
     # Adding options relate to decoding strategy
     _add_decoding_opts(parser)
