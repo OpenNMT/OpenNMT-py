@@ -32,10 +32,10 @@ if __name__ == "__main__":
     base_checkpoint = torch.load(opt.base_model,
                                  map_location=torch.device('cpu'))
 
-    vocabs = dict_to_vocabs(base_checkpoint['vocab'])
-
     lora_checkpoint = torch.load(opt.lora_weights,
                                  map_location=torch.device('cpu'))
+
+    vocabs = dict_to_vocabs(lora_checkpoint['vocab'])
 
     lora_opt = lora_checkpoint['opt']
 
