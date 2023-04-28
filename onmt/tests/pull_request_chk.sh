@@ -115,7 +115,7 @@ ${PYTHON} onmt/bin/train.py \
             -hidden_size 10 -train_steps 10 \
             -tensorboard "true" \
             -tensorboard_log_dir $TMP_OUT_DIR/logs_train >> ${LOG_FILE} 2>&1
-#${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_train -tensorboard_checks train
+${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_train -tensorboard_checks train
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 rm -r $TMP_OUT_DIR/logs_train
