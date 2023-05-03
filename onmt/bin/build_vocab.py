@@ -4,7 +4,6 @@ import os
 import copy
 import multiprocessing as mp
 import pyonmttok
-from tqdm import tqdm
 from functools import partial
 from onmt.utils.logging import init_logger, logger
 from onmt.utils.misc import set_random_seed, check_path
@@ -148,10 +147,8 @@ def ingest_tokens(opts, transforms, n_sample, learner, stride, offset):
         with mp.Pool(opts.num_threads) as pool:
             buckets = pool.map(func, [data[i * chunk: (i + 1) * chunk]
                                       for i in range(0, opts.num_threads)])
-        print(len(buckets))
         for bucket in buckets:
-            print(len(bucket))
-            for i, ex in tqdm(enumerate(bucket)):
+            for ex in bucket:
                 if ex is not None:
                     src_line, tgt_line = (ex['src']['src'],
                                           ex['tgt']['tgt'])
@@ -165,7 +162,7 @@ def ingest_tokens(opts, transforms, n_sample, learner, stride, offset):
         stride=stride, offset=offset)
     to_ingest = []
     for c_name, c_iter in datasets_iterables.items():
-        for i, item in tqdm(enumerate(c_iter)):
+        for i, item in enumerate(c_iter):
             if n_sample >= 0 and i >= n_sample:
                 break
             if len(to_ingest) >= MAXBUCKETSIZE:
