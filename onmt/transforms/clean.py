@@ -1,6 +1,6 @@
 from onmt.transforms import register_transform
 from .transform import Transform
-# from onmt.utils.logging import logger
+from onmt.utils.logging import logger
 import gcld3
 import regex as re
 
@@ -75,8 +75,7 @@ class CleanTransform(Transform):
             for c_name, corpus in opts.data.items():
                 clean = cls._get_opt(corpus, opt, def_val)
                 if clean is not None:
-                    # disable to avoid noise - enable to debug
-                    # logger.info(f"Get {opt} for {c_name}: {clean}")
+                    logger.debug(f"Get {opt} for {c_name}: {clean}")
                     clean_dict[c_name] = clean
 
         return clean_dict

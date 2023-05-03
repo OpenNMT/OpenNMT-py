@@ -46,12 +46,12 @@ class FuzzyMatcher(object):
                     continue
                 src_segments.append(source.strip())
                 tgt_segments.append(target.strip())
-        logger.info(f'Translation Memory size for FuzzyMatch transform: '
+        logger.debug(f'Translation Memory size for FuzzyMatch transform: '
                     f'{len(src_segments)}')
         return [src_segments, tgt_segments]
 
     def _get_batch_matches(self, batch):
-        logger.info(f'Starting fuzzy matching on {len(batch)} examples')
+        logger.debug(f'Starting fuzzy matching on {len(batch)} examples')
         fuzzy_count = 0
         start = time.time()
         augmented = list()
@@ -94,7 +94,7 @@ class FuzzyMatcher(object):
             augmented.extend(plist)
 
         end = time.time()
-        logger.info(f'FuzzyMatch Transform: Added {fuzzy_count} '
+        logger.debug(f'FuzzyMatch Transform: Added {fuzzy_count} '
                     f'fuzzies in {end-start} secs')
 
         return augmented
