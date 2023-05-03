@@ -1,6 +1,6 @@
 from onmt.transforms import register_transform
 from .transform import Transform
-from onmt.utils.logging import logger
+# from onmt.utils.logging import logger
 import gcld3
 import regex as re
 
@@ -39,7 +39,7 @@ class CleanTransform(Transform):
                   default=3, help="average length of tokens min")
         group.add("--avg_tok_max", "-avg_tok_max", type=float,
                   default=20, help="average length of tokens max")
-        group.add('--langid', '-langid', default=['en', 'fr'],
+        group.add('--langid', '-langid', default=[],
                   nargs='*', type=str,
                   help="list of languages accepted")
 
@@ -75,7 +75,8 @@ class CleanTransform(Transform):
             for c_name, corpus in opts.data.items():
                 clean = cls._get_opt(corpus, opt, def_val)
                 if clean is not None:
-                    logger.info(f"Get {opt} for {c_name}: {clean}")
+                    # disable to avoid noise - enable to debug
+                    # logger.info(f"Get {opt} for {c_name}: {clean}")
                     clean_dict[c_name] = clean
 
         return clean_dict
@@ -92,7 +93,7 @@ class CleanTransform(Transform):
                                                     2)
         self.avg_tok_min_dict = self.get_opt_dict(self.opts, 'avg_tok_min', 3)
         self.avg_tok_max_dict = self.get_opt_dict(self.opts, 'avg_tok_max', 20)
-        self.langid_dict = self.get_opt_dict(self.opts, 'langid', ['en', 'fr'])
+        self.langid_dict = self.get_opt_dict(self.opts, 'langid', [])
 
         self.id_func = gcld3.NNetLanguageIdentifier(min_num_bytes=0,
                                                     max_num_bytes=200)
@@ -141,7 +142,8 @@ class CleanTransform(Transform):
                 # print("Some text belong to unwanted scripts")
                 continue
 
-            if _id(src_str) not in self.langid_dict[cid]:
+            if self.langid_dict[cid] != [] and \
+                    _id(src_str) not in self.langid_dict[cid]:
                 # print("langid does not match", _id(src_str))
                 continue
 
@@ -182,7 +184,8 @@ class CleanTransform(Transform):
                     # print("Some text belong to unwanted scripts")
                     continue
 
-                if _id(tgt_str) not in self.langid_dict[cid]:
+                if self.langid_dict[cid] != [] and \
+                        _id(tgt_str) not in self.langid_dict[cid]:
                     # print("langid does not match", _id(tgt_str))
                     continue
 

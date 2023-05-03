@@ -7,7 +7,7 @@
 # tokenizer/normalize-punctuation.perl
 
 
-from onmt.utils.logging import logger
+# from onmt.utils.logging import logger
 import re
 import regex
 
@@ -264,7 +264,8 @@ class NormalizeTransform(Transform):
             for c_name, corpus in opts.data.items():
                 normalize = cls._get_opt(corpus, opt, def_val)
                 if normalize is not None:
-                    logger.info(f"Get {opt} for {c_name}: {normalize}")
+                    # disabled to avoid noise - enable to debug
+                    # logger.info(f"Get {opt} for {c_name}: {normalize}")
                     normalize_dict[c_name] = normalize
 
         return normalize_dict
