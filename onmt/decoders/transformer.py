@@ -78,8 +78,8 @@ class TransformerDecoderLayerBase(nn.Module):
             )
 
         self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout,
-                                                    pos_ffn_activation_fn
-                                                    )
+                                                    pos_ffn_activation_fn,
+                                                    layer_norm)
         if layer_norm == 'standard':
             self.layer_norm_1 = nn.LayerNorm(d_model, eps=1e-6)
         elif layer_norm == 'rms':
