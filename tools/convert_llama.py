@@ -85,11 +85,8 @@ if __name__ == "__main__":
 
         onmt_cp['model']['decoder.transformer_layers.' + str(i) + '.feed_forward.layer_norm.weight'] =\
             checkpoint['layers.' + str(i) + '.ffn_norm.weight'].clone()
-        onmt_cp['model']['decoder.transformer_layers.' + str(i) + '.feed_forward.layer_norm.bias'] =\
-            torch.zeros(onmt_cp['model']['decoder.transformer_layers.' + str(i) + '.feed_forward.layer_norm.weight'].size(0), dtype=torch.float16)
 
     onmt_cp['model']['decoder.layer_norm.weight'] = checkpoint['norm.weight']
-    onmt_cp['model']['decoder.layer_norm.bias'] = torch.zeros(onmt_cp['model']['decoder.layer_norm.weight'].size(0), dtype=torch.float16)
 
     onmt_cp['generator'] = {}
     onmt_cp['generator']['weight'] = checkpoint['output.weight']
