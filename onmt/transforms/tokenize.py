@@ -368,9 +368,9 @@ class ONMTTokenizerTransform(TokenizerTransform):
         super()._parse_opts()
         self.src_subword_type = self.opts.src_subword_type
         self.tgt_subword_type = self.opts.tgt_subword_type
-        logger.info("Parsed pyonmttok kwargs for src: {}".format(
+        logger.debug("Parsed pyonmttok kwargs for src: {}".format(
             self.opts.src_onmttok_kwargs))
-        logger.info("Parsed pyonmttok kwargs for tgt: {}".format(
+        logger.debug("Parsed pyonmttok kwargs for tgt: {}".format(
             self.opts.tgt_onmttok_kwargs))
         self.src_other_kwargs = self.opts.src_onmttok_kwargs
         self.tgt_other_kwargs = self.opts.tgt_onmttok_kwargs
@@ -411,7 +411,7 @@ class ONMTTokenizerTransform(TokenizerTransform):
             kwopts['sp_nbest_size'] = subword_nbest
             kwopts['sp_alpha'] = subword_alpha
         else:
-            logger.warning('No subword method will be applied.')
+            logger.debug('No subword method will be applied.')
         vocabulary_threshold = self.tgt_vocab_threshold if side == 'tgt' \
             else self.src_vocab_threshold
         vocabulary_path = self.tgt_subword_vocab if side == 'tgt' \

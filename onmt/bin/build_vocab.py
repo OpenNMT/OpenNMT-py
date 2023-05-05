@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 """Get vocabulary coutings from transformed corpora samples."""
 import os
+import copy
+import multiprocessing as mp
+import pyonmttok
+from functools import partial
 from onmt.utils.logging import init_logger, logger
 from onmt.utils.misc import set_random_seed, check_path
 from onmt.utils.parse import ArgumentParser
@@ -10,7 +14,9 @@ from onmt.inputters.text_utils import process, append_features_to_text
 from onmt.transforms import make_transforms, get_transforms_cls
 from onmt.constants import CorpusName, CorpusTask
 from collections import Counter
-import multiprocessing as mp
+
+
+MAXBUCKETSIZE = 256000
 
 
 def write_files_from_queues(sample_path, queues):
@@ -107,7 +113,7 @@ def build_vocab(opts, transforms, n_sample=3):
     counter_src = Counter()
     counter_tgt = Counter()
     counter_src_feats = [Counter() for _ in range(opts.n_src_feats)]
-    from functools import partial
+
     queues = {c_name: [mp.Queue(opts.vocab_sample_queue_size)
                        for i in range(opts.num_threads)]
               for c_name in corpora.keys()}
@@ -134,6 +140,50 @@ def build_vocab(opts, transforms, n_sample=3):
     return counter_src, counter_tgt, counter_src_feats
 
 
+def ingest_tokens(opts, transforms, n_sample, learner, stride, offset):
+    def _mp_ingest(data):
+        func = partial(process, CorpusName.TRAIN)
+        chunk = len(data) // opts.num_threads
+        with mp.Pool(opts.num_threads) as pool:
+            buckets = pool.map(func, [data[i * chunk: (i + 1) * chunk]
+                                      for i in range(0, opts.num_threads)])
+        for bucket in buckets:
+            for ex in bucket:
+                if ex is not None:
+                    src_line, tgt_line = (ex['src']['src'],
+                                          ex['tgt']['tgt'])
+                    learner.ingest(src_line)
+                    learner.ingest(tgt_line)
+
+    corpora = get_corpora(opts, task=CorpusTask.TRAIN)
+    datasets_iterables = build_corpora_iters(
+        corpora, transforms, opts.data,
+        skip_empty_level=opts.skip_empty_level,
+        stride=stride, offset=offset)
+    to_ingest = []
+    for c_name, c_iter in datasets_iterables.items():
+        for i, item in enumerate(c_iter):
+            if n_sample >= 0 and i >= n_sample:
+                break
+            if len(to_ingest) >= MAXBUCKETSIZE:
+                _mp_ingest(to_ingest)
+                to_ingest = []
+            to_ingest.append(item)
+        _mp_ingest(to_ingest)
+
+
+def make_learner(tokenization_type, symbols):
+    if tokenization_type == "bpe":
+        # BPE training
+        learner = pyonmttok.BPELearner(tokenizer=None,
+                                       symbols=symbols)
+    elif tokenization_type == "sentencepiece":
+        # SentencePiece training
+        learner = pyonmttok.SentencePieceLearner(vocab_size=symbols,
+                                                 character_coverage=0.98)
+    return learner
+
+
 def build_vocab_main(opts):
     """Apply transforms to samples of specified data and build vocab from it.
 
@@ -153,6 +203,29 @@ def build_vocab_main(opts):
     logger = init_logger()
     set_random_seed(opts.seed, False)
     transforms_cls = get_transforms_cls(opts._all_transform)
+
+    if opts.learn_subwords:
+        logger.info(f"Ingesting {opts.src_subword_type} model from corpus")
+        learner = make_learner(opts.src_subword_type,
+                               opts.learn_subwords_size)
+        if opts.src_subword_model is not None:
+            tok_path = opts.src_subword_model
+        else:
+            data_dir = os.path.split(opts.save_data)[0]
+            if not os.path.exists(data_dir):
+                os.makedirs(data_dir)
+            tok_path = os.path.join(
+                data_dir, f"{opts.src_subword_type}.model")
+        save_opts = copy.deepcopy(opts)
+        opts.src_subword_type = 'none'
+        opts.tgt_subword_type = 'none'
+        opts.src_onmttok_kwargs["joiner_annotate"] = False
+        opts.tgt_onmttok_kwargs["joiner_annotate"] = False
+        transforms = make_transforms(opts, transforms_cls, None)
+        ingest_tokens(opts, transforms, opts.n_sample, learner, 1, 0)
+        logger.info(f"Learning {tok_path} model, patience")
+        learner.learn(tok_path)
+        opts = save_opts
 
     transforms = make_transforms(opts, transforms_cls, None)
 
