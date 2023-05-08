@@ -475,9 +475,9 @@ class TransformerDecoder(TransformerDecoderBase):
                     layer.self_attn.layer_cache = (
                         False, {'keys': torch.tensor([]),
                                 'values': torch.tensor([])})
-                    layer.context_attn.layer_cache = (
-                        False, {'keys': torch.tensor([]),
-                                'values': torch.tensor([])})
+                layer.context_attn.layer_cache = (
+                    False, {'keys': torch.tensor([]),
+                            'values': torch.tensor([])})
 
         tgt_words = tgt[:, :, 0]
 
