@@ -296,7 +296,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
 
 class TransformerDecoderBase(DecoderBase):
     def __init__(self, d_model, copy_attn, embeddings, alignment_layer,
-                 layer_norm='standard'):
+                 layer_norm):
         super(TransformerDecoderBase, self).__init__()
 
         self.embeddings = embeddings
@@ -428,7 +428,7 @@ class TransformerDecoder(TransformerDecoderBase):
         layer_norm='standard'
     ):
         super(TransformerDecoder, self).__init__(
-            d_model, copy_attn, embeddings, alignment_layer
+            d_model, copy_attn, embeddings, alignment_layer, layer_norm
         )
 
         self.transformer_layers = nn.ModuleList(
@@ -634,7 +634,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
         layer_norm='standard'
     ):
         super(TransformerLMDecoder, self).__init__(
-            d_model, copy_attn, embeddings, None
+            d_model, copy_attn, embeddings, alignment_layer, layer_norm
         )
         self.transformer_layers = nn.ModuleList(
             [
