@@ -26,6 +26,7 @@ Contents
       examples/wiki_103/LanguageModelGeneration.md
       examples/summary/Summarization.md
       examples/ggnn/GGNN.md
+      replicate_alpaca-vicuna/ReplicateAlpacaVicuna.md
 
 
 .. toctree::
