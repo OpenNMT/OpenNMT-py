@@ -3,6 +3,13 @@
 
 
 ## [Unreleased]
+
+## [3.1.2](https://github.com/OpenNMT/OpenNMT-py/tree/3.1.2) (2023-05-10)
+* fixes: transforms (normalize, clean, inlinetags)
+* Llama support (rotary embeddings, RMSNorm, Silu activation)
+* 8bit loading for specific layers (along with LoRa for other layers)
+* subword learner added to build_vocab
+
 ## [3.1.1](https://github.com/OpenNMT/OpenNMT-py/tree/3.1.1) (2023-03-30)
 * fix major bug in 3.1.0 introduced with LoRa (3.1.0 not available)
 
