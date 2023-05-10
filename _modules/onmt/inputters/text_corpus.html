@@ -93,6 +93,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">How do I use my v2 models in v3 ?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-do-i-train-the-transformer-model">How do I train the Transformer model?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#performance-tips">Performance tips</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#position-encoding-absolute-vs-relative-vs-rotary-embeddings">Position encoding: Absolute vs Relative vs Rotary Embeddings</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
@@ -100,7 +101,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-to-use-lora-to-finetune-a-big-model">How to use LoRa to finetune a big model ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-to-use-lora-and-8bit-loading-to-finetune-a-big-model">How to use LoRa and 8bit loading to finetune a big model ?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
@@ -458,21 +459,22 @@
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">bucket</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span>
             <span class="n">pro_bucket</span> <span class="o">=</span> <span class="n">process</span><span class="p">(</span><span class="n">CorpusTask</span><span class="o">.</span><span class="n">TRAIN</span><span class="p">,</span> <span class="n">bucket</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">maybe_example</span> <span class="ow">in</span> <span class="n">pro_bucket</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">maybe_example</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">src_line</span><span class="p">,</span> <span class="n">tgt_line</span> <span class="o">=</span> <span class="p">(</span><span class="n">maybe_example</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">][</span><span class="s1">&#39;src&#39;</span><span class="p">],</span>
-                                          <span class="n">maybe_example</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">][</span><span class="s1">&#39;tgt&#39;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">pro_bucket</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">maybe_example</span> <span class="ow">in</span> <span class="n">pro_bucket</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">maybe_example</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">src_line</span><span class="p">,</span> <span class="n">tgt_line</span> <span class="o">=</span> <span class="p">(</span><span class="n">maybe_example</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">][</span><span class="s1">&#39;src&#39;</span><span class="p">],</span>
+                                              <span class="n">maybe_example</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">][</span><span class="s1">&#39;tgt&#39;</span><span class="p">])</span>
 
-                    <span class="k">if</span> <span class="s1">&#39;feats&#39;</span> <span class="ow">in</span> <span class="n">maybe_example</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">]:</span>
-                        <span class="n">src_feats_lines</span> <span class="o">=</span> <span class="n">maybe_example</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">][</span><span class="s1">&#39;feats&#39;</span><span class="p">]</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="n">src_feats_lines</span> <span class="o">=</span> <span class="p">[]</span>
+                        <span class="k">if</span> <span class="s1">&#39;feats&#39;</span> <span class="ow">in</span> <span class="n">maybe_example</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">]:</span>
+                            <span class="n">src_feats_lines</span> <span class="o">=</span> <span class="n">maybe_example</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">][</span><span class="s1">&#39;feats&#39;</span><span class="p">]</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">src_feats_lines</span> <span class="o">=</span> <span class="p">[]</span>
 
-                    <span class="n">src_pretty_line</span> <span class="o">=</span> <span class="n">append_features_to_text</span><span class="p">(</span>
-                        <span class="n">src_line</span><span class="p">,</span> <span class="n">src_feats_lines</span><span class="p">)</span>
+                        <span class="n">src_pretty_line</span> <span class="o">=</span> <span class="n">append_features_to_text</span><span class="p">(</span>
+                            <span class="n">src_line</span><span class="p">,</span> <span class="n">src_feats_lines</span><span class="p">)</span>
 
-                    <span class="n">f_src</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">src_pretty_line</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
-                    <span class="n">f_tgt</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">tgt_line</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+                        <span class="n">f_src</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">src_pretty_line</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+                        <span class="n">f_tgt</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">tgt_line</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
 </pre></div>
 
            </div>

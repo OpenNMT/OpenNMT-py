@@ -93,6 +93,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">How do I use my v2 models in v3 ?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-do-i-train-the-transformer-model">How do I train the Transformer model?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#performance-tips">Performance tips</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#position-encoding-absolute-vs-relative-vs-rotary-embeddings">Position encoding: Absolute vs Relative vs Rotary Embeddings</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
@@ -100,7 +101,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-to-use-lora-to-finetune-a-big-model">How to use LoRa to finetune a big model ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-to-use-lora-and-8bit-loading-to-finetune-a-big-model">How to use LoRa and 8bit loading to finetune a big model ?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
@@ -205,6 +206,35 @@
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
 
 
+<span class="c1"># Help functions for Rotary Embeddings</span>
+<span class="c1"># https://arxiv.org/pdf/2104.09864.pdf</span>
+<span class="c1"># too convoluted to make maxseqlen a parameter.</span>
+<span class="c1"># we suppose src_seq_len at training and max_length at inference</span>
+<span class="c1"># are both &lt; 2048 tokens.</span>
+
+<span class="k">def</span> <span class="nf">rotaryembeddings</span><span class="p">(</span><span class="n">dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">maxseqlen</span><span class="o">=</span><span class="mi">4096</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="mi">10000</span><span class="p">):</span>
+    <span class="n">inv_freq</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">base</span> <span class="o">**</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span> <span class="o">/</span> <span class="n">dim</span><span class="p">))</span>
+    <span class="n">tmax</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">maxseqlen</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">inv_freq</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">rope</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">tmax</span><span class="p">,</span> <span class="n">inv_freq</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+    <span class="c1"># rope is now matrix [maxseqlen, dim/2]</span>
+    <span class="n">rope</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">polar</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">rope</span><span class="p">),</span> <span class="n">rope</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">rope</span>
+
+
+<span class="k">def</span> <span class="nf">apply_rotary_emb</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">rope</span><span class="p">):</span>
+    <span class="n">query_</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">float</span><span class="p">()</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">*</span><span class="n">query</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">query_</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">view_as_complex</span><span class="p">(</span><span class="n">query_</span><span class="p">)</span>
+    <span class="n">key_</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">float</span><span class="p">()</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">*</span><span class="n">key</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">key_</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">view_as_complex</span><span class="p">(</span><span class="n">key_</span><span class="p">)</span>
+    <span class="n">rope</span> <span class="o">=</span> <span class="n">rope</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">query_</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="n">query_</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+    <span class="n">query_out</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">view_as_real</span><span class="p">(</span><span class="n">query_</span> <span class="o">*</span> <span class="n">rope</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+    <span class="n">key_out</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">view_as_real</span><span class="p">(</span><span class="n">key_</span> <span class="o">*</span> <span class="n">rope</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">query_out</span><span class="o">.</span><span class="n">type_as</span><span class="p">(</span><span class="n">query</span><span class="p">),</span> <span class="n">key_out</span><span class="o">.</span><span class="n">type_as</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+
+<span class="c1"># Help functions for max_relative positions</span>
+<span class="c1"># https://arxiv.org/abs/1803.02155</span>
+
 <span class="k">def</span> <span class="nf">relative_matmul</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
                     <span class="n">transpose</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -246,6 +276,8 @@
     <span class="n">final_mat</span> <span class="o">=</span> <span class="n">distance_mat_clipped</span> <span class="o">+</span> <span class="n">max_relative_positions</span>
     <span class="k">return</span> <span class="n">final_mat</span>
 
+
+<span class="c1"># Help functions to split model dim per head</span>
 
 <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">dim_per_head</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -342,12 +374,16 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">relative_positions_embeddings</span> <span class="o">=</span> <span class="kc">None</span>
 
+            <span class="k">if</span> <span class="n">max_relative_positions</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>  <span class="c1"># rotary embeddings</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rope</span> <span class="o">=</span> <span class="n">rotaryembeddings</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">)</span>
+
     <span class="k">def</span> <span class="nf">update_dropout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dropout</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">dropout</span>
 
     <span class="c1"># @torch.jit.script_method</span>
 <div class="viewcode-block" id="MultiHeadedAttention.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.MultiHeadedAttention.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
-                <span class="n">query</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">mask</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">query</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">mask</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="n">step</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
                 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compute the context vector and the attention vectors.</span>
@@ -361,6 +397,7 @@
 <span class="sd">               query vectors  ``(batch, query_len, dim)``</span>
 <span class="sd">           mask: binary mask 1/0 indicating which keys have</span>
 <span class="sd">               zero / non-zero attention ``(batch, query_len, key_len)``</span>
+<span class="sd">           step (int): decoding step (used for Rotary embedding)</span>
 <span class="sd">        Returns:</span>
 <span class="sd">           (Tensor, Tensor):</span>
 
@@ -374,8 +411,25 @@
                 <span class="n">query</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear_query</span><span class="p">(</span><span class="n">query</span><span class="p">),</span>\
                                     <span class="bp">self</span><span class="o">.</span><span class="n">linear_keys</span><span class="p">(</span><span class="n">query</span><span class="p">),</span>\
                                     <span class="bp">self</span><span class="o">.</span><span class="n">linear_values</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+                <span class="n">query</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">)</span>
                 <span class="n">key</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">)</span>
                 <span class="n">value</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_relative_positions</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>  <span class="c1"># Rotary Embeddings</span>
+                    <span class="n">start_pos</span> <span class="o">=</span> <span class="n">step</span>
+                    <span class="n">seqlen</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+                    <span class="n">rope</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rope</span><span class="p">[</span><span class="n">start_pos</span><span class="p">:</span>
+                                     <span class="n">start_pos</span> <span class="o">+</span>
+                                     <span class="n">seqlen</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">query</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+                    <span class="n">query</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+                    <span class="n">key</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+                    <span class="n">query</span><span class="p">,</span> <span class="n">key</span> <span class="o">=</span> <span class="n">apply_rotary_emb</span><span class="p">(</span><span class="n">query</span><span class="p">,</span>
+                                                  <span class="n">key</span><span class="p">,</span>
+                                                  <span class="n">rope</span><span class="o">=</span><span class="n">rope</span><span class="p">)</span>
+                    <span class="n">query</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+                    <span class="n">key</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;keys&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="n">key</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
                         <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;keys&#39;</span><span class="p">],</span> <span class="n">key</span><span class="p">),</span>
@@ -389,6 +443,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;values&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">attn_type</span> <span class="o">==</span> <span class="s2">&quot;context&quot;</span><span class="p">:</span>
                 <span class="n">query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear_query</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+                <span class="n">query</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">)</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;keys&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear_keys</span><span class="p">(</span><span class="n">key</span><span class="p">),</span>\
                                  <span class="bp">self</span><span class="o">.</span><span class="n">linear_values</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
@@ -405,9 +460,22 @@
             <span class="n">query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear_query</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
             <span class="n">key</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">)</span>
             <span class="n">value</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">)</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">)</span>
 
-        <span class="n">query</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_relative_positions</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>  <span class="c1"># Rotary Embeddings</span>
+                <span class="n">start_pos</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">seqlen</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+                <span class="n">rope</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rope</span><span class="p">[</span><span class="n">start_pos</span><span class="p">:</span>
+                                 <span class="n">start_pos</span> <span class="o">+</span>
+                                 <span class="n">seqlen</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">query</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
 
+                <span class="n">query</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+                <span class="n">query</span><span class="p">,</span> <span class="n">key</span> <span class="o">=</span> <span class="n">apply_rotary_emb</span><span class="p">(</span><span class="n">query</span><span class="p">,</span>
+                                              <span class="n">key</span><span class="p">,</span>
+                                              <span class="n">rope</span><span class="o">=</span><span class="n">rope</span><span class="p">)</span>
+                <span class="n">query</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
         <span class="c1"># 2) Calculate and scale scores.</span>
         <span class="n">query</span> <span class="o">=</span> <span class="n">query</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">)</span>
         <span class="c1"># batch x num_heads x query_len x key_len</span>

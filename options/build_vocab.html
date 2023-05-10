@@ -97,6 +97,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html">How do I use my v2 models in v3 ?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-do-i-train-the-transformer-model">How do I train the Transformer model?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#performance-tips">Performance tips</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#position-encoding-absolute-vs-relative-vs-rotary-embeddings">Position encoding: Absolute vs Relative vs Rotary Embeddings</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
@@ -104,7 +105,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-to-use-lora-to-finetune-a-big-model">How to use LoRa to finetune a big model ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-to-use-lora-and-8bit-loading-to-finetune-a-big-model">How to use LoRa and 8bit loading to finetune a big model ?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
@@ -124,18 +125,19 @@
 <li class="toctree-l2"><a class="reference internal" href="#Data">Data</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Vocab">Vocab</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Features">Features</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#Transform/Docify">Transform/Docify</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#Transform/FuzzyMatching">Transform/FuzzyMatching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Transform/InferFeats">Transform/InferFeats</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Transform/Normalize">Transform/Normalize</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Transform/Uppercase">Transform/Uppercase</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#Transform/BART">Transform/BART</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#Transform/Subword/Common">Transform/Subword/Common</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#Transform/Subword/ONMTTOK">Transform/Subword/ONMTTOK</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Transform/SwitchOut">Transform/SwitchOut</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Transform/Token_Drop">Transform/Token_Drop</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Transform/Token_Mask">Transform/Token_Mask</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#Transform/Normalize">Transform/Normalize</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#Transform/InferFeats">Transform/InferFeats</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Transform/Clean">Transform/Clean</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Transform/Docify">Transform/Docify</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Transform/InlineTags">Transform/InlineTags</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Transform/FuzzyMatching">Transform/FuzzyMatching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Transform/BART">Transform/BART</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Transform/Subword/Common">Transform/Subword/Common</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Transform/Subword/ONMTTOK">Transform/Subword/ONMTTOK</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Transform/Filter">Transform/Filter</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Transform/Prefix">Transform/Prefix</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Transform/Suffix">Transform/Suffix</a></li>
@@ -230,24 +232,46 @@
 </p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">build_vocab</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">config</span> <span class="n">CONFIG</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">save_config</span> <span class="n">SAVE_CONFIG</span><span class="p">]</span> <span class="o">-</span><span class="n">data</span>
                       <span class="n">DATA</span> <span class="p">[</span><span class="o">-</span><span class="n">skip_empty_level</span> <span class="p">{</span><span class="n">silent</span><span class="p">,</span><span class="n">warning</span><span class="p">,</span><span class="n">error</span><span class="p">}]</span>
-                      <span class="p">[</span><span class="o">-</span><span class="n">transforms</span> <span class="p">{</span><span class="n">docify</span><span class="p">,</span><span class="n">fuzzymatch</span><span class="p">,</span><span class="n">uppercase</span><span class="p">,</span><span class="n">bart</span><span class="p">,</span><span class="n">sentencepiece</span><span class="p">,</span><span class="n">bpe</span><span class="p">,</span><span class="n">onmt_tokenize</span><span class="p">,</span><span class="n">switchout</span><span class="p">,</span><span class="n">tokendrop</span><span class="p">,</span><span class="n">tokenmask</span><span class="p">,</span><span class="n">normalize</span><span class="p">,</span><span class="n">inferfeats</span><span class="p">,</span><span class="n">inlinetags</span><span class="p">,</span><span class="n">filtertoolong</span><span class="p">,</span><span class="n">prefix</span><span class="p">,</span><span class="n">suffix</span><span class="p">}</span> <span class="p">[{</span><span class="n">docify</span><span class="p">,</span><span class="n">fuzzymatch</span><span class="p">,</span><span class="n">uppercase</span><span class="p">,</span><span class="n">bart</span><span class="p">,</span><span class="n">sentencepiece</span><span class="p">,</span><span class="n">bpe</span><span class="p">,</span><span class="n">onmt_tokenize</span><span class="p">,</span><span class="n">switchout</span><span class="p">,</span><span class="n">tokendrop</span><span class="p">,</span><span class="n">tokenmask</span><span class="p">,</span><span class="n">normalize</span><span class="p">,</span><span class="n">inferfeats</span><span class="p">,</span><span class="n">inlinetags</span><span class="p">,</span><span class="n">filtertoolong</span><span class="p">,</span><span class="n">prefix</span><span class="p">,</span><span class="n">suffix</span><span class="p">}</span> <span class="o">...</span><span class="p">]]</span>
+                      <span class="p">[</span><span class="o">-</span><span class="n">transforms</span> <span class="p">{</span><span class="n">inferfeats</span><span class="p">,</span><span class="n">normalize</span><span class="p">,</span><span class="n">uppercase</span><span class="p">,</span><span class="n">switchout</span><span class="p">,</span><span class="n">tokendrop</span><span class="p">,</span><span class="n">tokenmask</span><span class="p">,</span><span class="n">clean</span><span class="p">,</span><span class="n">docify</span><span class="p">,</span><span class="n">inlinetags</span><span class="p">,</span><span class="n">fuzzymatch</span><span class="p">,</span><span class="n">bart</span><span class="p">,</span><span class="n">sentencepiece</span><span class="p">,</span><span class="n">bpe</span><span class="p">,</span><span class="n">onmt_tokenize</span><span class="p">,</span><span class="n">filtertoolong</span><span class="p">,</span><span class="n">prefix</span><span class="p">,</span><span class="n">suffix</span><span class="p">}</span> <span class="p">[{</span><span class="n">inferfeats</span><span class="p">,</span><span class="n">normalize</span><span class="p">,</span><span class="n">uppercase</span><span class="p">,</span><span class="n">switchout</span><span class="p">,</span><span class="n">tokendrop</span><span class="p">,</span><span class="n">tokenmask</span><span class="p">,</span><span class="n">clean</span><span class="p">,</span><span class="n">docify</span><span class="p">,</span><span class="n">inlinetags</span><span class="p">,</span><span class="n">fuzzymatch</span><span class="p">,</span><span class="n">bart</span><span class="p">,</span><span class="n">sentencepiece</span><span class="p">,</span><span class="n">bpe</span><span class="p">,</span><span class="n">onmt_tokenize</span><span class="p">,</span><span class="n">filtertoolong</span><span class="p">,</span><span class="n">prefix</span><span class="p">,</span><span class="n">suffix</span><span class="p">}</span> <span class="o">...</span><span class="p">]]</span>
                       <span class="o">-</span><span class="n">save_data</span> <span class="n">SAVE_DATA</span> <span class="p">[</span><span class="o">-</span><span class="n">overwrite</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">n_sample</span> <span class="n">N_SAMPLE</span><span class="p">]</span>
                       <span class="p">[</span><span class="o">-</span><span class="n">dump_samples</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">num_threads</span> <span class="n">NUM_THREADS</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">-</span><span class="n">learn_subwords</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">-</span><span class="n">learn_subwords_size</span> <span class="n">LEARN_SUBWORDS_SIZE</span><span class="p">]</span>
                       <span class="p">[</span><span class="o">-</span><span class="n">vocab_sample_queue_size</span> <span class="n">VOCAB_SAMPLE_QUEUE_SIZE</span><span class="p">]</span>
                       <span class="o">-</span><span class="n">src_vocab</span> <span class="n">SRC_VOCAB</span> <span class="p">[</span><span class="o">-</span><span class="n">tgt_vocab</span> <span class="n">TGT_VOCAB</span><span class="p">]</span>
                       <span class="p">[</span><span class="o">-</span><span class="n">share_vocab</span><span class="p">]</span>
                       <span class="p">[</span><span class="o">--</span><span class="n">decoder_start_token</span> <span class="n">DECODER_START_TOKEN</span><span class="p">]</span>
                       <span class="p">[</span><span class="o">-</span><span class="n">n_src_feats</span> <span class="n">N_SRC_FEATS</span><span class="p">]</span>
                       <span class="p">[</span><span class="o">-</span><span class="n">src_feats_defaults</span> <span class="n">SRC_FEATS_DEFAULTS</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">--</span><span class="n">reversible_tokenization</span> <span class="p">{</span><span class="n">joiner</span><span class="p">,</span><span class="n">spacer</span><span class="p">}]</span>
+                      <span class="p">[</span><span class="o">--</span><span class="n">src_lang</span> <span class="n">SRC_LANG</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">tgt_lang</span> <span class="n">TGT_LANG</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">--</span><span class="n">penn</span> <span class="n">PENN</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">norm_quote_commas</span> <span class="n">NORM_QUOTE_COMMAS</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">--</span><span class="n">norm_numbers</span> <span class="n">NORM_NUMBERS</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">--</span><span class="n">pre_replace_unicode_punct</span> <span class="n">PRE_REPLACE_UNICODE_PUNCT</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">--</span><span class="n">post_remove_control_chars</span> <span class="n">POST_REMOVE_CONTROL_CHARS</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">--</span><span class="n">upper_corpus_ratio</span> <span class="n">UPPER_CORPUS_RATIO</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">-</span><span class="n">switchout_temperature</span> <span class="n">SWITCHOUT_TEMPERATURE</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">-</span><span class="n">tokendrop_temperature</span> <span class="n">TOKENDROP_TEMPERATURE</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">-</span><span class="n">tokenmask_temperature</span> <span class="n">TOKENMASK_TEMPERATURE</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">--</span><span class="n">src_eq_tgt</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">same_char</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">same_word</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">--</span><span class="n">scripts_ok</span> <span class="p">[</span><span class="n">SCRIPTS_OK</span> <span class="p">[</span><span class="n">SCRIPTS_OK</span> <span class="o">...</span><span class="p">]]]</span>
+                      <span class="p">[</span><span class="o">--</span><span class="n">scripts_nok</span> <span class="p">[</span><span class="n">SCRIPTS_NOK</span> <span class="p">[</span><span class="n">SCRIPTS_NOK</span> <span class="o">...</span><span class="p">]]]</span>
+                      <span class="p">[</span><span class="o">--</span><span class="n">src_tgt_ratio</span> <span class="n">SRC_TGT_RATIO</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">--</span><span class="n">avg_tok_min</span> <span class="n">AVG_TOK_MIN</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">avg_tok_max</span> <span class="n">AVG_TOK_MAX</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">--</span><span class="n">langid</span> <span class="p">[</span><span class="n">LANGID</span> <span class="p">[</span><span class="n">LANGID</span> <span class="o">...</span><span class="p">]]]</span>
                       <span class="p">[</span><span class="o">--</span><span class="n">doc_length</span> <span class="n">DOC_LENGTH</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">max_context</span> <span class="n">MAX_CONTEXT</span><span class="p">]</span>
-                      <span class="p">[</span><span class="o">--</span><span class="n">tm_path</span> <span class="n">TM_PATH</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">--</span><span class="n">tags_dictionary_path</span> <span class="n">TAGS_DICTIONARY_PATH</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">--</span><span class="n">tags_corpus_ratio</span> <span class="n">TAGS_CORPUS_RATIO</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">--</span><span class="n">max_tags</span> <span class="n">MAX_TAGS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">paired_stag</span> <span class="n">PAIRED_STAG</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">--</span><span class="n">paired_etag</span> <span class="n">PAIRED_ETAG</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">--</span><span class="n">isolated_tag</span> <span class="n">ISOLATED_TAG</span><span class="p">]</span>
+                      <span class="p">[</span><span class="o">--</span><span class="n">src_delimiter</span> <span class="n">SRC_DELIMITER</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">tm_path</span> <span class="n">TM_PATH</span><span class="p">]</span>
                       <span class="p">[</span><span class="o">--</span><span class="n">fuzzy_corpus_ratio</span> <span class="n">FUZZY_CORPUS_RATIO</span><span class="p">]</span>
                       <span class="p">[</span><span class="o">--</span><span class="n">fuzzy_threshold</span> <span class="n">FUZZY_THRESHOLD</span><span class="p">]</span>
                       <span class="p">[</span><span class="o">--</span><span class="n">tm_delimiter</span> <span class="n">TM_DELIMITER</span><span class="p">]</span>
                       <span class="p">[</span><span class="o">--</span><span class="n">fuzzy_token</span> <span class="n">FUZZY_TOKEN</span><span class="p">]</span>
                       <span class="p">[</span><span class="o">--</span><span class="n">fuzzymatch_min_length</span> <span class="n">FUZZYMATCH_MIN_LENGTH</span><span class="p">]</span>
                       <span class="p">[</span><span class="o">--</span><span class="n">fuzzymatch_max_length</span> <span class="n">FUZZYMATCH_MAX_LENGTH</span><span class="p">]</span>
-                      <span class="p">[</span><span class="o">--</span><span class="n">upper_corpus_ratio</span> <span class="n">UPPER_CORPUS_RATIO</span><span class="p">]</span>
                       <span class="p">[</span><span class="o">--</span><span class="n">permute_sent_ratio</span> <span class="n">PERMUTE_SENT_RATIO</span><span class="p">]</span>
                       <span class="p">[</span><span class="o">--</span><span class="n">rotate_ratio</span> <span class="n">ROTATE_RATIO</span><span class="p">]</span>
                       <span class="p">[</span><span class="o">--</span><span class="n">insert_ratio</span> <span class="n">INSERT_RATIO</span><span class="p">]</span>
@@ -269,21 +293,6 @@
                       <span class="p">[</span><span class="o">-</span><span class="n">tgt_subword_type</span> <span class="p">{</span><span class="n">none</span><span class="p">,</span><span class="n">sentencepiece</span><span class="p">,</span><span class="n">bpe</span><span class="p">}]</span>
                       <span class="p">[</span><span class="o">-</span><span class="n">src_onmttok_kwargs</span> <span class="n">SRC_ONMTTOK_KWARGS</span><span class="p">]</span>
                       <span class="p">[</span><span class="o">-</span><span class="n">tgt_onmttok_kwargs</span> <span class="n">TGT_ONMTTOK_KWARGS</span><span class="p">]</span>
-                      <span class="p">[</span><span class="o">-</span><span class="n">switchout_temperature</span> <span class="n">SWITCHOUT_TEMPERATURE</span><span class="p">]</span>
-                      <span class="p">[</span><span class="o">-</span><span class="n">tokendrop_temperature</span> <span class="n">TOKENDROP_TEMPERATURE</span><span class="p">]</span>
-                      <span class="p">[</span><span class="o">-</span><span class="n">tokenmask_temperature</span> <span class="n">TOKENMASK_TEMPERATURE</span><span class="p">]</span>
-                      <span class="p">[</span><span class="o">--</span><span class="n">src_lang</span> <span class="n">SRC_LANG</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">tgt_lang</span> <span class="n">TGT_LANG</span><span class="p">]</span>
-                      <span class="p">[</span><span class="o">--</span><span class="n">penn</span> <span class="n">PENN</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">norm_quote_commas</span> <span class="n">NORM_QUOTE_COMMAS</span><span class="p">]</span>
-                      <span class="p">[</span><span class="o">--</span><span class="n">norm_numbers</span> <span class="n">NORM_NUMBERS</span><span class="p">]</span>
-                      <span class="p">[</span><span class="o">--</span><span class="n">pre_replace_unicode_punct</span> <span class="n">PRE_REPLACE_UNICODE_PUNCT</span><span class="p">]</span>
-                      <span class="p">[</span><span class="o">--</span><span class="n">post_remove_control_chars</span> <span class="n">POST_REMOVE_CONTROL_CHARS</span><span class="p">]</span>
-                      <span class="p">[</span><span class="o">--</span><span class="n">reversible_tokenization</span> <span class="p">{</span><span class="n">joiner</span><span class="p">,</span><span class="n">spacer</span><span class="p">}]</span>
-                      <span class="p">[</span><span class="o">--</span><span class="n">tags_dictionary_path</span> <span class="n">TAGS_DICTIONARY_PATH</span><span class="p">]</span>
-                      <span class="p">[</span><span class="o">--</span><span class="n">tags_corpus_ratio</span> <span class="n">TAGS_CORPUS_RATIO</span><span class="p">]</span>
-                      <span class="p">[</span><span class="o">--</span><span class="n">max_tags</span> <span class="n">MAX_TAGS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">paired_stag</span> <span class="n">PAIRED_STAG</span><span class="p">]</span>
-                      <span class="p">[</span><span class="o">--</span><span class="n">paired_etag</span> <span class="n">PAIRED_ETAG</span><span class="p">]</span>
-                      <span class="p">[</span><span class="o">--</span><span class="n">isolated_tag</span> <span class="n">ISOLATED_TAG</span><span class="p">]</span>
-                      <span class="p">[</span><span class="o">--</span><span class="n">src_delimiter</span> <span class="n">SRC_DELIMITER</span><span class="p">]</span>
                       <span class="p">[</span><span class="o">--</span><span class="n">src_seq_length</span> <span class="n">SRC_SEQ_LENGTH</span><span class="p">]</span>
                       <span class="p">[</span><span class="o">--</span><span class="n">tgt_seq_length</span> <span class="n">TGT_SEQ_LENGTH</span><span class="p">]</span>
                       <span class="p">[</span><span class="o">--</span><span class="n">src_prefix</span> <span class="n">SRC_PREFIX</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">tgt_prefix</span> <span class="n">TGT_PREFIX</span><span class="p">]</span>
@@ -314,7 +323,7 @@
 <p>Default: “warning”</p>
 </dd>
 <dt><kbd>-transforms, --transforms</kbd></dt>
-<dd><p>Possible choices: docify, fuzzymatch, uppercase, bart, sentencepiece, bpe, onmt_tokenize, switchout, tokendrop, tokenmask, normalize, inferfeats, inlinetags, filtertoolong, prefix, suffix</p>
+<dd><p>Possible choices: inferfeats, normalize, uppercase, switchout, tokendrop, tokenmask, clean, docify, inlinetags, fuzzymatch, bart, sentencepiece, bpe, onmt_tokenize, filtertoolong, prefix, suffix</p>
 <p>Default transform pipeline to apply to data. Can be specified in each corpus of data to override.</p>
 <p>Default: []</p>
 </dd>
@@ -336,6 +345,14 @@
 <dt><kbd>-num_threads, --num_threads</kbd></dt>
 <dd><p>Number of parallel threads to build the vocab.</p>
 <p>Default: 1</p>
+</dd>
+<dt><kbd>-learn_subwords, --learn_subwords</kbd></dt>
+<dd><p>Learn subwords prior to building vocab</p>
+<p>Default: False</p>
+</dd>
+<dt><kbd>-learn_subwords_size, --learn_subwords_size</kbd></dt>
+<dd><p>Learn subwords operations</p>
+<p>Default: 32000</p>
 </dd>
 <dt><kbd>-vocab_sample_queue_size, --vocab_sample_queue_size</kbd></dt>
 <dd><p>Size of queues used in the build_vocab dump path.</p>
@@ -374,6 +391,130 @@
 </dd>
 </dl>
 </section>
+<section id="Transform/InferFeats">
+<h2>Transform/InferFeats<a class="headerlink" href="#Transform/InferFeats" title="Permalink to this heading">¶</a></h2>
+<dl class="option-list">
+<dt><kbd>--reversible_tokenization, -reversible_tokenization</kbd></dt>
+<dd><p>Possible choices: joiner, spacer</p>
+<p>Type of reversible tokenization applied on the tokenizer.</p>
+<p>Default: “joiner”</p>
+</dd>
+</dl>
+</section>
+<section id="Transform/Normalize">
+<h2>Transform/Normalize<a class="headerlink" href="#Transform/Normalize" title="Permalink to this heading">¶</a></h2>
+<dl class="option-list">
+<dt><kbd>--src_lang, -src_lang</kbd></dt>
+<dd><p>Source language code</p>
+<p>Default: “”</p>
+</dd>
+<dt><kbd>--tgt_lang, -tgt_lang</kbd></dt>
+<dd><p>Target language code</p>
+<p>Default: “”</p>
+</dd>
+<dt><kbd>--penn, -penn</kbd></dt>
+<dd><p>Penn substitution</p>
+<p>Default: True</p>
+</dd>
+<dt><kbd>--norm_quote_commas, -norm_quote_commas</kbd></dt>
+<dd><p>Normalize quotations and commas</p>
+<p>Default: True</p>
+</dd>
+<dt><kbd>--norm_numbers, -norm_numbers</kbd></dt>
+<dd><p>Normalize numbers</p>
+<p>Default: True</p>
+</dd>
+<dt><kbd>--pre_replace_unicode_punct, -pre_replace_unicode_punct</kbd></dt>
+<dd><p>Replace unicode punct</p>
+<p>Default: False</p>
+</dd>
+<dt><kbd>--post_remove_control_chars, -post_remove_control_chars</kbd></dt>
+<dd><p>Remove control chars</p>
+<p>Default: False</p>
+</dd>
+</dl>
+</section>
+<section id="Transform/Uppercase">
+<h2>Transform/Uppercase<a class="headerlink" href="#Transform/Uppercase" title="Permalink to this heading">¶</a></h2>
+<dl class="option-list">
+<dt><kbd>--upper_corpus_ratio, -upper_corpus_ratio</kbd></dt>
+<dd><p>Corpus ratio to apply uppercasing.</p>
+<p>Default: 0.01</p>
+</dd>
+</dl>
+</section>
+<section id="Transform/SwitchOut">
+<h2>Transform/SwitchOut<a class="headerlink" href="#Transform/SwitchOut" title="Permalink to this heading">¶</a></h2>
+<div class="admonition caution">
+<p class="admonition-title">Caution</p>
+<p>This transform will not take effect when building vocabulary.</p>
+</div>
+<dl class="option-list">
+<dt><kbd>-switchout_temperature, --switchout_temperature</kbd></dt>
+<dd><p>Sampling temperature for SwitchOut. <span class="math notranslate nohighlight">\(\tau^{-1}\)</span> in <span id="id1">[<a class="reference internal" href="../ref.html#id40" title="Xinyi Wang, Hieu Pham, Zihang Dai, and Graham Neubig. Switchout: an efficient data augmentation algorithm for neural machine translation. CoRR, 2018. URL: http://arxiv.org/abs/1808.07512, arXiv:1808.07512.">WPDN18</a>]</span>. Smaller value makes data more diverse.</p>
+<p>Default: 1.0</p>
+</dd>
+</dl>
+</section>
+<section id="Transform/Token_Drop">
+<h2>Transform/Token_Drop<a class="headerlink" href="#Transform/Token_Drop" title="Permalink to this heading">¶</a></h2>
+<dl class="option-list">
+<dt><kbd>-tokendrop_temperature, --tokendrop_temperature</kbd></dt>
+<dd><p>Sampling temperature for token deletion.</p>
+<p>Default: 1.0</p>
+</dd>
+</dl>
+</section>
+<section id="Transform/Token_Mask">
+<h2>Transform/Token_Mask<a class="headerlink" href="#Transform/Token_Mask" title="Permalink to this heading">¶</a></h2>
+<dl class="option-list">
+<dt><kbd>-tokenmask_temperature, --tokenmask_temperature</kbd></dt>
+<dd><p>Sampling temperature for token masking.</p>
+<p>Default: 1.0</p>
+</dd>
+</dl>
+</section>
+<section id="Transform/Clean">
+<h2>Transform/Clean<a class="headerlink" href="#Transform/Clean" title="Permalink to this heading">¶</a></h2>
+<dl class="option-list">
+<dt><kbd>--src_eq_tgt, -src_eq_tgt</kbd></dt>
+<dd><p>Remove ex src==tgt</p>
+<p>Default: False</p>
+</dd>
+<dt><kbd>--same_char, -same_char</kbd></dt>
+<dd><p>Remove ex with same char more than 4 times</p>
+<p>Default: False</p>
+</dd>
+<dt><kbd>--same_word, -same_word</kbd></dt>
+<dd><p>Remove ex with same word more than 3 times</p>
+<p>Default: False</p>
+</dd>
+<dt><kbd>--scripts_ok, -scripts_ok</kbd></dt>
+<dd><p>list of unicodata scripts accepted</p>
+<p>Default: [‘Latin’, ‘Common’]</p>
+</dd>
+<dt><kbd>--scripts_nok, -scripts_nok</kbd></dt>
+<dd><p>list of unicodata scripts not accepted</p>
+<p>Default: []</p>
+</dd>
+<dt><kbd>--src_tgt_ratio, -src_tgt_ratio</kbd></dt>
+<dd><p>ratio between src and tgt</p>
+<p>Default: 2</p>
+</dd>
+<dt><kbd>--avg_tok_min, -avg_tok_min</kbd></dt>
+<dd><p>average length of tokens min</p>
+<p>Default: 3</p>
+</dd>
+<dt><kbd>--avg_tok_max, -avg_tok_max</kbd></dt>
+<dd><p>average length of tokens max</p>
+<p>Default: 20</p>
+</dd>
+<dt><kbd>--langid, -langid</kbd></dt>
+<dd><p>list of languages accepted</p>
+<p>Default: []</p>
+</dd>
+</dl>
+</section>
 <section id="Transform/Docify">
 <h2>Transform/Docify<a class="headerlink" href="#Transform/Docify" title="Permalink to this heading">¶</a></h2>
 <dl class="option-list">
@@ -384,6 +525,38 @@
 <dt><kbd>--max_context, -max_context</kbd></dt>
 <dd><p>Max context segments.</p>
 <p>Default: 1</p>
+</dd>
+</dl>
+</section>
+<section id="Transform/InlineTags">
+<h2>Transform/InlineTags<a class="headerlink" href="#Transform/InlineTags" title="Permalink to this heading">¶</a></h2>
+<dl class="option-list">
+<dt><kbd>--tags_dictionary_path, -tags_dictionary_path</kbd></dt>
+<dd><p>Path to a flat term dictionary.</p>
+</dd>
+<dt><kbd>--tags_corpus_ratio, -tags_corpus_ratio</kbd></dt>
+<dd><p>Ratio of corpus to augment with tags.</p>
+<p>Default: 0.1</p>
+</dd>
+<dt><kbd>--max_tags, -max_tags</kbd></dt>
+<dd><p>Maximum number of tags that can be added to a single sentence.</p>
+<p>Default: 12</p>
+</dd>
+<dt><kbd>--paired_stag, -paired_stag</kbd></dt>
+<dd><p>The format of an opening paired inline tag. Must include the character #.</p>
+<p>Default: “｟ph_#_beg｠”</p>
+</dd>
+<dt><kbd>--paired_etag, -paired_etag</kbd></dt>
+<dd><p>The format of a closing paired inline tag. Must include the character #.</p>
+<p>Default: “｟ph_#_end｠”</p>
+</dd>
+<dt><kbd>--isolated_tag, -isolated_tag</kbd></dt>
+<dd><p>The format of an isolated inline tag. Must include the character #.</p>
+<p>Default: “｟ph_#_std｠”</p>
+</dd>
+<dt><kbd>--src_delimiter, -src_delimiter</kbd></dt>
+<dd><p>Any special token used for augmented src sentences. The default is the fuzzy token used in the FuzzyMatch transform.</p>
+<p>Default: “｟fuzzy｠”</p>
 </dd>
 </dl>
 </section>
@@ -416,15 +589,6 @@
 <dt><kbd>--fuzzymatch_max_length, -fuzzymatch_max_length</kbd></dt>
 <dd><p>Max length for TM entries and examples to match.</p>
 <p>Default: 70</p>
-</dd>
-</dl>
-</section>
-<section id="Transform/Uppercase">
-<h2>Transform/Uppercase<a class="headerlink" href="#Transform/Uppercase" title="Permalink to this heading">¶</a></h2>
-<dl class="option-list">
-<dt><kbd>--upper_corpus_ratio, -upper_corpus_ratio</kbd></dt>
-<dd><p>Corpus ratio to apply uppercasing.</p>
-<p>Default: 0.01</p>
 </dd>
 </dl>
 </section>
@@ -538,112 +702,6 @@
 <dt><kbd>-tgt_onmttok_kwargs, --tgt_onmttok_kwargs</kbd></dt>
 <dd><p>Other pyonmttok options for tgt in dict string, except subword related options listed earlier.</p>
 <p>Default: “{‘mode’: ‘none’}”</p>
-</dd>
-</dl>
-</section>
-<section id="Transform/SwitchOut">
-<h2>Transform/SwitchOut<a class="headerlink" href="#Transform/SwitchOut" title="Permalink to this heading">¶</a></h2>
-<div class="admonition caution">
-<p class="admonition-title">Caution</p>
-<p>This transform will not take effect when building vocabulary.</p>
-</div>
-<dl class="option-list">
-<dt><kbd>-switchout_temperature, --switchout_temperature</kbd></dt>
-<dd><p>Sampling temperature for SwitchOut. <span class="math notranslate nohighlight">\(\tau^{-1}\)</span> in <span id="id1">[<a class="reference internal" href="../ref.html#id40" title="Xinyi Wang, Hieu Pham, Zihang Dai, and Graham Neubig. Switchout: an efficient data augmentation algorithm for neural machine translation. CoRR, 2018. URL: http://arxiv.org/abs/1808.07512, arXiv:1808.07512.">WPDN18</a>]</span>. Smaller value makes data more diverse.</p>
-<p>Default: 1.0</p>
-</dd>
-</dl>
-</section>
-<section id="Transform/Token_Drop">
-<h2>Transform/Token_Drop<a class="headerlink" href="#Transform/Token_Drop" title="Permalink to this heading">¶</a></h2>
-<dl class="option-list">
-<dt><kbd>-tokendrop_temperature, --tokendrop_temperature</kbd></dt>
-<dd><p>Sampling temperature for token deletion.</p>
-<p>Default: 1.0</p>
-</dd>
-</dl>
-</section>
-<section id="Transform/Token_Mask">
-<h2>Transform/Token_Mask<a class="headerlink" href="#Transform/Token_Mask" title="Permalink to this heading">¶</a></h2>
-<dl class="option-list">
-<dt><kbd>-tokenmask_temperature, --tokenmask_temperature</kbd></dt>
-<dd><p>Sampling temperature for token masking.</p>
-<p>Default: 1.0</p>
-</dd>
-</dl>
-</section>
-<section id="Transform/Normalize">
-<h2>Transform/Normalize<a class="headerlink" href="#Transform/Normalize" title="Permalink to this heading">¶</a></h2>
-<dl class="option-list">
-<dt><kbd>--src_lang, -src_lang</kbd></dt>
-<dd><p>Source language code</p>
-<p>Default: “”</p>
-</dd>
-<dt><kbd>--tgt_lang, -tgt_lang</kbd></dt>
-<dd><p>Target language code</p>
-<p>Default: “”</p>
-</dd>
-<dt><kbd>--penn, -penn</kbd></dt>
-<dd><p>Penn substitution</p>
-<p>Default: True</p>
-</dd>
-<dt><kbd>--norm_quote_commas, -norm_quote_commas</kbd></dt>
-<dd><p>Normalize quotations and commas</p>
-<p>Default: True</p>
-</dd>
-<dt><kbd>--norm_numbers, -norm_numbers</kbd></dt>
-<dd><p>Normalize numbers</p>
-<p>Default: True</p>
-</dd>
-<dt><kbd>--pre_replace_unicode_punct, -pre_replace_unicode_punct</kbd></dt>
-<dd><p>Replace unicode punct</p>
-<p>Default: False</p>
-</dd>
-<dt><kbd>--post_remove_control_chars, -post_remove_control_chars</kbd></dt>
-<dd><p>Remove control chars</p>
-<p>Default: False</p>
-</dd>
-</dl>
-</section>
-<section id="Transform/InferFeats">
-<h2>Transform/InferFeats<a class="headerlink" href="#Transform/InferFeats" title="Permalink to this heading">¶</a></h2>
-<dl class="option-list">
-<dt><kbd>--reversible_tokenization, -reversible_tokenization</kbd></dt>
-<dd><p>Possible choices: joiner, spacer</p>
-<p>Type of reversible tokenization applied on the tokenizer.</p>
-<p>Default: “joiner”</p>
-</dd>
-</dl>
-</section>
-<section id="Transform/InlineTags">
-<h2>Transform/InlineTags<a class="headerlink" href="#Transform/InlineTags" title="Permalink to this heading">¶</a></h2>
-<dl class="option-list">
-<dt><kbd>--tags_dictionary_path, -tags_dictionary_path</kbd></dt>
-<dd><p>Path to a flat term dictionary.</p>
-</dd>
-<dt><kbd>--tags_corpus_ratio, -tags_corpus_ratio</kbd></dt>
-<dd><p>Ratio of corpus to augment with tags.</p>
-<p>Default: 0.1</p>
-</dd>
-<dt><kbd>--max_tags, -max_tags</kbd></dt>
-<dd><p>Maximum number of tags that can be added to a single sentence.</p>
-<p>Default: 12</p>
-</dd>
-<dt><kbd>--paired_stag, -paired_stag</kbd></dt>
-<dd><p>The format of an opening paired inline tag. Must include the character #.</p>
-<p>Default: “｟ph_#_beg｠”</p>
-</dd>
-<dt><kbd>--paired_etag, -paired_etag</kbd></dt>
-<dd><p>The format of a closing paired inline tag. Must include the character #.</p>
-<p>Default: “｟ph_#_end｠”</p>
-</dd>
-<dt><kbd>--isolated_tag, -isolated_tag</kbd></dt>
-<dd><p>The format of an isolated inline tag. Must include the character #.</p>
-<p>Default: “｟ph_#_std｠”</p>
-</dd>
-<dt><kbd>--src_delimiter, -src_delimiter</kbd></dt>
-<dd><p>Any special token used for augmented src sentences. The default is the fuzzy token used in the FuzzyMatch transform.</p>
-<p>Default: “｟fuzzy｠”</p>
 </dd>
 </dl>
 </section>

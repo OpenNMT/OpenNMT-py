@@ -96,6 +96,7 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">How do I use my v2 models in v3 ?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="#how-do-i-train-the-transformer-model">How do I train the Transformer model?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="#performance-tips">Performance tips</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#position-encoding-absolute-vs-relative-vs-rotary-embeddings">Position encoding: Absolute vs Relative vs Rotary Embeddings</a></li>
 <li class="toctree-l1"><a class="reference internal" href="#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#example">Example</a></li>
@@ -117,6 +118,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#add-custom-suffix-to-examples">Add custom suffix to examples</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#convert-examples-to-uppercase">Convert examples to uppercase</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#normalize-punctuation">Normalize punctuation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#clean-dataset">Clean dataset</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#context-doc-aware-transform">Context / Doc aware transform</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#augment-source-segments-with-fuzzy-matches-for-neural-fuzzy-repair">Augment source segments with fuzzy matches for Neural Fuzzy Repair</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#augment-source-and-target-segments-with-inline-tags">Augment source and target segments with inline tags</a></li>
@@ -138,7 +140,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="#how-to-use-lora-to-finetune-a-big-model">How to use LoRa to finetune a big model ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#how-to-use-lora-and-8bit-loading-to-finetune-a-big-model">How to use LoRa and 8bit loading to finetune a big model ?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#raw-alignments-from-averaging-transformer-attention-heads">Raw alignments from averaging Transformer attention heads</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#supervised-learning-on-a-specific-head">Supervised learning on a specific head</a></li>
@@ -363,6 +365,24 @@ effectively you need to set different options that mimic the <a class="reference
 <li><p>for very fast inference convert your model to CTranslate2 format.</p></li>
 </ul>
 </section>
+<section id="position-encoding-absolute-vs-relative-vs-rotary-embeddings">
+<h1>Position encoding: Absolute vs Relative vs Rotary Embeddings<a class="headerlink" href="#position-encoding-absolute-vs-relative-vs-rotary-embeddings" title="Permalink to this heading">¶</a></h1>
+<p>The basic feature is absolute position encoding stemming from the original Transformer Paper.
+However, even with this, we can use SinusoidalInterleaved (default OpenNMT-py) or SinusoidalConcat (default Fairseq imported models)</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">position_encoding:</span> <span class="pre">true</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">position_encoding_type:</span> <span class="pre">'SinusoidalInterleaved'</span></code>
+Do not forget to set also <code class="docutils literal notranslate"><span class="pre">param_init_glorot:</span> <span class="pre">true</span></code></p></li>
+</ul>
+<p>If you prefer to use relative position encoding, we support two modes:</p>
+<ul class="simple">
+<li><p>“Shaw”: https://arxiv.org/abs/1803.02155 - you need to set <code class="docutils literal notranslate"><span class="pre">max_relative_positions:</span> <span class="pre">N</span></code> where N &gt; 1 (use 16, 20, 32) see paper.</p></li>
+<li><p>“Rope” Rotary Embeddings: https://arxiv.org/abs/2104.09864 - you need to set <code class="docutils literal notranslate"><span class="pre">max_relative_positions:</span> <span class="pre">-1</span></code></p></li>
+</ul>
+<p>In both cases, it is necessary to set <code class="docutils literal notranslate"><span class="pre">position_encoding:</span> <span class="pre">false</span></code></p>
+<p>In a nutshell, at the time if this writing (v3.1) absolute position encoding is managed in the Embeddings module, whereas
+the relative position encoding is managed directly in the multi-head self-attention module.</p>
+</section>
 <section id="do-you-support-multi-gpu">
 <h1>Do you support multi-gpu?<a class="headerlink" href="#do-you-support-multi-gpu" title="Permalink to this heading">¶</a></h1>
 <p>First you need to make sure you <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">CUDA_VISIBLE_DEVICES=0,1,2,3</span></code>.</p>
@@ -567,7 +587,7 @@ you need to set your yaml file as follow (example given with a target language a
 <p>Converts source and target (if present) examples to uppercase so the model can learn better to translate
 sentences in all caps. This transform normalizes the examples so the uppercased strings are stripped from
 any diacritics and accents. Usually this is desirable for most languages, although there are few exceptions.</p>
-<p>The following option can be added to the configuration :</p>
+<p>The following option can be added to the main configuration (same ratio for all dataset with this transform):</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">upper_corpus_ratio</span></code>: ratio of the corpus that will be transformed to uppercase (default: 0.01);</p></li>
 </ul>
@@ -577,15 +597,33 @@ any diacritics and accents. Usually this is desirable for most languages, althou
 <p>Transform name: <code class="docutils literal notranslate"><span class="pre">normalize</span></code></p>
 <p>Class: <code class="docutils literal notranslate"><span class="pre">onmt.transforms.normalize.NormalizeTransform</span></code></p>
 <p>Normalizes source and target (if present) examples using the same rules as Moses punctuation normalizer.</p>
-<p>The following options can be added to the configuration :</p>
+<p>The following options can be added to the configuration of each dataset:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">src_lang</span></code>: en, de, cz/cs, fr (default=en)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">tgt_lang</span></code>: en, de, cz/cs, fr (default=en)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src_lang</span></code>: en, de, cz/cs, fr (default=’’)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tgt_lang</span></code>: en, de, cz/cs, fr (default=’’)</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">penn</span></code>: Penn substitution (default=True)</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">norm_quote_commas</span></code>: Normalize quotations and commas (default=True)</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">norm_numbers</span></code>: Normalize numbers (default=True)</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">pre_replace_unicode_punct</span></code>: Replace unicode punct (default=False)</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">post_remove_control_chars</span></code>: Remove control chars (default=False)</p></li>
+</ul>
+</section>
+<section id="clean-dataset">
+<h3>Clean dataset<a class="headerlink" href="#clean-dataset" title="Permalink to this heading">¶</a></h3>
+<p>Transform name: <code class="docutils literal notranslate"><span class="pre">clean</span></code></p>
+<p>Class: <code class="docutils literal notranslate"><span class="pre">onmt.transforms.clean.CleanTransform</span></code></p>
+<p>Cleans source and target (if present) examples using a set of rules.</p>
+<p>The following options can be added to the configuration of each dataset:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">src_eq_tgt</span></code>: Remove example when source=target (default=True)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">same_char</span></code>: Remove example if the same char is repeated 4 times (default=True)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">same_word</span></code>: Remove example if the same word is repeated 3 times (default=True)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">script_ok</span></code>: Remove example which contains chars that do not belong to these scripts (default=[’Latin’, ‘Common’])</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">script_nok</span></code>: Remove example which contains chars that belong to these scripts  (default=[])</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src_tgt_ratio</span></code>: Remove example for which src/tgt ration is &lt;1/ratio or &gt;ratio (default=2)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">avg_tok_min</span></code>: Remove example for which the average token length is &lt; X (default=3)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">avg_tok_max</span></code>: Remove example for which the average token length is &gt; X (default=20)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lang_id</span></code>: Remove example for which detected language is not in [] (default=[’en’, ‘fr’])</p></li>
 </ul>
 </section>
 <section id="context-doc-aware-transform">
@@ -595,7 +633,7 @@ any diacritics and accents. Usually this is desirable for most languages, althou
 <p>Concatenates several segments into one, separated with a delimiter.</p>
 <p>Pre-requisite:</p>
 <p>Dataset must be “Docs” separated by an empty line which will make clear a story ends at this empty line.</p>
-<p>The following options can be added to the configuration :</p>
+<p>The following options can be added to the main configuration (same options for all dataset with this transform):</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">doc_length</span></code>: max token to be concatenated (default=200)</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">max_context</span></code>: number of delimiter (default=1 , ie 2 segments concatenated)</p></li>
@@ -617,7 +655,7 @@ The Translation Memory (TM) format should be a flat text file, with each line co
 <li><p>Although the transform performs some basic filtering both in the TM and in the corpus for very short or very long segments, some examples may still be long enough, so you should increase a bit the <code class="docutils literal notranslate"><span class="pre">src_seq_length</span></code>;</p></li>
 <li><p>Currently, when using <code class="docutils literal notranslate"><span class="pre">n_sample</span></code>, examples are always processed one by one and not in batches.</p></li>
 </ul>
-<p>The following options can be added to the configuration:</p>
+<p>The following options can be added to the main configuration (valid for all datasets using this transform):</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">tm_path</span></code>: The path to the Translation Memory text file;</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">fuzzy_corpus_ratio</span></code>: Ratio of corpus to augment with fuzzy matches (default: 0.1);</p></li>
@@ -633,7 +671,7 @@ The Translation Memory (TM) format should be a flat text file, with each line co
 <p>Transform name: <code class="docutils literal notranslate"><span class="pre">inlinetags</span></code></p>
 <p>Class: <code class="docutils literal notranslate"><span class="pre">onmt.transforms.inlinetags.InlineTagsTransform</span></code></p>
 <p>Augments source and target segments with inline tags (placeholders). The transform adds 2 kind of tags, paired tags (an opening and a closing tag) and isolated (standalone) tags, and requires a tab-delimited dictionary text file with source and target terms and phrases. A dictionary with 20-30k entries is recommended. User-defined tags must include the number placeholder #, e.g. “｟user_start_tag_#｠”.</p>
-<p>The following options can be added to the configuration:</p>
+<p>The following options can be added to the main configuration (valid for all datasets using this transform):</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">tags_dictionary_path</span></code>: The path to the dictionary text file;</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">tags_corpus_ratio</span></code>: Ratio of corpus to augment with inline tags (default: 0.1);</p></li>
@@ -804,8 +842,8 @@ The Translation Memory (TM) format should be a flat text file, with each line co
 </div>
 <p>This is defined in <code class="docutils literal notranslate"><span class="pre">onmt.inputters.corpus.ParallelCorpus.load</span></code>. This class is not easily extendable for now but it can be considered for future developments. For instance, we could create some <code class="docutils literal notranslate"><span class="pre">CustomParallelCorpus</span></code> class that would handle other kind of inputs.</p>
 </section>
-<section id="how-to-use-lora-to-finetune-a-big-model">
-<h1>How to use LoRa to finetune a big model ?<a class="headerlink" href="#how-to-use-lora-to-finetune-a-big-model" title="Permalink to this heading">¶</a></h1>
+<section id="how-to-use-lora-and-8bit-loading-to-finetune-a-big-model">
+<h1>How to use LoRa and 8bit loading to finetune a big model ?<a class="headerlink" href="#how-to-use-lora-and-8bit-loading-to-finetune-a-big-model" title="Permalink to this heading">¶</a></h1>
 <p>Cf paper: <a class="reference external" href="https://arxiv.org/abs/2106.09685">LoRa</a></p>
 <p>LoRa is a mechanism that helps to finetune bigger model on a single GPU card by limiting the anmount of VRAM needed.
 The principle is to make only a few layers trainable (hence reducing the amount of required memory especially for the Adam optimizer)</p>
@@ -817,6 +855,14 @@ The principle is to make only a few layers trainable (hence reducing the amount 
 <li><p><code class="docutils literal notranslate"><span class="pre">lora_alpha:</span> <span class="pre">1</span></code> or any value you can test</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">lora_embedding:</span> <span class="pre">true</span></code> makes Embeddings LoRa compatible, hence trainable in the case you use <code class="docutils literal notranslate"><span class="pre">update_vocab:</span> <span class="pre">true</span></code> or if you want to finetune Embeddings as well.</p></li>
 </ul>
+<p>Bitsandbytes enables quantization of Linear layers. For more information: https://github.com/TimDettmers/bitsandbytes
+Also you can read the blog post here: https://huggingface.co/blog/hf-bitsandbytes-integration</p>
+<p>You need to add the following option:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">quant_layers:</span> <span class="pre">['w_1',</span> <span class="pre">'w_2']</span></code></p></li>
+</ul>
+<p>These are the layers of the PositionWise Feed-Forward from the Encoder/Decoder.</p>
+<p>At the moment, for a given layer you cannot mix LoRa and 8bit compression. (TODO List)</p>
 </section>
 <section id="can-i-get-word-alignments-while-translating">
 <h1>Can I get word alignments while translating?<a class="headerlink" href="#can-i-get-word-alignments-while-translating" title="Permalink to this heading">¶</a></h1>

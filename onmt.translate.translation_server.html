@@ -96,6 +96,7 @@
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html">How do I use my v2 models in v3 ?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-do-i-train-the-transformer-model">How do I train the Transformer model?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#performance-tips">Performance tips</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#position-encoding-absolute-vs-relative-vs-rotary-embeddings">Position encoding: Absolute vs Relative vs Rotary Embeddings</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
@@ -103,7 +104,7 @@
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-to-use-lora-to-finetune-a-big-model">How to use LoRa to finetune a big model ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-to-use-lora-and-8bit-loading-to-finetune-a-big-model">How to use LoRa and 8bit loading to finetune a big model ?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
@@ -293,7 +294,7 @@ attr <code class="docutils literal notranslate"><span class="pre">self.on_timemo
 
 <dl class="py method">
 <dt class="sig sig-object py" id="onmt.translate.translation_server.ServerModel.maybe_convert_align">
-<span class="sig-name descname"><span class="pre">maybe_convert_align</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tgt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">align</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel.maybe_convert_align"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel.maybe_convert_align" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">maybe_convert_align</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tgt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">align</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">align_scores</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel.maybe_convert_align"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel.maybe_convert_align" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert alignment to match detokenized src/tgt (or not).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -419,7 +420,7 @@ sorted or None if no alignment in output.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="onmt.translate.translation_server.ServerModel.rebuild_seg_packages">
-<span class="sig-name descname"><span class="pre">rebuild_seg_packages</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">all_preprocessed</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">results</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scores</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aligns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_best</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel.rebuild_seg_packages"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel.rebuild_seg_packages" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">rebuild_seg_packages</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">all_preprocessed</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">results</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scores</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aligns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">align_scores</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_best</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/translate/translation_server.html#ServerModel.rebuild_seg_packages"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.translate.translation_server.ServerModel.rebuild_seg_packages" title="Permalink to this definition">¶</a></dt>
 <dd><p>Rebuild proper segment packages based on initial n_seg.</p>
 </dd></dl>
 

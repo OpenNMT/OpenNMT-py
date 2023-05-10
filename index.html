@@ -95,6 +95,7 @@
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html">How do I use my v2 models in v3 ?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-do-i-train-the-transformer-model">How do I train the Transformer model?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#performance-tips">Performance tips</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#position-encoding-absolute-vs-relative-vs-rotary-embeddings">Position encoding: Absolute vs Relative vs Rotary Embeddings</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
@@ -102,7 +103,7 @@
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-to-use-lora-to-finetune-a-big-model">How to use LoRa to finetune a big model ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-to-use-lora-and-8bit-loading-to-finetune-a-big-model">How to use LoRa and 8bit loading to finetune a big model ?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
@@ -236,6 +237,7 @@
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html">How do I use my v2 models in v3 ?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-do-i-train-the-transformer-model">How do I train the Transformer model?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#performance-tips">Performance tips</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#position-encoding-absolute-vs-relative-vs-rotary-embeddings">Position encoding: Absolute vs Relative vs Rotary Embeddings</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="FAQ.html#example">Example</a></li>
@@ -258,7 +260,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
-<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-to-use-lora-to-finetune-a-big-model">How to use LoRa to finetune a big model ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-to-use-lora-and-8bit-loading-to-finetune-a-big-model">How to use LoRa and 8bit loading to finetune a big model ?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="FAQ.html#raw-alignments-from-averaging-transformer-attention-heads">Raw alignments from averaging Transformer attention heads</a></li>
 <li class="toctree-l2"><a class="reference internal" href="FAQ.html#supervised-learning-on-a-specific-head">Supervised learning on a specific head</a></li>
@@ -319,18 +321,19 @@
 <li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Data">Data</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Vocab">Vocab</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Features">Features</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/Docify">Transform/Docify</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/FuzzyMatching">Transform/FuzzyMatching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/InferFeats">Transform/InferFeats</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/Normalize">Transform/Normalize</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/Uppercase">Transform/Uppercase</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/BART">Transform/BART</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/Subword/Common">Transform/Subword/Common</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/Subword/ONMTTOK">Transform/Subword/ONMTTOK</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/SwitchOut">Transform/SwitchOut</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/Token_Drop">Transform/Token_Drop</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/Token_Mask">Transform/Token_Mask</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/Normalize">Transform/Normalize</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/InferFeats">Transform/InferFeats</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/Clean">Transform/Clean</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/Docify">Transform/Docify</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/InlineTags">Transform/InlineTags</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/FuzzyMatching">Transform/FuzzyMatching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/BART">Transform/BART</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/Subword/Common">Transform/Subword/Common</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/Subword/ONMTTOK">Transform/Subword/ONMTTOK</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/Filter">Transform/Filter</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/Prefix">Transform/Prefix</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/build_vocab.html#Transform/Suffix">Transform/Suffix</a></li>
@@ -344,18 +347,19 @@
 <li class="toctree-l2"><a class="reference internal" href="options/train.html#Features">Features</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/train.html#Pruning">Pruning</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/train.html#Embeddings">Embeddings</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/Docify">Transform/Docify</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/FuzzyMatching">Transform/FuzzyMatching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/InferFeats">Transform/InferFeats</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/Normalize">Transform/Normalize</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/Uppercase">Transform/Uppercase</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/BART">Transform/BART</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/Subword/Common">Transform/Subword/Common</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/Subword/ONMTTOK">Transform/Subword/ONMTTOK</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/SwitchOut">Transform/SwitchOut</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/Token_Drop">Transform/Token_Drop</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/Token_Mask">Transform/Token_Mask</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/Normalize">Transform/Normalize</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/InferFeats">Transform/InferFeats</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/Clean">Transform/Clean</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/Docify">Transform/Docify</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/InlineTags">Transform/InlineTags</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/FuzzyMatching">Transform/FuzzyMatching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/BART">Transform/BART</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/Subword/Common">Transform/Subword/Common</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/Subword/ONMTTOK">Transform/Subword/ONMTTOK</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/Filter">Transform/Filter</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/Prefix">Transform/Prefix</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/train.html#Transform/Suffix">Transform/Suffix</a></li>
@@ -387,18 +391,19 @@
 <li class="toctree-l2"><a class="reference internal" href="options/translate.html#Decoding tricks">Decoding tricks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/translate.html#Logging">Logging</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/translate.html#Efficiency">Efficiency</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/translate.html#Transform/Docify">Transform/Docify</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/translate.html#Transform/FuzzyMatching">Transform/FuzzyMatching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/translate.html#Transform/InferFeats">Transform/InferFeats</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/translate.html#Transform/Normalize">Transform/Normalize</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/translate.html#Transform/Uppercase">Transform/Uppercase</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/translate.html#Transform/BART">Transform/BART</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/translate.html#Transform/Subword/Common">Transform/Subword/Common</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/translate.html#Transform/Subword/ONMTTOK">Transform/Subword/ONMTTOK</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/translate.html#Transform/SwitchOut">Transform/SwitchOut</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/translate.html#Transform/Token_Drop">Transform/Token_Drop</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/translate.html#Transform/Token_Mask">Transform/Token_Mask</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/translate.html#Transform/Normalize">Transform/Normalize</a></li>
-<li class="toctree-l2"><a class="reference internal" href="options/translate.html#Transform/InferFeats">Transform/InferFeats</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/translate.html#Transform/Clean">Transform/Clean</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/translate.html#Transform/Docify">Transform/Docify</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/translate.html#Transform/InlineTags">Transform/InlineTags</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/translate.html#Transform/FuzzyMatching">Transform/FuzzyMatching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/translate.html#Transform/BART">Transform/BART</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/translate.html#Transform/Subword/Common">Transform/Subword/Common</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options/translate.html#Transform/Subword/ONMTTOK">Transform/Subword/ONMTTOK</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/translate.html#Transform/Filter">Transform/Filter</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/translate.html#Transform/Prefix">Transform/Prefix</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options/translate.html#Transform/Suffix">Transform/Suffix</a></li>
