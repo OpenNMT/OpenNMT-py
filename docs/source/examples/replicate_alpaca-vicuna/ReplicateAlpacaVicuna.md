@@ -119,7 +119,9 @@ Below is an instruction that describes a task. Write a response that appropriate
 
 ### Translate
 
-Let us create an `outputs` folder  To obtain the model's inference you can run this command:
+Let us create an `outputs` folder.
+
+To obtain the model's inference you can run this command:
 
 ```shell
 nohup python3 OpenNMT-py/onmt/bin/translate.py\
@@ -132,7 +134,7 @@ nohup python3 OpenNMT-py/onmt/bin/translate.py\
 Where `infer.yaml` is the following config with the tranlsation options:
 
 ```yaml
-transforms: [sentencepiece, filtertoolong]
+transforms: [sentencepiece]
 src_subword_model: llama/tokenizer.model
 tgt_subword_model: llama/tokenizer.model
 gpu: 0
