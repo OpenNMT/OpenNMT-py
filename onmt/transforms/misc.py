@@ -95,19 +95,19 @@ class PrefixTransform(Transform):
             for c_name, corpus in opts.data.items():
                 prefix = cls._get_prefix(corpus)
                 if prefix is not None:
-                    logger.info(f"Get prefix for {c_name}: {prefix}")
+                    logger.debug(f"Get prefix for {c_name}: {prefix}")
                     prefix_dict[c_name] = prefix
         # prefix as general option for inference
         if hasattr(opts, 'src_prefix'):
             if 'infer' not in prefix_dict.keys():
                 prefix_dict['infer'] = {}
             prefix_dict['infer']['src'] = opts.src_prefix
-            logger.info(f"Get prefix for src infer: {opts.src_prefix}")
+            logger.debug(f"Get prefix for src infer: {opts.src_prefix}")
         if hasattr(opts, 'tgt_prefix'):
             if 'infer' not in prefix_dict.keys():
                 prefix_dict['infer'] = {}
             prefix_dict['infer']['tgt'] = opts.tgt_prefix
-            logger.info(f"Get prefix for tgt infer: {opts.tgt_prefix}")
+            logger.debug(f"Get prefix for tgt infer: {opts.tgt_prefix}")
 
         return prefix_dict
 
@@ -201,19 +201,19 @@ class SuffixTransform(Transform):
             for c_name, corpus in opts.data.items():
                 suffix = cls._get_suffix(corpus)
                 if suffix is not None:
-                    logger.info(f"Get suffix for {c_name}: {suffix}")
+                    logger.debug(f"Get suffix for {c_name}: {suffix}")
                     suffix_dict[c_name] = suffix
         # suffix as general option for inference
         if hasattr(opts, 'src_suffix'):
             if 'infer' not in suffix_dict.keys():
                 suffix_dict['infer'] = {}
             suffix_dict['infer']['src'] = opts.src_suffix
-            logger.info(f"Get suffix for src infer: {opts.src_suffix}")
+            logger.debug(f"Get suffix for src infer: {opts.src_suffix}")
         if hasattr(opts, 'tgt_suffix'):
             if 'infer' not in suffix_dict.keys():
                 suffix_dict['infer'] = {}
             suffix_dict['infer']['tgt'] = opts.tgt_suffix
-            logger.info(f"Get suffix for tgt infer: {opts.tgt_suffix}")
+            logger.debug(f"Get suffix for tgt infer: {opts.tgt_suffix}")
 
         return suffix_dict
 

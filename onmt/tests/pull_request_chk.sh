@@ -109,7 +109,7 @@ ${PYTHON} onmt/bin/train.py \
             -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
             -src_vocab_size 1000 \
             -tgt_vocab_size 1000 \
-            -hidden_size 2 -batch_size 10 \
+            -batch_size 10 \
             -num_workers 0 -bucket_size 1024 \
             -word_vec_size 5 -report_every 5 \
             -hidden_size 10 -train_steps 10 \
@@ -127,7 +127,7 @@ ${PYTHON} onmt/bin/train.py \
             -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
             -src_vocab_size 1000 \
             -tgt_vocab_size 1000 \
-            -hidden_size 2 -batch_size 10 \
+            -batch_size 10 \
             -num_workers 0 -bucket_size 1024 \
             -word_vec_size 5 -report_every 2 \
             -hidden_size 10 -train_steps 10 -valid_steps 5 \
@@ -161,7 +161,7 @@ ${PYTHON} onmt/bin/train.py \
             -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
             -src_vocab_size 1000 \
             -tgt_vocab_size 1000 \
-            -hidden_size 2 -batch_size 10 \
+            -batch_size 10 \
             -num_workers 0 -bucket_size 1024 \
             -word_vec_size 5 -report_every 5        \
             -coverage_attn true -lambda_coverage 0.1 \
@@ -271,7 +271,7 @@ ${PYTHON} onmt/bin/train.py \
             -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
             -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
             -src_vocab_size 1000 -tgt_vocab_size 1000 \
-            -hidden_size 2 -batch_size 10 \
+            -batch_size 10 \
             -word_vec_size 5 -hidden_size 10 \
             -num_workers 0 -bucket_size 1024 \
             -report_every 5 -train_steps 10 \
@@ -283,7 +283,7 @@ ${PYTHON} onmt/bin/train.py \
             -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
             -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
             -src_vocab_size 1000 -tgt_vocab_size 1000 \
-            -hidden_size 2 -batch_size 10 \
+            -batch_size 10 \
             -word_vec_size 5 -hidden_size 10 \
             -num_workers 0 -bucket_size 1024 \
             -report_every 5 -train_steps 20 \
@@ -349,7 +349,7 @@ ${PYTHON} onmt/bin/train.py \
             -src_vocab $TMP_OUT_DIR/onmt_feat.vocab.src \
             -tgt_vocab $TMP_OUT_DIR/onmt_feat.vocab.tgt \
             -src_vocab_size 1000 -tgt_vocab_size 1000 \
-            -hidden_size 2 -batch_size 10 \
+            -batch_size 10 \
             -word_vec_size 5 -hidden_size 10 \
             -num_workers 0 -bucket_size 1024 \
             -report_every 5 -train_steps 10 \
@@ -365,7 +365,7 @@ ${PYTHON} onmt/bin/train.py \
             -src_vocab $TMP_OUT_DIR/onmt_feat.vocab.src \
             -tgt_vocab $TMP_OUT_DIR/onmt_feat.vocab.tgt \
             -src_vocab_size 1000 -tgt_vocab_size 1000 \
-            -hidden_size 2 -batch_size 10 \
+            -batch_size 10 \
             -word_vec_size 5 -hidden_size 10 \
             -num_workers 0 -bucket_size 1024 \
             -report_every 5 -train_steps 10 \

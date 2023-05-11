@@ -61,7 +61,7 @@ def replace_lora_linear(model, r=2, lora_alpha=1,
                 r=r,
                 lora_alpha=lora_alpha,
                 lora_dropout=lora_dropout,
-                bias=False)
+                bias=module.bias is not None)
     return model
 
 
@@ -333,7 +333,7 @@ def build_base_model(model_opt, vocabs, checkpoint=None):
         mark_lora = True
 
     if mark_lora:
-        mark_only_lora_as_trainable(model, bias='none')
+        mark_only_lora_as_trainable(model, bias='lora_only')
 
     # Build Generator.
     if not model_opt.copy_attn:
