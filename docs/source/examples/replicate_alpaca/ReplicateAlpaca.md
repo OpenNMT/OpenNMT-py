@@ -1,4 +1,4 @@
-# Supervised Finetuning of llama 7B to replicate Alpaca-Vicuna 
+# Supervised Finetuning of llama 7B to replicate Alpaca
 This tutorial shows how to make a supervised finetuning of the llama 7B foundation model, on the alpaca and vicuna datasets.
 
 Different features will be enabled:
@@ -6,18 +6,17 @@ Different features will be enabled:
 - 8bit compression of the position-wise feed-forward layers.
 - Architectural improvements used during the training of the llama models (RMS normalisation, Rotary Embeddings, SwiGLU activation).
 
-Here is a short description of the content of your current directory at the end of the tutorial:
+Here is a short description of the content of your current directory:
 
 - The OpenNMT-py repository.
-- The `replicate_alpaca-vicuna.yaml` file.
-- A subdirectory named "llama" with the original llama chekpoints.
+- The `replicate_alpaca.yaml` file.
+- A subdirectory named "llama" with the llama chekpoints.
 - The converted llama7B checkpoint (`llama7B-vicuna-onmt`) and the vocabulary (`vocab.txt`) that will be genenerated with OpenNMT tools.
 - A subdirectory named "dataAI" with the datasets for the finetuning.
 - A subdirectory named "finetuned_llama7B" that will contain the finetuning samples, tensorboard logs and checkpoints.
-- A file named `infer.yaml` with the translation options for the inference.
-- A subdirectory named "inputs" with the input examples for the inference.
-- A subdirectory named "outputs" that will contain the inferred outputs of the finetuned model .
-
+- The `translate_opts.yaml` file with the translation options for the inference.
+- A subdirectory named "inputs" containing the `input_examples.txt`file with the input examples for the inference.
+- A subdirectory named "outputs" that will contain the inferred outputs of the finetuned model.
 
 
 ## Data
@@ -25,9 +24,9 @@ Here is a short description of the content of your current directory at the end 
 ### Checkpoints
 The procedure to retrieve the llama checkpoints as well the llama legacy sentencepiece tokenizer is described on the official llama repository:  https://github.com/facebookresearch/llama/
 
-Let us save them in a local folder that we will name `llama`.
+Let us save them in a local folder that we will name "llama".
 
-We need to convert the llama 7B checkpoint to the onmt format, using the `convert_llama.py` tool..
+We need to convert the llama 7B checkpoint to the `onmt` format, using the `convert_llama.py` tool:
 
 ```shell
 python3 OpenNMT-py/tools/convert_llama.py \
@@ -51,7 +50,7 @@ python3 OpenNMT-py/tools/extract_vocabulary.py -model llama7B-vicuna-onmt -out_f
 
 The original [alpaca](https://raw.githubusercontent.com/gururise/AlpacaDataCleaned/main/alpaca_data_cleaned.json) and vicuna datasets are JSON files.
 
-Here is is the first element of the original alpaca_data.json dataset :
+Here is the first element of the original alpaca_data.json dataset :
 ```json
     {
         "instruction": "Give three tips for staying healthy.",
@@ -69,7 +68,7 @@ The onmt datasets can be retrieved at the links below:
   
 - [vicuna](https://opennmt-models.s3.amazonaws.com/llama/sharegpt.txt) (28800 examples)
 
-Let us save the in a  local folder that we will name `dataAI`.
+Let us save them in a  local folder that we will name `dataAI`.
 
 Each example is a prompt that contains:
 - a short description of the task
@@ -84,7 +83,7 @@ Below is an instruction that describes a task. Write a response that appropriate
 
 ## Finetuning
 
-We provide an example of a finetuning configuration (`replicate_alpaca-vicuna.yaml`). To enable the application of the LoRa method to the attention layers, the options of the checkpoint need to be overriden.
+We provide an example of a finetuning configuration (`replicate_alpaca.yaml`). To enable the application of the LoRa method to the attention layers, the options of the checkpoint need to be overriden.
 
 
 The finetuning can be launched with this command:
@@ -104,7 +103,6 @@ For instance the first training example is transformed in:
 ```
 
 
-
 ## Inference
 
 ### Concatenation of the checkpoints
@@ -122,18 +120,14 @@ python3 OpenNMT-py/tools/lora_weights.py\
 
 ### Input examples
 
-The inputs need the to follow the same pattern than the finetuning examples. 
+The inputs need to follow the same pattern than the finetuning examples. 
 
-Let us create an `inputs` folder and save the two ones below in file names `examples.txt`.
+Let us create an "inputs" folder and save inside it the file named `input_examples.txt`.
 
-```text
-Below is an instruction that describes a task. Write a response that appropriately completes the request.｟newline｠｟newline｠###Instruction:｟newline｠Write a Python program that prints the first 10 Fibonacci numbers.｟newline｠｟newline｠### Response:｟newline｠
-Below is an instruction that describes a task. Write a response that appropriately completes the request.｟newline｠｟newline｠### Instruction:｟newline｠Tell me about alpacas. ｟newline｠｟newline｠### Response:｟newline｠
-```
 
 ### Translate
 
-Let us create an `outputs` folder.
+Let us create an "outputs" folder.
 
 To obtain the model's inference you can run this command:
 
@@ -141,22 +135,10 @@ To obtain the model's inference you can run this command:
 nohup python3 OpenNMT-py/onmt/bin/translate.py\
     -model finetuned_llama7B/llama7B-vicuna-onmt_step_4000.concat.pt \
     -src inputs/examples.txt \
-    -output outputs/examples_llama7B-vicuna-onmt_step_4000.merge.txt  \
-    -config infer.yaml > infer.log & 
+    -output outputs/examples_llama7B-vicuna-onmt_step_4000.concat.txt  \
+    -config translate_opts.yaml > infer.log & 
 ```
 
-Where `infer.yaml` is the following config with the tranlsation options:
-
-```yaml
-transforms: [sentencepiece]
-src_subword_model: llama/tokenizer.model
-tgt_subword_model: llama/tokenizer.model
-gpu: 0
-batch_type: sents
-batch_size: 1
-precision: fp16
-verbose: true
-random_sampling_topp: 0.9
-```
+Where `translate_opts.yaml` is the provided config with the tranlsation options.
 You can test other decoding methods and paramaters.
 
