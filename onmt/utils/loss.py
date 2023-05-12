@@ -269,8 +269,12 @@ class LossCompute(nn.Module):
         # take into account here the tgt_shift_index (0 / 1 = LM/NMT)
         trunc_range = (trunc_start + self.tgt_shift_index,
                        trunc_start + trunc_size)
+
         target = batch['tgt'][:, trunc_range[0]:trunc_range[1],
                               :]
+        output = output[:, trunc_start:trunc_range[1],
+                        :].contiguous()
+
         flat_tgt = target[:, :, 0].contiguous().view(-1)
 
         if self.copy_attn:
@@ -332,7 +336,8 @@ class LossCompute(nn.Module):
             lm_loss = self._compute_lm_loss(output, batch['tgt'])
             loss = loss + lm_loss * self.lm_prior_lambda
 
-        stats = self._stats(len(batch['srclen']), loss.sum().item(),
+        n_sents = len(batch['srclen']) if trunc_start == 0 else 0
+        stats = self._stats(n_sents, loss.sum().item(),
                             scores, flat_tgt)
 
         return loss, stats
@@ -351,10 +356,11 @@ class LossCompute(nn.Module):
         non_padding = target.ne(self.padding_idx)
         num_correct = pred.eq(target).masked_select(non_padding).sum().item()
         num_non_padding = non_padding.sum().item()
+        n_batchs = 1 if bsz else 0
         # in the case criterion reduction is None then we need
         # to sum the loss of each sentence in the batch
         return onmt.utils.Statistics(loss=loss,
-                                     n_batchs=1,
+                                     n_batchs=n_batchs,
                                      n_sents=bsz,
                                      n_words=num_non_padding,
                                      n_correct=num_correct)

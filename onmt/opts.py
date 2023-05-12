@@ -123,6 +123,11 @@ def _add_dynamic_corpus_opts(parser, build_vocab_only=False):
                   "Warning: this may slow down the process.")
         group.add('-num_threads', '--num_threads', type=int, default=1,
                   help="Number of parallel threads to build the vocab.")
+        group.add('-learn_subwords', '--learn_subwords', action='store_true',
+                  help="Learn subwords prior to building vocab")
+        group.add('-learn_subwords_size', '--learn_subwords_size', type=int,
+                  default=32000,
+                  help="Learn subwords operations")
         group.add('-vocab_sample_queue_size', '--vocab_sample_queue_size',
                   type=int, default=20,
                   help="Size of queues used in the build_vocab dump path.")
@@ -158,6 +163,12 @@ def _add_dynamic_vocab_opts(parser, build_vocab_only=False):
               help="Default decoder start token "
                    "for most ONMT models it is <s> = BOS "
                    "it happens that for some Fairseq model it requires </s> ")
+    group.add('--default_specials', '-default_specilas', nargs='+', type=str,
+              default=[DefaultTokens.UNK, DefaultTokens.PAD,
+                       DefaultTokens.BOS, DefaultTokens.EOS],
+              help="list of layers to be replaced by LoRa layers."
+                   " ex: ['linear_values', 'linear_query'] "
+                   " cf paper §4.2 https://arxiv.org/abs/2106.09685")
 
     _add_features_opts(parser)
 

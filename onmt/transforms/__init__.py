@@ -15,7 +15,7 @@ def get_transforms_cls(transform_names):
     transforms_cls = {}
     for name in transform_names:
         if name not in AVAILABLE_TRANSFORMS:
-            raise ValueError("specified tranform not supported!")
+            raise ValueError("%s transform not supported!" % name)
         transforms_cls[name] = AVAILABLE_TRANSFORMS[name]
     return transforms_cls
 

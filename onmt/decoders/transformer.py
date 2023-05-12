@@ -78,8 +78,8 @@ class TransformerDecoderLayerBase(nn.Module):
             )
 
         self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout,
-                                                    pos_ffn_activation_fn
-                                                    )
+                                                    pos_ffn_activation_fn,
+                                                    layer_norm)
         if layer_norm == 'standard':
             self.layer_norm_1 = nn.LayerNorm(d_model, eps=1e-6)
         elif layer_norm == 'rms':
@@ -296,7 +296,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
 
 class TransformerDecoderBase(DecoderBase):
     def __init__(self, d_model, copy_attn, embeddings, alignment_layer,
-                 layer_norm='standard'):
+                 layer_norm):
         super(TransformerDecoderBase, self).__init__()
 
         self.embeddings = embeddings
@@ -428,7 +428,7 @@ class TransformerDecoder(TransformerDecoderBase):
         layer_norm='standard'
     ):
         super(TransformerDecoder, self).__init__(
-            d_model, copy_attn, embeddings, alignment_layer
+            d_model, copy_attn, embeddings, alignment_layer, layer_norm
         )
 
         self.transformer_layers = nn.ModuleList(
@@ -468,9 +468,13 @@ class TransformerDecoder(TransformerDecoderBase):
             self._init_cache(enc_out)
         elif step is None:
             for layer in self.transformer_layers:
-                layer.self_attn.layer_cache = (
-                    False, {'keys': torch.tensor([]),
-                            'values': torch.tensor([])})
+                if isinstance(layer.self_attn, AverageAttention):
+                    layer.self_attn.layer_cache =\
+                        False, {'prev_g': torch.tensor([])}
+                else:
+                    layer.self_attn.layer_cache = (
+                        False, {'keys': torch.tensor([]),
+                                'values': torch.tensor([])})
                 layer.context_attn.layer_cache = (
                     False, {'keys': torch.tensor([]),
                             'values': torch.tensor([])})
@@ -630,7 +634,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
         layer_norm='standard'
     ):
         super(TransformerLMDecoder, self).__init__(
-            d_model, copy_attn, embeddings, None
+            d_model, copy_attn, embeddings, alignment_layer, layer_norm
         )
         self.transformer_layers = nn.ModuleList(
             [

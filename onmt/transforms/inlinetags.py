@@ -40,14 +40,14 @@ class InlineTagger(object):
         self.automaton = self._create_automaton()
 
     def _create_internal_dictionary(self, tags_dictionary_path):
-        logger.info('Creating tag dictionary for tagging transform...')
+        logger.debug('Creating tag dictionary for tagging transform...')
         dictionary = list()
         with open(tags_dictionary_path, mode='r', encoding='utf-8') as file:
             pairs = file.readlines()
             for pair in pairs:
                 src_term, tgt_term = map(str, pair.split('\t'))
                 dictionary.append((src_term.strip(), tgt_term.strip()))
-        logger.info(f'Created tag dictionary with {len(dictionary)} entries.')
+        logger.debug(f'Created tag dictionary with {len(dictionary)} entries.')
         return dictionary
 
     def _create_automaton(self):

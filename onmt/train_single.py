@@ -9,7 +9,7 @@ from onmt.constants import CorpusTask
 from onmt.transforms import make_transforms, save_transforms, \
     get_specials, get_transforms_cls
 from onmt.inputters import build_vocab, IterOnDevice
-from onmt.inputters.inputter import dict_to_vocabs
+from onmt.inputters.inputter import dict_to_vocabs, vocabs_to_dict
 from onmt.inputters.dynamic_iterator import build_dynamic_dataset_iter
 from onmt.inputters.text_corpus import save_transformed_sample
 from onmt.model_builder import build_model
@@ -57,6 +57,11 @@ def prepare_transforms_vocabs(opt):
         logger.info(
             "Sample saved, please check it before restart training.")
         sys.exit()
+    logger.info(
+        "The first 10 tokens of the vocabs are:"
+        f"{vocabs_to_dict(vocabs)['src'][0:10]}")
+    logger.info(
+        f"The decoder start token is: {opt.decoder_start_token}")
     return vocabs, transforms_cls
 
 
@@ -102,7 +107,17 @@ def configure_process(opt, device_id):
 def _get_model_opts(opt, checkpoint=None):
     """Get `model_opt` to build model, may load from `checkpoint` if any."""
     if checkpoint is not None:
+        model_opt = ArgumentParser.ckpt_model_opts(checkpoint["opt"])
         if opt.override_opts:
+            logger.info("Over-ride model option set to true - use with care")
+            args = list(opt.__dict__.keys())
+            model_args = list(model_opt.__dict__.keys())
+            for arg in args:
+                if arg in model_args and \
+                        getattr(opt, arg) != getattr(model_opt, arg):
+                    logger.info("Option: %s , value: %s overiding model: %s"
+                                % (arg, getattr(opt, arg),
+                                   getattr(model_opt, arg)))
             model_opt = opt
         else:
             model_opt = ArgumentParser.ckpt_model_opts(checkpoint["opt"])

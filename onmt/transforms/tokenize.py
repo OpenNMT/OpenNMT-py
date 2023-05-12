@@ -350,6 +350,9 @@ class ONMTTokenizerTransform(TokenizerTransform):
                   default="{'mode': 'none'}",
                   help="Other pyonmttok options for tgt in dict string, "
                   "except subword related options listed earlier.")
+        group.add('--gpt2_pretok', '-gpt2_pretok', action="store_true",
+                  default=False,
+                  help='Preprocess sentence with byte-level mapping')
 
     @classmethod
     def _validate_options(cls, opts):
@@ -368,12 +371,13 @@ class ONMTTokenizerTransform(TokenizerTransform):
         super()._parse_opts()
         self.src_subword_type = self.opts.src_subword_type
         self.tgt_subword_type = self.opts.tgt_subword_type
-        logger.info("Parsed pyonmttok kwargs for src: {}".format(
+        logger.debug("Parsed pyonmttok kwargs for src: {}".format(
             self.opts.src_onmttok_kwargs))
-        logger.info("Parsed pyonmttok kwargs for tgt: {}".format(
+        logger.debug("Parsed pyonmttok kwargs for tgt: {}".format(
             self.opts.tgt_onmttok_kwargs))
         self.src_other_kwargs = self.opts.src_onmttok_kwargs
         self.tgt_other_kwargs = self.opts.tgt_onmttok_kwargs
+        self.gpt2_pretok = self.opts.gpt2_pretok
 
     @classmethod
     def get_specials(cls, opts):
@@ -411,7 +415,7 @@ class ONMTTokenizerTransform(TokenizerTransform):
             kwopts['sp_nbest_size'] = subword_nbest
             kwopts['sp_alpha'] = subword_alpha
         else:
-            logger.warning('No subword method will be applied.')
+            logger.debug('No subword method will be applied.')
         vocabulary_threshold = self.tgt_vocab_threshold if side == 'tgt' \
             else self.src_vocab_threshold
         vocabulary_path = self.tgt_subword_vocab if side == 'tgt' \
@@ -449,19 +453,50 @@ class ONMTTokenizerTransform(TokenizerTransform):
                 'src': src_tokenizer,
                 'tgt': tgt_tokenizer
             }
+        if self.gpt2_pretok:
+            """
+            Returns list of utf-8 byte and a corresponding list of unicode
+            strings. The reversible bpe codes work on unicode strings.
+            code taken from openai/gpt2
+            """
+            bs = list(range(ord("!"), ord("~") + 1)) +\
+                list(range(ord("¡"), ord("¬") + 1)) +\
+                list(range(ord("®"), ord("ÿ") + 1))
+            cs = bs[:]
+            n = 0
+            for b in range(2**8):
+                if b not in bs:
+                    bs.append(b)
+                    cs.append(2**8+n)
+                    n += 1
+            cs = [chr(n) for n in cs]
+            self.maptable = dict(zip(bs, cs))
+            self.revtable = {v: k for k, v in self.maptable.items()}
 
     def _tokenize(self, tokens, side='src', is_train=False):
         """Do OpenNMT Tokenizer's tokenize."""
         tokenizer = self.load_models[side]
         sentence = ' '.join(tokens)
-        segmented, _ = tokenizer.tokenize(sentence)
+        if self.gpt2_pretok:
+            sentence = ''.join(self.maptable[b] for b in
+                               sentence.replace(DefaultTokens.SEP,
+                                                '\n').encode('utf-8'))
+            segmented = tokenizer(sentence)
+        else:
+            segmented = tokenizer(sentence)
         return segmented
 
     def _detokenize(self, tokens, side='src', is_train=False):
         """Do OpenNMT Tokenizer's detokenize."""
         tokenizer = self.load_models[side]
-        detokenized = tokenizer.detokenize(tokens)
-        return detokenized
+        if self.gpt2_pretok:
+            sentence = ''.join(tokens)
+            detokenized = bytearray([self.revtable[c] for c in
+                                     sentence]).decode('utf-8',
+                                                       errors='replace')
+        else:
+            detokenized = tokenizer.detokenize(tokens)
+        return detokenized.replace('\n', DefaultTokens.SEP)
 
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Apply OpenNMT Tokenizer to src & tgt."""

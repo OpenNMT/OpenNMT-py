@@ -4,6 +4,7 @@ import torch
 from torch import Tensor
 from typing import Optional, Tuple
 import torch.nn as nn
+from .alibi_position_bias import AlibiPositionalBias
 
 
 # Help functions for Rotary Embeddings
@@ -177,6 +178,9 @@ class MultiHeadedAttention(nn.Module):
             if max_relative_positions == -1:  # rotary embeddings
                 self.rope = rotaryembeddings(self.dim_per_head)
 
+            if max_relative_positions == -2:  # alibi positional bias
+                self.alibi = AlibiPositionalBias(head_count)
+
     def update_dropout(self, dropout: float) -> None:
         self.dropout.p = dropout
 
@@ -292,6 +296,8 @@ class MultiHeadedAttention(nn.Module):
             relations_keys = self.relative_positions_embeddings(
                 relative_positions_matrix)
             scores = query_key + relative_matmul(query, relations_keys, True)
+        elif self.max_relative_positions == -2:
+            scores = self.alibi(query_key)
         else:
             scores = query_key
 
