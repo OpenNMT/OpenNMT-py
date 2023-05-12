@@ -51,15 +51,13 @@ def build_vocab(opt, specials):
             vocab.add_token(DefaultTokens.VOCAB_PAD + str(i))
         return vocab
 
-    default_specials = [DefaultTokens.UNK,
-                        DefaultTokens.PAD,
-                        DefaultTokens.BOS,
-                        DefaultTokens.EOS]
+    default_specials = opt.default_specials
     vocabs = {}
     src_vocab = _read_vocab_file(opt.src_vocab, opt.src_words_min_frequency)
 
     src_specials = [item for item in (default_specials + specials['src'])
                     if item not in src_vocab]
+
     src_vocab = pyonmttok.build_vocab_from_tokens(
         src_vocab,
         maximum_size=opt.src_vocab_size,

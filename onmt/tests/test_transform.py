@@ -232,6 +232,7 @@ class TestSubwordTransform(unittest.TestCase):
         onmt_args = "{'mode': 'space', 'joiner_annotate': True}"
         base_opt["src_onmttok_kwargs"] = onmt_args
         base_opt["tgt_onmttok_kwargs"] = onmt_args
+        base_opt["gpt2_pretok"] = False
         opt = Namespace(**base_opt)
         onmttok_cls._validate_options(opt)
         onmttok_transform = onmttok_cls(opt)
@@ -257,6 +258,7 @@ class TestSubwordTransform(unittest.TestCase):
         onmt_args = "{'mode': 'none', 'spacer_annotate': True}"
         base_opt["src_onmttok_kwargs"] = onmt_args
         base_opt["tgt_onmttok_kwargs"] = onmt_args
+        base_opt["gpt2_pretok"] = False
         opt = Namespace(**base_opt)
         onmttok_cls._validate_options(opt)
         onmttok_transform = onmttok_cls(opt)
