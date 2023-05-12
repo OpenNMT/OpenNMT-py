@@ -163,6 +163,12 @@ def _add_dynamic_vocab_opts(parser, build_vocab_only=False):
               help="Default decoder start token "
                    "for most ONMT models it is <s> = BOS "
                    "it happens that for some Fairseq model it requires </s> ")
+    group.add('--default_specials', '-default_specilas', nargs='+', type=str,
+              default=[DefaultTokens.UNK, DefaultTokens.PAD,
+                       DefaultTokens.BOS, DefaultTokens.EOS],
+              help="list of layers to be replaced by LoRa layers."
+                   " ex: ['linear_values', 'linear_query'] "
+                   " cf paper §4.2 https://arxiv.org/abs/2106.09685")
 
     _add_features_opts(parser)
 
