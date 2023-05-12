@@ -1,7 +1,9 @@
 from onmt.transforms import register_transform
 from .transform import Transform
 from onmt.utils.logging import logger
-import gcld3
+import fasttext
+import os
+import urllib.request
 import regex as re
 
 
@@ -94,14 +96,21 @@ class CleanTransform(Transform):
         self.avg_tok_max_dict = self.get_opt_dict(self.opts, 'avg_tok_max', 20)
         self.langid_dict = self.get_opt_dict(self.opts, 'langid', [])
 
-        self.id_func = gcld3.NNetLanguageIdentifier(min_num_bytes=0,
-                                                    max_num_bytes=200)
+        fasttext_loc = f"{os.path.dirname(os.path.abspath(__file__))}/lid.176.ftz"
+
+        if not os.path.exists(fasttext_loc):
+            urllib.request.urlretrieve("https://dl.fbaipublicfiles.com/fasttext/supervised-models/lid.176.ftz", fasttext_loc)
+            
+
+
+        self.id_func = fasttext.load_model(fasttext_loc)
 
     def batch_apply(self, batch, is_train=False, stats=None, **kwargs):
         """Convert source and target examples to doc level segments."""
         def _id(string):
-            res = self.id_func.FindLanguage(text=string)
-            return res.language
+            res = self.id_func.predict(string, k=1)
+            res = res[0][0].replace("__label__", "")
+            return res
 
         trf_batch = []
 

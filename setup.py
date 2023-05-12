@@ -32,7 +32,7 @@ setup(
         "sacrebleu",
         "rapidfuzz",
         "pyahocorasick",
-        "gcld3"
+        "fasttext-wheel"
     ],
     entry_points={
         "console_scripts": [
