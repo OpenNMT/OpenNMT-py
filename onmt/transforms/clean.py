@@ -100,7 +100,8 @@ class CleanTransform(Transform):
 
         if not os.path.exists(fasttext_loc):
             urllib.request.urlretrieve(
-                "https://dl.fbaipublicfiles.com/fasttext/supervised-models/lid.176.ftz",
+                "https://dl.fbaipublicfiles.com/" +
+                "fasttext/supervised-models/lid.176.ftz",
                 fasttext_loc)
         self.id_func = fasttext.load_model(fasttext_loc)
 
