@@ -95,14 +95,13 @@ class CleanTransform(Transform):
         self.avg_tok_min_dict = self.get_opt_dict(self.opts, 'avg_tok_min', 3)
         self.avg_tok_max_dict = self.get_opt_dict(self.opts, 'avg_tok_max', 20)
         self.langid_dict = self.get_opt_dict(self.opts, 'langid', [])
-
-        fasttext_loc = f"{os.path.dirname(os.path.abspath(__file__))}/lid.176.ftz"
+        fasttext_loc = f"{os.path.dirname(os.path.abspath(__file__))} \
+            /lid.176.ftz"
 
         if not os.path.exists(fasttext_loc):
-            urllib.request.urlretrieve("https://dl.fbaipublicfiles.com/fasttext/supervised-models/lid.176.ftz", fasttext_loc)
-            
-
-
+            urllib.request.urlretrieve(
+                "https://dl.fbaipublicfiles.com/fasttext/supervised-models/lid.176.ftz",
+                fasttext_loc)
         self.id_func = fasttext.load_model(fasttext_loc)
 
     def batch_apply(self, batch, is_train=False, stats=None, **kwargs):
