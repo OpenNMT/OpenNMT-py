@@ -10,7 +10,7 @@ OMIT = (DefaultTokens.UNK, DefaultTokens.BOS, DefaultTokens.EOS)
 
 def convert(lines):
     for line in lines:
-        w, c = line.rstrip('\n').split(None, 1)
+        w, c = line.rstrip("\n").split(None, 1)
         if w in OMIT:
             continue
         c = math.exp(float(c)) * 1000000
@@ -18,6 +18,6 @@ def convert(lines):
         yield w, c
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     for c, w in convert(sys.stdin):
-        print('{}\t{}'.format(c, w))
+        print("{}\t{}".format(c, w))

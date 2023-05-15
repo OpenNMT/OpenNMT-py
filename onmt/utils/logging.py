@@ -21,10 +21,11 @@ def init_logger(
     console_handler.setFormatter(log_format)
     logger.handlers = [console_handler]
 
-    if log_file and log_file != '':
+    if log_file and log_file != "":
         if rotate:
             file_handler = RotatingFileHandler(
-                log_file, maxBytes=1000000, backupCount=10)
+                log_file, maxBytes=1000000, backupCount=10
+            )
         else:
             file_handler = logging.FileHandler(log_file)
         file_handler.setLevel(log_file_level)

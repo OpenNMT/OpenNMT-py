@@ -20,9 +20,7 @@ class MeanEncoder(EncoderBase):
     @classmethod
     def from_opt(cls, opt, embeddings):
         """Alternate constructor."""
-        return cls(
-            opt.enc_layers,
-            embeddings)
+        return cls(opt.enc_layers, embeddings)
 
     def forward(self, src, src_len=None):
         """See :func:`EncoderBase.forward()`"""

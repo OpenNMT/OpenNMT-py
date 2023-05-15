@@ -7,9 +7,11 @@ def wrap_str_func(func):
     """
     Wrapper to apply str function to the proper key of return_dict.
     """
+
     def wrapper(some_dict):
         some_dict["seg"] = [func(item) for item in some_dict["seg"]]
         return some_dict
+
     return wrapper
 
 

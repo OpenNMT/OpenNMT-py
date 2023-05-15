@@ -42,7 +42,6 @@ def _threshold_and_support(input, dim=0):
 
 
 class SparsemaxFunction(Function):
-
     @staticmethod
     @custom_fwd
     def forward(ctx, input, dim=0):
@@ -81,7 +80,6 @@ sparsemax = SparsemaxFunction.apply
 
 
 class Sparsemax(nn.Module):
-
     def __init__(self, dim=0):
         self.dim = dim
         super(Sparsemax, self).__init__()
@@ -91,7 +89,6 @@ class Sparsemax(nn.Module):
 
 
 class LogSparsemax(nn.Module):
-
     def __init__(self, dim=0):
         self.dim = dim
         super(LogSparsemax, self).__init__()
