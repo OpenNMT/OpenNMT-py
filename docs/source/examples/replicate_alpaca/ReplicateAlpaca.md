@@ -134,11 +134,11 @@ To obtain the model's inference you can run this command:
 ```shell
 nohup python3 OpenNMT-py/onmt/bin/translate.py\
     -model finetuned_llama7B/llama7B-vicuna-onmt_step_4000.concat.pt \
-    -src inputs/examples.txt \
+    -src inputs/input_examples.txt \
     -output outputs/examples_llama7B-vicuna-onmt_step_4000.concat.txt  \
     -config translate_opts.yaml > infer.log & 
 ```
 
-Where `translate_opts.yaml` is the provided config with the tranlsation options.
+Where `translate_opts.yaml` is the provided config with the translation options.
 You can test other decoding methods and paramaters.
 

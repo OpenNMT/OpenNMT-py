@@ -6,4 +6,4 @@ batch_type: sents
 batch_size: 1
 precision: fp16
 verbose: true
-random_sampling_topp: 0.9
+beam_size: 5

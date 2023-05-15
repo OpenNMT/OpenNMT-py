@@ -4,12 +4,10 @@
 data:
     alpaca:
         path_src: dataAI/alpaca_clean.txt
-        # transforms: [sentencepiece, replace_newline, filtertoolong]
         transforms: [sentencepiece, filtertoolong]
         weight: 10
     sharegpt:
         path_src: dataAI/sharegpt.txt
-        # transforms: [sentencepiece, replace_newline, filtertoolong]
         transforms: [sentencepiece, filtertoolong]
         weight: 10
 
