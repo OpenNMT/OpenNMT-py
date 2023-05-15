@@ -26,10 +26,10 @@ def write_files_from_queues(sample_path, queues):
     """
     os.makedirs(sample_path, exist_ok=True)
     for c_name in queues.keys():
-        dest_base = os.path.join(
-            sample_path, "{}.{}".format(c_name, CorpusName.SAMPLE))
-        with open(dest_base + ".src", 'w', encoding="utf-8") as f_src,\
-                open(dest_base + ".tgt", 'w', encoding="utf-8") as f_tgt:
+        dest_base = os.path.join(sample_path, "{}.{}".format(c_name, CorpusName.SAMPLE))
+        with open(dest_base + ".src", "w", encoding="utf-8") as f_src, open(
+            dest_base + ".tgt", "w", encoding="utf-8"
+        ) as f_tgt:
             while True:
                 _next = False
                 for q in queues[c_name]:
@@ -40,8 +40,8 @@ def write_files_from_queues(sample_path, queues):
                         _next = True
                         break
                     _, src_line, tgt_line = item
-                    f_src.write(src_line + '\n')
-                    f_tgt.write(tgt_line + '\n')
+                    f_src.write(src_line + "\n")
+                    f_tgt.write(tgt_line + "\n")
                 if _next:
                     break
 
@@ -52,9 +52,13 @@ def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
     sub_counter_tgt = Counter()
     sub_counter_src_feats = [Counter() for _ in range(opts.n_src_feats)]
     datasets_iterables = build_corpora_iters(
-        corpora, transforms, opts.data,
+        corpora,
+        transforms,
+        opts.data,
         skip_empty_level=opts.skip_empty_level,
-        stride=stride, offset=offset)
+        stride=stride,
+        offset=offset,
+    )
     for c_name, c_iter in datasets_iterables.items():
         for i, item in enumerate(c_iter):
             maybe_example = process(CorpusTask.TRAIN, [item])
@@ -64,25 +68,26 @@ def build_sub_vocab(corpora, transforms, opts, n_sample, stride, offset):
                 if opts.dump_samples:
                     build_sub_vocab.queues[c_name][offset].put("blank")
                 continue
-            src_line, tgt_line = (maybe_example['src']['src'],
-                                  maybe_example['tgt']['tgt'])
-            sub_counter_src.update(src_line.split(' '))
-            sub_counter_tgt.update(tgt_line.split(' '))
+            src_line, tgt_line = (
+                maybe_example["src"]["src"],
+                maybe_example["tgt"]["tgt"],
+            )
+            sub_counter_src.update(src_line.split(" "))
+            sub_counter_tgt.update(tgt_line.split(" "))
 
-            if 'feats' in maybe_example['src']:
-                src_feats_lines = maybe_example['src']['feats']
+            if "feats" in maybe_example["src"]:
+                src_feats_lines = maybe_example["src"]["feats"]
                 for k in range(opts.n_src_feats):
-                    sub_counter_src_feats[k].update(
-                        src_feats_lines[k].split(' '))
+                    sub_counter_src_feats[k].update(src_feats_lines[k].split(" "))
             else:
                 src_feats_lines = []
 
             if opts.dump_samples:
-                src_pretty_line = append_features_to_text(
-                    src_line, src_feats_lines)
+                src_pretty_line = append_features_to_text(src_line, src_feats_lines)
                 build_sub_vocab.queues[c_name][offset].put(
-                    (i, src_pretty_line, tgt_line))
-            if n_sample > 0 and ((i+1) * stride + offset) >= n_sample:
+                    (i, src_pretty_line, tgt_line)
+                )
+            if n_sample > 0 and ((i + 1) * stride + offset) >= n_sample:
                 if opts.dump_samples:
                     build_sub_vocab.queues[c_name][offset].put("break")
                 break
@@ -107,30 +112,34 @@ def build_vocab(opts, transforms, n_sample=3):
         raise ValueError(f"n_sample should > 0 or == -1, get {n_sample}.")
 
     if opts.dump_samples:
-        logger.info("The samples on which the vocab is built will be "
-                    "dumped to disk. It may slow down the process.")
+        logger.info(
+            "The samples on which the vocab is built will be "
+            "dumped to disk. It may slow down the process."
+        )
     corpora = get_corpora(opts, task=CorpusTask.TRAIN)
     counter_src = Counter()
     counter_tgt = Counter()
     counter_src_feats = [Counter() for _ in range(opts.n_src_feats)]
 
-    queues = {c_name: [mp.Queue(opts.vocab_sample_queue_size)
-                       for i in range(opts.num_threads)]
-              for c_name in corpora.keys()}
-    sample_path = os.path.join(
-        os.path.dirname(opts.save_data), CorpusName.SAMPLE)
+    queues = {
+        c_name: [
+            mp.Queue(opts.vocab_sample_queue_size) for i in range(opts.num_threads)
+        ]
+        for c_name in corpora.keys()
+    }
+    sample_path = os.path.join(os.path.dirname(opts.save_data), CorpusName.SAMPLE)
     if opts.dump_samples:
         write_process = mp.Process(
-            target=write_files_from_queues,
-            args=(sample_path, queues),
-            daemon=True)
+            target=write_files_from_queues, args=(sample_path, queues), daemon=True
+        )
         write_process.start()
     with mp.Pool(opts.num_threads, init_pool, [queues]) as p:
         func = partial(
-            build_sub_vocab, corpora, transforms,
-            opts, n_sample, opts.num_threads)
+            build_sub_vocab, corpora, transforms, opts, n_sample, opts.num_threads
+        )
         for sub_counter_src, sub_counter_tgt, sub_counter_src_feats in p.imap(
-                func, range(0, opts.num_threads)):
+            func, range(0, opts.num_threads)
+        ):
             counter_src.update(sub_counter_src)
             counter_tgt.update(sub_counter_tgt)
             for i in range(opts.n_src_feats):
@@ -145,21 +154,26 @@ def ingest_tokens(opts, transforms, n_sample, learner, stride, offset):
         func = partial(process, CorpusName.TRAIN)
         chunk = len(data) // opts.num_threads
         with mp.Pool(opts.num_threads) as pool:
-            buckets = pool.map(func, [data[i * chunk: (i + 1) * chunk]
-                                      for i in range(0, opts.num_threads)])
+            buckets = pool.map(
+                func,
+                [data[i * chunk : (i + 1) * chunk] for i in range(0, opts.num_threads)],
+            )
         for bucket in buckets:
             for ex in bucket:
                 if ex is not None:
-                    src_line, tgt_line = (ex['src']['src'],
-                                          ex['tgt']['tgt'])
+                    src_line, tgt_line = (ex["src"]["src"], ex["tgt"]["tgt"])
                     learner.ingest(src_line)
                     learner.ingest(tgt_line)
 
     corpora = get_corpora(opts, task=CorpusTask.TRAIN)
     datasets_iterables = build_corpora_iters(
-        corpora, transforms, opts.data,
+        corpora,
+        transforms,
+        opts.data,
         skip_empty_level=opts.skip_empty_level,
-        stride=stride, offset=offset)
+        stride=stride,
+        offset=offset,
+    )
     to_ingest = []
     for c_name, c_iter in datasets_iterables.items():
         for i, item in enumerate(c_iter):
@@ -175,12 +189,12 @@ def ingest_tokens(opts, transforms, n_sample, learner, stride, offset):
 def make_learner(tokenization_type, symbols):
     if tokenization_type == "bpe":
         # BPE training
-        learner = pyonmttok.BPELearner(tokenizer=None,
-                                       symbols=symbols)
+        learner = pyonmttok.BPELearner(tokenizer=None, symbols=symbols)
     elif tokenization_type == "sentencepiece":
         # SentencePiece training
-        learner = pyonmttok.SentencePieceLearner(vocab_size=symbols,
-                                                 character_coverage=0.98)
+        learner = pyonmttok.SentencePieceLearner(
+            vocab_size=symbols, character_coverage=0.98
+        )
     return learner
 
 
@@ -197,8 +211,9 @@ def build_vocab_main(opts):
     """
 
     ArgumentParser.validate_prepare_opts(opts, build_vocab_only=True)
-    assert opts.n_sample == -1 or opts.n_sample > 1, \
-        f"Illegal argument n_sample={opts.n_sample}."
+    assert (
+        opts.n_sample == -1 or opts.n_sample > 1
+    ), f"Illegal argument n_sample={opts.n_sample}."
 
     logger = init_logger()
     set_random_seed(opts.seed, False)
@@ -206,19 +221,17 @@ def build_vocab_main(opts):
 
     if opts.learn_subwords:
         logger.info(f"Ingesting {opts.src_subword_type} model from corpus")
-        learner = make_learner(opts.src_subword_type,
-                               opts.learn_subwords_size)
+        learner = make_learner(opts.src_subword_type, opts.learn_subwords_size)
         if opts.src_subword_model is not None:
             tok_path = opts.src_subword_model
         else:
             data_dir = os.path.split(opts.save_data)[0]
             if not os.path.exists(data_dir):
                 os.makedirs(data_dir)
-            tok_path = os.path.join(
-                data_dir, f"{opts.src_subword_type}.model")
+            tok_path = os.path.join(data_dir, f"{opts.src_subword_type}.model")
         save_opts = copy.deepcopy(opts)
-        opts.src_subword_type = 'none'
-        opts.tgt_subword_type = 'none'
+        opts.src_subword_type = "none"
+        opts.tgt_subword_type = "none"
         opts.src_onmttok_kwargs["joiner_annotate"] = False
         opts.tgt_onmttok_kwargs["joiner_annotate"] = False
         transforms = make_transforms(opts, transforms_cls, None)
@@ -231,7 +244,8 @@ def build_vocab_main(opts):
 
     logger.info(f"Counter vocab from {opts.n_sample} samples.")
     src_counter, tgt_counter, src_feats_counter = build_vocab(
-        opts, transforms, n_sample=opts.n_sample)
+        opts, transforms, n_sample=opts.n_sample
+    )
 
     logger.info(f"Counters src: {len(src_counter)}")
     logger.info(f"Counters tgt: {len(tgt_counter)}")
@@ -258,7 +272,7 @@ def build_vocab_main(opts):
 
 
 def _get_parser():
-    parser = ArgumentParser(description='build_vocab.py')
+    parser = ArgumentParser(description="build_vocab.py")
     dynamic_prepare_opts(parser, build_vocab_only=True)
     return parser
 
@@ -269,5 +283,5 @@ def main():
     build_vocab_main(opts)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

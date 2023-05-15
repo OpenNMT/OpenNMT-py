@@ -38,7 +38,7 @@ Corpus PPL is in the logger.info
 
 
 def _get_parser():
-    parser = ArgumentParser(description='LM_scoring.py')
+    parser = ArgumentParser(description="LM_scoring.py")
     opts.config_opts(parser)
     opts.translate_opts(parser, dynamic=True)
     return parser
@@ -56,31 +56,30 @@ def main():
     set_random_seed(opt.seed, False)
     ppl_file = codecs.open(opt.output + ".ppl", "w+", "utf-8")
 
-    device = (
-        torch.device("cuda", opt.gpu)
-        if opt.gpu > -1
-        else torch.device("cpu")
-    )
+    device = torch.device("cuda", opt.gpu) if opt.gpu > -1 else torch.device("cpu")
 
     vocabs, model, model_opt = load_test_model(opt)
-    padding_idx = vocabs['tgt'][DefaultTokens.PAD]
-    criterion = torch.nn.CrossEntropyLoss(ignore_index=padding_idx,
-                                          reduction='none')
-    valid_loss = LossCompute(criterion, model.generator,
-                             tgt_shift_index=0,
-                             lambda_coverage=model_opt.lambda_coverage,
-                             lambda_align=model_opt.lambda_align)
+    padding_idx = vocabs["tgt"][DefaultTokens.PAD]
+    criterion = torch.nn.CrossEntropyLoss(ignore_index=padding_idx, reduction="none")
+    valid_loss = LossCompute(
+        criterion,
+        model.generator,
+        tgt_shift_index=0,
+        lambda_coverage=model_opt.lambda_coverage,
+        lambda_align=model_opt.lambda_align,
+    )
     valid_loss.to(device)
 
     transforms_cls = get_transforms_cls(opt._all_transform)
 
     infer_iter = build_dynamic_dataset_iter(
-        opt, transforms_cls, vocabs, task=CorpusTask.INFER,
-        copy=False)
+        opt, transforms_cls, vocabs, task=CorpusTask.INFER, copy=False
+    )
 
     data_transform = [
-        infer_iter.transforms[name] for name in
-        opt.transforms if name in infer_iter.transforms
+        infer_iter.transforms[name]
+        for name in opt.transforms
+        if name in infer_iter.transforms
     ]
     _ = TransformPipe.build_from(data_transform)
 
@@ -96,32 +95,30 @@ def main():
 
     for i, batch in enumerate(infer_iter):
         # reminder a batch includes .src .tgt .indices and it is sorted
-        batch_size = len(batch['srclen'])
-        src = batch['src']
-        src_len = batch['srclen']
+        batch_size = len(batch["srclen"])
+        src = batch["src"]
+        src_len = batch["srclen"]
 
-        outputs, attns = model(src, None, src_len,
-                               with_align=False)
+        outputs, attns = model(src, None, src_len, with_align=False)
         # Compute and retrieve the loss for EACH sentence
         loss, _ = valid_loss(batch, outputs, attns)
         loss = loss.view(batch_size, -1)  # (B, T)
-        losspertoken = loss.sum(1) / batch['tgt'][:, 1:,
-                                                  0].ne(padding_idx).sum(1)
+        losspertoken = loss.sum(1) / batch["tgt"][:, 1:, 0].ne(padding_idx).sum(1)
         ppl = torch.exp(losspertoken)
         cumul_loss += loss.sum().item()
-        cumul_length += batch['tgt'][:, 1:, 0].ne(padding_idx).sum().cpu()
+        cumul_length += batch["tgt"][:, 1:, 0].ne(padding_idx).sum().cpu()
         # Now we need to rearrange the batch of ppl
         # in the original order with indices
-        sent_ppl_orig = ppl.gather(0, batch['indices'].argsort(0))
+        sent_ppl_orig = ppl.gather(0, batch["indices"].argsort(0))
         for j in range(batch_size):
             ppl_file.write(str(sent_ppl_orig[j].item()) + "\n")
-    logger.info("Loss: %.2f Tokens: %d Corpus PPL: %.2f" %
-                (cumul_loss, cumul_length,
-                 np.exp(cumul_loss / cumul_length)))
+    logger.info(
+        "Loss: %.2f Tokens: %d Corpus PPL: %.2f"
+        % (cumul_loss, cumul_length, np.exp(cumul_loss / cumul_length))
+    )
     ppl_file.close()
 
-    os.system('paste "' + opt.src + '" "' + opt.output +
-              '".ppl > "' + opt.output + '"')
+    os.system('paste "' + opt.src + '" "' + opt.output + '".ppl > "' + opt.output + '"')
 
 
 if __name__ == "__main__":

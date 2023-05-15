@@ -24,7 +24,11 @@ jobs:
         pip install -r requirements.opt.txt
         pip install sacrebleu
         pip install flake8
+        python -m pip install black==22.* flake8==3.8.*
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    - name: Check code with Black
+      run: |
+        black --check .
     - name: Lint with flake8
       run: |
         flake8 .

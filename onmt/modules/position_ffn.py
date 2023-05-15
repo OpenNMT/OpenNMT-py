@@ -21,7 +21,7 @@ ACTIVATION_FUNCTIONS = {
 
 
 class PositionwiseFeedForward(nn.Module):
-    """ A two-layer Feed-Forward-Network with residual layer norm.
+    """A two-layer Feed-Forward-Network with residual layer norm.
 
     Args:
         d_model (int): the size of input for the first-layer of the FFN.
@@ -32,22 +32,27 @@ class PositionwiseFeedForward(nn.Module):
         layer_norm (string): 'standard' or 'rms'
     """
 
-    def __init__(self, d_model, d_ff, dropout=0.1,
-                 activation_fn=ActivationFunction.relu,
-                 layer_norm='standard'):
+    def __init__(
+        self,
+        d_model,
+        d_ff,
+        dropout=0.1,
+        activation_fn=ActivationFunction.relu,
+        layer_norm="standard",
+    ):
         super(PositionwiseFeedForward, self).__init__()
         self.w_1 = nn.Linear(d_model, d_ff)
         self.w_2 = nn.Linear(d_ff, d_model)
-        if layer_norm == 'standard':
+        if layer_norm == "standard":
             self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
-        elif layer_norm == 'rms':
+        elif layer_norm == "rms":
             self.layer_norm = RMSNorm(d_model, eps=1e-6)
         else:
-            raise ValueError(f'{layer_norm} layer norm type is not supported')
+            raise ValueError(f"{layer_norm} layer norm type is not supported")
         self.dropout_1 = nn.Dropout(dropout)
         self.activation = ACTIVATION_FUNCTIONS[activation_fn]
         self.dropout_2 = nn.Dropout(dropout)
-        if activation_fn == 'silu':
+        if activation_fn == "silu":
             self.w_3 = nn.Linear(d_model, d_ff)
         else:
             self.w_3 = None
@@ -62,12 +67,12 @@ class PositionwiseFeedForward(nn.Module):
             (FloatTensor): Output ``(batch_size, input_len, model_dim)``.
         """
         if self.w_3 is None:
-            inter = self.dropout_1(self.activation(
-                self.w_1(self.layer_norm(x))))
+            inter = self.dropout_1(self.activation(self.w_1(self.layer_norm(x))))
         else:
             inter = self.dropout_1(
                 self.activation(self.w_1(self.layer_norm(x)))
-                * self.w_3(self.layer_norm(x)))
+                * self.w_3(self.layer_norm(x))
+            )
         output = self.dropout_2(self.w_2(inter))
         return output + x
 

@@ -34,61 +34,69 @@ class Field(RawField):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('-v2model', type=str, required=True,
-                        help="""Source OpenNMT-py v2.x model to
-                              be converted in v3.x """)
-    parser.add_argument('-v3model', type=str, required=True,
-                        help="""Target model to be used by OpenNMT-py
-                               v3.x """)
+    parser.add_argument(
+        "-v2model",
+        type=str,
+        required=True,
+        help="""Source OpenNMT-py v2.x model to
+                              be converted in v3.x """,
+    )
+    parser.add_argument(
+        "-v3model",
+        type=str,
+        required=True,
+        help="""Target model to be used by OpenNMT-py
+                               v3.x """,
+    )
 
     opt = parser.parse_args()
     print(opt)
     module1 = imp.load_source("torchtext.data.field", "tools/convertv2_v3.py")
-    module2 = imp.load_source("onmt.inputters.text_dataset",
-                              "tools/convertv2_v3.py")
+    module2 = imp.load_source("onmt.inputters.text_dataset", "tools/convertv2_v3.py")
     # module3 = imp.load_source("Vocab", "tools/convertv2_v3.py")
     checkpoint = torch.load(opt.v2model)
     vocabs = {}
-    multifield = checkpoint['vocab']['src']
+    multifield = checkpoint["vocab"]["src"]
     multifields = multifield.fields
     _, fields = multifields[0]
     # voc = dict(sorted(fields.vocab.__dict__['freqs'].items(),
     #                  key=lambda x: (-x[1], x[0]))).keys()
-    voc = fields.vocab.__dict__['itos']
+    voc = fields.vocab.__dict__["itos"]
     src_vocab = pyonmttok.build_vocab_from_tokens(
-        voc,
-        maximum_size=0,
-        minimum_frequency=1)
+        voc, maximum_size=0, minimum_frequency=1
+    )
     src_vocab.default_id = src_vocab[DefaultTokens.UNK]
-    vocabs['src'] = src_vocab
+    vocabs["src"] = src_vocab
     print("Source vocab size is:", len(src_vocab))
-    multifield = checkpoint['vocab']['tgt']
+    multifield = checkpoint["vocab"]["tgt"]
     multifields = multifield.fields
     _, fields = multifields[0]
     # voc = dict(sorted(fields.vocab.__dict__['freqs'].items(),
     #                  key=lambda x: (-x[1], x[0]))).keys()
-    voc = fields.vocab.__dict__['itos']
+    voc = fields.vocab.__dict__["itos"]
     tgt_vocab = pyonmttok.build_vocab_from_tokens(
-        voc,
-        maximum_size=0,
-        minimum_frequency=1)
+        voc, maximum_size=0, minimum_frequency=1
+    )
     tgt_vocab.default_id = src_vocab[DefaultTokens.UNK]
-    vocabs['tgt'] = tgt_vocab
+    vocabs["tgt"] = tgt_vocab
     print("Target vocab size is:", len(tgt_vocab))
-    if hasattr(checkpoint['opt'], 'data_task'):
-        print("Model is type:", checkpoint['opt'].data_task)
-        vocabs['data_task'] = checkpoint['opt'].data_task
+    if hasattr(checkpoint["opt"], "data_task"):
+        print("Model is type:", checkpoint["opt"].data_task)
+        vocabs["data_task"] = checkpoint["opt"].data_task
     else:
-        vocabs['data_task'] = "seq2seq"
-    checkpoint['vocab'] = vocabs_to_dict(vocabs)
+        vocabs["data_task"] = "seq2seq"
+    checkpoint["vocab"] = vocabs_to_dict(vocabs)
 
-    checkpoint['opt'].__dict__['hidden_size'] =\
-        checkpoint['opt'].__dict__.pop('rnn_size')
-    checkpoint['opt'].__dict__['enc_hid_size'] =\
-        checkpoint['opt'].__dict__.pop('enc_rnn_size')
-    checkpoint['opt'].__dict__['dec_hid_size'] =\
-        checkpoint['opt'].__dict__.pop('dec_rnn_size')
+    checkpoint["opt"].__dict__["hidden_size"] = checkpoint["opt"].__dict__.pop(
+        "rnn_size"
+    )
+    checkpoint["opt"].__dict__["enc_hid_size"] = checkpoint["opt"].__dict__.pop(
+        "enc_rnn_size"
+    )
+    checkpoint["opt"].__dict__["dec_hid_size"] = checkpoint["opt"].__dict__.pop(
+        "dec_rnn_size"
+    )
 
-    checkpoint['opt'].__dict__['add_qkvbias'] = True
+    checkpoint["opt"].__dict__["add_qkvbias"] = True
 
     torch.save(checkpoint, opt.v3model)

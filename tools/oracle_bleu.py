@@ -4,6 +4,7 @@
 import sacrebleu
 import codecs
 from argparse import ArgumentParser
+
 parser = ArgumentParser()
 
 # Let's say you have a source file with N sentences in SL - eg: source.sl
@@ -19,12 +20,11 @@ parser = ArgumentParser()
 # It will search in all hyp the best bleu wrt reference
 # and output the max bleu
 
-parser.add_argument("--nbest-hyp", type=str, help="file with nbest to rerank",
-                    required=True)
-parser.add_argument("--nbest-ref", type=str, help="ref repeated n times",
-                    required=True)
-parser.add_argument("--nbest-order", type=int, help="nbest order",
-                    required=True)
+parser.add_argument(
+    "--nbest-hyp", type=str, help="file with nbest to rerank", required=True
+)
+parser.add_argument("--nbest-ref", type=str, help="ref repeated n times", required=True)
+parser.add_argument("--nbest-order", type=int, help="nbest order", required=True)
 parser.add_argument("--output", type=str, help="output file", required=True)
 
 args = parser.parse_args()
@@ -33,7 +33,7 @@ args = parser.parse_args()
 def chunks(lgth, n):
     """Yield successive n-sized chunks from l."""
     for i in range(0, len(lgth), n):
-        yield lgth[i:i + n]
+        yield lgth[i : i + n]
 
 
 with codecs.open(args.nbest_hyp, encoding="utf-8") as file:

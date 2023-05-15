@@ -13,11 +13,26 @@ from onmt.modules.lora import LoRALayer, Embedding, Linear, MergedLinear
 from onmt.modules.lora import mark_only_lora_as_trainable, lora_state_dict
 from onmt.modules.rmsnorm import RMSNorm
 
-__all__ = ["Elementwise", "context_gate_factory", "ContextGate",
-           "GlobalAttention", "ConvMultiStepAttention", "CopyGenerator",
-           "CopyGeneratorLoss", "CopyGeneratorLMLossCompute",
-           "MultiHeadedAttention", "Embeddings", "PositionalEncoding",
-           "AlibiPositionalBias",
-           "WeightNormConv2d", "AverageAttention", "RMSNorm",
-           "LoRALayer", "Embedding", "Linear", "MergedLinear",
-           "mark_only_lora_as_trainable", "lora_state_dict"]
+__all__ = [
+    "Elementwise",
+    "context_gate_factory",
+    "ContextGate",
+    "GlobalAttention",
+    "ConvMultiStepAttention",
+    "CopyGenerator",
+    "CopyGeneratorLoss",
+    "CopyGeneratorLMLossCompute",
+    "MultiHeadedAttention",
+    "Embeddings",
+    "PositionalEncoding",
+    "AlibiPositionalBias",
+    "WeightNormConv2d",
+    "AverageAttention",
+    "RMSNorm",
+    "LoRALayer",
+    "Embedding",
+    "Linear",
+    "MergedLinear",
+    "mark_only_lora_as_trainable",
+    "lora_state_dict",
+]

@@ -4,14 +4,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-SCALE_WEIGHT = 0.5 ** 0.5
+SCALE_WEIGHT = 0.5**0.5
 
 
 def seq_linear(linear, x):
-    """ linear transform for 3-d tensor """
+    """linear transform for 3-d tensor"""
     batch, hidden_size, length, _ = x.size()
-    h = linear(torch.transpose(x, 1, 2).contiguous().view(
-        batch * length, hidden_size))
+    h = linear(torch.transpose(x, 1, 2).contiguous().view(batch * length, hidden_size))
     return torch.transpose(h.view(batch, length, hidden_size, 1), 1, 2)
 
 
@@ -29,11 +28,12 @@ class ConvMultiStepAttention(nn.Module):
         self.mask = None
 
     def apply_mask(self, mask):
-        """ Apply mask """
+        """Apply mask"""
         self.mask = mask
 
-    def forward(self, base_target_emb, input_from_dec, encoder_out_top,
-                encoder_out_combine):
+    def forward(
+        self, base_target_emb, input_from_dec, encoder_out_top, encoder_out_combine
+    ):
         """
         Args:
             base_target_emb: target emb tensor
@@ -55,12 +55,10 @@ class ConvMultiStepAttention(nn.Module):
         pre_attn = torch.bmm(target, encoder_out_top)
 
         if self.mask is not None:
-            pre_attn.data.masked_fill_(self.mask, -float('inf'))
+            pre_attn.data.masked_fill_(self.mask, -float("inf"))
 
         attn = F.softmax(pre_attn, dim=2)
 
-        context_output = torch.bmm(
-            attn, torch.transpose(encoder_out_combine, 1, 2))
-        context_output = torch.transpose(
-            torch.unsqueeze(context_output, 3), 1, 2)
+        context_output = torch.bmm(attn, torch.transpose(encoder_out_combine, 1, 2))
+        context_output = torch.transpose(torch.unsqueeze(context_output, 3), 1, 2)
         return context_output, attn

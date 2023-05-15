@@ -11,12 +11,9 @@ def build_model_saver(model_opt, opt, model, vocabs, optim):
     save_model_path = os.path.abspath(opt.save_model)
     os.makedirs(os.path.dirname(save_model_path), exist_ok=True)
 
-    model_saver = ModelSaver(opt.save_model,
-                             model,
-                             model_opt,
-                             vocabs,
-                             optim,
-                             opt.keep_checkpoint)
+    model_saver = ModelSaver(
+        opt.save_model, model, model_opt, vocabs, optim, opt.keep_checkpoint
+    )
     return model_saver
 
 
@@ -24,9 +21,8 @@ def load_checkpoint(ckpt_path):
     """Load checkpoint from `ckpt_path` if any else return `None`."""
     checkpoint = None
     if ckpt_path:
-        logger.info('Loading checkpoint from %s' % ckpt_path)
-        checkpoint = torch.load(ckpt_path,
-                                map_location=lambda storage, loc: storage)
+        logger.info("Loading checkpoint from %s" % ckpt_path)
+        checkpoint = torch.load(ckpt_path, map_location=lambda storage, loc: storage)
     return checkpoint
 
 
@@ -38,8 +34,7 @@ class ModelSaverBase(object):
     * `_rm_checkpoint
     """
 
-    def __init__(self, base_path, model, model_opt, vocabs, optim,
-                 keep_checkpoint=-1):
+    def __init__(self, base_path, model, model_opt, vocabs, optim, keep_checkpoint=-1):
         self.base_path = base_path
         self.model = model
         self.model_opt = model_opt
@@ -71,8 +66,7 @@ class ModelSaverBase(object):
         self.last_saved_step = step
 
         if moving_average:
-            for param_data, param in zip(model_params_data,
-                                         save_model.parameters()):
+            for param_data, param in zip(model_params_data, save_model.parameters()):
                 param.data = param_data
 
         if self.keep_checkpoint > 0:
@@ -112,28 +106,31 @@ class ModelSaver(ModelSaverBase):
     """Simple model saver to filesystem"""
 
     def _save(self, step, model):
-        if (hasattr(self.model_opt, 'lora_layers') and
-                len(self.model_opt.lora_layers) > 0) or \
-                (hasattr(self.model_opt, 'lora_embedding') and
-                 self.model_opt.lora_embedding):
-            model_state_dict = lora_state_dict(model, bias='lora_only')
+        if (
+            hasattr(self.model_opt, "lora_layers")
+            and len(self.model_opt.lora_layers) > 0
+        ) or (
+            hasattr(self.model_opt, "lora_embedding") and self.model_opt.lora_embedding
+        ):
+            model_state_dict = lora_state_dict(model, bias="lora_only")
             generator_state_dict = None
         else:
             model_state_dict = model.state_dict()
-            model_state_dict = {k: v for k, v in model_state_dict.items()
-                                if 'generator' not in k}
+            model_state_dict = {
+                k: v for k, v in model_state_dict.items() if "generator" not in k
+            }
             generator_state_dict = model.generator.state_dict()
 
         checkpoint = {
-            'model': model_state_dict,
-            'generator': generator_state_dict,
-            'vocab': vocabs_to_dict(self.vocabs),
-            'opt': self.model_opt,
-            'optim': self.optim.state_dict(),
+            "model": model_state_dict,
+            "generator": generator_state_dict,
+            "vocab": vocabs_to_dict(self.vocabs),
+            "opt": self.model_opt,
+            "optim": self.optim.state_dict(),
         }
 
         logger.info("Saving checkpoint %s_step_%d.pt" % (self.base_path, step))
-        checkpoint_path = '%s_step_%d.pt' % (self.base_path, step)
+        checkpoint_path = "%s_step_%d.pt" % (self.base_path, step)
         torch.save(checkpoint, checkpoint_path)
         return checkpoint, checkpoint_path
 
