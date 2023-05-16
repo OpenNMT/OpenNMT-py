@@ -1,15 +1,19 @@
-# Supervised Finetuning of llama 7B to replicate Alpaca
-This tutorial shows how to make a supervised finetuning of the llama 7B foundation model, on the alpaca and vicuna datasets.
+# Supervised Finetuning of llama 7B to replicate Vicuna
+
+This tutorial shows how to finetune a LLaMA 7B foundation model on instruction data including multi-round conversations.
+
 
 Different features will be enabled:
 - Application of the LoRa method to the attention layers.
 - 8bit compression of the position-wise feed-forward layers.
 - Architectural improvements used during the training of the llama models (RMS normalisation, Rotary Embeddings, SwiGLU activation).
 
+The maximal context length will be set to 512.
+
 Here is a short description of the content of your current directory:
 
 - The OpenNMT-py repository.
-- The `replicate_alpaca.yaml` file.
+- The `replicate_vicuna.yaml` file.
 - A subdirectory named "llama" with the llama chekpoints.
 - The converted llama7B checkpoint (`llama7B-vicuna-onmt`) and the vocabulary (`vocab.txt`) that will be genenerated with OpenNMT tools.
 - A subdirectory named "dataAI" with the datasets for the finetuning.
@@ -48,7 +52,7 @@ python3 OpenNMT-py/tools/extract_vocabulary.py -model llama7B-vicuna-onmt -out_f
 
 ### Datasets 
 
-The original [alpaca](https://raw.githubusercontent.com/gururise/AlpacaDataCleaned/main/alpaca_data_cleaned.json) and vicuna datasets are JSON files.
+The original [*alpaca*](https://raw.githubusercontent.com/gururise/AlpacaDataCleaned/main/alpaca_data_cleaned.json) and *vicuna* datasets are JSON files. This 
 
 Here is the first element of the original alpaca_data.json dataset :
 ```json
@@ -58,6 +62,8 @@ Here is the first element of the original alpaca_data.json dataset :
         "output": "1. Eat a balanced and nutritious diet: Make sure your meals are inclusive of a variety of fruits and vegetables, lean protein, whole grains, and healthy fats. This helps to provide your body with the essential nutrients to function at its best and can help prevent chronic diseases.\n\n2. Engage in regular physical activity: Exercise is crucial for maintaining strong bones, muscles, and cardiovascular health. Aim for at least 150 minutes of moderate aerobic exercise or 75 minutes of vigorous exercise each week.\n\n3. Get enough sleep: Getting enough quality sleep is crucial for physical and mental well-being. It helps to regulate mood, improve cognitive function, and supports healthy growth and immune function. Aim for 7-9 hours of sleep each night."
     },
 ```
+
+The *vicuna* dataset
 
 **The datasets that will be used in this tutorial are slightly modified versions of the original datasets.**
 They have been flattened into plain text files. Moreover all occurences of the “\n” symbol, which acts as example break in the OpenNMT world, have been replaced with '｟newline｠'.
@@ -116,8 +122,7 @@ python3 OpenNMT-py/tools/lora_weights.py\
     --lora_weights finetuned_llama7B/llama7B-vicuna-onmt_step_4000.pt \
     --output finetuned_llama7B/llama7B-vicuna-onmt_step_4000.concat.pt
 ```
-
-
+### Conversion to ct2 format
 ### Input examples
 
 The inputs need to follow the same pattern than the finetuning examples. 
