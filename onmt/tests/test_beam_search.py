@@ -62,7 +62,7 @@ class TestBeamSearch(unittest.TestCase):
                 word_probs = torch.full((batch_sz * beam_sz, n_words), -float("inf"))
                 word_probs[0::beam_sz, repeat_idx] = 0
 
-                attns = torch.randn(1, batch_sz * beam_sz, 53)
+                attns = torch.randn(batch_sz * beam_sz, 1, 53)
                 beam.advance(word_probs, attns)
 
                 if i < ngram_repeat:
@@ -133,7 +133,7 @@ class TestBeamSearch(unittest.TestCase):
                     word_probs[0::beam_sz, repeat_idx] = 0
                     # continue pushing around what beam 1 predicts
                     word_probs[1::beam_sz, repeat_idx + i + 1] = 0
-                attns = torch.randn(1, batch_sz * beam_sz, 53)
+                attns = torch.randn(batch_sz * beam_sz, 1, 53)
                 beam.advance(word_probs, attns)
                 if i < ngram_repeat:
                     self.assertFalse(
@@ -207,7 +207,7 @@ class TestBeamSearch(unittest.TestCase):
                     word_probs[1::beam_sz, repeat_idx + i + 1] = 0
                     # predict the allowed-repeat again in beam 2
                     word_probs[2::beam_sz, repeat_idx_ignored] = 0
-                attns = torch.randn(1, batch_sz * beam_sz, 53)
+                attns = torch.randn(batch_sz * beam_sz, 1, 53)
                 beam.advance(word_probs, attns)
                 if i < ngram_repeat:
                     self.assertFalse(
@@ -293,7 +293,7 @@ class TestBeamSearch(unittest.TestCase):
                         beam_idx = min(beam_sz - 1, k)
                         word_probs[beam_idx::beam_sz, j] = score
 
-                attns = torch.randn(1, batch_sz * beam_sz, 53)
+                attns = torch.randn(batch_sz * beam_sz, 1, 53)
                 all_attns.append(attns)
                 beam.advance(word_probs, attns)
                 if i < min_length:
@@ -364,7 +364,7 @@ class TestBeamSearch(unittest.TestCase):
                 for j in range(beam_sz):
                     word_probs[j::beam_sz, eos_idx] = valid_score_dist[0]
 
-            attns = torch.randn(1, batch_sz * beam_sz, 53)
+            attns = torch.randn(batch_sz * beam_sz, 1, 53)
             beam.advance(word_probs, attns)
             if i < min_length:
                 self.assertFalse(beam.done)
@@ -435,7 +435,7 @@ class TestBeamSearch(unittest.TestCase):
                 for j in range(beam_sz):
                     word_probs[j::beam_sz, eos_idx] = valid_score_dist[0]
 
-            attns = torch.randn(1, batch_sz * beam_sz, 53)
+            attns = torch.randn(batch_sz * beam_sz, 1, 53)
             beam.advance(word_probs, attns)
             if i < min_length:
                 self.assertFalse(beam.done)
@@ -483,7 +483,7 @@ class TestBeamSearchAgainstReferenceCase(unittest.TestCase):
     INP_SEQ_LEN = 53
 
     def random_attn(self):
-        return torch.randn(1, self.BATCH_SZ * self.BEAM_SZ, self.INP_SEQ_LEN)
+        return torch.randn(self.BATCH_SZ * self.BEAM_SZ, 1, self.INP_SEQ_LEN)
 
     def init_step(self, beam, expected_len_pen):
         # init_preds: [4, 3, 5, 6, 7] - no EOS's
