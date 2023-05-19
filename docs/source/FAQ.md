@@ -114,7 +114,7 @@ Here are what the most important parameters mean:
 * If you train a transformer we support `max_relative_positions` (use 20) instead of position_encoding. 
 * for very fast inference convert your model to CTranslate2 format.
 
-## Position encoding: Absolute vs Relative vs Rotary Embeddings
+## Position encoding: Absolute vs Relative vs Rotary Embeddings vs Alibi
 
 The basic feature is absolute position encoding stemming from the original Transformer Paper.
 However, even with this, we can use SinusoidalInterleaved (default OpenNMT-py) or SinusoidalConcat (default Fairseq imported models)
@@ -122,9 +122,10 @@ However, even with this, we can use SinusoidalInterleaved (default OpenNMT-py) o
 * `position_encoding_type: 'SinusoidalInterleaved'`
 Do not forget to set also `param_init_glorot: true`
 
-If you prefer to use relative position encoding, we support two modes:
+If you prefer to use relative position encoding, we support 3 modes:
 * "Shaw": https://arxiv.org/abs/1803.02155 - you need to set `max_relative_positions: N` where N > 1 (use 16, 20, 32) see paper.
 * "Rope" Rotary Embeddings: https://arxiv.org/abs/2104.09864 - you need to set `max_relative_positions: -1`
+* "Alibi" (used by MPT-7B for example) https://arxiv.org/abs/2108.12409 - you need to set `max_relative_positions: -2`
 
 In both cases, it is necessary to set `position_encoding: false`
 
@@ -245,6 +246,51 @@ data:
 ...
 
 ```
+
+## What special tokens does OpenNMT-py use?
+
+In the v2, special tokens were different for SEQ2SEQ and LM:
+LM was BOS, PAD, EOS with IDs (0, 1, 2) and the first vocab token started at id=3
+SEQ2SEQ was UNK, PAD, BOS, EOS with IDs (0, 1, 2, 3) and first vocab token started at id=4
+
+In v3 we changed this behavior to align things:
+    group.add(
+        "--default_specials",
+        "-default_specilas",
+        nargs="+",
+        type=str,
+        default=[
+            DefaultTokens.UNK,
+            DefaultTokens.PAD,
+            DefaultTokens.BOS,
+            DefaultTokens.EOS,
+        ])
+
+When we train a SEQ2SEQ model we use:
+SRC: srctok1 srctok2 srctok3 .... srctokn
+TGT: BOS tgttok1 tgttok2 ..... tgttokm EOS
+But when training a LM
+SRC: BOS srctok1 srctok2 srctok3 .... srctokn
+TGT: srctok1 srctok2 srctok3 .... srctokn EOS
+
+Having said that, sometimes we need to finetune models (eg: NLLB-200, Llama, ...) with existing vocab
+and special tokens are not the same.
+
+ex with NLLB-200
+BOS id=0
+PAD id=1
+EOS id=2
+UNK id=3
+And the decoder start token is EOS (</s>) which means in fact that the BOS is never used.
+At training, TGT needs to start with EOS instead of BOS in the default OpenNMT-py config.
+
+Example of Llama
+UNK id=0
+BOS id=1
+EOS id=2
+There was no PAD but to avoid conflicts we forced PAD id=3 (which was token '<0x00>' in the original llama tokenizer)
+
+
 
 ## How can I apply on-the-fly tokenization and subword regularization when training?
 
