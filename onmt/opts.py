@@ -339,9 +339,9 @@ def _add_dynamic_vocab_opts(parser, build_vocab_only=False):
             DefaultTokens.BOS,
             DefaultTokens.EOS,
         ],
-        help="list of layers to be replaced by LoRa layers."
-        " ex: ['linear_values', 'linear_query'] "
-        " cf paper §4.2 https://arxiv.org/abs/2106.09685",
+        help="default specials used for Vocab initialization"
+        " UNK, PAD, BOS, EOS will take IDs 0, 1, 2, 3 "
+        " typically <unk> <blank> <s> </s> ",
     )
 
     _add_features_opts(parser)
