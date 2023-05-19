@@ -49,7 +49,7 @@ class DocifyTransform(Transform):
     def get_specials(cls, opts):
         """Add newline tag to src and tgt vocabs."""
 
-        src_specials, tgt_specials = ["｟newline｠"], ["｟newline｠"]
+        src_specials, tgt_specials = [DefaultTokens.SEP], [DefaultTokens.SEP]
         return (src_specials, tgt_specials)
 
     def warm_up(self, vocabs=None):
