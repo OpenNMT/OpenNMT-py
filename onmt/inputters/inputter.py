@@ -59,6 +59,9 @@ def build_vocab(opt, specials):
         item for item in (default_specials + specials["src"]) if item not in src_vocab
     ]
 
+    if DefaultTokens.SEP in src_specials and "<0x0A>" in src_vocab:
+        src_specials.remove(DefaultTokens.SEP)
+
     src_vocab = pyonmttok.build_vocab_from_tokens(
         src_vocab, maximum_size=opt.src_vocab_size, special_tokens=src_specials
     )
@@ -76,6 +79,8 @@ def build_vocab(opt, specials):
             for item in (default_specials + specials["tgt"])
             if item not in tgt_vocab
         ]
+        if DefaultTokens.SEP in tgt_specials and "<0x0A>" in tgt_vocab:
+            tgt_specials.remove(DefaultTokens.SEP)
         tgt_vocab = pyonmttok.build_vocab_from_tokens(
             tgt_vocab, maximum_size=opt.tgt_vocab_size, special_tokens=tgt_specials
         )

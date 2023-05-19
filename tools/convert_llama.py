@@ -144,8 +144,6 @@ if __name__ == "__main__":
 
     onmt_cp["vocab"] = {}
     onmt_cp["vocab"] = vocabs_to_dict(vocabs)
-    onmt_cp["vocab"]["src"][30004] = "｟newline｠"
-    onmt_cp["vocab"]["tgt"][30004] = "｟newline｠"
 
     with open(
         os.path.join(opt.model_dir, "llama.vocab"), "w", encoding="utf-8"
