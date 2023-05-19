@@ -202,7 +202,7 @@ class BeamSearchBase(DecodeStrategy):
         predictions = self.alive_seq.view(_B_old, self.beam_size, step)
         attention = (
             self.alive_attn.view(
-                step - 1, _B_old, self.beam_size, self.alive_attn.size(-1)
+                _B_old, self.beam_size, step - 1, self.alive_attn.size(-1)
             )
             if self.alive_attn is not None
             else None
@@ -221,7 +221,7 @@ class BeamSearchBase(DecodeStrategy):
                     (
                         self.topk_scores[i, j],
                         predictions[i, j, 1:],  # Ignore start_token.
-                        attention[:, i, j, : self.src_len[i]]
+                        attention[i, j, :, : self.src_len[i]]
                         if attention is not None
                         else None,
                     )
@@ -275,14 +275,14 @@ class BeamSearchBase(DecodeStrategy):
         self.maybe_update_target_prefix(self.select_indices)
         if self.alive_attn is not None:
             inp_seq_len = self.alive_attn.size(-1)
-            self.alive_attn = attention.index_select(1, non_finished).view(
-                step - 1, _B_new * self.beam_size, inp_seq_len
+            self.alive_attn = attention.index_select(0, non_finished).view(
+                _B_new * self.beam_size, step - 1, inp_seq_len
             )
             if self._cov_pen:
                 self._coverage = (
-                    self._coverage.view(1, _B_old, self.beam_size, inp_seq_len)
-                    .index_select(1, non_finished)
-                    .view(1, _B_new * self.beam_size, inp_seq_len)
+                    self._coverage.view(_B_old, self.beam_size, 1, inp_seq_len)
+                    .index_select(0, non_finished)
+                    .view(_B_new * self.beam_size, 1, inp_seq_len)
                 )
                 if self._stepwise_cov_pen:
                     self._prev_penalty = self._prev_penalty.index_select(
@@ -345,7 +345,7 @@ class BeamSearchBase(DecodeStrategy):
         self.maybe_update_forbidden_tokens()
 
         if self.return_attention or self._cov_pen:
-            current_attn = attn.index_select(1, self.select_indices)
+            current_attn = attn.index_select(0, self.select_indices)
             if step == 1:
                 self.alive_attn = current_attn
                 # update global state (step == 1)
@@ -353,11 +353,11 @@ class BeamSearchBase(DecodeStrategy):
                     self._prev_penalty = torch.zeros_like(self.topk_log_probs)
                     self._coverage = current_attn
             else:
-                self.alive_attn = self.alive_attn.index_select(1, self.select_indices)
-                self.alive_attn = torch.cat([self.alive_attn, current_attn], 0)
+                self.alive_attn = self.alive_attn.index_select(0, self.select_indices)
+                self.alive_attn = torch.cat([self.alive_attn, current_attn], 1)
                 # update global state (step > 1)
                 if self._cov_pen:
-                    self._coverage = self._coverage.index_select(1, self.select_indices)
+                    self._coverage = self._coverage.index_select(0, self.select_indices)
                     self._coverage += current_attn
                     self._prev_penalty = self.global_scorer.cov_penalty(
                         self._coverage, beta=self.global_scorer.beta
