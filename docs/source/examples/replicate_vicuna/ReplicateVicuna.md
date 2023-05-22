@@ -100,8 +100,7 @@ nohup python3 OpenNMT-py/onmt/bin/train.py -config replicate_alpaca-vicuna.yaml 
 
 We can start by generating some samples (by turning `dump_samples` to True and `n_samples` to a strictly positive value).
 
-It is worth noting that the he sentencepiece vocabulary does not map the custom substring ｟newline｠with specific token. However
-it maps the new line symbol '\n' with the token '<0x0A>'. To handle properlyour datasets without changing the vocabulary and training new embddings from scratch, the Tokenize transform replaces on-the-fly the token '｟newline｠' token with  '<0x0A>'.
+It is worth noting that the he sentencepiece vocabulary does not map the custom substring ｟newline｠with a specific token. However it maps the new line symbol '\n' with the token '<0x0A>'. To handle properly our datasets without changing the vocabulary and training new embddings from scratch, the Tokenize transform replaces on-the-fly the token '｟newline｠' token with  '<0x0A>'.
 
 For instance the first training example is transformed in:
 ```txt
@@ -125,7 +124,7 @@ python3 OpenNMT-py/tools/lora_weights.py\
 ### Conversion to ct2 format
 ### Input examples
 
-The inputs need to follow the same pattern than the finetuning examples. 
+The inputs need to follow the same pattern used in the finetuning examples. 
 
 Let us create an "inputs" folder and save inside it the file named `input_examples.txt`.
 
