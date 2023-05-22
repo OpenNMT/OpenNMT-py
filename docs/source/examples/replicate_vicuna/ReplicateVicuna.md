@@ -13,14 +13,17 @@ The maximal context length will be set to 512.
 Here is a short description of the content of your current directory:
 
 - The OpenNMT-py repository.
+- The Ctranslate2 repository.
 - The `replicate_vicuna.yaml` file.
 - A subdirectory named "llama" with the llama chekpoints.
 - The converted llama7B checkpoint (`llama7B-vicuna-onmt`) and the vocabulary (`vocab.txt`) that will be genenerated with OpenNMT tools.
 - A subdirectory named "dataAI" with the datasets for the finetuning.
 - A subdirectory named "finetuned_llama7B" that will contain the finetuning samples, tensorboard logs and checkpoints.
-- The `translate_opts.yaml` file with the translation options for the inference.
-- A subdirectory named "inputs" containing the `input_examples.txt`file with the input examples for the inference.
+- The `translate_opts.yaml` file with the translation options for the inference with `OpenNMT-py/onmt/bin/translate.py`.
+- A subdirectory named "inputs" containing the `input_examples.txt` file with the input examples for the inference.
 - A subdirectory named "outputs" that will contain the inferred outputs of the finetuned model.
+- The `add_missing_key.py` script (to enable the ctranslate2 conversion).
+- The `chatbot.py` script (for the ctranslate2 inference with a gradio application).
 
 
 ## Data
@@ -121,7 +124,7 @@ python3 OpenNMT-py/tools/lora_weights.py\
     --lora_weights finetuned_llama7B/llama7B-vicuna-onmt_step_4000.pt \
     --output finetuned_llama7B/llama7B-vicuna-onmt_step_4000.concat.pt
 ```
-### Conversion to ct2 format
+
 ### Input examples
 
 The inputs need to follow the same pattern used in the finetuning examples. 
@@ -129,7 +132,7 @@ The inputs need to follow the same pattern used in the finetuning examples.
 Let us create an "inputs" folder and save inside it the file named `input_examples.txt`.
 
 
-### Translate
+### Inference with translate.py
 
 Let us create an "outputs" folder.
 
@@ -146,3 +149,26 @@ nohup python3 OpenNMT-py/onmt/bin/translate.py\
 Where `translate_opts.yaml` is the provided config with the translation options.
 You can test other decoding methods and paramaters.
 
+
+### Inference with CTranslate
+
+First we need to do the conversion to the ctranslate2 format.
+
+We have provided a python script to "manually" add the `encoder_type` key to the checkpoint.
+
+```shell
+python3 add_missing_key.py
+
+python3 OpenNMT-py/onmt/bin/release_model.py \
+    --model finetuned_llama7B/llama7B-vicuna-onmt_step_4000.concat_added_key.pt \
+    --output finetuned_llama7B/llama7B-vicuna-onmt_step_4000.concat_CT2 \
+    --format ctranslate2 \
+    --quantization int8_float16
+```
+
+We also have provided a gradio application to chat with the model.
+
+```shell
+pip install gradio
+gradio chatbot.py
+```
