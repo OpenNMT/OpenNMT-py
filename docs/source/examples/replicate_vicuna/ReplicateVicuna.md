@@ -132,7 +132,7 @@ The inputs need to follow the same pattern used in the finetuning examples.
 Let us create an "inputs" folder and save inside it the file named `input_examples.txt`.
 
 
-### Inference with translate.py
+### Inference with `translate.py`
 
 Let us create an "outputs" folder.
 
@@ -150,7 +150,7 @@ Where `translate_opts.yaml` is the provided config with the translation options.
 You can test other decoding methods and paramaters.
 
 
-### Inference with CTranslate
+### Inference with `CTranslate` 
 
 First we need to do the conversion to the ctranslate2 format.
 

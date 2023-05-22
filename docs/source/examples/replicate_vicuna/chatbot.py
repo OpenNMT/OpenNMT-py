@@ -14,7 +14,8 @@ def load_models(model_dir, tokenizer_dir):
     if CACHE.get("generator", None) is None:
         CACHE["generator"] = ctranslate2.Generator(model_dir, device="cuda")
         CACHE["tokenizer"] = spm.SentencePieceProcessor(
-            os.path.join(tokenizer_dir, "tokenizer.model"))
+            os.path.join(tokenizer_dir, "tokenizer.model")
+        )
 
 
 def make_prompt(chat_history):
@@ -27,7 +28,7 @@ def make_prompt(chat_history):
         return f"### Response:｟newline｠{text}"
 
     out = [task_description]
-    for (_user_message, _bot_message) in chat_history:
+    for _user_message, _bot_message in chat_history:
         out.append(parse_instruction(_user_message))
         if _bot_message is not None:
             out.append(parse_response(_bot_message))
@@ -44,10 +45,7 @@ def generate_words(generator, sp, prompt, add_bos=True):
         prompt_tokens.insert(0, "<s>")
 
     step_results = generator.generate_tokens(
-        prompt_tokens,
-        sampling_temperature=0.1,
-        sampling_topk=40,
-        max_length=512
+        prompt_tokens, sampling_temperature=0.1, sampling_topk=40, max_length=512
     )
 
     output_ids = []
@@ -69,7 +67,7 @@ def make_bot_message(prompt):
     out = []
     for word in generate_words(CACHE["generator"], CACHE["tokenizer"], prompt):
         out.append(word)
-    return ''.join(out)
+    return "".join(out)
 
 
 with gr.Blocks() as demo:
