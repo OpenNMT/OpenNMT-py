@@ -29,7 +29,10 @@ def make_prompt(chat_history):
     out = [task_description]
     for (_user_message, _bot_message) in chat_history:
         out.append(parse_instruction(_user_message))
-        out.append(parse_response(_bot_message))
+        if _bot_message is not None:
+            out.append(parse_response(_bot_message))
+        else:
+            out.append("### Response:｟newline｠")
     prompt = "".join(out)
     return prompt
 
@@ -95,7 +98,7 @@ with gr.Blocks() as demo:
         history[-1][1] = ""
         for character in bot_message:
             history[-1][1] += character
-            time.sleep(0.1)
+            time.sleep(0.03)
             yield history
 
     msg.submit(user, [msg, chatbot], [msg, chatbot], queue=False).then(
@@ -105,3 +108,5 @@ with gr.Blocks() as demo:
 
 demo.queue()
 demo.launch(server_port=1851, server_name="0.0.0.0")
+
+# What are the 3 best french cities ?
