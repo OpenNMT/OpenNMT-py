@@ -8,7 +8,7 @@ import time
 CACHE = {}
 model_dir = "finetuned_llama7B/llama7B-vicuna-onmt_step_4000.concat_CT2"
 tokenizer_dir = "llama"
-max_context_length = 1000  # # 4096
+max_context_length = 4096
 
 
 def load_models(model_dir, tokenizer_dir):
@@ -108,6 +108,7 @@ def make_bot_message(prompt):
 with gr.Blocks() as demo:
     chatbot = gr.Chatbot()
     msg = gr.Textbox()
+    submit = gr.Button("Submit")
     clear = gr.Button("Clear")
 
     load_models(model_dir, tokenizer_dir)
@@ -125,8 +126,11 @@ with gr.Blocks() as demo:
             time.sleep(0.001)
             yield history
 
-    submit = gr.Button("Submit")
     submit.click(user, [msg, chatbot], [msg, chatbot], queue=False).then(
+        bot, chatbot, chatbot
+    )
+
+    msg.submit(user, [msg, chatbot], [msg, chatbot], queue=False).then(
         bot, chatbot, chatbot
     )
 
