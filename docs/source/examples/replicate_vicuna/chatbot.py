@@ -125,9 +125,11 @@ with gr.Blocks() as demo:
             time.sleep(0.001)
             yield history
 
-    msg.submit(user, [msg, chatbot], [msg, chatbot], queue=False).then(
+    submit = gr.Button("Submit")
+    submit.click(user, [msg, chatbot], [msg, chatbot], queue=False).then(
         bot, chatbot, chatbot
     )
+
     clear.click(lambda: None, None, chatbot, queue=False)
 
 demo.queue()
