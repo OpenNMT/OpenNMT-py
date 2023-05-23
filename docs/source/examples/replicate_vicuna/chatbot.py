@@ -1,5 +1,6 @@
 import ctranslate2
 import gradio as gr
+import numpy as np
 import os
 import sentencepiece as spm
 import time
@@ -7,7 +8,6 @@ import time
 CACHE = {}
 model_dir = "finetuned_llama7B/llama7B-vicuna-onmt_step_4000.concat_CT2"
 tokenizer_dir = "llama"
-out_dir = "outputs/ct2"
 max_context_length = 1000  # # 4096
 
 
@@ -15,7 +15,8 @@ def load_models(model_dir, tokenizer_dir):
     if CACHE.get("generator", None) is None:
         CACHE["generator"] = ctranslate2.Generator(model_dir, device="cuda")
         CACHE["tokenizer"] = spm.SentencePieceProcessor(
-            os.path.join(tokenizer_dir, "tokenizer.model"))
+            os.path.join(tokenizer_dir, "tokenizer.model")
+        )
 
 
 def make_prompt(chat_history):
@@ -29,50 +30,41 @@ def make_prompt(chat_history):
 
     def parse_instruction(text):
         parsed_text = f"### Instruction:｟newline｠ {text} ｟newline｠｟newline｠"
-        parsed_text_sp = parsed_text.replace('｟newline｠', '\n')
+        parsed_text_sp = parsed_text.replace("｟newline｠", "\n")
         tokens = sp.encode(parsed_text_sp, out_type=str)
         nb_user_tokens.append(len(tokens))
         return parsed_text
 
     def parse_response(text):
         parsed_text = f"### Response:｟newline｠{text}"
-        # parsed_text_sp = parsed_text.replace('\n', '｟newline｠')
         tokens = sp.encode(parsed_text, out_type=str)
         nb_bot_tokens.append(len(tokens))
         return parsed_text
 
     out = [task_description]
-    for (_user_message, _bot_message) in chat_history:
+    for _user_message, _bot_message in chat_history:
         parsed_instructions.append(parse_instruction(_user_message))
         if _bot_message is not None:
             parsed_responses.append(parse_response(_bot_message))
         else:
             parsed_responses.append("### Response:｟newline｠")
 
-        print("###################")
-        print("# nb_user_tokens: ", nb_user_tokens)
-        print(parsed_instructions)
-        print("# nb_bot_tokens: ", nb_bot_tokens)
-        print(parsed_responses)
         keep_indices = prune_history(
-            nb_user_tokens, nb_bot_tokens,
-            max_context_length - len(task_description))
-        print("## We only keep the rounds:", keep_indices)
+            nb_user_tokens, nb_bot_tokens, max_context_length - len(task_description)
+        )
         for i in keep_indices:
             out.append(parsed_instructions[i])
             out.append(parsed_responses[i])
     prompt = "".join(out)
-    prompt = prompt.replace('｟newline｠', '\n')
+    prompt = prompt.replace("｟newline｠", "\n")
     return prompt
 
 
 def prune_history(x, y, L):
-    import numpy as np
     reversed_indices = list(range(len(x)))[::-1]
     keep_indices = []
     _x, _y = x[::-1], y[::-1]
     z = [sum(i) for i in zip(_x, _y)]
-    # print("# cumsums: ", np.cumsum(z))
     for i, n in enumerate(np.cumsum(z)):
         if n < L:
             keep_indices.append(reversed_indices[i])
@@ -88,10 +80,7 @@ def generate_words(prompt, add_bos=True):
         prompt_tokens.insert(0, "<s>")
 
     step_results = generator.generate_tokens(
-        prompt_tokens,
-        sampling_temperature=0.1,
-        sampling_topk=40,
-        max_length=512
+        prompt_tokens, sampling_temperature=0.1, sampling_topk=40, max_length=512
     )
 
     output_ids = []
@@ -113,16 +102,13 @@ def make_bot_message(prompt):
     for _out in generate_words(prompt):
         words.append(_out)
     bot_message_length = _out
-    return ''.join(words[:-1]), bot_message_length
+    return "".join(words[:-1]), bot_message_length
 
 
 with gr.Blocks() as demo:
     chatbot = gr.Chatbot()
     msg = gr.Textbox()
     clear = gr.Button("Clear")
-
-    if not os.path.exists(out_dir):
-        os.mkdir(out_dir)
 
     load_models(model_dir, tokenizer_dir)
 
@@ -131,20 +117,13 @@ with gr.Blocks() as demo:
 
     def bot(history):
         prompt = make_prompt(history)
-        with open(os.path.join(out_dir, "prompt"), "a") as f:
-            f.write(str(prompt) + "\n")
         bot_message = make_bot_message(prompt)
-        with open(os.path.join(out_dir, "bot_message"), "a") as f:
-            f.write(str(bot_message) + "\n")
 
         history[-1][1] = ""
         for character in bot_message:
             history[-1][1] += character
             time.sleep(0.001)
             yield history
-
-        with open(os.path.join(out_dir, "history"), "a") as f:
-            f.write(str(history) + "\n")
 
     msg.submit(user, [msg, chatbot], [msg, chatbot], queue=False).then(
         bot, chatbot, chatbot

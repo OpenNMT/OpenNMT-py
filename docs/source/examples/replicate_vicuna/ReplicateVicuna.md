@@ -1,5 +1,4 @@
 # Supervised Finetuning of llama 7B to replicate Vicuna
-
 This tutorial shows how to finetune a LLaMA 7B foundation model on instruction data including multi-round conversations.
 
 
@@ -45,7 +44,7 @@ python3 OpenNMT-py/tools/convert_llama.py \
 The converted checkpoint is named `llama7B-vicuna-onmt`.
 
 ### Vocabulary 
-As the subword model is a sentencepiece model, the vocabulary is known and can be retrieved from the tokenizer:
+As the subword model is a sentencepiece model, the vocabulary can be retrieved from the tokenizer. The `convert_llama.py` script saved a copy of the vocabulary with slight modifications but you can also extract the vocabulary from the newly created checkpoint as follow:
 
 ```shell
 python3 OpenNMT-py/tools/extract_vocabulary.py -model llama7B-vicuna-onmt -out_file vocab.txt -side src
@@ -154,19 +153,15 @@ You can test other decoding methods and paramaters.
 
 First we need to do the conversion to the ctranslate2 format.
 
-We have provided a python script to "manually" add the `encoder_type` key to the checkpoint.
-
 ```shell
-python3 add_missing_key.py
-
 python3 OpenNMT-py/onmt/bin/release_model.py \
-    --model finetuned_llama7B/llama7B-vicuna-onmt_step_4000.concat_added_key.pt \
+    --model finetuned_llama7B/llama7B-vicuna-onmt_step_4000.concat.pt \
     --output finetuned_llama7B/llama7B-vicuna-onmt_step_4000.concat_CT2 \
     --format ctranslate2 \
     --quantization int8_float16
 ```
 
-We also have provided a gradio application to chat with the model.
+We have provided a gradio application to chat with the model.
 
 ```shell
 pip install gradio
