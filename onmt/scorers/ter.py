@@ -3,7 +3,7 @@ from onmt.scorers import register_scorer
 from sacrebleu import corpus_ter
 
 
-@register_scorer(metric='TER')
+@register_scorer(metric="TER")
 class TerScorer(Scorer):
     """TER scorer class."""
 

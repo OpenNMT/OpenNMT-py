@@ -1,4 +1,3 @@
-
 from enum import Enum
 from onmt.utils.logging import logger
 
@@ -31,7 +30,6 @@ class Scorer(object):
 
 
 class PPLScorer(Scorer):
-
     def __init__(self):
         super(PPLScorer, self).__init__(float("inf"), "ppl")
 
@@ -46,7 +44,6 @@ class PPLScorer(Scorer):
 
 
 class AccuracyScorer(Scorer):
-
     def __init__(self):
         super(AccuracyScorer, self).__init__(float("-inf"), "acc")
 
@@ -63,10 +60,7 @@ class AccuracyScorer(Scorer):
 DEFAULT_SCORERS = [PPLScorer(), AccuracyScorer()]
 
 
-SCORER_BUILDER = {
-    "ppl": PPLScorer,
-    "accuracy": AccuracyScorer
-}
+SCORER_BUILDER = {"ppl": PPLScorer, "accuracy": AccuracyScorer}
 
 
 def scorers_from_opts(opt):
@@ -75,21 +69,21 @@ def scorers_from_opts(opt):
     else:
         scorers = []
         for criterion in set(opt.early_stopping_criteria):
-            assert criterion in SCORER_BUILDER.keys(), \
-                "Criterion {} not found".format(criterion)
+            assert criterion in SCORER_BUILDER.keys(), "Criterion {} not found".format(
+                criterion
+            )
             scorers.append(SCORER_BUILDER[criterion]())
         return scorers
 
 
 class EarlyStopping(object):
-
     def __init__(self, tolerance, scorers=DEFAULT_SCORERS):
         """
-            Callable class to keep track of early stopping.
+        Callable class to keep track of early stopping.
 
-            Args:
-                tolerance(int): number of validation steps without improving
-                scorer(fn): list of scorers to validate performance on dev
+        Args:
+            tolerance(int): number of validation steps without improving
+            scorer(fn): list of scorers to validate performance on dev
         """
 
         self.tolerance = tolerance
@@ -119,12 +113,17 @@ class EarlyStopping(object):
             # Don't do anything
             return
 
-        if all([scorer.is_improving(valid_stats) for scorer
-                in self.early_stopping_scorers]):
+        if all(
+            [scorer.is_improving(valid_stats) for scorer in self.early_stopping_scorers]
+        ):
             self._update_increasing(valid_stats, step)
 
-        elif all([scorer.is_decreasing(valid_stats) for scorer
-                  in self.early_stopping_scorers]):
+        elif all(
+            [
+                scorer.is_decreasing(valid_stats)
+                for scorer in self.early_stopping_scorers
+            ]
+        ):
             self._update_decreasing()
 
         else:
@@ -134,13 +133,11 @@ class EarlyStopping(object):
         self.stalled_tolerance -= 1
 
         logger.info(
-            "Stalled patience: {}/{}".format(self.stalled_tolerance,
-                                             self.tolerance))
+            "Stalled patience: {}/{}".format(self.stalled_tolerance, self.tolerance)
+        )
 
         if self.stalled_tolerance == 0:
-            logger.info(
-                "Training finished after stalled validations. Early Stop!"
-            )
+            logger.info("Training finished after stalled validations. Early Stop!")
             self._log_best_step()
 
         self._decreasing_or_stopped_status_update(self.stalled_tolerance)
@@ -150,7 +147,8 @@ class EarlyStopping(object):
         for scorer in self.early_stopping_scorers:
             logger.info(
                 "Model is improving {}: {:g} --> {:g}.".format(
-                    scorer.name, scorer.best_score, scorer(valid_stats))
+                    scorer.name, scorer.best_score, scorer(valid_stats)
+                )
             )
             # Update best score of each criteria
             scorer.update(valid_stats)
@@ -168,8 +166,7 @@ class EarlyStopping(object):
 
         # Log
         logger.info(
-            "Decreasing patience: {}/{}".format(self.current_tolerance,
-                                                self.tolerance)
+            "Decreasing patience: {}/{}".format(self.current_tolerance, self.tolerance)
         )
         # Log
         if self.current_tolerance == 0:
@@ -179,13 +176,10 @@ class EarlyStopping(object):
         self._decreasing_or_stopped_status_update(self.current_tolerance)
 
     def _log_best_step(self):
-        logger.info("Best model found at step {}".format(
-            self.current_step_best))
+        logger.info("Best model found at step {}".format(self.current_step_best))
 
     def _decreasing_or_stopped_status_update(self, tolerance):
-        self.status = PatienceEnum.DECREASING \
-            if tolerance > 0 \
-            else PatienceEnum.STOPPED
+        self.status = PatienceEnum.DECREASING if tolerance > 0 else PatienceEnum.STOPPED
 
     def is_improving(self):
         return self.status == PatienceEnum.IMPROVING

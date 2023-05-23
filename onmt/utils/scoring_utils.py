@@ -10,10 +10,11 @@ from onmt.transforms import get_transforms_cls, make_transforms, TransformPipe
 from itertools import repeat
 
 
-class ScoringPreparator():
+class ScoringPreparator:
     """Allow the calculation of metrics via the Trainer's
-     training_eval_handler method.
+    training_eval_handler method.
     """
+
     def __init__(self, vocabs, opt):
         self.vocabs = vocabs
         self.opt = opt
@@ -46,31 +47,38 @@ class ScoringPreparator():
         nb_tokens_per_sentence = batch_side.shape[1]
         nb_feats = batch_side.shape[2] - 1
 
-        indices_to_remove = [vocab.lookup_token(token)
-                             for token in [DefaultTokens.PAD,
-                                           DefaultTokens.EOS,
-                                           DefaultTokens.BOS]]
+        indices_to_remove = [
+            vocab.lookup_token(token)
+            for token in [DefaultTokens.PAD, DefaultTokens.EOS, DefaultTokens.BOS]
+        ]
         transformed_sentences = []
         for i in range(nb_sentences):
-            tokens = [vocab.lookup_index(batch_side[i, t, 0])
-                      for t in range(nb_tokens_per_sentence)
-                      if batch_side[i, t, 0] not in indices_to_remove]
+            tokens = [
+                vocab.lookup_index(batch_side[i, t, 0])
+                for t in range(nb_tokens_per_sentence)
+                if batch_side[i, t, 0] not in indices_to_remove
+            ]
             transformed_sentences.append(tokens)
 
         if nb_feats > 0:
             transformed_feats = []
             for i_feat in range(nb_feats):
                 fv = self.vocabs["src_feats"][i_feat]
-                indices_to_remove = [fv.lookup_token(token)
-                                     for token in [DefaultTokens.PAD,
-                                                   DefaultTokens.EOS,
-                                                   DefaultTokens.BOS]]
+                indices_to_remove = [
+                    fv.lookup_token(token)
+                    for token in [
+                        DefaultTokens.PAD,
+                        DefaultTokens.EOS,
+                        DefaultTokens.BOS,
+                    ]
+                ]
                 transformed_feat = []
                 for i in range(nb_sentences):
-                    tokens = [fv.lookup_index(batch_side[i, t, i_feat+1])
-                              for t in range(nb_tokens_per_sentence)
-                              if batch_side[i, t, i_feat+1]
-                              not in indices_to_remove]
+                    tokens = [
+                        fv.lookup_index(batch_side[i, t, i_feat + 1])
+                        for t in range(nb_tokens_per_sentence)
+                        if batch_side[i, t, i_feat + 1] not in indices_to_remove
+                    ]
                     transformed_feat.append(tokens)
                 transformed_feats.append(transformed_feat)
         else:
@@ -88,19 +96,16 @@ class ScoringPreparator():
         with the fields "src" and "tgt"
         """
 
-        transformed_srcs, transformed_src_feats = \
-            self.ids_to_tokens_batch_side(batch, 'src')
-        transformed_tgts, _ = \
-            self.ids_to_tokens_batch_side(batch, 'tgt')
+        transformed_srcs, transformed_src_feats = self.ids_to_tokens_batch_side(
+            batch, "src"
+        )
+        transformed_tgts, _ = self.ids_to_tokens_batch_side(batch, "tgt")
 
         transformed_batch = []
-        for src, tgt, *src_feats in zip(transformed_srcs,
-                                        transformed_tgts,
-                                        *transformed_src_feats):
-            ex = {
-                "src": src,
-                "tgt": tgt
-            }
+        for src, tgt, *src_feats in zip(
+            transformed_srcs, transformed_tgts, *transformed_src_feats
+        ):
+            ex = {"src": src, "tgt": tgt}
             if src_feats[0] is not None:
                 ex["src_feats"] = src_feats
             transformed_batch.append(ex)
@@ -125,7 +130,7 @@ class ScoringPreparator():
         model_opt = self.opt
         parser = ArgumentParser()
         translate_opts(parser)
-        base_args = (["-model", "dummy"] + ["-src", "dummy"])
+        base_args = ["-model", "dummy"] + ["-src", "dummy"]
         opt = parser.parse_args(base_args)
         opt.gpu = gpu_rank
         ArgumentParser.validate_translate_opts(opt)
@@ -142,7 +147,8 @@ class ScoringPreparator():
             out_file=out_file,
             report_align=opt.report_align,
             report_score=False,
-            logger=None)
+            logger=None,
+        )
         # translate
         preds = []
         raw_sources = []
@@ -154,30 +160,33 @@ class ScoringPreparator():
             numeric = []
             for i, ex in enumerate(batch):
                 if ex is not None:
-                    raw_sources.append(ex['src'])
-                    raw_refs.append(ex['tgt'])
-                    if isinstance(ex['src'], bytes):
-                        ex['src'] = ex['src'].decode("utf-8")
-                    idxs = translator.vocabs['src'](ex['src'])
-                    num_ex = {'src': {'src': " ".join(ex['src']),
-                              'src_ids': idxs},
-                              'srclen': len(ex['src']),
-                              'tgt': None,
-                              'indices': i,
-                              'align': None}
+                    raw_sources.append(ex["src"])
+                    raw_refs.append(ex["tgt"])
+                    if isinstance(ex["src"], bytes):
+                        ex["src"] = ex["src"].decode("utf-8")
+                    idxs = translator.vocabs["src"](ex["src"])
+                    num_ex = {
+                        "src": {"src": " ".join(ex["src"]), "src_ids": idxs},
+                        "srclen": len(ex["src"]),
+                        "tgt": None,
+                        "indices": i,
+                        "align": None,
+                    }
                     if "src_feats" in ex:
-                        fs_idxs = [fv(f) for fv, f in
-                                   zip(translator.vocabs["src_feats"],
-                                       ex["src_feats"])]
+                        fs_idxs = [
+                            fv(f)
+                            for fv, f in zip(
+                                translator.vocabs["src_feats"], ex["src_feats"]
+                            )
+                        ]
                         num_ex["src"]["feats"] = fs_idxs
                     num_ex = _addcopykeys(translator.vocabs["src"], num_ex)
-                    num_ex["src"]["src"] = ex['src']
+                    num_ex["src"]["src"] = ex["src"]
                     numeric.append(num_ex)
             numeric.sort(key=text_sort_key, reverse=True)
             infer_iter = [tensorify(self.vocabs, numeric)]
             infer_iter = IterOnDevice(infer_iter, opt.gpu)
-            _, preds_ = translator._translate(
-                        infer_iter, transform=self.transform)
+            _, preds_ = translator._translate(infer_iter, transform=self.transform)
             preds += preds_
 
         # apply_reverse refs
@@ -192,9 +201,9 @@ class ScoringPreparator():
 
         # save results
         if len(preds) > 0 and self.opt.scoring_debug:
-            path = os.path.join(self.opt.dump_preds,
-                                "preds.{}_step_{}.{}".format(
-                                    mode, step, "txt"))
+            path = os.path.join(
+                self.opt.dump_preds, "preds.{}_step_{}.{}".format(mode, step, "txt")
+            )
             with open(path, "a") as file:
                 for i in range(len(preds)):
                     file.write("SOURCE: {}\n".format(raw_sources[i]))

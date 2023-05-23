@@ -1,4 +1,3 @@
-
 """Module for dynamic scoring"""
 import os
 import importlib
@@ -28,11 +27,12 @@ def register_scorer(metric):
     def register_scorer_cls(cls):
         if metric in AVAILABLE_SCORERS.keys():
             raise ValueError(
-                'Cannot register duplicate scorer for metric ({})'.format(
-                    metric))
+                "Cannot register duplicate scorer for metric ({})".format(metric)
+            )
         if not issubclass(cls, Scorer):
-            raise ValueError('scorer ({}: {}) must extend Scorer'.format(
-                metric, cls.__name__))
+            raise ValueError(
+                "scorer ({}: {}) must extend Scorer".format(metric, cls.__name__)
+            )
         AVAILABLE_SCORERS[metric] = cls
         return cls
 
@@ -43,8 +43,10 @@ def register_scorer(metric):
 scorer_dir = os.path.dirname(__file__)
 for file in os.listdir(scorer_dir):
     path = os.path.join(scorer_dir, file)
-    if not file.startswith('_') and not file.startswith('.') and (
-            file.endswith('.py') or os.path.isdir(path)):
-        file_name = file[:file.find('.py')] if file.endswith('.py') else file
-        module = importlib.import_module(
-            'onmt.scorers.' + file_name)
+    if (
+        not file.startswith("_")
+        and not file.startswith(".")
+        and (file.endswith(".py") or os.path.isdir(path))
+    ):
+        file_name = file[: file.find(".py")] if file.endswith(".py") else file
+        module = importlib.import_module("onmt.scorers." + file_name)

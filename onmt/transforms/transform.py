@@ -66,7 +66,7 @@ class Transform(object):
             is_train (bool): Indicate if src/tgt is training data;bject.
         """
         transformed_batch = []
-        for (example, _, cid) in batch:
+        for example, _, cid in batch:
             example = self.apply(example, is_train=is_train, **kwargs)
             if example is not None:
                 transformed_batch.append((example, self, cid))
@@ -88,8 +88,8 @@ class Transform(object):
     def __getstate__(self):
         """Pickling following for rebuild."""
         state = {"opts": self.opts}
-        if hasattr(self, 'vocabs'):
-            state['vocabs'] = self.vocabs
+        if hasattr(self, "vocabs"):
+            state["vocabs"] = self.vocabs
         return state
 
     def _parse_opts(self):
@@ -106,21 +106,21 @@ class Transform(object):
         """Reload when unpickling from save file."""
         self.opts = state["opts"]
         self._parse_opts()
-        vocabs = state.get('vocabs', None)
+        vocabs = state.get("vocabs", None)
         self.warm_up(vocabs=vocabs)
 
     def stats(self):
         """Return statistic message."""
-        return ''
+        return ""
 
     def _repr_args(self):
         """Return str represent key arguments for class."""
-        return ''
+        return ""
 
     def __repr__(self):
         cls_name = type(self).__name__
         cls_args = self._repr_args()
-        return '{}({})'.format(cls_name, cls_args)
+        return "{}({})".format(cls_name, cls_args)
 
 
 class ObservableStats:
@@ -139,14 +139,13 @@ class ObservableStats:
     def __str__(self) -> str:
         return "{}({})".format(
             self.name(),
-            ", ".join(
-                f"{name}={getattr(self, name)}" for name in self.__slots__
-            )
+            ", ".join(f"{name}={getattr(self, name)}" for name in self.__slots__),
         )
 
 
 class TransformStatistics:
     """A observer containing runing statistics."""
+
     def __init__(self):
         self.observables = {}
 
@@ -184,8 +183,9 @@ class TransformPipe(Transform):
     def build_from(cls, transform_list):
         """Return a `TransformPipe` instance build from `transform_list`."""
         for transform in transform_list:
-            assert isinstance(transform, Transform), \
-                "transform should be a instance of Transform."
+            assert isinstance(
+                transform, Transform
+            ), "transform should be a instance of Transform."
         transform_pipe = cls(None, transform_list)
         return transform_pipe
 
@@ -215,7 +215,8 @@ class TransformPipe(Transform):
         """
         for transform in self.transforms:
             example = transform.apply(
-                example, is_train=is_train, stats=self.statistics, **kwargs)
+                example, is_train=is_train, stats=self.statistics, **kwargs
+            )
             if example is None:
                 break
         return example
@@ -229,7 +230,8 @@ class TransformPipe(Transform):
         """
         for transform in self.transforms:
             batch = transform.batch_apply(
-                batch, is_train=is_train, stats=self.statistics, **kwargs)
+                batch, is_train=is_train, stats=self.statistics, **kwargs
+            )
             if batch is None:
                 break
         return batch
@@ -256,7 +258,7 @@ class TransformPipe(Transform):
         info_args = []
         for transform in self.transforms:
             info_args.append(repr(transform))
-        return ', '.join(info_args)
+        return ", ".join(info_args)
 
 
 def make_transforms(opts, transforms_cls, vocabs):
@@ -264,9 +266,7 @@ def make_transforms(opts, transforms_cls, vocabs):
     transforms = {}
     for name, transform_cls in transforms_cls.items():
         if transform_cls.require_vocab() and vocabs is None:
-            logger.warning(
-                f"{transform_cls.__name__} require vocab to apply, skip it."
-            )
+            logger.warning(f"{transform_cls.__name__} require vocab to apply, skip it.")
             continue
         transform_obj = transform_cls(opts)
         transform_obj.warm_up(vocabs)
@@ -276,13 +276,13 @@ def make_transforms(opts, transforms_cls, vocabs):
 
 def get_specials(opts, transforms_cls_dict):
     """Get specials of transforms that should be registed in Vocab."""
-    all_specials = {'src': [], 'tgt': []}
+    all_specials = {"src": [], "tgt": []}
     for name, transform_cls in transforms_cls_dict.items():
         src_specials, tgt_specials = transform_cls.get_specials(opts)
         for src_spec in src_specials:
-            all_specials['src'].append(src_spec)
+            all_specials["src"].append(src_spec)
         for tgt_spec in tgt_specials:
-            all_specials['tgt'].append(tgt_spec)
+            all_specials["tgt"].append(tgt_spec)
     logger.info(f"Get special vocabs from Transforms: {all_specials}.")
     return all_specials
 

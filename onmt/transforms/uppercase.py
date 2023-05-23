@@ -4,7 +4,7 @@ import unicodedata
 import random
 
 
-@register_transform(name='uppercase')
+@register_transform(name="uppercase")
 class UpperCaseTransform(Transform):
     """
     Convert source and target examples to uppercase.
@@ -24,8 +24,13 @@ class UpperCaseTransform(Transform):
         """Add an option for the corpus ratio to apply this transform."""
 
         group = parser.add_argument_group("Transform/Uppercase")
-        group.add("--upper_corpus_ratio", "-upper_corpus_ratio", type=float,
-                  default=0.01, help="Corpus ratio to apply uppercasing.")
+        group.add(
+            "--upper_corpus_ratio",
+            "-upper_corpus_ratio",
+            type=float,
+            default=0.01,
+            help="Corpus ratio to apply uppercasing.",
+        )
 
     def _parse_opts(self):
         self.upper_corpus_ratio = self.opts.upper_corpus_ratio
@@ -36,16 +41,21 @@ class UpperCaseTransform(Transform):
         if random.random() > self.upper_corpus_ratio:
             return example
 
-        src_str = ' '.join(example['src'])
-        src_str = ''.join(c for c in unicodedata.normalize('NFD',
-                          src_str.upper()) if unicodedata.category(c) != 'Mn')
-        example['src'] = src_str.split()
+        src_str = " ".join(example["src"])
+        src_str = "".join(
+            c
+            for c in unicodedata.normalize("NFD", src_str.upper())
+            if unicodedata.category(c) != "Mn"
+        )
+        example["src"] = src_str.split()
 
-        if example['tgt'] is not None:
-            tgt_str = ' '.join(example['tgt'])
-            tgt_str = ''.join(c for c in unicodedata.normalize('NFD',
-                              tgt_str.upper()) if unicodedata.category(c) !=
-                              'Mn')
-            example['tgt'] = tgt_str.split()
+        if example["tgt"] is not None:
+            tgt_str = " ".join(example["tgt"])
+            tgt_str = "".join(
+                c
+                for c in unicodedata.normalize("NFD", tgt_str.upper())
+                if unicodedata.category(c) != "Mn"
+            )
+            example["tgt"] = tgt_str.split()
 
         return example

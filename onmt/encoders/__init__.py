@@ -7,9 +7,20 @@ from onmt.encoders.cnn_encoder import CNNEncoder
 from onmt.encoders.mean_encoder import MeanEncoder
 
 
-str2enc = {"ggnn": GGNNEncoder, "rnn": RNNEncoder, "brnn": RNNEncoder,
-           "cnn": CNNEncoder, "transformer": TransformerEncoder,
-           "mean": MeanEncoder}
+str2enc = {
+    "ggnn": GGNNEncoder,
+    "rnn": RNNEncoder,
+    "brnn": RNNEncoder,
+    "cnn": CNNEncoder,
+    "transformer": TransformerEncoder,
+    "mean": MeanEncoder,
+}
 
-__all__ = ["EncoderBase", "TransformerEncoder", "RNNEncoder", "CNNEncoder",
-           "MeanEncoder", "str2enc"]
+__all__ = [
+    "EncoderBase",
+    "TransformerEncoder",
+    "RNNEncoder",
+    "CNNEncoder",
+    "MeanEncoder",
+    "str2enc",
+]

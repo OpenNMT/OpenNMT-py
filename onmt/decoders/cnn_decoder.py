@@ -8,7 +8,7 @@ from onmt.modules import ConvMultiStepAttention, GlobalAttention
 from onmt.utils.cnn_factory import shape_transform, GatedConv
 from onmt.decoders.decoder import DecoderBase
 
-SCALE_WEIGHT = 0.5 ** 0.5
+SCALE_WEIGHT = 0.5**0.5
 
 
 class CNNDecoder(DecoderBase):
@@ -18,9 +18,17 @@ class CNNDecoder(DecoderBase):
     Consists of residual convolutional layers, with ConvMultiStepAttention.
     """
 
-    def __init__(self, num_layers, hidden_size, attn_type,
-                 copy_attn, cnn_kernel_width, dropout, embeddings,
-                 copy_attn_type):
+    def __init__(
+        self,
+        num_layers,
+        hidden_size,
+        attn_type,
+        copy_attn,
+        cnn_kernel_width,
+        dropout,
+        embeddings,
+        copy_attn_type,
+    ):
         super(CNNDecoder, self).__init__()
 
         self.cnn_kernel_width = cnn_kernel_width
@@ -32,8 +40,10 @@ class CNNDecoder(DecoderBase):
         input_size = self.embeddings.embedding_size
         self.linear = nn.Linear(input_size, hidden_size)
         self.conv_layers = nn.ModuleList(
-            [GatedConv(hidden_size, cnn_kernel_width, dropout, True)
-             for i in range(num_layers)]
+            [
+                GatedConv(hidden_size, cnn_kernel_width, dropout, True)
+                for i in range(num_layers)
+            ]
         )
         self.attn_layers = nn.ModuleList(
             [ConvMultiStepAttention(hidden_size) for i in range(num_layers)]
@@ -43,8 +53,7 @@ class CNNDecoder(DecoderBase):
         # Set up a separate copy attention layer if needed.
         assert not copy_attn, "Copy mechanism not yet tested in conv2conv"
         if copy_attn:
-            self.copy_attn = GlobalAttention(
-                hidden_size, attn_type=copy_attn_type)
+            self.copy_attn = GlobalAttention(hidden_size, attn_type=copy_attn_type)
         else:
             self.copy_attn = None
 
@@ -59,7 +68,8 @@ class CNNDecoder(DecoderBase):
             opt.cnn_kernel_width,
             opt.dropout[0] if type(opt.dropout) is list else opt.dropout,
             embeddings,
-            opt.copy_attn_type)
+            opt.copy_attn_type,
+        )
 
     def init_state(self, _, enc_out, enc_hidden):
         """Init decoder state."""
@@ -75,7 +85,7 @@ class CNNDecoder(DecoderBase):
         self.state["previous_input"] = self.state["previous_input"].detach()
 
     def forward(self, tgt, enc_out, step=None, **kwargs):
-        """ See :obj:`onmt.modules.RNNDecoderBase.forward()`"""
+        """See :obj:`onmt.modules.RNNDecoderBase.forward()`"""
 
         if self.state["previous_input"] is not None:
             tgt = torch.cat([self.state["previous_input"], tgt], 1)
@@ -94,8 +104,7 @@ class CNNDecoder(DecoderBase):
         # The combination of output of CNNEncoder and source embeddings.
         enc_out_c = self.state["src"]
 
-        emb_reshape = tgt_emb.view(
-            tgt_emb.size(0) * tgt_emb.size(1), -1)
+        emb_reshape = tgt_emb.view(tgt_emb.size(0) * tgt_emb.size(1), -1)
         linear_out = self.linear(emb_reshape)
         x = linear_out.view(tgt_emb.size(0), tgt_emb.size(1), -1)
         x = shape_transform(x)
@@ -108,16 +117,15 @@ class CNNDecoder(DecoderBase):
         for conv, attention in zip(self.conv_layers, self.attn_layers):
             new_target_input = torch.cat([pad, x], 2)
             out = conv(new_target_input)
-            c, attn = attention(base_target_emb, out,
-                                enc_out_t, enc_out_c)
+            c, attn = attention(base_target_emb, out, enc_out_t, enc_out_c)
             x = (x + (c + out) * SCALE_WEIGHT) * SCALE_WEIGHT
 
         dec_outs = x.squeeze(3).transpose(1, 2)
 
         # Process the result and update the attentions.
         if self.state["previous_input"] is not None:
-            dec_outs = dec_outs[:, self.state["previous_input"].size(1):, :]
-            attn = attn[:, self.state["previous_input"].size(1):].squeeze()
+            dec_outs = dec_outs[:, self.state["previous_input"].size(1) :, :]
+            attn = attn[:, self.state["previous_input"].size(1) :].squeeze()
             attn = torch.stack([attn])
         attns["std"] = attn
         if self.copy_attn is not None:

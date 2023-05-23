@@ -29,7 +29,7 @@ class TransformerDecoderLayerBase(nn.Module):
         alignment_heads=0,
         pos_ffn_activation_fn=ActivationFunction.relu,
         add_qkvbias=False,
-        layer_norm='standard'
+        layer_norm="standard",
     ):
         """
         Args:
@@ -70,22 +70,22 @@ class TransformerDecoderLayerBase(nn.Module):
                 dropout=attention_dropout,
                 max_relative_positions=max_relative_positions,
                 attn_type="self",
-                add_qkvbias=add_qkvbias
+                add_qkvbias=add_qkvbias,
             )
         elif self_attn_type == "average":
             self.self_attn = AverageAttention(
                 d_model, dropout=attention_dropout, aan_useffn=aan_useffn
             )
 
-        self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout,
-                                                    pos_ffn_activation_fn,
-                                                    layer_norm)
-        if layer_norm == 'standard':
+        self.feed_forward = PositionwiseFeedForward(
+            d_model, d_ff, dropout, pos_ffn_activation_fn, layer_norm
+        )
+        if layer_norm == "standard":
             self.layer_norm_1 = nn.LayerNorm(d_model, eps=1e-6)
-        elif layer_norm == 'rms':
+        elif layer_norm == "rms":
             self.layer_norm_1 = RMSNorm(d_model, eps=1e-6)
         else:
-            raise ValueError(f'{layer_norm} layer norm type is not supported')
+            raise ValueError(f"{layer_norm} layer norm type is not supported")
         self.drop = nn.Dropout(dropout)
         self.full_context_alignment = full_context_alignment
         self.alignment_heads = alignment_heads
@@ -155,20 +155,12 @@ class TransformerDecoderLayerBase(nn.Module):
     def _forward_self_attn(self, layer_in_norm, dec_mask, step):
         if self.self_attn_type == "scaled-dot":
             return self.self_attn(
-                layer_in_norm,
-                layer_in_norm,
-                layer_in_norm,
-                mask=dec_mask,
-                step=step
+                layer_in_norm, layer_in_norm, layer_in_norm, mask=dec_mask, step=step
             )
         elif self.self_attn_type == "average":
-            return self.self_attn(
-                layer_in_norm, mask=dec_mask, step=step
-            )
+            return self.self_attn(layer_in_norm, mask=dec_mask, step=step)
         else:
-            raise ValueError(
-                f"self attention {type(self.self_attn)} not supported"
-            )
+            raise ValueError(f"self attention {type(self.self_attn)} not supported")
 
 
 class TransformerDecoderLayer(TransformerDecoderLayerBase):
@@ -194,7 +186,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
         alignment_heads=0,
         pos_ffn_activation_fn=ActivationFunction.relu,
         add_qkvbias=False,
-        layer_norm='standard'
+        layer_norm="standard",
     ):
         """
         Args:
@@ -213,24 +205,24 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
             alignment_heads,
             pos_ffn_activation_fn=pos_ffn_activation_fn,
             add_qkvbias=add_qkvbias,
-            layer_norm=layer_norm
+            layer_norm=layer_norm,
         )
         self.context_attn = MultiHeadedAttention(
-            heads, d_model, dropout=attention_dropout,
+            heads,
+            d_model,
+            dropout=attention_dropout,
             attn_type="context",
-            add_qkvbias=add_qkvbias
+            add_qkvbias=add_qkvbias,
         )
-        if layer_norm == 'standard':
+        if layer_norm == "standard":
             self.layer_norm_2 = nn.LayerNorm(d_model, eps=1e-6)
-        elif layer_norm == 'rms':
+        elif layer_norm == "rms":
             self.layer_norm_2 = RMSNorm(d_model, eps=1e-6)
         else:
-            raise ValueError(f'{layer_norm} layer norm type is not supported')
+            raise ValueError(f"{layer_norm} layer norm type is not supported")
 
     def update_dropout(self, dropout, attention_dropout):
-        super(TransformerDecoderLayer, self).update_dropout(
-            dropout, attention_dropout
-        )
+        super(TransformerDecoderLayer, self).update_dropout(dropout, attention_dropout)
         self.context_attn.update_dropout(attention_dropout)
 
     def _forward(
@@ -275,28 +267,20 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
 
         layer_in_norm = self.layer_norm_1(layer_in)
 
-        query, _ = self._forward_self_attn(
-            layer_in_norm, dec_mask, step
-        )
+        query, _ = self._forward_self_attn(layer_in_norm, dec_mask, step)
 
         query = self.drop(query) + layer_in
 
         query_norm = self.layer_norm_2(query)
 
-        mid, attns = self.context_attn(
-            enc_out,
-            enc_out,
-            query_norm,
-            mask=src_pad_mask
-        )
+        mid, attns = self.context_attn(enc_out, enc_out, query_norm, mask=src_pad_mask)
         layer_out = self.feed_forward(self.drop(mid) + query)
 
         return layer_out, attns
 
 
 class TransformerDecoderBase(DecoderBase):
-    def __init__(self, d_model, copy_attn, embeddings, alignment_layer,
-                 layer_norm='standard'):
+    def __init__(self, d_model, copy_attn, embeddings, alignment_layer, layer_norm):
         super(TransformerDecoderBase, self).__init__()
 
         self.embeddings = embeddings
@@ -308,12 +292,12 @@ class TransformerDecoderBase(DecoderBase):
         # attention. But it was never actually used -- the "copy" attention
         # just reuses the context attention.
         self._copy = copy_attn
-        if layer_norm == 'standard':
+        if layer_norm == "standard":
             self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
-        elif layer_norm == 'rms':
+        elif layer_norm == "rms":
             self.layer_norm = RMSNorm(d_model, eps=1e-6)
         else:
-            raise ValueError(f'{layer_norm} layer norm type is not supported')
+            raise ValueError(f"{layer_norm} layer norm type is not supported")
 
         self.alignment_layer = alignment_layer
 
@@ -339,7 +323,7 @@ class TransformerDecoderBase(DecoderBase):
             alignment_heads=opt.alignment_heads,
             pos_ffn_activation_fn=opt.pos_ffn_activation_fn,
             add_qkvbias=opt.add_qkvbias,
-            layer_norm=opt.layer_norm
+            layer_norm=opt.layer_norm,
         )
 
     def init_state(self, src, enc_out, enc_final_hs):
@@ -347,26 +331,23 @@ class TransformerDecoderBase(DecoderBase):
         self.state["src"] = src
 
     def map_state(self, fn):
-
         if self.state["src"] is not None:
             self.state["src"] = fn(self.state["src"], 0)
         for layer in self.transformer_layers:
-            if hasattr(layer, 'context_attn'):
-                if layer.context_attn.layer_cache[1]['keys'].numel() != 0:
-                    x = fn(layer.context_attn.layer_cache[1]['keys'], 0)
-                    y = fn(layer.context_attn.layer_cache[1]['values'], 0)
-                    layer.context_attn.layer_cache = True, {'keys': x,
-                                                            'values': y}
+            if hasattr(layer, "context_attn"):
+                if layer.context_attn.layer_cache[1]["keys"].numel() != 0:
+                    x = fn(layer.context_attn.layer_cache[1]["keys"], 0)
+                    y = fn(layer.context_attn.layer_cache[1]["values"], 0)
+                    layer.context_attn.layer_cache = True, {"keys": x, "values": y}
             if isinstance(layer.self_attn, AverageAttention):
-                if layer.self_attn.layer_cache[1]['prev_g'].numel() != 0:
-                    x = fn(layer.self_attn.layer_cache[1]['prev_g'], 0)
-                    layer.self_attn.layer_cache = True, {'prev_g': x}
+                if layer.self_attn.layer_cache[1]["prev_g"].numel() != 0:
+                    x = fn(layer.self_attn.layer_cache[1]["prev_g"], 0)
+                    layer.self_attn.layer_cache = True, {"prev_g": x}
             else:
-                if layer.self_attn.layer_cache[1]['keys'].numel() != 0:
-                    x = fn(layer.self_attn.layer_cache[1]['keys'], 0)
-                    y = fn(layer.self_attn.layer_cache[1]['values'], 0)
-                    layer.self_attn.layer_cache = True, {'keys': x,
-                                                         'values': y}
+                if layer.self_attn.layer_cache[1]["keys"].numel() != 0:
+                    x = fn(layer.self_attn.layer_cache[1]["keys"], 0)
+                    y = fn(layer.self_attn.layer_cache[1]["values"], 0)
+                    layer.self_attn.layer_cache = True, {"keys": x, "values": y}
 
     def detach_state(self):
         raise NotImplementedError
@@ -425,10 +406,10 @@ class TransformerDecoder(TransformerDecoderBase):
         alignment_heads,
         pos_ffn_activation_fn=ActivationFunction.relu,
         add_qkvbias=False,
-        layer_norm='standard'
+        layer_norm="standard",
     ):
         super(TransformerDecoder, self).__init__(
-            d_model, copy_attn, embeddings, alignment_layer
+            d_model, copy_attn, embeddings, alignment_layer, layer_norm
         )
 
         self.transformer_layers = nn.ModuleList(
@@ -446,7 +427,7 @@ class TransformerDecoder(TransformerDecoderBase):
                     alignment_heads=alignment_heads,
                     pos_ffn_activation_fn=pos_ffn_activation_fn,
                     add_qkvbias=add_qkvbias,
-                    layer_norm=layer_norm
+                    layer_norm=layer_norm,
                 )
                 for i in range(num_layers)
             ]
@@ -469,15 +450,16 @@ class TransformerDecoder(TransformerDecoderBase):
         elif step is None:
             for layer in self.transformer_layers:
                 if isinstance(layer.self_attn, AverageAttention):
-                    layer.self_attn.layer_cache =\
-                        False, {'prev_g': torch.tensor([])}
+                    layer.self_attn.layer_cache = False, {"prev_g": torch.tensor([])}
                 else:
                     layer.self_attn.layer_cache = (
-                        False, {'keys': torch.tensor([]),
-                                'values': torch.tensor([])})
+                        False,
+                        {"keys": torch.tensor([]), "values": torch.tensor([])},
+                    )
                 layer.context_attn.layer_cache = (
-                    False, {'keys': torch.tensor([]),
-                            'values': torch.tensor([])})
+                    False,
+                    {"keys": torch.tensor([]), "values": torch.tensor([])},
+                )
 
         tgt_words = tgt[:, :, 0]
 
@@ -520,7 +502,6 @@ class TransformerDecoder(TransformerDecoderBase):
         return dec_out, attns
 
     def _init_cache(self, enc_out):
-
         batch_size = enc_out.size(0)
         depth = enc_out.size(-1)
 
@@ -529,30 +510,34 @@ class TransformerDecoder(TransformerDecoderBase):
             # layer_cache becomes active in the MultiHeadedAttention fwd
             layer.context_attn.layer_cache = (
                 True,
-                {'keys': torch.tensor([], device=enc_out.device),
-                 'values': torch.tensor([], device=enc_out.device)}
-                )
+                {
+                    "keys": torch.tensor([], device=enc_out.device),
+                    "values": torch.tensor([], device=enc_out.device),
+                },
+            )
             if isinstance(layer.self_attn, AverageAttention):
-                layer.self_attn.layer_cache = True, {'prev_g': torch.zeros(
-                     (batch_size, 1, depth), device=enc_out.device
-                ).to(enc_out.dtype)}
+                layer.self_attn.layer_cache = True, {
+                    "prev_g": torch.zeros(
+                        (batch_size, 1, depth), device=enc_out.device
+                    ).to(enc_out.dtype)
+                }
             else:
                 layer.self_attn.layer_cache = (
                     True,
-                    {'keys': torch.tensor([], device=enc_out.device),
-                     'values': torch.tensor([], device=enc_out.device)}
-                    )
+                    {
+                        "keys": torch.tensor([], device=enc_out.device),
+                        "values": torch.tensor([], device=enc_out.device),
+                    },
+                )
 
 
 class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
     """Transformer Decoder only layer block in GPT style.
-   Args:
-        See TransformerDecoderLayerBase
+    Args:
+         See TransformerDecoderLayerBase
     """
 
-    def _forward(
-        self, layer_in, tgt_pad_mask, step=None, future=False
-    ):
+    def _forward(self, layer_in, tgt_pad_mask, step=None, future=False):
         """A naive forward pass for transformer decoder.
 
         # T: could be 1 in the case of stepwise decoding or tgt_len
@@ -583,9 +568,7 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
 
         layer_in_norm = self.layer_norm_1(layer_in)
 
-        query, attns = self._forward_self_attn(
-            layer_in_norm, dec_mask, step
-        )
+        query, attns = self._forward_self_attn(layer_in_norm, dec_mask, step)
 
         layer_out = self.drop(query) + layer_in
 
@@ -596,21 +579,21 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
 
 class TransformerLMDecoder(TransformerDecoderBase):
     """The Transformer decoder from GPT-2
-   Args:
-        num_layers (int): number of decoder layers.
-        d_model (int): size of the model
-        heads (int): number of heads
-        d_ff (int): size of the inner FF layer
-        copy_attn (bool): if using a separate copy attention
-        self_attn_type (str): type of self-attention scaled-dot, average
-        dropout (float): dropout in residual, self-attn(dot) and feed-forward
-        attention_dropout (float): dropout in context_attn (and self-attn(avg))
-        embeddings (onmt.modules.Embeddings):
-            embeddings to use, should have positional encodings
-        max_relative_positions (int):
-            Max distance between inputs in relative positions representations
-        aan_useffn (bool): Turn on the FFN layer in the AAN decoder
-        add_qkvbias (bool): whether to add bias to the Key/Value nn.Linear
+    Args:
+         num_layers (int): number of decoder layers.
+         d_model (int): size of the model
+         heads (int): number of heads
+         d_ff (int): size of the inner FF layer
+         copy_attn (bool): if using a separate copy attention
+         self_attn_type (str): type of self-attention scaled-dot, average
+         dropout (float): dropout in residual, self-attn(dot) and feed-forward
+         attention_dropout (float): dropout in context_attn (and self-attn(avg))
+         embeddings (onmt.modules.Embeddings):
+             embeddings to use, should have positional encodings
+         max_relative_positions (int):
+             Max distance between inputs in relative positions representations
+         aan_useffn (bool): Turn on the FFN layer in the AAN decoder
+         add_qkvbias (bool): whether to add bias to the Key/Value nn.Linear
     """
 
     def __init__(
@@ -631,10 +614,10 @@ class TransformerLMDecoder(TransformerDecoderBase):
         alignment_heads=None,
         pos_ffn_activation_fn=ActivationFunction.relu,
         add_qkvbias=False,
-        layer_norm='standard'
+        layer_norm="standard",
     ):
         super(TransformerLMDecoder, self).__init__(
-            d_model, copy_attn, embeddings, None
+            d_model, copy_attn, embeddings, alignment_layer, layer_norm
         )
         self.transformer_layers = nn.ModuleList(
             [
@@ -651,7 +634,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
                     alignment_heads=None,
                     pos_ffn_activation_fn=pos_ffn_activation_fn,
                     add_qkvbias=add_qkvbias,
-                    layer_norm=layer_norm
+                    layer_norm=layer_norm,
                 )
                 for i in range(num_layers)
             ]
@@ -670,8 +653,9 @@ class TransformerLMDecoder(TransformerDecoderBase):
         elif step is None:
             for layer in self.transformer_layers:
                 layer.self_attn.layer_cache = (
-                    False, {'keys': torch.tensor([]),
-                            'values': torch.tensor([])})
+                    False,
+                    {"keys": torch.tensor([]), "values": torch.tensor([])},
+                )
 
         tgt_words = tgt[:, :, 0]
 
@@ -703,13 +687,14 @@ class TransformerLMDecoder(TransformerDecoderBase):
         return dec_out, attns
 
     def _init_cache(self, tgt=None):
-
         for layer in self.transformer_layers:
             if isinstance(layer.self_attn, AverageAttention):
                 raise NotImplementedError
             else:
                 layer.self_attn.layer_cache = (
                     True,
-                    {'keys': torch.tensor([], device=tgt.device),
-                     'values': torch.tensor([], device=tgt.device)}
-                    )
+                    {
+                        "keys": torch.tensor([], device=tgt.device),
+                        "values": torch.tensor([], device=tgt.device),
+                    },
+                )

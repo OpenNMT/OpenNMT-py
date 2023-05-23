@@ -39,8 +39,7 @@ class PenaltyBuilder(object):
         elif self._pen_is_none(cov_pen):
             return self.coverage_none
         else:
-            raise NotImplementedError("No '{:s}' coverage penalty.".format(
-                cov_pen))
+            raise NotImplementedError("No '{:s}' coverage penalty.".format(cov_pen))
 
     def _length_penalty(self, length_pen):
         if length_pen == "wu":
@@ -50,14 +49,13 @@ class PenaltyBuilder(object):
         elif self._pen_is_none(length_pen):
             return self.length_none
         else:
-            raise NotImplementedError("No '{:s}' length penalty.".format(
-                length_pen))
+            raise NotImplementedError("No '{:s}' length penalty.".format(length_pen))
 
     # Below are all the different penalty terms implemented so far.
     # Subtract coverage penalty from topk log probs.
     # Divide topk log probs by length penalty.
 
-    def coverage_wu(self, cov, beta=0.):
+    def coverage_wu(self, cov, beta=0.0):
         """GNMT coverage re-ranking score.
 
         See "Google's Neural Machine Translation System" :cite:`wu2016google`.
@@ -70,21 +68,20 @@ class PenaltyBuilder(object):
         penalty = -torch.min(cov, cov.clone().fill_(1.0)).log().sum(-1)
         return beta * penalty
 
-    def coverage_summary(self, cov, beta=0.):
+    def coverage_summary(self, cov, beta=0.0):
         """Our summary penalty."""
         penalty = torch.max(cov, cov.clone().fill_(1.0)).sum(-1)
         penalty -= cov.size(-1)
         return beta * penalty
 
-    def coverage_none(self, cov, beta=0.):
+    def coverage_none(self, cov, beta=0.0):
         """Returns zero as penalty"""
-        none = torch.zeros((1,), device=cov.device,
-                           dtype=torch.float)
+        none = torch.zeros((1,), device=cov.device, dtype=torch.float)
         if cov.dim() == 3:
             none = none.unsqueeze(0)
         return none
 
-    def length_wu(self, cur_len, alpha=0.):
+    def length_wu(self, cur_len, alpha=0.0):
         """GNMT length re-ranking score.
 
         See "Google's Neural Machine Translation System" :cite:`wu2016google`.
@@ -92,10 +89,10 @@ class PenaltyBuilder(object):
 
         return ((5 + cur_len) / 6.0) ** alpha
 
-    def length_average(self, cur_len, alpha=1.):
+    def length_average(self, cur_len, alpha=1.0):
         """Returns the current sequence length."""
-        return cur_len ** alpha
+        return cur_len**alpha
 
-    def length_none(self, cur_len, alpha=0.):
+    def length_none(self, cur_len, alpha=0.0):
         """Returns unmodified scores."""
         return 1.0

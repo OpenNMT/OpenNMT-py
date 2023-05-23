@@ -4,6 +4,7 @@ import torch
 from torch import Tensor
 from typing import Optional, Tuple
 import torch.nn as nn
+from .alibi_position_bias import AlibiPositionalBias
 
 
 # Help functions for Rotary Embeddings
@@ -11,6 +12,7 @@ import torch.nn as nn
 # too convoluted to make maxseqlen a parameter.
 # we suppose src_seq_len at training and max_length at inference
 # are both < 2048 tokens.
+
 
 def rotaryembeddings(dim: int, maxseqlen=4096, base=10000):
     inv_freq = 1.0 / (base ** (torch.arange(0, dim, 2).float() / dim))
@@ -35,8 +37,8 @@ def apply_rotary_emb(query, key, rope):
 # Help functions for max_relative positions
 # https://arxiv.org/abs/1803.02155
 
-def relative_matmul(x: Tensor, z: Tensor,
-                    transpose: bool) -> Tensor:
+
+def relative_matmul(x: Tensor, z: Tensor, transpose: bool) -> Tensor:
     """
     Helper function for relative positions attention.
     https://arxiv.org/pdf/1803.02155.pdf
@@ -55,23 +57,23 @@ def relative_matmul(x: Tensor, z: Tensor,
     return x_tz_matmul_r_t
 
 
-def gen_relative_positions(length: int,
-                           max_relative_positions: int,
-                           cache: bool = False,
-                           device: Optional[torch.device] = None
-                           ) -> Tensor:
+def gen_relative_positions(
+    length: int,
+    max_relative_positions: int,
+    cache: bool = False,
+    device: Optional[torch.device] = None,
+) -> Tensor:
     """Generate the clipped relative positions matrix
-       for a given length and maximum relative positions"""
+    for a given length and maximum relative positions"""
     if cache:
-        distance_mat = torch.arange(-length+1, 1, 1,
-                                    device=device).unsqueeze(0)
+        distance_mat = torch.arange(-length + 1, 1, 1, device=device).unsqueeze(0)
     else:
         range_vec = torch.arange(length, device=device)
         range_mat = range_vec.unsqueeze(-1).expand(-1, length).transpose(0, 1)
         distance_mat = range_mat - range_mat.transpose(0, 1)
-    distance_mat_clipped = torch.clamp(distance_mat,
-                                       min=-max_relative_positions,
-                                       max=max_relative_positions)
+    distance_mat_clipped = torch.clamp(
+        distance_mat, min=-max_relative_positions, max=max_relative_positions
+    )
     # Shift values to be >= 0
     final_mat = distance_mat_clipped + max_relative_positions
     return final_mat
@@ -79,14 +81,14 @@ def gen_relative_positions(length: int,
 
 # Help functions to split model dim per head
 
+
 def shape(x: Tensor, dim_per_head: int) -> Tensor:
     """
     Projection.
     [batchsize x length x modeldim]
     -> [batchsize x heads x length x dimperhead]
     """
-    return x.view(x.size(0), x.size(1), -1, dim_per_head) \
-        .transpose(1, 2)
+    return x.view(x.size(0), x.size(1), -1, dim_per_head).transpose(1, 2)
 
 
 def unshape(x: Tensor) -> Tensor:
@@ -95,8 +97,7 @@ def unshape(x: Tensor) -> Tensor:
     [batchsize x heads x length x dimperhead]
     -> [batchsize x length x modeldim]
     """
-    return x.transpose(1, 2).contiguous() \
-        .view(x.size(0), -1, x.size(1) * x.size(3))
+    return x.transpose(1, 2).contiguous().view(x.size(0), -1, x.size(1) * x.size(3))
 
 
 class MultiHeadedAttention(nn.Module):
@@ -142,10 +143,15 @@ class MultiHeadedAttention(nn.Module):
        attn_type: "self" or "context"
     """
 
-    def __init__(self, head_count: int, model_dim: int, dropout: float = 0.1,
-                 max_relative_positions: int = 0,
-                 attn_type: str = None, add_qkvbias=False) -> None:
-
+    def __init__(
+        self,
+        head_count: int,
+        model_dim: int,
+        dropout: float = 0.1,
+        max_relative_positions: int = 0,
+        attn_type: str = None,
+        add_qkvbias=False,
+    ) -> None:
         assert model_dim % head_count == 0
         self.dim_per_head = model_dim // head_count
         super(MultiHeadedAttention, self).__init__()
@@ -160,8 +166,10 @@ class MultiHeadedAttention(nn.Module):
 
         self.max_relative_positions = max_relative_positions
         self.attn_type = attn_type
-        self.layer_cache = (False, {'keys': torch.tensor([]),
-                                    'values': torch.tensor([])})
+        self.layer_cache = (
+            False,
+            {"keys": torch.tensor([]), "values": torch.tensor([])},
+        )
         if max_relative_positions > 0:
             # https://arxiv.org/pdf/1803.02155.pdf
             # in the paper they suggest either two embeds
@@ -170,21 +178,29 @@ class MultiHeadedAttention(nn.Module):
             # for both.
             vocab_size = max_relative_positions * 2 + 1
             self.relative_positions_embeddings = nn.Embedding(
-                vocab_size, self.dim_per_head)
+                vocab_size, self.dim_per_head
+            )
         else:
             self.relative_positions_embeddings = None
 
             if max_relative_positions == -1:  # rotary embeddings
                 self.rope = rotaryembeddings(self.dim_per_head)
 
+            if max_relative_positions == -2:  # alibi positional bias
+                self.alibi = AlibiPositionalBias(head_count)
+
     def update_dropout(self, dropout: float) -> None:
         self.dropout.p = dropout
 
     # @torch.jit.script_method
-    def forward(self, key: Tensor, value: Tensor,
-                query: Tensor, mask: Optional[Tensor] = None,
-                step: Optional[int] = 0
-                ) -> Tuple[Tensor, Tensor]:
+    def forward(
+        self,
+        key: Tensor,
+        value: Tensor,
+        query: Tensor,
+        mask: Optional[Tensor] = None,
+        step: Optional[int] = 0,
+    ) -> Tuple[Tensor, Tensor]:
         """
         Compute the context vector and the attention vectors.
 
@@ -208,9 +224,11 @@ class MultiHeadedAttention(nn.Module):
         # as a reminder at training layer_cache[0] remains False
         if self.layer_cache[0]:
             if self.attn_type == "self":
-                query, key, value = self.linear_query(query),\
-                                    self.linear_keys(query),\
-                                    self.linear_values(query)
+                query, key, value = (
+                    self.linear_query(query),
+                    self.linear_keys(query),
+                    self.linear_values(query),
+                )
                 query = shape(query, self.dim_per_head)
                 key = shape(key, self.dim_per_head)
                 value = shape(value, self.dim_per_head)
@@ -218,42 +236,35 @@ class MultiHeadedAttention(nn.Module):
                 if self.max_relative_positions == -1:  # Rotary Embeddings
                     start_pos = step
                     seqlen = query.size(2)
-                    rope = self.rope[start_pos:
-                                     start_pos +
-                                     seqlen].to(query.device)
+                    rope = self.rope[start_pos : start_pos + seqlen].to(query.device)
 
                     query = query.transpose(1, 2)
                     key = key.transpose(1, 2)
-                    query, key = apply_rotary_emb(query,
-                                                  key,
-                                                  rope=rope)
+                    query, key = apply_rotary_emb(query, key, rope=rope)
                     query = query.transpose(1, 2)
                     key = key.transpose(1, 2)
 
-                if self.layer_cache[1]['keys'].numel() != 0:
-                    key = torch.cat(
-                        (self.layer_cache[1]['keys'], key),
-                        dim=2)
+                if self.layer_cache[1]["keys"].numel() != 0:
+                    key = torch.cat((self.layer_cache[1]["keys"], key), dim=2)
 
-                if self.layer_cache[1]['values'].numel() != 0:
-                    value = torch.cat(
-                        (self.layer_cache[1]['values'], value),
-                        dim=2)
-                self.layer_cache[1]['keys'] = key
-                self.layer_cache[1]['values'] = value
+                if self.layer_cache[1]["values"].numel() != 0:
+                    value = torch.cat((self.layer_cache[1]["values"], value), dim=2)
+                self.layer_cache[1]["keys"] = key
+                self.layer_cache[1]["values"] = value
             elif self.attn_type == "context":
                 query = self.linear_query(query)
                 query = shape(query, self.dim_per_head)
-                if self.layer_cache[1]['keys'].numel() == 0:
-                    key, value = self.linear_keys(key),\
-                                 self.linear_values(value)
+                if self.layer_cache[1]["keys"].numel() == 0:
+                    key, value = self.linear_keys(key), self.linear_values(value)
                     key = shape(key, self.dim_per_head)
                     value = shape(value, self.dim_per_head)
                 else:
-                    key, value = self.layer_cache[1]['keys'],\
-                               self.layer_cache[1]['values']
-                self.layer_cache[1]['keys'] = key
-                self.layer_cache[1]['values'] = value
+                    key, value = (
+                        self.layer_cache[1]["keys"],
+                        self.layer_cache[1]["values"],
+                    )
+                self.layer_cache[1]["keys"] = key
+                self.layer_cache[1]["values"] = value
         else:
             key = self.linear_keys(key)
             value = self.linear_values(value)
@@ -265,15 +276,11 @@ class MultiHeadedAttention(nn.Module):
             if self.max_relative_positions == -1:  # Rotary Embeddings
                 start_pos = 0
                 seqlen = query.size(2)
-                rope = self.rope[start_pos:
-                                 start_pos +
-                                 seqlen].to(query.device)
+                rope = self.rope[start_pos : start_pos + seqlen].to(query.device)
 
                 query = query.transpose(1, 2)
                 key = key.transpose(1, 2)
-                query, key = apply_rotary_emb(query,
-                                              key,
-                                              rope=rope)
+                query, key = apply_rotary_emb(query, key, rope=rope)
                 query = query.transpose(1, 2)
                 key = key.transpose(1, 2)
         # 2) Calculate and scale scores.
@@ -285,13 +292,18 @@ class MultiHeadedAttention(nn.Module):
             key_len = key.size(2)
             # 1 or key_len x key_len
             relative_positions_matrix = gen_relative_positions(
-                key_len, self.max_relative_positions,
+                key_len,
+                self.max_relative_positions,
                 cache=self.layer_cache[0],
-                device=key.device)
+                device=key.device,
+            )
             #  1 or key_len x key_len x dim_per_head
             relations_keys = self.relative_positions_embeddings(
-                relative_positions_matrix)
+                relative_positions_matrix
+            )
             scores = query_key + relative_matmul(query, relations_keys, True)
+        elif self.max_relative_positions == -2:
+            scores = self.alibi(query_key)
         else:
             scores = query_key
 
@@ -312,10 +324,9 @@ class MultiHeadedAttention(nn.Module):
         if self.relative_positions_embeddings is not None:
             # We use the same embeddings for key and value
             relations_values = relations_keys
-            context = unshape(context_original
-                              + relative_matmul(drop_attn,
-                                                relations_values,
-                                                False))
+            context = unshape(
+                context_original + relative_matmul(drop_attn, relations_values, False)
+            )
         else:
             context = unshape(context_original)
 

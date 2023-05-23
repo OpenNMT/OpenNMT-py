@@ -25,30 +25,35 @@ class PositionalEncoding(nn.Module):
 
     def __init__(self, dim, enc_type, max_len=5000):
         if dim % 2 != 0:
-            raise ValueError("Cannot use sin/cos positional encoding with "
-                             "odd dim (got dim={:d})".format(dim))
-        if enc_type == 'SinusoidalInterleaved':
+            raise ValueError(
+                "Cannot use sin/cos positional encoding with "
+                "odd dim (got dim={:d})".format(dim)
+            )
+        if enc_type == "SinusoidalInterleaved":
             pe = torch.zeros(max_len, dim)
             position = torch.arange(0, max_len).unsqueeze(1)
-            div_term = torch.exp((torch.arange(0, dim, 2, dtype=torch.float) *
-                                 -(math.log(10000.0) / dim)))
+            div_term = torch.exp(
+                (
+                    torch.arange(0, dim, 2, dtype=torch.float)
+                    * -(math.log(10000.0) / dim)
+                )
+            )
             pe[:, 0::2] = torch.sin(position.float() * div_term)
             pe[:, 1::2] = torch.cos(position.float() * div_term)
-        elif enc_type == 'SinusoidalConcat':
+        elif enc_type == "SinusoidalConcat":
             half_dim = dim // 2
             pe = math.log(10000) / (half_dim - 1)
             pe = torch.exp(torch.arange(half_dim, dtype=torch.float) * -pe)
-            pe = torch.arange(max_len,
-                              dtype=torch.float).unsqueeze(1) * pe.unsqueeze(0)
-            pe = torch.cat([torch.sin(pe),
-                            torch.cos(pe)], dim=1).view(max_len, -1)
+            pe = torch.arange(max_len, dtype=torch.float).unsqueeze(1) * pe.unsqueeze(0)
+            pe = torch.cat([torch.sin(pe), torch.cos(pe)], dim=1).view(max_len, -1)
         else:
             raise ValueError(
                 "Choice of Position encoding is SinusoidalInterleaved or"
-                " SinusoidalConcat.")
+                " SinusoidalConcat."
+            )
         pe = pe.unsqueeze(1)  # we keep pe (len x batch x dim) for back comp
         super(PositionalEncoding, self).__init__()
-        self.register_buffer('pe', pe)
+        self.register_buffer("pe", pe)
         self.dim = dim
 
     def forward(self, emb, step=None):
@@ -68,7 +73,7 @@ class PositionalEncoding(nn.Module):
                 f"Sequence is {emb.size(1) + step} but PositionalEncoding is"
                 f" limited to {self.pe.size(1)}. See max_len argument."
             )
-        emb = emb + pe[:, step:emb.size(1)+step, :]
+        emb = emb + pe[:, step : emb.size(1) + step, :]
 
         return emb
 
@@ -115,21 +120,29 @@ class Embeddings(nn.Module):
         freeze_word_vecs (bool): freeze weights of word vectors.
     """
 
-    def __init__(self, word_vec_size,
-                 word_vocab_size,
-                 word_padding_idx,
-                 position_encoding=False,
-                 position_encoding_type='SinusoidalInterleaved',
-                 feat_merge="concat",
-                 feat_vec_exponent=0.7,
-                 feat_vec_size=-1,
-                 feat_padding_idx=[],
-                 feat_vocab_sizes=[],
-                 dropout=0,
-                 sparse=False,
-                 freeze_word_vecs=False):
-        self._validate_args(feat_merge, feat_vocab_sizes, feat_vec_exponent,
-                            feat_vec_size, feat_padding_idx)
+    def __init__(
+        self,
+        word_vec_size,
+        word_vocab_size,
+        word_padding_idx,
+        position_encoding=False,
+        position_encoding_type="SinusoidalInterleaved",
+        feat_merge="concat",
+        feat_vec_exponent=0.7,
+        feat_vec_size=-1,
+        feat_padding_idx=[],
+        feat_vocab_sizes=[],
+        dropout=0,
+        sparse=False,
+        freeze_word_vecs=False,
+    ):
+        self._validate_args(
+            feat_merge,
+            feat_vocab_sizes,
+            feat_vec_exponent,
+            feat_vec_size,
+            feat_padding_idx,
+        )
 
         if feat_padding_idx is None:
             feat_padding_idx = []
@@ -144,13 +157,12 @@ class Embeddings(nn.Module):
 
         # Dimensions and padding for feature embedding matrices
         # (these have no effect if feat_vocab_sizes is empty)
-        if feat_merge == 'sum':
+        if feat_merge == "sum":
             feat_dims = [word_vec_size] * len(feat_vocab_sizes)
         elif feat_vec_size > 0:
             feat_dims = [feat_vec_size] * len(feat_vocab_sizes)
         else:
-            feat_dims = [int(vocab ** feat_vec_exponent)
-                         for vocab in feat_vocab_sizes]
+            feat_dims = [int(vocab**feat_vec_exponent) for vocab in feat_vocab_sizes]
         vocab_sizes.extend(feat_vocab_sizes)
         emb_dims.extend(feat_dims)
         pad_indices.extend(feat_padding_idx)
@@ -158,16 +170,17 @@ class Embeddings(nn.Module):
         # The embedding matrix look-up tables. The first look-up table
         # is for words. Subsequent ones are for features, if any exist.
         emb_params = zip(vocab_sizes, emb_dims, pad_indices)
-        embeddings = [nn.Embedding(vocab, dim, padding_idx=pad, sparse=sparse)
-                      for vocab, dim, pad in emb_params]
+        embeddings = [
+            nn.Embedding(vocab, dim, padding_idx=pad, sparse=sparse)
+            for vocab, dim, pad in emb_params
+        ]
         emb_luts = Elementwise(feat_merge, embeddings)
 
         # The final output size of word + feature vectors. This can vary
         # from the word vector size if and only if features are defined.
         # This is the attribute you should access if you need to know
         # how big your embeddings are going to be.
-        self.embedding_size = (sum(emb_dims) if feat_merge == 'concat'
-                               else word_vec_size)
+        self.embedding_size = sum(emb_dims) if feat_merge == "concat" else word_vec_size
 
         # The sequence of operations that converts the input sequence
         # into a sequence of embeddings. At minimum this consists of
@@ -176,50 +189,64 @@ class Embeddings(nn.Module):
         # additional operations as well.
         super(Embeddings, self).__init__()
         self.make_embedding = nn.Sequential()
-        self.make_embedding.add_module('emb_luts', emb_luts)
+        self.make_embedding.add_module("emb_luts", emb_luts)
 
-        if feat_merge == 'mlp' and len(feat_vocab_sizes) > 0:
+        if feat_merge == "mlp" and len(feat_vocab_sizes) > 0:
             in_dim = sum(emb_dims)
             mlp = nn.Sequential(nn.Linear(in_dim, word_vec_size), nn.ReLU())
-            self.make_embedding.add_module('mlp', mlp)
+            self.make_embedding.add_module("mlp", mlp)
 
         self.position_encoding = position_encoding
         self.dropout = nn.Dropout(p=dropout)
 
         if self.position_encoding:
-            pe = PositionalEncoding(self.embedding_size,
-                                    position_encoding_type)
-            self.make_embedding.add_module('pe', pe)
+            pe = PositionalEncoding(self.embedding_size, position_encoding_type)
+            self.make_embedding.add_module("pe", pe)
 
         if freeze_word_vecs:
             self.word_lut.weight.requires_grad = False
 
-    def _validate_args(self, feat_merge, feat_vocab_sizes, feat_vec_exponent,
-                       feat_vec_size, feat_padding_idx):
+    def _validate_args(
+        self,
+        feat_merge,
+        feat_vocab_sizes,
+        feat_vec_exponent,
+        feat_vec_size,
+        feat_padding_idx,
+    ):
         if feat_merge == "sum":
             # features must use word_vec_size
             if feat_vec_exponent != 0.7:
-                warnings.warn("Merging with sum, but got non-default "
-                              "feat_vec_exponent. It will be unused.")
+                warnings.warn(
+                    "Merging with sum, but got non-default "
+                    "feat_vec_exponent. It will be unused."
+                )
             if feat_vec_size != -1:
-                warnings.warn("Merging with sum, but got non-default "
-                              "feat_vec_size. It will be unused.")
+                warnings.warn(
+                    "Merging with sum, but got non-default "
+                    "feat_vec_size. It will be unused."
+                )
         elif feat_vec_size > 0:
             # features will use feat_vec_size
             if feat_vec_exponent != -1:
-                warnings.warn("Not merging with sum and positive "
-                              "feat_vec_size, but got non-default "
-                              "feat_vec_exponent. It will be unused.")
+                warnings.warn(
+                    "Not merging with sum and positive "
+                    "feat_vec_size, but got non-default "
+                    "feat_vec_exponent. It will be unused."
+                )
         else:
             if feat_vec_exponent <= 0:
-                raise ValueError("Using feat_vec_exponent to determine "
-                                 "feature vec size, but got feat_vec_exponent "
-                                 "less than or equal to 0.")
+                raise ValueError(
+                    "Using feat_vec_exponent to determine "
+                    "feature vec size, but got feat_vec_exponent "
+                    "less than or equal to 0."
+                )
         n_feats = len(feat_vocab_sizes)
         if n_feats != len(feat_padding_idx):
-            raise ValueError("Got unequal number of feat_vocab_sizes and "
-                             "feat_padding_idx ({:d} != {:d})".format(
-                                n_feats, len(feat_padding_idx)))
+            raise ValueError(
+                "Got unequal number of feat_vocab_sizes and "
+                "feat_padding_idx ({:d} != {:d})".format(n_feats, len(feat_padding_idx))
+            )
 
     @property
     def word_lut(self):
@@ -244,8 +271,7 @@ class Embeddings(nn.Module):
             if self.word_vec_size > pretrained_vec_size:
                 self.word_lut.weight.data[:, :pretrained_vec_size] = pretrained
             elif self.word_vec_size < pretrained_vec_size:
-                self.word_lut.weight.data \
-                    .copy_(pretrained[:, :self.word_vec_size])
+                self.word_lut.weight.data.copy_(pretrained[:, : self.word_vec_size])
             else:
                 self.word_lut.weight.data.copy_(pretrained)
 
@@ -276,13 +302,14 @@ class Embeddings(nn.Module):
 
 # Some utilitary functions for pretrained embeddings
 
+
 def read_embeddings(path, skip_lines=0, filter_set=None):
     """
     Read an embeddings file in the glove format.
     """
     embs = dict()
     total_vectors_in_file = 0
-    with open(path, 'rb') as f:
+    with open(path, "rb") as f:
         for i, line in enumerate(f):
             if i < skip_lines:
                 continue
@@ -292,7 +319,7 @@ def read_embeddings(path, skip_lines=0, filter_set=None):
                 # is this reachable?
                 continue
 
-            l_split = line.decode('utf8').strip().split(' ')
+            l_split = line.decode("utf8").strip().split(" ")
             if len(l_split) == 2:
                 continue
             total_vectors_in_file += 1
@@ -303,8 +330,7 @@ def read_embeddings(path, skip_lines=0, filter_set=None):
 
 
 def calc_vocab_load_stats(vocab, loaded_embed_dict):
-    matching_count = len(
-        set(vocab.ids_to_tokens) & set(loaded_embed_dict.keys()))
+    matching_count = len(set(vocab.ids_to_tokens) & set(loaded_embed_dict.keys()))
     missing_count = len(vocab) - matching_count
     percent_matching = matching_count / len(vocab) * 100
     return matching_count, missing_count, percent_matching
@@ -319,80 +345,78 @@ def convert_to_torch_tensor(word_to_float_list_dict, vocab):
 
 
 def prepare_pretrained_embeddings(opt, vocabs):
-    if all([opt.both_embeddings is None,
+    if all(
+        [
+            opt.both_embeddings is None,
             opt.src_embeddings is None,
-            opt.tgt_embeddings is None]):
+            opt.tgt_embeddings is None,
+        ]
+    ):
         return
 
-    assert opt.save_data, "-save_data is required when using \
+    assert (
+        opt.save_data
+    ), "-save_data is required when using \
         pretrained embeddings."
 
     vocs = []
-    for side in ['src', 'tgt']:
+    for side in ["src", "tgt"]:
         vocab = vocabs[side]
         vocs.append(vocab)
     enc_vocab, dec_vocab = vocs
 
     skip_lines = 1 if opt.embeddings_type == "word2vec" else 0
     if opt.both_embeddings is not None:
-        set_of_src_and_tgt_vocab = \
-            set(enc_vocab.ids_to_tokens) | set(dec_vocab.ids_to_tokens)
-        logger.info("Reading encoder and decoder embeddings from {}".format(
-            opt.both_embeddings))
-        src_vectors, total_vec_count = \
-            read_embeddings(opt.both_embeddings, skip_lines,
-                            set_of_src_and_tgt_vocab)
+        set_of_src_and_tgt_vocab = set(enc_vocab.ids_to_tokens) | set(
+            dec_vocab.ids_to_tokens
+        )
+        logger.info(
+            "Reading encoder and decoder embeddings from {}".format(opt.both_embeddings)
+        )
+        src_vectors, total_vec_count = read_embeddings(
+            opt.both_embeddings, skip_lines, set_of_src_and_tgt_vocab
+        )
         tgt_vectors = src_vectors
         logger.info("\tFound {} total vectors in file".format(total_vec_count))
     else:
         if opt.src_embeddings is not None:
-            logger.info("Reading encoder embeddings from {}".format(
-                opt.src_embeddings))
+            logger.info("Reading encoder embeddings from {}".format(opt.src_embeddings))
             src_vectors, total_vec_count = read_embeddings(
-                opt.src_embeddings, skip_lines,
-                filter_set=set(enc_vocab.ids_to_tokens)
+                opt.src_embeddings, skip_lines, filter_set=set(enc_vocab.ids_to_tokens)
             )
-            logger.info("\tFound {} total vectors in file.".format(
-                total_vec_count))
+            logger.info("\tFound {} total vectors in file.".format(total_vec_count))
         else:
             src_vectors = None
         if opt.tgt_embeddings is not None:
-            logger.info("Reading decoder embeddings from {}".format(
-                opt.tgt_embeddings))
+            logger.info("Reading decoder embeddings from {}".format(opt.tgt_embeddings))
             tgt_vectors, total_vec_count = read_embeddings(
-                opt.tgt_embeddings, skip_lines,
-                filter_set=set(dec_vocab.ids_to_tokens)
+                opt.tgt_embeddings, skip_lines, filter_set=set(dec_vocab.ids_to_tokens)
             )
-            logger.info(
-                "\tFound {} total vectors in file".format(total_vec_count))
+            logger.info("\tFound {} total vectors in file".format(total_vec_count))
         else:
             tgt_vectors = None
     logger.info("After filtering to vectors in vocab:")
     if opt.src_embeddings is not None or opt.both_embeddings is not None:
-        logger.info("\t* enc: %d match, %d missing, (%.2f%%)"
-                    % calc_vocab_load_stats(enc_vocab, src_vectors))
+        logger.info(
+            "\t* enc: %d match, %d missing, (%.2f%%)"
+            % calc_vocab_load_stats(enc_vocab, src_vectors)
+        )
     if opt.tgt_embeddings is not None or opt.both_embeddings is not None:
-        logger.info("\t* dec: %d match, %d missing, (%.2f%%)"
-                    % calc_vocab_load_stats(dec_vocab, tgt_vectors))
+        logger.info(
+            "\t* dec: %d match, %d missing, (%.2f%%)"
+            % calc_vocab_load_stats(dec_vocab, tgt_vectors)
+        )
 
     # Write to file
     enc_output_file = opt.save_data + ".enc_embeddings.pt"
     dec_output_file = opt.save_data + ".dec_embeddings.pt"
     if opt.src_embeddings is not None or opt.both_embeddings is not None:
-        logger.info("\nSaving encoder embeddings as:\n\t* enc: %s"
-                    % enc_output_file)
-        torch.save(
-            convert_to_torch_tensor(src_vectors, enc_vocab),
-            enc_output_file
-        )
+        logger.info("\nSaving encoder embeddings as:\n\t* enc: %s" % enc_output_file)
+        torch.save(convert_to_torch_tensor(src_vectors, enc_vocab), enc_output_file)
         # set the opt in place
         opt.pre_word_vecs_enc = enc_output_file
     if opt.tgt_embeddings is not None or opt.both_embeddings is not None:
-        logger.info("\nSaving decoder embeddings as:\n\t* dec: %s"
-                    % dec_output_file)
-        torch.save(
-            convert_to_torch_tensor(tgt_vectors, dec_vocab),
-            dec_output_file
-        )
+        logger.info("\nSaving decoder embeddings as:\n\t* dec: %s" % dec_output_file)
+        torch.save(convert_to_torch_tensor(tgt_vectors, dec_vocab), dec_output_file)
         # set the opt in place
         opt.pre_word_vecs_dec = dec_output_file

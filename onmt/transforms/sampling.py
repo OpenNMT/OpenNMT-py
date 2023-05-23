@@ -10,7 +10,7 @@ class HammingDistanceSampling(object):
     """Functions related to (negative) Hamming Distance Sampling."""
 
     def _softmax(self, x):
-        softmax = np.exp(x)/sum(np.exp(x))
+        softmax = np.exp(x) / sum(np.exp(x))
         return softmax
 
     def _sample_replace(self, vocab, reject):
@@ -58,7 +58,7 @@ class SwitchOutStats(ObservableStats):
         self.total += other.total
 
 
-@register_transform(name='switchout')
+@register_transform(name="switchout")
 class SwitchOutTransform(HammingDistanceSamplingTransform):
     """
     SwitchOut.
@@ -77,11 +77,15 @@ class SwitchOutTransform(HammingDistanceSamplingTransform):
     def add_options(cls, parser):
         """Avalilable options relate to this Transform."""
         group = parser.add_argument_group("Transform/SwitchOut")
-        group.add("-switchout_temperature", "--switchout_temperature",
-                  type=float, default=1.0,
-                  help="Sampling temperature for SwitchOut. :math:`\\tau^{-1}`"
-                       " in :cite:`DBLP:journals/corr/abs-1808-07512`. "
-                       "Smaller value makes data more diverse.")
+        group.add(
+            "-switchout_temperature",
+            "--switchout_temperature",
+            type=float,
+            default=1.0,
+            help="Sampling temperature for SwitchOut. :math:`\\tau^{-1}`"
+            " in :cite:`DBLP:journals/corr/abs-1808-07512`. "
+            "Smaller value makes data more diverse.",
+        )
 
     def _parse_opts(self):
         self.temperature = self.opts.switchout_temperature
@@ -101,15 +105,17 @@ class SwitchOutTransform(HammingDistanceSamplingTransform):
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Apply switchout to both src and tgt side tokens."""
         if is_train:
-            example['src'] = self._switchout(
-                example['src'], self.vocabs['src'].ids_to_tokens, stats)
-            example['tgt'] = self._switchout(
-                example['tgt'], self.vocabs['tgt'].ids_to_tokens, stats)
+            example["src"] = self._switchout(
+                example["src"], self.vocabs["src"].ids_to_tokens, stats
+            )
+            example["tgt"] = self._switchout(
+                example["tgt"], self.vocabs["tgt"].ids_to_tokens, stats
+            )
         return example
 
     def _repr_args(self):
         """Return str represent key arguments for class."""
-        return '{}={}'.format('switchout_temperature', self.temperature)
+        return "{}={}".format("switchout_temperature", self.temperature)
 
 
 class TokenDropStats(ObservableStats):
@@ -126,7 +132,7 @@ class TokenDropStats(ObservableStats):
         self.total += other.total
 
 
-@register_transform(name='tokendrop')
+@register_transform(name="tokendrop")
 class TokenDropTransform(HammingDistanceSamplingTransform):
     """Random drop tokens from sentence."""
 
@@ -137,9 +143,13 @@ class TokenDropTransform(HammingDistanceSamplingTransform):
     def add_options(cls, parser):
         """Avalilable options relate to this Transform."""
         group = parser.add_argument_group("Transform/Token_Drop")
-        group.add("-tokendrop_temperature", "--tokendrop_temperature",
-                  type=float, default=1.0,
-                  help="Sampling temperature for token deletion.")
+        group.add(
+            "-tokendrop_temperature",
+            "--tokendrop_temperature",
+            type=float,
+            default=1.0,
+            help="Sampling temperature for token deletion.",
+        )
 
     def _parse_opts(self):
         self.temperature = self.opts.tokendrop_temperature
@@ -151,8 +161,7 @@ class TokenDropTransform(HammingDistanceSamplingTransform):
         # 2. sample positions to corrput
         chosen_indices = self._sample_position(tokens, distance=n_chosen)
         # 3. Drop token on chosen position
-        out = [tok for (i, tok) in enumerate(tokens)
-               if i not in chosen_indices]
+        out = [tok for (i, tok) in enumerate(tokens) if i not in chosen_indices]
         if stats is not None:
             stats.update(TokenDropStats(n_chosen, n_items))
         return out
@@ -160,13 +169,13 @@ class TokenDropTransform(HammingDistanceSamplingTransform):
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Apply token drop to both src and tgt side tokens."""
         if is_train:
-            example['src'] = self._token_drop(example['src'], stats)
-            example['tgt'] = self._token_drop(example['tgt'], stats)
+            example["src"] = self._token_drop(example["src"], stats)
+            example["tgt"] = self._token_drop(example["tgt"], stats)
         return example
 
     def _repr_args(self):
         """Return str represent key arguments for class."""
-        return '{}={}'.format('tokendrop_temperature', self.temperature)
+        return "{}={}".format("tokendrop_temperature", self.temperature)
 
 
 class TokenMaskStats(ObservableStats):
@@ -183,7 +192,7 @@ class TokenMaskStats(ObservableStats):
         self.total += other.total
 
 
-@register_transform(name='tokenmask')
+@register_transform(name="tokenmask")
 class TokenMaskTransform(HammingDistanceSamplingTransform):
     """Random mask tokens from src sentence."""
 
@@ -196,9 +205,13 @@ class TokenMaskTransform(HammingDistanceSamplingTransform):
     def add_options(cls, parser):
         """Avalilable options relate to this Transform."""
         group = parser.add_argument_group("Transform/Token_Mask")
-        group.add('-tokenmask_temperature', '--tokenmask_temperature',
-                  type=float, default=1.0,
-                  help="Sampling temperature for token masking.")
+        group.add(
+            "-tokenmask_temperature",
+            "--tokenmask_temperature",
+            type=float,
+            default=1.0,
+            help="Sampling temperature for token masking.",
+        )
 
     def _parse_opts(self):
         self.temperature = self.opts.tokenmask_temperature
@@ -223,9 +236,9 @@ class TokenMaskTransform(HammingDistanceSamplingTransform):
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Apply word drop to both src and tgt side tokens."""
         if is_train:
-            example['src'] = self._token_mask(example['src'], stats)
+            example["src"] = self._token_mask(example["src"], stats)
         return example
 
     def _repr_args(self):
         """Return str represent key arguments for class."""
-        return '{}={}'.format('tokenmask_temperature', self.temperature)
+        return "{}={}".format("tokenmask_temperature", self.temperature)

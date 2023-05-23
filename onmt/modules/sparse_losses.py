@@ -6,7 +6,6 @@ from onmt.modules.sparse_activations import _threshold_and_support
 
 
 class SparsemaxLossFunction(Function):
-
     @staticmethod
     @custom_fwd
     def forward(ctx, input, target):
@@ -20,8 +19,7 @@ class SparsemaxLossFunction(Function):
         tau_z, support_size = _threshold_and_support(input, dim=1)
         support = input > tau_z
         x = torch.where(
-            support, input**2 - tau_z**2,
-            torch.tensor(0.0, device=input.device)
+            support, input**2 - tau_z**2, torch.tensor(0.0, device=input.device)
         ).sum(dim=1)
         ctx.save_for_backward(input, target, tau_z)
         # clamping necessary because of numerical errors: loss should be lower
@@ -53,9 +51,8 @@ class SparsemaxLoss(nn.Module):
     nn.NLLLoss).
     """
 
-    def __init__(self, weight=None, ignore_index=-100,
-                 reduction='elementwise_mean'):
-        assert reduction in ['elementwise_mean', 'sum', 'none']
+    def __init__(self, weight=None, ignore_index=-100, reduction="elementwise_mean"):
+        assert reduction in ["elementwise_mean", "sum", "none"]
         self.reduction = reduction
         self.weight = weight
         self.ignore_index = ignore_index
@@ -69,8 +66,8 @@ class SparsemaxLoss(nn.Module):
             loss.masked_fill_(ignored_positions, 0.0)
         else:
             size = float(target.size(0))
-        if self.reduction == 'sum':
+        if self.reduction == "sum":
             loss = loss.sum()
-        elif self.reduction == 'elementwise_mean':
+        elif self.reduction == "elementwise_mean":
             loss = loss.sum() / size
         return loss

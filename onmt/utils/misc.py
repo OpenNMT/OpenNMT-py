@@ -46,7 +46,7 @@ def check_path(path, exist_ok=False, log=print):
         else:
             raise IOError(f"path {path} exists, stop.")
     else:
-        if os.path.dirname(path) != '':
+        if os.path.dirname(path) != "":
             os.makedirs(os.path.dirname(path), exist_ok=True)
 
 
@@ -56,10 +56,12 @@ def sequence_mask(lengths, max_len=None):
     """
     batch_size = lengths.numel()
     max_len = max_len or lengths.max()
-    return (torch.arange(0, max_len, device=lengths.device)
-            .type_as(lengths)
-            .repeat(batch_size, 1)
-            .lt(lengths.unsqueeze(1)))
+    return (
+        torch.arange(0, max_len, device=lengths.device)
+        .type_as(lengths)
+        .repeat(batch_size, 1)
+        .lt(lengths.unsqueeze(1))
+    )
 
 
 def tile(x, count, dim=0):
@@ -73,12 +75,15 @@ def tile(x, count, dim=0):
     out_size = list(x.size())
     out_size[0] *= count
     batch = x.size(0)
-    x = x.contiguous().view(batch, -1) \
-         .transpose(0, 1) \
-         .repeat(count, 1) \
-         .transpose(0, 1) \
-         .contiguous() \
-         .view(*out_size)
+    x = (
+        x.contiguous()
+        .view(batch, -1)
+        .transpose(0, 1)
+        .repeat(count, 1)
+        .transpose(0, 1)
+        .contiguous()
+        .view(*out_size)
+    )
     if dim != 0:
         x = x.permute(perm).contiguous()
     return x
@@ -88,8 +93,9 @@ def use_gpu(opt):
     """
     Creates a boolean if gpu used
     """
-    return (hasattr(opt, 'gpu_ranks') and len(opt.gpu_ranks) > 0) or \
-        (hasattr(opt, 'gpu') and opt.gpu > -1)
+    return (hasattr(opt, "gpu_ranks") and len(opt.gpu_ranks) > 0) or (
+        hasattr(opt, "gpu") and opt.gpu > -1
+    )
 
 
 def set_random_seed(seed, is_cuda):
@@ -118,14 +124,12 @@ def fn_args(fun):
 def report_matrix(row_label, column_label, matrix):
     header_format = "{:>10.10} " + "{:>10.7} " * len(row_label)
     row_format = "{:>10.10} " + "{:>10.7f} " * len(row_label)
-    output = header_format.format("", *row_label) + '\n'
+    output = header_format.format("", *row_label) + "\n"
     for word, row in zip(column_label, matrix):
         max_index = row.index(max(row))
-        row_format = row_format.replace(
-            "{:>10.7f} ", "{:*>10.7f} ", max_index + 1)
-        row_format = row_format.replace(
-            "{:*>10.7f} ", "{:>10.7f} ", max_index)
-        output += row_format.format(word, *row) + '\n'
+        row_format = row_format.replace("{:>10.7f} ", "{:*>10.7f} ", max_index + 1)
+        row_format = row_format.replace("{:*>10.7f} ", "{:>10.7f} ", max_index)
+        output += row_format.format(word, *row) + "\n"
         row_format = "{:>10.10} " + "{:>10.7f} " * len(row_label)
     return output
 
@@ -136,8 +140,8 @@ def check_model_config(model_config, root):
         model_path = os.path.join(root, model)
         if not os.path.exists(model_path):
             raise FileNotFoundError(
-                "{} from model {} does not exist".format(
-                    model_path, model_config["id"]))
+                "{} from model {} does not exist".format(model_path, model_config["id"])
+            )
     if "tokenizer" in model_config.keys():
         if "params" in model_config["tokenizer"].keys():
             for k, v in model_config["tokenizer"]["params"].items():
@@ -146,4 +150,6 @@ def check_model_config(model_config, root):
                     if not os.path.exists(tok_path):
                         raise FileNotFoundError(
                             "{} from model {} does not exist".format(
-                                tok_path, model_config["id"]))
+                                tok_path, model_config["id"]
+                            )
+                        )

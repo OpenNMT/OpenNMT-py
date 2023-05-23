@@ -31,6 +31,4 @@ class TestGeneratorLM(unittest.TestCase):
         ) = GeneratorLM.split_src_to_prevent_padding(src, src_len)
         self.assertTupleEqual(src.shape, (6, new_length, 1))
         self.assertTupleEqual(target_prefix.shape, (6, 1, 1))
-        self.assertTrue(
-            src_len.equal(new_length * torch.ones(6, dtype=torch.int))
-        )
+        self.assertTrue(src_len.equal(new_length * torch.ones(6, dtype=torch.int)))
