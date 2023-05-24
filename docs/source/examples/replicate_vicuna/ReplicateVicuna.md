@@ -1,7 +1,6 @@
 # Supervised Finetuning of llama 7B to replicate Vicuna
 This tutorial shows how to finetune a LLaMA 7B foundation model on instruction data including multi-round conversations.
 
-
 Different features will be enabled:
 - Application of the LoRa method to the attention layers.
 - 8bit compression of the position-wise feed-forward layers.
@@ -148,9 +147,16 @@ nohup python3 OpenNMT-py/onmt/bin/translate.py\
 Where `translate_opts.yaml` is the provided config with the translation options.
 You can test other decoding methods and paramaters.
 
+We have also provided a gradio application to chat with the model.
+
+```shell
+pip install gradio
+gradio chatbot.py
+```
+You must use `inf_type = "-py"` at the beginning of the `chatbot.py` script.
+
 
 ### Inference with `CTranslate` 
-
 First we need to do the conversion to the ctranslate2 format.
 
 ```shell
@@ -161,9 +167,4 @@ python3 OpenNMT-py/onmt/bin/release_model.py \
     --quantization int8_float16
 ```
 
-We have provided a gradio application to chat with the model.
-
-```shell
-pip install gradio
-gradio chatbot.py
-```
+You can chat with the model using `inf_type = "ct2"` at the beginning of the `chatbot.py` script.
