@@ -3,6 +3,13 @@
 
 
 ## [Unreleased]
+## [3.1.3](https://github.com/OpenNMT/OpenNMT-py/tree/3.1.3) (2023-05-24)
+* Step-by-step Tuto for Vicuna replication thanks Lina
+* MosaicML MPT7B converter and support (Alibi embeddings)
+* Open Llama converter
+* Switch GCLD3 to Fasttext thanks ArtanieTheOne
+* fix coverage attention in beam decoding
+* fix ct2 keys for "Llama / MPT7B based" OpenNMT-y models
 
 ## [3.1.2](https://github.com/OpenNMT/OpenNMT-py/tree/3.1.2) (2023-05-10)
 * fixes: transforms (normalize, clean, inlinetags)
