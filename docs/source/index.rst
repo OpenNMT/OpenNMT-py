@@ -26,7 +26,7 @@ Contents
       examples/wiki_103/LanguageModelGeneration.md
       examples/summary/Summarization.md
       examples/ggnn/GGNN.md
-      replicate_vicuna/ReplicateVicuna.md
+      examples/replicate_vicuna/ReplicateVicuna.md
 
 
 .. toctree::
