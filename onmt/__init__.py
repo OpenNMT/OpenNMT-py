@@ -23,4 +23,4 @@ __all__ = [
     "Trainer",
 ]
 
-__version__ = "3.1.2"
+__version__ = "3.1.3"
