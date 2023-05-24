@@ -93,11 +93,12 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">How do I use my v2 models in v3 ?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-do-i-train-the-transformer-model">How do I train the Transformer model?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#performance-tips">Performance tips</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#position-encoding-absolute-vs-relative-vs-rotary-embeddings">Position encoding: Absolute vs Relative vs Rotary Embeddings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#position-encoding-absolute-vs-relative-vs-rotary-embeddings-vs-alibi">Position encoding: Absolute vs Relative vs Rotary Embeddings vs Alibi</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#what-special-tokens-does-opennmt-py-use">What special tokens does OpenNMT-py use?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
@@ -211,10 +212,11 @@
 <span class="kn">from</span> <span class="nn">onmt.constants</span> <span class="kn">import</span> <span class="n">ModelTask</span><span class="p">,</span> <span class="n">DefaultTokens</span>
 <span class="kn">from</span> <span class="nn">onmt.modules.copy_generator</span> <span class="kn">import</span> <span class="n">collapse_copy_scores</span>
 <span class="kn">from</span> <span class="nn">onmt.model_builder</span> <span class="kn">import</span> <span class="n">load_test_model</span>
+
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">import</span> <span class="nn">ctranslate2</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
-    <span class="k">pass</span>   <span class="c1"># this is tested when importing for loading a LM</span>
+    <span class="k">pass</span>  <span class="c1"># this is tested when importing for loading a LM</span>
 
 
 <div class="viewcode-block" id="LossCompute"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.loss.LossCompute">[docs]</a><span class="k">class</span> <span class="nc">LossCompute</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -236,11 +238,21 @@
 <span class="sd">        lm_prior_lambda (float): weight of LM model in loss</span>
 <span class="sd">        lm_prior_tau (float): scaler for LM loss</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">criterion</span><span class="p">,</span> <span class="n">generator</span><span class="p">,</span>
-                 <span class="n">copy_attn</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">lambda_coverage</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">lambda_align</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
-                 <span class="n">tgt_shift_index</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">vocab</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lm_generator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">lm_prior_lambda</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lm_prior_tau</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">lm_prior_model</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">criterion</span><span class="p">,</span>
+        <span class="n">generator</span><span class="p">,</span>
+        <span class="n">copy_attn</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">lambda_coverage</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">lambda_align</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">tgt_shift_index</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">vocab</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">lm_generator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">lm_prior_lambda</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">lm_prior_tau</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">lm_prior_model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">LossCompute</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">criterion</span> <span class="o">=</span> <span class="n">criterion</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">generator</span> <span class="o">=</span> <span class="n">generator</span>
@@ -263,32 +275,34 @@
 <span class="sd">        training/validation logging.</span>
 <span class="sd">        The Criterion and LossCompute options are triggered by opt settings.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">use_gpu</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
-                              <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+        <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">use_gpu</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
 
         <span class="n">padding_idx</span> <span class="o">=</span> <span class="n">vocab</span><span class="p">[</span><span class="n">DefaultTokens</span><span class="o">.</span><span class="n">PAD</span><span class="p">]</span>
         <span class="n">unk_idx</span> <span class="o">=</span> <span class="n">vocab</span><span class="p">[</span><span class="n">DefaultTokens</span><span class="o">.</span><span class="n">UNK</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">lambda_coverage</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="n">opt</span><span class="o">.</span><span class="n">coverage_attn</span><span class="p">,</span> <span class="s2">&quot;--coverage_attn needs to be set in &quot;</span> \
+            <span class="k">assert</span> <span class="n">opt</span><span class="o">.</span><span class="n">coverage_attn</span><span class="p">,</span> <span class="p">(</span>
+                <span class="s2">&quot;--coverage_attn needs to be set in &quot;</span>
                 <span class="s2">&quot;order to use --lambda_coverage != 0&quot;</span>
+            <span class="p">)</span>
 
         <span class="n">tgt_shift_idx</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">model_task</span> <span class="o">==</span> <span class="n">ModelTask</span><span class="o">.</span><span class="n">SEQ2SEQ</span> <span class="k">else</span> <span class="mi">0</span>
 
         <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">copy_attn</span><span class="p">:</span>
             <span class="n">criterion</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">CopyGeneratorLoss</span><span class="p">(</span>
-                <span class="nb">len</span><span class="p">(</span><span class="n">vocab</span><span class="p">),</span> <span class="n">opt</span><span class="o">.</span><span class="n">copy_attn_force</span><span class="p">,</span>
-                <span class="n">unk_index</span><span class="o">=</span><span class="n">unk_idx</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="n">padding_idx</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">vocab</span><span class="p">),</span>
+                <span class="n">opt</span><span class="o">.</span><span class="n">copy_attn_force</span><span class="p">,</span>
+                <span class="n">unk_index</span><span class="o">=</span><span class="n">unk_idx</span><span class="p">,</span>
+                <span class="n">ignore_index</span><span class="o">=</span><span class="n">padding_idx</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">generator_function</span> <span class="o">==</span> <span class="s1">&#39;sparsemax&#39;</span><span class="p">:</span>
-                <span class="n">criterion</span> <span class="o">=</span> <span class="n">SparsemaxLoss</span><span class="p">(</span><span class="n">ignore_index</span><span class="o">=</span><span class="n">padding_idx</span><span class="p">,</span>
-                                          <span class="n">reduction</span><span class="o">=</span><span class="s1">&#39;sum&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">generator_function</span> <span class="o">==</span> <span class="s2">&quot;sparsemax&quot;</span><span class="p">:</span>
+                <span class="n">criterion</span> <span class="o">=</span> <span class="n">SparsemaxLoss</span><span class="p">(</span><span class="n">ignore_index</span><span class="o">=</span><span class="n">padding_idx</span><span class="p">,</span> <span class="n">reduction</span><span class="o">=</span><span class="s2">&quot;sum&quot;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">criterion</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">CrossEntropyLoss</span><span class="p">(</span>
                     <span class="n">ignore_index</span><span class="o">=</span><span class="n">padding_idx</span><span class="p">,</span>
-                    <span class="n">reduction</span><span class="o">=</span><span class="s1">&#39;sum&#39;</span><span class="p">,</span>
-                    <span class="n">label_smoothing</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">label_smoothing</span>
+                    <span class="n">reduction</span><span class="o">=</span><span class="s2">&quot;sum&quot;</span><span class="p">,</span>
+                    <span class="n">label_smoothing</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">label_smoothing</span><span class="p">,</span>
                 <span class="p">)</span>
 
         <span class="n">lm_prior_lambda</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">lm_prior_lambda</span>
@@ -298,8 +312,9 @@
                 <span class="n">opt</span><span class="o">.</span><span class="n">gpu</span> <span class="o">=</span> <span class="mi">0</span>
                 <span class="n">opt</span><span class="o">.</span><span class="n">fp32</span> <span class="o">=</span> <span class="kc">False</span>
                 <span class="n">opt</span><span class="o">.</span><span class="n">int8</span> <span class="o">=</span> <span class="kc">False</span>
-                <span class="n">_</span><span class="p">,</span> <span class="n">lm_prior_model</span><span class="p">,</span> <span class="n">lm_model_opt</span> \
-                    <span class="o">=</span> <span class="n">load_test_model</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">model_path</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">lm_prior_model</span><span class="p">)</span>
+                <span class="n">_</span><span class="p">,</span> <span class="n">lm_prior_model</span><span class="p">,</span> <span class="n">lm_model_opt</span> <span class="o">=</span> <span class="n">load_test_model</span><span class="p">(</span>
+                    <span class="n">opt</span><span class="p">,</span> <span class="n">model_path</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">lm_prior_model</span>
+                <span class="p">)</span>
                 <span class="n">lm_prior_model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span><span class="p">,</span> <span class="n">opt</span><span class="o">.</span><span class="n">gpu</span><span class="p">))</span>
                 <span class="n">lm_prior_model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
                 <span class="n">lm_generator</span> <span class="o">=</span> <span class="kc">None</span>
@@ -307,24 +322,29 @@
                 <span class="n">lm_prior_model</span> <span class="o">=</span> <span class="kc">None</span>
                 <span class="k">try</span><span class="p">:</span>
                     <span class="kn">import</span> <span class="nn">ctranslate2</span>
+
                     <span class="n">lm_generator</span> <span class="o">=</span> <span class="n">ctranslate2</span><span class="o">.</span><span class="n">Generator</span><span class="p">(</span>
-                        <span class="n">opt</span><span class="o">.</span><span class="n">lm_prior_model</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cuda&quot;</span><span class="p">,</span>
-                        <span class="n">compute_type</span><span class="o">=</span><span class="s2">&quot;float16&quot;</span><span class="p">)</span>
+                        <span class="n">opt</span><span class="o">.</span><span class="n">lm_prior_model</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cuda&quot;</span><span class="p">,</span> <span class="n">compute_type</span><span class="o">=</span><span class="s2">&quot;float16&quot;</span>
+                    <span class="p">)</span>
                 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s2">&quot;Could not import ctranslate2&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">lm_generator</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="n">lm_prior_model</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="n">compute</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">criterion</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">generator</span><span class="p">,</span>
-                      <span class="n">copy_attn</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">copy_attn</span><span class="p">,</span>
-                      <span class="n">lambda_coverage</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">lambda_coverage</span><span class="p">,</span>
-                      <span class="n">lambda_align</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">lambda_align</span><span class="p">,</span>
-                      <span class="n">tgt_shift_index</span><span class="o">=</span><span class="n">tgt_shift_idx</span><span class="p">,</span>
-                      <span class="n">vocab</span><span class="o">=</span><span class="n">vocab</span><span class="p">,</span> <span class="n">lm_generator</span><span class="o">=</span><span class="n">lm_generator</span><span class="p">,</span>
-                      <span class="n">lm_prior_lambda</span><span class="o">=</span><span class="n">lm_prior_lambda</span><span class="p">,</span>
-                      <span class="n">lm_prior_tau</span><span class="o">=</span><span class="n">lm_prior_tau</span><span class="p">,</span>
-                      <span class="n">lm_prior_model</span><span class="o">=</span><span class="n">lm_prior_model</span><span class="p">)</span>
+        <span class="n">compute</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">criterion</span><span class="p">,</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">generator</span><span class="p">,</span>
+            <span class="n">copy_attn</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">copy_attn</span><span class="p">,</span>
+            <span class="n">lambda_coverage</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">lambda_coverage</span><span class="p">,</span>
+            <span class="n">lambda_align</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">lambda_align</span><span class="p">,</span>
+            <span class="n">tgt_shift_index</span><span class="o">=</span><span class="n">tgt_shift_idx</span><span class="p">,</span>
+            <span class="n">vocab</span><span class="o">=</span><span class="n">vocab</span><span class="p">,</span>
+            <span class="n">lm_generator</span><span class="o">=</span><span class="n">lm_generator</span><span class="p">,</span>
+            <span class="n">lm_prior_lambda</span><span class="o">=</span><span class="n">lm_prior_lambda</span><span class="p">,</span>
+            <span class="n">lm_prior_tau</span><span class="o">=</span><span class="n">lm_prior_tau</span><span class="p">,</span>
+            <span class="n">lm_prior_model</span><span class="o">=</span><span class="n">lm_prior_model</span><span class="p">,</span>
+        <span class="p">)</span>
         <span class="n">compute</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">compute</span></div>
@@ -364,9 +384,9 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            A tuple with the loss and raw scores.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bottle</span><span class="p">(</span><span class="n">output</span><span class="p">),</span>
-                                <span class="bp">self</span><span class="o">.</span><span class="n">_bottle</span><span class="p">(</span><span class="n">attns</span><span class="p">[</span><span class="s1">&#39;copy&#39;</span><span class="p">]),</span>
-                                <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;src_map&#39;</span><span class="p">])</span>
+        <span class="n">scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_bottle</span><span class="p">(</span><span class="n">output</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bottle</span><span class="p">(</span><span class="n">attns</span><span class="p">[</span><span class="s2">&quot;copy&quot;</span><span class="p">]),</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;src_map&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
         <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">criterion</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">align</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
 
         <span class="k">return</span> <span class="n">loss</span><span class="p">,</span> <span class="n">scores</span>
@@ -390,7 +410,8 @@
         <span class="n">lm_scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lm_generator</span><span class="o">.</span><span class="n">forward_batch</span><span class="p">(</span>
             <span class="n">ctranslate2</span><span class="o">.</span><span class="n">StorageView</span><span class="o">.</span><span class="n">from_array</span><span class="p">(</span><span class="n">src</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">int32</span><span class="p">)),</span>
             <span class="n">ctranslate2</span><span class="o">.</span><span class="n">StorageView</span><span class="o">.</span><span class="n">from_array</span><span class="p">(</span><span class="n">src_len</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">int32</span><span class="p">)),</span>
-            <span class="n">return_log_probs</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">return_log_probs</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
         <span class="n">lm_scores</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">lm_scores</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">scores</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
         <span class="c1"># again we use raw probs to rescale with tau and apply log_softmax</span>
         <span class="n">lm_scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bottle</span><span class="p">(</span><span class="n">lm_scores</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">lm_prior_tau</span>
@@ -398,12 +419,10 @@
         <span class="n">lm_scores</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vocab</span><span class="p">[</span><span class="n">DefaultTokens</span><span class="o">.</span><span class="n">UNK</span><span class="p">]]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">50</span>
         <span class="n">lm_scores</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vocab</span><span class="p">[</span><span class="n">DefaultTokens</span><span class="o">.</span><span class="n">EOS</span><span class="p">]]</span> <span class="o">-=</span> <span class="mi">20</span>
         <span class="c1"># lm_scores are in log space so log_target=True</span>
-        <span class="n">lm_loss</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">kl_div</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">lm_scores</span><span class="p">,</span>
-                           <span class="n">reduction</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span>
-                           <span class="n">log_target</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">lm_loss</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">kl_div</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">lm_scores</span><span class="p">,</span> <span class="n">reduction</span><span class="o">=</span><span class="s2">&quot;none&quot;</span><span class="p">,</span> <span class="n">log_target</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">non_padding</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bottle</span><span class="p">(</span><span class="n">output</span><span class="p">)</span><span class="o">.</span><span class="n">ne</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">padding_idx</span><span class="p">)[:,</span> <span class="mi">0</span><span class="p">]</span>
         <span class="n">lm_loss</span> <span class="o">=</span> <span class="n">lm_loss</span><span class="o">.</span><span class="n">masked_select</span><span class="p">(</span><span class="n">non_padding</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-        <span class="n">lm_loss</span> <span class="o">=</span> <span class="n">lm_loss</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lm_prior_tau</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">lm_loss</span> <span class="o">=</span> <span class="n">lm_loss</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lm_prior_tau</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">lm_loss</span>
 
     <span class="k">def</span> <span class="nf">_compute_lm_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
@@ -421,20 +440,20 @@
         <span class="n">src</span> <span class="o">=</span> <span class="n">src</span><span class="p">[:,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>
         <span class="n">src_len</span> <span class="o">=</span> <span class="n">src</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ne</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">padding_idx</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
         <span class="c1"># ct2 expects src with lengths without padding</span>
-        <span class="n">lm_outs</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lm_prior_model</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span>
-                                         <span class="n">with_align</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-        <span class="n">lm_scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lm_prior_model</span><span class="o">.</span><span class="n">generator</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_bottle</span><span class="p">(</span><span class="n">lm_outs</span><span class="p">))</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">lm_prior_tau</span>
+        <span class="n">lm_outs</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lm_prior_model</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span> <span class="n">with_align</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">lm_scores</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lm_prior_model</span><span class="o">.</span><span class="n">generator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bottle</span><span class="p">(</span><span class="n">lm_outs</span><span class="p">))</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+            <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">lm_prior_tau</span>
+        <span class="p">)</span>
         <span class="c1"># again we use raw probs to rescale with tau and apply log_softmax</span>
         <span class="n">lm_scores</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">log_softmax</span><span class="p">(</span><span class="n">lm_scores</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">lm_scores</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vocab</span><span class="p">[</span><span class="n">DefaultTokens</span><span class="o">.</span><span class="n">UNK</span><span class="p">]]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">50</span>
         <span class="n">lm_scores</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vocab</span><span class="p">[</span><span class="n">DefaultTokens</span><span class="o">.</span><span class="n">EOS</span><span class="p">]]</span> <span class="o">-=</span> <span class="mi">20</span>
         <span class="c1"># lm_scores are in log space so log_target=True</span>
-        <span class="n">lm_loss</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">kl_div</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">lm_scores</span><span class="p">,</span>
-                           <span class="n">reduction</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">log_target</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">lm_loss</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">kl_div</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">lm_scores</span><span class="p">,</span> <span class="n">reduction</span><span class="o">=</span><span class="s2">&quot;none&quot;</span><span class="p">,</span> <span class="n">log_target</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">non_padding</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bottle</span><span class="p">(</span><span class="n">output</span><span class="p">)</span><span class="o">.</span><span class="n">ne</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">padding_idx</span><span class="p">)[:,</span> <span class="mi">0</span><span class="p">]</span>
         <span class="n">lm_loss</span> <span class="o">=</span> <span class="n">lm_loss</span><span class="o">.</span><span class="n">masked_select</span><span class="p">(</span><span class="n">non_padding</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-        <span class="n">lm_loss</span> <span class="o">=</span> <span class="n">lm_loss</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lm_prior_tau</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">lm_loss</span> <span class="o">=</span> <span class="n">lm_loss</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lm_prior_tau</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">lm_loss</span>
 
     <span class="k">def</span> <span class="nf">_bottle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_v</span><span class="p">):</span>
@@ -443,8 +462,7 @@
     <span class="k">def</span> <span class="nf">_unbottle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_v</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">_v</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">_v</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
 
-<div class="viewcode-block" id="LossCompute.forward"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.loss.LossCompute.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">attns</span><span class="p">,</span>
-                <span class="n">trunc_start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">trunc_size</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="LossCompute.forward"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.loss.LossCompute.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">attns</span><span class="p">,</span> <span class="n">trunc_start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">trunc_size</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the forward loss, supports truncated BPTT for long</span>
 <span class="sd">        sequences by taking a range in the decoder output sequence to</span>
 <span class="sd">        back propagate in.</span>
@@ -465,27 +483,30 @@
 <span class="sd">            A tuple with the loss and a :obj:`onmt.utils.Statistics` instance.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">trunc_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">trunc_size</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">trunc_start</span>
+            <span class="n">trunc_size</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">trunc_start</span>
         <span class="c1"># take into account here the tgt_shift_index (0 / 1 = LM/NMT)</span>
-        <span class="n">trunc_range</span> <span class="o">=</span> <span class="p">(</span><span class="n">trunc_start</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">tgt_shift_index</span><span class="p">,</span>
-                       <span class="n">trunc_start</span> <span class="o">+</span> <span class="n">trunc_size</span><span class="p">)</span>
+        <span class="n">trunc_range</span> <span class="o">=</span> <span class="p">(</span><span class="n">trunc_start</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">tgt_shift_index</span><span class="p">,</span> <span class="n">trunc_start</span> <span class="o">+</span> <span class="n">trunc_size</span><span class="p">)</span>
 
-        <span class="n">target</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">][:,</span> <span class="n">trunc_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span><span class="n">trunc_range</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
-                              <span class="p">:]</span>
-        <span class="n">output</span> <span class="o">=</span> <span class="n">output</span><span class="p">[:,</span> <span class="n">trunc_start</span><span class="p">:</span><span class="n">trunc_range</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
-                        <span class="p">:]</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">][:,</span> <span class="n">trunc_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">:</span> <span class="n">trunc_range</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="p">:]</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">output</span><span class="p">[:,</span> <span class="n">trunc_start</span> <span class="p">:</span> <span class="n">trunc_range</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="p">:]</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
 
         <span class="n">flat_tgt</span> <span class="o">=</span> <span class="n">target</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span><span class="p">:</span>
-            <span class="n">align</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;alignment&#39;</span><span class="p">][</span>
-                <span class="p">:,</span> <span class="n">trunc_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span><span class="n">trunc_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-                <span class="p">]</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-            <span class="n">loss</span><span class="p">,</span> <span class="n">scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_copy_loss</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">flat_tgt</span><span class="p">,</span>
-                                                   <span class="n">align</span><span class="p">,</span> <span class="n">attns</span><span class="p">)</span>
+            <span class="n">align</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;alignment&quot;</span><span class="p">][:,</span> <span class="n">trunc_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">:</span> <span class="n">trunc_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+                <span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
+                <span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">loss</span><span class="p">,</span> <span class="n">scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_copy_loss</span><span class="p">(</span>
+                <span class="n">batch</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">flat_tgt</span><span class="p">,</span> <span class="n">align</span><span class="p">,</span> <span class="n">attns</span>
+            <span class="p">)</span>
             <span class="n">scores_data</span> <span class="o">=</span> <span class="n">collapse_copy_scores</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_unbottle</span><span class="p">(</span><span class="n">scores</span><span class="o">.</span><span class="n">clone</span><span class="p">(),</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s1">&#39;srclen&#39;</span><span class="p">])),</span>
-                <span class="n">batch</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vocab</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_unbottle</span><span class="p">(</span><span class="n">scores</span><span class="o">.</span><span class="n">clone</span><span class="p">(),</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;srclen&quot;</span><span class="p">])),</span>
+                <span class="n">batch</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">vocab</span><span class="p">,</span>
+                <span class="kc">None</span><span class="p">,</span>
+            <span class="p">)</span>
             <span class="n">scores_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bottle</span><span class="p">(</span><span class="n">scores_data</span><span class="p">)</span>
             <span class="c1"># Correct target copy token instead of &lt;unk&gt;</span>
             <span class="c1"># tgt[i] = align[i] + len(tgt_vocab)</span>
@@ -499,46 +520,46 @@
             <span class="n">flat_tgt</span> <span class="o">=</span> <span class="n">target_data</span>
 
         <span class="k">else</span><span class="p">:</span>
-
             <span class="n">scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bottle</span><span class="p">(</span><span class="n">output</span><span class="p">))</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">criterion</span><span class="p">,</span> <span class="n">SparsemaxLoss</span><span class="p">):</span>
                 <span class="n">scores</span> <span class="o">=</span> <span class="n">LogSparsemax</span><span class="p">(</span><span class="n">scores</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
             <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">criterion</span><span class="p">(</span><span class="n">scores</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span> <span class="n">flat_tgt</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lambda_align</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">:</span>
-                <span class="n">align_head</span> <span class="o">=</span> <span class="n">attns</span><span class="p">[</span><span class="s1">&#39;align&#39;</span><span class="p">]</span>
+                <span class="n">align_head</span> <span class="o">=</span> <span class="n">attns</span><span class="p">[</span><span class="s2">&quot;align&quot;</span><span class="p">]</span>
                 <span class="k">if</span> <span class="n">align_head</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="n">loss</span><span class="o">.</span><span class="n">dtype</span><span class="p">:</span>  <span class="c1"># Fix FP16</span>
                     <span class="n">align_head</span> <span class="o">=</span> <span class="n">align_head</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">loss</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
-                <span class="n">align_idx</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;align&#39;</span><span class="p">]</span>
-                <span class="n">batch_size</span><span class="p">,</span> <span class="n">pad_tgt_size</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
-                <span class="n">_</span><span class="p">,</span> <span class="n">pad_src_size</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+                <span class="n">align_idx</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;align&quot;</span><span class="p">]</span>
+                <span class="n">batch_size</span><span class="p">,</span> <span class="n">pad_tgt_size</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+                <span class="n">_</span><span class="p">,</span> <span class="n">pad_src_size</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
                 <span class="n">align_matrix_size</span> <span class="o">=</span> <span class="p">[</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">pad_tgt_size</span><span class="p">,</span> <span class="n">pad_src_size</span><span class="p">]</span>
                 <span class="n">ref_align</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">make_batch_align_matrix</span><span class="p">(</span>
                     <span class="n">align_idx</span><span class="p">,</span> <span class="n">align_matrix_size</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">True</span>
                 <span class="p">)</span>
-                <span class="n">ref_align</span> <span class="o">=</span> <span class="n">ref_align</span><span class="p">[:,</span> <span class="n">trunc_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span><span class="n">trunc_range</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="p">:]</span>
+                <span class="n">ref_align</span> <span class="o">=</span> <span class="n">ref_align</span><span class="p">[:,</span> <span class="n">trunc_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">:</span> <span class="n">trunc_range</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="p">:]</span>
                 <span class="k">if</span> <span class="n">ref_align</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="n">loss</span><span class="o">.</span><span class="n">dtype</span><span class="p">:</span>
                     <span class="n">ref_align</span> <span class="o">=</span> <span class="n">ref_align</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">loss</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
                 <span class="n">align_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_alignement_loss</span><span class="p">(</span>
-                    <span class="n">align_head</span><span class="o">=</span><span class="n">align_head</span><span class="p">,</span> <span class="n">ref_align</span><span class="o">=</span><span class="n">ref_align</span><span class="p">)</span>
+                    <span class="n">align_head</span><span class="o">=</span><span class="n">align_head</span><span class="p">,</span> <span class="n">ref_align</span><span class="o">=</span><span class="n">ref_align</span>
+                <span class="p">)</span>
                 <span class="n">loss</span> <span class="o">+=</span> <span class="n">align_loss</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lambda_coverage</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">:</span>
             <span class="n">coverage_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_coverage_loss</span><span class="p">(</span>
-                <span class="n">attns</span><span class="p">[</span><span class="s1">&#39;std&#39;</span><span class="p">],</span> <span class="n">attns</span><span class="p">[</span><span class="s1">&#39;coverage&#39;</span><span class="p">],</span> <span class="n">flat_tgt</span><span class="p">)</span>
+                <span class="n">attns</span><span class="p">[</span><span class="s2">&quot;std&quot;</span><span class="p">],</span> <span class="n">attns</span><span class="p">[</span><span class="s2">&quot;coverage&quot;</span><span class="p">],</span> <span class="n">flat_tgt</span>
+            <span class="p">)</span>
             <span class="n">loss</span> <span class="o">+=</span> <span class="n">coverage_loss</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lm_generator</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">lm_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_lm_loss_ct2</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">])</span>
+            <span class="n">lm_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_lm_loss_ct2</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">])</span>
             <span class="n">loss</span> <span class="o">=</span> <span class="n">loss</span> <span class="o">+</span> <span class="n">lm_loss</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">lm_prior_lambda</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lm_prior_model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">lm_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_lm_loss</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">])</span>
+            <span class="n">lm_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_lm_loss</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">])</span>
             <span class="n">loss</span> <span class="o">=</span> <span class="n">loss</span> <span class="o">+</span> <span class="n">lm_loss</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">lm_prior_lambda</span>
 
-        <span class="n">n_sents</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s1">&#39;srclen&#39;</span><span class="p">])</span> <span class="k">if</span> <span class="n">trunc_start</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
-        <span class="n">stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stats</span><span class="p">(</span><span class="n">n_sents</span><span class="p">,</span> <span class="n">loss</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
-                            <span class="n">scores</span><span class="p">,</span> <span class="n">flat_tgt</span><span class="p">)</span>
+        <span class="n">n_sents</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;srclen&quot;</span><span class="p">])</span> <span class="k">if</span> <span class="n">trunc_start</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="n">stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stats</span><span class="p">(</span><span class="n">n_sents</span><span class="p">,</span> <span class="n">loss</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span> <span class="n">scores</span><span class="p">,</span> <span class="n">flat_tgt</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">loss</span><span class="p">,</span> <span class="n">stats</span></div>
 
@@ -559,11 +580,13 @@
         <span class="n">n_batchs</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">bsz</span> <span class="k">else</span> <span class="mi">0</span>
         <span class="c1"># in the case criterion reduction is None then we need</span>
         <span class="c1"># to sum the loss of each sentence in the batch</span>
-        <span class="k">return</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">Statistics</span><span class="p">(</span><span class="n">loss</span><span class="o">=</span><span class="n">loss</span><span class="p">,</span>
-                                     <span class="n">n_batchs</span><span class="o">=</span><span class="n">n_batchs</span><span class="p">,</span>
-                                     <span class="n">n_sents</span><span class="o">=</span><span class="n">bsz</span><span class="p">,</span>
-                                     <span class="n">n_words</span><span class="o">=</span><span class="n">num_non_padding</span><span class="p">,</span>
-                                     <span class="n">n_correct</span><span class="o">=</span><span class="n">num_correct</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">Statistics</span><span class="p">(</span>
+            <span class="n">loss</span><span class="o">=</span><span class="n">loss</span><span class="p">,</span>
+            <span class="n">n_batchs</span><span class="o">=</span><span class="n">n_batchs</span><span class="p">,</span>
+            <span class="n">n_sents</span><span class="o">=</span><span class="n">bsz</span><span class="p">,</span>
+            <span class="n">n_words</span><span class="o">=</span><span class="n">num_non_padding</span><span class="p">,</span>
+            <span class="n">n_correct</span><span class="o">=</span><span class="n">num_correct</span><span class="p">,</span>
+        <span class="p">)</span></div>
 </pre></div>
 
            </div>

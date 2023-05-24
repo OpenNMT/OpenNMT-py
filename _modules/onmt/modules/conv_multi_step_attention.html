@@ -93,11 +93,12 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">How do I use my v2 models in v3 ?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-do-i-train-the-transformer-model">How do I train the Transformer model?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#performance-tips">Performance tips</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#position-encoding-absolute-vs-relative-vs-rotary-embeddings">Position encoding: Absolute vs Relative vs Rotary Embeddings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#position-encoding-absolute-vs-relative-vs-rotary-embeddings-vs-alibi">Position encoding: Absolute vs Relative vs Rotary Embeddings vs Alibi</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#what-special-tokens-does-opennmt-py-use">What special tokens does OpenNMT-py use?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
@@ -204,14 +205,13 @@
 <span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
 
 
-<span class="n">SCALE_WEIGHT</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">**</span> <span class="mf">0.5</span>
+<span class="n">SCALE_WEIGHT</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">**</span><span class="mf">0.5</span>
 
 
 <span class="k">def</span> <span class="nf">seq_linear</span><span class="p">(</span><span class="n">linear</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; linear transform for 3-d tensor &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;linear transform for 3-d tensor&quot;&quot;&quot;</span>
     <span class="n">batch</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
-    <span class="n">h</span> <span class="o">=</span> <span class="n">linear</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span><span class="o">.</span><span class="n">view</span><span class="p">(</span>
-        <span class="n">batch</span> <span class="o">*</span> <span class="n">length</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">))</span>
+    <span class="n">h</span> <span class="o">=</span> <span class="n">linear</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch</span> <span class="o">*</span> <span class="n">length</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
 
 
@@ -229,11 +229,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">mask</span> <span class="o">=</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="ConvMultiStepAttention.apply_mask"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.ConvMultiStepAttention.apply_mask">[docs]</a>    <span class="k">def</span> <span class="nf">apply_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mask</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot; Apply mask &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply mask&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span></div>
 
-<div class="viewcode-block" id="ConvMultiStepAttention.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.ConvMultiStepAttention.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_target_emb</span><span class="p">,</span> <span class="n">input_from_dec</span><span class="p">,</span> <span class="n">encoder_out_top</span><span class="p">,</span>
-                <span class="n">encoder_out_combine</span><span class="p">):</span>
+<div class="viewcode-block" id="ConvMultiStepAttention.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.ConvMultiStepAttention.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">base_target_emb</span><span class="p">,</span> <span class="n">input_from_dec</span><span class="p">,</span> <span class="n">encoder_out_top</span><span class="p">,</span> <span class="n">encoder_out_combine</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            base_target_emb: target emb tensor</span>
@@ -255,14 +256,12 @@
         <span class="n">pre_attn</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">bmm</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">encoder_out_top</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">pre_attn</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">masked_fill_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="p">,</span> <span class="o">-</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">))</span>
+            <span class="n">pre_attn</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">masked_fill_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="p">,</span> <span class="o">-</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">))</span>
 
         <span class="n">attn</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">pre_attn</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 
-        <span class="n">context_output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">bmm</span><span class="p">(</span>
-            <span class="n">attn</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">encoder_out_combine</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
-        <span class="n">context_output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span>
-            <span class="n">torch</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="n">context_output</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">context_output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">bmm</span><span class="p">(</span><span class="n">attn</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">encoder_out_combine</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="n">context_output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="n">context_output</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">context_output</span><span class="p">,</span> <span class="n">attn</span></div></div>
 </pre></div>
 

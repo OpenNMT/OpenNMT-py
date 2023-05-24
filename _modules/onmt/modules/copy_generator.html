@@ -93,11 +93,12 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">How do I use my v2 models in v3 ?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-do-i-train-the-transformer-model">How do I train the Transformer model?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#performance-tips">Performance tips</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#position-encoding-absolute-vs-relative-vs-rotary-embeddings">Position encoding: Absolute vs Relative vs Rotary Embeddings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#position-encoding-absolute-vs-relative-vs-rotary-embeddings-vs-alibi">Position encoding: Absolute vs Relative vs Rotary Embeddings vs Alibi</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#what-special-tokens-does-opennmt-py-use">What special tokens does OpenNMT-py use?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
@@ -202,8 +203,9 @@
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
 
 
-<span class="k">def</span> <span class="nf">collapse_copy_scores</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">tgt_vocab</span><span class="p">,</span> <span class="n">src_vocabs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                         <span class="n">batch_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">batch_offset</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">collapse_copy_scores</span><span class="p">(</span>
+    <span class="n">scores</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">tgt_vocab</span><span class="p">,</span> <span class="n">src_vocabs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">batch_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">batch_offset</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Given scores from an expanded dictionary</span>
 <span class="sd">    corresponeding to a batch, sums together copies,</span>
@@ -215,10 +217,10 @@
         <span class="n">fill</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="k">if</span> <span class="n">src_vocabs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">src_vocab</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;src_ex_vocab&#39;</span><span class="p">][</span><span class="n">b</span><span class="p">]</span>
+            <span class="n">src_vocab</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;src_ex_vocab&quot;</span><span class="p">][</span><span class="n">b</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">batch_id</span> <span class="o">=</span> <span class="n">batch_offset</span><span class="p">[</span><span class="n">b</span><span class="p">]</span> <span class="k">if</span> <span class="n">batch_offset</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">b</span>
-            <span class="n">index</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;indices&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">batch_id</span><span class="p">]</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;indices&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">batch_id</span><span class="p">]</span>
             <span class="n">src_vocab</span> <span class="o">=</span> <span class="n">src_vocabs</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
 
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">src_vocab</span><span class="p">)):</span>
@@ -228,8 +230,8 @@
                 <span class="n">blank</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">offset</span> <span class="o">+</span> <span class="n">i</span><span class="p">)</span>
                 <span class="n">fill</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ti</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">blank</span><span class="p">:</span>
-            <span class="n">blank</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">blank</span><span class="p">)</span><span class="o">.</span><span class="n">type_as</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s1">&#39;indices&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
-            <span class="n">fill</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">fill</span><span class="p">)</span><span class="o">.</span><span class="n">type_as</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s1">&#39;indices&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">blank</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">blank</span><span class="p">)</span><span class="o">.</span><span class="n">type_as</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;indices&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">fill</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">fill</span><span class="p">)</span><span class="o">.</span><span class="n">type_as</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;indices&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
             <span class="n">score</span> <span class="o">=</span> <span class="n">scores</span><span class="p">[:,</span> <span class="n">b</span><span class="p">]</span> <span class="k">if</span> <span class="n">batch_dim</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">scores</span><span class="p">[</span><span class="n">b</span><span class="p">]</span>
             <span class="n">score</span><span class="o">.</span><span class="n">index_add_</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">fill</span><span class="p">,</span> <span class="n">score</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">blank</span><span class="p">))</span>
             <span class="n">score</span><span class="o">.</span><span class="n">index_fill_</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">blank</span><span class="p">,</span> <span class="mf">1e-10</span><span class="p">)</span>
@@ -288,7 +290,7 @@
 
         <span class="c1"># Original probabilities.</span>
         <span class="n">logits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear</span><span class="p">(</span><span class="n">hidden</span><span class="p">)</span>
-        <span class="n">logits</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pad_idx</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)</span>
+        <span class="n">logits</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pad_idx</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">)</span>
         <span class="n">prob</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 
         <span class="c1"># Probability of copying p(z=1) batch.</span>
@@ -296,18 +298,17 @@
         <span class="c1"># Probability of not copying: p_{word}(w) * (1 - p(z))</span>
         <span class="n">out_prob</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">prob</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">p_copy</span><span class="p">)</span>
         <span class="n">mul_attn</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">attn</span><span class="p">,</span> <span class="n">p_copy</span><span class="p">)</span>
-        <span class="n">copy_prob</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">bmm</span><span class="p">(</span>
-            <span class="n">mul_attn</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">slen</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
-            <span class="n">src_map</span>
-        <span class="p">)</span>
+        <span class="n">copy_prob</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">bmm</span><span class="p">(</span><span class="n">mul_attn</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">slen</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">src_map</span><span class="p">)</span>
         <span class="n">copy_prob</span> <span class="o">=</span> <span class="n">copy_prob</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">cvocab</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">out_prob</span><span class="p">,</span> <span class="n">copy_prob</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span></div></div>
 
 
 <span class="k">class</span> <span class="nc">CopyGeneratorLoss</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Copy generator criterion.&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vocab_size</span><span class="p">,</span> <span class="n">force_copy</span><span class="p">,</span> <span class="n">unk_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                 <span class="n">ignore_index</span><span class="o">=-</span><span class="mi">100</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-20</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">vocab_size</span><span class="p">,</span> <span class="n">force_copy</span><span class="p">,</span> <span class="n">unk_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=-</span><span class="mi">100</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-20</span>
+    <span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">CopyGeneratorLoss</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">force_copy</span> <span class="o">=</span> <span class="n">force_copy</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">eps</span> <span class="o">=</span> <span class="n">eps</span>
@@ -339,9 +340,7 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">force_copy</span><span class="p">:</span>
             <span class="n">non_copy</span> <span class="o">=</span> <span class="n">non_copy</span> <span class="o">|</span> <span class="p">(</span><span class="n">target</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unk_index</span><span class="p">)</span>
 
-        <span class="n">probs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
-            <span class="n">non_copy</span><span class="p">,</span> <span class="n">copy_tok_probs</span> <span class="o">+</span> <span class="n">vocab_probs</span><span class="p">,</span> <span class="n">copy_tok_probs</span>
-        <span class="p">)</span>
+        <span class="n">probs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">non_copy</span><span class="p">,</span> <span class="n">copy_tok_probs</span> <span class="o">+</span> <span class="n">vocab_probs</span><span class="p">,</span> <span class="n">copy_tok_probs</span><span class="p">)</span>
 
         <span class="n">loss</span> <span class="o">=</span> <span class="o">-</span><span class="n">probs</span><span class="o">.</span><span class="n">log</span><span class="p">()</span>  <span class="c1"># just NLLLoss; can the module be incorporated?</span>
         <span class="c1"># Drop padding.</span>

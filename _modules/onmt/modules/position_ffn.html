@@ -93,11 +93,12 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">How do I use my v2 models in v3 ?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-do-i-train-the-transformer-model">How do I train the Transformer model?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#performance-tips">Performance tips</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#position-encoding-absolute-vs-relative-vs-rotary-embeddings">Position encoding: Absolute vs Relative vs Rotary Embeddings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#position-encoding-absolute-vs-relative-vs-rotary-embeddings-vs-alibi">Position encoding: Absolute vs Relative vs Rotary Embeddings vs Alibi</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#what-special-tokens-does-opennmt-py-use">What special tokens does OpenNMT-py use?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
@@ -221,7 +222,7 @@
 
 
 <div class="viewcode-block" id="PositionwiseFeedForward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.position_ffn.PositionwiseFeedForward">[docs]</a><span class="k">class</span> <span class="nc">PositionwiseFeedForward</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; A two-layer Feed-Forward-Network with residual layer norm.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A two-layer Feed-Forward-Network with residual layer norm.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        d_model (int): the size of input for the first-layer of the FFN.</span>
@@ -232,22 +233,27 @@
 <span class="sd">        layer_norm (string): &#39;standard&#39; or &#39;rms&#39;</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d_model</span><span class="p">,</span> <span class="n">d_ff</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
-                 <span class="n">activation_fn</span><span class="o">=</span><span class="n">ActivationFunction</span><span class="o">.</span><span class="n">relu</span><span class="p">,</span>
-                 <span class="n">layer_norm</span><span class="o">=</span><span class="s1">&#39;standard&#39;</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">d_model</span><span class="p">,</span>
+        <span class="n">d_ff</span><span class="p">,</span>
+        <span class="n">dropout</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+        <span class="n">activation_fn</span><span class="o">=</span><span class="n">ActivationFunction</span><span class="o">.</span><span class="n">relu</span><span class="p">,</span>
+        <span class="n">layer_norm</span><span class="o">=</span><span class="s2">&quot;standard&quot;</span><span class="p">,</span>
+    <span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">PositionwiseFeedForward</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">w_1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">d_ff</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">w_2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">d_ff</span><span class="p">,</span> <span class="n">d_model</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">layer_norm</span> <span class="o">==</span> <span class="s1">&#39;standard&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">layer_norm</span> <span class="o">==</span> <span class="s2">&quot;standard&quot;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">layer_norm</span> <span class="o">==</span> <span class="s1">&#39;rms&#39;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">layer_norm</span> <span class="o">==</span> <span class="s2">&quot;rms&quot;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span> <span class="o">=</span> <span class="n">RMSNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">layer_norm</span><span class="si">}</span><span class="s1"> layer norm type is not supported&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">layer_norm</span><span class="si">}</span><span class="s2"> layer norm type is not supported&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dropout_1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">activation</span> <span class="o">=</span> <span class="n">ACTIVATION_FUNCTIONS</span><span class="p">[</span><span class="n">activation_fn</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dropout_2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">activation_fn</span> <span class="o">==</span> <span class="s1">&#39;silu&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">activation_fn</span> <span class="o">==</span> <span class="s2">&quot;silu&quot;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">w_3</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">d_ff</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">w_3</span> <span class="o">=</span> <span class="kc">None</span>
@@ -262,12 +268,12 @@
 <span class="sd">            (FloatTensor): Output ``(batch_size, input_len, model_dim)``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">w_3</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">inter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout_1</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">activation</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">w_1</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span><span class="p">(</span><span class="n">x</span><span class="p">))))</span>
+            <span class="n">inter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout_1</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">activation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">w_1</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span><span class="p">(</span><span class="n">x</span><span class="p">))))</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">inter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout_1</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">activation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">w_1</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span><span class="p">(</span><span class="n">x</span><span class="p">)))</span>
-                <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">w_3</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span><span class="p">(</span><span class="n">x</span><span class="p">)))</span>
+                <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">w_3</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+            <span class="p">)</span>
         <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout_2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">w_2</span><span class="p">(</span><span class="n">inter</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">output</span> <span class="o">+</span> <span class="n">x</span></div>
 

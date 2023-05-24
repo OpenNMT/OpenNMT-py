@@ -93,11 +93,12 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">How do I use my v2 models in v3 ?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-do-i-train-the-transformer-model">How do I train the Transformer model?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#performance-tips">Performance tips</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#position-encoding-absolute-vs-relative-vs-rotary-embeddings">Position encoding: Absolute vs Relative vs Rotary Embeddings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#position-encoding-absolute-vs-relative-vs-rotary-embeddings-vs-alibi">Position encoding: Absolute vs Relative vs Rotary Embeddings vs Alibi</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#what-special-tokens-does-opennmt-py-use">What special tokens does OpenNMT-py use?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
@@ -225,30 +226,35 @@
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">enc_type</span><span class="p">,</span> <span class="n">max_len</span><span class="o">=</span><span class="mi">5000</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">dim</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot use sin/cos positional encoding with &quot;</span>
-                             <span class="s2">&quot;odd dim (got dim=</span><span class="si">{:d}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dim</span><span class="p">))</span>
-        <span class="k">if</span> <span class="n">enc_type</span> <span class="o">==</span> <span class="s1">&#39;SinusoidalInterleaved&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Cannot use sin/cos positional encoding with &quot;</span>
+                <span class="s2">&quot;odd dim (got dim=</span><span class="si">{:d}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">enc_type</span> <span class="o">==</span> <span class="s2">&quot;SinusoidalInterleaved&quot;</span><span class="p">:</span>
             <span class="n">pe</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">max_len</span><span class="p">,</span> <span class="n">dim</span><span class="p">)</span>
             <span class="n">position</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">max_len</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-            <span class="n">div_term</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">((</span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">)</span> <span class="o">*</span>
-                                 <span class="o">-</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">10000.0</span><span class="p">)</span> <span class="o">/</span> <span class="n">dim</span><span class="p">)))</span>
+            <span class="n">div_term</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
+                <span class="p">(</span>
+                    <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+                    <span class="o">*</span> <span class="o">-</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">10000.0</span><span class="p">)</span> <span class="o">/</span> <span class="n">dim</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
             <span class="n">pe</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">position</span><span class="o">.</span><span class="n">float</span><span class="p">()</span> <span class="o">*</span> <span class="n">div_term</span><span class="p">)</span>
             <span class="n">pe</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">position</span><span class="o">.</span><span class="n">float</span><span class="p">()</span> <span class="o">*</span> <span class="n">div_term</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">enc_type</span> <span class="o">==</span> <span class="s1">&#39;SinusoidalConcat&#39;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">enc_type</span> <span class="o">==</span> <span class="s2">&quot;SinusoidalConcat&quot;</span><span class="p">:</span>
             <span class="n">half_dim</span> <span class="o">=</span> <span class="n">dim</span> <span class="o">//</span> <span class="mi">2</span>
             <span class="n">pe</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">10000</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">half_dim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
             <span class="n">pe</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">half_dim</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">)</span> <span class="o">*</span> <span class="o">-</span><span class="n">pe</span><span class="p">)</span>
-            <span class="n">pe</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">max_len</span><span class="p">,</span>
-                              <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">pe</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-            <span class="n">pe</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">torch</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">pe</span><span class="p">),</span>
-                            <span class="n">torch</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">pe</span><span class="p">)],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">max_len</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">pe</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">max_len</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">pe</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">pe</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">torch</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">pe</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">pe</span><span class="p">)],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">max_len</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s2">&quot;Choice of Position encoding is SinusoidalInterleaved or&quot;</span>
-                <span class="s2">&quot; SinusoidalConcat.&quot;</span><span class="p">)</span>
+                <span class="s2">&quot; SinusoidalConcat.&quot;</span>
+            <span class="p">)</span>
         <span class="n">pe</span> <span class="o">=</span> <span class="n">pe</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># we keep pe (len x batch x dim) for back comp</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">PositionalEncoding</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s1">&#39;pe&#39;</span><span class="p">,</span> <span class="n">pe</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">&quot;pe&quot;</span><span class="p">,</span> <span class="n">pe</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">=</span> <span class="n">dim</span>
 
 <div class="viewcode-block" id="PositionalEncoding.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.PositionalEncoding.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">emb</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -268,7 +274,7 @@
                 <span class="sa">f</span><span class="s2">&quot;Sequence is </span><span class="si">{</span><span class="n">emb</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">step</span><span class="si">}</span><span class="s2"> but PositionalEncoding is&quot;</span>
                 <span class="sa">f</span><span class="s2">&quot; limited to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">pe</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2">. See max_len argument.&quot;</span>
             <span class="p">)</span>
-        <span class="n">emb</span> <span class="o">=</span> <span class="n">emb</span> <span class="o">+</span> <span class="n">pe</span><span class="p">[:,</span> <span class="n">step</span><span class="p">:</span><span class="n">emb</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">+</span><span class="n">step</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">emb</span> <span class="o">=</span> <span class="n">emb</span> <span class="o">+</span> <span class="n">pe</span><span class="p">[:,</span> <span class="n">step</span> <span class="p">:</span> <span class="n">emb</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">step</span><span class="p">,</span> <span class="p">:]</span>
 
         <span class="k">return</span> <span class="n">emb</span></div></div>
 
@@ -315,21 +321,29 @@
 <span class="sd">        freeze_word_vecs (bool): freeze weights of word vectors.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">word_vec_size</span><span class="p">,</span>
-                 <span class="n">word_vocab_size</span><span class="p">,</span>
-                 <span class="n">word_padding_idx</span><span class="p">,</span>
-                 <span class="n">position_encoding</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                 <span class="n">position_encoding_type</span><span class="o">=</span><span class="s1">&#39;SinusoidalInterleaved&#39;</span><span class="p">,</span>
-                 <span class="n">feat_merge</span><span class="o">=</span><span class="s2">&quot;concat&quot;</span><span class="p">,</span>
-                 <span class="n">feat_vec_exponent</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
-                 <span class="n">feat_vec_size</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
-                 <span class="n">feat_padding_idx</span><span class="o">=</span><span class="p">[],</span>
-                 <span class="n">feat_vocab_sizes</span><span class="o">=</span><span class="p">[],</span>
-                 <span class="n">dropout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                 <span class="n">sparse</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                 <span class="n">freeze_word_vecs</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_args</span><span class="p">(</span><span class="n">feat_merge</span><span class="p">,</span> <span class="n">feat_vocab_sizes</span><span class="p">,</span> <span class="n">feat_vec_exponent</span><span class="p">,</span>
-                            <span class="n">feat_vec_size</span><span class="p">,</span> <span class="n">feat_padding_idx</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">word_vec_size</span><span class="p">,</span>
+        <span class="n">word_vocab_size</span><span class="p">,</span>
+        <span class="n">word_padding_idx</span><span class="p">,</span>
+        <span class="n">position_encoding</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">position_encoding_type</span><span class="o">=</span><span class="s2">&quot;SinusoidalInterleaved&quot;</span><span class="p">,</span>
+        <span class="n">feat_merge</span><span class="o">=</span><span class="s2">&quot;concat&quot;</span><span class="p">,</span>
+        <span class="n">feat_vec_exponent</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
+        <span class="n">feat_vec_size</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">feat_padding_idx</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">feat_vocab_sizes</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">dropout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">sparse</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">freeze_word_vecs</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_args</span><span class="p">(</span>
+            <span class="n">feat_merge</span><span class="p">,</span>
+            <span class="n">feat_vocab_sizes</span><span class="p">,</span>
+            <span class="n">feat_vec_exponent</span><span class="p">,</span>
+            <span class="n">feat_vec_size</span><span class="p">,</span>
+            <span class="n">feat_padding_idx</span><span class="p">,</span>
+        <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">feat_padding_idx</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">feat_padding_idx</span> <span class="o">=</span> <span class="p">[]</span>
@@ -344,13 +358,12 @@
 
         <span class="c1"># Dimensions and padding for feature embedding matrices</span>
         <span class="c1"># (these have no effect if feat_vocab_sizes is empty)</span>
-        <span class="k">if</span> <span class="n">feat_merge</span> <span class="o">==</span> <span class="s1">&#39;sum&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">feat_merge</span> <span class="o">==</span> <span class="s2">&quot;sum&quot;</span><span class="p">:</span>
             <span class="n">feat_dims</span> <span class="o">=</span> <span class="p">[</span><span class="n">word_vec_size</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">feat_vocab_sizes</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">feat_vec_size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">feat_dims</span> <span class="o">=</span> <span class="p">[</span><span class="n">feat_vec_size</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">feat_vocab_sizes</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">feat_dims</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">vocab</span> <span class="o">**</span> <span class="n">feat_vec_exponent</span><span class="p">)</span>
-                         <span class="k">for</span> <span class="n">vocab</span> <span class="ow">in</span> <span class="n">feat_vocab_sizes</span><span class="p">]</span>
+            <span class="n">feat_dims</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">vocab</span><span class="o">**</span><span class="n">feat_vec_exponent</span><span class="p">)</span> <span class="k">for</span> <span class="n">vocab</span> <span class="ow">in</span> <span class="n">feat_vocab_sizes</span><span class="p">]</span>
         <span class="n">vocab_sizes</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">feat_vocab_sizes</span><span class="p">)</span>
         <span class="n">emb_dims</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">feat_dims</span><span class="p">)</span>
         <span class="n">pad_indices</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">feat_padding_idx</span><span class="p">)</span>
@@ -358,16 +371,17 @@
         <span class="c1"># The embedding matrix look-up tables. The first look-up table</span>
         <span class="c1"># is for words. Subsequent ones are for features, if any exist.</span>
         <span class="n">emb_params</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="n">vocab_sizes</span><span class="p">,</span> <span class="n">emb_dims</span><span class="p">,</span> <span class="n">pad_indices</span><span class="p">)</span>
-        <span class="n">embeddings</span> <span class="o">=</span> <span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span><span class="n">vocab</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">padding_idx</span><span class="o">=</span><span class="n">pad</span><span class="p">,</span> <span class="n">sparse</span><span class="o">=</span><span class="n">sparse</span><span class="p">)</span>
-                      <span class="k">for</span> <span class="n">vocab</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">pad</span> <span class="ow">in</span> <span class="n">emb_params</span><span class="p">]</span>
+        <span class="n">embeddings</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span><span class="n">vocab</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">padding_idx</span><span class="o">=</span><span class="n">pad</span><span class="p">,</span> <span class="n">sparse</span><span class="o">=</span><span class="n">sparse</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">vocab</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">pad</span> <span class="ow">in</span> <span class="n">emb_params</span>
+        <span class="p">]</span>
         <span class="n">emb_luts</span> <span class="o">=</span> <span class="n">Elementwise</span><span class="p">(</span><span class="n">feat_merge</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">)</span>
 
         <span class="c1"># The final output size of word + feature vectors. This can vary</span>
         <span class="c1"># from the word vector size if and only if features are defined.</span>
         <span class="c1"># This is the attribute you should access if you need to know</span>
         <span class="c1"># how big your embeddings are going to be.</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">embedding_size</span> <span class="o">=</span> <span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">emb_dims</span><span class="p">)</span> <span class="k">if</span> <span class="n">feat_merge</span> <span class="o">==</span> <span class="s1">&#39;concat&#39;</span>
-                               <span class="k">else</span> <span class="n">word_vec_size</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">embedding_size</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">emb_dims</span><span class="p">)</span> <span class="k">if</span> <span class="n">feat_merge</span> <span class="o">==</span> <span class="s2">&quot;concat&quot;</span> <span class="k">else</span> <span class="n">word_vec_size</span>
 
         <span class="c1"># The sequence of operations that converts the input sequence</span>
         <span class="c1"># into a sequence of embeddings. At minimum this consists of</span>
@@ -376,50 +390,64 @@
         <span class="c1"># additional operations as well.</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">Embeddings</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">make_embedding</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">make_embedding</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s1">&#39;emb_luts&#39;</span><span class="p">,</span> <span class="n">emb_luts</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">make_embedding</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s2">&quot;emb_luts&quot;</span><span class="p">,</span> <span class="n">emb_luts</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">feat_merge</span> <span class="o">==</span> <span class="s1">&#39;mlp&#39;</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">feat_vocab_sizes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">feat_merge</span> <span class="o">==</span> <span class="s2">&quot;mlp&quot;</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">feat_vocab_sizes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">in_dim</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">emb_dims</span><span class="p">)</span>
             <span class="n">mlp</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">in_dim</span><span class="p">,</span> <span class="n">word_vec_size</span><span class="p">),</span> <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">())</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">make_embedding</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s1">&#39;mlp&#39;</span><span class="p">,</span> <span class="n">mlp</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">make_embedding</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s2">&quot;mlp&quot;</span><span class="p">,</span> <span class="n">mlp</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">position_encoding</span> <span class="o">=</span> <span class="n">position_encoding</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="n">dropout</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">position_encoding</span><span class="p">:</span>
-            <span class="n">pe</span> <span class="o">=</span> <span class="n">PositionalEncoding</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_size</span><span class="p">,</span>
-                                    <span class="n">position_encoding_type</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">make_embedding</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s1">&#39;pe&#39;</span><span class="p">,</span> <span class="n">pe</span><span class="p">)</span>
+            <span class="n">pe</span> <span class="o">=</span> <span class="n">PositionalEncoding</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_size</span><span class="p">,</span> <span class="n">position_encoding_type</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">make_embedding</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s2">&quot;pe&quot;</span><span class="p">,</span> <span class="n">pe</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">freeze_word_vecs</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">word_lut</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="kc">False</span>
 
-    <span class="k">def</span> <span class="nf">_validate_args</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feat_merge</span><span class="p">,</span> <span class="n">feat_vocab_sizes</span><span class="p">,</span> <span class="n">feat_vec_exponent</span><span class="p">,</span>
-                       <span class="n">feat_vec_size</span><span class="p">,</span> <span class="n">feat_padding_idx</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_validate_args</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">feat_merge</span><span class="p">,</span>
+        <span class="n">feat_vocab_sizes</span><span class="p">,</span>
+        <span class="n">feat_vec_exponent</span><span class="p">,</span>
+        <span class="n">feat_vec_size</span><span class="p">,</span>
+        <span class="n">feat_padding_idx</span><span class="p">,</span>
+    <span class="p">):</span>
         <span class="k">if</span> <span class="n">feat_merge</span> <span class="o">==</span> <span class="s2">&quot;sum&quot;</span><span class="p">:</span>
             <span class="c1"># features must use word_vec_size</span>
             <span class="k">if</span> <span class="n">feat_vec_exponent</span> <span class="o">!=</span> <span class="mf">0.7</span><span class="p">:</span>
-                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Merging with sum, but got non-default &quot;</span>
-                              <span class="s2">&quot;feat_vec_exponent. It will be unused.&quot;</span><span class="p">)</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                    <span class="s2">&quot;Merging with sum, but got non-default &quot;</span>
+                    <span class="s2">&quot;feat_vec_exponent. It will be unused.&quot;</span>
+                <span class="p">)</span>
             <span class="k">if</span> <span class="n">feat_vec_size</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
-                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Merging with sum, but got non-default &quot;</span>
-                              <span class="s2">&quot;feat_vec_size. It will be unused.&quot;</span><span class="p">)</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                    <span class="s2">&quot;Merging with sum, but got non-default &quot;</span>
+                    <span class="s2">&quot;feat_vec_size. It will be unused.&quot;</span>
+                <span class="p">)</span>
         <span class="k">elif</span> <span class="n">feat_vec_size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="c1"># features will use feat_vec_size</span>
             <span class="k">if</span> <span class="n">feat_vec_exponent</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
-                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Not merging with sum and positive &quot;</span>
-                              <span class="s2">&quot;feat_vec_size, but got non-default &quot;</span>
-                              <span class="s2">&quot;feat_vec_exponent. It will be unused.&quot;</span><span class="p">)</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                    <span class="s2">&quot;Not merging with sum and positive &quot;</span>
+                    <span class="s2">&quot;feat_vec_size, but got non-default &quot;</span>
+                    <span class="s2">&quot;feat_vec_exponent. It will be unused.&quot;</span>
+                <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">feat_vec_exponent</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Using feat_vec_exponent to determine &quot;</span>
-                                 <span class="s2">&quot;feature vec size, but got feat_vec_exponent &quot;</span>
-                                 <span class="s2">&quot;less than or equal to 0.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Using feat_vec_exponent to determine &quot;</span>
+                    <span class="s2">&quot;feature vec size, but got feat_vec_exponent &quot;</span>
+                    <span class="s2">&quot;less than or equal to 0.&quot;</span>
+                <span class="p">)</span>
         <span class="n">n_feats</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">feat_vocab_sizes</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">n_feats</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">feat_padding_idx</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Got unequal number of feat_vocab_sizes and &quot;</span>
-                             <span class="s2">&quot;feat_padding_idx (</span><span class="si">{:d}</span><span class="s2"> != </span><span class="si">{:d}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                                <span class="n">n_feats</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">feat_padding_idx</span><span class="p">)))</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Got unequal number of feat_vocab_sizes and &quot;</span>
+                <span class="s2">&quot;feat_padding_idx (</span><span class="si">{:d}</span><span class="s2"> != </span><span class="si">{:d}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">n_feats</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">feat_padding_idx</span><span class="p">))</span>
+            <span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">word_lut</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -444,8 +472,7 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">word_vec_size</span> <span class="o">&gt;</span> <span class="n">pretrained_vec_size</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">word_lut</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span> <span class="p">:</span><span class="n">pretrained_vec_size</span><span class="p">]</span> <span class="o">=</span> <span class="n">pretrained</span>
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">word_vec_size</span> <span class="o">&lt;</span> <span class="n">pretrained_vec_size</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">word_lut</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span> \
-                    <span class="o">.</span><span class="n">copy_</span><span class="p">(</span><span class="n">pretrained</span><span class="p">[:,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">word_vec_size</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">word_lut</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy_</span><span class="p">(</span><span class="n">pretrained</span><span class="p">[:,</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">word_vec_size</span><span class="p">])</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">word_lut</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy_</span><span class="p">(</span><span class="n">pretrained</span><span class="p">)</span></div>
 
@@ -476,13 +503,14 @@
 
 <span class="c1"># Some utilitary functions for pretrained embeddings</span>
 
+
 <span class="k">def</span> <span class="nf">read_embeddings</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">skip_lines</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">filter_set</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Read an embeddings file in the glove format.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">embs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
     <span class="n">total_vectors_in_file</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">skip_lines</span><span class="p">:</span>
                 <span class="k">continue</span>
@@ -492,7 +520,7 @@
                 <span class="c1"># is this reachable?</span>
                 <span class="k">continue</span>
 
-            <span class="n">l_split</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+            <span class="n">l_split</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf8&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">l_split</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
                 <span class="k">continue</span>
             <span class="n">total_vectors_in_file</span> <span class="o">+=</span> <span class="mi">1</span>
@@ -503,8 +531,7 @@
 
 
 <span class="k">def</span> <span class="nf">calc_vocab_load_stats</span><span class="p">(</span><span class="n">vocab</span><span class="p">,</span> <span class="n">loaded_embed_dict</span><span class="p">):</span>
-    <span class="n">matching_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span>
-        <span class="nb">set</span><span class="p">(</span><span class="n">vocab</span><span class="o">.</span><span class="n">ids_to_tokens</span><span class="p">)</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">loaded_embed_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+    <span class="n">matching_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">vocab</span><span class="o">.</span><span class="n">ids_to_tokens</span><span class="p">)</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">loaded_embed_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
     <span class="n">missing_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">vocab</span><span class="p">)</span> <span class="o">-</span> <span class="n">matching_count</span>
     <span class="n">percent_matching</span> <span class="o">=</span> <span class="n">matching_count</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">vocab</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span>
     <span class="k">return</span> <span class="n">matching_count</span><span class="p">,</span> <span class="n">missing_count</span><span class="p">,</span> <span class="n">percent_matching</span>
@@ -519,81 +546,79 @@
 
 
 <span class="k">def</span> <span class="nf">prepare_pretrained_embeddings</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">vocabs</span><span class="p">):</span>
-    <span class="k">if</span> <span class="nb">all</span><span class="p">([</span><span class="n">opt</span><span class="o">.</span><span class="n">both_embeddings</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="k">if</span> <span class="nb">all</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="n">opt</span><span class="o">.</span><span class="n">both_embeddings</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">src_embeddings</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="n">opt</span><span class="o">.</span><span class="n">tgt_embeddings</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">]):</span>
+            <span class="n">opt</span><span class="o">.</span><span class="n">tgt_embeddings</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="p">]</span>
+    <span class="p">):</span>
         <span class="k">return</span>
 
-    <span class="k">assert</span> <span class="n">opt</span><span class="o">.</span><span class="n">save_data</span><span class="p">,</span> <span class="s2">&quot;-save_data is required when using </span><span class="se">\</span>
+    <span class="k">assert</span> <span class="p">(</span>
+        <span class="n">opt</span><span class="o">.</span><span class="n">save_data</span>
+    <span class="p">),</span> <span class="s2">&quot;-save_data is required when using </span><span class="se">\</span>
 <span class="s2">        pretrained embeddings.&quot;</span>
 
     <span class="n">vocs</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">side</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">,</span> <span class="s1">&#39;tgt&#39;</span><span class="p">]:</span>
+    <span class="k">for</span> <span class="n">side</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">,</span> <span class="s2">&quot;tgt&quot;</span><span class="p">]:</span>
         <span class="n">vocab</span> <span class="o">=</span> <span class="n">vocabs</span><span class="p">[</span><span class="n">side</span><span class="p">]</span>
         <span class="n">vocs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">vocab</span><span class="p">)</span>
     <span class="n">enc_vocab</span><span class="p">,</span> <span class="n">dec_vocab</span> <span class="o">=</span> <span class="n">vocs</span>
 
     <span class="n">skip_lines</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">embeddings_type</span> <span class="o">==</span> <span class="s2">&quot;word2vec&quot;</span> <span class="k">else</span> <span class="mi">0</span>
     <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">both_embeddings</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">set_of_src_and_tgt_vocab</span> <span class="o">=</span> \
-            <span class="nb">set</span><span class="p">(</span><span class="n">enc_vocab</span><span class="o">.</span><span class="n">ids_to_tokens</span><span class="p">)</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">dec_vocab</span><span class="o">.</span><span class="n">ids_to_tokens</span><span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Reading encoder and decoder embeddings from </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-            <span class="n">opt</span><span class="o">.</span><span class="n">both_embeddings</span><span class="p">))</span>
-        <span class="n">src_vectors</span><span class="p">,</span> <span class="n">total_vec_count</span> <span class="o">=</span> \
-            <span class="n">read_embeddings</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">both_embeddings</span><span class="p">,</span> <span class="n">skip_lines</span><span class="p">,</span>
-                            <span class="n">set_of_src_and_tgt_vocab</span><span class="p">)</span>
+        <span class="n">set_of_src_and_tgt_vocab</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">enc_vocab</span><span class="o">.</span><span class="n">ids_to_tokens</span><span class="p">)</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span>
+            <span class="n">dec_vocab</span><span class="o">.</span><span class="n">ids_to_tokens</span>
+        <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;Reading encoder and decoder embeddings from </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">both_embeddings</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">src_vectors</span><span class="p">,</span> <span class="n">total_vec_count</span> <span class="o">=</span> <span class="n">read_embeddings</span><span class="p">(</span>
+            <span class="n">opt</span><span class="o">.</span><span class="n">both_embeddings</span><span class="p">,</span> <span class="n">skip_lines</span><span class="p">,</span> <span class="n">set_of_src_and_tgt_vocab</span>
+        <span class="p">)</span>
         <span class="n">tgt_vectors</span> <span class="o">=</span> <span class="n">src_vectors</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">Found </span><span class="si">{}</span><span class="s2"> total vectors in file&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">total_vec_count</span><span class="p">))</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">src_embeddings</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Reading encoder embeddings from </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                <span class="n">opt</span><span class="o">.</span><span class="n">src_embeddings</span><span class="p">))</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Reading encoder embeddings from </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">src_embeddings</span><span class="p">))</span>
             <span class="n">src_vectors</span><span class="p">,</span> <span class="n">total_vec_count</span> <span class="o">=</span> <span class="n">read_embeddings</span><span class="p">(</span>
-                <span class="n">opt</span><span class="o">.</span><span class="n">src_embeddings</span><span class="p">,</span> <span class="n">skip_lines</span><span class="p">,</span>
-                <span class="n">filter_set</span><span class="o">=</span><span class="nb">set</span><span class="p">(</span><span class="n">enc_vocab</span><span class="o">.</span><span class="n">ids_to_tokens</span><span class="p">)</span>
+                <span class="n">opt</span><span class="o">.</span><span class="n">src_embeddings</span><span class="p">,</span> <span class="n">skip_lines</span><span class="p">,</span> <span class="n">filter_set</span><span class="o">=</span><span class="nb">set</span><span class="p">(</span><span class="n">enc_vocab</span><span class="o">.</span><span class="n">ids_to_tokens</span><span class="p">)</span>
             <span class="p">)</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">Found </span><span class="si">{}</span><span class="s2"> total vectors in file.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                <span class="n">total_vec_count</span><span class="p">))</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">Found </span><span class="si">{}</span><span class="s2"> total vectors in file.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">total_vec_count</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">src_vectors</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">tgt_embeddings</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Reading decoder embeddings from </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                <span class="n">opt</span><span class="o">.</span><span class="n">tgt_embeddings</span><span class="p">))</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Reading decoder embeddings from </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">tgt_embeddings</span><span class="p">))</span>
             <span class="n">tgt_vectors</span><span class="p">,</span> <span class="n">total_vec_count</span> <span class="o">=</span> <span class="n">read_embeddings</span><span class="p">(</span>
-                <span class="n">opt</span><span class="o">.</span><span class="n">tgt_embeddings</span><span class="p">,</span> <span class="n">skip_lines</span><span class="p">,</span>
-                <span class="n">filter_set</span><span class="o">=</span><span class="nb">set</span><span class="p">(</span><span class="n">dec_vocab</span><span class="o">.</span><span class="n">ids_to_tokens</span><span class="p">)</span>
+                <span class="n">opt</span><span class="o">.</span><span class="n">tgt_embeddings</span><span class="p">,</span> <span class="n">skip_lines</span><span class="p">,</span> <span class="n">filter_set</span><span class="o">=</span><span class="nb">set</span><span class="p">(</span><span class="n">dec_vocab</span><span class="o">.</span><span class="n">ids_to_tokens</span><span class="p">)</span>
             <span class="p">)</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">Found </span><span class="si">{}</span><span class="s2"> total vectors in file&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">total_vec_count</span><span class="p">))</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">Found </span><span class="si">{}</span><span class="s2"> total vectors in file&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">total_vec_count</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">tgt_vectors</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;After filtering to vectors in vocab:&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">src_embeddings</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">opt</span><span class="o">.</span><span class="n">both_embeddings</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">* enc: </span><span class="si">%d</span><span class="s2"> match, </span><span class="si">%d</span><span class="s2"> missing, (</span><span class="si">%.2f%%</span><span class="s2">)&quot;</span>
-                    <span class="o">%</span> <span class="n">calc_vocab_load_stats</span><span class="p">(</span><span class="n">enc_vocab</span><span class="p">,</span> <span class="n">src_vectors</span><span class="p">))</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">* enc: </span><span class="si">%d</span><span class="s2"> match, </span><span class="si">%d</span><span class="s2"> missing, (</span><span class="si">%.2f%%</span><span class="s2">)&quot;</span>
+            <span class="o">%</span> <span class="n">calc_vocab_load_stats</span><span class="p">(</span><span class="n">enc_vocab</span><span class="p">,</span> <span class="n">src_vectors</span><span class="p">)</span>
+        <span class="p">)</span>
     <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">tgt_embeddings</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">opt</span><span class="o">.</span><span class="n">both_embeddings</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">* dec: </span><span class="si">%d</span><span class="s2"> match, </span><span class="si">%d</span><span class="s2"> missing, (</span><span class="si">%.2f%%</span><span class="s2">)&quot;</span>
-                    <span class="o">%</span> <span class="n">calc_vocab_load_stats</span><span class="p">(</span><span class="n">dec_vocab</span><span class="p">,</span> <span class="n">tgt_vectors</span><span class="p">))</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">* dec: </span><span class="si">%d</span><span class="s2"> match, </span><span class="si">%d</span><span class="s2"> missing, (</span><span class="si">%.2f%%</span><span class="s2">)&quot;</span>
+            <span class="o">%</span> <span class="n">calc_vocab_load_stats</span><span class="p">(</span><span class="n">dec_vocab</span><span class="p">,</span> <span class="n">tgt_vectors</span><span class="p">)</span>
+        <span class="p">)</span>
 
     <span class="c1"># Write to file</span>
     <span class="n">enc_output_file</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">save_data</span> <span class="o">+</span> <span class="s2">&quot;.enc_embeddings.pt&quot;</span>
     <span class="n">dec_output_file</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">save_data</span> <span class="o">+</span> <span class="s2">&quot;.dec_embeddings.pt&quot;</span>
     <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">src_embeddings</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">opt</span><span class="o">.</span><span class="n">both_embeddings</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Saving encoder embeddings as:</span><span class="se">\n\t</span><span class="s2">* enc: </span><span class="si">%s</span><span class="s2">&quot;</span>
-                    <span class="o">%</span> <span class="n">enc_output_file</span><span class="p">)</span>
-        <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span>
-            <span class="n">convert_to_torch_tensor</span><span class="p">(</span><span class="n">src_vectors</span><span class="p">,</span> <span class="n">enc_vocab</span><span class="p">),</span>
-            <span class="n">enc_output_file</span>
-        <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Saving encoder embeddings as:</span><span class="se">\n\t</span><span class="s2">* enc: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">enc_output_file</span><span class="p">)</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">convert_to_torch_tensor</span><span class="p">(</span><span class="n">src_vectors</span><span class="p">,</span> <span class="n">enc_vocab</span><span class="p">),</span> <span class="n">enc_output_file</span><span class="p">)</span>
         <span class="c1"># set the opt in place</span>
         <span class="n">opt</span><span class="o">.</span><span class="n">pre_word_vecs_enc</span> <span class="o">=</span> <span class="n">enc_output_file</span>
     <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">tgt_embeddings</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">opt</span><span class="o">.</span><span class="n">both_embeddings</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Saving decoder embeddings as:</span><span class="se">\n\t</span><span class="s2">* dec: </span><span class="si">%s</span><span class="s2">&quot;</span>
-                    <span class="o">%</span> <span class="n">dec_output_file</span><span class="p">)</span>
-        <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span>
-            <span class="n">convert_to_torch_tensor</span><span class="p">(</span><span class="n">tgt_vectors</span><span class="p">,</span> <span class="n">dec_vocab</span><span class="p">),</span>
-            <span class="n">dec_output_file</span>
-        <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Saving decoder embeddings as:</span><span class="se">\n\t</span><span class="s2">* dec: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">dec_output_file</span><span class="p">)</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">convert_to_torch_tensor</span><span class="p">(</span><span class="n">tgt_vectors</span><span class="p">,</span> <span class="n">dec_vocab</span><span class="p">),</span> <span class="n">dec_output_file</span><span class="p">)</span>
         <span class="c1"># set the opt in place</span>
         <span class="n">opt</span><span class="o">.</span><span class="n">pre_word_vecs_dec</span> <span class="o">=</span> <span class="n">dec_output_file</span>
 </pre></div>

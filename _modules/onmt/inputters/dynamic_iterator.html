@@ -93,11 +93,12 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">How do I use my v2 models in v3 ?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-do-i-train-the-transformer-model">How do I train the Transformer model?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#performance-tips">Performance tips</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#position-encoding-absolute-vs-relative-vs-rotary-embeddings">Position encoding: Absolute vs Relative vs Rotary Embeddings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#position-encoding-absolute-vs-relative-vs-rotary-embeddings-vs-alibi">Position encoding: Absolute vs Relative vs Rotary Embeddings vs Alibi</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#what-special-tokens-does-opennmt-py-use">What special tokens does OpenNMT-py use?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
@@ -203,8 +204,13 @@
 <span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">cycle</span>
 <span class="kn">from</span> <span class="nn">onmt.constants</span> <span class="kn">import</span> <span class="n">CorpusTask</span>
 <span class="kn">from</span> <span class="nn">onmt.inputters.text_corpus</span> <span class="kn">import</span> <span class="n">get_corpora</span><span class="p">,</span> <span class="n">build_corpora_iters</span>
-<span class="kn">from</span> <span class="nn">onmt.inputters.text_utils</span> <span class="kn">import</span> <span class="n">text_sort_key</span><span class="p">,</span> <span class="n">process</span><span class="p">,</span>\
-    <span class="n">numericalize</span><span class="p">,</span> <span class="n">tensorify</span><span class="p">,</span> <span class="n">_addcopykeys</span>
+<span class="kn">from</span> <span class="nn">onmt.inputters.text_utils</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">text_sort_key</span><span class="p">,</span>
+    <span class="n">process</span><span class="p">,</span>
+    <span class="n">numericalize</span><span class="p">,</span>
+    <span class="n">tensorify</span><span class="p">,</span>
+    <span class="n">_addcopykeys</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span> <span class="nn">onmt.transforms</span> <span class="kn">import</span> <span class="n">make_transforms</span>
 <span class="kn">from</span> <span class="nn">onmt.utils.logging</span> <span class="kn">import</span> <span class="n">init_logger</span><span class="p">,</span> <span class="n">logger</span>
 <span class="kn">from</span> <span class="nn">onmt.utils.misc</span> <span class="kn">import</span> <span class="n">RandomShuffler</span>
@@ -224,8 +230,7 @@
         <span class="n">iter_keys</span> <span class="o">=</span> <span class="n">iterables</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
         <span class="n">weight_keys</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">iter_keys</span> <span class="o">!=</span> <span class="n">weight_keys</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;keys in </span><span class="si">{</span><span class="n">iterables</span><span class="si">}</span><span class="s2"> &amp; </span><span class="si">{</span><span class="n">iterables</span><span class="si">}</span><span class="s2"> should be equal.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;keys in </span><span class="si">{</span><span class="n">iterables</span><span class="si">}</span><span class="s2"> &amp; </span><span class="si">{</span><span class="n">iterables</span><span class="si">}</span><span class="s2"> should be equal.&quot;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
@@ -262,7 +267,7 @@
         <span class="n">logger</span> <span class="o">=</span> <span class="n">init_logger</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">ds_name</span><span class="p">,</span> <span class="n">ds_count</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_counts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">msgs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t\t\t</span><span class="s2">* </span><span class="si">{</span><span class="n">ds_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">ds_count</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Weighted corpora loaded so far:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">+</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">msgs</span><span class="p">))</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Weighted corpora loaded so far:</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">msgs</span><span class="p">))</span>
 
     <span class="k">def</span> <span class="nf">_reset_iter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ds_name</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_iterators</span><span class="p">[</span><span class="n">ds_name</span><span class="p">]</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">iterables</span><span class="p">[</span><span class="n">ds_name</span><span class="p">])</span>
@@ -315,11 +320,25 @@
 <span class="sd">        mixer (MixingStrategy): the strategy to iterate corpora.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">corpora</span><span class="p">,</span> <span class="n">corpora_info</span><span class="p">,</span> <span class="n">transforms</span><span class="p">,</span> <span class="n">vocabs</span><span class="p">,</span> <span class="n">task</span><span class="p">,</span>
-                 <span class="n">batch_type</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">batch_size_multiple</span><span class="p">,</span> <span class="n">data_type</span><span class="o">=</span><span class="s2">&quot;text&quot;</span><span class="p">,</span>
-                 <span class="n">bucket_size</span><span class="o">=</span><span class="mi">2048</span><span class="p">,</span> <span class="n">bucket_size_init</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
-                 <span class="n">bucket_size_increment</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                 <span class="n">skip_empty_level</span><span class="o">=</span><span class="s1">&#39;warning&#39;</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">corpora</span><span class="p">,</span>
+        <span class="n">corpora_info</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="p">,</span>
+        <span class="n">vocabs</span><span class="p">,</span>
+        <span class="n">task</span><span class="p">,</span>
+        <span class="n">batch_type</span><span class="p">,</span>
+        <span class="n">batch_size</span><span class="p">,</span>
+        <span class="n">batch_size_multiple</span><span class="p">,</span>
+        <span class="n">data_type</span><span class="o">=</span><span class="s2">&quot;text&quot;</span><span class="p">,</span>
+        <span class="n">bucket_size</span><span class="o">=</span><span class="mi">2048</span><span class="p">,</span>
+        <span class="n">bucket_size_init</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">bucket_size_increment</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">skip_empty_level</span><span class="o">=</span><span class="s2">&quot;warning&quot;</span><span class="p">,</span>
+        <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">DynamicDatasetIter</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">corpora</span> <span class="o">=</span> <span class="n">corpora</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span> <span class="o">=</span> <span class="n">transforms</span>
@@ -330,7 +349,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch_size</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">batch_type</span> <span class="o">=</span> <span class="n">batch_type</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">batch_size_multiple</span> <span class="o">=</span> <span class="n">batch_size_multiple</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="s1">&#39;cpu&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="s2">&quot;cpu&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sort_key</span> <span class="o">=</span> <span class="n">text_sort_key</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bucket_size</span> <span class="o">=</span> <span class="n">bucket_size</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bucket_size_init</span> <span class="o">=</span> <span class="n">bucket_size_init</span>
@@ -340,19 +359,18 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid argument for stride=</span><span class="si">{</span><span class="n">stride</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">stride</span> <span class="o">=</span> <span class="n">stride</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="n">offset</span>
-        <span class="k">if</span> <span class="n">skip_empty_level</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;silent&#39;</span><span class="p">,</span> <span class="s1">&#39;warning&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">]:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Invalid argument skip_empty_level=</span><span class="si">{</span><span class="n">skip_empty_level</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">skip_empty_level</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;silent&quot;</span><span class="p">,</span> <span class="s2">&quot;warning&quot;</span><span class="p">,</span> <span class="s2">&quot;error&quot;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid argument skip_empty_level=</span><span class="si">{</span><span class="n">skip_empty_level</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">skip_empty_level</span> <span class="o">=</span> <span class="n">skip_empty_level</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">random_shuffler</span> <span class="o">=</span> <span class="n">RandomShuffler</span><span class="p">()</span>
 
 <div class="viewcode-block" id="DynamicDatasetIter.from_opt"><a class="viewcode-back" href="../../../onmt.inputters.html#onmt.inputters.DynamicDatasetIter.from_opt">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_opt</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">corpora</span><span class="p">,</span> <span class="n">transforms</span><span class="p">,</span> <span class="n">vocabs</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">task</span><span class="p">,</span> <span class="n">copy</span><span class="p">,</span>
-                 <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">from_opt</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">corpora</span><span class="p">,</span> <span class="n">transforms</span><span class="p">,</span> <span class="n">vocabs</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">task</span><span class="p">,</span> <span class="n">copy</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initilize `DynamicDatasetIter` with options parsed from `opt`.&quot;&quot;&quot;</span>
         <span class="n">corpora_info</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="n">batch_size</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">valid_batch_size</span> <span class="k">if</span> <span class="p">(</span><span class="n">task</span> <span class="o">==</span> <span class="n">CorpusTask</span><span class="o">.</span><span class="n">VALID</span><span class="p">)</span> \
-            <span class="k">else</span> <span class="n">opt</span><span class="o">.</span><span class="n">batch_size</span>
+        <span class="n">batch_size</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">opt</span><span class="o">.</span><span class="n">valid_batch_size</span> <span class="k">if</span> <span class="p">(</span><span class="n">task</span> <span class="o">==</span> <span class="n">CorpusTask</span><span class="o">.</span><span class="n">VALID</span><span class="p">)</span> <span class="k">else</span> <span class="n">opt</span><span class="o">.</span><span class="n">batch_size</span>
+        <span class="p">)</span>
         <span class="k">if</span> <span class="n">task</span> <span class="o">!=</span> <span class="n">CorpusTask</span><span class="o">.</span><span class="n">INFER</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">batch_size_multiple</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">batch_size_multiple</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">batch_size_multiple</span>
@@ -365,21 +383,30 @@
             <span class="n">skip_empty_level</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">skip_empty_level</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">batch_size_multiple</span> <span class="o">=</span> <span class="mi">1</span>
-            <span class="n">corpora_info</span><span class="p">[</span><span class="n">CorpusTask</span><span class="o">.</span><span class="n">INFER</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;transforms&#39;</span><span class="p">:</span> <span class="n">opt</span><span class="o">.</span><span class="n">transforms</span><span class="p">}</span>
-            <span class="n">corpora_info</span><span class="p">[</span><span class="n">CorpusTask</span><span class="o">.</span><span class="n">INFER</span><span class="p">][</span><span class="s1">&#39;weight&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">corpora_info</span><span class="p">[</span><span class="n">CorpusTask</span><span class="o">.</span><span class="n">INFER</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;transforms&quot;</span><span class="p">:</span> <span class="n">opt</span><span class="o">.</span><span class="n">transforms</span><span class="p">}</span>
+            <span class="n">corpora_info</span><span class="p">[</span><span class="n">CorpusTask</span><span class="o">.</span><span class="n">INFER</span><span class="p">][</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
             <span class="c1"># bucket_size = batch_size</span>
             <span class="n">bucket_size</span> <span class="o">=</span> <span class="mi">16384</span>
             <span class="n">bucket_size_init</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
             <span class="n">bucket_size_increment</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="n">skip_empty_level</span> <span class="o">=</span> <span class="s1">&#39;warning&#39;</span>
+            <span class="n">skip_empty_level</span> <span class="o">=</span> <span class="s2">&quot;warning&quot;</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
-            <span class="n">corpora</span><span class="p">,</span> <span class="n">corpora_info</span><span class="p">,</span> <span class="n">transforms</span><span class="p">,</span> <span class="n">vocabs</span><span class="p">,</span> <span class="n">task</span><span class="p">,</span> <span class="n">opt</span><span class="o">.</span><span class="n">batch_type</span><span class="p">,</span>
-            <span class="n">batch_size</span><span class="p">,</span> <span class="n">batch_size_multiple</span><span class="p">,</span> <span class="n">data_type</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">data_type</span><span class="p">,</span>
-            <span class="n">bucket_size</span><span class="o">=</span><span class="n">bucket_size</span><span class="p">,</span> <span class="n">bucket_size_init</span><span class="o">=</span><span class="n">bucket_size_init</span><span class="p">,</span>
+            <span class="n">corpora</span><span class="p">,</span>
+            <span class="n">corpora_info</span><span class="p">,</span>
+            <span class="n">transforms</span><span class="p">,</span>
+            <span class="n">vocabs</span><span class="p">,</span>
+            <span class="n">task</span><span class="p">,</span>
+            <span class="n">opt</span><span class="o">.</span><span class="n">batch_type</span><span class="p">,</span>
+            <span class="n">batch_size</span><span class="p">,</span>
+            <span class="n">batch_size_multiple</span><span class="p">,</span>
+            <span class="n">data_type</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">data_type</span><span class="p">,</span>
+            <span class="n">bucket_size</span><span class="o">=</span><span class="n">bucket_size</span><span class="p">,</span>
+            <span class="n">bucket_size_init</span><span class="o">=</span><span class="n">bucket_size_init</span><span class="p">,</span>
             <span class="n">bucket_size_increment</span><span class="o">=</span><span class="n">bucket_size_increment</span><span class="p">,</span>
             <span class="n">copy</span><span class="o">=</span><span class="n">copy</span><span class="p">,</span>
             <span class="n">skip_empty_level</span><span class="o">=</span><span class="n">skip_empty_level</span><span class="p">,</span>
-            <span class="n">stride</span><span class="o">=</span><span class="n">stride</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="n">offset</span>
+            <span class="n">stride</span><span class="o">=</span><span class="n">stride</span><span class="p">,</span>
+            <span class="n">offset</span><span class="o">=</span><span class="n">offset</span><span class="p">,</span>
         <span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_init_datasets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">worker_id</span><span class="p">):</span>
@@ -390,11 +417,15 @@
             <span class="n">stride</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stride</span>
             <span class="n">offset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span>
         <span class="n">datasets_iterables</span> <span class="o">=</span> <span class="n">build_corpora_iters</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">corpora</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">corpora_info</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">corpora</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">corpora_info</span><span class="p">,</span>
             <span class="n">skip_empty_level</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">skip_empty_level</span><span class="p">,</span>
-            <span class="n">stride</span><span class="o">=</span><span class="n">stride</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="n">offset</span><span class="p">)</span>
+            <span class="n">stride</span><span class="o">=</span><span class="n">stride</span><span class="p">,</span>
+            <span class="n">offset</span><span class="o">=</span><span class="n">offset</span><span class="p">,</span>
+        <span class="p">)</span>
         <span class="n">datasets_weights</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">ds_name</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">corpora_info</span><span class="p">[</span><span class="n">ds_name</span><span class="p">][</span><span class="s1">&#39;weight&#39;</span><span class="p">])</span>
+            <span class="n">ds_name</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">corpora_info</span><span class="p">[</span><span class="n">ds_name</span><span class="p">][</span><span class="s2">&quot;weight&quot;</span><span class="p">])</span>
             <span class="k">for</span> <span class="n">ds_name</span> <span class="ow">in</span> <span class="n">datasets_iterables</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
         <span class="p">}</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span> <span class="o">==</span> <span class="n">CorpusTask</span><span class="o">.</span><span class="n">TRAIN</span><span class="p">:</span>
@@ -436,27 +467,23 @@
         <span class="k">if</span> <span class="n">bucket</span><span class="p">:</span>
             <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tuple_to_json_with_tokIDs</span><span class="p">(</span><span class="n">bucket</span><span class="p">)</span>
 
-<div class="viewcode-block" id="DynamicDatasetIter.batch_iter"><a class="viewcode-back" href="../../../onmt.inputters.html#onmt.inputters.DynamicDatasetIter.batch_iter">[docs]</a>    <span class="k">def</span> <span class="nf">batch_iter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">batch_type</span><span class="o">=</span><span class="s2">&quot;sents&quot;</span><span class="p">,</span>
-                   <span class="n">batch_size_multiple</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<div class="viewcode-block" id="DynamicDatasetIter.batch_iter"><a class="viewcode-back" href="../../../onmt.inputters.html#onmt.inputters.DynamicDatasetIter.batch_iter">[docs]</a>    <span class="k">def</span> <span class="nf">batch_iter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">batch_type</span><span class="o">=</span><span class="s2">&quot;sents&quot;</span><span class="p">,</span> <span class="n">batch_size_multiple</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Yield elements from data in chunks of batch_size,</span>
 <span class="sd">        where each chunk size is a multiple of batch_size_multiple.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="k">def</span> <span class="nf">batch_size_fn</span><span class="p">(</span><span class="n">nbsents</span><span class="p">,</span> <span class="n">maxlen</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">batch_type</span> <span class="o">==</span> <span class="s1">&#39;sents&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">batch_type</span> <span class="o">==</span> <span class="s2">&quot;sents&quot;</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">nbsents</span>
-            <span class="k">elif</span> <span class="n">batch_type</span> <span class="o">==</span> <span class="s1">&#39;tokens&#39;</span><span class="p">:</span>
+            <span class="k">elif</span> <span class="n">batch_type</span> <span class="o">==</span> <span class="s2">&quot;tokens&quot;</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">nbsents</span> <span class="o">*</span> <span class="n">maxlen</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Invalid argument batch_type=</span><span class="si">{</span><span class="n">batch_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid argument batch_type=</span><span class="si">{</span><span class="n">batch_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
         <span class="n">minibatch</span><span class="p">,</span> <span class="n">maxlen</span><span class="p">,</span> <span class="n">size_so_far</span><span class="p">,</span> <span class="n">seen</span> <span class="o">=</span> <span class="p">[],</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">ex</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
-            <span class="k">if</span> <span class="p">(</span>
-                   <span class="p">(</span><span class="n">ex</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">][</span><span class="s1">&#39;src&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen</span><span class="p">)</span> <span class="ow">or</span>
-                   <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">task</span> <span class="o">!=</span> <span class="n">CorpusTask</span><span class="o">.</span><span class="n">TRAIN</span><span class="p">)</span>
-            <span class="p">):</span>
-                <span class="n">seen</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ex</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">][</span><span class="s1">&#39;src&#39;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">ex</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">][</span><span class="s2">&quot;src&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">task</span> <span class="o">!=</span> <span class="n">CorpusTask</span><span class="o">.</span><span class="n">TRAIN</span><span class="p">):</span>
+                <span class="n">seen</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ex</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">][</span><span class="s2">&quot;src&quot;</span><span class="p">])</span>
                 <span class="n">minibatch</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span>
                 <span class="n">nbsents</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">minibatch</span><span class="p">)</span>
                 <span class="n">maxlen</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">text_sort_key</span><span class="p">(</span><span class="n">ex</span><span class="p">),</span> <span class="n">maxlen</span><span class="p">)</span>
@@ -467,18 +494,18 @@
                         <span class="n">overflowed</span> <span class="o">+=</span> <span class="mi">1</span>
                     <span class="k">if</span> <span class="n">batch_size_multiple</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
                         <span class="n">overflowed</span> <span class="o">+=</span> <span class="p">(</span>
-                            <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">minibatch</span><span class="p">)</span> <span class="o">-</span> <span class="n">overflowed</span><span class="p">)</span>
-                            <span class="o">%</span> <span class="n">batch_size_multiple</span><span class="p">)</span>
+                            <span class="nb">len</span><span class="p">(</span><span class="n">minibatch</span><span class="p">)</span> <span class="o">-</span> <span class="n">overflowed</span>
+                        <span class="p">)</span> <span class="o">%</span> <span class="n">batch_size_multiple</span>
                     <span class="k">if</span> <span class="n">overflowed</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                         <span class="k">yield</span> <span class="n">minibatch</span>
                         <span class="n">minibatch</span><span class="p">,</span> <span class="n">maxlen</span><span class="p">,</span> <span class="n">size_so_far</span><span class="p">,</span> <span class="n">seen</span> <span class="o">=</span> <span class="p">[],</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">[]</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="k">if</span> <span class="n">overflowed</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">minibatch</span><span class="p">):</span>
                             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                                 <span class="s2">&quot;The batch will be filled until we reach&quot;</span>
-                                 <span class="s2">&quot; </span><span class="si">%d</span><span class="s2">, its size may exceed </span><span class="si">%d</span><span class="s2"> tokens&quot;</span>
-                                 <span class="o">%</span> <span class="p">(</span><span class="n">batch_size_multiple</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">)</span>
-                                 <span class="p">)</span>
+                                <span class="s2">&quot;The batch will be filled until we reach&quot;</span>
+                                <span class="s2">&quot; </span><span class="si">%d</span><span class="s2">, its size may exceed </span><span class="si">%d</span><span class="s2"> tokens&quot;</span>
+                                <span class="o">%</span> <span class="p">(</span><span class="n">batch_size_multiple</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">)</span>
+                            <span class="p">)</span>
                         <span class="k">else</span><span class="p">:</span>
                             <span class="k">yield</span> <span class="n">minibatch</span><span class="p">[:</span><span class="o">-</span><span class="n">overflowed</span><span class="p">]</span>
                             <span class="n">minibatch</span> <span class="o">=</span> <span class="n">minibatch</span><span class="p">[</span><span class="o">-</span><span class="n">overflowed</span><span class="p">:]</span>
@@ -496,11 +523,14 @@
             <span class="c1"># for faster performance, but otherwise, sequential.</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span> <span class="o">==</span> <span class="n">CorpusTask</span><span class="o">.</span><span class="n">TRAIN</span><span class="p">:</span>
                 <span class="n">bucket</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sort_key</span><span class="p">)</span>
-            <span class="n">p_batch</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_iter</span><span class="p">(</span>
-                <span class="n">bucket</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span>
-                <span class="n">batch_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_type</span><span class="p">,</span>
-                <span class="n">batch_size_multiple</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size_multiple</span><span class="p">))</span>
+            <span class="n">p_batch</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">batch_iter</span><span class="p">(</span>
+                    <span class="n">bucket</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span>
+                    <span class="n">batch_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_type</span><span class="p">,</span>
+                    <span class="n">batch_size_multiple</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size_multiple</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
             <span class="c1"># For TRAIN we shuffle batches within the bucket</span>
             <span class="c1"># otherwise sequential</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span> <span class="o">==</span> <span class="n">CorpusTask</span><span class="o">.</span><span class="n">TRAIN</span><span class="p">:</span>
@@ -513,8 +543,9 @@
                 <span class="k">yield</span> <span class="n">tensor_batch</span></div>
 
 
-<span class="k">def</span> <span class="nf">build_dynamic_dataset_iter</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">transforms_cls</span><span class="p">,</span> <span class="n">vocabs</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                               <span class="n">task</span><span class="o">=</span><span class="n">CorpusTask</span><span class="o">.</span><span class="n">TRAIN</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">build_dynamic_dataset_iter</span><span class="p">(</span>
+    <span class="n">opt</span><span class="p">,</span> <span class="n">transforms_cls</span><span class="p">,</span> <span class="n">vocabs</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">task</span><span class="o">=</span><span class="n">CorpusTask</span><span class="o">.</span><span class="n">TRAIN</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">0</span>
+<span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Build `DynamicDatasetIter` from opt.</span>
 <span class="sd">    Typically this function is called for CorpusTask.[TRAIN,VALID,INFER]</span>
@@ -535,20 +566,22 @@
         <span class="k">assert</span> <span class="n">task</span> <span class="o">!=</span> <span class="n">CorpusTask</span><span class="o">.</span><span class="n">TRAIN</span><span class="p">,</span> <span class="s2">&quot;only valid corpus is ignorable.&quot;</span>
         <span class="k">return</span> <span class="kc">None</span>
     <span class="n">data_iter</span> <span class="o">=</span> <span class="n">DynamicDatasetIter</span><span class="o">.</span><span class="n">from_opt</span><span class="p">(</span>
-        <span class="n">corpora</span><span class="p">,</span> <span class="n">transforms</span><span class="p">,</span> <span class="n">vocabs</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">task</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="n">copy</span><span class="p">,</span>
-        <span class="n">stride</span><span class="o">=</span><span class="n">stride</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="n">offset</span><span class="p">)</span>
-    <span class="n">data_iter</span><span class="o">.</span><span class="n">num_workers</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">num_workers</span> <span class="k">if</span> \
-        <span class="nb">hasattr</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="s1">&#39;num_workers&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="n">corpora</span><span class="p">,</span> <span class="n">transforms</span><span class="p">,</span> <span class="n">vocabs</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">task</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="n">copy</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="n">stride</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="n">offset</span>
+    <span class="p">)</span>
+    <span class="n">data_iter</span><span class="o">.</span><span class="n">num_workers</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">num_workers</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="s2">&quot;num_workers&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="mi">0</span>
     <span class="k">if</span> <span class="n">data_iter</span><span class="o">.</span><span class="n">num_workers</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">task</span> <span class="o">==</span> <span class="n">CorpusTask</span><span class="o">.</span><span class="n">INFER</span><span class="p">:</span>
         <span class="n">data_iter</span><span class="o">.</span><span class="n">_init_datasets</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># when workers=0 init_fn not called</span>
         <span class="n">data_loader</span> <span class="o">=</span> <span class="n">data_iter</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">data_loader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span><span class="n">data_iter</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                                 <span class="n">pin_memory</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                                 <span class="n">multiprocessing_context</span><span class="o">=</span><span class="s2">&quot;spawn&quot;</span><span class="p">,</span>
-                                 <span class="n">num_workers</span><span class="o">=</span><span class="n">data_iter</span><span class="o">.</span><span class="n">num_workers</span><span class="p">,</span>
-                                 <span class="n">worker_init_fn</span><span class="o">=</span><span class="n">data_iter</span><span class="o">.</span><span class="n">_init_datasets</span><span class="p">,</span>
-                                 <span class="n">prefetch_factor</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">prefetch_factor</span><span class="p">)</span>
+        <span class="n">data_loader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span>
+            <span class="n">data_iter</span><span class="p">,</span>
+            <span class="n">batch_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">pin_memory</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">multiprocessing_context</span><span class="o">=</span><span class="s2">&quot;spawn&quot;</span><span class="p">,</span>
+            <span class="n">num_workers</span><span class="o">=</span><span class="n">data_iter</span><span class="o">.</span><span class="n">num_workers</span><span class="p">,</span>
+            <span class="n">worker_init_fn</span><span class="o">=</span><span class="n">data_iter</span><span class="o">.</span><span class="n">_init_datasets</span><span class="p">,</span>
+            <span class="n">prefetch_factor</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">prefetch_factor</span><span class="p">,</span>
+        <span class="p">)</span>
     <span class="k">return</span> <span class="n">data_loader</span>
 </pre></div>
 

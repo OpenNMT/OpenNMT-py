@@ -93,11 +93,12 @@
 <li class="toctree-l1"><a class="reference internal" href="../../FAQ.html">How do I use my v2 models in v3 ?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-do-i-train-the-transformer-model">How do I train the Transformer model?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#performance-tips">Performance tips</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#position-encoding-absolute-vs-relative-vs-rotary-embeddings">Position encoding: Absolute vs Relative vs Rotary Embeddings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#position-encoding-absolute-vs-relative-vs-rotary-embeddings-vs-alibi">Position encoding: Absolute vs Relative vs Rotary Embeddings vs Alibi</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#what-special-tokens-does-opennmt-py-use">What special tokens does OpenNMT-py use?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
@@ -198,8 +199,7 @@
            <div itemprop="articleBody">
             
   <h1>Source code for onmt.trainer</h1><div class="highlight"><pre>
-<span></span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This is the loadable seq2seq trainer library that is</span>
 <span class="sd">    in charge of training details, loss compute, and statistics.</span>
 <span class="sd">    See train.py for a use case of this library.</span>
@@ -235,8 +235,8 @@
 <span class="sd">            used to save the model</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">train_loss</span> <span class="o">=</span> <span class="n">LossCompute</span><span class="o">.</span><span class="n">from_opts</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">vocabs</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">])</span>
-    <span class="n">valid_loss</span> <span class="o">=</span> <span class="n">LossCompute</span><span class="o">.</span><span class="n">from_opts</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">vocabs</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">],</span> <span class="n">train</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">train_loss</span> <span class="o">=</span> <span class="n">LossCompute</span><span class="o">.</span><span class="n">from_opts</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">vocabs</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">])</span>
+    <span class="n">valid_loss</span> <span class="o">=</span> <span class="n">LossCompute</span><span class="o">.</span><span class="n">from_opts</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">vocabs</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">],</span> <span class="n">train</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
     <span class="n">scoring_preparator</span> <span class="o">=</span> <span class="n">ScoringPreparator</span><span class="p">(</span><span class="n">vocabs</span><span class="o">=</span><span class="n">vocabs</span><span class="p">,</span> <span class="n">opt</span><span class="o">=</span><span class="n">opt</span><span class="p">)</span>
     <span class="n">validset_transforms</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;valid&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;transforms&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
@@ -263,27 +263,41 @@
         <span class="n">gpu_rank</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
         <span class="n">n_gpu</span> <span class="o">=</span> <span class="mi">0</span>
 
-    <span class="n">earlystopper</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">EarlyStopping</span><span class="p">(</span>
-        <span class="n">opt</span><span class="o">.</span><span class="n">early_stopping</span><span class="p">,</span> <span class="n">scorers</span><span class="o">=</span><span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">scorers_from_opts</span><span class="p">(</span><span class="n">opt</span><span class="p">))</span> \
-        <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">early_stopping</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">earlystopper</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">EarlyStopping</span><span class="p">(</span>
+            <span class="n">opt</span><span class="o">.</span><span class="n">early_stopping</span><span class="p">,</span> <span class="n">scorers</span><span class="o">=</span><span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">scorers_from_opts</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">early_stopping</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="k">else</span> <span class="kc">None</span>
+    <span class="p">)</span>
 
     <span class="n">report_manager</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">build_report_manager</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">gpu_rank</span><span class="p">)</span>
-    <span class="n">trainer</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">Trainer</span><span class="p">(</span><span class="n">model</span><span class="p">,</span>
-                           <span class="n">train_loss</span><span class="p">,</span> <span class="n">valid_loss</span><span class="p">,</span>
-                           <span class="n">scoring_preparator</span><span class="p">,</span> <span class="n">train_scorers</span><span class="p">,</span> <span class="n">valid_scorers</span><span class="p">,</span>
-                           <span class="n">optim</span><span class="p">,</span> <span class="n">trunc_size</span><span class="p">,</span> <span class="n">norm_method</span><span class="p">,</span>
-                           <span class="n">accum_count</span><span class="p">,</span> <span class="n">accum_steps</span><span class="p">,</span>
-                           <span class="n">n_gpu</span><span class="p">,</span> <span class="n">gpu_rank</span><span class="p">,</span>
-                           <span class="n">opt</span><span class="o">.</span><span class="n">train_eval_steps</span><span class="p">,</span> <span class="n">report_manager</span><span class="p">,</span>
-                           <span class="n">with_align</span><span class="o">=</span><span class="kc">True</span> <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">lambda_align</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">False</span><span class="p">,</span>
-                           <span class="n">model_saver</span><span class="o">=</span><span class="n">model_saver</span> <span class="k">if</span> <span class="n">gpu_rank</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
-                           <span class="n">average_decay</span><span class="o">=</span><span class="n">average_decay</span><span class="p">,</span>
-                           <span class="n">average_every</span><span class="o">=</span><span class="n">average_every</span><span class="p">,</span>
-                           <span class="n">model_dtype</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">model_dtype</span><span class="p">,</span>
-                           <span class="n">earlystopper</span><span class="o">=</span><span class="n">earlystopper</span><span class="p">,</span>
-                           <span class="n">dropout</span><span class="o">=</span><span class="n">dropout</span><span class="p">,</span>
-                           <span class="n">attention_dropout</span><span class="o">=</span><span class="n">attention_dropout</span><span class="p">,</span>
-                           <span class="n">dropout_steps</span><span class="o">=</span><span class="n">dropout_steps</span><span class="p">)</span>
+    <span class="n">trainer</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">Trainer</span><span class="p">(</span>
+        <span class="n">model</span><span class="p">,</span>
+        <span class="n">train_loss</span><span class="p">,</span>
+        <span class="n">valid_loss</span><span class="p">,</span>
+        <span class="n">scoring_preparator</span><span class="p">,</span>
+        <span class="n">train_scorers</span><span class="p">,</span>
+        <span class="n">valid_scorers</span><span class="p">,</span>
+        <span class="n">optim</span><span class="p">,</span>
+        <span class="n">trunc_size</span><span class="p">,</span>
+        <span class="n">norm_method</span><span class="p">,</span>
+        <span class="n">accum_count</span><span class="p">,</span>
+        <span class="n">accum_steps</span><span class="p">,</span>
+        <span class="n">n_gpu</span><span class="p">,</span>
+        <span class="n">gpu_rank</span><span class="p">,</span>
+        <span class="n">opt</span><span class="o">.</span><span class="n">train_eval_steps</span><span class="p">,</span>
+        <span class="n">report_manager</span><span class="p">,</span>
+        <span class="n">with_align</span><span class="o">=</span><span class="kc">True</span> <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">lambda_align</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">model_saver</span><span class="o">=</span><span class="n">model_saver</span> <span class="k">if</span> <span class="n">gpu_rank</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">average_decay</span><span class="o">=</span><span class="n">average_decay</span><span class="p">,</span>
+        <span class="n">average_every</span><span class="o">=</span><span class="n">average_every</span><span class="p">,</span>
+        <span class="n">model_dtype</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">model_dtype</span><span class="p">,</span>
+        <span class="n">earlystopper</span><span class="o">=</span><span class="n">earlystopper</span><span class="p">,</span>
+        <span class="n">dropout</span><span class="o">=</span><span class="n">dropout</span><span class="p">,</span>
+        <span class="n">attention_dropout</span><span class="o">=</span><span class="n">attention_dropout</span><span class="p">,</span>
+        <span class="n">dropout_steps</span><span class="o">=</span><span class="n">dropout_steps</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">return</span> <span class="n">trainer</span>
 
 
@@ -328,19 +342,33 @@
 <span class="sd">        attention_dropout (float): dropaout in attention layers.</span>
 <span class="sd">        dropout_steps (list): dropout values scheduling in steps.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">train_loss</span><span class="p">,</span> <span class="n">valid_loss</span><span class="p">,</span>
-                 <span class="n">scoring_preparator</span><span class="p">,</span> <span class="n">train_scorers</span><span class="p">,</span> <span class="n">valid_scorers</span><span class="p">,</span>
-                 <span class="n">optim</span><span class="p">,</span>
-                 <span class="n">trunc_size</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                 <span class="n">norm_method</span><span class="o">=</span><span class="s1">&#39;sents&#39;</span><span class="p">,</span>
-                 <span class="n">accum_count</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
-                 <span class="n">accum_steps</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-                 <span class="n">n_gpu</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">gpu_rank</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                 <span class="n">train_eval_steps</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
-                 <span class="n">report_manager</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">with_align</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">model_saver</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">average_decay</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">average_every</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">model_dtype</span><span class="o">=</span><span class="s1">&#39;fp32&#39;</span><span class="p">,</span>
-                 <span class="n">earlystopper</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="p">[</span><span class="mf">0.3</span><span class="p">],</span> <span class="n">attention_dropout</span><span class="o">=</span><span class="p">[</span><span class="mf">0.1</span><span class="p">],</span>
-                 <span class="n">dropout_steps</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">,</span>
+        <span class="n">train_loss</span><span class="p">,</span>
+        <span class="n">valid_loss</span><span class="p">,</span>
+        <span class="n">scoring_preparator</span><span class="p">,</span>
+        <span class="n">train_scorers</span><span class="p">,</span>
+        <span class="n">valid_scorers</span><span class="p">,</span>
+        <span class="n">optim</span><span class="p">,</span>
+        <span class="n">trunc_size</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">norm_method</span><span class="o">=</span><span class="s2">&quot;sents&quot;</span><span class="p">,</span>
+        <span class="n">accum_count</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+        <span class="n">accum_steps</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="n">n_gpu</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">gpu_rank</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">train_eval_steps</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+        <span class="n">report_manager</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">with_align</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">model_saver</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">average_decay</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">average_every</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">model_dtype</span><span class="o">=</span><span class="s2">&quot;fp32&quot;</span><span class="p">,</span>
+        <span class="n">earlystopper</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">dropout</span><span class="o">=</span><span class="p">[</span><span class="mf">0.3</span><span class="p">],</span>
+        <span class="n">attention_dropout</span><span class="o">=</span><span class="p">[</span><span class="mf">0.1</span><span class="p">],</span>
+        <span class="n">dropout_steps</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+    <span class="p">):</span>
         <span class="c1"># Basic attributes.</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
@@ -398,11 +426,11 @@
     <span class="k">def</span> <span class="nf">_maybe_update_dropout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dropout_steps</span><span class="p">)):</span>
             <span class="k">if</span> <span class="n">step</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">step</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout_steps</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">update_dropout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
-                                          <span class="bp">self</span><span class="o">.</span><span class="n">attention_dropout</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Updated dropout/attn dropout to </span><span class="si">%f</span><span class="s2"> </span><span class="si">%f</span><span class="s2"> at step </span><span class="si">%d</span><span class="s2">&quot;</span>
-                            <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
-                               <span class="bp">self</span><span class="o">.</span><span class="n">attention_dropout</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">step</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">update_dropout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">attention_dropout</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="s2">&quot;Updated dropout/attn dropout to </span><span class="si">%f</span><span class="s2"> </span><span class="si">%f</span><span class="s2"> at step </span><span class="si">%d</span><span class="s2">&quot;</span>
+                    <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">attention_dropout</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">step</span><span class="p">)</span>
+                <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_accum_batches</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterator</span><span class="p">):</span>
         <span class="n">batches</span> <span class="o">=</span> <span class="p">[]</span>
@@ -411,12 +439,13 @@
         <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">iterator</span><span class="p">:</span>
             <span class="n">batches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm_method</span> <span class="o">==</span> <span class="s2">&quot;tokens&quot;</span><span class="p">:</span>
-                <span class="n">num_tokens</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ne</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">train_loss</span><span class="o">.</span><span class="n">padding_idx</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+                <span class="n">num_tokens</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ne</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_loss</span><span class="o">.</span><span class="n">padding_idx</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+                <span class="p">)</span>
                 <span class="n">normalization</span> <span class="o">+=</span> <span class="n">num_tokens</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-                <span class="n">normalization</span> <span class="o">-=</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">])</span>  <span class="c1"># don&#39;t count for EOS</span>
+                <span class="n">normalization</span> <span class="o">-=</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">])</span>  <span class="c1"># don&#39;t count for EOS</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">normalization</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">])</span>
+                <span class="n">normalization</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">])</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">batches</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">accum_count</span><span class="p">:</span>
                 <span class="k">yield</span> <span class="n">batches</span><span class="p">,</span> <span class="n">normalization</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">accum_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_accum_count</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">training_step</span><span class="p">)</span>
@@ -427,24 +456,27 @@
 
     <span class="k">def</span> <span class="nf">_update_average</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">moving_average</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">copy_params</span> <span class="o">=</span> <span class="p">[</span><span class="n">params</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
-                           <span class="k">for</span> <span class="n">params</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">()]</span>
+            <span class="n">copy_params</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">params</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">float</span><span class="p">()</span> <span class="k">for</span> <span class="n">params</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">()</span>
+            <span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">moving_average</span> <span class="o">=</span> <span class="n">copy_params</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">average_decay</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">average_decay</span><span class="p">,</span>
-                                <span class="mi">1</span> <span class="o">-</span> <span class="p">(</span><span class="n">step</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">step</span> <span class="o">+</span> <span class="mi">10</span><span class="p">))</span>
-            <span class="k">for</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">avg</span><span class="p">),</span> <span class="n">cpt</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">moving_average</span><span class="p">),</span>
-                                     <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">()):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">moving_average</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> \
-                    <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">average_decay</span><span class="p">)</span> <span class="o">*</span> <span class="n">avg</span> <span class="o">+</span> \
-                    <span class="n">cpt</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">float</span><span class="p">()</span> <span class="o">*</span> <span class="n">average_decay</span>
+            <span class="n">average_decay</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">average_decay</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="p">(</span><span class="n">step</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">step</span> <span class="o">+</span> <span class="mi">10</span><span class="p">))</span>
+            <span class="k">for</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">avg</span><span class="p">),</span> <span class="n">cpt</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+                <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">moving_average</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">()</span>
+            <span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">moving_average</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="mi">1</span> <span class="o">-</span> <span class="n">average_decay</span>
+                <span class="p">)</span> <span class="o">*</span> <span class="n">avg</span> <span class="o">+</span> <span class="n">cpt</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">float</span><span class="p">()</span> <span class="o">*</span> <span class="n">average_decay</span>
 
-<div class="viewcode-block" id="Trainer.train"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.train">[docs]</a>    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-              <span class="n">train_iter</span><span class="p">,</span>
-              <span class="n">train_steps</span><span class="p">,</span>
-              <span class="n">save_checkpoint_steps</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span>
-              <span class="n">valid_iter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-              <span class="n">valid_steps</span><span class="o">=</span><span class="mi">10000</span><span class="p">):</span>
+<div class="viewcode-block" id="Trainer.train"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.train">[docs]</a>    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">train_iter</span><span class="p">,</span>
+        <span class="n">train_steps</span><span class="p">,</span>
+        <span class="n">save_checkpoint_steps</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span>
+        <span class="n">valid_iter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">valid_steps</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The main training loop by iterating over ``train_iter`` and possibly</span>
 <span class="sd">        running validation on ``valid_iter``.</span>
 
@@ -460,13 +492,13 @@
 <span class="sd">            :obj:``nmt.Statistics``: training loss statistics&quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="n">valid_iter</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Start training loop without validation...&#39;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Start training loop without validation...&quot;</span><span class="p">)</span>
             <span class="n">valid_stats</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Start training loop and validate every </span><span class="si">%d</span><span class="s1"> steps...&#39;</span><span class="p">,</span>
-                        <span class="n">valid_steps</span><span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="s2">&quot;Scoring with: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scoring_preparator</span><span class="o">.</span><span class="n">transform</span><span class="p">))</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s2">&quot;Start training loop and validate every </span><span class="si">%d</span><span class="s2"> steps...&quot;</span><span class="p">,</span> <span class="n">valid_steps</span>
+            <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Scoring with: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scoring_preparator</span><span class="o">.</span><span class="n">transform</span><span class="p">))</span>
 
         <span class="n">total_stats</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">Statistics</span><span class="p">()</span>
         <span class="n">report_stats</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">Statistics</span><span class="p">()</span>
@@ -474,38 +506,43 @@
         <span class="c1"># Let&#39;s clean the GPUs before training loop</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">empty_cache</span><span class="p">()</span>
 
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">batches</span><span class="p">,</span> <span class="n">normalization</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_accum_batches</span><span class="p">(</span><span class="n">train_iter</span><span class="p">)):</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">batches</span><span class="p">,</span> <span class="n">normalization</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_accum_batches</span><span class="p">(</span><span class="n">train_iter</span><span class="p">)):</span>
             <span class="n">step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">training_step</span>
             <span class="c1"># UPDATE DROPOUT</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_maybe_update_dropout</span><span class="p">(</span><span class="n">step</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_gpu</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">normalization</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">distributed</span>
-                                    <span class="o">.</span><span class="n">all_gather_list</span>
-                                    <span class="p">(</span><span class="n">normalization</span><span class="p">))</span>
+                <span class="n">normalization</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span>
+                    <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">all_gather_list</span><span class="p">(</span><span class="n">normalization</span><span class="p">)</span>
+                <span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">_gradient_accumulation</span><span class="p">(</span>
-                <span class="n">batches</span><span class="p">,</span> <span class="n">normalization</span><span class="p">,</span> <span class="n">total_stats</span><span class="p">,</span>
-                <span class="n">report_stats</span><span class="p">)</span>
+                <span class="n">batches</span><span class="p">,</span> <span class="n">normalization</span><span class="p">,</span> <span class="n">total_stats</span><span class="p">,</span> <span class="n">report_stats</span>
+            <span class="p">)</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">average_decay</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">average_every</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_update_average</span><span class="p">(</span><span class="n">step</span><span class="p">)</span>
 
             <span class="n">report_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_maybe_report_training</span><span class="p">(</span>
-                <span class="n">step</span><span class="p">,</span> <span class="n">train_steps</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">(),</span>
-                <span class="n">report_stats</span><span class="p">)</span>
+                <span class="n">step</span><span class="p">,</span> <span class="n">train_steps</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">(),</span> <span class="n">report_stats</span>
+            <span class="p">)</span>
 
-            <span class="k">if</span> <span class="p">(</span><span class="n">valid_iter</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">step</span> <span class="o">%</span> <span class="n">valid_steps</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">gpu_rank</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">valid_iter</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="ow">and</span> <span class="n">step</span> <span class="o">%</span> <span class="n">valid_steps</span> <span class="o">==</span> <span class="mi">0</span>
+                <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpu_rank</span> <span class="o">&lt;=</span> <span class="mi">0</span>
+            <span class="p">):</span>
                 <span class="n">valid_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span>
-                    <span class="n">valid_iter</span><span class="p">,</span> <span class="n">moving_average</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">moving_average</span><span class="p">)</span>
+                    <span class="n">valid_iter</span><span class="p">,</span> <span class="n">moving_average</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">moving_average</span>
+                <span class="p">)</span>
 
             <span class="k">if</span> <span class="n">step</span> <span class="o">%</span> <span class="n">valid_steps</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpu_rank</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_report_step</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">(),</span>
-                                  <span class="n">step</span><span class="p">,</span> <span class="n">valid_stats</span><span class="o">=</span><span class="n">valid_stats</span><span class="p">,</span>
-                                  <span class="n">train_stats</span><span class="o">=</span><span class="n">total_stats</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_report_step</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">(),</span>
+                    <span class="n">step</span><span class="p">,</span>
+                    <span class="n">valid_stats</span><span class="o">=</span><span class="n">valid_stats</span><span class="p">,</span>
+                    <span class="n">train_stats</span><span class="o">=</span><span class="n">total_stats</span><span class="p">,</span>
+                <span class="p">)</span>
 
                 <span class="c1"># Run patience mechanism</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">earlystopper</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -515,9 +552,9 @@
                         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;earlystopper has_stopped!&quot;</span><span class="p">)</span>
                         <span class="k">break</span>
 
-            <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_saver</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-                    <span class="ow">and</span> <span class="p">(</span><span class="n">save_checkpoint_steps</span> <span class="o">!=</span> <span class="mi">0</span>
-                         <span class="ow">and</span> <span class="n">step</span> <span class="o">%</span> <span class="n">save_checkpoint_steps</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_saver</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="p">(</span>
+                <span class="n">save_checkpoint_steps</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">step</span> <span class="o">%</span> <span class="n">save_checkpoint_steps</span> <span class="o">==</span> <span class="mi">0</span>
+            <span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">model_saver</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">moving_average</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">moving_average</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">train_steps</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">step</span> <span class="o">&gt;=</span> <span class="n">train_steps</span><span class="p">:</span>
@@ -541,11 +578,11 @@
             <span class="c1"># swap model params w/ moving average</span>
             <span class="c1"># (and keep the original parameters)</span>
             <span class="n">model_params_data</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">avg</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">moving_average</span><span class="p">,</span>
-                                  <span class="n">valid_model</span><span class="o">.</span><span class="n">parameters</span><span class="p">()):</span>
+            <span class="k">for</span> <span class="n">avg</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">moving_average</span><span class="p">,</span> <span class="n">valid_model</span><span class="o">.</span><span class="n">parameters</span><span class="p">()):</span>
                 <span class="n">model_params_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">param</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
-                <span class="n">param</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">avg</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">half</span><span class="p">()</span> <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">float16</span> \
-                    <span class="k">else</span> <span class="n">avg</span><span class="o">.</span><span class="n">data</span>
+                <span class="n">param</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">avg</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">half</span><span class="p">()</span> <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">float16</span> <span class="k">else</span> <span class="n">avg</span><span class="o">.</span><span class="n">data</span>
+                <span class="p">)</span>
 
         <span class="c1"># Set model in validating mode.</span>
         <span class="n">valid_model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
@@ -555,24 +592,30 @@
             <span class="n">stats</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">Statistics</span><span class="p">()</span>
             <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
             <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">valid_iter</span><span class="p">:</span>
-                <span class="n">src</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">]</span>
-                <span class="n">src_len</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;srclen&#39;</span><span class="p">]</span>
-                <span class="n">tgt</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span>
+                <span class="n">src</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span>
+                <span class="n">src_len</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;srclen&quot;</span><span class="p">]</span>
+                <span class="n">tgt</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_scorers</span><span class="p">:</span>
-                    <span class="n">transformed_batch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scoring_preparator</span><span class="o">.</span>\
-                        <span class="n">ids_to_tokens_batch</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+                    <span class="n">transformed_batch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scoring_preparator</span><span class="o">.</span><span class="n">ids_to_tokens_batch</span><span class="p">(</span>
+                        <span class="n">batch</span>
+                    <span class="p">)</span>
                     <span class="n">transformed_batches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">transformed_batch</span><span class="p">)</span>
                 <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">amp</span><span class="o">.</span><span class="n">autocast</span><span class="p">(</span><span class="n">enabled</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">amp</span><span class="p">):</span>
                     <span class="c1"># F-prop through the model.</span>
-                    <span class="n">model_out</span><span class="p">,</span> <span class="n">attns</span> <span class="o">=</span> <span class="n">valid_model</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span>
-                                                   <span class="n">with_align</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">with_align</span><span class="p">)</span>
+                    <span class="n">model_out</span><span class="p">,</span> <span class="n">attns</span> <span class="o">=</span> <span class="n">valid_model</span><span class="p">(</span>
+                        <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span> <span class="n">with_align</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">with_align</span>
+                    <span class="p">)</span>
 
                     <span class="c1"># Compute loss.</span>
                     <span class="n">_</span><span class="p">,</span> <span class="n">batch_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_loss</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">model_out</span><span class="p">,</span> <span class="n">attns</span><span class="p">)</span>
 
                     <span class="n">stats</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">batch_stats</span><span class="p">)</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;valid stats calculation and sentences rebuilding</span>
-<span class="s2">                           took: </span><span class="si">{}</span><span class="s2"> s.&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span><span class="p">))</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+<span class="w">                </span><span class="sd">&quot;&quot;&quot;valid stats calculation and sentences rebuilding</span>
+<span class="sd">                           took: {} s.&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
 
             <span class="c1"># Compute validation metrics (at batch.dataset level)</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">valid_scorers</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -583,33 +626,35 @@
                     <span class="n">transformed_batches</span><span class="o">=</span><span class="n">transformed_batches</span><span class="p">,</span>
                     <span class="n">gpu_rank</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">gpu_rank</span><span class="p">,</span>
                     <span class="n">step</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">training_step</span><span class="p">,</span>
-                    <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;valid&quot;</span><span class="p">)</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;The translation of the valid dataset</span>
-<span class="s2">                               took : </span><span class="si">{}</span><span class="s2"> s.&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span><span class="p">))</span>
+                    <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;valid&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+<span class="w">                    </span><span class="sd">&quot;&quot;&quot;The translation of the valid dataset</span>
+<span class="sd">                               took : {} s.&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">metric</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">valid_scorers</span><span class="p">):</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;UPDATING VALIDATION </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">metric</span><span class="p">))</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">valid_scorers</span><span class="p">[</span>
-                    <span class="n">metric</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_training_eval_handler</span><span class="p">(</span>
-                        <span class="n">scorer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">valid_scorers</span><span class="p">[</span><span class="n">metric</span><span class="p">][</span><span class="s2">&quot;scorer&quot;</span><span class="p">],</span>
-                        <span class="n">preds</span><span class="o">=</span><span class="n">preds</span><span class="p">,</span>
-                        <span class="n">texts_ref</span><span class="o">=</span><span class="n">texts_ref</span><span class="p">)</span>
-                <span class="n">computed_metrics</span><span class="p">[</span>
-                    <span class="n">metric</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_scorers</span><span class="p">[</span><span class="n">metric</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">valid_scorers</span><span class="p">[</span><span class="n">metric</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_training_eval_handler</span><span class="p">(</span>
+                    <span class="n">scorer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">valid_scorers</span><span class="p">[</span><span class="n">metric</span><span class="p">][</span><span class="s2">&quot;scorer&quot;</span><span class="p">],</span>
+                    <span class="n">preds</span><span class="o">=</span><span class="n">preds</span><span class="p">,</span>
+                    <span class="n">texts_ref</span><span class="o">=</span><span class="n">texts_ref</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">computed_metrics</span><span class="p">[</span><span class="n">metric</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_scorers</span><span class="p">[</span><span class="n">metric</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">]</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                     <span class="s2">&quot;validation </span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                        <span class="n">metric</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_scorers</span><span class="p">[</span><span class="n">metric</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">])</span>
-                        <span class="p">)</span>
+                        <span class="n">metric</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_scorers</span><span class="p">[</span><span class="n">metric</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">]</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
                 <span class="c1"># Compute stats</span>
-                <span class="n">metric_stats</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">Statistics</span><span class="p">(</span>
-                    <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span>
-                    <span class="n">computed_metrics</span><span class="p">)</span>
+                <span class="n">metric_stats</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">Statistics</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">computed_metrics</span><span class="p">)</span>
 
                 <span class="c1"># Update statistics.</span>
                 <span class="n">stats</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">metric_stats</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">moving_average</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">param_data</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">model_params_data</span><span class="p">,</span>
-                                         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">()):</span>
+            <span class="k">for</span> <span class="n">param_data</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">model_params_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">()):</span>
                 <span class="n">param</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">param_data</span>
 
         <span class="c1"># Set model back to training mode.</span>
@@ -617,8 +662,9 @@
 
         <span class="k">return</span> <span class="n">stats</span></div>
 
-    <span class="k">def</span> <span class="nf">_gradient_accumulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">true_batches</span><span class="p">,</span> <span class="n">normalization</span><span class="p">,</span> <span class="n">total_stats</span><span class="p">,</span>
-                               <span class="n">report_stats</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_gradient_accumulation</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">true_batches</span><span class="p">,</span> <span class="n">normalization</span><span class="p">,</span> <span class="n">total_stats</span><span class="p">,</span> <span class="n">report_stats</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Function that iterates over big batches = ``true_batches``</span>
 
 <span class="sd">        Perform a backward on the loss of each sub_batch and</span>
@@ -628,26 +674,26 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">(</span><span class="n">set_to_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">batch</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">true_batches</span><span class="p">):</span>
-            <span class="n">target_size</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">target_size</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
             <span class="c1"># Truncated BPTT: reminder not compatible with accum &gt; 1</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">trunc_size</span><span class="p">:</span>
                 <span class="n">trunc_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trunc_size</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">trunc_size</span> <span class="o">=</span> <span class="n">target_size</span>
 
-            <span class="n">src</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">]</span>
-            <span class="n">src_len</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;srclen&#39;</span><span class="p">]</span>
+            <span class="n">src</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span>
+            <span class="n">src_len</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;srclen&quot;</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">src_len</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">report_stats</span><span class="o">.</span><span class="n">n_src_words</span> <span class="o">+=</span> <span class="n">src_len</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
                 <span class="n">total_stats</span><span class="o">.</span><span class="n">n_src_words</span> <span class="o">+=</span> <span class="n">src_len</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
 
-            <span class="n">tgt_outer</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span>
+            <span class="n">tgt_outer</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span>
 
             <span class="n">bptt</span> <span class="o">=</span> <span class="kc">False</span>
             <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">target_size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">trunc_size</span><span class="p">):</span>
                 <span class="c1"># 1. Create truncated target.</span>
 
-                <span class="n">tgt</span> <span class="o">=</span> <span class="n">tgt_outer</span><span class="p">[:,</span> <span class="n">j</span><span class="p">:</span> <span class="n">j</span> <span class="o">+</span> <span class="n">trunc_size</span><span class="p">,</span> <span class="p">:]</span>
+                <span class="n">tgt</span> <span class="o">=</span> <span class="n">tgt_outer</span><span class="p">[:,</span> <span class="n">j</span> <span class="p">:</span> <span class="n">j</span> <span class="o">+</span> <span class="n">trunc_size</span><span class="p">,</span> <span class="p">:]</span>
 
                 <span class="c1"># 2. F-prop all but generator.</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">accum_count</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
@@ -656,8 +702,8 @@
                 <span class="k">try</span><span class="p">:</span>
                     <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">amp</span><span class="o">.</span><span class="n">autocast</span><span class="p">(</span><span class="n">enabled</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">amp</span><span class="p">):</span>
                         <span class="n">model_out</span><span class="p">,</span> <span class="n">attns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span>
-                            <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span> <span class="n">bptt</span><span class="o">=</span><span class="n">bptt</span><span class="p">,</span>
-                            <span class="n">with_align</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">with_align</span><span class="p">)</span>
+                            <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span> <span class="n">bptt</span><span class="o">=</span><span class="n">bptt</span><span class="p">,</span> <span class="n">with_align</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">with_align</span>
+                        <span class="p">)</span>
                         <span class="n">bptt</span> <span class="o">=</span> <span class="kc">True</span>
 
                         <span class="c1"># 3. Compute loss.</span>
@@ -666,37 +712,40 @@
                             <span class="n">model_out</span><span class="p">,</span>
                             <span class="n">attns</span><span class="p">,</span>
                             <span class="n">trunc_start</span><span class="o">=</span><span class="n">j</span><span class="p">,</span>
-                            <span class="n">trunc_size</span><span class="o">=</span><span class="n">trunc_size</span><span class="p">)</span>
+                            <span class="n">trunc_size</span><span class="o">=</span><span class="n">trunc_size</span><span class="p">,</span>
+                        <span class="p">)</span>
 
                     <span class="n">step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">training_step</span>
-                    <span class="k">if</span> <span class="p">(</span>
-                           <span class="bp">self</span><span class="o">.</span><span class="n">train_scorers</span> <span class="o">!=</span> <span class="p">{}</span> <span class="ow">and</span>
-                           <span class="n">step</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_eval_steps</span> <span class="o">==</span> <span class="mi">0</span>
-                    <span class="p">):</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_scorers</span> <span class="o">!=</span> <span class="p">{}</span> <span class="ow">and</span> <span class="n">step</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_eval_steps</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                         <span class="c1"># Compute and save stats</span>
                         <span class="n">computed_metrics</span> <span class="o">=</span> <span class="p">{}</span>
-                        <span class="n">transformed_batch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scoring_preparator</span><span class="o">.</span>\
-                            <span class="n">ids_to_tokens_batch</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+                        <span class="n">transformed_batch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scoring_preparator</span><span class="o">.</span><span class="n">ids_to_tokens_batch</span><span class="p">(</span>
+                            <span class="n">batch</span>
+                        <span class="p">)</span>
                         <span class="n">preds</span><span class="p">,</span> <span class="n">texts_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scoring_preparator</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span>
                             <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
                             <span class="n">transformed_batches</span><span class="o">=</span><span class="p">[</span><span class="n">transformed_batch</span><span class="p">],</span>
                             <span class="n">gpu_rank</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">gpu_rank</span><span class="p">,</span>
                             <span class="n">step</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">training_step</span><span class="p">,</span>
-                            <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;train&quot;</span><span class="p">)</span>
+                            <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;train&quot;</span><span class="p">,</span>
+                        <span class="p">)</span>
                         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">metric</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_scorers</span><span class="p">):</span>
                             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;UPDATING TRAINING </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">metric</span><span class="p">))</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">train_scorers</span><span class="p">[</span>
-                                <span class="n">metric</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_training_eval_handler</span><span class="p">(</span>
-                                <span class="n">scorer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">train_scorers</span><span class="p">[</span>
-                                    <span class="n">metric</span><span class="p">][</span><span class="s2">&quot;scorer&quot;</span><span class="p">],</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">train_scorers</span><span class="p">[</span><span class="n">metric</span><span class="p">][</span>
+                                <span class="s2">&quot;value&quot;</span>
+                            <span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_training_eval_handler</span><span class="p">(</span>
+                                <span class="n">scorer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">train_scorers</span><span class="p">[</span><span class="n">metric</span><span class="p">][</span><span class="s2">&quot;scorer&quot;</span><span class="p">],</span>
                                 <span class="n">preds</span><span class="o">=</span><span class="n">preds</span><span class="p">,</span>
-                                <span class="n">texts_ref</span><span class="o">=</span><span class="n">texts_ref</span><span class="p">)</span>
+                                <span class="n">texts_ref</span><span class="o">=</span><span class="n">texts_ref</span><span class="p">,</span>
+                            <span class="p">)</span>
                             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                                 <span class="s2">&quot;training </span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                                    <span class="n">metric</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_scorers</span><span class="p">[</span>
-                                        <span class="n">metric</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">]))</span>
-                            <span class="n">computed_metrics</span><span class="p">[</span>
-                                <span class="n">metric</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_scorers</span><span class="p">[</span><span class="n">metric</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">]</span>
+                                    <span class="n">metric</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_scorers</span><span class="p">[</span><span class="n">metric</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">]</span>
+                                <span class="p">)</span>
+                            <span class="p">)</span>
+                            <span class="n">computed_metrics</span><span class="p">[</span><span class="n">metric</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_scorers</span><span class="p">[</span><span class="n">metric</span><span class="p">][</span>
+                                <span class="s2">&quot;value&quot;</span>
+                            <span class="p">]</span>
                         <span class="n">batch_stats</span><span class="o">.</span><span class="n">computed_metrics</span> <span class="o">=</span> <span class="n">computed_metrics</span>
 
                     <span class="k">if</span> <span class="n">loss</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -709,8 +758,10 @@
                 <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
                     <span class="n">trace_content</span> <span class="o">=</span> <span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span>
                     <span class="k">if</span> <span class="s2">&quot;CUDA out of memory&quot;</span> <span class="ow">in</span> <span class="n">trace_content</span><span class="p">:</span>
-                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Step </span><span class="si">%d</span><span class="s2">, cuda OOM - batch removed&quot;</span><span class="p">,</span>
-                                    <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">training_step</span><span class="p">)</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                            <span class="s2">&quot;Step </span><span class="si">%d</span><span class="s2">, cuda OOM - batch removed&quot;</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">training_step</span><span class="p">,</span>
+                        <span class="p">)</span>
                         <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">empty_cache</span><span class="p">()</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="n">traceback</span><span class="o">.</span><span class="n">print_exc</span><span class="p">()</span>
@@ -723,11 +774,14 @@
         <span class="c1"># in case of multi step gradient accumulation,</span>
         <span class="c1"># update only after accum batches</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_gpu</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">grads</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">data</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">()</span>
-                     <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">requires_grad</span>
-                     <span class="ow">and</span> <span class="n">p</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
+            <span class="n">grads</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">p</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">data</span>
+                <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">requires_grad</span> <span class="ow">and</span> <span class="n">p</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="p">]</span>
             <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">all_reduce_and_rescale_tensors</span><span class="p">(</span>
-                <span class="n">grads</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_gpu</span><span class="p">))</span>
+                <span class="n">grads</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_gpu</span><span class="p">)</span>
+            <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">_start_report_manager</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_time</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -739,8 +793,7 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">report_manager</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="n">start_time</span>
 
-    <span class="k">def</span> <span class="nf">_maybe_report_training</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">num_steps</span><span class="p">,</span> <span class="n">learning_rate</span><span class="p">,</span>
-                               <span class="n">report_stats</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_maybe_report_training</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">num_steps</span><span class="p">,</span> <span class="n">learning_rate</span><span class="p">,</span> <span class="n">report_stats</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Simple function to report training stats (if report_manager is set)</span>
 <span class="sd">        see ``onmt.utils.ReportManagerBase.report_training`` for doc&quot;&quot;&quot;</span>
 
@@ -749,22 +802,27 @@
                 <span class="n">step</span><span class="p">,</span>
                 <span class="n">num_steps</span><span class="p">,</span>
                 <span class="n">learning_rate</span><span class="p">,</span>
-                <span class="kc">None</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">earlystopper</span> <span class="ow">is</span> <span class="kc">None</span>
+                <span class="kc">None</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">earlystopper</span> <span class="ow">is</span> <span class="kc">None</span>
                 <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">earlystopper</span><span class="o">.</span><span class="n">current_tolerance</span><span class="p">,</span>
                 <span class="n">report_stats</span><span class="p">,</span>
-                <span class="n">multigpu</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_gpu</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">multigpu</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_gpu</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_report_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">learning_rate</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span>
-                     <span class="n">valid_stats</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">train_stats</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_report_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">learning_rate</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">valid_stats</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">train_stats</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Simple function to report stats (if report_manager is set)</span>
 <span class="sd">        see ``onmt.utils.ReportManagerBase.report_step`` for doc&quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_manager</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_manager</span><span class="o">.</span><span class="n">report_step</span><span class="p">(</span>
                 <span class="n">learning_rate</span><span class="p">,</span>
-                <span class="kc">None</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">earlystopper</span> <span class="ow">is</span> <span class="kc">None</span>
+                <span class="kc">None</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">earlystopper</span> <span class="ow">is</span> <span class="kc">None</span>
                 <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">earlystopper</span><span class="o">.</span><span class="n">current_tolerance</span><span class="p">,</span>
-                <span class="n">step</span><span class="p">,</span> <span class="n">valid_stats</span><span class="o">=</span><span class="n">valid_stats</span><span class="p">,</span> <span class="n">train_stats</span><span class="o">=</span><span class="n">train_stats</span><span class="p">)</span></div>
+                <span class="n">step</span><span class="p">,</span>
+                <span class="n">valid_stats</span><span class="o">=</span><span class="n">valid_stats</span><span class="p">,</span>
+                <span class="n">train_stats</span><span class="o">=</span><span class="n">train_stats</span><span class="p">,</span>
+            <span class="p">)</span></div>
 </pre></div>
 
            </div>

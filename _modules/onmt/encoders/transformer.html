@@ -93,11 +93,12 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">How do I use my v2 models in v3 ?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-do-i-train-the-transformer-model">How do I train the Transformer model?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#performance-tips">Performance tips</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#position-encoding-absolute-vs-relative-vs-rotary-embeddings">Position encoding: Absolute vs Relative vs Rotary Embeddings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#position-encoding-absolute-vs-relative-vs-rotary-embeddings-vs-alibi">Position encoding: Absolute vs Relative vs Rotary Embeddings vs Alibi</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#what-special-tokens-does-opennmt-py-use">What special tokens does OpenNMT-py use?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
@@ -226,18 +227,30 @@
 <span class="sd">            activation function choice for PositionwiseFeedForward layer</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d_model</span><span class="p">,</span> <span class="n">heads</span><span class="p">,</span> <span class="n">d_ff</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">attention_dropout</span><span class="p">,</span>
-                 <span class="n">max_relative_positions</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                 <span class="n">pos_ffn_activation_fn</span><span class="o">=</span><span class="n">ActivationFunction</span><span class="o">.</span><span class="n">relu</span><span class="p">,</span>
-                 <span class="n">add_qkvbias</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">d_model</span><span class="p">,</span>
+        <span class="n">heads</span><span class="p">,</span>
+        <span class="n">d_ff</span><span class="p">,</span>
+        <span class="n">dropout</span><span class="p">,</span>
+        <span class="n">attention_dropout</span><span class="p">,</span>
+        <span class="n">max_relative_positions</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">pos_ffn_activation_fn</span><span class="o">=</span><span class="n">ActivationFunction</span><span class="o">.</span><span class="n">relu</span><span class="p">,</span>
+        <span class="n">add_qkvbias</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">TransformerEncoderLayer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">self_attn</span> <span class="o">=</span> <span class="n">MultiHeadedAttention</span><span class="p">(</span>
-            <span class="n">heads</span><span class="p">,</span> <span class="n">d_model</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="n">attention_dropout</span><span class="p">,</span>
+            <span class="n">heads</span><span class="p">,</span>
+            <span class="n">d_model</span><span class="p">,</span>
+            <span class="n">dropout</span><span class="o">=</span><span class="n">attention_dropout</span><span class="p">,</span>
             <span class="n">max_relative_positions</span><span class="o">=</span><span class="n">max_relative_positions</span><span class="p">,</span>
-            <span class="n">attn_type</span><span class="o">=</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="n">add_qkvbias</span><span class="o">=</span><span class="n">add_qkvbias</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">feed_forward</span> <span class="o">=</span> <span class="n">PositionwiseFeedForward</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">d_ff</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span>
-                                                    <span class="n">pos_ffn_activation_fn</span><span class="p">)</span>
+            <span class="n">attn_type</span><span class="o">=</span><span class="s2">&quot;self&quot;</span><span class="p">,</span>
+            <span class="n">add_qkvbias</span><span class="o">=</span><span class="n">add_qkvbias</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">feed_forward</span> <span class="o">=</span> <span class="n">PositionwiseFeedForward</span><span class="p">(</span>
+            <span class="n">d_model</span><span class="p">,</span> <span class="n">d_ff</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">pos_ffn_activation_fn</span>
+        <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span>
 
@@ -252,8 +265,7 @@
 <span class="sd">            * layer_out ``(batch_size, src_len, model_dim)``</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">input_norm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span><span class="p">(</span><span class="n">layer_in</span><span class="p">)</span>
-        <span class="n">context</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">self_attn</span><span class="p">(</span><span class="n">input_norm</span><span class="p">,</span> <span class="n">input_norm</span><span class="p">,</span> <span class="n">input_norm</span><span class="p">,</span>
-                                    <span class="n">mask</span><span class="o">=</span><span class="n">mask</span><span class="p">)</span>
+        <span class="n">context</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">self_attn</span><span class="p">(</span><span class="n">input_norm</span><span class="p">,</span> <span class="n">input_norm</span><span class="p">,</span> <span class="n">input_norm</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">mask</span><span class="p">)</span>
         <span class="n">layer_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">context</span><span class="p">)</span> <span class="o">+</span> <span class="n">layer_in</span>
         <span class="n">layer_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">feed_forward</span><span class="p">(</span><span class="n">layer_out</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">layer_out</span>
@@ -287,20 +299,37 @@
 <span class="sd">        * src_len ``(batch_size)``</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span> <span class="n">d_model</span><span class="p">,</span> <span class="n">heads</span><span class="p">,</span> <span class="n">d_ff</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span>
-                 <span class="n">attention_dropout</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">,</span> <span class="n">max_relative_positions</span><span class="p">,</span>
-                 <span class="n">pos_ffn_activation_fn</span><span class="o">=</span><span class="n">ActivationFunction</span><span class="o">.</span><span class="n">relu</span><span class="p">,</span>
-                 <span class="n">add_qkvbias</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">num_layers</span><span class="p">,</span>
+        <span class="n">d_model</span><span class="p">,</span>
+        <span class="n">heads</span><span class="p">,</span>
+        <span class="n">d_ff</span><span class="p">,</span>
+        <span class="n">dropout</span><span class="p">,</span>
+        <span class="n">attention_dropout</span><span class="p">,</span>
+        <span class="n">embeddings</span><span class="p">,</span>
+        <span class="n">max_relative_positions</span><span class="p">,</span>
+        <span class="n">pos_ffn_activation_fn</span><span class="o">=</span><span class="n">ActivationFunction</span><span class="o">.</span><span class="n">relu</span><span class="p">,</span>
+        <span class="n">add_qkvbias</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">TransformerEncoder</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span> <span class="o">=</span> <span class="n">embeddings</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">transformer</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">(</span>
-            <span class="p">[</span><span class="n">TransformerEncoderLayer</span><span class="p">(</span>
-                <span class="n">d_model</span><span class="p">,</span> <span class="n">heads</span><span class="p">,</span> <span class="n">d_ff</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">attention_dropout</span><span class="p">,</span>
-                <span class="n">max_relative_positions</span><span class="o">=</span><span class="n">max_relative_positions</span><span class="p">,</span>
-                <span class="n">pos_ffn_activation_fn</span><span class="o">=</span><span class="n">pos_ffn_activation_fn</span><span class="p">,</span>
-                <span class="n">add_qkvbias</span><span class="o">=</span><span class="n">add_qkvbias</span><span class="p">)</span>
-             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_layers</span><span class="p">)])</span>
+            <span class="p">[</span>
+                <span class="n">TransformerEncoderLayer</span><span class="p">(</span>
+                    <span class="n">d_model</span><span class="p">,</span>
+                    <span class="n">heads</span><span class="p">,</span>
+                    <span class="n">d_ff</span><span class="p">,</span>
+                    <span class="n">dropout</span><span class="p">,</span>
+                    <span class="n">attention_dropout</span><span class="p">,</span>
+                    <span class="n">max_relative_positions</span><span class="o">=</span><span class="n">max_relative_positions</span><span class="p">,</span>
+                    <span class="n">pos_ffn_activation_fn</span><span class="o">=</span><span class="n">pos_ffn_activation_fn</span><span class="p">,</span>
+                    <span class="n">add_qkvbias</span><span class="o">=</span><span class="n">add_qkvbias</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_layers</span><span class="p">)</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
 
 <div class="viewcode-block" id="TransformerEncoder.from_opt"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.encoders.TransformerEncoder.from_opt">[docs]</a>    <span class="nd">@classmethod</span>
@@ -312,12 +341,13 @@
             <span class="n">opt</span><span class="o">.</span><span class="n">heads</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">transformer_ff</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">dropout</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">dropout</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">list</span> <span class="k">else</span> <span class="n">opt</span><span class="o">.</span><span class="n">dropout</span><span class="p">,</span>
-            <span class="n">opt</span><span class="o">.</span><span class="n">attention_dropout</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">attention_dropout</span><span class="p">)</span>
-            <span class="ow">is</span> <span class="nb">list</span> <span class="k">else</span> <span class="n">opt</span><span class="o">.</span><span class="n">attention_dropout</span><span class="p">,</span>
+            <span class="n">opt</span><span class="o">.</span><span class="n">attention_dropout</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">attention_dropout</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">list</span>
+            <span class="k">else</span> <span class="n">opt</span><span class="o">.</span><span class="n">attention_dropout</span><span class="p">,</span>
             <span class="n">embeddings</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">max_relative_positions</span><span class="p">,</span>
             <span class="n">pos_ffn_activation_fn</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">pos_ffn_activation_fn</span><span class="p">,</span>
-            <span class="n">add_qkvbias</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">add_qkvbias</span>
+            <span class="n">add_qkvbias</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">add_qkvbias</span><span class="p">,</span>
         <span class="p">)</span></div>
 
 <div class="viewcode-block" id="TransformerEncoder.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.encoders.TransformerEncoder.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">src_len</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>

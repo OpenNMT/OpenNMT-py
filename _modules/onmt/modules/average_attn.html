@@ -93,11 +93,12 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">How do I use my v2 models in v3 ?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-do-i-train-the-transformer-model">How do I train the Transformer model?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#performance-tips">Performance tips</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#position-encoding-absolute-vs-relative-vs-rotary-embeddings">Position encoding: Absolute vs Relative vs Rotary Embeddings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#position-encoding-absolute-vs-relative-vs-rotary-embeddings-vs-alibi">Position encoding: Absolute vs Relative vs Rotary Embeddings vs Alibi</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#what-special-tokens-does-opennmt-py-use">What special tokens does OpenNMT-py use?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
@@ -209,8 +210,9 @@
 <span class="kn">from</span> <span class="nn">onmt.modules.position_ffn</span> <span class="kn">import</span> <span class="n">ActivationFunction</span>
 
 
-<span class="k">def</span> <span class="nf">cumulative_average_mask</span><span class="p">(</span><span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">t_len</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-                            <span class="n">device</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">cumulative_average_mask</span><span class="p">(</span>
+    <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">t_len</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Builds the mask to compute the cumulative average as described in</span>
 <span class="sd">    :cite:`DBLP:journals/corr/abs-1805-00631` -- Figure 3</span>
@@ -223,17 +225,18 @@
 <span class="sd">        * A Tensor of shape ``(batch_size, t_len, t_len)``</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">triangle</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tril</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">t_len</span><span class="p">,</span> <span class="n">t_len</span><span class="p">,</span>
-                          <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">))</span>
-    <span class="n">weights</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">t_len</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span> \
-        <span class="o">/</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">t_len</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">triangle</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tril</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">t_len</span><span class="p">,</span> <span class="n">t_len</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">))</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">t_len</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span> <span class="o">/</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span>
+        <span class="mi">1</span><span class="p">,</span> <span class="n">t_len</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span>
+    <span class="p">)</span>
     <span class="n">mask</span> <span class="o">=</span> <span class="n">triangle</span> <span class="o">*</span> <span class="n">weights</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">mask</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">t_len</span><span class="p">,</span> <span class="n">t_len</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">cumulative_average</span><span class="p">(</span><span class="n">layer_in</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">layer_cache</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
-                       <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">cumulative_average</span><span class="p">(</span>
+    <span class="n">layer_in</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">layer_cache</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Computes the cumulative average as described in</span>
 <span class="sd">    :cite:`DBLP:journals/corr/abs-1805-00631` -- Equations (1) (5) (6)</span>
@@ -251,9 +254,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">layer_cache</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
-        <span class="n">average_attention</span> <span class="o">=</span> <span class="p">(</span><span class="n">layer_in</span> <span class="o">+</span> <span class="n">step</span> <span class="o">*</span>
-                             <span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;prev_g&#39;</span><span class="p">])</span> <span class="o">/</span> <span class="p">(</span><span class="n">step</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;prev_g&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">average_attention</span>
+        <span class="n">average_attention</span> <span class="o">=</span> <span class="p">(</span><span class="n">layer_in</span> <span class="o">+</span> <span class="n">step</span> <span class="o">*</span> <span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;prev_g&quot;</span><span class="p">])</span> <span class="o">/</span> <span class="p">(</span><span class="n">step</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;prev_g&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">average_attention</span>
         <span class="k">return</span> <span class="n">average_attention</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">mask</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">layer_in</span><span class="o">.</span><span class="n">dtype</span><span class="p">),</span> <span class="n">layer_in</span><span class="p">)</span>
@@ -274,18 +276,22 @@
 <span class="sd">           activation function choice for PositionwiseFeedForward layer</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_dim</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">aan_useffn</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                 <span class="n">pos_ffn_activation_fn</span><span class="o">=</span><span class="n">ActivationFunction</span><span class="o">.</span><span class="n">relu</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">model_dim</span><span class="p">,</span>
+        <span class="n">dropout</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+        <span class="n">aan_useffn</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">pos_ffn_activation_fn</span><span class="o">=</span><span class="n">ActivationFunction</span><span class="o">.</span><span class="n">relu</span><span class="p">,</span>
+    <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model_dim</span> <span class="o">=</span> <span class="n">model_dim</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">aan_useffn</span> <span class="o">=</span> <span class="n">aan_useffn</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">AverageAttention</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">aan_useffn</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">average_layer</span> <span class="o">=</span> <span class="n">PositionwiseFeedForward</span><span class="p">(</span><span class="n">model_dim</span><span class="p">,</span> <span class="n">model_dim</span><span class="p">,</span>
-                                                         <span class="n">dropout</span><span class="p">,</span>
-                                                         <span class="n">pos_ffn_activation_fn</span>
-                                                         <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">average_layer</span> <span class="o">=</span> <span class="n">PositionwiseFeedForward</span><span class="p">(</span>
+                <span class="n">model_dim</span><span class="p">,</span> <span class="n">model_dim</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">pos_ffn_activation_fn</span>
+            <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">gating_layer</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">model_dim</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span> <span class="n">model_dim</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;prev_g&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([])}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;prev_g&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([])}</span>
 
     <span class="c1"># @torch.jit.script</span>
 <div class="viewcode-block" id="AverageAttention.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.AverageAttention.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer_in</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -303,17 +309,20 @@
 
         <span class="n">batch_size</span> <span class="o">=</span> <span class="n">layer_in</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
         <span class="n">t_len</span> <span class="o">=</span> <span class="n">layer_in</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">mask</span> <span class="o">=</span> <span class="n">cumulative_average_mask</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">t_len</span><span class="p">,</span> <span class="n">layer_in</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>\
-            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">else</span> <span class="kc">None</span>
-        <span class="n">average_out</span> <span class="o">=</span> <span class="n">cumulative_average</span><span class="p">(</span>
-          <span class="n">layer_in</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">cumulative_average_mask</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">t_len</span><span class="p">,</span> <span class="n">layer_in</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">else</span> <span class="kc">None</span>
+        <span class="p">)</span>
+        <span class="n">average_out</span> <span class="o">=</span> <span class="n">cumulative_average</span><span class="p">(</span><span class="n">layer_in</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">aan_useffn</span><span class="p">:</span>
             <span class="n">average_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">average_layer</span><span class="p">(</span><span class="n">average_out</span><span class="p">)</span>
-        <span class="n">gating_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gating_layer</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">layer_in</span><span class="p">,</span>
-                                                  <span class="n">average_out</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+        <span class="n">gating_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gating_layer</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">layer_in</span><span class="p">,</span> <span class="n">average_out</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
         <span class="n">input_gate</span><span class="p">,</span> <span class="n">forget_gate</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">chunk</span><span class="p">(</span><span class="n">gating_out</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-        <span class="n">gating_out</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">input_gate</span><span class="p">)</span> <span class="o">*</span> <span class="n">layer_in</span> <span class="o">+</span> \
-            <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">forget_gate</span><span class="p">)</span> <span class="o">*</span> <span class="n">average_out</span>
+        <span class="n">gating_out</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">input_gate</span><span class="p">)</span> <span class="o">*</span> <span class="n">layer_in</span>
+            <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">forget_gate</span><span class="p">)</span> <span class="o">*</span> <span class="n">average_out</span>
+        <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">gating_out</span><span class="p">,</span> <span class="n">average_out</span></div></div>
 </pre></div>

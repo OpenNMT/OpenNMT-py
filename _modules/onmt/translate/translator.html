@@ -93,11 +93,12 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">How do I use my v2 models in v3 ?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-do-i-train-the-transformer-model">How do I train the Transformer model?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#performance-tips">Performance tips</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#position-encoding-absolute-vs-relative-vs-rotary-embeddings">Position encoding: Absolute vs Relative vs Rotary Embeddings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#position-encoding-absolute-vs-relative-vs-rotary-embeddings-vs-alibi">Position encoding: Absolute vs Relative vs Rotary Embeddings vs Alibi</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#what-special-tokens-does-opennmt-py-use">What special tokens does OpenNMT-py use?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
@@ -335,22 +336,19 @@
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vocabs</span> <span class="o">=</span> <span class="n">vocabs</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_vocab</span> <span class="o">=</span> <span class="n">vocabs</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_eos_idx</span> <span class="o">=</span> <span class="n">vocabs</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lookup_token</span><span class="p">(</span><span class="n">DefaultTokens</span><span class="o">.</span><span class="n">EOS</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_pad_idx</span> <span class="o">=</span> <span class="n">vocabs</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lookup_token</span><span class="p">(</span><span class="n">DefaultTokens</span><span class="o">.</span><span class="n">PAD</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_bos_idx</span> <span class="o">=</span> <span class="n">vocabs</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lookup_token</span><span class="p">(</span><span class="n">DefaultTokens</span><span class="o">.</span><span class="n">BOS</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_unk_idx</span> <span class="o">=</span> <span class="n">vocabs</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lookup_token</span><span class="p">(</span><span class="n">DefaultTokens</span><span class="o">.</span><span class="n">UNK</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_sep_idx</span> <span class="o">=</span> <span class="n">vocabs</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lookup_token</span><span class="p">(</span><span class="n">DefaultTokens</span><span class="o">.</span><span class="n">SEP</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_start_with</span> <span class="o">=</span>\
-            <span class="n">vocabs</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lookup_token</span><span class="p">(</span><span class="n">vocabs</span><span class="p">[</span><span class="s1">&#39;decoder_start_token&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_vocab</span> <span class="o">=</span> <span class="n">vocabs</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_eos_idx</span> <span class="o">=</span> <span class="n">vocabs</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">lookup_token</span><span class="p">(</span><span class="n">DefaultTokens</span><span class="o">.</span><span class="n">EOS</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_pad_idx</span> <span class="o">=</span> <span class="n">vocabs</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">lookup_token</span><span class="p">(</span><span class="n">DefaultTokens</span><span class="o">.</span><span class="n">PAD</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_bos_idx</span> <span class="o">=</span> <span class="n">vocabs</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">lookup_token</span><span class="p">(</span><span class="n">DefaultTokens</span><span class="o">.</span><span class="n">BOS</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_unk_idx</span> <span class="o">=</span> <span class="n">vocabs</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">lookup_token</span><span class="p">(</span><span class="n">DefaultTokens</span><span class="o">.</span><span class="n">UNK</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_sep_idx</span> <span class="o">=</span> <span class="n">vocabs</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">lookup_token</span><span class="p">(</span><span class="n">DefaultTokens</span><span class="o">.</span><span class="n">SEP</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_start_with</span> <span class="o">=</span> <span class="n">vocabs</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">lookup_token</span><span class="p">(</span><span class="n">vocabs</span><span class="p">[</span><span class="s2">&quot;decoder_start_token&quot;</span><span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_vocab_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_vocab</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_gpu</span> <span class="o">=</span> <span class="n">gpu</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_use_cuda</span> <span class="o">=</span> <span class="n">gpu</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_dev</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gpu</span><span class="p">)</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_cuda</span>
-            <span class="k">else</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gpu</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_cuda</span> <span class="k">else</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
         <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">n_best</span> <span class="o">=</span> <span class="n">n_best</span>
@@ -368,9 +366,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">dump_beam</span> <span class="o">=</span> <span class="n">dump_beam</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">block_ngram_repeat</span> <span class="o">=</span> <span class="n">block_ngram_repeat</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ignore_when_blocking</span> <span class="o">=</span> <span class="n">ignore_when_blocking</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_exclusion_idxs</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_vocab</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignore_when_blocking</span>
-        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_exclusion_idxs</span> <span class="o">=</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_vocab</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignore_when_blocking</span><span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">replace_unk</span> <span class="o">=</span> <span class="n">replace_unk</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">replace_unk</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">attentional</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;replace_unk requires an attentional decoder.&quot;</span><span class="p">)</span>
@@ -383,13 +379,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span> <span class="o">=</span> <span class="n">copy_attn</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">global_scorer</span> <span class="o">=</span> <span class="n">global_scorer</span>
-        <span class="k">if</span> <span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">global_scorer</span><span class="o">.</span><span class="n">has_cov_pen</span>
-            <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">attentional</span>
-        <span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;Coverage penalty requires an attentional decoder.&quot;</span>
-            <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">global_scorer</span><span class="o">.</span><span class="n">has_cov_pen</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">attentional</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Coverage penalty requires an attentional decoder.&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">out_file</span> <span class="o">=</span> <span class="n">out_file</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">report_align</span> <span class="o">=</span> <span class="n">report_align</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">gold_align</span> <span class="o">=</span> <span class="n">gold_align</span>
@@ -496,12 +487,12 @@
         <span class="n">batch_size</span><span class="p">,</span>
         <span class="n">src</span><span class="p">,</span>
     <span class="p">):</span>
-        <span class="k">if</span> <span class="s1">&#39;tgt&#39;</span> <span class="ow">in</span> <span class="n">batch</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">tgt_file_prefix</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">&quot;tgt&quot;</span> <span class="ow">in</span> <span class="n">batch</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">tgt_file_prefix</span><span class="p">:</span>
             <span class="n">gs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_score_target</span><span class="p">(</span>
                 <span class="n">batch</span><span class="p">,</span>
                 <span class="n">enc_out</span><span class="p">,</span>
                 <span class="n">src_len</span><span class="p">,</span>
-                <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;src_map&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">use_src_map</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;src_map&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">use_src_map</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">init_state</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span> <span class="n">enc_final_hs</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -514,7 +505,7 @@
         <span class="n">transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">attn_debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">align_debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="n">phrase_table</span><span class="o">=</span><span class="s2">&quot;&quot;</span>
+        <span class="n">phrase_table</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Translate content of ``src`` and get gold scores from ``tgt``.</span>
 
@@ -550,13 +541,14 @@
 
         <span class="k">def</span> <span class="nf">_maybe_retranslate</span><span class="p">(</span><span class="n">translations</span><span class="p">,</span> <span class="n">batch</span><span class="p">):</span>
 <span class="w">            </span><span class="sd">&quot;&quot;&quot;Here we handle the cases of mismatch in number of segments</span>
-<span class="sd">               between source and target. We re-translate seg by seg.&quot;&quot;&quot;</span>
-            <span class="n">inds</span><span class="p">,</span> <span class="n">perm</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s1">&#39;indices&#39;</span><span class="p">])</span>
+<span class="sd">            between source and target. We re-translate seg by seg.&quot;&quot;&quot;</span>
+            <span class="n">inds</span><span class="p">,</span> <span class="n">perm</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;indices&quot;</span><span class="p">])</span>
             <span class="n">trans_copy</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">translations</span><span class="p">)</span>
             <span class="n">inserted_so_far</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">trans</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">translations</span><span class="p">):</span>
-                <span class="k">if</span> <span class="p">(</span><span class="n">trans</span><span class="o">.</span><span class="n">src_raw</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">DefaultTokens</span><span class="o">.</span><span class="n">SEP</span><span class="p">)</span> <span class="o">!=</span>
-                        <span class="n">trans</span><span class="o">.</span><span class="n">pred_sents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">DefaultTokens</span><span class="o">.</span><span class="n">SEP</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="n">trans</span><span class="o">.</span><span class="n">src_raw</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">DefaultTokens</span><span class="o">.</span><span class="n">SEP</span><span class="p">)</span> <span class="o">!=</span> <span class="n">trans</span><span class="o">.</span><span class="n">pred_sents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">count</span><span class="p">(</span>
+                    <span class="n">DefaultTokens</span><span class="o">.</span><span class="n">SEP</span>
+                <span class="p">):</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="s2">&quot;Mismatch in number of ((newline))&quot;</span><span class="p">)</span>
                     <span class="c1"># those two should be the same except feat dim</span>
                     <span class="c1"># batch[&#39;src&#39;][perm[j], :, :])</span>
@@ -569,29 +561,25 @@
                     <span class="n">start_idx</span> <span class="o">=</span> <span class="mi">0</span>
                     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">idx</span><span class="p">)):</span>
                         <span class="n">end_idx</span> <span class="o">=</span> <span class="n">idx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-                        <span class="n">sub_src</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">][</span><span class="n">perm</span><span class="p">[</span><span class="n">j</span><span class="p">],</span>
-                                                    <span class="n">start_idx</span><span class="p">:</span><span class="n">end_idx</span><span class="p">,</span>
-                                                    <span class="p">:])</span>
+                        <span class="n">sub_src</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">][</span><span class="n">perm</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">start_idx</span><span class="p">:</span><span class="n">end_idx</span><span class="p">,</span> <span class="p">:])</span>
                         <span class="n">start_idx</span> <span class="o">=</span> <span class="n">end_idx</span> <span class="o">+</span> <span class="mi">1</span>
-                    <span class="n">end_idx</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">][</span><span class="n">perm</span><span class="p">[</span><span class="n">j</span><span class="p">],</span>
-                                           <span class="p">:,</span>
-                                           <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ne</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_pad_idx</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span>
-                    <span class="n">sub_src</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">][</span><span class="n">perm</span><span class="p">[</span><span class="n">j</span><span class="p">],</span>
-                                                <span class="n">start_idx</span><span class="p">:</span><span class="n">end_idx</span><span class="p">,</span>
-                                                <span class="p">:])</span>
-                    <span class="n">t_sub_src</span> <span class="o">=</span> <span class="n">pad_sequence</span><span class="p">(</span><span class="n">sub_src</span><span class="p">,</span>
-                                             <span class="n">batch_first</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                                             <span class="n">padding_value</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_pad_idx</span><span class="p">)</span>
-                    <span class="n">t_sub_src_len</span> <span class="o">=</span> <span class="n">t_sub_src</span><span class="p">[:,</span>
-                                              <span class="p">:,</span>
-                                              <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ne</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_pad_idx</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-                    <span class="n">t_sub_src_ind</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span>
-                                                  <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sub_src</span><span class="p">))],</span>
-                                                 <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
-                    <span class="n">device</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">device</span>
-                    <span class="n">t_sub_batch</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;src&#39;</span><span class="p">:</span> <span class="n">t_sub_src</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">),</span>
-                                   <span class="s1">&#39;srclen&#39;</span><span class="p">:</span> <span class="n">t_sub_src_len</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">),</span>
-                                   <span class="s1">&#39;indices&#39;</span><span class="p">:</span> <span class="n">t_sub_src_ind</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)}</span>
+                    <span class="n">end_idx</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">][</span><span class="n">perm</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ne</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_pad_idx</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span>
+                    <span class="p">)</span>
+                    <span class="n">sub_src</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">][</span><span class="n">perm</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">start_idx</span><span class="p">:</span><span class="n">end_idx</span><span class="p">,</span> <span class="p">:])</span>
+                    <span class="n">t_sub_src</span> <span class="o">=</span> <span class="n">pad_sequence</span><span class="p">(</span>
+                        <span class="n">sub_src</span><span class="p">,</span> <span class="n">batch_first</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">padding_value</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_pad_idx</span>
+                    <span class="p">)</span>
+                    <span class="n">t_sub_src_len</span> <span class="o">=</span> <span class="n">t_sub_src</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ne</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_pad_idx</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="n">t_sub_src_ind</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
+                        <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sub_src</span><span class="p">))],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int16</span>
+                    <span class="p">)</span>
+                    <span class="n">device</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">device</span>
+                    <span class="n">t_sub_batch</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;src&quot;</span><span class="p">:</span> <span class="n">t_sub_src</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">),</span>
+                        <span class="s2">&quot;srclen&quot;</span><span class="p">:</span> <span class="n">t_sub_src_len</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">),</span>
+                        <span class="s2">&quot;indices&quot;</span><span class="p">:</span> <span class="n">t_sub_src_ind</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">),</span>
+                    <span class="p">}</span>
                     <span class="c1"># new sub-batch ready to be translated</span>
                     <span class="n">sub_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translate_batch</span><span class="p">(</span><span class="n">t_sub_batch</span><span class="p">,</span> <span class="n">attn_debug</span><span class="p">)</span>
                     <span class="n">sub_trans</span> <span class="o">=</span> <span class="n">xlation_builder</span><span class="o">.</span><span class="n">from_batch</span><span class="p">(</span><span class="n">sub_data</span><span class="p">)</span>
@@ -599,16 +587,12 @@
                     <span class="c1"># we re-insert the sub-batch in the initial translations</span>
                     <span class="n">trans_copy</span><span class="p">[</span><span class="n">j</span> <span class="o">+</span> <span class="n">inserted_so_far</span><span class="p">]</span> <span class="o">=</span> <span class="n">sub_trans</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">sub_src</span><span class="p">)):</span>
-                        <span class="n">trans_copy</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">j</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="n">inserted_so_far</span><span class="p">,</span>
-                                          <span class="n">sub_trans</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                        <span class="n">trans_copy</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">j</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="n">inserted_so_far</span><span class="p">,</span> <span class="n">sub_trans</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
                     <span class="n">inserted_so_far</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sub_src</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
             <span class="k">return</span> <span class="n">trans_copy</span>
 
         <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">infer_iter</span><span class="p">:</span>
-
-            <span class="n">batch_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translate_batch</span><span class="p">(</span>
-                <span class="n">batch</span><span class="p">,</span> <span class="n">attn_debug</span>
-            <span class="p">)</span>
+            <span class="n">batch_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translate_batch</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">attn_debug</span><span class="p">)</span>
 
             <span class="n">translations</span> <span class="o">=</span> <span class="n">xlation_builder</span><span class="o">.</span><span class="n">from_batch</span><span class="p">(</span><span class="n">batch_data</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">GeneratorLM</span><span class="p">):</span>
@@ -618,7 +602,7 @@
                 <span class="n">all_scores</span> <span class="o">+=</span> <span class="p">[</span><span class="n">trans</span><span class="o">.</span><span class="n">pred_scores</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_best</span><span class="p">]]</span>
                 <span class="n">pred_score_total</span> <span class="o">+=</span> <span class="n">trans</span><span class="o">.</span><span class="n">pred_scores</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                 <span class="n">pred_words_total</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">trans</span><span class="o">.</span><span class="n">pred_sents</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-                <span class="k">if</span> <span class="s1">&#39;tgt&#39;</span> <span class="ow">in</span> <span class="n">batch</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s2">&quot;tgt&quot;</span> <span class="ow">in</span> <span class="n">batch</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                     <span class="n">gold_score_total</span> <span class="o">+=</span> <span class="n">trans</span><span class="o">.</span><span class="n">gold_score</span>
                     <span class="n">gold_words_total</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">trans</span><span class="o">.</span><span class="n">gold_sent</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
 
@@ -635,14 +619,10 @@
                         <span class="n">build_align_pharaoh</span><span class="p">(</span><span class="n">align</span><span class="p">)</span>
                         <span class="k">for</span> <span class="n">align</span> <span class="ow">in</span> <span class="n">trans</span><span class="o">.</span><span class="n">word_aligns</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_best</span><span class="p">]</span>
                     <span class="p">]</span>
-                    <span class="n">n_best_preds_align</span> <span class="o">=</span> <span class="p">[</span>
-                        <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">align</span><span class="p">)</span> <span class="k">for</span> <span class="n">align</span> <span class="ow">in</span> <span class="n">align_pharaohs</span>
-                    <span class="p">]</span>
+                    <span class="n">n_best_preds_align</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">align</span><span class="p">)</span> <span class="k">for</span> <span class="n">align</span> <span class="ow">in</span> <span class="n">align_pharaohs</span><span class="p">]</span>
                     <span class="n">n_best_preds</span> <span class="o">=</span> <span class="p">[</span>
                         <span class="n">pred</span> <span class="o">+</span> <span class="n">DefaultTokens</span><span class="o">.</span><span class="n">ALIGNMENT_SEPARATOR</span> <span class="o">+</span> <span class="n">align</span>
-                        <span class="k">for</span> <span class="n">pred</span><span class="p">,</span> <span class="n">align</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
-                            <span class="n">n_best_preds</span><span class="p">,</span> <span class="n">n_best_preds_align</span>
-                        <span class="p">)</span>
+                        <span class="k">for</span> <span class="n">pred</span><span class="p">,</span> <span class="n">align</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">n_best_preds</span><span class="p">,</span> <span class="n">n_best_preds_align</span><span class="p">)</span>
                     <span class="p">]</span>
 
                 <span class="k">if</span> <span class="n">transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -651,8 +631,8 @@
                 <span class="n">all_predictions</span> <span class="o">+=</span> <span class="p">[</span><span class="n">n_best_preds</span><span class="p">]</span>
 
                 <span class="n">out_all</span> <span class="o">=</span> <span class="p">[</span>
-                    <span class="n">pred</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">score</span><span class="p">)</span> <span class="k">for</span> <span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">score</span><span class="p">)</span> <span class="ow">in</span>
-                    <span class="nb">zip</span><span class="p">(</span><span class="n">n_best_preds</span><span class="p">,</span> <span class="n">n_best_scores</span><span class="p">)</span>
+                    <span class="n">pred</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">score</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">n_best_preds</span><span class="p">,</span> <span class="n">n_best_scores</span><span class="p">)</span>
                 <span class="p">]</span>
 
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">with_score</span><span class="p">:</span>
@@ -702,14 +682,10 @@
         <span class="n">end_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_score</span><span class="p">:</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_report_score</span><span class="p">(</span>
-                <span class="s2">&quot;PRED&quot;</span><span class="p">,</span> <span class="n">pred_score_total</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_scores</span><span class="p">)</span>
-            <span class="p">)</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_report_score</span><span class="p">(</span><span class="s2">&quot;PRED&quot;</span><span class="p">,</span> <span class="n">pred_score_total</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_scores</span><span class="p">))</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
-            <span class="k">if</span> <span class="s1">&#39;tgt&#39;</span> <span class="ow">in</span> <span class="n">batch</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">tgt_file_prefix</span><span class="p">:</span>
-                <span class="n">msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_report_score</span><span class="p">(</span>
-                    <span class="s2">&quot;GOLD&quot;</span><span class="p">,</span> <span class="n">gold_score_total</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_scores</span><span class="p">)</span>
-                <span class="p">)</span>
+            <span class="k">if</span> <span class="s2">&quot;tgt&quot;</span> <span class="ow">in</span> <span class="n">batch</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">tgt_file_prefix</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_report_score</span><span class="p">(</span><span class="s2">&quot;GOLD&quot;</span><span class="p">,</span> <span class="n">gold_score_total</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_scores</span><span class="p">))</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_time</span><span class="p">:</span>
@@ -719,9 +695,7 @@
                 <span class="s2">&quot;Average translation time (ms): </span><span class="si">%.1f</span><span class="s2">&quot;</span>
                 <span class="o">%</span> <span class="p">(</span><span class="n">total_time</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_predictions</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span>
             <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span>
-                <span class="s2">&quot;Tokens per second: </span><span class="si">%.1f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pred_words_total</span> <span class="o">/</span> <span class="n">total_time</span><span class="p">)</span>
-            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="s2">&quot;Tokens per second: </span><span class="si">%.1f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pred_words_total</span> <span class="o">/</span> <span class="n">total_time</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dump_beam</span><span class="p">:</span>
             <span class="kn">import</span> <span class="nn">json</span>
@@ -748,17 +722,13 @@
 <span class="sd">            batched_nbest_predict (torch.LongTensor): `(batch, n_best, tgt_l)`</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">dtype</span><span class="p">,</span> <span class="n">device</span> <span class="o">=</span> <span class="n">predictions</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">predictions</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">device</span>
-        <span class="n">flatten_tgt</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">best</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="k">for</span> <span class="n">bests</span> <span class="ow">in</span> <span class="n">predictions</span> <span class="k">for</span> <span class="n">best</span> <span class="ow">in</span> <span class="n">bests</span>
-        <span class="p">]</span>
+        <span class="n">flatten_tgt</span> <span class="o">=</span> <span class="p">[</span><span class="n">best</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="k">for</span> <span class="n">bests</span> <span class="ow">in</span> <span class="n">predictions</span> <span class="k">for</span> <span class="n">best</span> <span class="ow">in</span> <span class="n">bests</span><span class="p">]</span>
         <span class="n">paded_tgt</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
             <span class="nb">list</span><span class="p">(</span><span class="n">zip_longest</span><span class="p">(</span><span class="o">*</span><span class="n">flatten_tgt</span><span class="p">,</span> <span class="n">fillvalue</span><span class="o">=</span><span class="n">pad</span><span class="p">)),</span>
             <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span>
             <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
         <span class="p">)</span><span class="o">.</span><span class="n">T</span>
-        <span class="n">bos_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">(</span>
-            <span class="p">[</span><span class="n">paded_tgt</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="mi">1</span><span class="p">],</span> <span class="n">bos</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span>
-        <span class="p">)</span>
+        <span class="n">bos_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">([</span><span class="n">paded_tgt</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="mi">1</span><span class="p">],</span> <span class="n">bos</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
         <span class="n">full_tgt</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">bos_tensor</span><span class="p">,</span> <span class="n">paded_tgt</span><span class="p">),</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">batched_nbest_predict</span> <span class="o">=</span> <span class="n">full_tgt</span><span class="o">.</span><span class="n">view</span><span class="p">(</span>
             <span class="nb">len</span><span class="p">(</span><span class="n">predictions</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">full_tgt</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
@@ -782,7 +752,7 @@
                 <span class="n">score</span><span class="p">,</span>
                 <span class="n">name</span><span class="p">,</span>
                 <span class="n">ppl</span><span class="p">,</span>
-                <span class="n">nb_sentences</span>
+                <span class="n">nb_sentences</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="k">return</span> <span class="n">msg</span>
 
@@ -831,8 +801,7 @@
             <span class="p">)</span>
             <span class="c1"># here we have scores [tgt_lenxbatch, vocab] or [beamxbatch, vocab]</span>
             <span class="k">if</span> <span class="n">batch_offset</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">scores</span> <span class="o">=</span> <span class="n">scores</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s1">&#39;srclen&#39;</span><span class="p">]),</span>
-                                     <span class="n">scores</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+                <span class="n">scores</span> <span class="o">=</span> <span class="n">scores</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;srclen&quot;</span><span class="p">]),</span> <span class="n">scores</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
                 <span class="n">scores</span> <span class="o">=</span> <span class="n">scores</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">scores</span> <span class="o">=</span> <span class="n">scores</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span><span class="p">,</span> <span class="n">scores</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
@@ -854,9 +823,7 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Translate a batch of sentences.&quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 
-    <span class="k">def</span> <span class="nf">_score_target</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span> <span class="n">src_map</span>
-    <span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_score_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span> <span class="n">src_map</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 
     <span class="k">def</span> <span class="nf">report_results</span><span class="p">(</span>
@@ -905,12 +872,13 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># (0) add BOS and padding to tgt prediction</span>
-        <span class="k">if</span> <span class="s1">&#39;tgt&#39;</span> <span class="ow">in</span> <span class="n">batch</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">gold_align</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">&quot;tgt&quot;</span> <span class="ow">in</span> <span class="n">batch</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">gold_align</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_log</span><span class="p">(</span><span class="s2">&quot;Computing alignments with gold target&quot;</span><span class="p">)</span>
-            <span class="n">batch_tgt_idxs</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="n">batch_tgt_idxs</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">batch_tgt_idxs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_align_pad_prediction</span><span class="p">(</span>
-                <span class="n">predictions</span><span class="p">,</span> <span class="n">bos</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_bos_idx</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_pad_idx</span><span class="p">)</span>
+                <span class="n">predictions</span><span class="p">,</span> <span class="n">bos</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_bos_idx</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_pad_idx</span>
+            <span class="p">)</span>
         <span class="n">tgt_mask</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">batch_tgt_idxs</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_pad_idx</span><span class="p">)</span>
             <span class="o">|</span> <span class="n">batch_tgt_idxs</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_eos_idx</span><span class="p">)</span>
@@ -942,18 +910,14 @@
         <span class="n">tgt</span> <span class="o">=</span> <span class="n">batch_tgt_idxs</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">batch_tgt_idxs</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">dec_in</span> <span class="o">=</span> <span class="n">tgt</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># exclude last target from inputs</span>
         <span class="c1"># here dec_in is batch first</span>
-        <span class="n">_</span><span class="p">,</span> <span class="n">attns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="p">(</span>
-            <span class="n">dec_in</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span> <span class="n">src_len</span><span class="o">=</span><span class="n">src_len</span><span class="p">,</span> <span class="n">with_align</span><span class="o">=</span><span class="kc">True</span>
-        <span class="p">)</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">attns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="p">(</span><span class="n">dec_in</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span> <span class="n">src_len</span><span class="o">=</span><span class="n">src_len</span><span class="p">,</span> <span class="n">with_align</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="n">alignment_attn</span> <span class="o">=</span> <span class="n">attns</span><span class="p">[</span><span class="s2">&quot;align&quot;</span><span class="p">]</span>  <span class="c1"># ``(B, tgt_len-1, src_len)``</span>
         <span class="c1"># masked_select</span>
         <span class="n">align_tgt_mask</span> <span class="o">=</span> <span class="n">tgt_mask</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">tgt_mask</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
         <span class="n">prediction_mask</span> <span class="o">=</span> <span class="n">align_tgt_mask</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:]</span>  <span class="c1"># exclude bos to match pred</span>
         <span class="c1"># get aligned src id for each prediction&#39;s valid tgt tokens</span>
-        <span class="n">alignement</span> <span class="o">=</span> <span class="n">extract_alignment</span><span class="p">(</span>
-            <span class="n">alignment_attn</span><span class="p">,</span> <span class="n">prediction_mask</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span> <span class="n">n_best</span>
-        <span class="p">)</span>
+        <span class="n">alignement</span> <span class="o">=</span> <span class="n">extract_alignment</span><span class="p">(</span><span class="n">alignment_attn</span><span class="p">,</span> <span class="n">prediction_mask</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span> <span class="n">n_best</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">alignement</span>
 
 <div class="viewcode-block" id="Translator.translate_batch"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.Translator.translate_batch">[docs]</a>    <span class="k">def</span> <span class="nf">translate_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">attn_debug</span><span class="p">):</span>
@@ -966,7 +930,7 @@
                     <span class="n">eos</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_eos_idx</span><span class="p">,</span>
                     <span class="n">unk</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_unk_idx</span><span class="p">,</span>
                     <span class="n">start</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_start_with</span><span class="p">,</span>
-                    <span class="n">batch_size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s1">&#39;srclen&#39;</span><span class="p">]),</span>
+                    <span class="n">batch_size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;srclen&quot;</span><span class="p">]),</span>
                     <span class="n">global_scorer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">global_scorer</span><span class="p">,</span>
                     <span class="n">min_length</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">min_length</span><span class="p">,</span>
                     <span class="n">max_length</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_length</span><span class="p">,</span>
@@ -984,7 +948,7 @@
                 <span class="k">assert</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">dump_beam</span>
                 <span class="n">decode_strategy</span> <span class="o">=</span> <span class="n">BeamSearch</span><span class="p">(</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span><span class="p">,</span>
-                    <span class="n">batch_size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s1">&#39;srclen&#39;</span><span class="p">]),</span>
+                    <span class="n">batch_size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;srclen&quot;</span><span class="p">]),</span>
                     <span class="n">pad</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_pad_idx</span><span class="p">,</span>
                     <span class="n">bos</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_bos_idx</span><span class="p">,</span>
                     <span class="n">eos</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_eos_idx</span><span class="p">,</span>
@@ -1001,34 +965,25 @@
                     <span class="n">ratio</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ratio</span><span class="p">,</span>
                     <span class="n">ban_unk_token</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ban_unk_token</span><span class="p">,</span>
                 <span class="p">)</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_batch_with_strategy</span><span class="p">(</span>
-                <span class="n">batch</span><span class="p">,</span> <span class="n">decode_strategy</span>
-            <span class="p">)</span></div>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_batch_with_strategy</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">decode_strategy</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_run_encoder</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">):</span>
-        <span class="n">src</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">]</span>
-        <span class="n">src_len</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;srclen&#39;</span><span class="p">]</span>
-        <span class="n">batch_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s1">&#39;srclen&#39;</span><span class="p">])</span>
+        <span class="n">src</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span>
+        <span class="n">src_len</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;srclen&quot;</span><span class="p">]</span>
+        <span class="n">batch_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;srclen&quot;</span><span class="p">])</span>
 
-        <span class="n">enc_out</span><span class="p">,</span> <span class="n">enc_final_hs</span><span class="p">,</span> <span class="n">src_len</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">encoder</span><span class="p">(</span>
-            <span class="n">src</span><span class="p">,</span> <span class="n">src_len</span>
-        <span class="p">)</span>
+        <span class="n">enc_out</span><span class="p">,</span> <span class="n">enc_final_hs</span><span class="p">,</span> <span class="n">src_len</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">encoder</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">src_len</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">src_len</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">assert</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span>
                 <span class="n">enc_out</span><span class="p">,</span> <span class="nb">tuple</span>
             <span class="p">),</span> <span class="s2">&quot;Ensemble decoding only supported for text data&quot;</span>
             <span class="n">src_len</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)</span>
-                <span class="o">.</span><span class="n">type_as</span><span class="p">(</span><span class="n">enc_out</span><span class="p">)</span>
-                <span class="o">.</span><span class="n">long</span><span class="p">()</span>
-                <span class="o">.</span><span class="n">fill_</span><span class="p">(</span><span class="n">enc_out</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+                <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)</span><span class="o">.</span><span class="n">type_as</span><span class="p">(</span><span class="n">enc_out</span><span class="p">)</span><span class="o">.</span><span class="n">long</span><span class="p">()</span><span class="o">.</span><span class="n">fill_</span><span class="p">(</span><span class="n">enc_out</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
             <span class="p">)</span>
         <span class="k">return</span> <span class="n">src</span><span class="p">,</span> <span class="n">enc_final_hs</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span> <span class="n">src_len</span>
 
-    <span class="k">def</span> <span class="nf">_translate_batch_with_strategy</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">decode_strategy</span>
-    <span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_translate_batch_with_strategy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">decode_strategy</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Translate a batch of sentences step by step using cache.</span>
 
 <span class="sd">        Args:</span>
@@ -1043,7 +998,7 @@
         <span class="n">use_src_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span>
         <span class="n">parallel_paths</span> <span class="o">=</span> <span class="n">decode_strategy</span><span class="o">.</span><span class="n">parallel_paths</span>  <span class="c1"># beam_size</span>
 
-        <span class="n">batch_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s1">&#39;srclen&#39;</span><span class="p">])</span>
+        <span class="n">batch_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;srclen&quot;</span><span class="p">])</span>
 
         <span class="c1"># (1) Run the encoder on the src.</span>
         <span class="n">src</span><span class="p">,</span> <span class="n">enc_final_hs</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span> <span class="n">src_len</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_encoder</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
@@ -1061,14 +1016,9 @@
         <span class="p">)</span>
 
         <span class="c1"># (2) prep decode_strategy. Possibly repeat src objects.</span>
-        <span class="n">src_map</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;src_map&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">use_src_map</span> <span class="k">else</span> <span class="kc">None</span>
-        <span class="n">target_prefix</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tgt_file_prefix</span> <span class="k">else</span> <span class="kc">None</span>
-        <span class="p">(</span>
-            <span class="n">fn_map_state</span><span class="p">,</span>
-            <span class="n">enc_out</span><span class="p">,</span>
-            <span class="n">src_len_tiled</span><span class="p">,</span>
-            <span class="n">src_map</span><span class="p">,</span>
-        <span class="p">)</span> <span class="o">=</span> <span class="n">decode_strategy</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span>
+        <span class="n">src_map</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;src_map&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">use_src_map</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="n">target_prefix</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tgt_file_prefix</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="p">(</span><span class="n">fn_map_state</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span> <span class="n">src_len_tiled</span><span class="p">,</span> <span class="n">src_map</span><span class="p">,)</span> <span class="o">=</span> <span class="n">decode_strategy</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span>
             <span class="n">enc_out</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span> <span class="n">src_map</span><span class="p">,</span> <span class="n">target_prefix</span><span class="o">=</span><span class="n">target_prefix</span>
         <span class="p">)</span>
 
@@ -1103,9 +1053,7 @@
             <span class="k">if</span> <span class="n">any_finished</span><span class="p">:</span>
                 <span class="c1"># Reorder states.</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">enc_out</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
-                    <span class="n">enc_out</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
-                        <span class="n">x</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">select_indices</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">enc_out</span>
-                    <span class="p">)</span>
+                    <span class="n">enc_out</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">select_indices</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">enc_out</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">enc_out</span> <span class="o">=</span> <span class="n">enc_out</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">select_indices</span><span class="p">)</span>
 
@@ -1129,10 +1077,8 @@
             <span class="n">decode_strategy</span><span class="p">,</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_score_target</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span> <span class="n">src_map</span>
-    <span class="p">):</span>
-        <span class="n">tgt</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span>
+    <span class="k">def</span> <span class="nf">_score_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span> <span class="n">src_map</span><span class="p">):</span>
+        <span class="n">tgt</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span>
         <span class="n">tgt_in</span> <span class="o">=</span> <span class="n">tgt</span><span class="p">[:,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>
 
         <span class="n">log_probs</span><span class="p">,</span> <span class="n">attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decode_and_generate</span><span class="p">(</span>
@@ -1168,13 +1114,15 @@
 
     <span class="k">def</span> <span class="nf">translate_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">attn_debug</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Translate a batch of sentences.&quot;&quot;&quot;</span>
-        <span class="n">batch_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s1">&#39;srclen&#39;</span><span class="p">])</span>
+        <span class="n">batch_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;srclen&quot;</span><span class="p">])</span>
         <span class="k">if</span> <span class="n">batch_size</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">warning_msg</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;GeneratorLM does not support batch_size != 1&quot;</span>
-                           <span class="s2">&quot; nicely. You can remove this limitation here.&quot;</span>
-                           <span class="s2">&quot; With batch_size &gt; 1 the end of each input is&quot;</span>
-                           <span class="s2">&quot; repeated until the input is finished. Then&quot;</span>
-                           <span class="s2">&quot; generation will start.&quot;</span><span class="p">)</span>
+            <span class="n">warning_msg</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="s2">&quot;GeneratorLM does not support batch_size != 1&quot;</span>
+                <span class="s2">&quot; nicely. You can remove this limitation here.&quot;</span>
+                <span class="s2">&quot; With batch_size &gt; 1 the end of each input is&quot;</span>
+                <span class="s2">&quot; repeated until the input is finished. Then&quot;</span>
+                <span class="s2">&quot; generation will start.&quot;</span>
+            <span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">warning_msg</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
@@ -1187,7 +1135,7 @@
                     <span class="n">eos</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_eos_idx</span><span class="p">,</span>
                     <span class="n">unk</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_unk_idx</span><span class="p">,</span>
                     <span class="n">start</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_start_with</span><span class="p">,</span>
-                    <span class="n">batch_size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s1">&#39;srclen&#39;</span><span class="p">]),</span>
+                    <span class="n">batch_size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;srclen&quot;</span><span class="p">]),</span>
                     <span class="n">global_scorer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">global_scorer</span><span class="p">,</span>
                     <span class="n">min_length</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">min_length</span><span class="p">,</span>
                     <span class="n">max_length</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_length</span><span class="p">,</span>
@@ -1205,7 +1153,7 @@
                 <span class="k">assert</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">dump_beam</span>
                 <span class="n">decode_strategy</span> <span class="o">=</span> <span class="n">BeamSearchLM</span><span class="p">(</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span><span class="p">,</span>
-                    <span class="n">batch_size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s1">&#39;srclen&#39;</span><span class="p">]),</span>
+                    <span class="n">batch_size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;srclen&quot;</span><span class="p">]),</span>
                     <span class="n">pad</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_pad_idx</span><span class="p">,</span>
                     <span class="n">bos</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_bos_idx</span><span class="p">,</span>
                     <span class="n">eos</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tgt_eos_idx</span><span class="p">,</span>
@@ -1222,9 +1170,7 @@
                     <span class="n">ratio</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ratio</span><span class="p">,</span>
                     <span class="n">ban_unk_token</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ban_unk_token</span><span class="p">,</span>
                 <span class="p">)</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_batch_with_strategy</span><span class="p">(</span>
-                <span class="n">batch</span><span class="p">,</span> <span class="n">decode_strategy</span>
-            <span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_batch_with_strategy</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">decode_strategy</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">split_src_to_prevent_padding</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">src_len</span><span class="p">):</span>
@@ -1243,9 +1189,7 @@
             <span class="n">log_probs</span> <span class="o">=</span> <span class="n">log_probs</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>
         <span class="k">return</span> <span class="n">log_probs</span>
 
-    <span class="k">def</span> <span class="nf">_translate_batch_with_strategy</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">decode_strategy</span>
-    <span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_translate_batch_with_strategy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">decode_strategy</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Translate a batch of sentences step by step using cache.</span>
 
 <span class="sd">        Args:</span>
@@ -1259,15 +1203,13 @@
         <span class="c1"># (0) Prep the components of the search.</span>
         <span class="n">use_src_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_attn</span>
         <span class="n">parallel_paths</span> <span class="o">=</span> <span class="n">decode_strategy</span><span class="o">.</span><span class="n">parallel_paths</span>  <span class="c1"># beam_size</span>
-        <span class="n">batch_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s1">&#39;srclen&#39;</span><span class="p">])</span>
+        <span class="n">batch_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;srclen&quot;</span><span class="p">])</span>
 
         <span class="c1"># (1) split src into src and target_prefix to avoid padding.</span>
-        <span class="n">src</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">]</span>
-        <span class="n">src_len</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;srclen&#39;</span><span class="p">]</span>
+        <span class="n">src</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span>
+        <span class="n">src_len</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;srclen&quot;</span><span class="p">]</span>
 
-        <span class="n">src</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span> <span class="n">target_prefix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_src_to_prevent_padding</span><span class="p">(</span>
-            <span class="n">src</span><span class="p">,</span> <span class="n">src_len</span>
-        <span class="p">)</span>
+        <span class="n">src</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span> <span class="n">target_prefix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_src_to_prevent_padding</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">src_len</span><span class="p">)</span>
 
         <span class="c1"># (2) init decoder</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">init_state</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
@@ -1282,13 +1224,8 @@
         <span class="p">)</span>
 
         <span class="c1"># (3) prep decode_strategy. Possibly repeat src objects.</span>
-        <span class="n">src_map</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;src_map&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">use_src_map</span> <span class="k">else</span> <span class="kc">None</span>
-        <span class="p">(</span>
-            <span class="n">fn_map_state</span><span class="p">,</span>
-            <span class="n">src</span><span class="p">,</span>
-            <span class="n">src_len_tiled</span><span class="p">,</span>
-            <span class="n">src_map</span><span class="p">,</span>
-        <span class="p">)</span> <span class="o">=</span> <span class="n">decode_strategy</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span>
+        <span class="n">src_map</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;src_map&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">use_src_map</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="p">(</span><span class="n">fn_map_state</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">src_len_tiled</span><span class="p">,</span> <span class="n">src_map</span><span class="p">,)</span> <span class="o">=</span> <span class="n">decode_strategy</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span>
             <span class="n">src</span><span class="p">,</span>
             <span class="n">src_len</span><span class="p">,</span>
             <span class="n">src_map</span><span class="p">,</span>
@@ -1298,9 +1235,7 @@
         <span class="c1"># (4) Begin decoding step by step:</span>
         <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">decode_strategy</span><span class="o">.</span><span class="n">max_length</span><span class="p">):</span>
             <span class="n">decoder_input</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">src</span>
-                <span class="k">if</span> <span class="n">step</span> <span class="o">==</span> <span class="mi">0</span>
-                <span class="k">else</span> <span class="n">decode_strategy</span><span class="o">.</span><span class="n">current_predictions</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">src</span> <span class="k">if</span> <span class="n">step</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">decode_strategy</span><span class="o">.</span><span class="n">current_predictions</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
             <span class="p">)</span>
 
             <span class="n">log_probs</span><span class="p">,</span> <span class="n">attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decode_and_generate</span><span class="p">(</span>
@@ -1315,7 +1250,8 @@
 
             <span class="k">if</span> <span class="n">step</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">log_probs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tile_to_beam_size_after_initial_step</span><span class="p">(</span>
-                    <span class="n">fn_map_state</span><span class="p">,</span> <span class="n">log_probs</span><span class="p">)</span>
+                    <span class="n">fn_map_state</span><span class="p">,</span> <span class="n">log_probs</span>
+                <span class="p">)</span>
 
             <span class="n">decode_strategy</span><span class="o">.</span><span class="n">advance</span><span class="p">(</span><span class="n">log_probs</span><span class="p">,</span> <span class="n">attn</span><span class="p">)</span>
             <span class="n">any_finished</span> <span class="o">=</span> <span class="n">decode_strategy</span><span class="o">.</span><span class="n">is_finished</span><span class="o">.</span><span class="n">any</span><span class="p">()</span>
@@ -1349,12 +1285,10 @@
             <span class="n">decode_strategy</span><span class="p">,</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_score_target</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span> <span class="n">src_map</span>
-    <span class="p">):</span>
-        <span class="n">src</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">]</span>
-        <span class="n">src_len</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;srclen&#39;</span><span class="p">]</span>
-        <span class="n">tgt</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;tgt&#39;</span><span class="p">]</span>
+    <span class="k">def</span> <span class="nf">_score_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span> <span class="n">src_map</span><span class="p">):</span>
+        <span class="n">src</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span>
+        <span class="n">src_len</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;srclen&quot;</span><span class="p">]</span>
+        <span class="n">tgt</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span>
 
         <span class="n">log_probs</span><span class="p">,</span> <span class="n">attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decode_and_generate</span><span class="p">(</span>
             <span class="n">src</span><span class="p">,</span>

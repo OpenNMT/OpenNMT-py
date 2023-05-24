@@ -93,11 +93,12 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">How do I use my v2 models in v3 ?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-do-i-train-the-transformer-model">How do I train the Transformer model?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#performance-tips">Performance tips</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#position-encoding-absolute-vs-relative-vs-rotary-embeddings">Position encoding: Absolute vs Relative vs Rotary Embeddings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#position-encoding-absolute-vs-relative-vs-rotary-embeddings-vs-alibi">Position encoding: Absolute vs Relative vs Rotary Embeddings vs Alibi</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#do-you-support-multi-gpu">Do you support multi-gpu?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove">How do I use Pretrained embeddings (e.g. GloVe)?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-ensemble-models-at-inference">How can I ensemble Models at inference?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-weight-different-corpora-at-training">How can I weight different corpora at training?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#what-special-tokens-does-opennmt-py-use">What special tokens does OpenNMT-py use?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-apply-on-the-fly-tokenization-and-subword-regularization-when-training">How can I apply on-the-fly tokenization and subword regularization when training?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
@@ -209,6 +210,7 @@
 <span class="kn">import</span> <span class="nn">types</span>
 <span class="kn">import</span> <span class="nn">importlib</span>
 <span class="kn">from</span> <span class="nn">onmt.utils.misc</span> <span class="kn">import</span> <span class="n">fn_args</span>
+
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">import</span> <span class="nn">apex</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
@@ -238,59 +240,46 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">params</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">()</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">]</span>
     <span class="n">betas</span> <span class="o">=</span> <span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">adam_beta1</span><span class="p">,</span> <span class="n">opt</span><span class="o">.</span><span class="n">adam_beta2</span><span class="p">]</span>
-    <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">optim</span> <span class="o">==</span> <span class="s1">&#39;sgd&#39;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">optim</span> <span class="o">==</span> <span class="s2">&quot;sgd&quot;</span><span class="p">:</span>
         <span class="n">optimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">SGD</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">optim</span> <span class="o">==</span> <span class="s1">&#39;adagrad&#39;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">optim</span> <span class="o">==</span> <span class="s2">&quot;adagrad&quot;</span><span class="p">:</span>
         <span class="n">optimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adagrad</span><span class="p">(</span>
             <span class="n">params</span><span class="p">,</span>
             <span class="n">lr</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span>
-            <span class="n">initial_accumulator_value</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">adagrad_accumulator_init</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">optim</span> <span class="o">==</span> <span class="s1">&#39;adadelta&#39;</span><span class="p">:</span>
+            <span class="n">initial_accumulator_value</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">adagrad_accumulator_init</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">optim</span> <span class="o">==</span> <span class="s2">&quot;adadelta&quot;</span><span class="p">:</span>
         <span class="n">optimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adadelta</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">optim</span> <span class="o">==</span> <span class="s1">&#39;adafactor&#39;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">optim</span> <span class="o">==</span> <span class="s2">&quot;adafactor&quot;</span><span class="p">:</span>
         <span class="n">optimizer</span> <span class="o">=</span> <span class="n">AdaFactor</span><span class="p">(</span>
-            <span class="n">params</span><span class="p">,</span>
-            <span class="n">non_constant_decay</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">enable_factorization</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">weight_decay</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">optim</span> <span class="o">==</span> <span class="s1">&#39;adam&#39;</span><span class="p">:</span>
-        <span class="n">optimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span>
-            <span class="n">params</span><span class="p">,</span>
-            <span class="n">lr</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span>
-            <span class="n">betas</span><span class="o">=</span><span class="n">betas</span><span class="p">,</span>
-            <span class="n">eps</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">optim</span> <span class="o">==</span> <span class="s1">&#39;sparseadam&#39;</span><span class="p">:</span>
+            <span class="n">params</span><span class="p">,</span> <span class="n">non_constant_decay</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">enable_factorization</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">weight_decay</span><span class="o">=</span><span class="mi">0</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">optim</span> <span class="o">==</span> <span class="s2">&quot;adam&quot;</span><span class="p">:</span>
+        <span class="n">optimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span> <span class="n">betas</span><span class="o">=</span><span class="n">betas</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">optim</span> <span class="o">==</span> <span class="s2">&quot;sparseadam&quot;</span><span class="p">:</span>
         <span class="n">dense</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">sparse</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">():</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">param</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
                 <span class="k">continue</span>
             <span class="c1"># TODO: Find a better way to check for sparse gradients.</span>
-            <span class="k">if</span> <span class="s1">&#39;embed&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s2">&quot;embed&quot;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
                 <span class="n">sparse</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">dense</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
         <span class="n">optimizer</span> <span class="o">=</span> <span class="n">MultipleOptimizer</span><span class="p">(</span>
-            <span class="p">[</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span>
-                <span class="n">dense</span><span class="p">,</span>
-                <span class="n">lr</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span>
-                <span class="n">betas</span><span class="o">=</span><span class="n">betas</span><span class="p">,</span>
-                <span class="n">eps</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">),</span>
-             <span class="n">optim</span><span class="o">.</span><span class="n">SparseAdam</span><span class="p">(</span>
-                 <span class="n">sparse</span><span class="p">,</span>
-                 <span class="n">lr</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span>
-                 <span class="n">betas</span><span class="o">=</span><span class="n">betas</span><span class="p">,</span>
-                 <span class="n">eps</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">)])</span>
-    <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">optim</span> <span class="o">==</span> <span class="s1">&#39;fusedadam&#39;</span><span class="p">:</span>
-        <span class="n">optimizer</span> <span class="o">=</span> <span class="n">FusedAdam</span><span class="p">(</span>
-            <span class="n">params</span><span class="p">,</span>
-            <span class="n">lr</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span>
-            <span class="n">betas</span><span class="o">=</span><span class="n">betas</span><span class="p">)</span>
+            <span class="p">[</span>
+                <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">dense</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span> <span class="n">betas</span><span class="o">=</span><span class="n">betas</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">),</span>
+                <span class="n">optim</span><span class="o">.</span><span class="n">SparseAdam</span><span class="p">(</span><span class="n">sparse</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span> <span class="n">betas</span><span class="o">=</span><span class="n">betas</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">),</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">optim</span> <span class="o">==</span> <span class="s2">&quot;fusedadam&quot;</span><span class="p">:</span>
+        <span class="n">optimizer</span> <span class="o">=</span> <span class="n">FusedAdam</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span> <span class="n">betas</span><span class="o">=</span><span class="n">betas</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="kn">import</span> <span class="nn">apex</span>
         <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s2">&quot;Could not import apex&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">apex_opt_level</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;O0&#39;</span><span class="p">,</span> <span class="s1">&#39;O1&#39;</span><span class="p">,</span> <span class="s1">&#39;O2&#39;</span><span class="p">,</span> <span class="s1">&#39;O3&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">apex_opt_level</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;O0&quot;</span><span class="p">,</span> <span class="s2">&quot;O1&quot;</span><span class="p">,</span> <span class="s2">&quot;O2&quot;</span><span class="p">,</span> <span class="s2">&quot;O3&quot;</span><span class="p">]:</span>
             <span class="c1"># we use apex.amp</span>
             <span class="n">loss_scale</span> <span class="o">=</span> <span class="s2">&quot;dynamic&quot;</span> <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">loss_scale</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">opt</span><span class="o">.</span><span class="n">loss_scale</span>
             <span class="n">model</span><span class="p">,</span> <span class="n">optimizer</span> <span class="o">=</span> <span class="n">apex</span><span class="o">.</span><span class="n">amp</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span>
@@ -298,9 +287,10 @@
                 <span class="n">optimizer</span><span class="p">,</span>
                 <span class="n">opt_level</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">apex_opt_level</span><span class="p">,</span>
                 <span class="n">loss_scale</span><span class="o">=</span><span class="n">loss_scale</span><span class="p">,</span>
-                <span class="n">keep_batchnorm_fp32</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+                <span class="n">keep_batchnorm_fp32</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">model_dtype</span> <span class="o">==</span> <span class="s1">&#39;fp16&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">model_dtype</span> <span class="o">==</span> <span class="s2">&quot;fp16&quot;</span><span class="p">:</span>
                 <span class="c1"># In this case use the old FusedAdam with</span>
                 <span class="c1"># FP16_optimizer wrapper</span>
                 <span class="n">static_loss_scale</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">loss_scale</span>
@@ -308,56 +298,54 @@
                 <span class="n">optimizer</span> <span class="o">=</span> <span class="n">apex</span><span class="o">.</span><span class="n">contrib</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">FP16_Optimizer</span><span class="p">(</span>
                     <span class="n">optimizer</span><span class="p">,</span>
                     <span class="n">static_loss_scale</span><span class="o">=</span><span class="n">static_loss_scale</span><span class="p">,</span>
-                    <span class="n">dynamic_loss_scale</span><span class="o">=</span><span class="n">dynamic_loss_scale</span><span class="p">)</span>
+                    <span class="n">dynamic_loss_scale</span><span class="o">=</span><span class="n">dynamic_loss_scale</span><span class="p">,</span>
+                <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid optimizer type: &#39;</span> <span class="o">+</span> <span class="n">opt</span><span class="o">.</span><span class="n">optim</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid optimizer type: &quot;</span> <span class="o">+</span> <span class="n">opt</span><span class="o">.</span><span class="n">optim</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">optimizer</span>
 
 
 <span class="k">def</span> <span class="nf">make_learning_rate_decay_fn</span><span class="p">(</span><span class="n">opt</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the learning decay function from options.&quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">decay_method</span> <span class="o">==</span> <span class="s1">&#39;noam&#39;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">decay_method</span> <span class="o">==</span> <span class="s2">&quot;noam&quot;</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span>
-            <span class="n">noam_decay</span><span class="p">,</span>
-            <span class="n">warmup_steps</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">warmup_steps</span><span class="p">,</span>
-            <span class="n">model_size</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">hidden_size</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">decay_method</span> <span class="o">==</span> <span class="s1">&#39;noamwd&#39;</span><span class="p">:</span>
+            <span class="n">noam_decay</span><span class="p">,</span> <span class="n">warmup_steps</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">warmup_steps</span><span class="p">,</span> <span class="n">model_size</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">hidden_size</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">decay_method</span> <span class="o">==</span> <span class="s2">&quot;noamwd&quot;</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span>
             <span class="n">noamwd_decay</span><span class="p">,</span>
             <span class="n">warmup_steps</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">warmup_steps</span><span class="p">,</span>
             <span class="n">model_size</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">hidden_size</span><span class="p">,</span>
             <span class="n">rate</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">learning_rate_decay</span><span class="p">,</span>
             <span class="n">decay_steps</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">decay_steps</span><span class="p">,</span>
-            <span class="n">start_step</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">start_decay_steps</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">decay_method</span> <span class="o">==</span> <span class="s1">&#39;rsqrt&#39;</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span>
-            <span class="n">rsqrt_decay</span><span class="p">,</span> <span class="n">warmup_steps</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">warmup_steps</span><span class="p">)</span>
+            <span class="n">start_step</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">start_decay_steps</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">decay_method</span> <span class="o">==</span> <span class="s2">&quot;rsqrt&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">rsqrt_decay</span><span class="p">,</span> <span class="n">warmup_steps</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">warmup_steps</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">start_decay_steps</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span>
             <span class="n">exponential_decay</span><span class="p">,</span>
             <span class="n">rate</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">learning_rate_decay</span><span class="p">,</span>
             <span class="n">decay_steps</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">decay_steps</span><span class="p">,</span>
-            <span class="n">start_step</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">start_decay_steps</span><span class="p">)</span>
+            <span class="n">start_step</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">start_decay_steps</span><span class="p">,</span>
+        <span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">noam_decay</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">warmup_steps</span><span class="p">,</span> <span class="n">model_size</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Learning rate schedule described in</span>
 <span class="sd">    https://arxiv.org/pdf/1706.03762.pdf.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="p">(</span>
-        <span class="n">model_size</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span>
-        <span class="nb">min</span><span class="p">(</span><span class="n">step</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">),</span> <span class="n">step</span> <span class="o">*</span> <span class="n">warmup_steps</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">1.5</span><span class="p">)))</span>
+    <span class="k">return</span> <span class="n">model_size</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="nb">min</span><span class="p">(</span><span class="n">step</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">),</span> <span class="n">step</span> <span class="o">*</span> <span class="n">warmup_steps</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.5</span><span class="p">))</span>
 
 
-<span class="k">def</span> <span class="nf">noamwd_decay</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">warmup_steps</span><span class="p">,</span>
-                 <span class="n">model_size</span><span class="p">,</span> <span class="n">rate</span><span class="p">,</span> <span class="n">decay_steps</span><span class="p">,</span> <span class="n">start_step</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Learning rate schedule optimized for huge batches</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="k">def</span> <span class="nf">noamwd_decay</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">warmup_steps</span><span class="p">,</span> <span class="n">model_size</span><span class="p">,</span> <span class="n">rate</span><span class="p">,</span> <span class="n">decay_steps</span><span class="p">,</span> <span class="n">start_step</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Learning rate schedule optimized for huge batches&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="p">(</span>
-        <span class="n">model_size</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span>
-        <span class="nb">min</span><span class="p">(</span><span class="n">step</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">),</span> <span class="n">step</span> <span class="o">*</span> <span class="n">warmup_steps</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">1.5</span><span class="p">))</span> <span class="o">*</span>
-        <span class="n">rate</span> <span class="o">**</span> <span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">step</span> <span class="o">-</span> <span class="n">start_step</span> <span class="o">+</span> <span class="n">decay_steps</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">//</span> <span class="n">decay_steps</span><span class="p">))</span>
+        <span class="n">model_size</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">)</span>
+        <span class="o">*</span> <span class="nb">min</span><span class="p">(</span><span class="n">step</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">),</span> <span class="n">step</span> <span class="o">*</span> <span class="n">warmup_steps</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.5</span><span class="p">))</span>
+        <span class="o">*</span> <span class="n">rate</span> <span class="o">**</span> <span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">step</span> <span class="o">-</span> <span class="n">start_step</span> <span class="o">+</span> <span class="n">decay_steps</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">//</span> <span class="n">decay_steps</span><span class="p">)</span>
+    <span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">exponential_decay</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">rate</span><span class="p">,</span> <span class="n">decay_steps</span><span class="p">,</span> <span class="n">start_step</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
@@ -373,10 +361,10 @@
 
 
 <span class="k">class</span> <span class="nc">MultipleOptimizer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; Implement multiple optimizers needed for sparse adam &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Implement multiple optimizers needed for sparse adam&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">op</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot; ? &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;?&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">optimizers</span> <span class="o">=</span> <span class="n">op</span>
 
     <span class="nd">@property</span>
@@ -387,26 +375,26 @@
         <span class="k">return</span> <span class="n">param_groups</span>
 
     <span class="k">def</span> <span class="nf">zero_grad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">set_to_none</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot; ? &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;?&quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">op</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimizers</span><span class="p">:</span>
             <span class="n">op</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">(</span><span class="n">set_to_none</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot; ? &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;?&quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">op</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimizers</span><span class="p">:</span>
             <span class="n">op</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot; ? &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;?&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">op</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimizers</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">op</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
 
     <span class="k">def</span> <span class="nf">state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot; ? &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;?&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">op</span><span class="o">.</span><span class="n">state_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">op</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimizers</span><span class="p">]</span>
 
     <span class="k">def</span> <span class="nf">load_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_dicts</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot; ? &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;?&quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">state_dicts</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">optimizers</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">state_dicts</span><span class="p">)):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">optimizers</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dicts</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
@@ -428,12 +416,9 @@
 <span class="sd">        max_grad_norm: Clip gradients to this global norm.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                 <span class="n">optimizer</span><span class="p">,</span>
-                 <span class="n">learning_rate</span><span class="p">,</span>
-                 <span class="n">learning_rate_decay_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">max_grad_norm</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">learning_rate</span><span class="p">,</span> <span class="n">learning_rate_decay_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_grad_norm</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span> <span class="o">=</span> <span class="n">optimizer</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_learning_rate</span> <span class="o">=</span> <span class="n">learning_rate</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_learning_rate_decay_fn</span> <span class="o">=</span> <span class="n">learning_rate_decay_fn</span>
@@ -459,31 +444,30 @@
         <span class="n">optim_opt</span> <span class="o">=</span> <span class="n">opt</span>
         <span class="n">optim_state_dict</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="k">if</span> <span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">train_from</span> <span class="ow">and</span> <span class="n">checkpoint</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span>
-                <span class="s1">&#39;optim&#39;</span> <span class="ow">in</span> <span class="n">checkpoint</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
-            <span class="n">optim</span> <span class="o">=</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s1">&#39;optim&#39;</span><span class="p">]</span>
-            <span class="n">ckpt_opt</span> <span class="o">=</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s1">&#39;opt&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">train_from</span> <span class="ow">and</span> <span class="n">checkpoint</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s2">&quot;optim&quot;</span> <span class="ow">in</span> <span class="n">checkpoint</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">optim</span> <span class="o">=</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;optim&quot;</span><span class="p">]</span>
+            <span class="n">ckpt_opt</span> <span class="o">=</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;opt&quot;</span><span class="p">]</span>
             <span class="n">ckpt_state_dict</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">optim</span><span class="p">,</span> <span class="n">Optimizer</span><span class="p">):</span>  <span class="c1"># Backward compatibility.</span>
-                <span class="n">ckpt_state_dict</span><span class="p">[</span><span class="s1">&#39;training_step&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">_step</span> <span class="o">+</span> <span class="mi">1</span>
-                <span class="n">ckpt_state_dict</span><span class="p">[</span><span class="s1">&#39;decay_step&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">_step</span> <span class="o">+</span> <span class="mi">1</span>
-                <span class="n">ckpt_state_dict</span><span class="p">[</span><span class="s1">&#39;optimizer&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">optimizer</span><span class="o">.</span><span class="n">state_dict</span><span class="p">()</span>
+                <span class="n">ckpt_state_dict</span><span class="p">[</span><span class="s2">&quot;training_step&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">_step</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">ckpt_state_dict</span><span class="p">[</span><span class="s2">&quot;decay_step&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">_step</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">ckpt_state_dict</span><span class="p">[</span><span class="s2">&quot;optimizer&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">optimizer</span><span class="o">.</span><span class="n">state_dict</span><span class="p">()</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">ckpt_state_dict</span> <span class="o">=</span> <span class="n">optim</span>
 
-            <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">reset_optim</span> <span class="o">==</span> <span class="s1">&#39;none&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">reset_optim</span> <span class="o">==</span> <span class="s2">&quot;none&quot;</span><span class="p">:</span>
                 <span class="c1"># Load everything from the checkpoint.</span>
                 <span class="n">optim_opt</span> <span class="o">=</span> <span class="n">ckpt_opt</span>
                 <span class="n">optim_state_dict</span> <span class="o">=</span> <span class="n">ckpt_state_dict</span>
-            <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">reset_optim</span> <span class="o">==</span> <span class="s1">&#39;all&#39;</span><span class="p">:</span>
+            <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">reset_optim</span> <span class="o">==</span> <span class="s2">&quot;all&quot;</span><span class="p">:</span>
                 <span class="c1"># Build everything from scratch.</span>
                 <span class="k">pass</span>
-            <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">reset_optim</span> <span class="o">==</span> <span class="s1">&#39;states&#39;</span><span class="p">:</span>
+            <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">reset_optim</span> <span class="o">==</span> <span class="s2">&quot;states&quot;</span><span class="p">:</span>
                 <span class="c1"># Reset optimizer, keep options.</span>
                 <span class="n">optim_opt</span> <span class="o">=</span> <span class="n">ckpt_opt</span>
                 <span class="n">optim_state_dict</span> <span class="o">=</span> <span class="n">ckpt_state_dict</span>
-                <span class="k">del</span> <span class="n">optim_state_dict</span><span class="p">[</span><span class="s1">&#39;optimizer&#39;</span><span class="p">]</span>
-            <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">reset_optim</span> <span class="o">==</span> <span class="s1">&#39;keep_states&#39;</span><span class="p">:</span>
+                <span class="k">del</span> <span class="n">optim_state_dict</span><span class="p">[</span><span class="s2">&quot;optimizer&quot;</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">reset_optim</span> <span class="o">==</span> <span class="s2">&quot;keep_states&quot;</span><span class="p">:</span>
                 <span class="c1"># Reset options, keep optimizer.</span>
                 <span class="n">optim_state_dict</span> <span class="o">=</span> <span class="n">ckpt_state_dict</span>
 
@@ -491,16 +475,18 @@
             <span class="n">build_torch_optimizer</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">optim_opt</span><span class="p">),</span>
             <span class="n">optim_opt</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span>
             <span class="n">learning_rate_decay_fn</span><span class="o">=</span><span class="n">make_learning_rate_decay_fn</span><span class="p">(</span><span class="n">optim_opt</span><span class="p">),</span>
-            <span class="n">max_grad_norm</span><span class="o">=</span><span class="n">optim_opt</span><span class="o">.</span><span class="n">max_grad_norm</span><span class="p">)</span>
+            <span class="n">max_grad_norm</span><span class="o">=</span><span class="n">optim_opt</span><span class="o">.</span><span class="n">max_grad_norm</span><span class="p">,</span>
+        <span class="p">)</span>
         <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">model_dtype</span> <span class="o">==</span> <span class="s2">&quot;fp16&quot;</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">optim</span> <span class="o">==</span> <span class="s2">&quot;fusedadam&quot;</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">apex_opt_level</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;O0&#39;</span><span class="p">,</span> <span class="s1">&#39;O1&#39;</span><span class="p">,</span> <span class="s1">&#39;O2&#39;</span><span class="p">,</span> <span class="s1">&#39;O3&#39;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">apex_opt_level</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;O0&quot;</span><span class="p">,</span> <span class="s2">&quot;O1&quot;</span><span class="p">,</span> <span class="s2">&quot;O2&quot;</span><span class="p">,</span> <span class="s2">&quot;O3&quot;</span><span class="p">]:</span>
                     <span class="n">optimizer</span><span class="o">.</span><span class="n">_fp16</span> <span class="o">=</span> <span class="s2">&quot;apex.amp&quot;</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">optimizer</span><span class="o">.</span><span class="n">_fp16</span> <span class="o">=</span> <span class="s2">&quot;legacy&quot;</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">optimizer</span><span class="o">.</span><span class="n">_fp16</span> <span class="o">=</span> <span class="s2">&quot;amp&quot;</span>
                 <span class="kn">from</span> <span class="nn">torch.cuda.amp</span> <span class="kn">import</span> <span class="n">GradScaler</span>
+
                 <span class="n">optimizer</span><span class="o">.</span><span class="n">_scaler</span> <span class="o">=</span> <span class="n">GradScaler</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">optim_state_dict</span><span class="p">:</span>
             <span class="n">optimizer</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">optim_state_dict</span><span class="p">)</span>
@@ -525,18 +511,18 @@
 
     <span class="k">def</span> <span class="nf">state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s1">&#39;training_step&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_training_step</span><span class="p">,</span>
-            <span class="s1">&#39;decay_step&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decay_step</span><span class="p">,</span>
-            <span class="s1">&#39;optimizer&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span><span class="o">.</span><span class="n">state_dict</span><span class="p">()</span>
+            <span class="s2">&quot;training_step&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_training_step</span><span class="p">,</span>
+            <span class="s2">&quot;decay_step&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decay_step</span><span class="p">,</span>
+            <span class="s2">&quot;optimizer&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span>
         <span class="p">}</span>
 
     <span class="k">def</span> <span class="nf">load_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_dict</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_training_step</span> <span class="o">=</span> <span class="n">state_dict</span><span class="p">[</span><span class="s1">&#39;training_step&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_training_step</span> <span class="o">=</span> <span class="n">state_dict</span><span class="p">[</span><span class="s2">&quot;training_step&quot;</span><span class="p">]</span>
         <span class="c1"># State can be partially restored.</span>
-        <span class="k">if</span> <span class="s1">&#39;decay_step&#39;</span> <span class="ow">in</span> <span class="n">state_dict</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_decay_step</span> <span class="o">=</span> <span class="n">state_dict</span><span class="p">[</span><span class="s1">&#39;decay_step&#39;</span><span class="p">]</span>
-        <span class="k">if</span> <span class="s1">&#39;optimizer&#39;</span> <span class="ow">in</span> <span class="n">state_dict</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">[</span><span class="s1">&#39;optimizer&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="s2">&quot;decay_step&quot;</span> <span class="ow">in</span> <span class="n">state_dict</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_decay_step</span> <span class="o">=</span> <span class="n">state_dict</span><span class="p">[</span><span class="s2">&quot;decay_step&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">&quot;optimizer&quot;</span> <span class="ow">in</span> <span class="n">state_dict</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">[</span><span class="s2">&quot;optimizer&quot;</span><span class="p">])</span>
 
 <div class="viewcode-block" id="Optimizer.zero_grad"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.Optimizer.zero_grad">[docs]</a>    <span class="k">def</span> <span class="nf">zero_grad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">set_to_none</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Zero the gradients of optimized parameters.&quot;&quot;&quot;</span>
@@ -574,14 +560,16 @@
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fp16</span> <span class="o">==</span> <span class="s2">&quot;legacy&quot;</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span><span class="p">,</span> <span class="s2">&quot;update_master_grads&quot;</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span><span class="o">.</span><span class="n">update_master_grads</span><span class="p">()</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span><span class="p">,</span> <span class="s2">&quot;clip_master_grads&quot;</span><span class="p">)</span> <span class="ow">and</span> \
-               <span class="bp">self</span><span class="o">.</span><span class="n">_max_grad_norm</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span><span class="p">,</span> <span class="s2">&quot;clip_master_grads&quot;</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_grad_norm</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span><span class="o">.</span><span class="n">clip_master_grads</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_max_grad_norm</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span><span class="o">.</span><span class="n">param_groups</span><span class="p">:</span>
-            <span class="n">group</span><span class="p">[</span><span class="s1">&#39;lr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">learning_rate</span>
+            <span class="n">group</span><span class="p">[</span><span class="s2">&quot;lr&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">learning_rate</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_grad_norm</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fp16</span> <span class="o">!=</span> <span class="s2">&quot;legacy&quot;</span><span class="p">:</span>
-                <span class="n">clip_grad_norm_</span><span class="p">(</span><span class="n">group</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_grad_norm</span><span class="p">)</span>
+                <span class="n">clip_grad_norm_</span><span class="p">(</span><span class="n">group</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_grad_norm</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">amp</span><span class="p">:</span>
             <span class="c1"># unscaled optimizer&#39;s gradients (already done therefore skip),</span>
@@ -594,27 +582,44 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_decay_step</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_training_step</span> <span class="o">+=</span> <span class="mi">1</span></div></div>
 
+
 <span class="c1"># Code below is an implementation of https://arxiv.org/pdf/1804.04235.pdf</span>
 <span class="c1"># inspired but modified from https://github.com/DeadAt0m/adafactor-pytorch</span>
 
 
 <div class="viewcode-block" id="AdaFactor"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.AdaFactor">[docs]</a><span class="k">class</span> <span class="nc">AdaFactor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Optimizer</span><span class="p">):</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">beta1</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">beta2</span><span class="o">=</span><span class="mf">0.999</span><span class="p">,</span> <span class="n">eps1</span><span class="o">=</span><span class="mf">1e-30</span><span class="p">,</span>
-                 <span class="n">eps2</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">cliping_threshold</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">non_constant_decay</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                 <span class="n">enable_factorization</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ams_grad</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">weight_decay</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">params</span><span class="p">,</span>
+        <span class="n">lr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">beta1</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span>
+        <span class="n">beta2</span><span class="o">=</span><span class="mf">0.999</span><span class="p">,</span>
+        <span class="n">eps1</span><span class="o">=</span><span class="mf">1e-30</span><span class="p">,</span>
+        <span class="n">eps2</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
+        <span class="n">cliping_threshold</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">non_constant_decay</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">enable_factorization</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">ams_grad</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">weight_decay</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="p">):</span>
         <span class="n">enable_momentum</span> <span class="o">=</span> <span class="n">beta1</span> <span class="o">!=</span> <span class="mi">0</span>
 
         <span class="k">if</span> <span class="n">non_constant_decay</span><span class="p">:</span>
             <span class="n">ams_grad</span> <span class="o">=</span> <span class="kc">False</span>
 
-        <span class="n">defaults</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">,</span> <span class="n">beta1</span><span class="o">=</span><span class="n">beta1</span><span class="p">,</span> <span class="n">beta2</span><span class="o">=</span><span class="n">beta2</span><span class="p">,</span> <span class="n">eps1</span><span class="o">=</span><span class="n">eps1</span><span class="p">,</span>
-                        <span class="n">eps2</span><span class="o">=</span><span class="n">eps2</span><span class="p">,</span> <span class="n">cliping_threshold</span><span class="o">=</span><span class="n">cliping_threshold</span><span class="p">,</span>
-                        <span class="n">weight_decay</span><span class="o">=</span><span class="n">weight_decay</span><span class="p">,</span> <span class="n">ams_grad</span><span class="o">=</span><span class="n">ams_grad</span><span class="p">,</span>
-                        <span class="n">enable_factorization</span><span class="o">=</span><span class="n">enable_factorization</span><span class="p">,</span>
-                        <span class="n">enable_momentum</span><span class="o">=</span><span class="n">enable_momentum</span><span class="p">,</span>
-                        <span class="n">non_constant_decay</span><span class="o">=</span><span class="n">non_constant_decay</span><span class="p">)</span>
+        <span class="n">defaults</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">,</span>
+            <span class="n">beta1</span><span class="o">=</span><span class="n">beta1</span><span class="p">,</span>
+            <span class="n">beta2</span><span class="o">=</span><span class="n">beta2</span><span class="p">,</span>
+            <span class="n">eps1</span><span class="o">=</span><span class="n">eps1</span><span class="p">,</span>
+            <span class="n">eps2</span><span class="o">=</span><span class="n">eps2</span><span class="p">,</span>
+            <span class="n">cliping_threshold</span><span class="o">=</span><span class="n">cliping_threshold</span><span class="p">,</span>
+            <span class="n">weight_decay</span><span class="o">=</span><span class="n">weight_decay</span><span class="p">,</span>
+            <span class="n">ams_grad</span><span class="o">=</span><span class="n">ams_grad</span><span class="p">,</span>
+            <span class="n">enable_factorization</span><span class="o">=</span><span class="n">enable_factorization</span><span class="p">,</span>
+            <span class="n">enable_momentum</span><span class="o">=</span><span class="n">enable_momentum</span><span class="p">,</span>
+            <span class="n">non_constant_decay</span><span class="o">=</span><span class="n">non_constant_decay</span><span class="p">,</span>
+        <span class="p">)</span>
 
         <span class="nb">super</span><span class="p">(</span><span class="n">AdaFactor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">defaults</span><span class="p">)</span>
 
@@ -624,20 +629,20 @@
     <span class="k">def</span> <span class="nf">_experimental_reshape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">):</span>
         <span class="n">temp_shape</span> <span class="o">=</span> <span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">temp_shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">new_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+            <span class="n">new_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">tmp_div</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">temp_shape</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">temp_shape</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span>
-            <span class="n">new_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">functools</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">operator</span><span class="o">.</span><span class="n">mul</span><span class="p">,</span>
-                                                   <span class="n">temp_shape</span><span class="p">[</span><span class="n">tmp_div</span><span class="p">:],</span> <span class="mi">1</span><span class="p">),</span>
-                         <span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">functools</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">operator</span><span class="o">.</span><span class="n">mul</span><span class="p">,</span>
-                                                   <span class="n">temp_shape</span><span class="p">[:</span><span class="n">tmp_div</span><span class="p">],</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="n">new_shape</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">functools</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">operator</span><span class="o">.</span><span class="n">mul</span><span class="p">,</span> <span class="n">temp_shape</span><span class="p">[</span><span class="n">tmp_div</span><span class="p">:],</span> <span class="mi">1</span><span class="p">),</span>
+                <span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">functools</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">operator</span><span class="o">.</span><span class="n">mul</span><span class="p">,</span> <span class="n">temp_shape</span><span class="p">[:</span><span class="n">tmp_div</span><span class="p">],</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="p">)</span>
         <span class="k">return</span> <span class="n">new_shape</span><span class="p">,</span> <span class="n">copy</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_check_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        output1 - True - algorithm for matrix, False - vector;</span>
 <span class="sd">        output2 - need reshape</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="kc">True</span>
         <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
@@ -655,115 +660,137 @@
         <span class="k">if</span> <span class="n">closure</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">loss</span> <span class="o">=</span> <span class="n">closure</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_groups</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">]:</span>
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">]:</span>
                 <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="k">continue</span>
                 <span class="n">grad</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">data</span>
 
                 <span class="k">if</span> <span class="n">grad</span><span class="o">.</span><span class="n">is_sparse</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Adam does not support sparse </span><span class="se">\</span>
-<span class="s1">                                       gradients, use SparseAdam instead&#39;</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                        <span class="s2">&quot;Adam does not support sparse </span><span class="se">\</span>
+<span class="s2">                                       gradients, use SparseAdam instead&quot;</span>
+                    <span class="p">)</span>
 
                 <span class="n">is_matrix</span><span class="p">,</span> <span class="n">is_need_reshape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_shape</span><span class="p">(</span><span class="n">grad</span><span class="o">.</span><span class="n">size</span><span class="p">())</span>
                 <span class="n">new_shape</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
-                <span class="k">if</span> <span class="n">is_need_reshape</span> <span class="ow">and</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;enable_factorization&#39;</span><span class="p">]:</span>
-                    <span class="n">new_shape</span><span class="p">,</span> <span class="n">old_shape</span> <span class="o">=</span> \
-                        <span class="bp">self</span><span class="o">.</span><span class="n">_experimental_reshape</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">())</span>
+                <span class="k">if</span> <span class="n">is_need_reshape</span> <span class="ow">and</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;enable_factorization&quot;</span><span class="p">]:</span>
+                    <span class="n">new_shape</span><span class="p">,</span> <span class="n">old_shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_experimental_reshape</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">())</span>
                     <span class="n">grad</span> <span class="o">=</span> <span class="n">grad</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">new_shape</span><span class="p">)</span>
 
                 <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="n">p</span><span class="p">]</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">state</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">state</span><span class="p">[</span><span class="s1">&#39;step&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-                    <span class="k">if</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;enable_momentum&#39;</span><span class="p">]:</span>
-                        <span class="n">state</span><span class="p">[</span><span class="s1">&#39;exp_avg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">new_shape</span><span class="p">,</span>
-                                                       <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
-                                                       <span class="n">device</span><span class="o">=</span><span class="n">p</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+                    <span class="n">state</span><span class="p">[</span><span class="s2">&quot;step&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="k">if</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;enable_momentum&quot;</span><span class="p">]:</span>
+                        <span class="n">state</span><span class="p">[</span><span class="s2">&quot;exp_avg&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+                            <span class="n">new_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">p</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">device</span>
+                        <span class="p">)</span>
 
-                    <span class="k">if</span> <span class="n">is_matrix</span> <span class="ow">and</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;enable_factorization&#39;</span><span class="p">]:</span>
-                        <span class="n">state</span><span class="p">[</span><span class="s1">&#39;exp_avg_sq_R&#39;</span><span class="p">]</span> <span class="o">=</span> \
-                            <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="n">new_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
-                                        <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
-                                        <span class="n">device</span><span class="o">=</span><span class="n">p</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
-                        <span class="n">state</span><span class="p">[</span><span class="s1">&#39;exp_avg_sq_C&#39;</span><span class="p">]</span> <span class="o">=</span> \
-                            <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">new_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">),</span>
-                                        <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
-                                        <span class="n">device</span><span class="o">=</span><span class="n">p</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">is_matrix</span> <span class="ow">and</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;enable_factorization&quot;</span><span class="p">]:</span>
+                        <span class="n">state</span><span class="p">[</span><span class="s2">&quot;exp_avg_sq_R&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+                            <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">new_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">p</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">device</span>
+                        <span class="p">)</span>
+                        <span class="n">state</span><span class="p">[</span><span class="s2">&quot;exp_avg_sq_C&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+                            <span class="p">(</span><span class="n">new_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">p</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">device</span>
+                        <span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
-                        <span class="n">state</span><span class="p">[</span><span class="s1">&#39;exp_avg_sq&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">new_shape</span><span class="p">,</span>
-                                                          <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
-                                                          <span class="n">device</span><span class="o">=</span><span class="n">p</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;ams_grad&#39;</span><span class="p">]:</span>
-                        <span class="n">state</span><span class="p">[</span><span class="s1">&#39;exp_avg_sq_hat&#39;</span><span class="p">]</span> <span class="o">=</span> \
-                            <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">new_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
-                                        <span class="n">device</span><span class="o">=</span><span class="n">p</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+                        <span class="n">state</span><span class="p">[</span><span class="s2">&quot;exp_avg_sq&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+                            <span class="n">new_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">p</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">device</span>
+                        <span class="p">)</span>
+                    <span class="k">if</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;ams_grad&quot;</span><span class="p">]:</span>
+                        <span class="n">state</span><span class="p">[</span><span class="s2">&quot;exp_avg_sq_hat&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+                            <span class="n">new_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">p</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">device</span>
+                        <span class="p">)</span>
 
-                <span class="k">if</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;enable_momentum&#39;</span><span class="p">]:</span>
-                    <span class="n">exp_avg</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s1">&#39;exp_avg&#39;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;enable_momentum&quot;</span><span class="p">]:</span>
+                    <span class="n">exp_avg</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;exp_avg&quot;</span><span class="p">]</span>
 
-                <span class="k">if</span> <span class="n">is_matrix</span> <span class="ow">and</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;enable_factorization&#39;</span><span class="p">]:</span>
-                    <span class="n">exp_avg_sq_r</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s1">&#39;exp_avg_sq_R&#39;</span><span class="p">]</span>
-                    <span class="n">exp_avg_sq_c</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s1">&#39;exp_avg_sq_C&#39;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">is_matrix</span> <span class="ow">and</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;enable_factorization&quot;</span><span class="p">]:</span>
+                    <span class="n">exp_avg_sq_r</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;exp_avg_sq_R&quot;</span><span class="p">]</span>
+                    <span class="n">exp_avg_sq_c</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;exp_avg_sq_C&quot;</span><span class="p">]</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">exp_avg_sq</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s1">&#39;exp_avg_sq&#39;</span><span class="p">]</span>
+                    <span class="n">exp_avg_sq</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;exp_avg_sq&quot;</span><span class="p">]</span>
 
-                <span class="k">if</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;ams_grad&#39;</span><span class="p">]:</span>
-                    <span class="n">exp_avg_sq_hat</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s1">&#39;exp_avg_sq_hat&#39;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;ams_grad&quot;</span><span class="p">]:</span>
+                    <span class="n">exp_avg_sq_hat</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;exp_avg_sq_hat&quot;</span><span class="p">]</span>
 
-                <span class="n">state</span><span class="p">[</span><span class="s1">&#39;step&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
-                <span class="n">lr_t</span> <span class="o">=</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;lr&#39;</span><span class="p">]</span>
-                <span class="n">lr_t</span> <span class="o">*=</span> <span class="nb">max</span><span class="p">(</span><span class="n">group</span><span class="p">[</span><span class="s1">&#39;eps2&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rms</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
+                <span class="n">state</span><span class="p">[</span><span class="s2">&quot;step&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">lr_t</span> <span class="o">=</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;lr&quot;</span><span class="p">]</span>
+                <span class="n">lr_t</span> <span class="o">*=</span> <span class="nb">max</span><span class="p">(</span><span class="n">group</span><span class="p">[</span><span class="s2">&quot;eps2&quot;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rms</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
 
-                <span class="k">if</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;enable_momentum&#39;</span><span class="p">]:</span>
-                    <span class="k">if</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;non_constant_decay&#39;</span><span class="p">]:</span>
-                        <span class="n">beta1_t</span> <span class="o">=</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;beta1&#39;</span><span class="p">]</span> <span class="o">*</span> \
-                                  <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;beta1&#39;</span><span class="p">]</span> <span class="o">**</span> <span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s1">&#39;step&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span> \
-                                  <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;beta1&#39;</span><span class="p">]</span> <span class="o">**</span> <span class="n">state</span><span class="p">[</span><span class="s1">&#39;step&#39;</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;enable_momentum&quot;</span><span class="p">]:</span>
+                    <span class="k">if</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;non_constant_decay&quot;</span><span class="p">]:</span>
+                        <span class="n">beta1_t</span> <span class="o">=</span> <span class="p">(</span>
+                            <span class="n">group</span><span class="p">[</span><span class="s2">&quot;beta1&quot;</span><span class="p">]</span>
+                            <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;beta1&quot;</span><span class="p">]</span> <span class="o">**</span> <span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;step&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+                            <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;beta1&quot;</span><span class="p">]</span> <span class="o">**</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;step&quot;</span><span class="p">])</span>
+                        <span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
-                        <span class="n">beta1_t</span> <span class="o">=</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;beta1&#39;</span><span class="p">]</span>
+                        <span class="n">beta1_t</span> <span class="o">=</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;beta1&quot;</span><span class="p">]</span>
                     <span class="n">exp_avg</span><span class="o">.</span><span class="n">mul_</span><span class="p">(</span><span class="n">beta1_t</span><span class="p">)</span><span class="o">.</span><span class="n">add_</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">beta1_t</span><span class="p">,</span> <span class="n">grad</span><span class="p">)</span>
 
-                <span class="k">if</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;non_constant_decay&#39;</span><span class="p">]:</span>
-                    <span class="n">beta2_t</span> <span class="o">=</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;beta2&#39;</span><span class="p">]</span> <span class="o">*</span> \
-                              <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;beta2&#39;</span><span class="p">]</span> <span class="o">**</span> <span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s1">&#39;step&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span> <span class="o">/</span> \
-                              <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;beta2&#39;</span><span class="p">]</span> <span class="o">**</span> <span class="n">state</span><span class="p">[</span><span class="s1">&#39;step&#39;</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;non_constant_decay&quot;</span><span class="p">]:</span>
+                    <span class="n">beta2_t</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="n">group</span><span class="p">[</span><span class="s2">&quot;beta2&quot;</span><span class="p">]</span>
+                        <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;beta2&quot;</span><span class="p">]</span> <span class="o">**</span> <span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;step&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+                        <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;beta2&quot;</span><span class="p">]</span> <span class="o">**</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;step&quot;</span><span class="p">])</span>
+                    <span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">beta2_t</span> <span class="o">=</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;beta2&#39;</span><span class="p">]</span>
+                    <span class="n">beta2_t</span> <span class="o">=</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;beta2&quot;</span><span class="p">]</span>
 
-                <span class="k">if</span> <span class="n">is_matrix</span> <span class="ow">and</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;enable_factorization&#39;</span><span class="p">]:</span>
-                    <span class="n">exp_avg_sq_r</span><span class="o">.</span><span class="n">mul_</span><span class="p">(</span><span class="n">beta2_t</span><span class="p">)</span><span class="o">.</span> \
-                        <span class="n">add_</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">beta2_t</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">grad</span><span class="p">,</span> <span class="n">grad</span><span class="p">)</span><span class="o">.</span>
-                                                    <span class="n">add_</span><span class="p">(</span><span class="n">group</span><span class="p">[</span><span class="s1">&#39;eps1&#39;</span><span class="p">]),</span>
-                                                    <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
-                    <span class="n">exp_avg_sq_c</span><span class="o">.</span><span class="n">mul_</span><span class="p">(</span><span class="n">beta2_t</span><span class="p">)</span><span class="o">.</span> \
-                        <span class="n">add_</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">beta2_t</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">grad</span><span class="p">,</span> <span class="n">grad</span><span class="p">)</span><span class="o">.</span>
-                                                    <span class="n">add_</span><span class="p">(</span><span class="n">group</span><span class="p">[</span><span class="s1">&#39;eps1&#39;</span><span class="p">]),</span>
-                                                    <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
-                    <span class="n">v</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">exp_avg_sq_c</span><span class="p">,</span>
-                                  <span class="n">exp_avg_sq_r</span><span class="p">)</span><span class="o">.</span><span class="n">div_</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">exp_avg_sq_r</span><span class="p">))</span>
+                <span class="k">if</span> <span class="n">is_matrix</span> <span class="ow">and</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;enable_factorization&quot;</span><span class="p">]:</span>
+                    <span class="n">exp_avg_sq_r</span><span class="o">.</span><span class="n">mul_</span><span class="p">(</span><span class="n">beta2_t</span><span class="p">)</span><span class="o">.</span><span class="n">add_</span><span class="p">(</span>
+                        <span class="mi">1</span> <span class="o">-</span> <span class="n">beta2_t</span><span class="p">,</span>
+                        <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
+                            <span class="n">torch</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">grad</span><span class="p">,</span> <span class="n">grad</span><span class="p">)</span><span class="o">.</span><span class="n">add_</span><span class="p">(</span><span class="n">group</span><span class="p">[</span><span class="s2">&quot;eps1&quot;</span><span class="p">]),</span>
+                            <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                            <span class="n">keepdim</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="p">),</span>
+                    <span class="p">)</span>
+                    <span class="n">exp_avg_sq_c</span><span class="o">.</span><span class="n">mul_</span><span class="p">(</span><span class="n">beta2_t</span><span class="p">)</span><span class="o">.</span><span class="n">add_</span><span class="p">(</span>
+                        <span class="mi">1</span> <span class="o">-</span> <span class="n">beta2_t</span><span class="p">,</span>
+                        <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
+                            <span class="n">torch</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">grad</span><span class="p">,</span> <span class="n">grad</span><span class="p">)</span><span class="o">.</span><span class="n">add_</span><span class="p">(</span><span class="n">group</span><span class="p">[</span><span class="s2">&quot;eps1&quot;</span><span class="p">]),</span>
+                            <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                            <span class="n">keepdim</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="p">),</span>
+                    <span class="p">)</span>
+                    <span class="n">v</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">exp_avg_sq_c</span><span class="p">,</span> <span class="n">exp_avg_sq_r</span><span class="p">)</span><span class="o">.</span><span class="n">div_</span><span class="p">(</span>
+                        <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">exp_avg_sq_r</span><span class="p">)</span>
+                    <span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">exp_avg_sq</span><span class="o">.</span><span class="n">mul_</span><span class="p">(</span><span class="n">beta2_t</span><span class="p">)</span><span class="o">.</span> \
-                        <span class="n">addcmul_</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">beta2_t</span><span class="p">,</span> <span class="n">grad</span><span class="p">,</span> <span class="n">grad</span><span class="p">)</span><span class="o">.</span> \
-                        <span class="n">add_</span><span class="p">((</span><span class="mi">1</span> <span class="o">-</span> <span class="n">beta2_t</span><span class="p">)</span><span class="o">*</span><span class="n">group</span><span class="p">[</span><span class="s1">&#39;eps1&#39;</span><span class="p">])</span>
+                    <span class="n">exp_avg_sq</span><span class="o">.</span><span class="n">mul_</span><span class="p">(</span><span class="n">beta2_t</span><span class="p">)</span><span class="o">.</span><span class="n">addcmul_</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">beta2_t</span><span class="p">,</span> <span class="n">grad</span><span class="p">,</span> <span class="n">grad</span><span class="p">)</span><span class="o">.</span><span class="n">add_</span><span class="p">(</span>
+                        <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">beta2_t</span><span class="p">)</span> <span class="o">*</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;eps1&quot;</span><span class="p">]</span>
+                    <span class="p">)</span>
                     <span class="n">v</span> <span class="o">=</span> <span class="n">exp_avg_sq</span>
 
                 <span class="n">g</span> <span class="o">=</span> <span class="n">grad</span>
-                <span class="k">if</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;enable_momentum&#39;</span><span class="p">]:</span>
-                    <span class="n">g</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="n">exp_avg</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">beta1_t</span> <span class="o">**</span> <span class="n">state</span><span class="p">[</span><span class="s1">&#39;step&#39;</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;enable_momentum&quot;</span><span class="p">]:</span>
+                    <span class="n">g</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="n">exp_avg</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">beta1_t</span> <span class="o">**</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;step&quot;</span><span class="p">])</span>
 
-                <span class="k">if</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;ams_grad&#39;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;ams_grad&quot;</span><span class="p">]:</span>
                     <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">exp_avg_sq_hat</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">exp_avg_sq_hat</span><span class="p">)</span>
                     <span class="n">v</span> <span class="o">=</span> <span class="n">exp_avg_sq_hat</span>
-                    <span class="n">u</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">beta2_t</span> <span class="o">**</span>
-                                  <span class="n">state</span><span class="p">[</span><span class="s1">&#39;step&#39;</span><span class="p">]))</span><span class="o">.</span><span class="n">sqrt</span><span class="p">()</span><span class="o">.</span><span class="n">add_</span><span class="p">(</span><span class="n">group</span><span class="p">[</span><span class="s1">&#39;eps1&#39;</span><span class="p">]))</span>
+                    <span class="n">u</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">div</span><span class="p">(</span>
+                        <span class="n">g</span><span class="p">,</span>
+                        <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">beta2_t</span> <span class="o">**</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;step&quot;</span><span class="p">]))</span>
+                        <span class="o">.</span><span class="n">sqrt</span><span class="p">()</span>
+                        <span class="o">.</span><span class="n">add_</span><span class="p">(</span><span class="n">group</span><span class="p">[</span><span class="s2">&quot;eps1&quot;</span><span class="p">]),</span>
+                    <span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">u</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">v</span><span class="o">.</span><span class="n">sqrt</span><span class="p">())</span>
 
-                <span class="n">u</span><span class="o">.</span><span class="n">div_</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rms</span><span class="p">(</span><span class="n">u</span><span class="p">)</span> <span class="o">/</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;cliping_threshold&#39;</span><span class="p">]))</span>
-                <span class="n">p</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">add_</span><span class="p">(</span><span class="o">-</span><span class="n">lr_t</span> <span class="o">*</span> <span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">old_shape</span><span class="p">)</span> <span class="k">if</span> <span class="n">is_need_reshape</span> <span class="ow">and</span>
-                            <span class="n">group</span><span class="p">[</span><span class="s1">&#39;enable_factorization&#39;</span><span class="p">]</span> <span class="k">else</span> <span class="n">u</span><span class="p">))</span>
+                <span class="n">u</span><span class="o">.</span><span class="n">div_</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rms</span><span class="p">(</span><span class="n">u</span><span class="p">)</span> <span class="o">/</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;cliping_threshold&quot;</span><span class="p">]))</span>
+                <span class="n">p</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">add_</span><span class="p">(</span>
+                    <span class="o">-</span><span class="n">lr_t</span>
+                    <span class="o">*</span> <span class="p">(</span>
+                        <span class="n">u</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">old_shape</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">is_need_reshape</span> <span class="ow">and</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;enable_factorization&quot;</span><span class="p">]</span>
+                        <span class="k">else</span> <span class="n">u</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
 
-                <span class="k">if</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;weight_decay&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">p</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">add_</span><span class="p">(</span><span class="o">-</span><span class="n">group</span><span class="p">[</span><span class="s1">&#39;weight_decay&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">lr_t</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;weight_decay&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">p</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">add_</span><span class="p">(</span><span class="o">-</span><span class="n">group</span><span class="p">[</span><span class="s2">&quot;weight_decay&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">lr_t</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">loss</span></div></div>
 
@@ -793,23 +820,37 @@
 <span class="sd">            second moment estimate as in the original paper. (default: False)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span>
-                 <span class="n">lr</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">bias_correction</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                 <span class="n">betas</span><span class="o">=</span><span class="p">(</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.999</span><span class="p">),</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">,</span> <span class="n">eps_inside_sqrt</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                 <span class="n">weight_decay</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">max_grad_norm</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">amsgrad</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">params</span><span class="p">,</span>
+        <span class="n">lr</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
+        <span class="n">bias_correction</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">betas</span><span class="o">=</span><span class="p">(</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.999</span><span class="p">),</span>
+        <span class="n">eps</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">,</span>
+        <span class="n">eps_inside_sqrt</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">weight_decay</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">max_grad_norm</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">amsgrad</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
         <span class="k">global</span> <span class="n">fused_adam_cuda</span>
         <span class="n">fused_adam_cuda</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s2">&quot;fused_adam_cuda&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">amsgrad</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;AMSGrad variant not supported.&#39;</span><span class="p">)</span>
-        <span class="n">defaults</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">,</span> <span class="n">bias_correction</span><span class="o">=</span><span class="n">bias_correction</span><span class="p">,</span>
-                        <span class="n">betas</span><span class="o">=</span><span class="n">betas</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="n">eps</span><span class="p">,</span> <span class="n">weight_decay</span><span class="o">=</span><span class="n">weight_decay</span><span class="p">,</span>
-                        <span class="n">max_grad_norm</span><span class="o">=</span><span class="n">max_grad_norm</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;AMSGrad variant not supported.&quot;</span><span class="p">)</span>
+        <span class="n">defaults</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">,</span>
+            <span class="n">bias_correction</span><span class="o">=</span><span class="n">bias_correction</span><span class="p">,</span>
+            <span class="n">betas</span><span class="o">=</span><span class="n">betas</span><span class="p">,</span>
+            <span class="n">eps</span><span class="o">=</span><span class="n">eps</span><span class="p">,</span>
+            <span class="n">weight_decay</span><span class="o">=</span><span class="n">weight_decay</span><span class="p">,</span>
+            <span class="n">max_grad_norm</span><span class="o">=</span><span class="n">max_grad_norm</span><span class="p">,</span>
+        <span class="p">)</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">FusedAdam</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">defaults</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">eps_mode</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">eps_inside_sqrt</span> <span class="k">else</span> <span class="mi">1</span>
 
-<div class="viewcode-block" id="FusedAdam.step"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.FusedAdam.step">[docs]</a>    <span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">closure</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">grads</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-             <span class="n">scale</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">grad_norms</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="FusedAdam.step"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.FusedAdam.step">[docs]</a>    <span class="k">def</span> <span class="nf">step</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">closure</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">grads</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">grad_norms</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Performs a single optimization step.</span>
 
 <span class="sd">        Arguments:</span>
@@ -830,7 +871,7 @@
             <span class="n">loss</span> <span class="o">=</span> <span class="n">closure</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="n">grads</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">grads_group</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">param_groups</span><span class="p">)</span>
+            <span class="n">grads_group</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">param_groups</span><span class="p">)</span>
         <span class="c1"># backward compatibility</span>
         <span class="c1"># assuming a list/generator of parameter means single group</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">grads</span><span class="p">,</span> <span class="n">types</span><span class="o">.</span><span class="n">GeneratorType</span><span class="p">):</span>
@@ -841,7 +882,7 @@
             <span class="n">grads_group</span> <span class="o">=</span> <span class="n">grads</span>
 
         <span class="k">if</span> <span class="n">output_params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">output_params_group</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">param_groups</span><span class="p">)</span>
+            <span class="n">output_params_group</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">param_groups</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output_params</span><span class="p">,</span> <span class="n">types</span><span class="o">.</span><span class="n">GeneratorType</span><span class="p">):</span>
             <span class="n">output_params_group</span> <span class="o">=</span> <span class="p">[</span><span class="n">output_params</span><span class="p">]</span>
         <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">output_params</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">!=</span> <span class="nb">list</span><span class="p">:</span>
@@ -850,29 +891,29 @@
             <span class="n">output_params_group</span> <span class="o">=</span> <span class="n">output_params</span>
 
         <span class="k">if</span> <span class="n">grad_norms</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">grad_norms</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">param_groups</span><span class="p">)</span>
+            <span class="n">grad_norms</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">param_groups</span><span class="p">)</span>
 
-        <span class="k">for</span> <span class="n">group</span><span class="p">,</span> <span class="n">grads_this_group</span><span class="p">,</span> <span class="n">output_params_this_group</span><span class="p">,</span> \
-            <span class="n">grad_norm</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">param_groups</span><span class="p">,</span> <span class="n">grads_group</span><span class="p">,</span>
-                             <span class="n">output_params_group</span><span class="p">,</span> <span class="n">grad_norms</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">group</span><span class="p">,</span> <span class="n">grads_this_group</span><span class="p">,</span> <span class="n">output_params_this_group</span><span class="p">,</span> <span class="n">grad_norm</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">param_groups</span><span class="p">,</span> <span class="n">grads_group</span><span class="p">,</span> <span class="n">output_params_group</span><span class="p">,</span> <span class="n">grad_norms</span>
+        <span class="p">):</span>
             <span class="k">if</span> <span class="n">grads_this_group</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">grads_this_group</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">group</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">])</span>
+                <span class="n">grads_this_group</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">group</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">])</span>
             <span class="k">if</span> <span class="n">output_params_this_group</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">output_params_this_group</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">group</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">])</span>
+                <span class="n">output_params_this_group</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">group</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">])</span>
 
             <span class="c1"># compute combined scale factor for this group</span>
             <span class="n">combined_scale</span> <span class="o">=</span> <span class="n">scale</span>
-            <span class="k">if</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;max_grad_norm&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;max_grad_norm&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="c1"># norm is in fact norm*scale</span>
-                <span class="n">clip</span> <span class="o">=</span> <span class="p">((</span><span class="n">grad_norm</span> <span class="o">/</span> <span class="n">scale</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1e-6</span><span class="p">)</span> <span class="o">/</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;max_grad_norm&#39;</span><span class="p">]</span>
+                <span class="n">clip</span> <span class="o">=</span> <span class="p">((</span><span class="n">grad_norm</span> <span class="o">/</span> <span class="n">scale</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1e-6</span><span class="p">)</span> <span class="o">/</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;max_grad_norm&quot;</span><span class="p">]</span>
                 <span class="k">if</span> <span class="n">clip</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
                     <span class="n">combined_scale</span> <span class="o">=</span> <span class="n">clip</span> <span class="o">*</span> <span class="n">scale</span>
 
-            <span class="n">bias_correction</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;bias_correction&#39;</span><span class="p">]</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="n">bias_correction</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;bias_correction&quot;</span><span class="p">]</span> <span class="k">else</span> <span class="mi">0</span>
 
-            <span class="k">for</span> <span class="n">p</span><span class="p">,</span> <span class="n">grad</span><span class="p">,</span> <span class="n">output_param</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">group</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">],</span>
-                                             <span class="n">grads_this_group</span><span class="p">,</span>
-                                             <span class="n">output_params_this_group</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">p</span><span class="p">,</span> <span class="n">grad</span><span class="p">,</span> <span class="n">output_param</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+                <span class="n">group</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">],</span> <span class="n">grads_this_group</span><span class="p">,</span> <span class="n">output_params_this_group</span>
+            <span class="p">):</span>
                 <span class="c1"># note: p.grad should not ever be set for correct operation of</span>
                 <span class="c1"># mixed precision optimizer that sometimes sends None gradients</span>
                 <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">grad</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -880,41 +921,48 @@
                 <span class="k">if</span> <span class="n">grad</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">grad</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">data</span>
                 <span class="k">if</span> <span class="n">grad</span><span class="o">.</span><span class="n">is_sparse</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;FusedAdam does not support sparse </span><span class="se">\</span>
-<span class="s1">                                       gradients, please consider </span><span class="se">\</span>
-<span class="s1">                                       SparseAdam instead&#39;</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                        <span class="s2">&quot;FusedAdam does not support sparse </span><span class="se">\</span>
+<span class="s2">                                       gradients, please consider </span><span class="se">\</span>
+<span class="s2">                                       SparseAdam instead&quot;</span>
+                    <span class="p">)</span>
 
                 <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="n">p</span><span class="p">]</span>
 
                 <span class="c1"># State initialization</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">state</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">state</span><span class="p">[</span><span class="s1">&#39;step&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="n">state</span><span class="p">[</span><span class="s2">&quot;step&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
                     <span class="c1"># Exponential moving average of gradient values</span>
-                    <span class="n">state</span><span class="p">[</span><span class="s1">&#39;exp_avg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+                    <span class="n">state</span><span class="p">[</span><span class="s2">&quot;exp_avg&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
                     <span class="c1"># Exponential moving average of squared gradient values</span>
-                    <span class="n">state</span><span class="p">[</span><span class="s1">&#39;exp_avg_sq&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+                    <span class="n">state</span><span class="p">[</span><span class="s2">&quot;exp_avg_sq&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
 
-                <span class="n">exp_avg</span><span class="p">,</span> <span class="n">exp_avg_sq</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s1">&#39;exp_avg&#39;</span><span class="p">],</span> <span class="n">state</span><span class="p">[</span><span class="s1">&#39;exp_avg_sq&#39;</span><span class="p">]</span>
-                <span class="n">beta1</span><span class="p">,</span> <span class="n">beta2</span> <span class="o">=</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;betas&#39;</span><span class="p">]</span>
+                <span class="n">exp_avg</span><span class="p">,</span> <span class="n">exp_avg_sq</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;exp_avg&quot;</span><span class="p">],</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;exp_avg_sq&quot;</span><span class="p">]</span>
+                <span class="n">beta1</span><span class="p">,</span> <span class="n">beta2</span> <span class="o">=</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;betas&quot;</span><span class="p">]</span>
 
-                <span class="n">state</span><span class="p">[</span><span class="s1">&#39;step&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">state</span><span class="p">[</span><span class="s2">&quot;step&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
 
-                <span class="n">out_p</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">)</span> <span class="k">if</span> \
-                    <span class="n">output_param</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">output_param</span>
-                <span class="n">fused_adam_cuda</span><span class="o">.</span><span class="n">adam</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">data</span><span class="p">,</span>
-                                     <span class="n">out_p</span><span class="p">,</span>
-                                     <span class="n">exp_avg</span><span class="p">,</span>
-                                     <span class="n">exp_avg_sq</span><span class="p">,</span>
-                                     <span class="n">grad</span><span class="p">,</span>
-                                     <span class="n">group</span><span class="p">[</span><span class="s1">&#39;lr&#39;</span><span class="p">],</span>
-                                     <span class="n">beta1</span><span class="p">,</span>
-                                     <span class="n">beta2</span><span class="p">,</span>
-                                     <span class="n">group</span><span class="p">[</span><span class="s1">&#39;eps&#39;</span><span class="p">],</span>
-                                     <span class="n">combined_scale</span><span class="p">,</span>
-                                     <span class="n">state</span><span class="p">[</span><span class="s1">&#39;step&#39;</span><span class="p">],</span>
-                                     <span class="bp">self</span><span class="o">.</span><span class="n">eps_mode</span><span class="p">,</span>
-                                     <span class="n">bias_correction</span><span class="p">,</span>
-                                     <span class="n">group</span><span class="p">[</span><span class="s1">&#39;weight_decay&#39;</span><span class="p">])</span>
+                <span class="n">out_p</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">output_param</span> <span class="ow">is</span> <span class="kc">None</span>
+                    <span class="k">else</span> <span class="n">output_param</span>
+                <span class="p">)</span>
+                <span class="n">fused_adam_cuda</span><span class="o">.</span><span class="n">adam</span><span class="p">(</span>
+                    <span class="n">p</span><span class="o">.</span><span class="n">data</span><span class="p">,</span>
+                    <span class="n">out_p</span><span class="p">,</span>
+                    <span class="n">exp_avg</span><span class="p">,</span>
+                    <span class="n">exp_avg_sq</span><span class="p">,</span>
+                    <span class="n">grad</span><span class="p">,</span>
+                    <span class="n">group</span><span class="p">[</span><span class="s2">&quot;lr&quot;</span><span class="p">],</span>
+                    <span class="n">beta1</span><span class="p">,</span>
+                    <span class="n">beta2</span><span class="p">,</span>
+                    <span class="n">group</span><span class="p">[</span><span class="s2">&quot;eps&quot;</span><span class="p">],</span>
+                    <span class="n">combined_scale</span><span class="p">,</span>
+                    <span class="n">state</span><span class="p">[</span><span class="s2">&quot;step&quot;</span><span class="p">],</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">eps_mode</span><span class="p">,</span>
+                    <span class="n">bias_correction</span><span class="p">,</span>
+                    <span class="n">group</span><span class="p">[</span><span class="s2">&quot;weight_decay&quot;</span><span class="p">],</span>
+                <span class="p">)</span>
         <span class="k">return</span> <span class="n">loss</span></div></div>
 </pre></div>
 
