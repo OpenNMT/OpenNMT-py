@@ -129,7 +129,9 @@ def numericalize(vocabs, example):
 
     elif vocabs["data_task"] == ModelTask.LANGUAGE_MODEL:
         src_text = example["src"]["src"].split()
-        numeric["src"]["src_ids"] = vocabs["src"]([decoder_start_token] + src_text)
+        if decoder_start_token != "":
+            src_text = [decoder_start_token] + src_text
+        numeric["src"]["src_ids"] = vocabs["src"](src_text)
         if example["tgt"] is not None:
             numeric["tgt"]["tgt_ids"] = []
             tgt_text = example["tgt"]["tgt"].split()
