@@ -17,7 +17,7 @@ from onmt.utils.parse import ArgumentParser
 from onmt.utils.misc import use_gpu, set_random_seed
 
 inf_type = "-py"
-inf_type = "ct2"
+# inf_type = "ct2"
 
 CACHE = {}
 tokenizer_dir = "llama"
@@ -61,7 +61,6 @@ def make_prompt(chat_history):
             out.append(parsed_instructions[i])
             out.append(parsed_responses[i])
     prompt = "".join(out)
-    prompt = prompt.replace("｟newline｠", "\n")
     return prompt
 
 
@@ -118,11 +117,12 @@ def generate_words(prompt, add_bos=True):
 
 
 def make_bot_message_ct2(prompt):
+    prompt = prompt.replace("｟newline｠", "\n")
     words = []
     for _out in generate_words(prompt):
         words.append(_out)
-    bot_message_length = _out
-    return "".join(words[:-1]), bot_message_length
+    bot_message = "".join(words[:-1])
+    return bot_message
 
 
 ######################
@@ -167,15 +167,13 @@ def load_translator(opt):
         )
 
 
-def translate(text):
+def make_bot_message_py(prompt):
     # we receive a text box content
     # might be good to split also based on full period (later)
-    text = text.split("\n")
+    prompt = prompt.replace("\n", "｟newline｠")
     batch = []
-    # we make it a batch of tokens in the format to be "transformed"
-    for i, sent in enumerate(text):
-        ex = {"src": sent.strip("\n").split(" "), "tgt": ""}
-        batch.append((ex, None, "infer"))
+    ex = {"src": prompt.split(" "), "tgt": ""}
+    batch.append((ex, None, "infer"))
     trf_batch = CACHE["transform"].batch_apply(
         batch, is_train=False, corpus_name="infer"
     )
@@ -193,11 +191,11 @@ def translate(text):
         infer_iter, transform=CACHE["transform"]
     )
     print("\n".join([predictions[i][0] for i in range(len(predictions))]))
-    return "\n".join(sent[0] for sent in predictions)
 
+    bot_message = "\n".join(sent[0] for sent in predictions)
+    bot_message = bot_message.replace("｟newline｠", "\n")
 
-def make_bot_message_py(prompt):
-    return translate(prompt)
+    return bot_message
 
 
 ######
@@ -220,8 +218,7 @@ with gr.Blocks() as demo:
             + ["-config", translation_opts_config]
         )
         opt = parser.parse_args(base_args)
-        print(opt.transforms)
-        print(opt.models)
+
         load_translator(opt)
 
     def user(user_message, history):
@@ -237,7 +234,7 @@ with gr.Blocks() as demo:
         history[-1][1] = ""
         for character in bot_message:
             history[-1][1] += character
-            time.sleep(0.001)
+            time.sleep(0)
             yield history
 
     submit.click(user, [msg, chatbot], [msg, chatbot], queue=False).then(
