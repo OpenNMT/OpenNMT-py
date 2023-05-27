@@ -19,21 +19,24 @@ from onmt.modules import Linear, Embedding, mark_only_lora_as_trainable
 
 
 def replace_bnb_linear(
-        model,
-        module_to_convert="",
-        q_type="bnb_8bit",
-        threshold=6.0,
-        compute_dtype=torch.float16  # we could also use bfloat16 when available
-    ):
+    model,
+    module_to_convert="",
+    q_type="bnb_8bit",
+    threshold=6.0,
+    compute_dtype=torch.float16,  # we could also use bfloat16 when available
+):
     try:
         import os
+
         os.environ["BITSANDBYTES_NOWELCOME"] = "1"
         import bitsandbytes as bnb
     except ImportError:
         raise ImportError("Install bitsandbytes to use compression")
     for name, module in model.named_children():
         if len(list(module.children())) > 0:
-            replace_bnb_linear(module, module_to_convert, q_type, threshold, compute_dtype)
+            replace_bnb_linear(
+                module, module_to_convert, q_type, threshold, compute_dtype
+            )
 
         if isinstance(module, nn.Linear) and name == module_to_convert:
             if q_type == "bnb_8bit":
@@ -46,16 +49,18 @@ def replace_bnb_linear(
                 )
             elif q_type in ["bnb_FP4", "bnb_NF4"]:
                 model._modules[name] = bnb.nn.Linear4bit(
-                module.in_features,
-                module.out_features,
-                module.bias is not None,
-                compute_dtype=compute_dtype,
-                quant_type=q_type[-3:].lower(),  # 'fp4' or 'nf4'
-            )
+                    module.in_features,
+                    module.out_features,
+                    module.bias is not None,
+                    compute_dtype=compute_dtype,
+                    quant_type=q_type[-3:].lower(),  # 'fp4' or 'nf4'
+                )
     return model
 
 
-def replace_lora_linear(model, r=2, lora_alpha=1, lora_dropout=0, layer="", quant_type=None):
+def replace_lora_linear(
+    model, r=2, lora_alpha=1, lora_dropout=0, layer="", quant_type=None
+):
     """
     Function replacing layers with LoRa layers recursively.
     Args:
@@ -68,7 +73,9 @@ def replace_lora_linear(model, r=2, lora_alpha=1, lora_dropout=0, layer="", quan
     for name, module in model.named_children():
         try:
             if len(list(module.children())) > 0:
-                replace_lora_linear(module, r, lora_alpha, lora_dropout, layer, quant_type)
+                replace_lora_linear(
+                    module, r, lora_alpha, lora_dropout, layer, quant_type
+                )
         except TypeError:
             pass
 
@@ -80,7 +87,7 @@ def replace_lora_linear(model, r=2, lora_alpha=1, lora_dropout=0, layer="", quan
                 lora_alpha=lora_alpha,
                 lora_dropout=lora_dropout,
                 bias=module.bias is not None,
-                quant_type=quant_type
+                quant_type=quant_type,
             )
     return model
 
@@ -325,8 +332,12 @@ def build_base_model(model_opt, vocabs, checkpoint=None):
     if hasattr(model_opt, "quant_layers") and len(model_opt.quant_layers) > 0:
         for layer in model_opt.quant_layers:
             if model_opt.quant_type in ["bnb_8bit", "bnb_FP4", "bnb_NF4"]:
-                logger.info("%s compression of layer %s" % (model_opt.quant_type, layer))
-                model = replace_bnb_linear(model, module_to_convert=layer, q_type=model_opt.quant_type)
+                logger.info(
+                    "%s compression of layer %s" % (model_opt.quant_type, layer)
+                )
+                model = replace_bnb_linear(
+                    model, module_to_convert=layer, q_type=model_opt.quant_type
+                )
             else:
                 logger.info("compression type %s not supported." % model_opt.quant_type)
 
