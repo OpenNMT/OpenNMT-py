@@ -4,6 +4,7 @@
 import torch.nn as nn
 import torch.nn.functional as F
 from onmt.modules.rmsnorm import RMSNorm
+from torch.nn.utils import skip_init
 
 
 class ActivationFunction(object):
@@ -41,8 +42,12 @@ class PositionwiseFeedForward(nn.Module):
         layer_norm="standard",
     ):
         super(PositionwiseFeedForward, self).__init__()
-        self.w_1 = nn.Linear(d_model, d_ff)
-        self.w_2 = nn.Linear(d_ff, d_model)
+        self.w_1 = skip_init(
+            nn.Linear, in_features=d_model, out_features=d_ff, bias=True
+        )
+        self.w_2 = skip_init(
+            nn.Linear, in_features=d_ff, out_features=d_model, bias=True
+        )
         if layer_norm == "standard":
             self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
         elif layer_norm == "rms":
@@ -53,7 +58,9 @@ class PositionwiseFeedForward(nn.Module):
         self.activation = ACTIVATION_FUNCTIONS[activation_fn]
         self.dropout_2 = nn.Dropout(dropout)
         if activation_fn == "silu":
-            self.w_3 = nn.Linear(d_model, d_ff)
+            self.w_3 = skip_init(
+                nn.Linear, in_features=d_model, out_features=d_ff, bias=True
+            )
         else:
             self.w_3 = None
 
