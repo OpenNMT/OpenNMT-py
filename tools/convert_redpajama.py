@@ -167,7 +167,7 @@ if __name__ == "__main__":
     vocabs["src"] = src_vocab
     vocabs["tgt"] = src_vocab
     vocabs["data_task"] = "lm"
-    vocabs["decoder_start_token"] = ""
+    vocabs["decoder_start_token"] = "</s>"
 
     onmt_cp["vocab"] = {}
     onmt_cp["vocab"] = vocabs_to_dict(vocabs)
