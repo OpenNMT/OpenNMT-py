@@ -4,6 +4,7 @@ import torch
 from torch import Tensor
 from typing import Optional, Tuple
 import torch.nn as nn
+from torch.nn.utils import skip_init
 from .alibi_position_bias import AlibiPositionalBias
 
 
@@ -157,12 +158,12 @@ class MultiHeadedAttention(nn.Module):
         super(MultiHeadedAttention, self).__init__()
         self.head_count = head_count
 
-        self.linear_keys = nn.Linear(model_dim, model_dim, bias=add_qkvbias)
-        self.linear_values = nn.Linear(model_dim, model_dim, bias=add_qkvbias)
-        self.linear_query = nn.Linear(model_dim, model_dim, bias=add_qkvbias)
+        self.linear_keys = skip_init(nn.Linear, in_features=model_dim, out_features=model_dim, bias=add_qkvbias)
+        self.linear_values = skip_init(nn.Linear, in_features=model_dim, out_features=model_dim, bias=add_qkvbias)
+        self.linear_query = skip_init(nn.Linear, in_features=model_dim, out_features=model_dim, bias=add_qkvbias)
         self.softmax = nn.Softmax(dim=-1)
         self.dropout = nn.Dropout(dropout)
-        self.final_linear = nn.Linear(model_dim, model_dim, bias=add_qkvbias)
+        self.final_linear = skip_init(nn.Linear, in_features=model_dim, out_features=model_dim, bias=add_qkvbias)
 
         self.max_relative_positions = max_relative_positions
         self.attn_type = attn_type
