@@ -1095,6 +1095,15 @@ def _add_train_general_opts(parser):
         help="list of layers to be compressed in 8bit.",
     )
 
+    group.add(
+        "--quant_type",
+        "-quant_type",
+        default="bnb_8bit",
+        choices=["bnb_8bit", "bnb_FP4", "bnb_NF4"],
+        type=str,
+        help="Type of compression.",
+    )
+
     _add_reproducibility_opts(parser)
 
     # Init options

@@ -1,15 +1,15 @@
 #  --------------------------------------------------------------------------
-#  Mostly copied from https://github.com/microsoft/LoRA/
+#  copied and adapted https://github.com/microsoft/LoRA/
 #  Copyright (c) Microsoft Corporation. All rights reserved.
 #  Licensed under the MIT License (MIT).
-#
+# Support bnb quantization of nderlying layers
 #  --------------------------------------------------------------------------
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 import math
 from typing import List, Dict
+import os
 
 
 class LoRALayer:
@@ -106,7 +106,27 @@ class Embedding(nn.Embedding, LoRALayer):
             return nn.Embedding.forward(self, x)
 
 
-class Linear(nn.Linear, LoRALayer):
+class maybeQLinear(type):
+    def __call__(cls, *args, **kwargs):
+        quant_type = kwargs.get("quant_type", None)
+        # print(kwargs)
+        if quant_type is None:
+            return nn.Linear
+        elif quant_type in ["bnb_8bit", "bnb_fp4", "bnb_NF4"]:
+            os.environ["BITSANDBYTES_NOWELCOME"] = "1"
+            try:
+                import bitsandbytes as bnb
+            except ImportError:
+                raise ImportError("Install bitsandbytes to use compression")
+            if quant_type == "bnb_8bit":
+                return bnb.nn.Linear8bitLt
+            elif quant_type in ["bnb_fp4", "bnb_NF4"]:
+                return bnb.nn.Linear4bit
+        else:
+            raise ValueError("Invalid quant_type")
+
+
+class Linear(LoRALayer, maybeQLinear):
     # LoRA implemented in a dense layer
     def __init__(
         self,
@@ -115,13 +135,42 @@ class Linear(nn.Linear, LoRALayer):
         r: int = 0,
         lora_alpha: int = 1,
         lora_dropout: float = 0.0,
-        fan_in_fan_out: bool = False,
-        # Set this to True if the layer to replace stores
-        # weight like (fan_in, fan_out)
         merge_weights: bool = True,
         **kwargs
     ):
-        nn.Linear.__init__(self, in_features, out_features, **kwargs)
+
+        self.quant_type = kwargs.get("quant_type", None)
+        super().__init__()
+
+        if self.quant_type == None:
+            self.linear = maybeQLinear(
+                in_features,
+                out_features,
+                bias=kwargs.get("bias", False),
+            )
+        elif self.quant_type == "bnb_8bit":
+            self.linear = maybeQLinear(
+                in_features,
+                out_features,
+                bias=kwargs.get("bias", False),
+                has_fp16_weights=kwargs.get("has_fp16_weights", True),
+                memory_efficient_backward=kwargs.get(
+                    "memory_efficient_backward", False
+                ),
+                threshold=kwargs.get("threshold", 0.0),
+                index=kwargs.get("index", None),
+            )
+        elif self.quant_type in ["bnb_fp4", "bnb_NF4"]:
+            qt = quant_type[-3:]
+            self.linear = maybeQLinear(
+                in_features,
+                out_features,
+                bias=kwargs.get("bias", False),
+                compute_dtype=kwargs.get("compute_dtype", torch.float32),
+                compress_statistics=kwargs.get("compress_statistics", True),
+                quant_type=qt,
+            )
+
         LoRALayer.__init__(
             self,
             r=r,
@@ -130,7 +179,6 @@ class Linear(nn.Linear, LoRALayer):
             merge_weights=merge_weights,
         )
 
-        self.fan_in_fan_out = fan_in_fan_out
         # Actual trainable parameters
         if r > 0:
             self.lora_A = nn.Parameter(self.weight.new_zeros((r, in_features)))
@@ -139,11 +187,9 @@ class Linear(nn.Linear, LoRALayer):
             # Freezing the pre-trained weight matrix
             self.weight.requires_grad = False
         self.reset_parameters()
-        if fan_in_fan_out:
-            self.weight.data = self.weight.data.transpose(0, 1)
 
     def reset_parameters(self):
-        nn.Linear.reset_parameters(self)
+        maybeQ_Linear.reset_parameters(self)
         if hasattr(self, "lora_A"):
             # initialize A the same way as the default
             # for nn.Linear and B to zero
@@ -151,29 +197,26 @@ class Linear(nn.Linear, LoRALayer):
             nn.init.zeros_(self.lora_B)
 
     def train(self, mode: bool = True):
-        def T(w):
-            return w.transpose(0, 1) if self.fan_in_fan_out else w
 
-        nn.Linear.train(self, mode)
+        maybeQ_Linear.train(self, mode)
         if mode:
             if self.merge_weights and self.merged:
                 # Make sure that the weights are not merged
                 if self.r > 0:
-                    self.weight.data -= T(self.lora_B @ self.lora_A) * self.scaling
+                    self.weight.data -= (self.lora_B @ self.lora_A) * self.scaling
                 self.merged = False
         else:
             if self.merge_weights and not self.merged:
                 # Merge the weights and mark it
                 if self.r > 0:
-                    self.weight.data += T(self.lora_B @ self.lora_A) * self.scaling
+                    self.weight.data += (self.lora_B @ self.lora_A) * self.scaling
                 self.merged = True
 
     def forward(self, x: torch.Tensor):
-        def T(w):
-            return w.transpose(0, 1) if self.fan_in_fan_out else w
+
+        result = self.linear.forward(x)
 
         if self.r > 0 and not self.merged:
-            result = F.linear(x, T(self.weight), bias=self.bias)
             if self.r > 0:
                 result += (
                     self.lora_dropout(x)
@@ -182,119 +225,6 @@ class Linear(nn.Linear, LoRALayer):
                 ) * self.scaling
             return result
         else:
-            return F.linear(x, T(self.weight), bias=self.bias)
-
-
-class MergedLinear(nn.Linear, LoRALayer):
-    # LoRA implemented in a dense layer
-    def __init__(
-        self,
-        in_features: int,
-        out_features: int,
-        r: int = 0,
-        lora_alpha: int = 1,
-        lora_dropout: float = 0.0,
-        enable_lora: List[bool] = [False],
-        fan_in_fan_out: bool = False,
-        merge_weights: bool = True,
-        **kwargs
-    ):
-        nn.Linear.__init__(self, in_features, out_features, **kwargs)
-        LoRALayer.__init__(
-            self,
-            r=r,
-            lora_alpha=lora_alpha,
-            lora_dropout=lora_dropout,
-            merge_weights=merge_weights,
-        )
-        assert (
-            out_features % len(enable_lora) == 0
-        ), "The length of enable_lora must divide out_features"
-        self.enable_lora = enable_lora
-        self.fan_in_fan_out = fan_in_fan_out
-        # Actual trainable parameters
-        if r > 0 and any(enable_lora):
-            self.lora_A = nn.Parameter(
-                self.weight.new_zeros((r * sum(enable_lora), in_features))
-            )
-            self.lora_B = nn.Parameter(
-                self.weight.new_zeros(
-                    (out_features // len(enable_lora) * sum(enable_lora), r)
-                )
-            )  # weights for Conv1D with groups=sum(enable_lora)
-            self.scaling = self.lora_alpha / self.r
-            # Freezing the pre-trained weight matrix
-            self.weight.requires_grad = False
-            # Compute the indices
-            self.lora_ind = self.weight.new_zeros(
-                (out_features,), dtype=torch.bool
-            ).view(len(enable_lora), -1)
-            self.lora_ind[enable_lora, :] = True
-            self.lora_ind = self.lora_ind.view(-1)
-        self.reset_parameters()
-        if fan_in_fan_out:
-            self.weight.data = self.weight.data.transpose(0, 1)
-
-    def reset_parameters(self):
-        nn.Linear.reset_parameters(self)
-        if hasattr(self, "lora_A"):
-            # initialize A the same way as the default
-            # for nn.Linear and B to zero
-            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-            nn.init.zeros_(self.lora_B)
-
-    def zero_pad(self, x):
-        result = x.new_zeros((*x.shape[:-1], self.out_features))
-        result = result.view(-1, self.out_features)
-        result[:, self.lora_ind] = x.reshape(
-            -1, self.out_features // len(self.enable_lora) * sum(self.enable_lora)
-        )
-        return result.view((*x.shape[:-1], self.out_features))
-
-    def train(self, mode: bool = True):
-        def T(w):
-            return w.transpose(0, 1) if self.fan_in_fan_out else w
-
-        nn.Linear.train(self, mode)
-        if mode:
-            if self.merge_weights and self.merged:
-                # Make sure that the weights are not merged
-                if self.r > 0 and any(self.enable_lora):
-                    delta_w = F.conv1d(
-                        self.lora_A.data.unsqueeze(0),
-                        self.lora_B.data.unsqueeze(-1),
-                        groups=sum(self.enable_lora),
-                    ).squeeze(0)
-                    self.weight.data -= self.zero_pad(T(delta_w * self.scaling))
-                self.merged = False
-        else:
-            if self.merge_weights and not self.merged:
-                # Merge the weights and mark it
-                if self.r > 0 and any(self.enable_lora):
-                    delta_w = F.conv1d(
-                        self.lora_A.data.unsqueeze(0),
-                        self.lora_B.data.unsqueeze(-1),
-                        groups=sum(self.enable_lora),
-                    ).squeeze(0)
-                    self.weight.data += self.zero_pad(T(delta_w * self.scaling))
-                self.merged = True
-
-    def forward(self, x: torch.Tensor):
-        def T(w):
-            return w.transpose(0, 1) if self.fan_in_fan_out else w
-
-        if self.merged:
-            return F.linear(x, T(self.weight), bias=self.bias)
-        else:
-            result = F.linear(x, T(self.weight), bias=self.bias)
-            if self.r > 0:
-                after_A = F.linear(self.lora_dropout(x), self.lora_A)
-                after_B = F.conv1d(
-                    after_A.transpose(-2, -1),
-                    self.lora_B.unsqueeze(-1),
-                    groups=sum(self.enable_lora),
-                ).transpose(-2, -1)
-                result += self.zero_pad(after_B) * self.scaling
             return result
 
 

@@ -18,27 +18,44 @@ from onmt.constants import DefaultTokens, ModelTask
 from onmt.modules import Linear, Embedding, mark_only_lora_as_trainable
 
 
-def replace_8bit_linear(model, threshold=6.0, module_to_convert=""):
+def replace_bnb_linear(
+        model,
+        module_to_convert="",
+        q_type="bnb_8bit",
+        threshold=6.0,
+        compute_dtype=torch.float16  # we could also use bfloat16 when available
+    ):
     try:
+        import os
+        os.environ["BITSANDBYTES_NOWELCOME"] = "1"
         import bitsandbytes as bnb
     except ImportError:
-        raise ImportError("Install bitsandbytes to use 8bit compression")
+        raise ImportError("Install bitsandbytes to use compression")
     for name, module in model.named_children():
         if len(list(module.children())) > 0:
-            replace_8bit_linear(module, threshold, module_to_convert)
+            replace_bnb_linear(module, module_to_convert, q_type, threshold, compute_dtype)
 
         if isinstance(module, nn.Linear) and name == module_to_convert:
-            model._modules[name] = bnb.nn.Linear8bitLt(
+            if q_type == "bnb_8bit":
+                model._modules[name] = bnb.nn.Linear8bitLt(
+                    module.in_features,
+                    module.out_features,
+                    module.bias is not None,
+                    has_fp16_weights=False,
+                    threshold=threshold,
+                )
+            elif q_type in ["bnb_FP4", "bnb_NF4"]:
+                model._modules[name] = bnb.nn.Linear4bit(
                 module.in_features,
                 module.out_features,
                 module.bias is not None,
-                has_fp16_weights=False,
-                threshold=threshold,
+                compute_dtype=compute_dtype,
+                quant_type=q_type[-3:].lower(),  # 'fp4' or 'nf4'
             )
     return model
 
 
-def replace_lora_linear(model, r=2, lora_alpha=1, lora_dropout=0, layer=""):
+def replace_lora_linear(model, r=2, lora_alpha=1, lora_dropout=0, layer="", quant_type=None):
     """
     Function replacing layers with LoRa layers recursively.
     Args:
@@ -49,8 +66,11 @@ def replace_lora_linear(model, r=2, lora_alpha=1, lora_dropout=0, layer=""):
         layer: layer name of the model to be replaced
     """
     for name, module in model.named_children():
-        if len(list(module.children())) > 0:
-            replace_lora_linear(module, r, lora_alpha, lora_dropout, layer)
+        try:
+            if len(list(module.children())) > 0:
+                replace_lora_linear(module, r, lora_alpha, lora_dropout, layer, quant_type)
+        except TypeError:
+            pass
 
         if isinstance(module, nn.Linear) and name == layer:
             model._modules[name] = Linear(
@@ -60,6 +80,7 @@ def replace_lora_linear(model, r=2, lora_alpha=1, lora_dropout=0, layer=""):
                 lora_alpha=lora_alpha,
                 lora_dropout=lora_dropout,
                 bias=module.bias is not None,
+                quant_type=quant_type
             )
     return model
 
@@ -303,14 +324,21 @@ def build_base_model(model_opt, vocabs, checkpoint=None):
 
     if hasattr(model_opt, "quant_layers") and len(model_opt.quant_layers) > 0:
         for layer in model_opt.quant_layers:
-            logger.info("8bit compression of layer %s" % layer)
-            model = replace_8bit_linear(model, module_to_convert=layer)
+            if model_opt.quant_type in ["bnb_8bit", "bnb_FP4", "bnb_NF4"]:
+                logger.info("%s compression of layer %s" % (model_opt.quant_type, layer))
+                model = replace_bnb_linear(model, module_to_convert=layer, q_type=model_opt.quant_type)
+            else:
+                logger.info("compression type %s not supported." % model_opt.quant_type)
 
     mark_lora = False
     if hasattr(model_opt, "lora_layers") and len(model_opt.lora_layers) > 0:
         if model_opt.freeze_encoder or model_opt.freeze_decoder:
             raise ValueError("Cannot use LoRa with Enc/Dec-oder freezing")
         for layer in model_opt.lora_layers:
+            if hasattr(model_opt, "quant_layers") and layer in model_opt.quant_layers:
+                quant_type = model_opt.quant_type
+            else:
+                quant_type = None
             logger.info("Adding LoRa layers for %s" % layer)
             model = replace_lora_linear(
                 model,
@@ -318,6 +346,7 @@ def build_base_model(model_opt, vocabs, checkpoint=None):
                 lora_alpha=model_opt.lora_alpha,
                 lora_dropout=model_opt.lora_dropout,
                 layer=layer,
+                quant_type=quant_type,
             )
         mark_lora = True
     if hasattr(model_opt, "lora_embedding") and model_opt.lora_embedding:
@@ -351,13 +380,15 @@ def build_base_model(model_opt, vocabs, checkpoint=None):
                 p.data.uniform_(-model_opt.param_init, model_opt.param_init)
             for p in generator.parameters():
                 p.data.uniform_(-model_opt.param_init, model_opt.param_init)
-        if model_opt.param_init_glorot:
+        elif model_opt.param_init_glorot:
             for p in model.parameters():
                 if p.dim() > 1:
                     xavier_uniform_(p)
             for p in generator.parameters():
                 if p.dim() > 1:
                     xavier_uniform_(p)
+        else:
+            raise ValueError("You need either param_init != 0 OR init_glorot True")
 
         if hasattr(model, "encoder") and hasattr(model.encoder, "embeddings"):
             model.encoder.embeddings.load_pretrained_vectors(
