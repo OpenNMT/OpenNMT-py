@@ -33,6 +33,7 @@ setup(
         "rapidfuzz",
         "pyahocorasick",
         "fasttext-wheel",
+        "bitsandbytes>=0.39",
     ],
     entry_points={
         "console_scripts": [

@@ -106,13 +106,6 @@ class Embedding(nn.Embedding, LoRALayer):
             return nn.Embedding.forward(self, x)
 
 
-os.environ["BITSANDBYTES_NOWELCOME"] = "1"
-try:
-    import bitsandbytes as bnb
-except ImportError:
-    raise ImportError("Install bitsandbytes to use compression")
-
-
 class maybeQLinear(type):
     def __call__(cls, *args, **kwargs):
         quant_type = kwargs.get("quant_type", None)
@@ -204,6 +197,11 @@ class LoraLinear(nn.Linear, LoRALayer):
         else:
             return result
 
+os.environ["BITSANDBYTES_NOWELCOME"] = "1"
+try:
+    import bitsandbytes as bnb
+except ImportError:
+    raise ImportError("Install bitsandbytes to use compression")
 
 class LoraLinear8bit(bnb.nn.Linear8bitLt, LoRALayer):
     # LoRA implemented in a dense layer
