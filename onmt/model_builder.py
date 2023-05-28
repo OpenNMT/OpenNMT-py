@@ -16,7 +16,13 @@ from onmt.utils.misc import use_gpu
 from onmt.utils.logging import logger
 from onmt.utils.parse import ArgumentParser
 from onmt.constants import DefaultTokens, ModelTask
-from onmt.modules import LoraLinear, LoraLinear8bit, Embedding, mark_only_lora_as_trainable
+from onmt.modules import (
+    LoraLinear,
+    LoraLinear8bit,
+    LoraLinear4bit,
+    Embedding,
+    mark_only_lora_as_trainable,
+)
 
 
 def replace_bnb_linear(
@@ -70,10 +76,8 @@ def replace_lora_linear(
         layer: layer name of the model to be replaced
     """
     for name, module in model.named_children():
-        if hasattr(module, 'children') and len(list(module.children())) > 0:
-            replace_lora_linear(
-                module, r, lora_alpha, lora_dropout, layer, quant_type
-            )
+        if hasattr(module, "children") and len(list(module.children())) > 0:
+            replace_lora_linear(module, r, lora_alpha, lora_dropout, layer, quant_type)
 
         if isinstance(module, nn.Linear) and name == layer:
             if quant_type is None:
@@ -85,7 +89,7 @@ def replace_lora_linear(
                     lora_dropout=lora_dropout,
                     bias=module.bias is not None,
                 )
-            elif quant_type == 'bnb_8bit':
+            elif quant_type == "bnb_8bit":
                 model._modules[name] = LoraLinear8bit(
                     module.in_features,
                     module.out_features,
@@ -93,6 +97,17 @@ def replace_lora_linear(
                     lora_alpha=lora_alpha,
                     lora_dropout=lora_dropout,
                     bias=module.bias is not None,
+                )
+            elif quant_type in ["bnb_FP4", "bnb_NF4"]:
+                model._modules[name] = LoraLinear4bit(
+                    module.in_features,
+                    module.out_features,
+                    r=r,
+                    lora_alpha=lora_alpha,
+                    lora_dropout=lora_dropout,
+                    bias=module.bias is not None,
+                    compute_dtype=torch.float16,
+                    quant_type=quant_type,
                 )
     return model
 

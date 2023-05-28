@@ -41,7 +41,7 @@ class Embedding(nn.Embedding, LoRALayer):
         r: int = 0,
         lora_alpha: int = 1,
         merge_weights: bool = True,
-        **kwargs
+        **kwargs,
     ):
         nn.Embedding.__init__(self, num_embeddings, embedding_dim, **kwargs)
         LoRALayer.__init__(
@@ -104,6 +104,7 @@ class Embedding(nn.Embedding, LoRALayer):
             return result
         else:
             return nn.Embedding.forward(self, x)
+
 
 os.environ["BITSANDBYTES_NOWELCOME"] = "1"
 try:
@@ -216,15 +217,13 @@ class LoraLinear8bit(bnb.nn.Linear8bitLt, LoRALayer):
         merge_weights: bool = True,
         **kwargs,
     ):
-        bnb.nn.Linear8bitLt.__init__( 
+        bnb.nn.Linear8bitLt.__init__(
             self,
             in_features,
             out_features,
             bias=kwargs.get("bias", False),
-            has_fp16_weights=kwargs.get("has_fp16_weights", True),
-            memory_efficient_backward=kwargs.get("memory_efficient_backward", False),
-            threshold=kwargs.get("threshold", 0.0),
-            index=kwargs.get("index", None),
+            has_fp16_weights=False,
+            threshold=6,
         )
         LoRALayer.__init__(
             self,
@@ -280,7 +279,7 @@ class LoraLinear8bit(bnb.nn.Linear8bitLt, LoRALayer):
             return result
 
 
-class LoraLinear4bit(bnb.nn.Linear8bitLt, LoRALayer):
+class LoraLinear4bit(bnb.nn.Linear4bit, LoRALayer):
     # LoRA implemented in a dense layer
     def __init__(
         self,
@@ -292,16 +291,14 @@ class LoraLinear4bit(bnb.nn.Linear8bitLt, LoRALayer):
         merge_weights: bool = True,
         **kwargs,
     ):
-        qt = quant_type[-3:]
         bnb.nn.Linear4bit.__init__(
             self,
             in_features,
             out_features,
             bias=kwargs.get("bias", False),
-            compute_dtype=kwargs.get("compute_dtype", torch.float32),
-                compress_statistics=kwargs.get("compress_statistics", True),
-                quant_type=qt,
-       )
+            compute_dtype=kwargs.get("compute_dtype", torch.float16),
+            quant_type=kwargs.get("quant_type", "bnb_FP4")[-3:].lower(),
+        )
         LoRALayer.__init__(
             self,
             r=r,
@@ -312,15 +309,15 @@ class LoraLinear4bit(bnb.nn.Linear8bitLt, LoRALayer):
 
         # Actual trainable parameters
         if r > 0:
-            self.lora_A = nn.Parameter(self.linear.weight.new_zeros((r, in_features)))
-            self.lora_B = nn.Parameter(self.linear.weight.new_zeros((out_features, r)))
+            self.lora_A = nn.Parameter(self.weight.new_zeros((r, in_features)))
+            self.lora_B = nn.Parameter(self.weight.new_zeros((out_features, r)))
             self.scaling = self.lora_alpha / self.r
             # Freezing the pre-trained weight matrix
-            self.linear.weight.requires_grad = False
+            self.weight.requires_grad = False
         self.reset_parameters()
 
     def reset_parameters(self):
-        self.linear.reset_parameters()
+        bnb.nn.Linear4bit.reset_parameters(self)
         if hasattr(self, "lora_A"):
             # initialize A the same way as the default
             # for nn.Linear and B to zero
@@ -328,25 +325,22 @@ class LoraLinear4bit(bnb.nn.Linear8bitLt, LoRALayer):
             nn.init.zeros_(self.lora_B)
 
     def train(self, mode: bool = True):
-
-        self.linear.train(self, mode)
+        bnb.nn.Linear4bit.train(self, mode)
         if mode:
             if self.merge_weights and self.merged:
                 # Make sure that the weights are not merged
                 if self.r > 0:
-                    self.linear.weight.data -= (self.lora_B @ self.lora_A) * self.scaling
+                    self.weight.data -= (self.lora_B @ self.lora_A) * self.scaling
                 self.merged = False
         else:
             if self.merge_weights and not self.merged:
                 # Merge the weights and mark it
                 if self.r > 0:
-                    self.linear.weight.data += (self.lora_B @ self.lora_A) * self.scaling
+                    self.weight.data += (self.lora_B @ self.lora_A) * self.scaling
                 self.merged = True
 
     def forward(self, x: torch.Tensor):
-
-        result = self.linear.forward(x)
-
+        result = super().forward(x)
         if self.r > 0 and not self.merged:
             if self.r > 0:
                 result += (
