@@ -105,6 +105,12 @@ class Embedding(nn.Embedding, LoRALayer):
         else:
             return nn.Embedding.forward(self, x)
 
+os.environ["BITSANDBYTES_NOWELCOME"] = "1"
+try:
+    import bitsandbytes as bnb
+except ImportError:
+    raise ImportError("Install bitsandbytes to use compression")
+
 
 class maybeQLinear(type):
     def __call__(cls, *args, **kwargs):
@@ -126,7 +132,7 @@ class maybeQLinear(type):
             raise ValueError("Invalid quant_type")
 
 
-class Linear(LoRALayer, maybeQLinear):
+class LoraLinear(nn.Linear, LoRALayer):
     # LoRA implemented in a dense layer
     def __init__(
         self,
@@ -136,41 +142,14 @@ class Linear(LoRALayer, maybeQLinear):
         lora_alpha: int = 1,
         lora_dropout: float = 0.0,
         merge_weights: bool = True,
-        **kwargs
+        **kwargs,
     ):
-
-        self.quant_type = kwargs.get("quant_type", None)
-        super().__init__()
-
-        if self.quant_type == None:
-            self.linear = maybeQLinear(
-                in_features,
-                out_features,
-                bias=kwargs.get("bias", False),
-            )
-        elif self.quant_type == "bnb_8bit":
-            self.linear = maybeQLinear(
-                in_features,
-                out_features,
-                bias=kwargs.get("bias", False),
-                has_fp16_weights=kwargs.get("has_fp16_weights", True),
-                memory_efficient_backward=kwargs.get(
-                    "memory_efficient_backward", False
-                ),
-                threshold=kwargs.get("threshold", 0.0),
-                index=kwargs.get("index", None),
-            )
-        elif self.quant_type in ["bnb_fp4", "bnb_NF4"]:
-            qt = quant_type[-3:]
-            self.linear = maybeQLinear(
-                in_features,
-                out_features,
-                bias=kwargs.get("bias", False),
-                compute_dtype=kwargs.get("compute_dtype", torch.float32),
-                compress_statistics=kwargs.get("compress_statistics", True),
-                quant_type=qt,
-            )
-
+        nn.Linear.__init__(
+            self,
+            in_features,
+            out_features,
+            bias=kwargs.get("bias", False),
+        )
         LoRALayer.__init__(
             self,
             r=r,
@@ -189,7 +168,7 @@ class Linear(LoRALayer, maybeQLinear):
         self.reset_parameters()
 
     def reset_parameters(self):
-        maybeQ_Linear.reset_parameters(self)
+        nn.Linear.reset_parameters(self)
         if hasattr(self, "lora_A"):
             # initialize A the same way as the default
             # for nn.Linear and B to zero
@@ -197,8 +176,7 @@ class Linear(LoRALayer, maybeQLinear):
             nn.init.zeros_(self.lora_B)
 
     def train(self, mode: bool = True):
-
-        maybeQ_Linear.train(self, mode)
+        nn.Linear.train(self, mode)
         if mode:
             if self.merge_weights and self.merged:
                 # Make sure that the weights are not merged
@@ -210,6 +188,159 @@ class Linear(LoRALayer, maybeQLinear):
                 # Merge the weights and mark it
                 if self.r > 0:
                     self.weight.data += (self.lora_B @ self.lora_A) * self.scaling
+                self.merged = True
+
+    def forward(self, x: torch.Tensor):
+        result = F.linear(x, self.weight, bias=self.bias)
+        if self.r > 0 and not self.merged:
+            if self.r > 0:
+                result += (
+                    self.lora_dropout(x)
+                    @ self.lora_A.transpose(0, 1)
+                    @ self.lora_B.transpose(0, 1)
+                ) * self.scaling
+            return result
+        else:
+            return result
+
+
+class LoraLinear8bit(bnb.nn.Linear8bitLt, LoRALayer):
+    # LoRA implemented in a dense layer
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        r: int = 0,
+        lora_alpha: int = 1,
+        lora_dropout: float = 0.0,
+        merge_weights: bool = True,
+        **kwargs,
+    ):
+        bnb.nn.Linear8bitLt.__init__( 
+            self,
+            in_features,
+            out_features,
+            bias=kwargs.get("bias", False),
+            has_fp16_weights=kwargs.get("has_fp16_weights", True),
+            memory_efficient_backward=kwargs.get("memory_efficient_backward", False),
+            threshold=kwargs.get("threshold", 0.0),
+            index=kwargs.get("index", None),
+        )
+        LoRALayer.__init__(
+            self,
+            r=r,
+            lora_alpha=lora_alpha,
+            lora_dropout=lora_dropout,
+            merge_weights=merge_weights,
+        )
+
+        # Actual trainable parameters
+        if r > 0:
+            self.lora_A = nn.Parameter(self.weight.new_zeros((r, in_features)))
+            self.lora_B = nn.Parameter(self.weight.new_zeros((out_features, r)))
+            self.scaling = self.lora_alpha / self.r
+            # Freezing the pre-trained weight matrix
+            self.weight.requires_grad = False
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        bnb.nn.Linear8bitLt.reset_parameters(self)
+        if hasattr(self, "lora_A"):
+            # initialize A the same way as the default
+            # for nn.Linear and B to zero
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            nn.init.zeros_(self.lora_B)
+
+    def train(self, mode: bool = True):
+        bnb.nn.Linear8bitLt.train(self, mode)
+        if mode:
+            if self.merge_weights and self.merged:
+                # Make sure that the weights are not merged
+                if self.r > 0:
+                    self.weight.data -= (self.lora_B @ self.lora_A) * self.scaling
+                self.merged = False
+        else:
+            if self.merge_weights and not self.merged:
+                # Merge the weights and mark it
+                if self.r > 0:
+                    self.weight.data += (self.lora_B @ self.lora_A) * self.scaling
+                self.merged = True
+
+    def forward(self, x: torch.Tensor):
+        result = super().forward(x)
+        if self.r > 0 and not self.merged:
+            if self.r > 0:
+                result += (
+                    self.lora_dropout(x)
+                    @ self.lora_A.transpose(0, 1)
+                    @ self.lora_B.transpose(0, 1)
+                ) * self.scaling
+            return result
+        else:
+            return result
+
+
+class LoraLinear4bit(bnb.nn.Linear8bitLt, LoRALayer):
+    # LoRA implemented in a dense layer
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        r: int = 0,
+        lora_alpha: int = 1,
+        lora_dropout: float = 0.0,
+        merge_weights: bool = True,
+        **kwargs,
+    ):
+        qt = quant_type[-3:]
+        bnb.nn.Linear4bit.__init__(
+            self,
+            in_features,
+            out_features,
+            bias=kwargs.get("bias", False),
+            compute_dtype=kwargs.get("compute_dtype", torch.float32),
+                compress_statistics=kwargs.get("compress_statistics", True),
+                quant_type=qt,
+       )
+        LoRALayer.__init__(
+            self,
+            r=r,
+            lora_alpha=lora_alpha,
+            lora_dropout=lora_dropout,
+            merge_weights=merge_weights,
+        )
+
+        # Actual trainable parameters
+        if r > 0:
+            self.lora_A = nn.Parameter(self.linear.weight.new_zeros((r, in_features)))
+            self.lora_B = nn.Parameter(self.linear.weight.new_zeros((out_features, r)))
+            self.scaling = self.lora_alpha / self.r
+            # Freezing the pre-trained weight matrix
+            self.linear.weight.requires_grad = False
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        self.linear.reset_parameters()
+        if hasattr(self, "lora_A"):
+            # initialize A the same way as the default
+            # for nn.Linear and B to zero
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            nn.init.zeros_(self.lora_B)
+
+    def train(self, mode: bool = True):
+
+        self.linear.train(self, mode)
+        if mode:
+            if self.merge_weights and self.merged:
+                # Make sure that the weights are not merged
+                if self.r > 0:
+                    self.linear.weight.data -= (self.lora_B @ self.lora_A) * self.scaling
+                self.merged = False
+        else:
+            if self.merge_weights and not self.merged:
+                # Merge the weights and mark it
+                if self.r > 0:
+                    self.linear.weight.data += (self.lora_B @ self.lora_A) * self.scaling
                 self.merged = True
 
     def forward(self, x: torch.Tensor):
