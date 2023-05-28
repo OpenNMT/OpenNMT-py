@@ -4,6 +4,7 @@ and creates each encoder and decoder accordingly.
 """
 import re
 import os
+import importlib
 import torch
 import torch.nn as nn
 from torch.nn.init import xavier_uniform_
@@ -16,13 +17,12 @@ from onmt.utils.misc import use_gpu
 from onmt.utils.logging import logger
 from onmt.utils.parse import ArgumentParser
 from onmt.constants import DefaultTokens, ModelTask
-from onmt.modules import (
-    LoraLinear,
-    LoraLinear8bit,
-    LoraLinear4bit,
-    Embedding,
-    mark_only_lora_as_trainable,
-)
+from onmt.modules import LoraLinear, Embedding, mark_only_lora_as_trainable
+
+if importlib.util.find_spec("bitsandbytes") is not None:
+    os.environ["BITSANDBYTES_NOWELCOME"] = "1"
+    import bitsandbytes as bnb
+    from onmt.modules.lora import LoraLinear8bit, LoraLinear4bit
 
 
 def replace_bnb_linear(
@@ -32,11 +32,6 @@ def replace_bnb_linear(
     threshold=6.0,
     compute_dtype=torch.float16,  # we could also use bfloat16 when available
 ):
-    try:
-        os.environ["BITSANDBYTES_NOWELCOME"] = "1"
-        import bitsandbytes as bnb
-    except ImportError:
-        raise ImportError("Install bitsandbytes to use compression")
     for name, module in model.named_children():
         if len(list(module.children())) > 0:
             replace_bnb_linear(
