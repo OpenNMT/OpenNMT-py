@@ -3,7 +3,7 @@ import argparse
 import torch
 import onmt
 import onmt.model_builder
-
+from onmt.models.model_saver import load_checkpoint
 from onmt.utils.parse import ArgumentParser
 import onmt.opts
 from onmt.inputters.inputter import dict_to_vocabs
@@ -39,7 +39,7 @@ def main():
         torch.cuda.set_device(opt.gpu)
 
     # Add in default model arguments, possibly added since training.
-    checkpoint = torch.load(opt.model, map_location=lambda storage, loc: storage)
+    checkpoint = load_checkpoint(opt.model)
     model_opt = checkpoint["opt"]
 
     vocabs = dict_to_vocabs(checkpoint["vocab"])
@@ -58,7 +58,9 @@ def main():
     ArgumentParser.update_model_opts(model_opt)
     ArgumentParser.validate_model_opts(model_opt)
 
-    model = onmt.model_builder.build_base_model(model_opt, vocabs, checkpoint)
+    model = onmt.model_builder.build_base_model(model_opt, vocabs)
+    model.load_state_dict(checkpoint)
+
     encoder = model.encoder  # no encoder for LM task
     decoder = model.decoder
 

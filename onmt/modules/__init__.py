@@ -11,14 +11,10 @@ from onmt.modules.embeddings import Embeddings, PositionalEncoding
 from onmt.modules.weight_norm import WeightNormConv2d
 from onmt.modules.average_attn import AverageAttention
 from onmt.modules.alibi_position_bias import AlibiPositionalBias
-from onmt.modules.lora import LoRALayer, Embedding, LoraLinear
+from onmt.modules.lora import LoRALayer, Embedding, QLoraLinear, QQLoraLinear
 from onmt.modules.lora import mark_only_lora_as_trainable, lora_state_dict
 from onmt.modules.rmsnorm import RMSNorm
 
-if importlib.util.find_spec("bitsandbytes") is not None:
-    os.environ["BITSANDBYTES_NOWELCOME"] = "1"
-    import bitsandbytes as bnb
-    from onmt.modules.lora import LoraLinear8bit, LoraLinear4bit
 
 __all__ = [
     "Elementwise",
@@ -38,9 +34,8 @@ __all__ = [
     "RMSNorm",
     "LoRALayer",
     "Embedding",
-    "LoraLinear",
-    "LoraLinear8bit",
-    "LoraLinear4bit",
+    "QLoraLinear",
+    "QQLoraLinear",
     "mark_only_lora_as_trainable",
     "lora_state_dict",
 ]

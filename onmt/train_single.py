@@ -186,6 +186,14 @@ def main(opt, device_id):
     model = build_model(model_opt, opt, vocabs, checkpoint)
 
     model.count_parameters(log=logger.info)
+    trainable, non_trainable = 0, 0
+    for n, p in model.named_parameters():
+        if p.requires_grad:
+            trainable += p.numel()
+        else:
+            non_trainable += p.numel()
+    logger.info("Trainable parameters = %d" % trainable)
+    logger.info("Non trainable parameters = %d" % non_trainable)
     logger.info(" * src vocab size = %d" % len(vocabs["src"]))
     logger.info(" * tgt vocab size = %d" % len(vocabs["tgt"]))
     if "src_feats" in vocabs:

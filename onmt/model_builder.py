@@ -16,13 +16,14 @@ from onmt.modules import Embeddings, CopyGenerator
 from onmt.utils.misc import use_gpu
 from onmt.utils.logging import logger
 from onmt.utils.parse import ArgumentParser
+from onmt.models.model_saver import load_checkpoint
 from onmt.constants import DefaultTokens, ModelTask
-from onmt.modules import LoraLinear, Embedding, mark_only_lora_as_trainable
-
-if importlib.util.find_spec("bitsandbytes") is not None:
-    os.environ["BITSANDBYTES_NOWELCOME"] = "1"
-    import bitsandbytes as bnb
-    from onmt.modules.lora import LoraLinear8bit, LoraLinear4bit
+from onmt.modules import (
+    QLoraLinear,
+    QQLoraLinear,
+    Embedding,
+    mark_only_lora_as_trainable,
+)
 
 
 def replace_bnb_linear(
@@ -32,6 +33,11 @@ def replace_bnb_linear(
     threshold=6.0,
     compute_dtype=torch.float16,  # we could also use bfloat16 when available
 ):
+    try:
+        os.environ["BITSANDBYTES_NOWELCOME"] = "1"
+        import bitsandbytes as bnb
+    except ImportError:
+        raise ImportError("Install bitsandbytes to use 4/8bit compression")
     for name, module in model.named_children():
         if len(list(module.children())) > 0:
             replace_bnb_linear(
@@ -59,7 +65,14 @@ def replace_bnb_linear(
 
 
 def replace_lora_linear(
-    model, r=2, lora_alpha=1, lora_dropout=0, layer="", quant_type=None
+    model,
+    r=2,
+    lora_alpha=1,
+    lora_dropout=0,
+    layer="",
+    quant_type=None,
+    threshold=6.0,
+    compute_dtype=torch.float16,
 ):
     """
     Function replacing layers with LoRa layers recursively.
@@ -69,41 +82,33 @@ def replace_lora_linear(
         lora_alpha: cf paper
         lora_dropout: cf paper
         layer: layer name of the model to be replaced
+        quant_type: use bnb to quantize nn.Linear sub-layer
     """
     for name, module in model.named_children():
         if hasattr(module, "children") and len(list(module.children())) > 0:
-            replace_lora_linear(module, r, lora_alpha, lora_dropout, layer, quant_type)
+            replace_lora_linear(
+                module,
+                r,
+                lora_alpha,
+                lora_dropout,
+                layer,
+                quant_type,
+                threshold=6.0,
+                compute_dtype=torch.float16,
+            )
 
         if isinstance(module, nn.Linear) and name == layer:
-            if quant_type is None:
-                model._modules[name] = LoraLinear(
-                    module.in_features,
-                    module.out_features,
-                    r=r,
-                    lora_alpha=lora_alpha,
-                    lora_dropout=lora_dropout,
-                    bias=module.bias is not None,
-                )
-            elif quant_type == "bnb_8bit":
-                model._modules[name] = LoraLinear8bit(
-                    module.in_features,
-                    module.out_features,
-                    r=r,
-                    lora_alpha=lora_alpha,
-                    lora_dropout=lora_dropout,
-                    bias=module.bias is not None,
-                )
-            elif quant_type in ["bnb_FP4", "bnb_NF4"]:
-                model._modules[name] = LoraLinear4bit(
-                    module.in_features,
-                    module.out_features,
-                    r=r,
-                    lora_alpha=lora_alpha,
-                    lora_dropout=lora_dropout,
-                    bias=module.bias is not None,
-                    compute_dtype=torch.float16,
-                    quant_type=quant_type,
-                )
+            model._modules[name] = QLoraLinear(
+                module.in_features,
+                module.out_features,
+                r=r,
+                lora_alpha=lora_alpha,
+                lora_dropout=lora_dropout,
+                bias=module.bias is not None,
+                quant_type=quant_type,
+                threshold=6.0,
+                compute_dtype=torch.float16,
+            )
     return model
 
 
@@ -198,7 +203,7 @@ def build_decoder(opt, embeddings):
 def load_test_model(opt, model_path=None):
     if model_path is None:
         model_path = opt.models[0]
-    checkpoint = torch.load(model_path, map_location=lambda storage, loc: storage)
+    checkpoint = load_checkpoint(model_path)
 
     model_opt = ArgumentParser.ckpt_model_opts(checkpoint["opt"])
 
@@ -209,7 +214,13 @@ def load_test_model(opt, model_path=None):
     # Avoid functionality on inference
     model_opt.update_vocab = False
 
-    model = build_base_model(model_opt, vocabs, checkpoint)
+    model = build_base_model(model_opt, vocabs)
+
+    model.load_state_dict(
+        checkpoint, precision=torch.float32, device=torch.device("cpu"), strict=True
+    )
+
+    del checkpoint
 
     if opt.precision == "fp32":
         model.float()
@@ -285,14 +296,14 @@ def build_task_specific_model(model_opt, vocabs):
         raise ValueError(f"No model defined for {model_opt.model_task} task")
 
 
-def use_embeddings_from_checkpoint(vocabs, model, generator, checkpoint):
+def use_embeddings_from_checkpoint(vocabs, model, checkpoint):
     # Update vocabulary embeddings with checkpoint embeddings
     logger.info("Updating vocabulary embeddings with checkpoint embeddings")
     # Embedding layers
     enc_emb_name = "encoder.embeddings.make_embedding.emb_luts.0.weight"
     dec_emb_name = "decoder.embeddings.make_embedding.emb_luts.0.weight"
     model_dict = model.state_dict()
-    generator_dict = generator.state_dict()
+    generator_dict = model.generator.state_dict()
     for side, emb_name in [("src", enc_emb_name), ("tgt", dec_emb_name)]:
         if emb_name not in checkpoint["model"]:
             continue
@@ -315,11 +326,12 @@ def use_embeddings_from_checkpoint(vocabs, model, generator, checkpoint):
         # Remove old vocabulary associated embeddings
         del checkpoint["model"][emb_name]
     del checkpoint["generator"]["weight"], checkpoint["generator"]["bias"]
-    model.load_state_dict(model_dict)
-    generator.load_state_dict(generator_dict)
+    fake_ckpt = {"model": model_dict, "generator": generator_dict}
+    model.load_state_dict(fake_ckpt)
+    # generator.load_state_dict(generator_dict)
 
 
-def build_base_model(model_opt, vocabs, checkpoint=None):
+def build_base_model(model_opt, vocabs):
     """Build a model from opts.
 
     Args:
@@ -328,8 +340,6 @@ def build_base_model(model_opt, vocabs, checkpoint=None):
             :class:`onmt.utils.parse.ArgumentParser`.
         vocabs (dict[str, Vocab]):
             `Field` objects for the model.
-        checkpoint: the model generated by train phase, or a resumed snapshot
-                    model from a stopped training.
 
     Returns:
         the NMTModel.
@@ -399,18 +409,28 @@ def build_base_model(model_opt, vocabs, checkpoint=None):
         if model_opt.share_decoder_embeddings:
             generator.linear.weight = model.decoder.embeddings.word_lut.weight
 
-    # Load the model states from checkpoint or initialize them.
+    model.generator = generator
+
+    return model
+
+
+def build_model(model_opt, opt, vocabs, checkpoint):
+    logger.info("Building model...")
+    model = build_base_model(model_opt, vocabs)
+
+    # If new training initialize the model params
+    # If update_vocab init also but checkpoint will overwrite old weights
     if checkpoint is None or model_opt.update_vocab:
         if model_opt.param_init != 0.0:
             for p in model.parameters():
                 p.data.uniform_(-model_opt.param_init, model_opt.param_init)
-            for p in generator.parameters():
+            for p in model.generator.parameters():
                 p.data.uniform_(-model_opt.param_init, model_opt.param_init)
         elif model_opt.param_init_glorot:
             for p in model.parameters():
                 if p.dim() > 1:
                     xavier_uniform_(p)
-            for p in generator.parameters():
+            for p in model.generator.parameters():
                 if p.dim() > 1:
                     xavier_uniform_(p)
         else:
@@ -426,39 +446,34 @@ def build_base_model(model_opt, vocabs, checkpoint=None):
             )
 
     if checkpoint is not None:
-        # This preserves backward-compat for models using customed layernorm
-        def fix_key(s):
-            s = re.sub(r"(.*)\.layer_norm((_\d+)?)\.b_2", r"\1.layer_norm\2.bias", s)
-            s = re.sub(r"(.*)\.layer_norm((_\d+)?)\.a_2", r"\1.layer_norm\2.weight", s)
-            return s
-
-        checkpoint["model"] = {fix_key(k): v for k, v in checkpoint["model"].items()}
-
-        if "0.weight" in checkpoint["generator"]:
-            checkpoint["generator"]["weight"] = checkpoint["generator"].pop("0.weight")
-        if "0.bias" in checkpoint["generator"]:
-            checkpoint["generator"]["bias"] = checkpoint["generator"].pop("0.bias")
-        # end of patch for backward compatibility
-
         if model_opt.update_vocab:
             # Update model embeddings with those from the checkpoint
             # after initialization
-            use_embeddings_from_checkpoint(vocabs, model, generator, checkpoint)
+            use_embeddings_from_checkpoint(vocabs, model, checkpoint)
+            # after this checkpoint contains no embeddings
 
         # when using LoRa or updating the vocab (no more embeddings in ckpt)
         # => strict=False when loading state_dict
-        strict = (not model_opt.update_vocab) and (not mark_lora)
-        model.load_state_dict(checkpoint["model"], strict=strict)
-        generator.load_state_dict(checkpoint["generator"], strict=strict)
+        strict = not model_opt.update_vocab
 
-    model.generator = generator
+        if (
+            model_opt.model_dtype == "fp16"
+            and model_opt.apex_opt_level not in ["O0", "O1", "O2", "O3"]
+            and model_opt.optim == "fusedadam"
+        ):
+            precision = "torch.float16"
 
-    return model
+        else:
+            precision = "torch.float32"
 
+        if use_gpu(opt):
+            device = torch.device("cuda")
+        else:
+            device = torch.device("cpu")
 
-def build_model(model_opt, opt, vocabs, checkpoint):
-    logger.info("Building model...")
-    model = build_base_model(model_opt, vocabs, checkpoint)
+        model.load_state_dict(
+            checkpoint, precision=precision, device=device, strict=strict
+        )
 
     if model_opt.freeze_encoder:
         model.encoder.requires_grad_(False)
@@ -468,14 +483,5 @@ def build_model(model_opt, opt, vocabs, checkpoint):
         model.decoder.requires_grad_(False)
         model.decoder.embeddings.requires_grad_()
 
-    if (
-        model_opt.model_dtype == "fp16"
-        and model_opt.apex_opt_level not in ["O0", "O1", "O2", "O3"]
-        and model_opt.optim == "fusedadam"
-    ):
-        model.half()  # with amp pytorch requires NOT to half the model
-
-    if use_gpu(opt):
-        model.to(torch.device("cuda"))
     logger.info(model)
     return model

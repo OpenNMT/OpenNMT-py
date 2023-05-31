@@ -1,5 +1,6 @@
 import os
 import torch
+import re
 from collections import deque
 from onmt.utils.logging import logger
 from onmt.inputters.inputter import vocabs_to_dict
@@ -23,6 +24,21 @@ def load_checkpoint(ckpt_path):
     if ckpt_path:
         logger.info("Loading checkpoint from %s" % ckpt_path)
         checkpoint = torch.load(ckpt_path, map_location=lambda storage, loc: storage)
+
+        # This preserves backward-compat for models using customed layernorm
+        def fix_key(s):
+            s = re.sub(r"(.*)\.layer_norm((_\d+)?)\.b_2", r"\1.layer_norm\2.bias", s)
+            s = re.sub(r"(.*)\.layer_norm((_\d+)?)\.a_2", r"\1.layer_norm\2.weight", s)
+            return s
+
+        checkpoint["model"] = {fix_key(k): v for k, v in checkpoint["model"].items()}
+        # fix v2 compatibility
+        if "0.weight" in checkpoint["generator"]:
+            checkpoint["generator"]["weight"] = checkpoint["generator"].pop("0.weight")
+        if "0.bias" in checkpoint["generator"]:
+            checkpoint["generator"]["bias"] = checkpoint["generator"].pop("0.bias")
+        # end of patch for backward compatibility
+
     return checkpoint
 
 

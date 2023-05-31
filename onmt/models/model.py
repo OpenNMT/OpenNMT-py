@@ -1,4 +1,5 @@
 """ Onmt NMT Model base class definition """
+import torch
 import torch.nn as nn
 
 
@@ -42,6 +43,66 @@ class BaseModel(nn.Module):
 
     def count_parameters(self, log=print):
         raise NotImplementedError
+
+    def load_state_dict(
+        self,
+        checkpoint,
+        precision=torch.float32,
+        device=torch.device("cpu"),
+        strict=True,
+    ):
+        """Custom state_dict loading to enable moving module on device as they are loaded
+
+        Args:
+            checkpoint:
+            precision:
+            device:
+            strict:
+
+        Return:
+
+            * Model"""
+
+        # bitsandbytes quantize weights when .cuda() is called
+        # for huge models we need to save Ram
+        # so we load the weights  module by module and transfer them to GPU for quantization
+
+        for name, module in self.named_modules():
+            for param_name, param in module.named_parameters():
+                if len(param_name.split(".")) == 1:  # only last key
+                    if name + "." + param_name in checkpoint["model"].keys():
+                        param.data = checkpoint["model"][name + "." + param_name]
+                        del checkpoint["model"][name + "." + param_name]
+                    elif (name + "." + param_name).replace(
+                        ".linear.weight", ".weight"
+                    ) in checkpoint["model"].keys():
+                        param.data = checkpoint["model"][
+                            (name + "." + param_name).replace(
+                                ".linear.weight", ".weight"
+                            )
+                        ]
+                        del checkpoint["model"][
+                            (name + "." + param_name).replace(
+                                ".linear.weight", ".weight"
+                            )
+                        ]
+                    elif (
+                        name == "generator" and len(checkpoint["generator"].keys()) > 0
+                    ):
+                        param.data = checkpoint["generator"][param_name]
+                        del checkpoint["generator"][param_name]
+                    elif strict and "lora" not in param_name:
+                        print(checkpoint["model"].keys())
+                        print(checkpoint["generator"].keys())
+                        raise ValueError(
+                            "Missing key in chekpoint: %s" % name + "." + param_name
+                        )
+
+            if precision == "torch.float16":
+                module.half()  # with amp pytorch requires NOT to half the model
+
+            if device == torch.device("cuda"):
+                module.to(torch.device("cuda"))
 
 
 class NMTModel(BaseModel):
