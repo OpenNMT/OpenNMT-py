@@ -97,12 +97,9 @@ class BaseModel(nn.Module):
                         raise ValueError(
                             "Missing key in chekpoint: %s" % name + "." + param_name
                         )
-
-            if precision == "torch.float16":
-                module.half()  # with amp pytorch requires NOT to half the model
-
-            if device == torch.device("cuda"):
-                module.to(torch.device("cuda"))
+            # ONLY for legacy fusedam with amp pytorch requires NOT to half the model
+            module.to(precision)
+            module.to(device)
 
 
 class NMTModel(BaseModel):

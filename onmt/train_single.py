@@ -202,7 +202,9 @@ def main(opt, device_id):
 
     # Build optimizer.
     optim = Optimizer.from_opt(model, opt, checkpoint=checkpoint)
+
     del checkpoint
+
     # Build model saver
     model_saver = build_model_saver(model_opt, opt, model, vocabs, optim)
 

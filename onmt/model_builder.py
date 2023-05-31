@@ -28,7 +28,7 @@ from onmt.modules import (
 
 def replace_bnb_linear(
     model,
-    module_to_convert="",
+    module_to_convert=[],
     q_type="bnb_8bit",
     threshold=6.0,
     compute_dtype=torch.float16,  # we could also use bfloat16 when available
@@ -44,7 +44,7 @@ def replace_bnb_linear(
                 module, module_to_convert, q_type, threshold, compute_dtype
             )
 
-        if isinstance(module, nn.Linear) and name == module_to_convert:
+        if isinstance(module, nn.Linear) and name in module_to_convert:
             if q_type == "bnb_8bit":
                 model._modules[name] = bnb.nn.Linear8bitLt(
                     module.in_features,
@@ -353,18 +353,24 @@ def build_base_model(model_opt, vocabs):
 
     # Build Model
     model = build_task_specific_model(model_opt, vocabs)
+    nonlora_to_quant = []
+    if hasattr(model_opt, "lora_layers") and len(model_opt.lora_layers) > 0:
+        nonlora_to_quant = [
+            layer
+            for layer in model_opt.quant_layers
+            if layer not in model_opt.lora_layers
+        ]
 
-    if hasattr(model_opt, "quant_layers") and len(model_opt.quant_layers) > 0:
-        for layer in model_opt.quant_layers:
-            if model_opt.quant_type in ["bnb_8bit", "bnb_FP4", "bnb_NF4"]:
-                logger.info(
-                    "%s compression of layer %s" % (model_opt.quant_type, layer)
-                )
-                model = replace_bnb_linear(
-                    model, module_to_convert=layer, q_type=model_opt.quant_type
-                )
-            else:
-                logger.info("compression type %s not supported." % model_opt.quant_type)
+    if hasattr(model_opt, "quant_layers") and len(nonlora_to_quant) > 0:
+        if model_opt.quant_type in ["bnb_8bit", "bnb_FP4", "bnb_NF4"]:
+            logger.info(
+                "%s compression of layer %s" % (model_opt.quant_type, nonlora_to_quant)
+            )
+            model = replace_bnb_linear(
+                model, module_to_convert=nonlora_to_quant, q_type=model_opt.quant_type
+            )
+        else:
+            logger.info("compression type %s not supported." % model_opt.quant_type)
 
     mark_lora = False
     if hasattr(model_opt, "lora_layers") and len(model_opt.lora_layers) > 0:
@@ -375,7 +381,7 @@ def build_base_model(model_opt, vocabs):
                 quant_type = model_opt.quant_type
             else:
                 quant_type = None
-            logger.info("Adding LoRa layers for %s" % layer)
+            logger.info("Adding LoRa layers for %s quant %s" % (layer, quant_type))
             model = replace_lora_linear(
                 model,
                 r=model_opt.lora_rank,
@@ -461,10 +467,13 @@ def build_model(model_opt, opt, vocabs, checkpoint):
             and model_opt.apex_opt_level not in ["O0", "O1", "O2", "O3"]
             and model_opt.optim == "fusedadam"
         ):
-            precision = "torch.float16"
-
+            precision = torch.float16
+            logger.info("Switching model to half() for FusedAdam legacy")
+            logger.info("Non quantized layer compute is %s", model_opt.model_dtype)
         else:
-            precision = "torch.float32"
+            precision = torch.float32
+            logger.info("Switching model to float32 for amp/apex_amp")
+            logger.info("Non quantized layer compute is %s", model_opt.model_dtype)
 
         if use_gpu(opt):
             device = torch.device("cuda")
