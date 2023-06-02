@@ -73,32 +73,17 @@ class BaseModel(nn.Module):
                     if name + "." + param_name in checkpoint["model"].keys():
                         param.data = checkpoint["model"][name + "." + param_name]
                         del checkpoint["model"][name + "." + param_name]
-                    elif (name + "." + param_name).replace(
-                        ".linear.weight", ".weight"
-                    ) in checkpoint["model"].keys():
-                        param.data = checkpoint["model"][
-                            (name + "." + param_name).replace(
-                                ".linear.weight", ".weight"
-                            )
-                        ]
-                        del checkpoint["model"][
-                            (name + "." + param_name).replace(
-                                ".linear.weight", ".weight"
-                            )
-                        ]
                     elif (
                         name == "generator" and len(checkpoint["generator"].keys()) > 0
                     ):
                         param.data = checkpoint["generator"][param_name]
                         del checkpoint["generator"][param_name]
                     elif strict and "lora" not in param_name:
-                        print(checkpoint["model"].keys())
-                        print(checkpoint["generator"].keys())
                         raise ValueError(
                             "Missing key in chekpoint: %s" % name + "." + param_name
                         )
-            module.to(precision)
-            module.to(device)
+                    module.to(precision)
+                    module.to(device)
 
 
 class NMTModel(BaseModel):

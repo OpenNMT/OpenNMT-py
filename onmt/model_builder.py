@@ -20,7 +20,6 @@ from onmt.models.model_saver import load_checkpoint
 from onmt.constants import DefaultTokens, ModelTask
 from onmt.modules import (
     QLoraLinear,
-    QQLoraLinear,
     Embedding,
     mark_only_lora_as_trainable,
 )
