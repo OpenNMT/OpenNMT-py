@@ -7,7 +7,7 @@ import os
 import importlib
 import torch
 import torch.nn as nn
-from torch.nn.init import xavier_uniform_
+from torch.nn.init import xavier_uniform_, zeros_, uniform_
 import onmt.modules
 from onmt.encoders import str2enc
 from onmt.decoders import str2dec
@@ -430,17 +430,15 @@ def build_model(model_opt, opt, vocabs, checkpoint):
     # If update_vocab init also but checkpoint will overwrite old weights
     if checkpoint is None or model_opt.update_vocab:
         if model_opt.param_init != 0.0:
-            for p in model.parameters():
-                p.data.uniform_(-model_opt.param_init, model_opt.param_init)
-            for p in model.generator.parameters():
-                p.data.uniform_(-model_opt.param_init, model_opt.param_init)
+            for param in model.parameters():
+                uniform_(param, -model_opt.param_init, model_opt.param_init)
         elif model_opt.param_init_glorot:
-            for p in model.parameters():
-                if p.dim() > 1:
-                    xavier_uniform_(p)
-            for p in model.generator.parameters():
-                if p.dim() > 1:
-                    xavier_uniform_(p)
+            for name, module in model.named_modules():
+                for param_name, param in module.named_parameters():
+                    if param_name == "weight" and param.dim() > 1:
+                        xavier_uniform_(param)
+                    elif param_name == "bias":
+                        zeros_(param)
         else:
             raise ValueError("You need either param_init != 0 OR init_glorot True")
 
