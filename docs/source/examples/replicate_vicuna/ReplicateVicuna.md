@@ -11,7 +11,6 @@ The maximal context length will be set to 512.
 Here is a short description of the content of your current directory:
 
 - The OpenNMT-py repository.
-- The Ctranslate2 repository.
 - The `replicate_vicuna.yaml` file.
 - A subdirectory named "llama" with the llama chekpoints.
 - The converted llama7B checkpoint (`llama7B-vicuna-onmt`) and the vocabulary (`vocab.txt`) that will be genenerated with OpenNMT tools.
@@ -20,9 +19,24 @@ Here is a short description of the content of your current directory:
 - The `translate_opts.yaml` file with the translation options for the inference with `OpenNMT-py/onmt/bin/translate.py`.
 - A subdirectory named "inputs" containing the `input_examples.txt` file with the input examples for the inference.
 - A subdirectory named "outputs" that will contain the inferred outputs of the finetuned model.
-- The `add_missing_key.py` script (to enable the ctranslate2 conversion).
 - The `chatbot.py` script (for the ctranslate2 inference with a gradio application).
 
+## Dependencies
+Apex is highly recommended to have fast performance.
+
+```shell
+git clone https://github.com/NVIDIA/apex
+cd apex
+pip3 install -v --disable-pip-version-check --no-cache-dir --global-option="--cpp_ext" --global-option="--cuda_ext" --global-option="--deprecated_fused_adam" --global-option="--xentropy" --global-option="--fast_multihead_attn" ./
+cd ..
+```
+
+You must also have gradio and ctranslate2 installed in your environment:
+
+```shell
+pip install gradio
+pip install ctranslate2==3.14.0
+```
 
 ## Data
 
@@ -150,7 +164,6 @@ You can test other decoding methods and paramaters.
 We have also provided a gradio application to chat with the model.
 
 ```shell
-pip install gradio
 gradio chatbot.py
 ```
 You must use `inf_type = "-py"` at the beginning of the `chatbot.py` script.
