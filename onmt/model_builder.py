@@ -7,7 +7,7 @@ import os
 import importlib
 import torch
 import torch.nn as nn
-from torch.nn.init import xavier_uniform_
+from torch.nn.init import xavier_uniform_, zeros_, uniform_
 import onmt.modules
 from onmt.encoders import str2enc
 from onmt.decoders import str2dec
@@ -430,17 +430,15 @@ def build_model(model_opt, opt, vocabs, checkpoint):
     # If update_vocab init also but checkpoint will overwrite old weights
     if checkpoint is None or model_opt.update_vocab:
         if model_opt.param_init != 0.0:
-            for p in model.parameters():
-                p.data.uniform_(-model_opt.param_init, model_opt.param_init)
-            for p in model.generator.parameters():
-                p.data.uniform_(-model_opt.param_init, model_opt.param_init)
+            for param in model.parameters():
+                uniform_(param, -model_opt.param_init, model_opt.param_init)
         elif model_opt.param_init_glorot:
-            for p in model.parameters():
-                if p.dim() > 1:
-                    xavier_uniform_(p)
-            for p in model.generator.parameters():
-                if p.dim() > 1:
-                    xavier_uniform_(p)
+            for name, module in model.named_modules():
+                for param_name, param in module.named_parameters():
+                    if param_name == "weight" and param.dim() > 1:
+                        xavier_uniform_(param)
+                    elif param_name == "bias":
+                        zeros_(param)
         else:
             raise ValueError("You need either param_init != 0 OR init_glorot True")
 
@@ -453,6 +451,25 @@ def build_model(model_opt, opt, vocabs, checkpoint):
                 model_opt.pre_word_vecs_dec
             )
 
+    # ONLY for legacy fusedam with amp pytorch requires NOT to half the model
+    if (
+        model_opt.model_dtype == "fp16"
+        and model_opt.apex_opt_level not in ["O0", "O1", "O2", "O3"]
+        and model_opt.optim == "fusedadam"
+    ):
+        precision = torch.float16
+        logger.info("Switching model to half() for FusedAdam legacy")
+        logger.info("Non quantized layer compute is %s", model_opt.model_dtype)
+    else:
+        precision = torch.float32
+        logger.info("Switching model to float32 for amp/apex_amp")
+        logger.info("Non quantized layer compute is %s", model_opt.model_dtype)
+
+    if use_gpu(opt):
+        device = torch.device("cuda")
+    else:
+        device = torch.device("cpu")
+
     if checkpoint is not None:
         if model_opt.update_vocab:
             # Update model embeddings with those from the checkpoint
@@ -464,28 +481,12 @@ def build_model(model_opt, opt, vocabs, checkpoint):
         # => strict=False when loading state_dict
         strict = not model_opt.update_vocab
 
-        # ONLY for legacy fusedam with amp pytorch requires NOT to half the model
-        if (
-            model_opt.model_dtype == "fp16"
-            and model_opt.apex_opt_level not in ["O0", "O1", "O2", "O3"]
-            and model_opt.optim == "fusedadam"
-        ):
-            precision = torch.float16
-            logger.info("Switching model to half() for FusedAdam legacy")
-            logger.info("Non quantized layer compute is %s", model_opt.model_dtype)
-        else:
-            precision = torch.float32
-            logger.info("Switching model to float32 for amp/apex_amp")
-            logger.info("Non quantized layer compute is %s", model_opt.model_dtype)
-
-        if use_gpu(opt):
-            device = torch.device("cuda")
-        else:
-            device = torch.device("cpu")
-
         model.load_state_dict(
             checkpoint, precision=precision, device=device, strict=strict
         )
+    else:
+        model.to(precision)
+        model.to(device)
 
     if model_opt.freeze_encoder:
         model.encoder.requires_grad_(False)
