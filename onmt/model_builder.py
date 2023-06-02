@@ -453,6 +453,25 @@ def build_model(model_opt, opt, vocabs, checkpoint):
                 model_opt.pre_word_vecs_dec
             )
 
+    # ONLY for legacy fusedam with amp pytorch requires NOT to half the model
+    if (
+        model_opt.model_dtype == "fp16"
+        and model_opt.apex_opt_level not in ["O0", "O1", "O2", "O3"]
+        and model_opt.optim == "fusedadam"
+    ):
+        precision = torch.float16
+        logger.info("Switching model to half() for FusedAdam legacy")
+        logger.info("Non quantized layer compute is %s", model_opt.model_dtype)
+    else:
+        precision = torch.float32
+        logger.info("Switching model to float32 for amp/apex_amp")
+        logger.info("Non quantized layer compute is %s", model_opt.model_dtype)
+
+    if use_gpu(opt):
+        device = torch.device("cuda")
+    else:
+        device = torch.device("cpu")
+
     if checkpoint is not None:
         if model_opt.update_vocab:
             # Update model embeddings with those from the checkpoint
@@ -464,28 +483,12 @@ def build_model(model_opt, opt, vocabs, checkpoint):
         # => strict=False when loading state_dict
         strict = not model_opt.update_vocab
 
-        # ONLY for legacy fusedam with amp pytorch requires NOT to half the model
-        if (
-            model_opt.model_dtype == "fp16"
-            and model_opt.apex_opt_level not in ["O0", "O1", "O2", "O3"]
-            and model_opt.optim == "fusedadam"
-        ):
-            precision = torch.float16
-            logger.info("Switching model to half() for FusedAdam legacy")
-            logger.info("Non quantized layer compute is %s", model_opt.model_dtype)
-        else:
-            precision = torch.float32
-            logger.info("Switching model to float32 for amp/apex_amp")
-            logger.info("Non quantized layer compute is %s", model_opt.model_dtype)
-
-        if use_gpu(opt):
-            device = torch.device("cuda")
-        else:
-            device = torch.device("cpu")
-
         model.load_state_dict(
             checkpoint, precision=precision, device=device, strict=strict
         )
+    else:
+        model.to(precision)
+        model.to(device)
 
     if model_opt.freeze_encoder:
         model.encoder.requires_grad_(False)
