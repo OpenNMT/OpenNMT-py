@@ -4,6 +4,7 @@ import torch
 from torch import Tensor
 from typing import Optional, Tuple
 import torch.nn as nn
+from torch.utils.checkpoint import checkpoint
 from torch.nn.utils import skip_init
 from .alibi_position_bias import AlibiPositionalBias
 
@@ -152,6 +153,7 @@ class MultiHeadedAttention(nn.Module):
         max_relative_positions: int = 0,
         attn_type: str = None,
         add_qkvbias=False,
+        use_ckpting=[],
     ) -> None:
         assert model_dim % head_count == 0
         self.dim_per_head = model_dim // head_count
@@ -197,6 +199,8 @@ class MultiHeadedAttention(nn.Module):
 
             if max_relative_positions == -2:  # alibi positional bias
                 self.alibi = AlibiPositionalBias(head_count)
+
+        self.maybe_ckpt = checkpoint if "mha" in use_ckpting else lambda f, x: f(x)
 
     def update_dropout(self, dropout: float) -> None:
         self.dropout.p = dropout
@@ -275,9 +279,9 @@ class MultiHeadedAttention(nn.Module):
                 self.layer_cache[1]["keys"] = key
                 self.layer_cache[1]["values"] = value
         else:
-            key = self.linear_keys(key)
-            value = self.linear_values(value)
-            query = self.linear_query(query)
+            key = self.maybe_ckpt(self.linear_keys, key)
+            value = self.maybe_ckpt(self.linear_values, value)
+            query = self.maybe_ckpt(self.linear_query, query)
             key = shape(key, self.dim_per_head)
             value = shape(value, self.dim_per_head)
             query = shape(query, self.dim_per_head)
@@ -293,9 +297,9 @@ class MultiHeadedAttention(nn.Module):
                 query = query.transpose(1, 2)
                 key = key.transpose(1, 2)
         # 2) Calculate and scale scores.
-        query = query / math.sqrt(self.dim_per_head)
+        query /= math.sqrt(self.dim_per_head)
         # batch x num_heads x query_len x key_len
-        query_key = torch.matmul(query, key.transpose(2, 3))
+        scores = torch.matmul(query, key.transpose(2, 3))
 
         if self.relative_positions_embeddings is not None:
             key_len = key.size(2)
@@ -310,11 +314,9 @@ class MultiHeadedAttention(nn.Module):
             relations_keys = self.relative_positions_embeddings(
                 relative_positions_matrix
             )
-            scores = query_key + relative_matmul(query, relations_keys, True)
-        elif self.max_relative_positions == -2:
-            scores = self.alibi(query_key)
-        else:
-            scores = query_key
+            scores.add_(relative_matmul(query, relations_keys, True))
+        elif self.max_relative_positions == -2:  # Alibi
+            scores = self.alibi(scores)
 
         scores = scores.float()
 
@@ -333,12 +335,10 @@ class MultiHeadedAttention(nn.Module):
         if self.relative_positions_embeddings is not None:
             # We use the same embeddings for key and value
             relations_values = relations_keys
-            context = unshape(
-                context_original + relative_matmul(drop_attn, relations_values, False)
-            )
-        else:
-            context = unshape(context_original)
+            context_original.add_(relative_matmul(drop_attn, relations_values, False))
 
-        output = self.final_linear(context)
+        context = unshape(context_original)
+
+        output = self.maybe_ckpt(self.final_linear, context)
 
         return output, attn

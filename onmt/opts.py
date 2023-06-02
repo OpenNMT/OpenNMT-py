@@ -966,6 +966,15 @@ def model_opts(parser):
         help="For FP16 training, the opt_level to use."
         "See https://nvidia.github.io/apex/amp.html#opt-levels.",
     )
+    group.add(
+        "--use_ckpting",
+        "-use_ckpting",
+        default=[],
+        nargs="+",
+        choices=["ffn", "mha", "lora"],
+        type=str,
+        help="use gradient checkpointing those modules",
+    )
 
 
 def _add_train_general_opts(parser):
@@ -1092,7 +1101,16 @@ def _add_train_general_opts(parser):
         default=[],
         nargs="+",
         type=str,
-        help="list of layers to be compressed in 8bit.",
+        help="list of layers to be compressed in 4/8bit.",
+    )
+
+    group.add(
+        "--quant_type",
+        "-quant_type",
+        default="bnb_8bit",
+        choices=["bnb_8bit", "bnb_FP4", "bnb_NF4"],
+        type=str,
+        help="Type of compression.",
     )
 
     _add_reproducibility_opts(parser)
@@ -1270,6 +1288,9 @@ def _add_train_general_opts(parser):
             "sparseadam",
             "adafactor",
             "fusedadam",
+            "adamw8bit",
+            "pagedadamw8bit",
+            "pagedadamw32bit",
         ],
         help="Optimization method.",
     )

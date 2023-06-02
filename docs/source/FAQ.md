@@ -701,11 +701,17 @@ Also you can read the blog post here: https://huggingface.co/blog/hf-bitsandbyte
 
 You need to add the following option:
 
-* `quant_layers: ['w_1', 'w_2']` 
+* `quant_layers: ['w_1', 'w_2', 'linear_values', 'linear_query']`
+* `quant_type: ['bnb_NF4']`
 
-These are the layers of the PositionWise Feed-Forward from the Encoder/Decoder.
+You can for instane quantize the layers of the PositionWise Feed-Forward from the Encoder/Decoder and the key/query/values/final from the Multi-head attention.
+Choices for quantization are ["bnb_8bit", "bnb_FP4", "bnb_NF4"]
 
-At the moment, for a given layer you cannot mix LoRa and 8bit compression. (TODO List)
+## How to use gradient checkpointing when dealing with a big model ?
+
+* `use_ckpting: ["ffn", "mha", "lora"]`
+
+Be carefull, the module that you use checkpointing needs to have gradients.
 
 
 ## Can I get word alignments while translating?

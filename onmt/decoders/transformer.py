@@ -5,7 +5,6 @@ subsequent transformer based architectures
 
 import torch
 import torch.nn as nn
-
 from onmt.decoders.decoder import DecoderBase
 from onmt.modules import MultiHeadedAttention, AverageAttention
 from onmt.modules.position_ffn import PositionwiseFeedForward
@@ -30,6 +29,7 @@ class TransformerDecoderLayerBase(nn.Module):
         pos_ffn_activation_fn=ActivationFunction.relu,
         add_qkvbias=False,
         layer_norm="standard",
+        use_ckpting=[],
     ):
         """
         Args:
@@ -71,6 +71,7 @@ class TransformerDecoderLayerBase(nn.Module):
                 max_relative_positions=max_relative_positions,
                 attn_type="self",
                 add_qkvbias=add_qkvbias,
+                use_ckpting=use_ckpting,
             )
         elif self_attn_type == "average":
             self.self_attn = AverageAttention(
@@ -78,7 +79,12 @@ class TransformerDecoderLayerBase(nn.Module):
             )
 
         self.feed_forward = PositionwiseFeedForward(
-            d_model, d_ff, dropout, pos_ffn_activation_fn, layer_norm
+            d_model,
+            d_ff,
+            dropout,
+            pos_ffn_activation_fn,
+            layer_norm,
+            use_ckpting=use_ckpting,
         )
         if layer_norm == "standard":
             self.layer_norm_1 = nn.LayerNorm(d_model, eps=1e-6)
@@ -187,6 +193,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
         pos_ffn_activation_fn=ActivationFunction.relu,
         add_qkvbias=False,
         layer_norm="standard",
+        use_ckpting=[],
     ):
         """
         Args:
@@ -206,6 +213,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
             pos_ffn_activation_fn=pos_ffn_activation_fn,
             add_qkvbias=add_qkvbias,
             layer_norm=layer_norm,
+            use_ckpting=use_ckpting,
         )
         self.context_attn = MultiHeadedAttention(
             heads,
@@ -213,6 +221,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
             dropout=attention_dropout,
             attn_type="context",
             add_qkvbias=add_qkvbias,
+            use_ckpting=use_ckpting,
         )
         if layer_norm == "standard":
             self.layer_norm_2 = nn.LayerNorm(d_model, eps=1e-6)
@@ -324,6 +333,7 @@ class TransformerDecoderBase(DecoderBase):
             pos_ffn_activation_fn=opt.pos_ffn_activation_fn,
             add_qkvbias=opt.add_qkvbias,
             layer_norm=opt.layer_norm,
+            use_ckpting=opt.use_ckpting,
         )
 
     def init_state(self, src, enc_out, enc_final_hs):
@@ -407,6 +417,7 @@ class TransformerDecoder(TransformerDecoderBase):
         pos_ffn_activation_fn=ActivationFunction.relu,
         add_qkvbias=False,
         layer_norm="standard",
+        use_ckpting=[],
     ):
         super(TransformerDecoder, self).__init__(
             d_model, copy_attn, embeddings, alignment_layer, layer_norm
@@ -428,6 +439,7 @@ class TransformerDecoder(TransformerDecoderBase):
                     pos_ffn_activation_fn=pos_ffn_activation_fn,
                     add_qkvbias=add_qkvbias,
                     layer_norm=layer_norm,
+                    use_ckpting=use_ckpting,
                 )
                 for i in range(num_layers)
             ]
@@ -461,8 +473,6 @@ class TransformerDecoder(TransformerDecoderBase):
                     {"keys": torch.tensor([]), "values": torch.tensor([])},
                 )
 
-        tgt_words = tgt[:, :, 0]
-
         emb = self.embeddings(tgt, step=step)
         dec_out = emb
         assert emb.dim() == 3  # len x batch x embedding_dim
@@ -472,7 +482,7 @@ class TransformerDecoder(TransformerDecoderBase):
         src_max_len = self.state["src"].shape[1]
         src_pad_mask = ~sequence_mask(src_lens, src_max_len)  # [B x slen]
         src_pad_mask = src_pad_mask.unsqueeze(1)  # [B x 1 x slen]
-        tgt_pad_mask = tgt_words.data.eq(pad_idx).unsqueeze(1)  # [B, 1, T_tgt]
+        tgt_pad_mask = tgt[:, :, 0].eq(pad_idx).unsqueeze(1)  # [B, 1, T_tgt]
 
         with_align = kwargs.pop("with_align", False)
         attn_aligns = []
@@ -615,6 +625,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
         pos_ffn_activation_fn=ActivationFunction.relu,
         add_qkvbias=False,
         layer_norm="standard",
+        use_ckpting=[],
     ):
         super(TransformerLMDecoder, self).__init__(
             d_model, copy_attn, embeddings, alignment_layer, layer_norm
@@ -635,6 +646,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
                     pos_ffn_activation_fn=pos_ffn_activation_fn,
                     add_qkvbias=add_qkvbias,
                     layer_norm=layer_norm,
+                    use_ckpting=use_ckpting,
                 )
                 for i in range(num_layers)
             ]
@@ -657,14 +669,12 @@ class TransformerLMDecoder(TransformerDecoderBase):
                     {"keys": torch.tensor([]), "values": torch.tensor([])},
                 )
 
-        tgt_words = tgt[:, :, 0]
-
         dec_out = self.embeddings(tgt, step=step)
 
         assert dec_out.dim() == 3  # batch x len x embedding_dim
 
         pad_idx = self.embeddings.word_padding_idx
-        tgt_pad_mask = tgt_words.data.eq(pad_idx).unsqueeze(1)  # [B, 1, T_tgt]
+        tgt_pad_mask = tgt[:, :, 0].eq(pad_idx).unsqueeze(1)  # [B, 1, T_tgt]
 
         with_align = kwargs.pop("with_align", False)
         assert not with_align, "TransformerLMDecoder does not support align"

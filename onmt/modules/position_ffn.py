@@ -3,6 +3,7 @@
 
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.utils.checkpoint import checkpoint
 from onmt.modules.rmsnorm import RMSNorm
 from torch.nn.utils import skip_init
 
@@ -40,6 +41,7 @@ class PositionwiseFeedForward(nn.Module):
         dropout=0.1,
         activation_fn=ActivationFunction.relu,
         layer_norm="standard",
+        use_ckpting=[],
     ):
         super(PositionwiseFeedForward, self).__init__()
         self.w_1 = skip_init(
@@ -63,6 +65,7 @@ class PositionwiseFeedForward(nn.Module):
             )
         else:
             self.w_3 = None
+        self.maybe_ckpt = checkpoint if "ffn" in use_ckpting else lambda f, x: f(x)
 
     def forward(self, x):
         """Layer definition.
@@ -73,15 +76,15 @@ class PositionwiseFeedForward(nn.Module):
         Returns:
             (FloatTensor): Output ``(batch_size, input_len, model_dim)``.
         """
-        if self.w_3 is None:
-            inter = self.dropout_1(self.activation(self.w_1(self.layer_norm(x))))
-        else:
-            inter = self.dropout_1(
-                self.activation(self.w_1(self.layer_norm(x)))
-                * self.w_3(self.layer_norm(x))
-            )
-        output = self.dropout_2(self.w_2(inter))
-        return output + x
+        norm_x = self.layer_norm(x)
+        inter = self.maybe_ckpt(self.w_1, norm_x)
+        inter = self.activation(inter)
+        if self.w_3 is not None:
+            inter.mul_(self.maybe_ckpt(self.w_3, norm_x))
+        inter = self.dropout_1(inter)
+        inter = self.maybe_ckpt(self.w_2, inter)
+        inter = self.dropout_2(inter)
+        return inter + x
 
     def update_dropout(self, dropout):
         self.dropout_1.p = dropout
