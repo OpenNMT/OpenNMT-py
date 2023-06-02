@@ -9,6 +9,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import math
 import importlib
+from torch.utils.checkpoint import checkpoint
 from typing import List, Dict
 import os
 
@@ -110,6 +111,7 @@ class Embedding(nn.Embedding, LoRALayer):
 class QLinear(type):
     def __call__(cls, *args, **kwargs):
         quant_type = kwargs.get("quant_type", None)
+        use_ckpting = kwargs.get("use_ckpting", [])
         r = kwargs.get("r", 0)
         lora_alpha = kwargs.get("lora_alpha", 1)
         lora_dropout = kwargs.get("lora_dropout", 0.0)
@@ -156,6 +158,9 @@ class QLinear(type):
                     # Freezing the pre-trained weight matrix
                     self.weight.requires_grad = False
                 self.reset_parameters()
+                self.maybe_ckpt = (
+                    checkpoint if "lora" in use_ckpting else lambda f, x: f(x)
+                )
 
             def reset_parameters(self):
                 super().reset_parameters()
@@ -185,17 +190,14 @@ class QLinear(type):
                         self.merged = True
 
             def forward(self, x: torch.Tensor):
-                result = super().forward(x)
+                result = self.maybe_ckpt(super().forward, x)
                 if self.r > 0 and not self.merged:
-                    if self.r > 0:
-                        result += (
-                            self.lora_dropout(x)
-                            @ self.lora_A.transpose(0, 1)
-                            @ self.lora_B.transpose(0, 1)
-                        ) * self.scaling
-                    return result
-                else:
-                    return result
+                    result += (
+                        self.lora_dropout(x)
+                        @ self.lora_A.transpose(0, 1)
+                        @ self.lora_B.transpose(0, 1)
+                    ) * self.scaling
+                return result
 
         instance = QLoraLinear_cls.__new__(
             QLoraLinear_cls
@@ -316,13 +318,11 @@ class QQLoraLinear(nn.Module, LoRALayer):
     def forward(self, x: torch.Tensor):
         result = self.linear(x)
         if self.r > 0 and not self.merged:
-            if self.r > 0:
-                result += (
-                    self.lora_dropout(x)
-                    @ self.lora_A.transpose(0, 1)
-                    @ self.lora_B.transpose(0, 1)
-                ) * self.scaling
-            return result
+            result += (
+                self.lora_dropout(x)
+                @ self.lora_A.transpose(0, 1)
+                @ self.lora_B.transpose(0, 1)
+            ) * self.scaling
         else:
             return result
 

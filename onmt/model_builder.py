@@ -71,6 +71,7 @@ def replace_lora_linear(
     lora_dropout=0,
     layer="",
     quant_type=None,
+    use_ckpting=[],
     threshold=6.0,
     compute_dtype=torch.float16,
 ):
@@ -88,13 +89,14 @@ def replace_lora_linear(
         if hasattr(module, "children") and len(list(module.children())) > 0:
             replace_lora_linear(
                 module,
-                r,
-                lora_alpha,
-                lora_dropout,
-                layer,
-                quant_type,
-                threshold=6.0,
-                compute_dtype=torch.float16,
+                r=r,
+                lora_alpha=lora_alpha,
+                lora_dropout=lora_dropout,
+                layer=layer,
+                quant_type=quant_type,
+                use_ckpting=use_ckpting,
+                threshold=threshold,
+                compute_dtype=compute_dtype,
             )
 
         if isinstance(module, nn.Linear) and name == layer:
@@ -106,8 +108,9 @@ def replace_lora_linear(
                 lora_dropout=lora_dropout,
                 bias=module.bias is not None,
                 quant_type=quant_type,
-                threshold=6.0,
-                compute_dtype=torch.float16,
+                use_ckpting=use_ckpting,
+                threshold=threshold,
+                compute_dtype=compute_dtype,
             )
     return model
 
@@ -353,13 +356,12 @@ def build_base_model(model_opt, vocabs):
 
     # Build Model
     model = build_task_specific_model(model_opt, vocabs)
-    nonlora_to_quant = []
-    if hasattr(model_opt, "lora_layers") and len(model_opt.lora_layers) > 0:
-        nonlora_to_quant = [
-            layer
-            for layer in model_opt.quant_layers
-            if layer not in model_opt.lora_layers
-        ]
+
+    nonlora_to_quant = [
+        layer
+        for layer in getattr(model_opt, "quant_layers", [])
+        if layer not in getattr(model_opt, "lora_layers", [])
+    ]
 
     if hasattr(model_opt, "quant_layers") and len(nonlora_to_quant) > 0:
         if model_opt.quant_type in ["bnb_8bit", "bnb_FP4", "bnb_NF4"]:
@@ -389,6 +391,7 @@ def build_base_model(model_opt, vocabs):
                 lora_dropout=model_opt.lora_dropout,
                 layer=layer,
                 quant_type=quant_type,
+                use_ckpting=model_opt.use_ckpting,
             )
         mark_lora = True
     if hasattr(model_opt, "lora_embedding") and model_opt.lora_embedding:
@@ -462,6 +465,7 @@ def build_model(model_opt, opt, vocabs, checkpoint):
         # => strict=False when loading state_dict
         strict = not model_opt.update_vocab
 
+        # ONLY for legacy fusedam with amp pytorch requires NOT to half the model
         if (
             model_opt.model_dtype == "fp16"
             and model_opt.apex_opt_level not in ["O0", "O1", "O2", "O3"]

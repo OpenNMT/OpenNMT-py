@@ -546,7 +546,6 @@ class Trainer(object):
                                 "value"
                             ]
                         batch_stats.computed_metrics = computed_metrics
-
                     if loss is not None:
                         loss /= normalization
                         self.optim.backward(loss)
@@ -581,6 +580,7 @@ class Trainer(object):
             onmt.utils.distributed.all_reduce_and_rescale_tensors(
                 grads, float(self.n_gpu)
             )
+
         self.optim.step()
 
     def _start_report_manager(self, start_time=None):

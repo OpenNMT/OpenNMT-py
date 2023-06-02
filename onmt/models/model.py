@@ -97,7 +97,6 @@ class BaseModel(nn.Module):
                         raise ValueError(
                             "Missing key in chekpoint: %s" % name + "." + param_name
                         )
-            # ONLY for legacy fusedam with amp pytorch requires NOT to half the model
             module.to(precision)
             module.to(device)
 

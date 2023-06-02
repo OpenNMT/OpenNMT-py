@@ -7,6 +7,7 @@ import functools
 from copy import copy
 from math import sqrt
 import types
+import os
 import importlib
 from onmt.utils.misc import fn_args
 
@@ -99,6 +100,57 @@ def build_torch_optimizer(model, opt):
                     static_loss_scale=static_loss_scale,
                     dynamic_loss_scale=dynamic_loss_scale,
                 )
+    elif opt.optim in ["adamw8bit", "pagedadamw8bit", "pagedadamw32bit"]:
+        try:
+            os.environ["BITSANDBYTES_NOWELCOME"] = "1"
+            import bitsandbytes as bnb
+        except ImportError:
+            raise ImportError("Install bitsandbytes to use bnb optimizers")
+        if opt.optim == "adamw8bit":
+            optimizer = bnb.optim.AdamW8bit(
+                params,
+                lr=opt.learning_rate,
+                betas=betas,
+                eps=1e-8,
+                weight_decay=1e-2,
+                amsgrad=False,
+                optim_bits=8,
+                args=None,
+                min_8bit_size=1024,
+                percentile_clipping=100,
+                block_wise=True,
+                is_paged=False,
+            )
+        elif opt.optim == "pagedadamw8bit":
+            optimizer = bnb.optim.PagedAdamW8bit(
+                params,
+                lr=opt.learning_rate,
+                betas=betas,
+                eps=1e-8,
+                weight_decay=1e-2,
+                amsgrad=False,
+                optim_bits=8,
+                args=None,
+                min_8bit_size=4096,
+                percentile_clipping=100,
+                block_wise=True,
+            )
+        elif opt.optim == "pagedadamw32bit":
+            optimizer = bnb.optim.PagedAdamW32bit(
+                params,
+                lr=opt.learning_rate,
+                betas=betas,
+                eps=1e-8,
+                weight_decay=1e-2,
+                amsgrad=False,
+                optim_bits=32,
+                args=None,
+                min_8bit_size=4096,
+                percentile_clipping=100,
+                block_wise=True,
+            )
+        else:
+            raise ValueError("Invalid optimizer type: " + opt.optim)
     else:
         raise ValueError("Invalid optimizer type: " + opt.optim)
 
