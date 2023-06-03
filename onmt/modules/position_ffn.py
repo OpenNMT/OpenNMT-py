@@ -40,15 +40,16 @@ class PositionwiseFeedForward(nn.Module):
         d_ff,
         dropout=0.1,
         activation_fn=ActivationFunction.relu,
+        add_ffnbias=True,
         layer_norm="standard",
         use_ckpting=[],
     ):
         super(PositionwiseFeedForward, self).__init__()
         self.w_1 = skip_init(
-            nn.Linear, in_features=d_model, out_features=d_ff, bias=True
+            nn.Linear, in_features=d_model, out_features=d_ff, bias=add_ffnbias
         )
         self.w_2 = skip_init(
-            nn.Linear, in_features=d_ff, out_features=d_model, bias=True
+            nn.Linear, in_features=d_ff, out_features=d_model, bias=add_ffnbias
         )
         if layer_norm == "standard":
             self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
@@ -61,7 +62,7 @@ class PositionwiseFeedForward(nn.Module):
         self.dropout_2 = nn.Dropout(dropout)
         if activation_fn == "silu":
             self.w_3 = skip_init(
-                nn.Linear, in_features=d_model, out_features=d_ff, bias=True
+                nn.Linear, in_features=d_model, out_features=d_ff, bias=add_ffnbias
             )
         else:
             self.w_3 = None

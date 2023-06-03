@@ -28,6 +28,8 @@ class TransformerDecoderLayerBase(nn.Module):
         alignment_heads=0,
         pos_ffn_activation_fn=ActivationFunction.relu,
         add_qkvbias=False,
+        add_ffnbias=True,
+        parallel_residual=False,
         layer_norm="standard",
         use_ckpting=[],
     ):
@@ -83,9 +85,11 @@ class TransformerDecoderLayerBase(nn.Module):
             d_ff,
             dropout,
             pos_ffn_activation_fn,
+            add_ffnbias,
             layer_norm,
             use_ckpting=use_ckpting,
         )
+        self.parallel_residual = parallel_residual
         if layer_norm == "standard":
             self.layer_norm_1 = nn.LayerNorm(d_model, eps=1e-6)
         elif layer_norm == "rms":
@@ -192,6 +196,8 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
         alignment_heads=0,
         pos_ffn_activation_fn=ActivationFunction.relu,
         add_qkvbias=False,
+        add_ffnbias=True,
+        parallel_residual=False,
         layer_norm="standard",
         use_ckpting=[],
     ):
@@ -212,6 +218,8 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
             alignment_heads,
             pos_ffn_activation_fn=pos_ffn_activation_fn,
             add_qkvbias=add_qkvbias,
+            add_ffnbias=add_ffnbias,
+            parallel_residual=parallel_residual,
             layer_norm=layer_norm,
             use_ckpting=use_ckpting,
         )
@@ -332,6 +340,8 @@ class TransformerDecoderBase(DecoderBase):
             alignment_heads=opt.alignment_heads,
             pos_ffn_activation_fn=opt.pos_ffn_activation_fn,
             add_qkvbias=opt.add_qkvbias,
+            add_ffnbias=opt.add_ffnbias,
+            parallel_residual=opt.parallel_residual,
             layer_norm=opt.layer_norm,
             use_ckpting=opt.use_ckpting,
         )
@@ -416,6 +426,8 @@ class TransformerDecoder(TransformerDecoderBase):
         alignment_heads,
         pos_ffn_activation_fn=ActivationFunction.relu,
         add_qkvbias=False,
+        add_ffnbias=True,
+        parallel_residual=False,
         layer_norm="standard",
         use_ckpting=[],
     ):
@@ -438,6 +450,8 @@ class TransformerDecoder(TransformerDecoderBase):
                     alignment_heads=alignment_heads,
                     pos_ffn_activation_fn=pos_ffn_activation_fn,
                     add_qkvbias=add_qkvbias,
+                    add_ffnbias=add_ffnbias,
+                    parallel_residual=parallel_residual,
                     layer_norm=layer_norm,
                     use_ckpting=use_ckpting,
                 )
@@ -580,9 +594,11 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
 
         query, attns = self._forward_self_attn(layer_in_norm, dec_mask, step)
 
-        layer_out = self.drop(query) + layer_in
-
-        layer_out = self.feed_forward(layer_out)
+        if self.parallel_residual:
+            layer_out = self.feed_forward(layer_in) + self.drop(query)
+        else:
+            layer_out = self.drop(query) + layer_in
+            layer_out = self.feed_forward(layer_out)
 
         return layer_out, attns
 
@@ -624,6 +640,8 @@ class TransformerLMDecoder(TransformerDecoderBase):
         alignment_heads=None,
         pos_ffn_activation_fn=ActivationFunction.relu,
         add_qkvbias=False,
+        add_ffnbias=True,
+        parallel_residual=False,
         layer_norm="standard",
         use_ckpting=[],
     ):
@@ -645,6 +663,8 @@ class TransformerLMDecoder(TransformerDecoderBase):
                     alignment_heads=None,
                     pos_ffn_activation_fn=pos_ffn_activation_fn,
                     add_qkvbias=add_qkvbias,
+                    add_ffnbias=add_ffnbias,
+                    parallel_residual=parallel_residual,
                     layer_norm=layer_norm,
                     use_ckpting=use_ckpting,
                 )

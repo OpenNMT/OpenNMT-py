@@ -123,7 +123,7 @@ def _get_model_opts(opt, checkpoint=None):
             for arg in args:
                 if arg in model_args and getattr(opt, arg) != getattr(model_opt, arg):
                     logger.info(
-                        "Option: %s , value: %s overiding model: %s"
+                        "Option: %s , value: %s overriding model: %s"
                         % (arg, getattr(opt, arg), getattr(model_opt, arg))
                     )
             model_opt = opt
@@ -178,7 +178,6 @@ def main(opt, device_id):
 
     configure_process(opt, device_id)
     init_logger(opt.log_file)
-
     checkpoint, vocabs, transforms_cls = _init_train(opt)
     model_opt = _get_model_opts(opt, checkpoint=checkpoint)
 

@@ -85,38 +85,14 @@ if __name__ == "__main__":
         onmt_cp["model"][
             "decoder.transformer_layers." + str(i) + ".feed_forward.w_1.weight"
         ] = checkpoint["layers." + str(i) + ".feed_forward.w1.weight"]
-        onmt_cp["model"][
-            "decoder.transformer_layers." + str(i) + ".feed_forward.w_1.bias"
-        ] = torch.zeros(
-            onmt_cp["model"][
-                "decoder.transformer_layers." + str(i) + ".feed_forward.w_1.weight"
-            ].size(0),
-            dtype=torch.float16,
-        )
 
         onmt_cp["model"][
             "decoder.transformer_layers." + str(i) + ".feed_forward.w_2.weight"
         ] = checkpoint["layers." + str(i) + ".feed_forward.w2.weight"]
-        onmt_cp["model"][
-            "decoder.transformer_layers." + str(i) + ".feed_forward.w_2.bias"
-        ] = torch.zeros(
-            onmt_cp["model"][
-                "decoder.transformer_layers." + str(i) + ".feed_forward.w_2.weight"
-            ].size(0),
-            dtype=torch.float16,
-        )
 
         onmt_cp["model"][
             "decoder.transformer_layers." + str(i) + ".feed_forward.w_3.weight"
         ] = checkpoint["layers." + str(i) + ".feed_forward.w3.weight"]
-        onmt_cp["model"][
-            "decoder.transformer_layers." + str(i) + ".feed_forward.w_3.bias"
-        ] = torch.zeros(
-            onmt_cp["model"][
-                "decoder.transformer_layers." + str(i) + ".feed_forward.w_3.weight"
-            ].size(0),
-            dtype=torch.float16,
-        )
 
         onmt_cp["model"][
             "decoder.transformer_layers." + str(i) + ".feed_forward.layer_norm.weight"
@@ -243,14 +219,6 @@ if __name__ == "__main__":
                 ),
                 dim=0,
             )
-            onmt_cp["model"][
-                "decoder.transformer_layers." + str(i) + ".feed_forward.w_1.bias"
-            ] = torch.zeros(
-                onmt_cp["model"][
-                    "decoder.transformer_layers." + str(i) + ".feed_forward.w_1.weight"
-                ].size(0),
-                dtype=torch.float16,
-            )
 
             onmt_cp["model"][
                 "decoder.transformer_layers." + str(i) + ".feed_forward.w_2.weight"
@@ -265,14 +233,6 @@ if __name__ == "__main__":
                 ),
                 dim=1,
             )
-            onmt_cp["model"][
-                "decoder.transformer_layers." + str(i) + ".feed_forward.w_2.bias"
-            ] = torch.zeros(
-                onmt_cp["model"][
-                    "decoder.transformer_layers." + str(i) + ".feed_forward.w_2.weight"
-                ].size(0),
-                dtype=torch.float16,
-            )
 
             onmt_cp["model"][
                 "decoder.transformer_layers." + str(i) + ".feed_forward.w_3.weight"
@@ -286,14 +246,6 @@ if __name__ == "__main__":
                     checkpoint["layers." + str(i) + ".feed_forward.w3.weight"],
                 ),
                 dim=0,
-            )
-            onmt_cp["model"][
-                "decoder.transformer_layers." + str(i) + ".feed_forward.w_3.bias"
-            ] = torch.zeros(
-                onmt_cp["model"][
-                    "decoder.transformer_layers." + str(i) + ".feed_forward.w_3.weight"
-                ].size(0),
-                dtype=torch.float16,
             )
 
         onmt_cp["generator"]["weight"] = torch.cat(
@@ -408,6 +360,8 @@ if __name__ == "__main__":
         transformer_ff=transformer_ff,
         aan_useffn=False,
         add_qkvbias=False,
+        add_ffnbias=False,
+        parallel_residual=False,
         lambda_align=0.0,
         alignment_layer=-3,
         alignment_heads=0,

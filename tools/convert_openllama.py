@@ -117,31 +117,6 @@ if __name__ == "__main__":
             else:
                 onmt_cp["model"][new_k] = v
 
-    for i in range(decoder_layers):
-        onmt_cp["model"][
-            "decoder.transformer_layers." + str(i) + ".feed_forward.w_1.bias"
-        ] = torch.zeros(
-            onmt_cp["model"][
-                "decoder.transformer_layers." + str(i) + ".feed_forward.w_1.weight"
-            ].size(0),
-            dtype=torch.float16,
-        )
-        onmt_cp["model"][
-            "decoder.transformer_layers." + str(i) + ".feed_forward.w_2.bias"
-        ] = torch.zeros(
-            onmt_cp["model"][
-                "decoder.transformer_layers." + str(i) + ".feed_forward.w_2.weight"
-            ].size(0),
-            dtype=torch.float16,
-        )
-        onmt_cp["model"][
-            "decoder.transformer_layers." + str(i) + ".feed_forward.w_3.bias"
-        ] = torch.zeros(
-            onmt_cp["model"][
-                "decoder.transformer_layers." + str(i) + ".feed_forward.w_3.weight"
-            ].size(0),
-            dtype=torch.float16,
-        )
     onmt_cp["generator"]["bias"] = torch.zeros(
         onmt_cp["generator"]["weight"].size(0), dtype=torch.float16
     )
@@ -267,6 +242,8 @@ if __name__ == "__main__":
         transformer_ff=transformer_ff,
         aan_useffn=False,
         add_qkvbias=False,
+        add_ffnbias=False,
+        parallel_residual=False,
         lambda_align=0.0,
         alignment_layer=-3,
         alignment_heads=0,

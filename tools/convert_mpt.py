@@ -90,26 +90,10 @@ if __name__ == "__main__":
         onmt_cp["model"][
             "decoder.transformer_layers." + str(i) + ".feed_forward.w_1.weight"
         ] = checkpoint["transformer.blocks." + str(i) + ".ffn.up_proj.weight"]
-        onmt_cp["model"][
-            "decoder.transformer_layers." + str(i) + ".feed_forward.w_1.bias"
-        ] = torch.zeros(
-            onmt_cp["model"][
-                "decoder.transformer_layers." + str(i) + ".feed_forward.w_1.weight"
-            ].size(0),
-            dtype=torch.float16,
-        )
 
         onmt_cp["model"][
             "decoder.transformer_layers." + str(i) + ".feed_forward.w_2.weight"
         ] = checkpoint["transformer.blocks." + str(i) + ".ffn.down_proj.weight"]
-        onmt_cp["model"][
-            "decoder.transformer_layers." + str(i) + ".feed_forward.w_2.bias"
-        ] = torch.zeros(
-            onmt_cp["model"][
-                "decoder.transformer_layers." + str(i) + ".feed_forward.w_2.weight"
-            ].size(0),
-            dtype=torch.float16,
-        )
 
         onmt_cp["model"][
             "decoder.transformer_layers." + str(i) + ".feed_forward.layer_norm.weight"
@@ -250,6 +234,8 @@ if __name__ == "__main__":
         transformer_ff=transformer_ff,
         aan_useffn=False,
         add_qkvbias=False,
+        add_ffnbias=False,
+        parallel_residual=False,
         lambda_align=0.0,
         alignment_layer=-3,
         alignment_heads=0,
