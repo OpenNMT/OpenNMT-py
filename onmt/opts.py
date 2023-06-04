@@ -839,6 +839,12 @@ def model_opts(parser):
         "Note: this will add bias to output proj layer too",
     )
     group.add(
+        "--multiquery",
+        "-multiquery",
+        action="store_true",
+        help="Use MultiQUery attention" "Note: https://arxiv.org/pdf/1911.02150.pdf",
+    )
+    group.add(
         "--add_ffnbias",
         "-add_ffnbias",
         action="store_true",
