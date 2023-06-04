@@ -41,14 +41,12 @@ class InlineTagger(object):
         self.automaton = self._create_automaton()
 
     def _create_internal_dictionary(self, tags_dictionary_path):
-        logger.debug('Creating tag dictionary for tagging transform...')
         dictionary = list()
         with open(tags_dictionary_path, mode='r', encoding='utf-8') as file:
             pairs = file.readlines()
             for pair in pairs:
                 src_term, tgt_term = map(str, pair.split('\t'))
                 dictionary.append((src_term.strip(), tgt_term.strip()))
-        logger.debug(f'Created tag dictionary with {len(dictionary)} entries.')
         return dictionary
 
     def _create_automaton(self):
@@ -200,9 +198,11 @@ class InlineTagger(object):
                 is_match = True
         if is_match:
             if augmented_part is not None:
-                src_with_tags.append(source_only[src_offset:] +
-                                     self.src_delimiter +
-                                     augmented_part)
+                src_with_tags.append(
+                    source_only[src_offset:]
+                    + self.src_delimiter
+                    + augmented_part
+                )
             else:
                 src_with_tags.append(source_only[src_offset:])
 
@@ -257,9 +257,6 @@ class InlineTagsTransform(Transform):
         self.tags_corpus_ratio = self.opts.tags_corpus_ratio
         self.max_tags = self.opts.max_tags
         self.src_delimiter = self.opts.src_delimiter
-        # self.paired_stag = self.opts.paired_stag,
-        # self.paired_etag = self.opts.paired_etag,
-        # self.isolated_tag = self.opts.isolated_tag,
 
     @classmethod
     def get_specials(cls, opts):
@@ -305,26 +302,24 @@ class InlineTagsTransform(Transform):
                                    self.opts.isolated_tag,
                                    self.src_delimiter,
                                    self.tags_corpus_ratio)
-        
+
     def batch_apply(self, batch, is_train=False, stats=None, **kwargs):
         bucket_size = len(batch)
-        logger.info(f'Starting inlinetags transform with '
-                    f'{bucket_size} examples')
         examples_with_tags = 0
 
         for (ex, _, _) in batch:
             augmented_example, is_match = self.apply(ex, is_train,
                                                      stats, **kwargs)
-            if is_match and (examples_with_tags <
-                             bucket_size * self.tags_corpus_ratio):
+            if is_match and (examples_with_tags
+                             < bucket_size * self.tags_corpus_ratio):
                 examples_with_tags += 1
                 ex['src'] = augmented_example['src']
                 ex['tgt'] = augmented_example['tgt']
-        logger.info(f'Added tags to {examples_with_tags} examples')
+        logger.debug(f'Added tags to {examples_with_tags}/{bucket_size} examples')
         return batch
 
-    def apply(self, example, is_train=False, stats=None, **kwargs) -> \
-            tuple[dict, bool]:
+    def apply(self, example, is_train=False, stats=None, **kwargs) \
+            -> tuple[dict, bool]:
         """Add tags (placeholders) to source and target segments."""
 
         src_tgt_pair, is_match = self.tagger._tagged_src_tgt(
@@ -334,4 +329,3 @@ class InlineTagsTransform(Transform):
         example['tgt'] = src_tgt_pair[1]
 
         return example, is_match
-
