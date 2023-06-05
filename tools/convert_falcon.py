@@ -56,7 +56,7 @@ if __name__ == "__main__":
         # redpajama stores QKV in one single tensor but it is not simply piled up Q+K+V
         # it is heads interleaved to we need to slice first
         # also it uses the HF rotary so we need to permute Q and K interleave
-        
+
         qkv_W = (
             checkpoint[
                 "transformer.h." + str(i) + ".self_attention.query_key_value.weight"
