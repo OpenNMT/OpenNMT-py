@@ -604,7 +604,12 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
         query, attns = self._forward_self_attn(layer_in_norm, dec_mask, step)
 
         if self.parallel_residual:
-            layer_out = self.feed_forward(layer_in) + self.drop(query)
+            layer_out = (
+                self.feed_forward(layer_in_norm)
+                - layer_in_norm
+                + layer_in
+                + self.drop(query)
+            )
         else:
             layer_out = self.drop(query) + layer_in
             layer_out = self.feed_forward(layer_out)
