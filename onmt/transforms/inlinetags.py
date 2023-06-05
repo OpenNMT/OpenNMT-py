@@ -64,7 +64,7 @@ class InlineTagger(object):
         automaton.make_automaton()
         return automaton
 
-    def _tagged_src_tgt(self, src_example, tgt_example) -> tuple[tuple, bool]:
+    def _tagged_src_tgt(self, src_example, tgt_example) -> tuple:
         """Uses the dictionary to find exact source matches with corresponding
         target matches and adds both paired tags and standalone tags."""
 
@@ -353,7 +353,7 @@ class InlineTagsTransform(Transform):
         logger.debug(f"Added tags to {examples_with_tags}/{bucket_size} examples")
         return batch
 
-    def apply(self, example, is_train=False, stats=None, **kwargs) -> tuple[dict, bool]:
+    def apply(self, example, is_train=False, stats=None, **kwargs) -> tuple:
         """Add tags (placeholders) to source and target segments."""
 
         src_tgt_pair, is_match = self.tagger._tagged_src_tgt(
