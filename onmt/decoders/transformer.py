@@ -99,7 +99,7 @@ class TransformerDecoderLayerBase(nn.Module):
             self.layer_norm_1 = RMSNorm(d_model, eps=1e-6)
         else:
             raise ValueError(f"{layer_norm} layer norm type is not supported")
-        self.drop = nn.Dropout(dropout)
+        self.dropout = nn.Dropout(dropout)
         self.full_context_alignment = full_context_alignment
         self.alignment_heads = alignment_heads
 
@@ -141,7 +141,7 @@ class TransformerDecoderLayerBase(nn.Module):
     def update_dropout(self, dropout, attention_dropout):
         self.self_attn.update_dropout(attention_dropout)
         self.feed_forward.update_dropout(dropout)
-        self.drop.p = dropout
+        self.dropout.p = dropout
 
     def _forward(self, *args, **kwargs):
         raise NotImplementedError
@@ -165,13 +165,13 @@ class TransformerDecoderLayerBase(nn.Module):
             dec_mask = tgt_pad_mask
         return dec_mask
 
-    def _forward_self_attn(self, layer_in_norm, dec_mask, step):
+    def _forward_self_attn(self, norm_layer_in, dec_mask, step):
         if self.self_attn_type == "scaled-dot":
             return self.self_attn(
-                layer_in_norm, layer_in_norm, layer_in_norm, mask=dec_mask, step=step
+                norm_layer_in, norm_layer_in, norm_layer_in, mask=dec_mask, step=step
             )
         elif self.self_attn_type == "average":
-            return self.self_attn(layer_in_norm, mask=dec_mask, step=step)
+            return self.self_attn(norm_layer_in, mask=dec_mask, step=step)
         else:
             raise ValueError(f"self attention {type(self.self_attn)} not supported")
 
@@ -288,16 +288,29 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
             # mask now are (batch x 1 x tlen x s or t len)
             # 1 = heads to be expanded in MHA
 
-        layer_in_norm = self.layer_norm_1(layer_in)
+        norm_layer_in = self.layer_norm_1(layer_in)
 
-        query, _ = self._forward_self_attn(layer_in_norm, dec_mask, step)
+        self_attn, _ = self._forward_self_attn(norm_layer_in, dec_mask, step)
 
-        query = self.drop(query) + layer_in
-
-        query_norm = self.layer_norm_2(query)
-
-        mid, attns = self.context_attn(enc_out, enc_out, query_norm, mask=src_pad_mask)
-        layer_out = self.feed_forward(self.drop(mid) + query)
+        if self.parallel_residual:
+            ctx_attn, attns = self.context_attn(
+                enc_out, enc_out, norm_layer_in, mask=src_pad_mask
+            )
+            # feed_forward applies residual, so we remove and apply residual with un-normed
+            layer_out = (
+                self.feed_forward(norm_layer_in)
+                - norm_layer_in
+                + layer_in
+                + self.dropout(self_attn)
+                + ctx_attn
+            )
+        else:
+            query = self.dropout(self_attn) + layer_in
+            norm_query = self.layer_norm_2(query)
+            ctx_attn, attns = self.context_attn(
+                enc_out, enc_out, norm_query, mask=src_pad_mask
+            )
+            layer_out = self.feed_forward(self.dropout(ctx_attn) + query)
 
         return layer_out, attns
 
@@ -599,20 +612,20 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
             # mask now are (batch x 1 x tlen x tlen)
             # 1 = heads to be expanded in MHA
 
-        layer_in_norm = self.layer_norm_1(layer_in)
+        norm_layer_in = self.layer_norm_1(layer_in)
 
-        attn_output, attns = self._forward_self_attn(layer_in_norm, dec_mask, step)
+        attn_output, attns = self._forward_self_attn(norm_layer_in, dec_mask, step)
 
         if self.parallel_residual:
             # feed_forward applies residual, so we remove and apply residual with un-normed
             layer_out = (
-                self.feed_forward(layer_in_norm)
-                - layer_in_norm
+                self.feed_forward(norm_layer_in)
+                - norm_layer_in
                 + layer_in
-                + self.drop(attn_output)
+                + self.dropout(attn_output)
             )
         else:
-            layer_out = self.drop(attn_output) + layer_in
+            layer_out = self.dropout(attn_output) + layer_in
             layer_out = self.feed_forward(layer_out)
 
         return layer_out, attns
