@@ -56,23 +56,50 @@ if __name__ == "__main__":
         # redpajama stores QKV in one single tensor but it is not simply piled up Q+K+V
         # it is heads interleaved to we need to slice first
         # also it uses the HF rotary so we need to permute Q and K interleave
+        """
+        qkv_W = checkpoint[
+            "transformer.h." + str(i) + ".self_attention.query_key_value.weight"
+        ].view(heads + 2, hidden_size // heads, hidden_size).to(torch.float16)
 
+        onmt_cp["model"][
+            "decoder.transformer_layers." + str(i) + ".self_attn.linear_query.weight"
+        ] = qkv_W[:-2, :].view(heads, hidden_size // heads // 2, 2, hidden_size).transpose(1, 2).reshape(hidden_size, hidden_size)
+
+        onmt_cp["model"][
+            "decoder.transformer_layers." + str(i) + ".self_attn.linear_keys.weight"
+        ] = qkv_W[[-2], :].view(1, hidden_size // heads // 2, 2, hidden_size).transpose(1, 2).reshape(hidden_size // heads, hidden_size)
+
+        onmt_cp["model"][
+            "decoder.transformer_layers." + str(i) + ".self_attn.linear_values.weight"
+        ] = qkv_W[[-1], :].reshape(hidden_size // heads, hidden_size)
+        """
         qkv_W = checkpoint[
             "transformer.h." + str(i) + ".self_attention.query_key_value.weight"
         ].to(torch.float16)
 
         onmt_cp["model"][
             "decoder.transformer_layers." + str(i) + ".self_attn.linear_query.weight"
-        ] = qkv_W[:hidden_size, :]
+        ] = (
+            qkv_W[:hidden_size, :]
+            .view(heads, hidden_size // heads // 2, 2, hidden_size)
+            .transpose(1, 2)
+            .reshape(hidden_size, hidden_size)
+        )
 
         onmt_cp["model"][
             "decoder.transformer_layers." + str(i) + ".self_attn.linear_keys.weight"
-        ] = qkv_W[hidden_size : (hidden_size + (hidden_size // heads)), :]
+        ] = (
+            qkv_W[hidden_size : hidden_size + (hidden_size // heads), :]
+            .view(1, hidden_size // heads // 2, 2, hidden_size)
+            .transpose(1, 2)
+            .reshape(hidden_size // heads, hidden_size)
+        )
 
         onmt_cp["model"][
             "decoder.transformer_layers." + str(i) + ".self_attn.linear_values.weight"
-        ] = qkv_W[(hidden_size + (hidden_size // heads)) :, :]
-
+        ] = qkv_W[hidden_size + (hidden_size // heads) :, :].reshape(
+            hidden_size // heads, hidden_size
+        )
         onmt_cp["model"][
             "decoder.transformer_layers." + str(i) + ".self_attn.final_linear.weight"
         ] = checkpoint["transformer.h." + str(i) + ".self_attention.dense.weight"].to(
