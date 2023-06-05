@@ -5,6 +5,7 @@ from .transform import Transform
 import random
 import ahocorasick
 import string
+from typing import Tuple
 
 
 class InlineTagger(object):
@@ -47,14 +48,12 @@ class InlineTagger(object):
         self.automaton = self._create_automaton()
 
     def _create_internal_dictionary(self, tags_dictionary_path):
-        logger.debug("Creating tag dictionary for tagging transform...")
         dictionary = list()
         with open(tags_dictionary_path, mode="r", encoding="utf-8") as file:
             pairs = file.readlines()
             for pair in pairs:
                 src_term, tgt_term = map(str, pair.split("\t"))
                 dictionary.append((src_term.strip(), tgt_term.strip()))
-        logger.debug(f"Created tag dictionary with {len(dictionary)} entries.")
         return dictionary
 
     def _create_automaton(self):
@@ -65,7 +64,7 @@ class InlineTagger(object):
         automaton.make_automaton()
         return automaton
 
-    def _tagged_src_tgt(self, src_example, tgt_example):
+    def _tagged_src_tgt(self, src_example, tgt_example) -> tuple:
         """Uses the dictionary to find exact source matches with corresponding
         target matches and adds both paired tags and standalone tags."""
 
@@ -179,7 +178,7 @@ class InlineTagger(object):
                     f"{self.paired_stag_prefix}{paired_tag_start_num}"
                     f"{self.paired_stag_suffix}∥{tgt_term}∥"
                     f"{self.paired_etag_prefix}{paired_tag_start_num}"
-                    f"{self.paired_etag_suffix}"
+                    f"{self.paired_etag_suffix}∥"
                 )
 
                 # Make a weighted choice between paired tags or single tags.
@@ -215,9 +214,9 @@ class InlineTagger(object):
             return (
                 "".join(src_with_tags).replace("∥", " ").split(),
                 "".join(tgt_with_tags).replace("∥", " ").split(),
-            )
+            ), is_match
         else:
-            return (src_example.split(), tgt_example.split())
+            return (src_example.split(), tgt_example.split()), is_match
 
 
 @register_transform(name="inlinetags")
@@ -289,9 +288,6 @@ class InlineTagsTransform(Transform):
         self.tags_corpus_ratio = self.opts.tags_corpus_ratio
         self.max_tags = self.opts.max_tags
         self.src_delimiter = self.opts.src_delimiter
-        self.paired_stag = (self.opts.paired_stag,)
-        self.paired_etag = (self.opts.paired_etag,)
-        self.isolated_tag = (self.opts.isolated_tag,)
 
     @classmethod
     def get_specials(cls, opts):
@@ -337,23 +333,33 @@ class InlineTagsTransform(Transform):
         self.tagger = InlineTagger(
             self.tags_dictionary_path,
             self.max_tags,
-            self.paired_stag,
-            self.paired_etag,
-            self.isolated_tag,
+            self.opts.paired_stag,
+            self.opts.paired_etag,
+            self.opts.isolated_tag,
             self.src_delimiter,
             self.tags_corpus_ratio,
         )
 
-    def apply(self, example, is_train=False, stats=None, **kwargs):
+    def batch_apply(self, batch, is_train=False, stats=None, **kwargs):
+        bucket_size = len(batch)
+        examples_with_tags = 0
+
+        for (ex, _, _) in batch:
+            augmented_example, is_match = self.apply(ex, is_train, stats, **kwargs)
+            if is_match and (examples_with_tags < bucket_size * self.tags_corpus_ratio):
+                examples_with_tags += 1
+                ex["src"] = augmented_example["src"]
+                ex["tgt"] = augmented_example["tgt"]
+        logger.debug(f"Added tags to {examples_with_tags}/{bucket_size} examples")
+        return batch
+
+    def apply(self, example, is_train=False, stats=None, **kwargs) -> tuple:
         """Add tags (placeholders) to source and target segments."""
 
-        if random.random() > self.tags_corpus_ratio:
-            return example
-
-        src_tgt_pair = self.tagger._tagged_src_tgt(
+        src_tgt_pair, is_match = self.tagger._tagged_src_tgt(
             " ".join(example["src"]), " ".join(example["tgt"])
         )
         example["src"] = src_tgt_pair[0]
         example["tgt"] = src_tgt_pair[1]
 
-        return example
+        return example, is_match
