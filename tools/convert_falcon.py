@@ -53,7 +53,7 @@ if __name__ == "__main__":
     ] = checkpoint["transformer.word_embeddings.weight"].to(torch.float16)
 
     for i in range(decoder_layers):
-        # redpajama stores QKV in one single tensor but it is not simply piled up Q+K+V
+        # Falcon stores QKV in one single tensor but it is not simply piled up Q+K+V
         # it is heads interleaved to we need to slice first
         # also it uses the HF rotary so we need to permute Q and K interleave
 
@@ -69,7 +69,7 @@ if __name__ == "__main__":
             "decoder.transformer_layers." + str(i) + ".self_attn.linear_query.weight"
         ] = (
             qkv_W[:-2, :]
-            .view(heads, hidden_size // heads // 2, 2, hidden_size)
+            .view(heads, 2, hidden_size // heads // 2, hidden_size)
             .transpose(1, 2)
             .reshape(hidden_size, hidden_size)
         )
@@ -78,7 +78,7 @@ if __name__ == "__main__":
             "decoder.transformer_layers." + str(i) + ".self_attn.linear_keys.weight"
         ] = (
             qkv_W[[-2], :]
-            .view(1, hidden_size // heads // 2, 2, hidden_size)
+            .view(1, 2, hidden_size // heads // 2, hidden_size)
             .transpose(1, 2)
             .reshape(hidden_size // heads, hidden_size)
         )
@@ -124,7 +124,9 @@ if __name__ == "__main__":
     ].to(torch.float16)
 
     onmt_cp["generator"] = {}
-    onmt_cp["generator"]["weight"] = checkpoint["transformer.word_embeddings.weight"]
+    onmt_cp["generator"]["weight"] = checkpoint[
+        "transformer.word_embeddings.weight"
+    ].to(torch.float16)
     onmt_cp["generator"]["bias"] = torch.zeros(
         onmt_cp["generator"]["weight"].size(0), dtype=torch.float16
     )
