@@ -360,6 +360,6 @@ class MultiHeadedAttention(nn.Module):
 
         context = unshape(context_original)
 
-        output = self.maybe_ckpt(self.final_linear, context)
+        attn_output = self.maybe_ckpt(self.final_linear, context)
 
-        return output, attn
+        return attn_output, attn

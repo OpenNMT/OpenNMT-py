@@ -601,17 +601,18 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
 
         layer_in_norm = self.layer_norm_1(layer_in)
 
-        query, attns = self._forward_self_attn(layer_in_norm, dec_mask, step)
+        attn_output, attns = self._forward_self_attn(layer_in_norm, dec_mask, step)
 
         if self.parallel_residual:
+            # feed_forward applies residual, so we remove and apply residual with un-normed
             layer_out = (
                 self.feed_forward(layer_in_norm)
                 - layer_in_norm
                 + layer_in
-                + self.drop(query)
+                + self.drop(attn_output)
             )
         else:
-            layer_out = self.drop(query) + layer_in
+            layer_out = self.drop(attn_output) + layer_in
             layer_out = self.feed_forward(layer_out)
 
         return layer_out, attns
