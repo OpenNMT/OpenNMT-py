@@ -64,9 +64,7 @@ class InlineTagger(object):
         automaton.make_automaton()
         return automaton
 
-    def _tagged_src_tgt(
-        self, src_example, tgt_example
-    ) -> tuple[tuple[list[str], list[str]], bool]:
+    def _tagged_src_tgt(self, src_example, tgt_example) -> tuple[tuple, bool]:
         """Uses the dictionary to find exact source matches with corresponding
         target matches and adds both paired tags and standalone tags."""
 
