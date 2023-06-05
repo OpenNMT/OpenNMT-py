@@ -1,8 +1,21 @@
 
 **Notes on versioning**
 
-
 ## [Unreleased]
+## [3.2.0](https://github.com/OpenNMT/OpenNMT-py/tree/3.2.0) (2023-06-XX)
+* Skip init during model build (way faster building)
+* Enable quantization of LoRA layers
+* Enable 4bit quantization from bitsandbytes (NF4 / FP4)
+* Enable "some" bnb.optim Optimizers for benchmarking purpose
+* Refactor model state_dict loading to enable pseudo lazy loading with move on GPU as it loads
+* Enable Gradient checkpointing for FFN, MHA, LoRA modules
+* Make FFN bias optional (same as QKV): llama, mpt, redpajama, openllama converters changed accordingly.
+  Convertv2_v3 set add_qkvbias=True, add_ffnbias=True.
+  load_checkpoint: if w1_bias detected in checkpoint then add_ffnbias=True
+* Add Multi Qury attention
+* Add Parallel Residual attention
+* Add Falcon 7B converter
+
 ## [3.1.3](https://github.com/OpenNMT/OpenNMT-py/tree/3.1.3) (2023-05-24)
 * Step-by-step Tuto for Vicuna replication thanks Lina
 * MosaicML MPT7B converter and support (Alibi embeddings)

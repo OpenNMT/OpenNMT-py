@@ -272,6 +272,8 @@ if __name__ == "__main__":
         transformer_ff=transformer_ff,
         aan_useffn=False,
         add_qkvbias=True,
+        add_ffnbias=True,
+        parallel_residual=False,
         lambda_align=0.0,
         alignment_layer=-3,
         alignment_heads=0,

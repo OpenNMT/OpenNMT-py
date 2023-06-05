@@ -838,6 +838,25 @@ def model_opts(parser):
         help="Add bias to nn.linear of Query/Key/Value in MHA"
         "Note: this will add bias to output proj layer too",
     )
+    group.add(
+        "--multiquery",
+        "-multiquery",
+        action="store_true",
+        help="Use MultiQUery attention" "Note: https://arxiv.org/pdf/1911.02150.pdf",
+    )
+    group.add(
+        "--add_ffnbias",
+        "-add_ffnbias",
+        action="store_true",
+        help="Add bias to nn.linear of Position_wise FFN",
+    )
+    group.add(
+        "--parallel_residual",
+        "-parallel_residual",
+        action="store_true",
+        help="Use Parallel residual in Decoder Layer"
+        "Note: this is used by GPT-J / Falcon Architecture",
+    )
 
     # Alignement options
     group = parser.add_argument_group("Model - Alignement")

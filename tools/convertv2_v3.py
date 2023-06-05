@@ -98,5 +98,6 @@ if __name__ == "__main__":
     )
 
     checkpoint["opt"].__dict__["add_qkvbias"] = True
+    checkpoint["opt"].__dict__["add_ffnbias"] = True
 
     torch.save(checkpoint, opt.v3model)

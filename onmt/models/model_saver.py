@@ -37,6 +37,11 @@ def load_checkpoint(ckpt_path):
             checkpoint["generator"]["weight"] = checkpoint["generator"].pop("0.weight")
         if "0.bias" in checkpoint["generator"]:
             checkpoint["generator"]["bias"] = checkpoint["generator"].pop("0.bias")
+
+        for key in checkpoint["model"].keys():
+            if "w_1.bias" in key:
+                checkpoint["opt"].add_ffnbias = True
+
         # end of patch for backward compatibility
 
     return checkpoint

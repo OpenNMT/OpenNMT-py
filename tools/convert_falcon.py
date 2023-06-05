@@ -40,84 +40,93 @@ if __name__ == "__main__":
     onmt_cp = {}
     onmt_cp["model"] = {}
 
-    decoder_layers = params["n_layers"]
-    src_word_vec_size = params["d_model"]
-    tgt_word_vec_size = params["d_model"]
-    hidden_size = params["d_model"]
-    heads = params["n_heads"]
+    decoder_layers = params["n_layer"]
+    src_word_vec_size = params["hidden_size"]
+    tgt_word_vec_size = params["hidden_size"]
+    hidden_size = params["hidden_size"]
+    heads = params["n_head"]
     vocab_size = params["vocab_size"]
-    transformer_ff = params["expansion_ratio"] * params["d_model"]
+    transformer_ff = params["hidden_size"] * 4
 
     onmt_cp["model"][
         "decoder.embeddings.make_embedding.emb_luts.0.weight"
-    ] = checkpoint["transformer.wte.weight"]
+    ] = checkpoint["transformer.word_embeddings.weight"].to(torch.float16)
 
     for i in range(decoder_layers):
+        # Falcon stores QKV in one single tensor but it is not simply piled up Q+K+V
+        # it is heads interleaved to we need to slice first
+        # also it uses the HF rotary so we need to permute Q and K interleave
+
+        qkv_W = (
+            checkpoint[
+                "transformer.h." + str(i) + ".self_attention.query_key_value.weight"
+            ]
+            .view(heads + 2, hidden_size // heads, hidden_size)
+            .to(torch.float16)
+        )
+
         onmt_cp["model"][
             "decoder.transformer_layers." + str(i) + ".self_attn.linear_query.weight"
-        ] = checkpoint["transformer.blocks." + str(i) + ".attn.Wqkv.weight"][
-            :hidden_size, :
-        ]
+        ] = (
+            qkv_W[:-2, :]
+            .view(heads, 2, hidden_size // heads // 2, hidden_size)
+            .transpose(1, 2)
+            .reshape(hidden_size, hidden_size)
+        )
 
         onmt_cp["model"][
             "decoder.transformer_layers." + str(i) + ".self_attn.linear_keys.weight"
-        ] = checkpoint["transformer.blocks." + str(i) + ".attn.Wqkv.weight"][
-            hidden_size : (hidden_size * 2), :
-        ]
+        ] = (
+            qkv_W[[-2], :]
+            .view(1, 2, hidden_size // heads // 2, hidden_size)
+            .transpose(1, 2)
+            .reshape(hidden_size // heads, hidden_size)
+        )
 
         onmt_cp["model"][
             "decoder.transformer_layers." + str(i) + ".self_attn.linear_values.weight"
-        ] = checkpoint["transformer.blocks." + str(i) + ".attn.Wqkv.weight"][
-            (hidden_size * 2) :, :
-        ]
+        ] = qkv_W[[-1], :].reshape(hidden_size // heads, hidden_size)
 
         onmt_cp["model"][
             "decoder.transformer_layers." + str(i) + ".self_attn.final_linear.weight"
-        ] = checkpoint["transformer.blocks." + str(i) + ".attn.out_proj.weight"]
+        ] = checkpoint["transformer.h." + str(i) + ".self_attention.dense.weight"].to(
+            torch.float16
+        )
 
         onmt_cp["model"][
             "decoder.transformer_layers." + str(i) + ".layer_norm_1.weight"
-        ] = checkpoint["transformer.blocks." + str(i) + ".norm_1.weight"]
+        ] = checkpoint["transformer.h." + str(i) + ".input_layernorm.weight"].to(
+            torch.float16
+        )
         onmt_cp["model"][
             "decoder.transformer_layers." + str(i) + ".layer_norm_1.bias"
-        ] = torch.zeros(
-            onmt_cp["model"][
-                "decoder.transformer_layers." + str(i) + ".layer_norm_1.weight"
-            ].size(0),
-            dtype=torch.float16,
+        ] = checkpoint["transformer.h." + str(i) + ".input_layernorm.bias"].to(
+            torch.float16
         )
 
         onmt_cp["model"][
             "decoder.transformer_layers." + str(i) + ".feed_forward.w_1.weight"
-        ] = checkpoint["transformer.blocks." + str(i) + ".ffn.up_proj.weight"]
+        ] = checkpoint["transformer.h." + str(i) + ".mlp.dense_h_to_4h.weight"].to(
+            torch.float16
+        )
 
         onmt_cp["model"][
             "decoder.transformer_layers." + str(i) + ".feed_forward.w_2.weight"
-        ] = checkpoint["transformer.blocks." + str(i) + ".ffn.down_proj.weight"]
-
-        onmt_cp["model"][
-            "decoder.transformer_layers." + str(i) + ".feed_forward.layer_norm.weight"
-        ] = checkpoint["transformer.blocks." + str(i) + ".norm_2.weight"]
-        onmt_cp["model"][
-            "decoder.transformer_layers." + str(i) + ".feed_forward.layer_norm.bias"
-        ] = torch.zeros(
-            onmt_cp["model"][
-                "decoder.transformer_layers."
-                + str(i)
-                + ".feed_forward.layer_norm.weight"
-            ].size(0),
-            dtype=torch.float16,
+        ] = checkpoint["transformer.h." + str(i) + ".mlp.dense_4h_to_h.weight"].to(
+            torch.float16
         )
 
     onmt_cp["model"]["decoder.layer_norm.weight"] = checkpoint[
-        "transformer.norm_f.weight"
-    ]
-    onmt_cp["model"]["decoder.layer_norm.bias"] = torch.zeros(
-        onmt_cp["model"]["decoder.layer_norm.weight"].size(0), dtype=torch.float16
-    )
+        "transformer.ln_f.weight"
+    ].to(torch.float16)
+    onmt_cp["model"]["decoder.layer_norm.bias"] = checkpoint[
+        "transformer.ln_f.bias"
+    ].to(torch.float16)
 
     onmt_cp["generator"] = {}
-    onmt_cp["generator"]["weight"] = checkpoint["transformer.wte.weight"]
+    onmt_cp["generator"]["weight"] = checkpoint[
+        "transformer.word_embeddings.weight"
+    ].to(torch.float16)
     onmt_cp["generator"]["bias"] = torch.zeros(
         onmt_cp["generator"]["weight"].size(0), dtype=torch.float16
     )
@@ -229,13 +238,14 @@ if __name__ == "__main__":
         global_attention="general",
         global_attention_function="softmax",
         self_attn_type="scaled-dot",
-        max_relative_positions=-2,
+        max_relative_positions=-1,
         heads=heads,
         transformer_ff=transformer_ff,
+        multiquery=True,
         aan_useffn=False,
         add_qkvbias=False,
         add_ffnbias=False,
-        parallel_residual=False,
+        parallel_residual=True,
         lambda_align=0.0,
         alignment_layer=-3,
         alignment_heads=0,

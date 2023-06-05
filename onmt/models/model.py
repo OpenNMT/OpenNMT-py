@@ -1,6 +1,7 @@
 """ Onmt NMT Model base class definition """
 import torch
 import torch.nn as nn
+from itertools import chain
 
 
 class BaseModel(nn.Module):
@@ -66,9 +67,10 @@ class BaseModel(nn.Module):
         # bitsandbytes quantize weights when .cuda() is called
         # for huge models we need to save Ram
         # so we load the weights  module by module and transfer them to GPU for quantization
-
         for name, module in self.named_modules():
-            for param_name, param in module.named_parameters():
+            for param_name, param in chain(
+                module.named_parameters(), module.named_buffers()
+            ):
                 if len(param_name.split(".")) == 1:  # only last key
                     if name + "." + param_name in checkpoint["model"].keys():
                         param.data = checkpoint["model"][name + "." + param_name]
@@ -80,10 +82,20 @@ class BaseModel(nn.Module):
                         del checkpoint["generator"][param_name]
                     elif strict and "lora" not in param_name:
                         raise ValueError(
-                            "Missing key in chekpoint: %s" % name + "." + param_name
+                            "Missing key in checkpoint: %s" % name + "." + param_name
                         )
                     module.to(precision)
                     module.to(device)
+        if len(checkpoint["model"].keys()) > 0:
+            raise ValueError(
+                "Extra keys in model state_dict do not match the model config %s"
+                % checkpoint["model"].keys()
+            )
+        if len(checkpoint["generator"].keys()) > 0:
+            raise ValueError(
+                "Extra keys in generator state_dict do not match the model config %s"
+                % checkpoint["generator"].keys()
+            )
 
 
 class NMTModel(BaseModel):

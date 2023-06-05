@@ -1,4 +1,4 @@
-# OpenNMT-py: Open-Source Neural Machine Translation
+# OpenNMT-py: Open-Source Neural Machine Translation and (Large) Language Models
 
 [![Build Status](https://github.com/OpenNMT/OpenNMT-py/workflows/Lint%20&%20Tests/badge.svg)](https://github.com/OpenNMT/OpenNMT-py/actions)
 [![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://opennmt.net/OpenNMT-py/)
@@ -16,7 +16,7 @@ Unless there is a bug, please use the [Forum](https://forum.opennmt.net) or [Git
 ----
 ## For beginners:
 
-There is a new step-by-step and explained tuto (Thanks to Yasmin Moslem): [Tutorial](https://github.com/ymoslem/OpenNMT-Tutorial)
+There is a step-by-step and explained tuto (Thanks to Yasmin Moslem): [Tutorial](https://github.com/ymoslem/OpenNMT-Tutorial)
 
 Please try to read and/or follow before raising newbies issues.
 
@@ -30,6 +30,7 @@ If you used previous versions of OpenNMT-py, you can check the [Changelog](https
 
 ## Tutorials:
 
+* How to replicate Vicuna with a 7B or 13B llama (or Open llama, MPT-7B, Redpajama)  Language Model: [Tuto Vicuna](https://github.com/OpenNMT/OpenNMT-py/blob/master/docs/source/examples/replicate_vicuna/ReplicateVicuna.md)
 * How to finetune NLLB-200 with your dataset: [Tuto Finetune NLLB-200](https://forum.opennmt.net/t/finetuning-and-curating-nllb-200-with-opennmt-py/5238)
 * How to create a simple OpenNMT-py REST Server: [Tuto REST](https://forum.opennmt.net/t/simple-opennmt-py-rest-server/1392)
 * How to create a simple Web Interface: [Tuto Streamlit](https://forum.opennmt.net/t/simple-web-interface/4527)

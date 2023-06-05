@@ -304,7 +304,7 @@ def use_embeddings_from_checkpoint(vocabs, model, checkpoint):
     # Embedding layers
     enc_emb_name = "encoder.embeddings.make_embedding.emb_luts.0.weight"
     dec_emb_name = "decoder.embeddings.make_embedding.emb_luts.0.weight"
-    model_dict = model.state_dict()
+    model_dict = {k: v for k, v in model.state_dict().items() if "generator" not in k}
     generator_dict = model.generator.state_dict()
     for side, emb_name in [("src", enc_emb_name), ("tgt", dec_emb_name)]:
         if emb_name not in checkpoint["model"]:
@@ -330,7 +330,6 @@ def use_embeddings_from_checkpoint(vocabs, model, checkpoint):
     del checkpoint["generator"]["weight"], checkpoint["generator"]["bias"]
     fake_ckpt = {"model": model_dict, "generator": generator_dict}
     model.load_state_dict(fake_ckpt)
-    # generator.load_state_dict(generator_dict)
 
 
 def build_base_model(model_opt, vocabs):
@@ -424,6 +423,7 @@ def build_base_model(model_opt, vocabs):
 
 def build_model(model_opt, opt, vocabs, checkpoint):
     logger.info("Building model...")
+
     model = build_base_model(model_opt, vocabs)
 
     # If new training initialize the model params

@@ -9,6 +9,7 @@ from onmt.modules import MultiHeadedAttention
 from onmt.modules.position_ffn import PositionwiseFeedForward
 from onmt.modules.position_ffn import ActivationFunction
 from onmt.utils.misc import sequence_mask
+from onmt.modules.rmsnorm import RMSNorm
 
 
 class TransformerEncoderLayer(nn.Module):
@@ -36,6 +37,11 @@ class TransformerEncoderLayer(nn.Module):
         max_relative_positions=0,
         pos_ffn_activation_fn=ActivationFunction.relu,
         add_qkvbias=False,
+        multiquery=False,
+        add_ffnbias=True,
+        parallel_residual=False,
+        layer_norm="standard",
+        use_ckpting=[],
     ):
         super(TransformerEncoderLayer, self).__init__()
 
@@ -46,11 +52,26 @@ class TransformerEncoderLayer(nn.Module):
             max_relative_positions=max_relative_positions,
             attn_type="self",
             add_qkvbias=add_qkvbias,
+            multiquery=multiquery,
+            use_ckpting=use_ckpting,
         )
         self.feed_forward = PositionwiseFeedForward(
-            d_model, d_ff, dropout, pos_ffn_activation_fn
+            d_model,
+            d_ff,
+            dropout,
+            pos_ffn_activation_fn,
+            add_ffnbias,
+            parallel_residual,
+            layer_norm,
+            use_ckpting=use_ckpting,
         )
-        self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
+        self.parallel_residual = parallel_residual
+        if layer_norm == "standard":
+            self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
+        elif layer_norm == "rms":
+            self.layer_norm = RMSNorm(d_model, eps=1e-6)
+        else:
+            raise ValueError(f"{layer_norm} layer norm type is not supported")
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, layer_in, mask):
@@ -63,10 +84,22 @@ class TransformerEncoderLayer(nn.Module):
             (FloatTensor):
             * layer_out ``(batch_size, src_len, model_dim)``
         """
-        input_norm = self.layer_norm(layer_in)
-        context, _ = self.self_attn(input_norm, input_norm, input_norm, mask=mask)
-        layer_out = self.dropout(context) + layer_in
-        layer_out = self.feed_forward(layer_out)
+        norm_layer_in = self.layer_norm(layer_in)
+        context, _ = self.self_attn(
+            norm_layer_in, norm_layer_in, norm_layer_in, mask=mask
+        )
+        if self.parallel_residual:
+            # feed_forward applies residual, so we remove and apply residual with un-normed
+            layer_out = (
+                self.feed_forward(norm_layer_in)
+                - norm_layer_in
+                + layer_in
+                + self.dropout(context)
+            )
+        else:
+            layer_out = self.dropout(context) + layer_in
+            layer_out = self.feed_forward(layer_out)
+
         return layer_out
 
     def update_dropout(self, dropout, attention_dropout):
@@ -110,6 +143,11 @@ class TransformerEncoder(EncoderBase):
         max_relative_positions,
         pos_ffn_activation_fn=ActivationFunction.relu,
         add_qkvbias=False,
+        multiquery=False,
+        add_ffnbias=True,
+        parallel_residual=False,
+        layer_norm="standard",
+        use_ckpting=[],
     ):
         super(TransformerEncoder, self).__init__()
 
@@ -125,11 +163,21 @@ class TransformerEncoder(EncoderBase):
                     max_relative_positions=max_relative_positions,
                     pos_ffn_activation_fn=pos_ffn_activation_fn,
                     add_qkvbias=add_qkvbias,
+                    multiquery=multiquery,
+                    add_ffnbias=add_ffnbias,
+                    parallel_residual=parallel_residual,
+                    layer_norm=layer_norm,
+                    use_ckpting=use_ckpting,
                 )
                 for i in range(num_layers)
             ]
         )
-        self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
+        if layer_norm == "standard":
+            self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
+        elif layer_norm == "rms":
+            self.layer_norm = RMSNorm(d_model, eps=1e-6)
+        else:
+            raise ValueError(f"{layer_norm} layer norm type is not supported")
 
     @classmethod
     def from_opt(cls, opt, embeddings):
@@ -147,6 +195,11 @@ class TransformerEncoder(EncoderBase):
             opt.max_relative_positions,
             pos_ffn_activation_fn=opt.pos_ffn_activation_fn,
             add_qkvbias=opt.add_qkvbias,
+            multiquery=opt.multiquery,
+            add_ffnbias=opt.add_ffnbias,
+            parallel_residual=opt.parallel_residual,
+            layer_norm=opt.layer_norm,
+            use_ckpting=opt.use_ckpting,
         )
 
     def forward(self, src, src_len=None):
