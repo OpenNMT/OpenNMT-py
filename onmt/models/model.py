@@ -3,8 +3,6 @@ import torch
 import torch.nn as nn
 import glob
 from itertools import chain
-from safetensors import safe_open
-from safetensors.torch import save_file
 
 
 class BaseModel(nn.Module):
@@ -123,12 +121,16 @@ class BaseModel(nn.Module):
         # bitsandbytes quantize weights when .cuda() is called
         # for huge models we need to save Ram
         # so we load the weights  module by module and transfer them to GPU for quantization
+        try:
+            import safetensors
+        except ImportError:
+            raise ImportError("run: pip install safetensors, to use safetensors")
         keyfound = {}
         shards = glob.glob(model_path + ".*.safetensors")
         f = []
         keys_shard = {}
         for i, shard in enumerate(shards):
-            f.append(safe_open(shard, framework="pt", device="cpu"))
+            f.append(safetensors.safe_open(shard, framework="pt", device="cpu"))
             for key in f[i].keys():
                 keys_shard[key] = i
         for name, module in self.named_modules():

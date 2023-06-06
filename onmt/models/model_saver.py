@@ -5,8 +5,6 @@ from collections import deque
 from onmt.utils.logging import logger
 from onmt.inputters.inputter import vocabs_to_dict
 from onmt.modules.lora import lora_state_dict
-from safetensors import safe_open
-from safetensors.torch import save_file
 
 
 def build_model_saver(model_opt, opt, model, vocabs, optim):
@@ -195,6 +193,10 @@ class ModelSaver(ModelSaverBase):
         return ckpt_path, None
 
     def _st_save(self, step, model):
+        try:
+            import safetensors
+        except ImportError:
+            raise ImportError("run: pip install safetensors, to use safetensors")
         if (
             hasattr(self.model_opt, "lora_layers")
             and len(self.model_opt.lora_layers) > 0
@@ -216,7 +218,7 @@ class ModelSaver(ModelSaverBase):
         torch.save(checkpoint, ckpt_path)
         logger.info("Saving safetensors %s_step_%d.pt" % (self.base_path, step))
         model_path = "%s_step_%d.safetensors" % (self.base_path, step)
-        save_file(model_state_dict, model_path)
+        safetensors.save_file(model_state_dict, model_path)
         return ckpt_path, model_path
 
     def _rm_checkpoint(self, name):
