@@ -76,7 +76,9 @@ class BaseModel(nn.Module):
                         param.data = checkpoint["model"][name + "." + param_name]
                         del checkpoint["model"][name + "." + param_name]
                     elif (
-                        name == "generator" and len(checkpoint["generator"].keys()) > 0
+                        "generator" in checkpoint.keys()
+                        and name == "generator"
+                        and len(checkpoint["generator"].keys()) > 0
                     ):
                         param.data = checkpoint["generator"][param_name]
                         del checkpoint["generator"][param_name]
