@@ -42,11 +42,9 @@ if __name__ == "__main__":
 
     init_logger()
 
-    base_checkpoint = load_checkpoint(opt.base_model, map_location=torch.device("cpu"))
+    base_checkpoint = load_checkpoint(opt.base_model)
 
-    lora_checkpoint = load_checkpoint(
-        opt.lora_weights, map_location=torch.device("cpu")
-    )
+    lora_checkpoint = load_checkpoint(opt.lora_weights)
 
     vocabs = dict_to_vocabs(lora_checkpoint["vocab"])
 
