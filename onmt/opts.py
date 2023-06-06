@@ -1016,6 +1016,14 @@ def _add_train_general_opts(parser):
     )
 
     group.add(
+        "--save_format",
+        "-save_format",
+        default="pytorch",
+        choices=["pytorch", "safetensors"],
+        help="Format to save the model weights",
+    )
+
+    group.add(
         "--save_checkpoint_steps",
         "-save_checkpoint_steps",
         type=int,

@@ -5,6 +5,8 @@ from collections import deque
 from onmt.utils.logging import logger
 from onmt.inputters.inputter import vocabs_to_dict
 from onmt.modules.lora import lora_state_dict
+from safetensors import safe_open
+from safetensors.torch import save_file
 
 
 def build_model_saver(model_opt, opt, model, vocabs, optim):
@@ -19,6 +21,7 @@ def build_model_saver(model_opt, opt, model, vocabs, optim):
         vocabs,
         optim,
         opt.keep_checkpoint,
+        opt.save_format,
     )
     return model_saver
 
@@ -70,7 +73,16 @@ class ModelSaverBase(object):
     * `_rm_checkpoint
     """
 
-    def __init__(self, base_path, model, model_opt, vocabs, optim, keep_checkpoint=-1):
+    def __init__(
+        self,
+        base_path,
+        model,
+        model_opt,
+        vocabs,
+        optim,
+        keep_checkpoint=-1,
+        save_format="pytorch",
+    ):
         self.base_path = base_path
         self.model = model
         self.model_opt = model_opt
@@ -78,8 +90,11 @@ class ModelSaverBase(object):
         self.optim = optim
         self.last_saved_step = None
         self.keep_checkpoint = keep_checkpoint
+        self.save_format = save_format
         if keep_checkpoint > 0:
             self.checkpoint_queue = deque([], maxlen=keep_checkpoint)
+            if save_format == "safetensors":
+                self.model_queue = deque([], maxlen=keep_checkpoint)
 
     def save(self, step, moving_average=None):
         """Main entry point for model saver
@@ -98,7 +113,11 @@ class ModelSaverBase(object):
                 model_params_data.append(param.data)
                 param.data = avg.data
 
-        chkpt, chkpt_name = self._save(step, save_model)
+        if self.save_format == "pytorch":
+            ckpt_path, _ = self._save(step, save_model)
+        elif self.save_format == "safetensors":
+            ckpt_path, model_path = self._st_save(step, save_model)
+
         self.last_saved_step = step
 
         if moving_average:
@@ -109,7 +128,12 @@ class ModelSaverBase(object):
             if len(self.checkpoint_queue) == self.checkpoint_queue.maxlen:
                 todel = self.checkpoint_queue.popleft()
                 self._rm_checkpoint(todel)
-            self.checkpoint_queue.append(chkpt_name)
+                if self.save_format == "safetensors":
+                    todel = self.model_queue.popleft()
+                    self._rm_checkpoint(todel)
+            self.checkpoint_queue.append(ckpt_path)
+            if self.save_format == "safetensors":
+                self.model_queue.append(model_path)
 
     def _save(self, step, model):
         """Save a resumable checkpoint.
@@ -119,10 +143,10 @@ class ModelSaverBase(object):
             model (nn.Module): torch model to save
 
         Returns:
-            (object, str):
+            (str, str):
 
-            * checkpoint: the saved object
             * checkpoint_name: name (or path) of the saved checkpoint
+            * model_name: name (or path) of the saved safetensors weights if applicable
         """
 
         raise NotImplementedError()
@@ -166,9 +190,34 @@ class ModelSaver(ModelSaverBase):
         }
 
         logger.info("Saving checkpoint %s_step_%d.pt" % (self.base_path, step))
-        checkpoint_path = "%s_step_%d.pt" % (self.base_path, step)
-        torch.save(checkpoint, checkpoint_path)
-        return checkpoint, checkpoint_path
+        ckpt_path = "%s_step_%d.pt" % (self.base_path, step)
+        torch.save(checkpoint, ckpt_path)
+        return ckpt_path, None
+
+    def _st_save(self, step, model):
+        if (
+            hasattr(self.model_opt, "lora_layers")
+            and len(self.model_opt.lora_layers) > 0
+        ) or (
+            hasattr(self.model_opt, "lora_embedding") and self.model_opt.lora_embedding
+        ):
+            model_state_dict = lora_state_dict(model, bias="lora_only")
+        else:
+            model_state_dict = model.state_dict()
+
+        checkpoint = {
+            "vocab": vocabs_to_dict(self.vocabs),
+            "opt": self.model_opt,
+            "optim": self.optim.state_dict(),
+        }
+
+        logger.info("Saving checkpoint %s_step_%d.pt" % (self.base_path, step))
+        ckpt_path = "%s_step_%d.pt" % (self.base_path, step)
+        torch.save(checkpoint, ckpt_path)
+        logger.info("Saving safetensors %s_step_%d.pt" % (self.base_path, step))
+        model_path = "%s_step_%d.safetensors" % (self.base_path, step)
+        save_file(model_state_dict, model_path)
+        return ckpt_path, model_path
 
     def _rm_checkpoint(self, name):
         if os.path.exists(name):

@@ -218,12 +218,20 @@ def load_test_model(opt, model_path=None):
 
     model = build_base_model(model_opt, vocabs)
 
-    model.load_state_dict(
-        checkpoint, precision=torch.float32, device=torch.device("cpu"), strict=True
-    )
+    if "model" in checkpoint.keys():
+        # weights are in the .pt file
+        model.load_state_dict(
+            checkpoint, precision=torch.float32, device=torch.device("cpu"), strict=True
+        )
+    else:
+        # weights are not in the .pt checkpoint but stored in the safetensors file
+        base_name = model_path[:-3] if model_path[-3:] == ".pt" else model_path
+        model_path = base_name + ".safetensors"
+        model.load_sf_state_dict(
+            model_path, precision=torch.float32, device=torch.device("cpu"), strict=True
+        )
 
     del checkpoint
-
     if opt.precision == "fp32":
         model.float()
     elif opt.precision == "fp16":
@@ -481,9 +489,26 @@ def build_model(model_opt, opt, vocabs, checkpoint):
         # => strict=False when loading state_dict
         strict = not model_opt.update_vocab
 
-        model.load_state_dict(
-            checkpoint, precision=precision, device=device, strict=strict
-        )
+        if "model" in checkpoint.keys():
+            # weights are in the .pt file
+            model.load_state_dict(
+                checkpoint,
+                precision=precision,
+                device=device,
+                strict=strict,
+            )
+        else:
+            # weights are not in the .pt checkpoint but stored in the safetensors file
+            base_name = (
+                opt.train_from[:-3] if opt.train_from[-3:] == ".pt" else opt.train_from
+            )
+            model_path = base_name
+            model.load_safe_state_dict(
+                model_path,
+                precision=precision,
+                device=device,
+                strict=strict,
+            )
     else:
         model.to(precision)
         model.to(device)

@@ -1,7 +1,10 @@
 """ Onmt NMT Model base class definition """
 import torch
 import torch.nn as nn
+import glob
 from itertools import chain
+from safetensors import safe_open
+from safetensors.torch import save_file
 
 
 class BaseModel(nn.Module):
@@ -98,6 +101,60 @@ class BaseModel(nn.Module):
                 "Extra keys in generator state_dict do not match the model config %s"
                 % checkpoint["generator"].keys()
             )
+
+    def load_safe_state_dict(
+        self,
+        model_path,
+        precision=torch.float32,
+        device=torch.device("cpu"),
+        strict=True,
+    ):
+        """Custom state_dict loading to enable moving module on device as they are loaded
+
+        Args:
+            checkpoint:
+            precision:
+            device:
+            strict:
+
+        Return:
+
+            * Model"""
+        # bitsandbytes quantize weights when .cuda() is called
+        # for huge models we need to save Ram
+        # so we load the weights  module by module and transfer them to GPU for quantization
+        keyfound = {}
+        shards = glob.glob(model_path + ".*.safetensors")
+        f = []
+        keys_shard = {}
+        for i, shard in enumerate(shards):
+            f.append(safe_open(shard, framework="pt", device="cpu"))
+            for key in f[i].keys():
+                keys_shard[key] = i
+        for name, module in self.named_modules():
+            for param_name, param in chain(
+                module.named_parameters(), module.named_buffers()
+            ):
+                if len(param_name.split(".")) == 1:  # only last key
+                    if name + "." + param_name in keys_shard.keys():
+                        param.data = f[keys_shard[name + "." + param_name]].get_tensor(
+                            name + "." + param_name
+                        )
+                        keyfound[name + "." + param_name] = True
+                    elif strict and "lora" not in param_name:
+                        raise ValueError(
+                            "Missing key in safetensors checkpoint: %s" % name
+                            + "."
+                            + param_name
+                        )
+                    module.to(precision)
+                    module.to(device)
+        for key in keys_shard.keys():
+            if key not in keyfound.keys():
+                raise ValueError(
+                    "Extra keys in model state_dict do not match the model config %s"
+                    % key
+                )
 
 
 class NMTModel(BaseModel):
