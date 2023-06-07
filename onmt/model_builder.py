@@ -18,123 +18,12 @@ from onmt.utils.logging import logger
 from onmt.utils.parse import ArgumentParser
 from onmt.models.model_saver import load_checkpoint
 from onmt.constants import DefaultTokens, ModelTask
-from onmt.modules import (
-    QLoraLinear,
-    Embedding,
+from onmt.modules.lora import (
+    replace_lora_linear,
+    replace_lora_embedding,
     mark_only_lora_as_trainable,
 )
-
-
-def replace_bnb_linear(
-    model,
-    module_to_convert=[],
-    q_type="bnb_8bit",
-    threshold=6.0,
-    compute_dtype=torch.float16,  # we could also use bfloat16 when available
-):
-    try:
-        os.environ["BITSANDBYTES_NOWELCOME"] = "1"
-        import bitsandbytes as bnb
-    except ImportError:
-        raise ImportError("Install bitsandbytes to use 4/8bit compression")
-    for name, module in model.named_children():
-        if len(list(module.children())) > 0:
-            replace_bnb_linear(
-                module, module_to_convert, q_type, threshold, compute_dtype
-            )
-
-        if isinstance(module, nn.Linear) and name in module_to_convert:
-            if q_type == "bnb_8bit":
-                model._modules[name] = bnb.nn.Linear8bitLt(
-                    module.in_features,
-                    module.out_features,
-                    module.bias is not None,
-                    has_fp16_weights=False,
-                    threshold=threshold,
-                )
-            elif q_type in ["bnb_FP4", "bnb_NF4"]:
-                model._modules[name] = bnb.nn.Linear4bit(
-                    module.in_features,
-                    module.out_features,
-                    module.bias is not None,
-                    compute_dtype=compute_dtype,
-                    quant_type=q_type[-3:].lower(),  # 'fp4' or 'nf4'
-                )
-    return model
-
-
-def replace_lora_linear(
-    model,
-    r=2,
-    lora_alpha=1,
-    lora_dropout=0,
-    layer="",
-    quant_type=None,
-    use_ckpting=[],
-    threshold=6.0,
-    compute_dtype=torch.float16,
-):
-    """
-    Function replacing layers with LoRa layers recursively.
-    Args:
-        model:
-        r: rank of matrix of the Low Rank layer
-        lora_alpha: cf paper
-        lora_dropout: cf paper
-        layer: layer name of the model to be replaced
-        quant_type: use bnb to quantize nn.Linear sub-layer
-    """
-    for name, module in model.named_children():
-        if hasattr(module, "children") and len(list(module.children())) > 0:
-            replace_lora_linear(
-                module,
-                r=r,
-                lora_alpha=lora_alpha,
-                lora_dropout=lora_dropout,
-                layer=layer,
-                quant_type=quant_type,
-                use_ckpting=use_ckpting,
-                threshold=threshold,
-                compute_dtype=compute_dtype,
-            )
-
-        if isinstance(module, nn.Linear) and name == layer:
-            model._modules[name] = QLoraLinear(
-                module.in_features,
-                module.out_features,
-                r=r,
-                lora_alpha=lora_alpha,
-                lora_dropout=lora_dropout,
-                bias=module.bias is not None,
-                quant_type=quant_type,
-                use_ckpting=use_ckpting,
-                threshold=threshold,
-                compute_dtype=compute_dtype,
-            )
-    return model
-
-
-def replace_lora_embedding(model, r=2, lora_alpha=1):
-    """
-    Function replacing Embeddings with LoRa ones recursively.
-    Args:
-        model:
-        r: rank of matrix of the Low Rank layer
-        lora_alpha: cf paper
-    """
-    for name, module in model.named_children():
-        if len(list(module.children())) > 0:
-            replace_lora_embedding(module, r, lora_alpha)
-        if isinstance(module, nn.Embedding):
-            model._modules[name] = Embedding(
-                module.num_embeddings,
-                module.embedding_dim,
-                r=r,
-                lora_alpha=lora_alpha,
-                padding_idx=module.padding_idx,
-                sparse=module.sparse,
-            )
-    return model
+import onmt.modules.bnb_linear as bnb_linear
 
 
 def build_embeddings(opt, vocabs, for_encoder=True):
@@ -366,7 +255,7 @@ def build_base_model(model_opt, vocabs):
             logger.info(
                 "%s compression of layer %s" % (model_opt.quant_type, nonlora_to_quant)
             )
-            model = replace_bnb_linear(
+            model = bnb_linear.replace_bnb_linear(
                 model, module_to_convert=nonlora_to_quant, q_type=model_opt.quant_type
             )
         else:
