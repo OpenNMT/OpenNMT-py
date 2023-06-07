@@ -6,5 +6,5 @@ sphinxcontrib.mermaid==0.8.1
 sphinx-rtd-theme==0.4.3
 recommonmark==0.6.0
 sphinx-argparse==0.2.5
-sphinx_markdown_tables==0.0.12
+sphinx_markdown_tables==0.0.17
 bitsandbytes

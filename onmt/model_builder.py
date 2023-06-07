@@ -23,7 +23,7 @@ from onmt.modules.lora import (
     replace_lora_embedding,
     mark_only_lora_as_trainable,
 )
-import onmt.modules.bnb_linear as bnb_linear
+from onmt.modules.bnb_linear import replace_bnb_linear
 
 
 def build_embeddings(opt, vocabs, for_encoder=True):
@@ -255,7 +255,7 @@ def build_base_model(model_opt, vocabs):
             logger.info(
                 "%s compression of layer %s" % (model_opt.quant_type, nonlora_to_quant)
             )
-            model = bnb_linear.replace_bnb_linear(
+            model = replace_bnb_linear(
                 model, module_to_convert=nonlora_to_quant, q_type=model_opt.quant_type
             )
         else:
