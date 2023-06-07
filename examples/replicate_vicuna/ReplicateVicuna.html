@@ -37,7 +37,9 @@
   <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
   <link rel="stylesheet" href="../../_static/theme_overrides.css" type="text/css" />
     <link rel="index" title="Index" href="../../genindex.html" />
-    <link rel="search" title="Search" href="../../search.html" /> 
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Build Vocab" href="../../options/build_vocab.html" />
+    <link rel="prev" title="Gated Graph Neural Networks" href="../ggnn/GGNN.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -104,17 +106,36 @@
 <li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-to-use-lora-and-8bit-loading-to-finetune-a-big-model">How to use LoRa and 8bit loading to finetune a big model ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-to-use-gradient-checkpointing-when-dealing-with-a-big-model">How to use gradient checkpointing when dealing with a big model ?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-set-up-a-translation-server">How can I set up a translation server ?</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples</span></p>
-<ul>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../wmt17/Translation.html">Translation WMT17 en-de</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../wiki_103/LanguageModelGeneration.html">Language Model Wiki-103</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../summary/Summarization.html">Summarization CNN/DM</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ggnn/GGNN.html">Gated Graph Neural Networks</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Supervised Finetuning of llama 7B to replicate Vicuna</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#dependencies">Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#data">Data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#checkpoints">Checkpoints</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#vocabulary">Vocabulary</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#datasets">Datasets</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#finetuning">Finetuning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#inference">Inference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#concatenation-of-the-checkpoints">Concatenation of the checkpoints</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#input-examples">Input examples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#inference-with-translate-py">Inference with <code class="docutils literal notranslate"><span class="pre">translate.py</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#inference-with-ctranslate">Inference with <code class="docutils literal notranslate"><span class="pre">CTranslate</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Scripts</span></p>
 <ul>
@@ -214,7 +235,6 @@
 <p>Here is a short description of the content of your current directory:</p>
 <ul class="simple">
 <li><p>The OpenNMT-py repository.</p></li>
-<li><p>The Ctranslate2 repository.</p></li>
 <li><p>The <code class="docutils literal notranslate"><span class="pre">replicate_vicuna.yaml</span></code> file.</p></li>
 <li><p>A subdirectory named “llama” with the llama chekpoints.</p></li>
 <li><p>The converted llama7B checkpoint (<code class="docutils literal notranslate"><span class="pre">llama7B-vicuna-onmt</span></code>) and the vocabulary (<code class="docutils literal notranslate"><span class="pre">vocab.txt</span></code>) that will be genenerated with OpenNMT tools.</p></li>
@@ -223,9 +243,23 @@
 <li><p>The <code class="docutils literal notranslate"><span class="pre">translate_opts.yaml</span></code> file with the translation options for the inference with <code class="docutils literal notranslate"><span class="pre">OpenNMT-py/onmt/bin/translate.py</span></code>.</p></li>
 <li><p>A subdirectory named “inputs” containing the <code class="docutils literal notranslate"><span class="pre">input_examples.txt</span></code> file with the input examples for the inference.</p></li>
 <li><p>A subdirectory named “outputs” that will contain the inferred outputs of the finetuned model.</p></li>
-<li><p>The <code class="docutils literal notranslate"><span class="pre">add_missing_key.py</span></code> script (to enable the ctranslate2 conversion).</p></li>
 <li><p>The <code class="docutils literal notranslate"><span class="pre">chatbot.py</span></code> script (for the ctranslate2 inference with a gradio application).</p></li>
 </ul>
+<section id="dependencies">
+<h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this heading">¶</a></h2>
+<p>Apex is highly recommended to have fast performance.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/NVIDIA/apex
+<span class="nb">cd</span><span class="w"> </span>apex
+pip3<span class="w"> </span>install<span class="w"> </span>-v<span class="w"> </span>--disable-pip-version-check<span class="w"> </span>--no-cache-dir<span class="w"> </span>--global-option<span class="o">=</span><span class="s2">&quot;--cpp_ext&quot;</span><span class="w"> </span>--global-option<span class="o">=</span><span class="s2">&quot;--cuda_ext&quot;</span><span class="w"> </span>--global-option<span class="o">=</span><span class="s2">&quot;--deprecated_fused_adam&quot;</span><span class="w"> </span>--global-option<span class="o">=</span><span class="s2">&quot;--xentropy&quot;</span><span class="w"> </span>--global-option<span class="o">=</span><span class="s2">&quot;--fast_multihead_attn&quot;</span><span class="w"> </span>./
+<span class="nb">cd</span><span class="w"> </span>..
+</pre></div>
+</div>
+<p>You must also have gradio and ctranslate2 installed in your environment:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>gradio
+pip<span class="w"> </span>install<span class="w"> </span><span class="nv">ctranslate2</span><span class="o">==</span><span class="m">3</span>.14.0
+</pre></div>
+</div>
+</section>
 <section id="data">
 <h2>Data<a class="headerlink" href="#data" title="Permalink to this heading">¶</a></h2>
 <section id="checkpoints">
@@ -275,7 +309,7 @@ They have been flattened into plain text files. Moreover all occurences of the �
 <li><p>a proposal of answer following the pattern <code class="docutils literal notranslate"><span class="pre">###</span> <span class="pre">Response</span></code></p></li>
 </ul>
 <p>Here is the first example in the onmt alpaca dataset:</p>
-<div class="highlight-txt notranslate"><div class="highlight"><pre><span></span>Below is an instruction that describes a task. Write a response that appropriately completes the request.｟newline｠｟newline｠### Instruction:｟newline｠Give three tips for staying healthy.｟newline｠｟newline｠### Response:｟newline｠1. Eat a balanced and nutritious diet: Make sure your meals are inclusive of a variety of fruits and vegetables, lean protein, whole grains, and healthy fats. This helps to provide your body with the essential nutrients to function at its best and can help prevent chronic diseases.｟newline｠｟newline｠2. Engage in regular physical activity: Exercise is crucial for maintaining strong bones, muscles, and cardiovascular health. Aim for at least 150 minutes of moderate aerobic exercise or 75 minutes of vigorous exercise each week.｟newline｠｟newline｠3. Get enough sleep: Getting enough quality sleep is crucial for physical and mental well-being. It helps to regulate mood, improve cognitive function, and supports healthy growth and immune function. Aim for 7-9 hours of sleep each night.
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Below is an instruction that describes a task. Write a response that appropriately completes the request.｟newline｠｟newline｠### Instruction:｟newline｠Give three tips for staying healthy.｟newline｠｟newline｠### Response:｟newline｠1. Eat a balanced and nutritious diet: Make sure your meals are inclusive of a variety of fruits and vegetables, lean protein, whole grains, and healthy fats. This helps to provide your body with the essential nutrients to function at its best and can help prevent chronic diseases.｟newline｠｟newline｠2. Engage in regular physical activity: Exercise is crucial for maintaining strong bones, muscles, and cardiovascular health. Aim for at least 150 minutes of moderate aerobic exercise or 75 minutes of vigorous exercise each week.｟newline｠｟newline｠3. Get enough sleep: Getting enough quality sleep is crucial for physical and mental well-being. It helps to regulate mood, improve cognitive function, and supports healthy growth and immune function. Aim for 7-9 hours of sleep each night.
 </pre></div>
 </div>
 </section>
@@ -290,7 +324,7 @@ They have been flattened into plain text files. Moreover all occurences of the �
 <p>We can start by generating some samples (by turning <code class="docutils literal notranslate"><span class="pre">dump_samples</span></code> to True and <code class="docutils literal notranslate"><span class="pre">n_samples</span></code> to a strictly positive value).</p>
 <p>It is worth noting that the he sentencepiece vocabulary does not map the custom substring ｟newline｠with a specific token. However it maps the new line symbol ‘\n’ with the token ‘&lt;0x0A&gt;’. To handle properly our datasets without changing the vocabulary and training new embddings from scratch, the Tokenize transform replaces on-the-fly the token ‘｟newline｠’ token with  ‘&lt;0x0A&gt;’.</p>
 <p>For instance the first training example is transformed in:</p>
-<div class="highlight-txt notranslate"><div class="highlight"><pre><span></span>▁Below ▁is ▁an ▁instruction ▁that ▁describes ▁a ▁task . ▁Write ▁a ▁response ▁that ▁appropri ately ▁comple tes ▁the ▁request . &lt;0x0A&gt; &lt;0x0A&gt; ## # ▁Inst ruction : &lt;0x0A&gt; G ive ▁three ▁tips ▁for ▁stay ing ▁health y . &lt;0x0A&gt; &lt;0x0A&gt; ## # ▁Response : &lt;0x0A&gt; 1 . ▁E at ▁a ▁bal anced ▁and ▁nut rit ious ▁di et : ▁Make ▁sure ▁your ▁me als ▁are ▁inclus ive ▁of ▁a ▁variety ▁of ▁f ruits ▁and ▁veget ables , ▁lean ▁protein , ▁whole ▁gra ins , ▁and ▁health y ▁f ats . ▁This ▁helps ▁to ▁provide ▁your ▁body ▁with ▁the ▁essential ▁nut ri ents ▁to ▁function ▁at ▁its ▁best ▁and ▁can ▁help ▁prevent ▁chron ic ▁dise ases . &lt;0x0A&gt; &lt;0x0A&gt; 2 . ▁Eng age ▁in ▁regular ▁physical ▁activity : ▁Ex erc ise ▁is ▁cru cial ▁for ▁maintain ing ▁strong ▁b ones , ▁mus cles , ▁and ▁card i ov asc ular ▁health . ▁A im ▁for ▁at ▁least ▁ 1 5 0 ▁minutes ▁of ▁moder ate ▁aer ob ic ▁exercise ▁or ▁ 7 5 ▁minutes ▁of ▁vig orous ▁exercise ▁each ▁week . &lt;0x0A&gt; &lt;0x0A&gt; 3 . ▁Get ▁enough ▁sleep : ▁Getting ▁enough ▁quality ▁sleep ▁is ▁cru cial ▁for ▁physical ▁and ▁mental ▁well - be ing . ▁It ▁helps ▁to ▁reg ulate ▁m ood , ▁improve ▁cogn itive ▁function , ▁and ▁supports ▁health y ▁growth ▁and ▁imm une ▁function . ▁A im ▁for ▁ 7 - 9 ▁hours ▁of ▁sleep ▁each ▁night .
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>▁Below ▁is ▁an ▁instruction ▁that ▁describes ▁a ▁task . ▁Write ▁a ▁response ▁that ▁appropri ately ▁comple tes ▁the ▁request . &lt;0x0A&gt; &lt;0x0A&gt; ## # ▁Inst ruction : &lt;0x0A&gt; G ive ▁three ▁tips ▁for ▁stay ing ▁health y . &lt;0x0A&gt; &lt;0x0A&gt; ## # ▁Response : &lt;0x0A&gt; 1 . ▁E at ▁a ▁bal anced ▁and ▁nut rit ious ▁di et : ▁Make ▁sure ▁your ▁me als ▁are ▁inclus ive ▁of ▁a ▁variety ▁of ▁f ruits ▁and ▁veget ables , ▁lean ▁protein , ▁whole ▁gra ins , ▁and ▁health y ▁f ats . ▁This ▁helps ▁to ▁provide ▁your ▁body ▁with ▁the ▁essential ▁nut ri ents ▁to ▁function ▁at ▁its ▁best ▁and ▁can ▁help ▁prevent ▁chron ic ▁dise ases . &lt;0x0A&gt; &lt;0x0A&gt; 2 . ▁Eng age ▁in ▁regular ▁physical ▁activity : ▁Ex erc ise ▁is ▁cru cial ▁for ▁maintain ing ▁strong ▁b ones , ▁mus cles , ▁and ▁card i ov asc ular ▁health . ▁A im ▁for ▁at ▁least ▁ 1 5 0 ▁minutes ▁of ▁moder ate ▁aer ob ic ▁exercise ▁or ▁ 7 5 ▁minutes ▁of ▁vig orous ▁exercise ▁each ▁week . &lt;0x0A&gt; &lt;0x0A&gt; 3 . ▁Get ▁enough ▁sleep : ▁Getting ▁enough ▁quality ▁sleep ▁is ▁cru cial ▁for ▁physical ▁and ▁mental ▁well - be ing . ▁It ▁helps ▁to ▁reg ulate ▁m ood , ▁improve ▁cogn itive ▁function , ▁and ▁supports ▁health y ▁growth ▁and ▁imm une ▁function . ▁A im ▁for ▁ 7 - 9 ▁hours ▁of ▁sleep ▁each ▁night .
 </pre></div>
 </div>
 </section>
@@ -325,22 +359,24 @@ They have been flattened into plain text files. Moreover all occurences of the �
 </div>
 <p>Where <code class="docutils literal notranslate"><span class="pre">translate_opts.yaml</span></code> is the provided config with the translation options.
 You can test other decoding methods and paramaters.</p>
+<p>We have also provided a gradio application to chat with the model.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>gradio<span class="w"> </span>chatbot.py
+</pre></div>
+</div>
+<p>You must use <code class="docutils literal notranslate"><span class="pre">inf_type</span> <span class="pre">=</span> <span class="pre">&quot;-py&quot;</span></code> at the beginning of the <code class="docutils literal notranslate"><span class="pre">chatbot.py</span></code> script.</p>
 </section>
 <section id="inference-with-ctranslate">
 <h3>Inference with <code class="docutils literal notranslate"><span class="pre">CTranslate</span></code><a class="headerlink" href="#inference-with-ctranslate" title="Permalink to this heading">¶</a></h3>
 <p>First we need to do the conversion to the ctranslate2 format.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>OpenNMT-py/onmt/bin/release_model.py<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>--model<span class="w"> </span>finetuned_llama7B/llama7B-vicuna-onmt_step_4000.concat.pt<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>--output<span class="w"> </span>finetuned_llama7B/llama7B-vicuna-onmt_step_4000.concat_CT2<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>--format<span class="w"> </span>ctranslate2<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>--quantization<span class="w"> </span>int8_float16
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">shell</span>
+<span class="n">python3</span> <span class="n">OpenNMT</span><span class="o">-</span><span class="n">py</span><span class="o">/</span><span class="n">onmt</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">release_model</span><span class="o">.</span><span class="n">py</span> \
+    <span class="o">--</span><span class="n">model</span> <span class="n">finetuned_llama7B</span><span class="o">/</span><span class="n">llama7B</span><span class="o">-</span><span class="n">vicuna</span><span class="o">-</span><span class="n">onmt_step_4000</span><span class="o">.</span><span class="n">concat</span><span class="o">.</span><span class="n">pt</span> \
+    <span class="o">--</span><span class="n">output</span> <span class="n">finetuned_llama7B</span><span class="o">/</span><span class="n">llama7B</span><span class="o">-</span><span class="n">vicuna</span><span class="o">-</span><span class="n">onmt_step_4000</span><span class="o">.</span><span class="n">concat_CT2</span> \
+    <span class="o">--</span><span class="nb">format</span> <span class="n">ctranslate2</span> \
+    <span class="o">--</span><span class="n">quantization</span> <span class="n">int8_float16</span>
 </pre></div>
 </div>
-<p>We have provided a gradio application to chat with the model.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>gradio
-gradio<span class="w"> </span>chatbot.py
-</pre></div>
-</div>
+<p>You can chat with the model using <code class="docutils literal notranslate"><span class="pre">inf_type</span> <span class="pre">=</span> <span class="pre">&quot;ct2&quot;</span></code> at the beginning of the <code class="docutils literal notranslate"><span class="pre">chatbot.py</span></code> script.</p>
 </section>
 </section>
 </section>
@@ -350,6 +386,15 @@ gradio<span class="w"> </span>chatbot.py
            
           </div>
           <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../../options/build_vocab.html" class="btn btn-neutral float-right" title="Build Vocab" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../ggnn/GGNN.html" class="btn btn-neutral float-left" title="Gated Graph Neural Networks" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
   
 
   <hr/>

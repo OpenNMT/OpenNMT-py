@@ -103,6 +103,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-to-use-lora-and-8bit-loading-to-finetune-a-big-model">How to use LoRa and 8bit loading to finetune a big model ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-to-use-gradient-checkpointing-when-dealing-with-a-big-model">How to use gradient checkpointing when dealing with a big model ?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
@@ -114,6 +115,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/wiki_103/LanguageModelGeneration.html">Language Model Wiki-103</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/summary/Summarization.html">Summarization CNN/DM</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/ggnn/GGNN.html">Gated Graph Neural Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/replicate_vicuna/ReplicateVicuna.html">Supervised Finetuning of llama 7B to replicate Vicuna</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Scripts</span></p>
 <ul>
@@ -208,6 +210,7 @@
 <span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">copy</span>
 <span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">sqrt</span>
 <span class="kn">import</span> <span class="nn">types</span>
+<span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">importlib</span>
 <span class="kn">from</span> <span class="nn">onmt.utils.misc</span> <span class="kn">import</span> <span class="n">fn_args</span>
 
@@ -300,6 +303,57 @@
                     <span class="n">static_loss_scale</span><span class="o">=</span><span class="n">static_loss_scale</span><span class="p">,</span>
                     <span class="n">dynamic_loss_scale</span><span class="o">=</span><span class="n">dynamic_loss_scale</span><span class="p">,</span>
                 <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">optim</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;adamw8bit&quot;</span><span class="p">,</span> <span class="s2">&quot;pagedadamw8bit&quot;</span><span class="p">,</span> <span class="s2">&quot;pagedadamw32bit&quot;</span><span class="p">]:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;BITSANDBYTES_NOWELCOME&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;1&quot;</span>
+            <span class="kn">import</span> <span class="nn">bitsandbytes</span> <span class="k">as</span> <span class="nn">bnb</span>
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s2">&quot;Install bitsandbytes to use bnb optimizers&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">optim</span> <span class="o">==</span> <span class="s2">&quot;adamw8bit&quot;</span><span class="p">:</span>
+            <span class="n">optimizer</span> <span class="o">=</span> <span class="n">bnb</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">AdamW8bit</span><span class="p">(</span>
+                <span class="n">params</span><span class="p">,</span>
+                <span class="n">lr</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span>
+                <span class="n">betas</span><span class="o">=</span><span class="n">betas</span><span class="p">,</span>
+                <span class="n">eps</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">,</span>
+                <span class="n">weight_decay</span><span class="o">=</span><span class="mf">1e-2</span><span class="p">,</span>
+                <span class="n">amsgrad</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">optim_bits</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+                <span class="n">args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">min_8bit_size</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span>
+                <span class="n">percentile_clipping</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+                <span class="n">block_wise</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">is_paged</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">optim</span> <span class="o">==</span> <span class="s2">&quot;pagedadamw8bit&quot;</span><span class="p">:</span>
+            <span class="n">optimizer</span> <span class="o">=</span> <span class="n">bnb</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">PagedAdamW8bit</span><span class="p">(</span>
+                <span class="n">params</span><span class="p">,</span>
+                <span class="n">lr</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span>
+                <span class="n">betas</span><span class="o">=</span><span class="n">betas</span><span class="p">,</span>
+                <span class="n">eps</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">,</span>
+                <span class="n">weight_decay</span><span class="o">=</span><span class="mf">1e-2</span><span class="p">,</span>
+                <span class="n">amsgrad</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">optim_bits</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+                <span class="n">args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">min_8bit_size</span><span class="o">=</span><span class="mi">4096</span><span class="p">,</span>
+                <span class="n">percentile_clipping</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+                <span class="n">block_wise</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">optim</span> <span class="o">==</span> <span class="s2">&quot;pagedadamw32bit&quot;</span><span class="p">:</span>
+            <span class="n">optimizer</span> <span class="o">=</span> <span class="n">bnb</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">PagedAdamW32bit</span><span class="p">(</span>
+                <span class="n">params</span><span class="p">,</span>
+                <span class="n">lr</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span>
+                <span class="n">betas</span><span class="o">=</span><span class="n">betas</span><span class="p">,</span>
+                <span class="n">eps</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">,</span>
+                <span class="n">weight_decay</span><span class="o">=</span><span class="mf">1e-2</span><span class="p">,</span>
+                <span class="n">amsgrad</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">optim_bits</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span>
+                <span class="n">args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">min_8bit_size</span><span class="o">=</span><span class="mi">4096</span><span class="p">,</span>
+                <span class="n">percentile_clipping</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+                <span class="n">block_wise</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid optimizer type: &quot;</span> <span class="o">+</span> <span class="n">opt</span><span class="o">.</span><span class="n">optim</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid optimizer type: &quot;</span> <span class="o">+</span> <span class="n">opt</span><span class="o">.</span><span class="n">optim</span><span class="p">)</span>
 

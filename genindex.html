@@ -103,6 +103,7 @@
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-to-use-lora-and-8bit-loading-to-finetune-a-big-model">How to use LoRa and 8bit loading to finetune a big model ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-to-use-gradient-checkpointing-when-dealing-with-a-big-model">How to use gradient checkpointing when dealing with a big model ?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
@@ -114,6 +115,7 @@
 <li class="toctree-l1"><a class="reference internal" href="examples/wiki_103/LanguageModelGeneration.html">Language Model Wiki-103</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/summary/Summarization.html">Summarization CNN/DM</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/ggnn/GGNN.html">Gated Graph Neural Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/replicate_vicuna/ReplicateVicuna.html">Supervised Finetuning of llama 7B to replicate Vicuna</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Scripts</span></p>
 <ul>
@@ -480,6 +482,8 @@
 </li>
       <li><a href="onmt.modules.html#onmt.modules.Embeddings.load_pretrained_vectors">load_pretrained_vectors() (onmt.modules.Embeddings method)</a>
 </li>
+      <li><a href="onmt.html#onmt.models.BaseModel.load_state_dict">load_state_dict() (onmt.models.BaseModel method)</a>
+</li>
       <li><a href="onmt.translation.html#onmt.translate.Translation.log">log() (onmt.translate.Translation method)</a>
 </li>
       <li><a href="onmt.html#onmt.utils.Statistics.log_tensorboard">log_tensorboard() (onmt.utils.Statistics method)</a>
@@ -632,9 +636,9 @@
 </li>
       <li><a href="onmt.translate.translation_server.html#onmt.translate.translation_server.ServerModel.tokenizer_marker">tokenizer_marker() (onmt.translate.translation_server.ServerModel method)</a>
 </li>
-      <li><a href="onmt.html#onmt.Trainer.train">train() (onmt.Trainer method)</a>
+      <li><a href="onmt.html#onmt.trainer.Trainer.train">train() (onmt.trainer.Trainer method)</a>
 </li>
-      <li><a href="onmt.html#onmt.Trainer">Trainer (class in onmt)</a>
+      <li><a href="onmt.html#onmt.trainer.Trainer">Trainer (class in onmt.trainer)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -678,7 +682,7 @@
 <h2 id="V">V</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="onmt.html#onmt.Trainer.validate">validate() (onmt.Trainer method)</a>
+      <li><a href="onmt.html#onmt.trainer.Trainer.validate">validate() (onmt.trainer.Trainer method)</a>
 </li>
   </ul></td>
 </tr></table>

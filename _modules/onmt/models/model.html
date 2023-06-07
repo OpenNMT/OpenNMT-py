@@ -103,6 +103,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-to-use-lora-and-8bit-loading-to-finetune-a-big-model">How to use LoRa and 8bit loading to finetune a big model ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-to-use-gradient-checkpointing-when-dealing-with-a-big-model">How to use gradient checkpointing when dealing with a big model ?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
@@ -114,6 +115,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/wiki_103/LanguageModelGeneration.html">Language Model Wiki-103</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/summary/Summarization.html">Summarization CNN/DM</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/ggnn/GGNN.html">Gated Graph Neural Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/replicate_vicuna/ReplicateVicuna.html">Supervised Finetuning of llama 7B to replicate Vicuna</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Scripts</span></p>
 <ul>
@@ -200,7 +202,9 @@
             
   <h1>Source code for onmt.models.model</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot; Onmt NMT Model base class definition &quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">chain</span>
 
 
 <div class="viewcode-block" id="BaseModel"><a class="viewcode-back" href="../../../onmt.html#onmt.models.BaseModel">[docs]</a><span class="k">class</span> <span class="nc">BaseModel</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -242,7 +246,62 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 
     <span class="k">def</span> <span class="nf">count_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="nb">print</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+<div class="viewcode-block" id="BaseModel.load_state_dict"><a class="viewcode-back" href="../../../onmt.html#onmt.models.BaseModel.load_state_dict">[docs]</a>    <span class="k">def</span> <span class="nf">load_state_dict</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">checkpoint</span><span class="p">,</span>
+        <span class="n">precision</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
+        <span class="n">device</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">),</span>
+        <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Custom state_dict loading to enable moving module on device as they are loaded</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            checkpoint:</span>
+<span class="sd">            precision:</span>
+<span class="sd">            device:</span>
+<span class="sd">            strict:</span>
+
+<span class="sd">        Return:</span>
+
+<span class="sd">            * Model&quot;&quot;&quot;</span>
+
+        <span class="c1"># bitsandbytes quantize weights when .cuda() is called</span>
+        <span class="c1"># for huge models we need to save Ram</span>
+        <span class="c1"># so we load the weights  module by module and transfer them to GPU for quantization</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">named_modules</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">param_name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">chain</span><span class="p">(</span>
+                <span class="n">module</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">(),</span> <span class="n">module</span><span class="o">.</span><span class="n">named_buffers</span><span class="p">()</span>
+            <span class="p">):</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">param_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">))</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># only last key</span>
+                    <span class="k">if</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="n">param_name</span> <span class="ow">in</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                        <span class="n">param</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">][</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="n">param_name</span><span class="p">]</span>
+                        <span class="k">del</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">][</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="n">param_name</span><span class="p">]</span>
+                    <span class="k">elif</span> <span class="p">(</span>
+                        <span class="s2">&quot;generator&quot;</span> <span class="ow">in</span> <span class="n">checkpoint</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+                        <span class="ow">and</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;generator&quot;</span>
+                        <span class="ow">and</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;generator&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                        <span class="ow">and</span> <span class="n">param_name</span> <span class="ow">in</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;generator&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+                    <span class="p">):</span>
+                        <span class="n">param</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;generator&quot;</span><span class="p">][</span><span class="n">param_name</span><span class="p">]</span>
+                        <span class="k">del</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;generator&quot;</span><span class="p">][</span><span class="n">param_name</span><span class="p">]</span>
+                    <span class="k">elif</span> <span class="n">strict</span> <span class="ow">and</span> <span class="s2">&quot;lora&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">param_name</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                            <span class="s2">&quot;Missing key in checkpoint: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="n">param_name</span>
+                        <span class="p">)</span>
+                    <span class="n">module</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">precision</span><span class="p">)</span>
+                    <span class="n">module</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Extra keys in model state_dict do not match the model config </span><span class="si">%s</span><span class="s2">&quot;</span>
+                <span class="o">%</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;generator&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Extra keys in generator state_dict do not match the model config </span><span class="si">%s</span><span class="s2">&quot;</span>
+                <span class="o">%</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;generator&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+            <span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="NMTModel"><a class="viewcode-back" href="../../../onmt.html#onmt.models.NMTModel">[docs]</a><span class="k">class</span> <span class="nc">NMTModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>

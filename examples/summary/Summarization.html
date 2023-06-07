@@ -106,6 +106,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-to-use-lora-and-8bit-loading-to-finetune-a-big-model">How to use LoRa and 8bit loading to finetune a big model ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-to-use-gradient-checkpointing-when-dealing-with-a-big-model">How to use gradient checkpointing when dealing with a big model ?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
@@ -133,6 +134,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../ggnn/GGNN.html">Gated Graph Neural Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../replicate_vicuna/ReplicateVicuna.html">Supervised Finetuning of llama 7B to replicate Vicuna</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Scripts</span></p>
 <ul>
@@ -455,95 +457,95 @@ The installation instructions can be found <a class="reference external" href="h
 <tr>
 <th>Model Type</th>
 <th>Model</th>
-<th align="right">R1 R</th>
-<th align="right">R1 P</th>
-<th align="right">R1 F</th>
-<th align="right">R2 R</th>
-<th align="right">R2 P</th>
-<th align="right">R2 F</th>
-<th align="right">RL R</th>
-<th align="right">RL P</th>
-<th align="right">RL F</th>
+<th style="text-align: right;">R1 R</th>
+<th style="text-align: right;">R1 P</th>
+<th style="text-align: right;">R1 F</th>
+<th style="text-align: right;">R2 R</th>
+<th style="text-align: right;">R2 P</th>
+<th style="text-align: right;">R2 F</th>
+<th style="text-align: right;">RL R</th>
+<th style="text-align: right;">RL P</th>
+<th style="text-align: right;">RL F</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>Pointer-Generator + Coverage [2]</td>
 <td><a href="https://github.com/abisee/pointer-generator">link</a></td>
-<td align="right">39.05</td>
-<td align="right">43.02</td>
-<td align="right">39.53</td>
-<td align="right">17.16</td>
-<td align="right">18.77</td>
-<td align="right">17.28</td>
-<td align="right">35.98</td>
-<td align="right">39.56</td>
-<td align="right">36.38</td>
+<td style="text-align: right;">39.05</td>
+<td style="text-align: right;">43.02</td>
+<td style="text-align: right;">39.53</td>
+<td style="text-align: right;">17.16</td>
+<td style="text-align: right;">18.77</td>
+<td style="text-align: right;">17.28</td>
+<td style="text-align: right;">35.98</td>
+<td style="text-align: right;">39.56</td>
+<td style="text-align: right;">36.38</td>
 </tr>
 <tr>
 <td>Pointer-Generator [2]</td>
 <td><a href="https://github.com/abisee/pointer-generator">link</a></td>
-<td align="right">37.76</td>
-<td align="right">37.60</td>
-<td align="right">36.44</td>
-<td align="right">16.31</td>
-<td align="right">16.12</td>
-<td align="right">15.66</td>
-<td align="right">34.66</td>
-<td align="right">34.46</td>
-<td align="right">33.42</td>
+<td style="text-align: right;">37.76</td>
+<td style="text-align: right;">37.60</td>
+<td style="text-align: right;">36.44</td>
+<td style="text-align: right;">16.31</td>
+<td style="text-align: right;">16.12</td>
+<td style="text-align: right;">15.66</td>
+<td style="text-align: right;">34.66</td>
+<td style="text-align: right;">34.46</td>
+<td style="text-align: right;">33.42</td>
 </tr>
 <tr>
 <td>OpenNMT BRNN  (1 layer, emb 128, hid 512)</td>
 <td><a href="https://s3.amazonaws.com/opennmt-models/Summary/ada6_bridge_oldcopy_tagged_acc_54.17_ppl_11.17_e20.pt">link</a></td>
-<td align="right">40.90</td>
-<td align="right">40.20</td>
-<td align="right">39.02</td>
-<td align="right">17.91</td>
-<td align="right">17.99</td>
-<td align="right">17.25</td>
-<td align="right">37.76</td>
-<td align="right">37.18</td>
-<td align="right">36.05</td>
+<td style="text-align: right;">40.90</td>
+<td style="text-align: right;">40.20</td>
+<td style="text-align: right;">39.02</td>
+<td style="text-align: right;">17.91</td>
+<td style="text-align: right;">17.99</td>
+<td style="text-align: right;">17.25</td>
+<td style="text-align: right;">37.76</td>
+<td style="text-align: right;">37.18</td>
+<td style="text-align: right;">36.05</td>
 </tr>
 <tr>
 <td>OpenNMT BRNN  (1 layer, emb 128, hid 512, shared embeddings)</td>
 <td><a href="https://s3.amazonaws.com/opennmt-models/Summary/ada6_bridge_oldcopy_tagged_share_acc_54.50_ppl_10.89_e20.pt">link</a></td>
-<td align="right">38.59</td>
-<td align="right">40.60</td>
-<td align="right">37.97</td>
-<td align="right">16.75</td>
-<td align="right">17.93</td>
-<td align="right">16.59</td>
-<td align="right">35.67</td>
-<td align="right">37.60</td>
-<td align="right">35.13</td>
+<td style="text-align: right;">38.59</td>
+<td style="text-align: right;">40.60</td>
+<td style="text-align: right;">37.97</td>
+<td style="text-align: right;">16.75</td>
+<td style="text-align: right;">17.93</td>
+<td style="text-align: right;">16.59</td>
+<td style="text-align: right;">35.67</td>
+<td style="text-align: right;">37.60</td>
+<td style="text-align: right;">35.13</td>
 </tr>
 <tr>
 <td>OpenNMT BRNN (2 layer, emb 256, hid 1024)</td>
 <td><a href="https://s3.amazonaws.com/opennmt-models/Summary/ada6_bridge_oldcopy_tagged_larger_acc_54.84_ppl_10.58_e17.pt">link</a></td>
-<td align="right">40.41</td>
-<td align="right">40.94</td>
-<td align="right">39.12</td>
-<td align="right">17.76</td>
-<td align="right">18.38</td>
-<td align="right">17.35</td>
-<td align="right">37.27</td>
-<td align="right">37.83</td>
-<td align="right">36.12</td>
+<td style="text-align: right;">40.41</td>
+<td style="text-align: right;">40.94</td>
+<td style="text-align: right;">39.12</td>
+<td style="text-align: right;">17.76</td>
+<td style="text-align: right;">18.38</td>
+<td style="text-align: right;">17.35</td>
+<td style="text-align: right;">37.27</td>
+<td style="text-align: right;">37.83</td>
+<td style="text-align: right;">36.12</td>
 </tr>
 <tr>
 <td>OpenNMT Transformer</td>
 <td><a href="https://s3.amazonaws.com/opennmt-models/sum_transformer_model_acc_57.25_ppl_9.22_e16.pt">link</a></td>
-<td align="right">40.31</td>
-<td align="right">41.09</td>
-<td align="right">39.25</td>
-<td align="right">17.97</td>
-<td align="right">18.46</td>
-<td align="right">17.54</td>
-<td align="right">37.41</td>
-<td align="right">38.18</td>
-<td align="right">36.45</td>
+<td style="text-align: right;">40.31</td>
+<td style="text-align: right;">41.09</td>
+<td style="text-align: right;">39.25</td>
+<td style="text-align: right;">17.97</td>
+<td style="text-align: right;">18.46</td>
+<td style="text-align: right;">17.54</td>
+<td style="text-align: right;">37.41</td>
+<td style="text-align: right;">38.18</td>
+<td style="text-align: right;">36.45</td>
 </tr>
 </tbody>
 </table></section>
@@ -554,30 +556,30 @@ The installation instructions can be found <a class="reference external" href="h
 <tr>
 <th>Model Type</th>
 <th>Model</th>
-<th align="right">R1 R</th>
-<th align="right">R1 P</th>
-<th align="right">R1 F</th>
-<th align="right">R2 R</th>
-<th align="right">R2 P</th>
-<th align="right">R2 F</th>
-<th align="right">RL R</th>
-<th align="right">RL P</th>
-<th align="right">RL F</th>
+<th style="text-align: right;">R1 R</th>
+<th style="text-align: right;">R1 P</th>
+<th style="text-align: right;">R1 F</th>
+<th style="text-align: right;">R2 R</th>
+<th style="text-align: right;">R2 P</th>
+<th style="text-align: right;">R2 F</th>
+<th style="text-align: right;">RL R</th>
+<th style="text-align: right;">RL P</th>
+<th style="text-align: right;">RL F</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>OpenNMT, no penalties</td>
 <td><a href="https://s3.amazonaws.com/opennmt-models/gigaword_copy_acc_51.78_ppl_11.71_e20.pt">link</a></td>
-<td align="right">?</td>
-<td align="right">?</td>
-<td align="right">35.51</td>
-<td align="right">?</td>
-<td align="right">?</td>
-<td align="right">17.35</td>
-<td align="right">?</td>
-<td align="right">?</td>
-<td align="right">33.17</td>
+<td style="text-align: right;">?</td>
+<td style="text-align: right;">?</td>
+<td style="text-align: right;">35.51</td>
+<td style="text-align: right;">?</td>
+<td style="text-align: right;">?</td>
+<td style="text-align: right;">17.35</td>
+<td style="text-align: right;">?</td>
+<td style="text-align: right;">?</td>
+<td style="text-align: right;">33.17</td>
 </tr>
 </tbody>
 </table></section>

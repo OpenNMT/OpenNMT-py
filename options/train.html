@@ -107,6 +107,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-to-use-lora-and-8bit-loading-to-finetune-a-big-model">How to use LoRa and 8bit loading to finetune a big model ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-to-use-gradient-checkpointing-when-dealing-with-a-big-model">How to use gradient checkpointing when dealing with a big model ?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
@@ -118,6 +119,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../examples/wiki_103/LanguageModelGeneration.html">Language Model Wiki-103</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../examples/summary/Summarization.html">Summarization CNN/DM</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../examples/ggnn/GGNN.html">Gated Graph Neural Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/replicate_vicuna/ReplicateVicuna.html">Supervised Finetuning of llama 7B to replicate Vicuna</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Scripts</span></p>
 <ul class="current">
@@ -129,22 +131,22 @@
 <li class="toctree-l2"><a class="reference internal" href="#Features">Features</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Pruning">Pruning</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Embeddings">Embeddings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Transform/InlineTags">Transform/InlineTags</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Transform/Normalize">Transform/Normalize</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Transform/Filter">Transform/Filter</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Transform/Prefix">Transform/Prefix</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Transform/Suffix">Transform/Suffix</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#Transform/FuzzyMatching">Transform/FuzzyMatching</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#Transform/InferFeats">Transform/InferFeats</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#Transform/InlineTags">Transform/InlineTags</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#Transform/Normalize">Transform/Normalize</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#Transform/BART">Transform/BART</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Transform/Docify">Transform/Docify</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Transform/BART">Transform/BART</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Transform/Clean">Transform/Clean</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Transform/SwitchOut">Transform/SwitchOut</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Transform/Token_Drop">Transform/Token_Drop</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Transform/Token_Mask">Transform/Token_Mask</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Transform/Uppercase">Transform/Uppercase</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Transform/FuzzyMatching">Transform/FuzzyMatching</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Transform/Subword/Common">Transform/Subword/Common</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Transform/Subword/ONMTTOK">Transform/Subword/ONMTTOK</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#Transform/Clean">Transform/Clean</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Transform/InferFeats">Transform/InferFeats</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Model-Embeddings">Model-Embeddings</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Model-Embedding Features">Model-Embedding Features</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Model- Task">Model- Task</a></li>
@@ -248,7 +250,7 @@
 </p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">train</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">config</span> <span class="n">CONFIG</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">save_config</span> <span class="n">SAVE_CONFIG</span><span class="p">]</span> <span class="o">-</span><span class="n">data</span> <span class="n">DATA</span>
                 <span class="p">[</span><span class="o">-</span><span class="n">skip_empty_level</span> <span class="p">{</span><span class="n">silent</span><span class="p">,</span><span class="n">warning</span><span class="p">,</span><span class="n">error</span><span class="p">}]</span>
-                <span class="p">[</span><span class="o">-</span><span class="n">transforms</span> <span class="p">{</span><span class="n">filtertoolong</span><span class="p">,</span><span class="n">prefix</span><span class="p">,</span><span class="n">suffix</span><span class="p">,</span><span class="n">fuzzymatch</span><span class="p">,</span><span class="n">inferfeats</span><span class="p">,</span><span class="n">inlinetags</span><span class="p">,</span><span class="n">normalize</span><span class="p">,</span><span class="n">bart</span><span class="p">,</span><span class="n">docify</span><span class="p">,</span><span class="n">switchout</span><span class="p">,</span><span class="n">tokendrop</span><span class="p">,</span><span class="n">tokenmask</span><span class="p">,</span><span class="n">uppercase</span><span class="p">,</span><span class="n">sentencepiece</span><span class="p">,</span><span class="n">bpe</span><span class="p">,</span><span class="n">onmt_tokenize</span><span class="p">,</span><span class="n">clean</span><span class="p">}</span> <span class="p">[{</span><span class="n">filtertoolong</span><span class="p">,</span><span class="n">prefix</span><span class="p">,</span><span class="n">suffix</span><span class="p">,</span><span class="n">fuzzymatch</span><span class="p">,</span><span class="n">inferfeats</span><span class="p">,</span><span class="n">inlinetags</span><span class="p">,</span><span class="n">normalize</span><span class="p">,</span><span class="n">bart</span><span class="p">,</span><span class="n">docify</span><span class="p">,</span><span class="n">switchout</span><span class="p">,</span><span class="n">tokendrop</span><span class="p">,</span><span class="n">tokenmask</span><span class="p">,</span><span class="n">uppercase</span><span class="p">,</span><span class="n">sentencepiece</span><span class="p">,</span><span class="n">bpe</span><span class="p">,</span><span class="n">onmt_tokenize</span><span class="p">,</span><span class="n">clean</span><span class="p">}</span> <span class="o">...</span><span class="p">]]</span>
+                <span class="p">[</span><span class="o">-</span><span class="n">transforms</span> <span class="p">{</span><span class="n">inlinetags</span><span class="p">,</span><span class="n">normalize</span><span class="p">,</span><span class="n">filtertoolong</span><span class="p">,</span><span class="n">prefix</span><span class="p">,</span><span class="n">suffix</span><span class="p">,</span><span class="n">docify</span><span class="p">,</span><span class="n">bart</span><span class="p">,</span><span class="n">clean</span><span class="p">,</span><span class="n">switchout</span><span class="p">,</span><span class="n">tokendrop</span><span class="p">,</span><span class="n">tokenmask</span><span class="p">,</span><span class="n">uppercase</span><span class="p">,</span><span class="n">fuzzymatch</span><span class="p">,</span><span class="n">sentencepiece</span><span class="p">,</span><span class="n">bpe</span><span class="p">,</span><span class="n">onmt_tokenize</span><span class="p">,</span><span class="n">inferfeats</span><span class="p">}</span> <span class="p">[{</span><span class="n">inlinetags</span><span class="p">,</span><span class="n">normalize</span><span class="p">,</span><span class="n">filtertoolong</span><span class="p">,</span><span class="n">prefix</span><span class="p">,</span><span class="n">suffix</span><span class="p">,</span><span class="n">docify</span><span class="p">,</span><span class="n">bart</span><span class="p">,</span><span class="n">clean</span><span class="p">,</span><span class="n">switchout</span><span class="p">,</span><span class="n">tokendrop</span><span class="p">,</span><span class="n">tokenmask</span><span class="p">,</span><span class="n">uppercase</span><span class="p">,</span><span class="n">fuzzymatch</span><span class="p">,</span><span class="n">sentencepiece</span><span class="p">,</span><span class="n">bpe</span><span class="p">,</span><span class="n">onmt_tokenize</span><span class="p">,</span><span class="n">inferfeats</span><span class="p">}</span> <span class="o">...</span><span class="p">]]</span>
                 <span class="p">[</span><span class="o">-</span><span class="n">save_data</span> <span class="n">SAVE_DATA</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">overwrite</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">n_sample</span> <span class="n">N_SAMPLE</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">-</span><span class="n">dump_transforms</span><span class="p">]</span> <span class="o">-</span><span class="n">src_vocab</span> <span class="n">SRC_VOCAB</span> <span class="p">[</span><span class="o">-</span><span class="n">tgt_vocab</span> <span class="n">TGT_VOCAB</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">-</span><span class="n">share_vocab</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">decoder_start_token</span> <span class="n">DECODER_START_TOKEN</span><span class="p">]</span>
@@ -266,16 +268,6 @@
                 <span class="p">[</span><span class="o">-</span><span class="n">src_embeddings</span> <span class="n">SRC_EMBEDDINGS</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">-</span><span class="n">tgt_embeddings</span> <span class="n">TGT_EMBEDDINGS</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">-</span><span class="n">embeddings_type</span> <span class="p">{</span><span class="n">GloVe</span><span class="p">,</span><span class="n">word2vec</span><span class="p">}]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">src_seq_length</span> <span class="n">SRC_SEQ_LENGTH</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">tgt_seq_length</span> <span class="n">TGT_SEQ_LENGTH</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">src_prefix</span> <span class="n">SRC_PREFIX</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">tgt_prefix</span> <span class="n">TGT_PREFIX</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">src_suffix</span> <span class="n">SRC_SUFFIX</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">tgt_suffix</span> <span class="n">TGT_SUFFIX</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">tm_path</span> <span class="n">TM_PATH</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">fuzzy_corpus_ratio</span> <span class="n">FUZZY_CORPUS_RATIO</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">fuzzy_threshold</span> <span class="n">FUZZY_THRESHOLD</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">tm_delimiter</span> <span class="n">TM_DELIMITER</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">fuzzy_token</span> <span class="n">FUZZY_TOKEN</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">fuzzymatch_min_length</span> <span class="n">FUZZYMATCH_MIN_LENGTH</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">fuzzymatch_max_length</span> <span class="n">FUZZYMATCH_MAX_LENGTH</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">reversible_tokenization</span> <span class="p">{</span><span class="n">joiner</span><span class="p">,</span><span class="n">spacer</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">tags_dictionary_path</span> <span class="n">TAGS_DICTIONARY_PATH</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">tags_corpus_ratio</span> <span class="n">TAGS_CORPUS_RATIO</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">max_tags</span> <span class="n">MAX_TAGS</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">paired_stag</span> <span class="n">PAIRED_STAG</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">paired_etag</span> <span class="n">PAIRED_ETAG</span><span class="p">]</span>
@@ -285,16 +277,30 @@
                 <span class="p">[</span><span class="o">--</span><span class="n">norm_numbers</span> <span class="n">NORM_NUMBERS</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">pre_replace_unicode_punct</span> <span class="n">PRE_REPLACE_UNICODE_PUNCT</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">post_remove_control_chars</span> <span class="n">POST_REMOVE_CONTROL_CHARS</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">src_seq_length</span> <span class="n">SRC_SEQ_LENGTH</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">tgt_seq_length</span> <span class="n">TGT_SEQ_LENGTH</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">src_prefix</span> <span class="n">SRC_PREFIX</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">tgt_prefix</span> <span class="n">TGT_PREFIX</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">src_suffix</span> <span class="n">SRC_SUFFIX</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">tgt_suffix</span> <span class="n">TGT_SUFFIX</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">doc_length</span> <span class="n">DOC_LENGTH</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">max_context</span> <span class="n">MAX_CONTEXT</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">permute_sent_ratio</span> <span class="n">PERMUTE_SENT_RATIO</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">rotate_ratio</span> <span class="n">ROTATE_RATIO</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">insert_ratio</span> <span class="n">INSERT_RATIO</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">random_ratio</span> <span class="n">RANDOM_RATIO</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">mask_ratio</span> <span class="n">MASK_RATIO</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">mask_length</span> <span class="p">{</span><span class="n">subword</span><span class="p">,</span><span class="n">word</span><span class="p">,</span><span class="n">span</span><span class="o">-</span><span class="n">poisson</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">poisson_lambda</span> <span class="n">POISSON_LAMBDA</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">replace_length</span> <span class="p">{</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">}]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">doc_length</span> <span class="n">DOC_LENGTH</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">max_context</span> <span class="n">MAX_CONTEXT</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">src_eq_tgt</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">same_char</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">same_word</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">scripts_ok</span> <span class="p">[</span><span class="n">SCRIPTS_OK</span> <span class="p">[</span><span class="n">SCRIPTS_OK</span> <span class="o">...</span><span class="p">]]]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">scripts_nok</span> <span class="p">[</span><span class="n">SCRIPTS_NOK</span> <span class="p">[</span><span class="n">SCRIPTS_NOK</span> <span class="o">...</span><span class="p">]]]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">src_tgt_ratio</span> <span class="n">SRC_TGT_RATIO</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">avg_tok_min</span> <span class="n">AVG_TOK_MIN</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">avg_tok_max</span> <span class="n">AVG_TOK_MAX</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">langid</span> <span class="p">[</span><span class="n">LANGID</span> <span class="p">[</span><span class="n">LANGID</span> <span class="o">...</span><span class="p">]]]</span>
                 <span class="p">[</span><span class="o">-</span><span class="n">switchout_temperature</span> <span class="n">SWITCHOUT_TEMPERATURE</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">-</span><span class="n">tokendrop_temperature</span> <span class="n">TOKENDROP_TEMPERATURE</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">-</span><span class="n">tokenmask_temperature</span> <span class="n">TOKENMASK_TEMPERATURE</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">upper_corpus_ratio</span> <span class="n">UPPER_CORPUS_RATIO</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">upper_corpus_ratio</span> <span class="n">UPPER_CORPUS_RATIO</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">tm_path</span> <span class="n">TM_PATH</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">fuzzy_corpus_ratio</span> <span class="n">FUZZY_CORPUS_RATIO</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">fuzzy_threshold</span> <span class="n">FUZZY_THRESHOLD</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">tm_delimiter</span> <span class="n">TM_DELIMITER</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">fuzzy_token</span> <span class="n">FUZZY_TOKEN</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">fuzzymatch_min_length</span> <span class="n">FUZZYMATCH_MIN_LENGTH</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">fuzzymatch_max_length</span> <span class="n">FUZZYMATCH_MAX_LENGTH</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">-</span><span class="n">src_subword_model</span> <span class="n">SRC_SUBWORD_MODEL</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">-</span><span class="n">tgt_subword_model</span> <span class="n">TGT_SUBWORD_MODEL</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">-</span><span class="n">src_subword_nbest</span> <span class="n">SRC_SUBWORD_NBEST</span><span class="p">]</span>
@@ -309,11 +315,7 @@
                 <span class="p">[</span><span class="o">-</span><span class="n">tgt_subword_type</span> <span class="p">{</span><span class="n">none</span><span class="p">,</span><span class="n">sentencepiece</span><span class="p">,</span><span class="n">bpe</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">-</span><span class="n">src_onmttok_kwargs</span> <span class="n">SRC_ONMTTOK_KWARGS</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">-</span><span class="n">tgt_onmttok_kwargs</span> <span class="n">TGT_ONMTTOK_KWARGS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">gpt2_pretok</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">src_eq_tgt</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">same_char</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">same_word</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">scripts_ok</span> <span class="p">[</span><span class="n">SCRIPTS_OK</span> <span class="p">[</span><span class="n">SCRIPTS_OK</span> <span class="o">...</span><span class="p">]]]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">scripts_nok</span> <span class="p">[</span><span class="n">SCRIPTS_NOK</span> <span class="p">[</span><span class="n">SCRIPTS_NOK</span> <span class="o">...</span><span class="p">]]]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">src_tgt_ratio</span> <span class="n">SRC_TGT_RATIO</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">avg_tok_min</span> <span class="n">AVG_TOK_MIN</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">avg_tok_max</span> <span class="n">AVG_TOK_MAX</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">langid</span> <span class="p">[</span><span class="n">LANGID</span> <span class="p">[</span><span class="n">LANGID</span> <span class="o">...</span><span class="p">]]]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">reversible_tokenization</span> <span class="p">{</span><span class="n">joiner</span><span class="p">,</span><span class="n">spacer</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">src_word_vec_size</span> <span class="n">SRC_WORD_VEC_SIZE</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">tgt_word_vec_size</span> <span class="n">TGT_WORD_VEC_SIZE</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">word_vec_size</span> <span class="n">WORD_VEC_SIZE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">share_decoder_embeddings</span><span class="p">]</span>
@@ -345,7 +347,8 @@
                 <span class="p">[</span><span class="o">--</span><span class="n">self_attn_type</span> <span class="n">SELF_ATTN_TYPE</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">max_relative_positions</span> <span class="n">MAX_RELATIVE_POSITIONS</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">heads</span> <span class="n">HEADS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">transformer_ff</span> <span class="n">TRANSFORMER_FF</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">aan_useffn</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">add_qkvbias</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">lambda_align</span> <span class="n">LAMBDA_ALIGN</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">aan_useffn</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">add_qkvbias</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">multiquery</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">add_ffnbias</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">parallel_residual</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">lambda_align</span> <span class="n">LAMBDA_ALIGN</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">alignment_layer</span> <span class="n">ALIGNMENT_LAYER</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">alignment_heads</span> <span class="n">ALIGNMENT_HEADS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">full_context_alignment</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">copy_attn</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">copy_attn_type</span> <span class="p">{</span><span class="n">dot</span><span class="p">,</span><span class="n">general</span><span class="p">,</span><span class="n">mlp</span><span class="p">,</span><span class="n">none</span><span class="p">}]</span>
@@ -355,8 +358,9 @@
                 <span class="p">[</span><span class="o">--</span><span class="n">lm_prior_model</span> <span class="n">LM_PRIOR_MODEL</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">lm_prior_lambda</span> <span class="n">LM_PRIOR_LAMBDA</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">lm_prior_tau</span> <span class="n">LM_PRIOR_TAU</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">loss_scale</span> <span class="n">LOSS_SCALE</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">apex_opt_level</span> <span class="p">{,</span><span class="n">O0</span><span class="p">,</span><span class="n">O1</span><span class="p">,</span><span class="n">O2</span><span class="p">,</span><span class="n">O3</span><span class="p">}]</span> <span class="p">[</span><span class="o">--</span><span class="n">data_type</span> <span class="n">DATA_TYPE</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">save_model</span> <span class="n">SAVE_MODEL</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">apex_opt_level</span> <span class="p">{,</span><span class="n">O0</span><span class="p">,</span><span class="n">O1</span><span class="p">,</span><span class="n">O2</span><span class="p">,</span><span class="n">O3</span><span class="p">}]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">use_ckpting</span> <span class="p">{</span><span class="n">ffn</span><span class="p">,</span><span class="n">mha</span><span class="p">,</span><span class="n">lora</span><span class="p">}</span> <span class="p">[{</span><span class="n">ffn</span><span class="p">,</span><span class="n">mha</span><span class="p">,</span><span class="n">lora</span><span class="p">}</span> <span class="o">...</span><span class="p">]]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">data_type</span> <span class="n">DATA_TYPE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">save_model</span> <span class="n">SAVE_MODEL</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">save_checkpoint_steps</span> <span class="n">SAVE_CHECKPOINT_STEPS</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">keep_checkpoint</span> <span class="n">KEEP_CHECKPOINT</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">gpu_ranks</span> <span class="p">[</span><span class="n">GPU_RANKS</span> <span class="p">[</span><span class="n">GPU_RANKS</span> <span class="o">...</span><span class="p">]]]</span>
@@ -366,7 +370,8 @@
                 <span class="p">[</span><span class="o">--</span><span class="n">lora_layers</span> <span class="n">LORA_LAYERS</span> <span class="p">[</span><span class="n">LORA_LAYERS</span> <span class="o">...</span><span class="p">]]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">lora_embedding</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">lora_rank</span> <span class="n">LORA_RANK</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">lora_alpha</span> <span class="n">LORA_ALPHA</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">lora_dropout</span> <span class="n">LORA_DROPOUT</span><span class="p">]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">quant_layers</span> <span class="n">QUANT_LAYERS</span> <span class="p">[</span><span class="n">QUANT_LAYERS</span> <span class="o">...</span><span class="p">]]</span> <span class="p">[</span><span class="o">--</span><span class="n">seed</span> <span class="n">SEED</span><span class="p">]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">quant_layers</span> <span class="n">QUANT_LAYERS</span> <span class="p">[</span><span class="n">QUANT_LAYERS</span> <span class="o">...</span><span class="p">]]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">quant_type</span> <span class="p">{</span><span class="n">bnb_8bit</span><span class="p">,</span><span class="n">bnb_FP4</span><span class="p">,</span><span class="n">bnb_NF4</span><span class="p">}]</span> <span class="p">[</span><span class="o">--</span><span class="n">seed</span> <span class="n">SEED</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">param_init</span> <span class="n">PARAM_INIT</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">param_init_glorot</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">train_from</span> <span class="n">TRAIN_FROM</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">reset_optim</span> <span class="p">{</span><span class="n">none</span><span class="p">,</span><span class="nb">all</span><span class="p">,</span><span class="n">states</span><span class="p">,</span><span class="n">keep_states</span><span class="p">}]</span>
@@ -383,7 +388,7 @@
                 <span class="p">[</span><span class="o">--</span><span class="n">train_steps</span> <span class="n">TRAIN_STEPS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">single_pass</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">early_stopping</span> <span class="n">EARLY_STOPPING</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">early_stopping_criteria</span> <span class="p">[</span><span class="n">EARLY_STOPPING_CRITERIA</span> <span class="p">[</span><span class="n">EARLY_STOPPING_CRITERIA</span> <span class="o">...</span><span class="p">]]]</span>
-                <span class="p">[</span><span class="o">--</span><span class="n">optim</span> <span class="p">{</span><span class="n">sgd</span><span class="p">,</span><span class="n">adagrad</span><span class="p">,</span><span class="n">adadelta</span><span class="p">,</span><span class="n">adam</span><span class="p">,</span><span class="n">sparseadam</span><span class="p">,</span><span class="n">adafactor</span><span class="p">,</span><span class="n">fusedadam</span><span class="p">}]</span>
+                <span class="p">[</span><span class="o">--</span><span class="n">optim</span> <span class="p">{</span><span class="n">sgd</span><span class="p">,</span><span class="n">adagrad</span><span class="p">,</span><span class="n">adadelta</span><span class="p">,</span><span class="n">adam</span><span class="p">,</span><span class="n">sparseadam</span><span class="p">,</span><span class="n">adafactor</span><span class="p">,</span><span class="n">fusedadam</span><span class="p">,</span><span class="n">adamw8bit</span><span class="p">,</span><span class="n">pagedadamw8bit</span><span class="p">,</span><span class="n">pagedadamw32bit</span><span class="p">}]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">adagrad_accumulator_init</span> <span class="n">ADAGRAD_ACCUMULATOR_INIT</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">max_grad_norm</span> <span class="n">MAX_GRAD_NORM</span><span class="p">]</span>
                 <span class="p">[</span><span class="o">--</span><span class="n">dropout</span> <span class="n">DROPOUT</span> <span class="p">[</span><span class="n">DROPOUT</span> <span class="o">...</span><span class="p">]]</span>
@@ -437,7 +442,7 @@
 <p>Default: “warning”</p>
 </dd>
 <dt><kbd>-transforms, --transforms</kbd></dt>
-<dd><p>Possible choices: filtertoolong, prefix, suffix, fuzzymatch, inferfeats, inlinetags, normalize, bart, docify, switchout, tokendrop, tokenmask, uppercase, sentencepiece, bpe, onmt_tokenize, clean</p>
+<dd><p>Possible choices: inlinetags, normalize, filtertoolong, prefix, suffix, docify, bart, clean, switchout, tokendrop, tokenmask, uppercase, fuzzymatch, sentencepiece, bpe, onmt_tokenize, inferfeats</p>
 <p>Default transform pipeline to apply to data. Can be specified in each corpus of data to override.</p>
 <p>Default: []</p>
 </dd>
@@ -542,87 +547,6 @@
 </dd>
 </dl>
 </section>
-<section id="Transform/Filter">
-<h2>Transform/Filter<a class="headerlink" href="#Transform/Filter" title="Permalink to this heading">¶</a></h2>
-<dl class="option-list">
-<dt><kbd>--src_seq_length, -src_seq_length</kbd></dt>
-<dd><p>Maximum source sequence length.</p>
-<p>Default: 192</p>
-</dd>
-<dt><kbd>--tgt_seq_length, -tgt_seq_length</kbd></dt>
-<dd><p>Maximum target sequence length.</p>
-<p>Default: 192</p>
-</dd>
-</dl>
-</section>
-<section id="Transform/Prefix">
-<h2>Transform/Prefix<a class="headerlink" href="#Transform/Prefix" title="Permalink to this heading">¶</a></h2>
-<dl class="option-list">
-<dt><kbd>--src_prefix, -src_prefix</kbd></dt>
-<dd><p>String to prepend to all source example.</p>
-<p>Default: “”</p>
-</dd>
-<dt><kbd>--tgt_prefix, -tgt_prefix</kbd></dt>
-<dd><p>String to prepend to all target example.</p>
-<p>Default: “”</p>
-</dd>
-</dl>
-</section>
-<section id="Transform/Suffix">
-<h2>Transform/Suffix<a class="headerlink" href="#Transform/Suffix" title="Permalink to this heading">¶</a></h2>
-<dl class="option-list">
-<dt><kbd>--src_suffix, -src_suffix</kbd></dt>
-<dd><p>String to append to all source example.</p>
-<p>Default: “”</p>
-</dd>
-<dt><kbd>--tgt_suffix, -tgt_suffix</kbd></dt>
-<dd><p>String to append to all target example.</p>
-<p>Default: “”</p>
-</dd>
-</dl>
-</section>
-<section id="Transform/FuzzyMatching">
-<h2>Transform/FuzzyMatching<a class="headerlink" href="#Transform/FuzzyMatching" title="Permalink to this heading">¶</a></h2>
-<dl class="option-list">
-<dt><kbd>--tm_path, -tm_path</kbd></dt>
-<dd><p>Path to a flat text TM.</p>
-</dd>
-<dt><kbd>--fuzzy_corpus_ratio, -fuzzy_corpus_ratio</kbd></dt>
-<dd><p>Ratio of corpus to augment with fuzzy matches.</p>
-<p>Default: 0.1</p>
-</dd>
-<dt><kbd>--fuzzy_threshold, -fuzzy_threshold</kbd></dt>
-<dd><p>The fuzzy matching threshold.</p>
-<p>Default: 70</p>
-</dd>
-<dt><kbd>--tm_delimiter, -tm_delimiter</kbd></dt>
-<dd><p>The delimiter used in the flat text TM.</p>
-<p>Default: “      “</p>
-</dd>
-<dt><kbd>--fuzzy_token, -fuzzy_token</kbd></dt>
-<dd><p>The fuzzy token to be added with the matches.</p>
-<p>Default: “｟fuzzy｠”</p>
-</dd>
-<dt><kbd>--fuzzymatch_min_length, -fuzzymatch_min_length</kbd></dt>
-<dd><p>Min length for TM entries and examples to match.</p>
-<p>Default: 4</p>
-</dd>
-<dt><kbd>--fuzzymatch_max_length, -fuzzymatch_max_length</kbd></dt>
-<dd><p>Max length for TM entries and examples to match.</p>
-<p>Default: 70</p>
-</dd>
-</dl>
-</section>
-<section id="Transform/InferFeats">
-<h2>Transform/InferFeats<a class="headerlink" href="#Transform/InferFeats" title="Permalink to this heading">¶</a></h2>
-<dl class="option-list">
-<dt><kbd>--reversible_tokenization, -reversible_tokenization</kbd></dt>
-<dd><p>Possible choices: joiner, spacer</p>
-<p>Type of reversible tokenization applied on the tokenizer.</p>
-<p>Default: “joiner”</p>
-</dd>
-</dl>
-</section>
 <section id="Transform/InlineTags">
 <h2>Transform/InlineTags<a class="headerlink" href="#Transform/InlineTags" title="Permalink to this heading">¶</a></h2>
 <dl class="option-list">
@@ -688,6 +612,58 @@
 </dd>
 </dl>
 </section>
+<section id="Transform/Filter">
+<h2>Transform/Filter<a class="headerlink" href="#Transform/Filter" title="Permalink to this heading">¶</a></h2>
+<dl class="option-list">
+<dt><kbd>--src_seq_length, -src_seq_length</kbd></dt>
+<dd><p>Maximum source sequence length.</p>
+<p>Default: 192</p>
+</dd>
+<dt><kbd>--tgt_seq_length, -tgt_seq_length</kbd></dt>
+<dd><p>Maximum target sequence length.</p>
+<p>Default: 192</p>
+</dd>
+</dl>
+</section>
+<section id="Transform/Prefix">
+<h2>Transform/Prefix<a class="headerlink" href="#Transform/Prefix" title="Permalink to this heading">¶</a></h2>
+<dl class="option-list">
+<dt><kbd>--src_prefix, -src_prefix</kbd></dt>
+<dd><p>String to prepend to all source example.</p>
+<p>Default: “”</p>
+</dd>
+<dt><kbd>--tgt_prefix, -tgt_prefix</kbd></dt>
+<dd><p>String to prepend to all target example.</p>
+<p>Default: “”</p>
+</dd>
+</dl>
+</section>
+<section id="Transform/Suffix">
+<h2>Transform/Suffix<a class="headerlink" href="#Transform/Suffix" title="Permalink to this heading">¶</a></h2>
+<dl class="option-list">
+<dt><kbd>--src_suffix, -src_suffix</kbd></dt>
+<dd><p>String to append to all source example.</p>
+<p>Default: “”</p>
+</dd>
+<dt><kbd>--tgt_suffix, -tgt_suffix</kbd></dt>
+<dd><p>String to append to all target example.</p>
+<p>Default: “”</p>
+</dd>
+</dl>
+</section>
+<section id="Transform/Docify">
+<h2>Transform/Docify<a class="headerlink" href="#Transform/Docify" title="Permalink to this heading">¶</a></h2>
+<dl class="option-list">
+<dt><kbd>--doc_length, -doc_length</kbd></dt>
+<dd><p>Number of tokens per doc.</p>
+<p>Default: 200</p>
+</dd>
+<dt><kbd>--max_context, -max_context</kbd></dt>
+<dd><p>Max context segments.</p>
+<p>Default: 1</p>
+</dd>
+</dl>
+</section>
 <section id="Transform/BART">
 <h2>Transform/BART<a class="headerlink" href="#Transform/BART" title="Permalink to this heading">¶</a></h2>
 <dl class="option-list">
@@ -727,16 +703,44 @@
 </dd>
 </dl>
 </section>
-<section id="Transform/Docify">
-<h2>Transform/Docify<a class="headerlink" href="#Transform/Docify" title="Permalink to this heading">¶</a></h2>
+<section id="Transform/Clean">
+<h2>Transform/Clean<a class="headerlink" href="#Transform/Clean" title="Permalink to this heading">¶</a></h2>
 <dl class="option-list">
-<dt><kbd>--doc_length, -doc_length</kbd></dt>
-<dd><p>Number of tokens per doc.</p>
-<p>Default: 200</p>
+<dt><kbd>--src_eq_tgt, -src_eq_tgt</kbd></dt>
+<dd><p>Remove ex src==tgt</p>
+<p>Default: False</p>
 </dd>
-<dt><kbd>--max_context, -max_context</kbd></dt>
-<dd><p>Max context segments.</p>
-<p>Default: 1</p>
+<dt><kbd>--same_char, -same_char</kbd></dt>
+<dd><p>Remove ex with same char more than 4 times</p>
+<p>Default: False</p>
+</dd>
+<dt><kbd>--same_word, -same_word</kbd></dt>
+<dd><p>Remove ex with same word more than 3 times</p>
+<p>Default: False</p>
+</dd>
+<dt><kbd>--scripts_ok, -scripts_ok</kbd></dt>
+<dd><p>list of unicodata scripts accepted</p>
+<p>Default: [‘Latin’, ‘Common’]</p>
+</dd>
+<dt><kbd>--scripts_nok, -scripts_nok</kbd></dt>
+<dd><p>list of unicodata scripts not accepted</p>
+<p>Default: []</p>
+</dd>
+<dt><kbd>--src_tgt_ratio, -src_tgt_ratio</kbd></dt>
+<dd><p>ratio between src and tgt</p>
+<p>Default: 2</p>
+</dd>
+<dt><kbd>--avg_tok_min, -avg_tok_min</kbd></dt>
+<dd><p>average length of tokens min</p>
+<p>Default: 3</p>
+</dd>
+<dt><kbd>--avg_tok_max, -avg_tok_max</kbd></dt>
+<dd><p>average length of tokens max</p>
+<p>Default: 20</p>
+</dd>
+<dt><kbd>--langid, -langid</kbd></dt>
+<dd><p>list of languages accepted</p>
+<p>Default: []</p>
 </dd>
 </dl>
 </section>
@@ -773,6 +777,38 @@
 <dt><kbd>--upper_corpus_ratio, -upper_corpus_ratio</kbd></dt>
 <dd><p>Corpus ratio to apply uppercasing.</p>
 <p>Default: 0.01</p>
+</dd>
+</dl>
+</section>
+<section id="Transform/FuzzyMatching">
+<h2>Transform/FuzzyMatching<a class="headerlink" href="#Transform/FuzzyMatching" title="Permalink to this heading">¶</a></h2>
+<dl class="option-list">
+<dt><kbd>--tm_path, -tm_path</kbd></dt>
+<dd><p>Path to a flat text TM.</p>
+</dd>
+<dt><kbd>--fuzzy_corpus_ratio, -fuzzy_corpus_ratio</kbd></dt>
+<dd><p>Ratio of corpus to augment with fuzzy matches.</p>
+<p>Default: 0.1</p>
+</dd>
+<dt><kbd>--fuzzy_threshold, -fuzzy_threshold</kbd></dt>
+<dd><p>The fuzzy matching threshold.</p>
+<p>Default: 70</p>
+</dd>
+<dt><kbd>--tm_delimiter, -tm_delimiter</kbd></dt>
+<dd><p>The delimiter used in the flat text TM.</p>
+<p>Default: “      “</p>
+</dd>
+<dt><kbd>--fuzzy_token, -fuzzy_token</kbd></dt>
+<dd><p>The fuzzy token to be added with the matches.</p>
+<p>Default: “｟fuzzy｠”</p>
+</dd>
+<dt><kbd>--fuzzymatch_min_length, -fuzzymatch_min_length</kbd></dt>
+<dd><p>Min length for TM entries and examples to match.</p>
+<p>Default: 4</p>
+</dd>
+<dt><kbd>--fuzzymatch_max_length, -fuzzymatch_max_length</kbd></dt>
+<dd><p>Max length for TM entries and examples to match.</p>
+<p>Default: 70</p>
 </dd>
 </dl>
 </section>
@@ -850,44 +886,13 @@
 </dd>
 </dl>
 </section>
-<section id="Transform/Clean">
-<h2>Transform/Clean<a class="headerlink" href="#Transform/Clean" title="Permalink to this heading">¶</a></h2>
+<section id="Transform/InferFeats">
+<h2>Transform/InferFeats<a class="headerlink" href="#Transform/InferFeats" title="Permalink to this heading">¶</a></h2>
 <dl class="option-list">
-<dt><kbd>--src_eq_tgt, -src_eq_tgt</kbd></dt>
-<dd><p>Remove ex src==tgt</p>
-<p>Default: False</p>
-</dd>
-<dt><kbd>--same_char, -same_char</kbd></dt>
-<dd><p>Remove ex with same char more than 4 times</p>
-<p>Default: False</p>
-</dd>
-<dt><kbd>--same_word, -same_word</kbd></dt>
-<dd><p>Remove ex with same word more than 3 times</p>
-<p>Default: False</p>
-</dd>
-<dt><kbd>--scripts_ok, -scripts_ok</kbd></dt>
-<dd><p>list of unicodata scripts accepted</p>
-<p>Default: [‘Latin’, ‘Common’]</p>
-</dd>
-<dt><kbd>--scripts_nok, -scripts_nok</kbd></dt>
-<dd><p>list of unicodata scripts not accepted</p>
-<p>Default: []</p>
-</dd>
-<dt><kbd>--src_tgt_ratio, -src_tgt_ratio</kbd></dt>
-<dd><p>ratio between src and tgt</p>
-<p>Default: 2</p>
-</dd>
-<dt><kbd>--avg_tok_min, -avg_tok_min</kbd></dt>
-<dd><p>average length of tokens min</p>
-<p>Default: 3</p>
-</dd>
-<dt><kbd>--avg_tok_max, -avg_tok_max</kbd></dt>
-<dd><p>average length of tokens max</p>
-<p>Default: 20</p>
-</dd>
-<dt><kbd>--langid, -langid</kbd></dt>
-<dd><p>list of languages accepted</p>
-<p>Default: []</p>
+<dt><kbd>--reversible_tokenization, -reversible_tokenization</kbd></dt>
+<dd><p>Possible choices: joiner, spacer</p>
+<p>Type of reversible tokenization applied on the tokenizer.</p>
+<p>Default: “joiner”</p>
 </dd>
 </dl>
 </section>
@@ -1109,6 +1114,18 @@
 <dd><p>Add bias to nn.linear of Query/Key/Value in MHANote: this will add bias to output proj layer too</p>
 <p>Default: False</p>
 </dd>
+<dt><kbd>--multiquery, -multiquery</kbd></dt>
+<dd><p>Use MultiQUery attentionNote: <a class="reference external" href="https://arxiv.org/pdf/1911.02150.pdf">https://arxiv.org/pdf/1911.02150.pdf</a></p>
+<p>Default: False</p>
+</dd>
+<dt><kbd>--add_ffnbias, -add_ffnbias</kbd></dt>
+<dd><p>Add bias to nn.linear of Position_wise FFN</p>
+<p>Default: False</p>
+</dd>
+<dt><kbd>--parallel_residual, -parallel_residual</kbd></dt>
+<dd><p>Use Parallel residual in Decoder LayerNote: this is used by GPT-J / Falcon Architecture</p>
+<p>Default: False</p>
+</dd>
 </dl>
 </section>
 <section id="Model - Alignement">
@@ -1190,6 +1207,11 @@
 <p>For FP16 training, the opt_level to use.See <a class="reference external" href="https://nvidia.github.io/apex/amp.html#opt-levels">https://nvidia.github.io/apex/amp.html#opt-levels</a>.</p>
 <p>Default: “”</p>
 </dd>
+<dt><kbd>--use_ckpting, -use_ckpting</kbd></dt>
+<dd><p>Possible choices: ffn, mha, lora</p>
+<p>use gradient checkpointing those modules</p>
+<p>Default: []</p>
+</dd>
 </dl>
 </section>
 <section id="General">
@@ -1256,8 +1278,13 @@
 <p>Default: 0.0</p>
 </dd>
 <dt><kbd>--quant_layers, -quant_layers</kbd></dt>
-<dd><p>list of layers to be compressed in 8bit.</p>
+<dd><p>list of layers to be compressed in 4/8bit.</p>
 <p>Default: []</p>
+</dd>
+<dt><kbd>--quant_type, -quant_type</kbd></dt>
+<dd><p>Possible choices: bnb_8bit, bnb_FP4, bnb_NF4</p>
+<p>Type of compression.</p>
+<p>Default: “bnb_8bit”</p>
 </dd>
 </dl>
 </section>
@@ -1363,7 +1390,7 @@
 <dd><p>Criteria to use for early stopping.</p>
 </dd>
 <dt><kbd>--optim, -optim</kbd></dt>
-<dd><p>Possible choices: sgd, adagrad, adadelta, adam, sparseadam, adafactor, fusedadam</p>
+<dd><p>Possible choices: sgd, adagrad, adadelta, adam, sparseadam, adafactor, fusedadam, adamw8bit, pagedadamw8bit, pagedadamw32bit</p>
 <p>Optimization method.</p>
 <p>Default: “sgd”</p>
 </dd>

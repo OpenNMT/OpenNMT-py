@@ -103,6 +103,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-to-use-lora-and-8bit-loading-to-finetune-a-big-model">How to use LoRa and 8bit loading to finetune a big model ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-to-use-gradient-checkpointing-when-dealing-with-a-big-model">How to use gradient checkpointing when dealing with a big model ?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
@@ -114,6 +115,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/wiki_103/LanguageModelGeneration.html">Language Model Wiki-103</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/summary/Summarization.html">Summarization CNN/DM</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/ggnn/GGNN.html">Gated Graph Neural Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/replicate_vicuna/ReplicateVicuna.html">Supervised Finetuning of llama 7B to replicate Vicuna</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Scripts</span></p>
 <ul>
@@ -205,6 +207,8 @@
 <span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">from</span> <span class="nn">torch.utils.checkpoint</span> <span class="kn">import</span> <span class="n">checkpoint</span>
+<span class="kn">from</span> <span class="nn">torch.nn.utils</span> <span class="kn">import</span> <span class="n">skip_init</span>
 <span class="kn">from</span> <span class="nn">.alibi_position_bias</span> <span class="kn">import</span> <span class="n">AlibiPositionalBias</span>
 
 
@@ -352,18 +356,48 @@
         <span class="n">max_relative_positions</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
         <span class="n">attn_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">add_qkvbias</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">multiquery</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">use_ckpting</span><span class="o">=</span><span class="p">[],</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">assert</span> <span class="n">model_dim</span> <span class="o">%</span> <span class="n">head_count</span> <span class="o">==</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span> <span class="o">=</span> <span class="n">model_dim</span> <span class="o">//</span> <span class="n">head_count</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">MultiHeadedAttention</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">head_count</span> <span class="o">=</span> <span class="n">head_count</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">linear_keys</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">model_dim</span><span class="p">,</span> <span class="n">model_dim</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="n">add_qkvbias</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">linear_values</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">model_dim</span><span class="p">,</span> <span class="n">model_dim</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="n">add_qkvbias</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">linear_query</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">model_dim</span><span class="p">,</span> <span class="n">model_dim</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="n">add_qkvbias</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">multiquery</span> <span class="o">=</span> <span class="n">multiquery</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">multiquery</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">linear_keys</span> <span class="o">=</span> <span class="n">skip_init</span><span class="p">(</span>
+                <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">,</span>
+                <span class="n">in_features</span><span class="o">=</span><span class="n">model_dim</span><span class="p">,</span>
+                <span class="n">out_features</span><span class="o">=</span><span class="n">model_dim</span><span class="p">,</span>
+                <span class="n">bias</span><span class="o">=</span><span class="n">add_qkvbias</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">linear_values</span> <span class="o">=</span> <span class="n">skip_init</span><span class="p">(</span>
+                <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">,</span>
+                <span class="n">in_features</span><span class="o">=</span><span class="n">model_dim</span><span class="p">,</span>
+                <span class="n">out_features</span><span class="o">=</span><span class="n">model_dim</span><span class="p">,</span>
+                <span class="n">bias</span><span class="o">=</span><span class="n">add_qkvbias</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">linear_keys</span> <span class="o">=</span> <span class="n">skip_init</span><span class="p">(</span>
+                <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">,</span>
+                <span class="n">in_features</span><span class="o">=</span><span class="n">model_dim</span><span class="p">,</span>
+                <span class="n">out_features</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">,</span>
+                <span class="n">bias</span><span class="o">=</span><span class="n">add_qkvbias</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">linear_values</span> <span class="o">=</span> <span class="n">skip_init</span><span class="p">(</span>
+                <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">,</span>
+                <span class="n">in_features</span><span class="o">=</span><span class="n">model_dim</span><span class="p">,</span>
+                <span class="n">out_features</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">,</span>
+                <span class="n">bias</span><span class="o">=</span><span class="n">add_qkvbias</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">linear_query</span> <span class="o">=</span> <span class="n">skip_init</span><span class="p">(</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">,</span> <span class="n">in_features</span><span class="o">=</span><span class="n">model_dim</span><span class="p">,</span> <span class="n">out_features</span><span class="o">=</span><span class="n">model_dim</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="n">add_qkvbias</span>
+        <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">softmax</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Softmax</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">final_linear</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">model_dim</span><span class="p">,</span> <span class="n">model_dim</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="n">add_qkvbias</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">final_linear</span> <span class="o">=</span> <span class="n">skip_init</span><span class="p">(</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">,</span> <span class="n">in_features</span><span class="o">=</span><span class="n">model_dim</span><span class="p">,</span> <span class="n">out_features</span><span class="o">=</span><span class="n">model_dim</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="n">add_qkvbias</span>
+        <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">max_relative_positions</span> <span class="o">=</span> <span class="n">max_relative_positions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">attn_type</span> <span class="o">=</span> <span class="n">attn_type</span>
@@ -389,6 +423,8 @@
 
             <span class="k">if</span> <span class="n">max_relative_positions</span> <span class="o">==</span> <span class="o">-</span><span class="mi">2</span><span class="p">:</span>  <span class="c1"># alibi positional bias</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">alibi</span> <span class="o">=</span> <span class="n">AlibiPositionalBias</span><span class="p">(</span><span class="n">head_count</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">maybe_ckpt</span> <span class="o">=</span> <span class="n">checkpoint</span> <span class="k">if</span> <span class="s2">&quot;mha&quot;</span> <span class="ow">in</span> <span class="n">use_ckpting</span> <span class="k">else</span> <span class="k">lambda</span> <span class="n">f</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">update_dropout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dropout</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">dropout</span>
@@ -467,9 +503,9 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;keys&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">key</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;values&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear_keys</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
-            <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear_values</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-            <span class="n">query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear_query</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maybe_ckpt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">linear_keys</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maybe_ckpt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">linear_values</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maybe_ckpt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">linear_query</span><span class="p">,</span> <span class="n">query</span><span class="p">)</span>
             <span class="n">key</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">)</span>
             <span class="n">value</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">)</span>
             <span class="n">query</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">)</span>
@@ -485,9 +521,9 @@
                 <span class="n">query</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
                 <span class="n">key</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
         <span class="c1"># 2) Calculate and scale scores.</span>
-        <span class="n">query</span> <span class="o">=</span> <span class="n">query</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">)</span>
+        <span class="n">query</span> <span class="o">/=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">)</span>
         <span class="c1"># batch x num_heads x query_len x key_len</span>
-        <span class="n">query_key</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">key</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="n">scores</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">key</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">relative_positions_embeddings</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">key_len</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
@@ -502,11 +538,9 @@
             <span class="n">relations_keys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relative_positions_embeddings</span><span class="p">(</span>
                 <span class="n">relative_positions_matrix</span>
             <span class="p">)</span>
-            <span class="n">scores</span> <span class="o">=</span> <span class="n">query_key</span> <span class="o">+</span> <span class="n">relative_matmul</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">relations_keys</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_relative_positions</span> <span class="o">==</span> <span class="o">-</span><span class="mi">2</span><span class="p">:</span>
-            <span class="n">scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">alibi</span><span class="p">(</span><span class="n">query_key</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">scores</span> <span class="o">=</span> <span class="n">query_key</span>
+            <span class="n">scores</span><span class="o">.</span><span class="n">add_</span><span class="p">(</span><span class="n">relative_matmul</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">relations_keys</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_relative_positions</span> <span class="o">==</span> <span class="o">-</span><span class="mi">2</span><span class="p">:</span>  <span class="c1"># Alibi</span>
+            <span class="n">scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">alibi</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span>
 
         <span class="n">scores</span> <span class="o">=</span> <span class="n">scores</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
 
@@ -525,15 +559,13 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">relative_positions_embeddings</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># We use the same embeddings for key and value</span>
             <span class="n">relations_values</span> <span class="o">=</span> <span class="n">relations_keys</span>
-            <span class="n">context</span> <span class="o">=</span> <span class="n">unshape</span><span class="p">(</span>
-                <span class="n">context_original</span> <span class="o">+</span> <span class="n">relative_matmul</span><span class="p">(</span><span class="n">drop_attn</span><span class="p">,</span> <span class="n">relations_values</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
-            <span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">context</span> <span class="o">=</span> <span class="n">unshape</span><span class="p">(</span><span class="n">context_original</span><span class="p">)</span>
+            <span class="n">context_original</span><span class="o">.</span><span class="n">add_</span><span class="p">(</span><span class="n">relative_matmul</span><span class="p">(</span><span class="n">drop_attn</span><span class="p">,</span> <span class="n">relations_values</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
 
-        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">final_linear</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+        <span class="n">context</span> <span class="o">=</span> <span class="n">unshape</span><span class="p">(</span><span class="n">context_original</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">output</span><span class="p">,</span> <span class="n">attn</span></div></div>
+        <span class="n">attn_output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maybe_ckpt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">final_linear</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">attn_output</span><span class="p">,</span> <span class="n">attn</span></div></div>
 </pre></div>
 
            </div>

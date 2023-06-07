@@ -142,6 +142,7 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="#how-to-use-lora-and-8bit-loading-to-finetune-a-big-model">How to use LoRa and 8bit loading to finetune a big model ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#how-to-use-gradient-checkpointing-when-dealing-with-a-big-model">How to use gradient checkpointing when dealing with a big model ?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#raw-alignments-from-averaging-transformer-attention-heads">Raw alignments from averaging Transformer attention heads</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#supervised-learning-on-a-specific-head">Supervised learning on a specific head</a></li>
@@ -178,6 +179,7 @@
 <li class="toctree-l1"><a class="reference internal" href="examples/wiki_103/LanguageModelGeneration.html">Language Model Wiki-103</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/summary/Summarization.html">Summarization CNN/DM</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/ggnn/GGNN.html">Gated Graph Neural Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/replicate_vicuna/ReplicateVicuna.html">Supervised Finetuning of llama 7B to replicate Vicuna</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Scripts</span></p>
 <ul>
@@ -899,10 +901,18 @@ The principle is to make only a few layers trainable (hence reducing the amount 
 Also you can read the blog post here: https://huggingface.co/blog/hf-bitsandbytes-integration</p>
 <p>You need to add the following option:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">quant_layers:</span> <span class="pre">['w_1',</span> <span class="pre">'w_2']</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">quant_layers:</span> <span class="pre">['w_1',</span> <span class="pre">'w_2',</span> <span class="pre">'linear_values',</span> <span class="pre">'linear_query']</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">quant_type:</span> <span class="pre">['bnb_NF4']</span></code></p></li>
 </ul>
-<p>These are the layers of the PositionWise Feed-Forward from the Encoder/Decoder.</p>
-<p>At the moment, for a given layer you cannot mix LoRa and 8bit compression. (TODO List)</p>
+<p>You can for instane quantize the layers of the PositionWise Feed-Forward from the Encoder/Decoder and the key/query/values/final from the Multi-head attention.
+Choices for quantization are [”bnb_8bit”, “bnb_FP4”, “bnb_NF4”]</p>
+</section>
+<section id="how-to-use-gradient-checkpointing-when-dealing-with-a-big-model">
+<h1>How to use gradient checkpointing when dealing with a big model ?<a class="headerlink" href="#how-to-use-gradient-checkpointing-when-dealing-with-a-big-model" title="Permalink to this heading">¶</a></h1>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">use_ckpting:</span> <span class="pre">[&quot;ffn&quot;,</span> <span class="pre">&quot;mha&quot;,</span> <span class="pre">&quot;lora&quot;]</span></code></p></li>
+</ul>
+<p>Be carefull, the module that you use checkpointing needs to have gradients.</p>
 </section>
 <section id="can-i-get-word-alignments-while-translating">
 <h1>Can I get word alignments while translating?<a class="headerlink" href="#can-i-get-word-alignments-while-translating" title="Permalink to this heading">¶</a></h1>

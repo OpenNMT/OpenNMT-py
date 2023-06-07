@@ -105,6 +105,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-to-use-lora-and-8bit-loading-to-finetune-a-big-model">How to use LoRa and 8bit loading to finetune a big model ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-to-use-gradient-checkpointing-when-dealing-with-a-big-model">How to use gradient checkpointing when dealing with a big model ?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
@@ -116,6 +117,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../examples/wiki_103/LanguageModelGeneration.html">Language Model Wiki-103</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../examples/summary/Summarization.html">Summarization CNN/DM</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../examples/ggnn/GGNN.html">Gated Graph Neural Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/replicate_vicuna/ReplicateVicuna.html">Supervised Finetuning of llama 7B to replicate Vicuna</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Scripts</span></p>
 <ul>
@@ -232,6 +234,7 @@ Use <code class="docutils literal notranslate"><span class="pre">unzip</span> <s
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pickle</span>
 <span class="kn">import</span> <span class="nn">os</span>
 
+
 <span class="n">YT</span> <span class="o">=</span> <span class="s2">&quot;youtube2text_iccv15&quot;</span>
 <span class="n">YTC</span> <span class="o">=</span> <span class="s2">&quot;YouTubeClips&quot;</span>
 
@@ -280,6 +283,7 @@ annotations. We skip the test videos since they are handled separately at transl
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">shuffle</span>
 
+
 <span class="n">YT</span> <span class="o">=</span> <span class="s2">&quot;youtube2text_iccv15&quot;</span>
 <span class="n">SHUFFLE</span> <span class="o">=</span> <span class="kc">True</span>
 
@@ -315,6 +319,7 @@ annotations. We skip the test videos since they are handled separately at transl
 <span class="k">if</span> <span class="n">SHUFFLE</span><span class="p">:</span>
     <span class="n">vid_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">vid_names</span><span class="p">)</span>
     <span class="n">shuffle</span><span class="p">(</span><span class="n">vid_names</span><span class="p">)</span>
+
 
 <span class="k">for</span> <span class="n">vid_name</span> <span class="ow">in</span> <span class="n">vid_names</span><span class="p">:</span>
     <span class="n">anns</span> <span class="o">=</span> <span class="n">vid2anns</span><span class="p">[</span><span class="n">vid_name</span><span class="p">]</span>
@@ -373,6 +378,7 @@ Install the git repository with pip using</p>
 <span class="kn">from</span> <span class="nn">pycocoevalcap.rouge.rouge</span> <span class="kn">import</span> <span class="n">Rouge</span>
 <span class="kn">from</span> <span class="nn">pycocoevalcap.cider.cider</span> <span class="kn">import</span> <span class="n">Cider</span>
 <span class="kn">from</span> <span class="nn">pycocoevalcap.spice.spice</span> <span class="kn">import</span> <span class="n">Spice</span>
+
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
     <span class="n">pred</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;pred.txt&quot;</span><span class="p">)</span>
@@ -465,6 +471,7 @@ tokenization similar to what the authors report.</p>
 <span class="n">seed</span> <span class="o">=</span> <span class="mi">2345</span>
 <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
 
+
 <span class="n">YT</span> <span class="o">=</span> <span class="s2">&quot;youtube2text_iccv15&quot;</span>
 <span class="n">SHUFFLE</span> <span class="o">=</span> <span class="kc">True</span>
 
@@ -479,6 +486,7 @@ tokenization similar to what the authors report.</p>
     <span class="c1"># multiple whitespace</span>
     <span class="n">caption</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">caption</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
     <span class="k">return</span> <span class="n">caption</span>
+
 
 <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">YT</span><span class="p">,</span> <span class="s2">&quot;train.pkl&quot;</span><span class="p">),</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
     <span class="n">train</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;latin-1&quot;</span><span class="p">)</span>
@@ -572,6 +580,7 @@ although this too is not mentioned. You can reproduce our early-stops with these
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
+
 <span class="k">def</span> <span class="nf">load_results</span><span class="p">(</span><span class="n">fname</span><span class="o">=</span><span class="s2">&quot;results.txt&quot;</span><span class="p">):</span>
     <span class="n">index</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
@@ -603,8 +612,10 @@ although this too is not mentioned. You can reproduce our early-stops with these
     <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">index</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">df</span>
 
+
 <span class="k">def</span> <span class="nf">find_absolute_stops</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">df</span><span class="o">.</span><span class="n">idxmax</span><span class="p">()</span>
+
 
 <span class="k">def</span> <span class="nf">find_early_stops</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">stop_count</span><span class="p">):</span>
     <span class="n">maxes</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="mi">0</span><span class="p">)</span>
@@ -627,11 +638,13 @@ although this too is not mentioned. You can reproduce our early-stops with these
                         <span class="k">break</span>
     <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">argmaxes</span><span class="p">)</span>
 
+
 <span class="k">def</span> <span class="nf">find_stops</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">stop_count</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">stop_count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">find_early_stops</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">stop_count</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">find_absolute_stops</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="s2">&quot;Find locations of best scores&quot;</span><span class="p">)</span>

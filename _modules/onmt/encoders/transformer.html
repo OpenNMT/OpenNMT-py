@@ -103,6 +103,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-to-use-lora-and-8bit-loading-to-finetune-a-big-model">How to use LoRa and 8bit loading to finetune a big model ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-to-use-gradient-checkpointing-when-dealing-with-a-big-model">How to use gradient checkpointing when dealing with a big model ?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
@@ -114,6 +115,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/wiki_103/LanguageModelGeneration.html">Language Model Wiki-103</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/summary/Summarization.html">Summarization CNN/DM</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/ggnn/GGNN.html">Gated Graph Neural Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/replicate_vicuna/ReplicateVicuna.html">Supervised Finetuning of llama 7B to replicate Vicuna</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Scripts</span></p>
 <ul>
@@ -210,6 +212,7 @@
 <span class="kn">from</span> <span class="nn">onmt.modules.position_ffn</span> <span class="kn">import</span> <span class="n">PositionwiseFeedForward</span>
 <span class="kn">from</span> <span class="nn">onmt.modules.position_ffn</span> <span class="kn">import</span> <span class="n">ActivationFunction</span>
 <span class="kn">from</span> <span class="nn">onmt.utils.misc</span> <span class="kn">import</span> <span class="n">sequence_mask</span>
+<span class="kn">from</span> <span class="nn">onmt.modules.rmsnorm</span> <span class="kn">import</span> <span class="n">RMSNorm</span>
 
 
 <span class="k">class</span> <span class="nc">TransformerEncoderLayer</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -237,6 +240,11 @@
         <span class="n">max_relative_positions</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
         <span class="n">pos_ffn_activation_fn</span><span class="o">=</span><span class="n">ActivationFunction</span><span class="o">.</span><span class="n">relu</span><span class="p">,</span>
         <span class="n">add_qkvbias</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">multiquery</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">add_ffnbias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">parallel_residual</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">layer_norm</span><span class="o">=</span><span class="s2">&quot;standard&quot;</span><span class="p">,</span>
+        <span class="n">use_ckpting</span><span class="o">=</span><span class="p">[],</span>
     <span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">TransformerEncoderLayer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
@@ -247,11 +255,26 @@
             <span class="n">max_relative_positions</span><span class="o">=</span><span class="n">max_relative_positions</span><span class="p">,</span>
             <span class="n">attn_type</span><span class="o">=</span><span class="s2">&quot;self&quot;</span><span class="p">,</span>
             <span class="n">add_qkvbias</span><span class="o">=</span><span class="n">add_qkvbias</span><span class="p">,</span>
+            <span class="n">multiquery</span><span class="o">=</span><span class="n">multiquery</span><span class="p">,</span>
+            <span class="n">use_ckpting</span><span class="o">=</span><span class="n">use_ckpting</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">feed_forward</span> <span class="o">=</span> <span class="n">PositionwiseFeedForward</span><span class="p">(</span>
-            <span class="n">d_model</span><span class="p">,</span> <span class="n">d_ff</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">pos_ffn_activation_fn</span>
+            <span class="n">d_model</span><span class="p">,</span>
+            <span class="n">d_ff</span><span class="p">,</span>
+            <span class="n">dropout</span><span class="p">,</span>
+            <span class="n">pos_ffn_activation_fn</span><span class="p">,</span>
+            <span class="n">add_ffnbias</span><span class="p">,</span>
+            <span class="n">parallel_residual</span><span class="p">,</span>
+            <span class="n">layer_norm</span><span class="p">,</span>
+            <span class="n">use_ckpting</span><span class="o">=</span><span class="n">use_ckpting</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parallel_residual</span> <span class="o">=</span> <span class="n">parallel_residual</span>
+        <span class="k">if</span> <span class="n">layer_norm</span> <span class="o">==</span> <span class="s2">&quot;standard&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">layer_norm</span> <span class="o">==</span> <span class="s2">&quot;rms&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span> <span class="o">=</span> <span class="n">RMSNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">layer_norm</span><span class="si">}</span><span class="s2"> layer norm type is not supported&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer_in</span><span class="p">,</span> <span class="n">mask</span><span class="p">):</span>
@@ -264,10 +287,22 @@
 <span class="sd">            (FloatTensor):</span>
 <span class="sd">            * layer_out ``(batch_size, src_len, model_dim)``</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">input_norm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span><span class="p">(</span><span class="n">layer_in</span><span class="p">)</span>
-        <span class="n">context</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">self_attn</span><span class="p">(</span><span class="n">input_norm</span><span class="p">,</span> <span class="n">input_norm</span><span class="p">,</span> <span class="n">input_norm</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">mask</span><span class="p">)</span>
-        <span class="n">layer_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">context</span><span class="p">)</span> <span class="o">+</span> <span class="n">layer_in</span>
-        <span class="n">layer_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">feed_forward</span><span class="p">(</span><span class="n">layer_out</span><span class="p">)</span>
+        <span class="n">norm_layer_in</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span><span class="p">(</span><span class="n">layer_in</span><span class="p">)</span>
+        <span class="n">context</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">self_attn</span><span class="p">(</span>
+            <span class="n">norm_layer_in</span><span class="p">,</span> <span class="n">norm_layer_in</span><span class="p">,</span> <span class="n">norm_layer_in</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">mask</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parallel_residual</span><span class="p">:</span>
+            <span class="c1"># feed_forward applies residual, so we remove and apply residual with un-normed</span>
+            <span class="n">layer_out</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">feed_forward</span><span class="p">(</span><span class="n">norm_layer_in</span><span class="p">)</span>
+                <span class="o">-</span> <span class="n">norm_layer_in</span>
+                <span class="o">+</span> <span class="n">layer_in</span>
+                <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">layer_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">context</span><span class="p">)</span> <span class="o">+</span> <span class="n">layer_in</span>
+            <span class="n">layer_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">feed_forward</span><span class="p">(</span><span class="n">layer_out</span><span class="p">)</span>
+
         <span class="k">return</span> <span class="n">layer_out</span>
 
     <span class="k">def</span> <span class="nf">update_dropout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">attention_dropout</span><span class="p">):</span>
@@ -311,6 +346,11 @@
         <span class="n">max_relative_positions</span><span class="p">,</span>
         <span class="n">pos_ffn_activation_fn</span><span class="o">=</span><span class="n">ActivationFunction</span><span class="o">.</span><span class="n">relu</span><span class="p">,</span>
         <span class="n">add_qkvbias</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">multiquery</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">add_ffnbias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">parallel_residual</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">layer_norm</span><span class="o">=</span><span class="s2">&quot;standard&quot;</span><span class="p">,</span>
+        <span class="n">use_ckpting</span><span class="o">=</span><span class="p">[],</span>
     <span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">TransformerEncoder</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
@@ -326,11 +366,21 @@
                     <span class="n">max_relative_positions</span><span class="o">=</span><span class="n">max_relative_positions</span><span class="p">,</span>
                     <span class="n">pos_ffn_activation_fn</span><span class="o">=</span><span class="n">pos_ffn_activation_fn</span><span class="p">,</span>
                     <span class="n">add_qkvbias</span><span class="o">=</span><span class="n">add_qkvbias</span><span class="p">,</span>
+                    <span class="n">multiquery</span><span class="o">=</span><span class="n">multiquery</span><span class="p">,</span>
+                    <span class="n">add_ffnbias</span><span class="o">=</span><span class="n">add_ffnbias</span><span class="p">,</span>
+                    <span class="n">parallel_residual</span><span class="o">=</span><span class="n">parallel_residual</span><span class="p">,</span>
+                    <span class="n">layer_norm</span><span class="o">=</span><span class="n">layer_norm</span><span class="p">,</span>
+                    <span class="n">use_ckpting</span><span class="o">=</span><span class="n">use_ckpting</span><span class="p">,</span>
                 <span class="p">)</span>
                 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_layers</span><span class="p">)</span>
             <span class="p">]</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">layer_norm</span> <span class="o">==</span> <span class="s2">&quot;standard&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">layer_norm</span> <span class="o">==</span> <span class="s2">&quot;rms&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span> <span class="o">=</span> <span class="n">RMSNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">layer_norm</span><span class="si">}</span><span class="s2"> layer norm type is not supported&quot;</span><span class="p">)</span>
 
 <div class="viewcode-block" id="TransformerEncoder.from_opt"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.encoders.TransformerEncoder.from_opt">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_opt</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">):</span>
@@ -348,6 +398,11 @@
             <span class="n">opt</span><span class="o">.</span><span class="n">max_relative_positions</span><span class="p">,</span>
             <span class="n">pos_ffn_activation_fn</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">pos_ffn_activation_fn</span><span class="p">,</span>
             <span class="n">add_qkvbias</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">add_qkvbias</span><span class="p">,</span>
+            <span class="n">multiquery</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">multiquery</span><span class="p">,</span>
+            <span class="n">add_ffnbias</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">add_ffnbias</span><span class="p">,</span>
+            <span class="n">parallel_residual</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">parallel_residual</span><span class="p">,</span>
+            <span class="n">layer_norm</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">layer_norm</span><span class="p">,</span>
+            <span class="n">use_ckpting</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">use_ckpting</span><span class="p">,</span>
         <span class="p">)</span></div>
 
 <div class="viewcode-block" id="TransformerEncoder.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.encoders.TransformerEncoder.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">src_len</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>

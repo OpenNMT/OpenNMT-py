@@ -103,6 +103,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms">What are the readily available on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-create-custom-on-the-fly-data-transforms">How can I create custom on-the-fly data transforms?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-to-use-lora-and-8bit-loading-to-finetune-a-big-model">How to use LoRa and 8bit loading to finetune a big model ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-to-use-gradient-checkpointing-when-dealing-with-a-big-model">How to use gradient checkpointing when dealing with a big model ?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#can-i-get-word-alignments-while-translating">Can I get word alignments while translating?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-update-a-checkpoint-s-vocabulary">How can I update a checkpoint’s vocabulary?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../FAQ.html#how-can-i-use-source-word-features">How can I use source word features?</a></li>
@@ -114,6 +115,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../examples/wiki_103/LanguageModelGeneration.html">Language Model Wiki-103</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../examples/summary/Summarization.html">Summarization CNN/DM</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../examples/ggnn/GGNN.html">Gated Graph Neural Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/replicate_vicuna/ReplicateVicuna.html">Supervised Finetuning of llama 7B to replicate Vicuna</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Scripts</span></p>
 <ul>
@@ -272,7 +274,7 @@
     <span class="p">)</span>
 
     <span class="n">report_manager</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">build_report_manager</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">gpu_rank</span><span class="p">)</span>
-    <span class="n">trainer</span> <span class="o">=</span> <span class="n">onmt</span><span class="o">.</span><span class="n">Trainer</span><span class="p">(</span>
+    <span class="n">trainer</span> <span class="o">=</span> <span class="n">Trainer</span><span class="p">(</span>
         <span class="n">model</span><span class="p">,</span>
         <span class="n">train_loss</span><span class="p">,</span>
         <span class="n">valid_loss</span><span class="p">,</span>
@@ -301,7 +303,7 @@
     <span class="k">return</span> <span class="n">trainer</span>
 
 
-<div class="viewcode-block" id="Trainer"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer">[docs]</a><span class="k">class</span> <span class="nc">Trainer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="Trainer"><a class="viewcode-back" href="../../onmt.html#onmt.trainer.Trainer">[docs]</a><span class="k">class</span> <span class="nc">Trainer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Class that controls the training process.</span>
 
 <span class="sd">    Args:</span>
@@ -469,7 +471,7 @@
                     <span class="mi">1</span> <span class="o">-</span> <span class="n">average_decay</span>
                 <span class="p">)</span> <span class="o">*</span> <span class="n">avg</span> <span class="o">+</span> <span class="n">cpt</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">float</span><span class="p">()</span> <span class="o">*</span> <span class="n">average_decay</span>
 
-<div class="viewcode-block" id="Trainer.train"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.train">[docs]</a>    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span>
+<div class="viewcode-block" id="Trainer.train"><a class="viewcode-back" href="../../onmt.html#onmt.trainer.Trainer.train">[docs]</a>    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">train_iter</span><span class="p">,</span>
         <span class="n">train_steps</span><span class="p">,</span>
@@ -564,7 +566,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">model_saver</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">moving_average</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">moving_average</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">total_stats</span></div>
 
-<div class="viewcode-block" id="Trainer.validate"><a class="viewcode-back" href="../../onmt.html#onmt.Trainer.validate">[docs]</a>    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">valid_iter</span><span class="p">,</span> <span class="n">moving_average</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="Trainer.validate"><a class="viewcode-back" href="../../onmt.html#onmt.trainer.Trainer.validate">[docs]</a>    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">valid_iter</span><span class="p">,</span> <span class="n">moving_average</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate model.</span>
 
 <span class="sd">        Args:</span>
@@ -747,7 +749,6 @@
                                 <span class="s2">&quot;value&quot;</span>
                             <span class="p">]</span>
                         <span class="n">batch_stats</span><span class="o">.</span><span class="n">computed_metrics</span> <span class="o">=</span> <span class="n">computed_metrics</span>
-
                     <span class="k">if</span> <span class="n">loss</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                         <span class="n">loss</span> <span class="o">/=</span> <span class="n">normalization</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span>
@@ -782,6 +783,7 @@
             <span class="n">onmt</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">all_reduce_and_rescale_tensors</span><span class="p">(</span>
                 <span class="n">grads</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_gpu</span><span class="p">)</span>
             <span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">_start_report_manager</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_time</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
