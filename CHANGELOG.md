@@ -12,7 +12,7 @@
 * Make FFN bias optional (same as QKV): llama, mpt, redpajama, openllama converters changed accordingly.
   Convertv2_v3 set add_qkvbias=True, add_ffnbias=True.
   load_checkpoint: if w1_bias detected in checkpoint then add_ffnbias=True
-* Add Multi Qury attention
+* Add Multi Query attention
 * Add Parallel Residual attention
 * Add Falcon 7B converter
 
