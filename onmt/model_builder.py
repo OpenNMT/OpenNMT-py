@@ -106,31 +106,37 @@ def load_test_model(opt, model_path=None):
 
     model = build_base_model(model_opt, vocabs)
 
+    precision = torch.float32
+
+    if opt.precision == "fp16":
+        precision = torch.float16
+    elif opt.precision == "int8":
+        if opt.gpu >= 0:
+            raise ValueError("Dynamic 8-bit quantization is not supported on GPU")
+        else:
+            precision = torch.float16
+
+    if use_gpu(opt) and opt.gpu >= 0:
+        device = torch.device("cuda", opt.gpu)
+    else:
+        device = torch.device("cpu")
+
     if "model" in checkpoint.keys():
         # weights are in the .pt file
         model.load_state_dict(
-            checkpoint, precision=torch.float32, device=torch.device("cpu"), strict=True
+            checkpoint, precision=precision, device=device, strict=True
         )
     else:
         # weights are not in the .pt checkpoint but stored in the safetensors file
         base_name = model_path[:-3] if model_path[-3:] == ".pt" else model_path
         model_path = base_name + ".safetensors"
-        model.load_sf_state_dict(
-            model_path, precision=torch.float32, device=torch.device("cpu"), strict=True
+        model.load_safe_state_dict(
+            model_path, precision=precision, device=device, strict=True
         )
 
     del checkpoint
-    if opt.precision == "fp32":
-        model.float()
-    elif opt.precision == "fp16":
-        model.half()
-    elif opt.precision == "int8":
-        if opt.gpu >= 0:
-            raise ValueError("Dynamic 8-bit quantization is not supported on GPU")
+    if opt.precision == "int8":
         torch.quantization.quantize_dynamic(model, inplace=True)
-
-    if use_gpu(opt) and opt.gpu >= 0:
-        model.to(torch.device("cuda", opt.gpu))
 
     model.eval()
     model.generator.eval()
@@ -393,10 +399,9 @@ def build_model(model_opt, opt, vocabs, checkpoint):
             )
         else:
             # weights are not in the .pt checkpoint but stored in the safetensors file
-            base_name = (
+            model_path = (
                 opt.train_from[:-3] if opt.train_from[-3:] == ".pt" else opt.train_from
             )
-            model_path = base_name
             model.load_safe_state_dict(
                 model_path,
                 precision=precision,
