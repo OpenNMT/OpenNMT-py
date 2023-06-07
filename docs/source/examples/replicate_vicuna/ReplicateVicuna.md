@@ -98,7 +98,7 @@ Each example is a prompt that contains:
 
 Here is the first example in the onmt alpaca dataset:
 
-```txt
+```
 Below is an instruction that describes a task. Write a response that appropriately completes the request.｟newline｠｟newline｠### Instruction:｟newline｠Give three tips for staying healthy.｟newline｠｟newline｠### Response:｟newline｠1. Eat a balanced and nutritious diet: Make sure your meals are inclusive of a variety of fruits and vegetables, lean protein, whole grains, and healthy fats. This helps to provide your body with the essential nutrients to function at its best and can help prevent chronic diseases.｟newline｠｟newline｠2. Engage in regular physical activity: Exercise is crucial for maintaining strong bones, muscles, and cardiovascular health. Aim for at least 150 minutes of moderate aerobic exercise or 75 minutes of vigorous exercise each week.｟newline｠｟newline｠3. Get enough sleep: Getting enough quality sleep is crucial for physical and mental well-being. It helps to regulate mood, improve cognitive function, and supports healthy growth and immune function. Aim for 7-9 hours of sleep each night.
 ```
 
@@ -118,7 +118,7 @@ We can start by generating some samples (by turning `dump_samples` to True and `
 It is worth noting that the he sentencepiece vocabulary does not map the custom substring ｟newline｠with a specific token. However it maps the new line symbol '\n' with the token '<0x0A>'. To handle properly our datasets without changing the vocabulary and training new embddings from scratch, the Tokenize transform replaces on-the-fly the token '｟newline｠' token with  '<0x0A>'.
 
 For instance the first training example is transformed in:
-```txt
+```
 ▁Below ▁is ▁an ▁instruction ▁that ▁describes ▁a ▁task . ▁Write ▁a ▁response ▁that ▁appropri ately ▁comple tes ▁the ▁request . <0x0A> <0x0A> ## # ▁Inst ruction : <0x0A> G ive ▁three ▁tips ▁for ▁stay ing ▁health y . <0x0A> <0x0A> ## # ▁Response : <0x0A> 1 . ▁E at ▁a ▁bal anced ▁and ▁nut rit ious ▁di et : ▁Make ▁sure ▁your ▁me als ▁are ▁inclus ive ▁of ▁a ▁variety ▁of ▁f ruits ▁and ▁veget ables , ▁lean ▁protein , ▁whole ▁gra ins , ▁and ▁health y ▁f ats . ▁This ▁helps ▁to ▁provide ▁your ▁body ▁with ▁the ▁essential ▁nut ri ents ▁to ▁function ▁at ▁its ▁best ▁and ▁can ▁help ▁prevent ▁chron ic ▁dise ases . <0x0A> <0x0A> 2 . ▁Eng age ▁in ▁regular ▁physical ▁activity : ▁Ex erc ise ▁is ▁cru cial ▁for ▁maintain ing ▁strong ▁b ones , ▁mus cles , ▁and ▁card i ov asc ular ▁health . ▁A im ▁for ▁at ▁least ▁ 1 5 0 ▁minutes ▁of ▁moder ate ▁aer ob ic ▁exercise ▁or ▁ 7 5 ▁minutes ▁of ▁vig orous ▁exercise ▁each ▁week . <0x0A> <0x0A> 3 . ▁Get ▁enough ▁sleep : ▁Getting ▁enough ▁quality ▁sleep ▁is ▁cru cial ▁for ▁physical ▁and ▁mental ▁well - be ing . ▁It ▁helps ▁to ▁reg ulate ▁m ood , ▁improve ▁cogn itive ▁function , ▁and ▁supports ▁health y ▁growth ▁and ▁imm une ▁function . ▁A im ▁for ▁ 7 - 9 ▁hours ▁of ▁sleep ▁each ▁night .
 ```
 
@@ -172,7 +172,8 @@ You must use `inf_type = "-py"` at the beginning of the `chatbot.py` script.
 ### Inference with `CTranslate` 
 First we need to do the conversion to the ctranslate2 format.
 
-```shell
+```
+shell
 python3 OpenNMT-py/onmt/bin/release_model.py \
     --model finetuned_llama7B/llama7B-vicuna-onmt_step_4000.concat.pt \
     --output finetuned_llama7B/llama7B-vicuna-onmt_step_4000.concat_CT2 \
