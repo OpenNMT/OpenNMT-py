@@ -163,7 +163,7 @@ class QLinear(type):
                 )
 
             def reset_parameters(self):
-                super().reset_parameters()
+                # we do not super().reset_parameters() save lot of time and useless when no grad.
                 if hasattr(self, "lora_A"):
                     # initialize A the same way as the default
                     # for nn.Linear and B to zero
@@ -265,3 +265,77 @@ def lora_state_dict(model: nn.Module, bias: str = "none") -> Dict[str, torch.Ten
         return to_return
     else:
         raise NotImplementedError
+
+
+def replace_lora_linear(
+    model,
+    r=2,
+    lora_alpha=1,
+    lora_dropout=0,
+    layer="",
+    quant_type=None,
+    use_ckpting=[],
+    threshold=6.0,
+    compute_dtype=torch.float16,
+):
+    """
+    Function replacing layers with LoRa layers recursively.
+    Args:
+        model:
+        r: rank of matrix of the Low Rank layer
+        lora_alpha: cf paper
+        lora_dropout: cf paper
+        layer: layer name of the model to be replaced
+        quant_type: use bnb to quantize nn.Linear sub-layer
+    """
+    for name, module in model.named_children():
+        if hasattr(module, "children") and len(list(module.children())) > 0:
+            replace_lora_linear(
+                module,
+                r=r,
+                lora_alpha=lora_alpha,
+                lora_dropout=lora_dropout,
+                layer=layer,
+                quant_type=quant_type,
+                use_ckpting=use_ckpting,
+                threshold=threshold,
+                compute_dtype=compute_dtype,
+            )
+
+        if isinstance(module, nn.Linear) and name == layer:
+            model._modules[name] = QLoraLinear(
+                module.in_features,
+                module.out_features,
+                r=r,
+                lora_alpha=lora_alpha,
+                lora_dropout=lora_dropout,
+                bias=module.bias is not None,
+                quant_type=quant_type,
+                use_ckpting=use_ckpting,
+                threshold=threshold,
+                compute_dtype=compute_dtype,
+            )
+    return model
+
+
+def replace_lora_embedding(model, r=2, lora_alpha=1):
+    """
+    Function replacing Embeddings with LoRa ones recursively.
+    Args:
+        model:
+        r: rank of matrix of the Low Rank layer
+        lora_alpha: cf paper
+    """
+    for name, module in model.named_children():
+        if len(list(module.children())) > 0:
+            replace_lora_embedding(module, r, lora_alpha)
+        if isinstance(module, nn.Embedding):
+            model._modules[name] = Embedding(
+                module.num_embeddings,
+                module.embedding_dim,
+                r=r,
+                lora_alpha=lora_alpha,
+                padding_idx=module.padding_idx,
+                sparse=module.sparse,
+            )
+    return model

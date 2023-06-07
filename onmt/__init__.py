@@ -5,7 +5,6 @@ import onmt.decoders
 import onmt.models
 import onmt.utils
 import onmt.modules
-from onmt.trainer import Trainer
 import sys
 import onmt.utils.optimizers
 
@@ -20,7 +19,6 @@ __all__ = [
     onmt.models,
     onmt.utils,
     onmt.modules,
-    "Trainer",
 ]
 
 __version__ = "3.2.0"

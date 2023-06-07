@@ -71,7 +71,7 @@ def build_trainer(opt, device_id, model, vocabs, optim, model_saver=None):
     )
 
     report_manager = onmt.utils.build_report_manager(opt, gpu_rank)
-    trainer = onmt.Trainer(
+    trainer = Trainer(
         model,
         train_loss,
         valid_loss,

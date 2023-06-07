@@ -11,8 +11,6 @@ from onmt.modules.embeddings import Embeddings, PositionalEncoding
 from onmt.modules.weight_norm import WeightNormConv2d
 from onmt.modules.average_attn import AverageAttention
 from onmt.modules.alibi_position_bias import AlibiPositionalBias
-from onmt.modules.lora import LoRALayer, Embedding, QLoraLinear
-from onmt.modules.lora import mark_only_lora_as_trainable, lora_state_dict
 from onmt.modules.rmsnorm import RMSNorm
 
 
@@ -32,9 +30,4 @@ __all__ = [
     "WeightNormConv2d",
     "AverageAttention",
     "RMSNorm",
-    "LoRALayer",
-    "Embedding",
-    "QLoraLinear",
-    "mark_only_lora_as_trainable",
-    "lora_state_dict",
 ]
