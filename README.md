@@ -23,6 +23,15 @@ Please try to read and/or follow before raising newbies issues.
 Otherwise you can just have a look at the [Quickstart](https://opennmt.net/OpenNMT-py/quickstart.html) steps
 
 ----
+## New:
+
+LLM support with converters for: Llama, OpenLlama, Redpajama, MPT-7B, Falcon.
+Support for 8bit and 4bit quantization along with LoRA adapters, with or without checkpointing.
+You can finetune 7B and 13B models on a single RTX 24GB with 4-bit quantization.
+Once your model is finetuned you can run inference either with OpenNMT-py or faster with CTranslate2.
+
+For all usecases including NMT, you can now use Multiquery instead of Multihead attention (faster at training and inference) and remove biases from all Linear (QKV as well as FeedForward modules).
+
 
 If you used previous versions of OpenNMT-py, you can check the [Changelog](https://github.com/OpenNMT/OpenNMT-py/blob/master/CHANGELOG.md) or the [Breaking Changes](https://github.com/OpenNMT/OpenNMT-py/blob/master/docs/source/changes.md)
 
