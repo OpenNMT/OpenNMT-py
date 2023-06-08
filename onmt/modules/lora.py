@@ -149,6 +149,7 @@ class QLinear(type):
                     )
                 else:
                     super(QLoraLinear_cls, self).__init__(*args, bias=bias)
+                self.quant_type = quant_type
                 LoRALayer.__init__(self, r, lora_alpha, lora_dropout, merge_weights)
                 # Actual trainable parameters
                 if r > 0:
@@ -171,23 +172,27 @@ class QLinear(type):
                     nn.init.zeros_(self.lora_B)
 
             def train(self, mode: bool = True):
-                super().train(mode)
-                if mode:
-                    if self.merge_weights and self.merged:
-                        # Make sure that the weights are not merged
-                        if self.r > 0:
-                            self.weight.data -= (
-                                self.lora_B @ self.lora_A
-                            ) * self.scaling
-                        self.merged = False
+                if self.quant_type is None:
+                    super().train(mode)
+                    if mode:
+                        if self.merge_weights and self.merged:
+                            # Make sure that the weights are not merged
+                            if self.r > 0:
+                                self.weight.data -= (
+                                    self.lora_B @ self.lora_A
+                                ) * self.scaling
+                            self.merged = False
+                    else:
+                        if self.merge_weights and not self.merged:
+                            # Merge the weights and mark it
+                            if self.r > 0:
+                                self.weight.data += (
+                                    self.lora_B @ self.lora_A
+                                ) * self.scaling
+                            self.merged = True
                 else:
-                    if self.merge_weights and not self.merged:
-                        # Merge the weights and mark it
-                        if self.r > 0:
-                            self.weight.data += (
-                                self.lora_B @ self.lora_A
-                            ) * self.scaling
-                        self.merged = True
+                    # cannot merge/unmerge quantized weigts with unquantized lora_X
+                    pass
 
             def forward(self, x: torch.Tensor):
                 result = self.maybe_ckpt(super().forward, x)

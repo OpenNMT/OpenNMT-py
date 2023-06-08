@@ -1,0 +1,115 @@
+# Corpus opts:
+data:
+    alpaca:
+        path_src: "/media/vincent/Extreme SSD/dataAI/alpaca_clean.txt"
+        transforms: [onmt_tokenize, filtertoolong]
+        weight: 10
+    sharegpt:
+        path_src: "/media/vincent/Extreme SSD/dataAI/sharegpt.txt"
+        transforms: [onmt_tokenize, filtertoolong]
+        weight: 10
+
+    valid:
+        path_src: "/media/vincent/Extreme SSD/dataAI/valid.txt"
+        transforms: [onmt_tokenize]
+
+### Transform related opts:
+#### Subword
+transforms: [onmt_tokenize]
+
+#### Subword
+src_subword_type: bpe
+src_subword_model: "/media/vincent/Extreme\ SSD/dataAI/Falcon7B/falcon-model.bpe"
+src_onmttok_kwargs: '{"mode": "conservative"}'
+
+tgt_subword_type: bpe
+tgt_subword_model: "/media/vincent/Extreme\ SSD/dataAI/Falcon7B/falcon-model.bpe"
+tgt_onmttok_kwargs: '{"mode": "conservative"}'
+gpt2_pretok: true
+#### Filter
+src_seq_length: 512
+tgt_seq_length: 512
+
+# silently ignore empty lines in the data
+skip_empty_level: silent
+
+# General opts
+train_from: "/media/vincent/Extreme\ SSD/dataAI/Falcon7B/falcon7B-onmt.pt"
+save_model: "/media/vincent/Extreme\ SSD/dataAI/Falcon7B/falcon7B-vicuna"
+keep_checkpoint: 10
+save_checkpoint_steps: 400
+seed: 1234
+report_every: 10
+train_steps: 4000
+valid_steps: 400
+
+# Batching
+bucket_size: 32768
+num_workers: 2
+world_size: 1
+gpu_ranks: [0]
+batch_type: "tokens"
+batch_size: 896
+valid_batch_size: 256
+batch_size_multiple: 1
+accum_count: [32]
+accum_steps: [0]
+
+override_opts: true  # CAREFULL this requires all settings to be defined below
+
+share_vocab: true
+save_data: "/media/vincent/Extreme SSD/dataAI"
+src_vocab: "/media/vincent/Extreme SSD/dataAI/Falcon7B/falcon.vocab"
+src_vocab_size: 65024
+tgt_vocab_size: 65024
+default_specials: ['</s>', '<blank>']
+
+decoder_start_token: '</s>'
+# Optimization
+model_dtype: "fp16"
+apex_opt_level: ""
+optim: "fusedadam"
+learning_rate: 0.0002
+warmup_steps: 100
+decay_method: "none"
+adam_beta2: 0.998
+max_grad_norm: 0
+label_smoothing: 0.0
+param_init: 0
+param_init_glorot: true
+normalization: "tokens"
+
+#4/8bit
+quant_layers: ['w_1', 'w_2', 'linear_values', 'linear_query', 'linear_keys', 'final_linear']
+quant_type: "bnb_NF4"
+
+#LoRa
+lora_layers: ['linear_values', 'linear_query', 'linear_keys', 'final_linear']
+lora_rank: 8
+lora_dropout: 0.05
+lora_alpha: 16
+lora_embedding: false
+
+# Chekpointing
+#use_ckpting: ['ffn', 'lora']
+
+# Model
+model_task: lm
+encoder_type: transformer_lm
+decoder_type: transformer_lm
+layer_norm: standard
+pos_ffn_activation_fn: 'gelu'
+max_relative_positions: -1
+position_encoding: false
+add_qkvbias: false
+add_ffnbias: false
+multiquery: true
+parallel_residual: true
+dec_layers: 32
+heads: 71
+hidden_size: 4544
+word_vec_size: 4544
+transformer_ff: 18176
+dropout_steps: [0]
+dropout: [0.0]
+attention_dropout: [0.0]
