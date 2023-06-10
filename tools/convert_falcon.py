@@ -45,7 +45,7 @@ if __name__ == "__main__":
     tgt_word_vec_size = params["hidden_size"]
     hidden_size = params["hidden_size"]
     heads = params["n_head"]
-    if 'n_head_kv' in params.keys():
+    if "n_head_kv" in params.keys():
         num_kv = params["n_head_kv"]
     else:
         num_kv = 1
@@ -90,7 +90,9 @@ if __name__ == "__main__":
 
         onmt_cp["model"][
             "decoder.transformer_layers." + str(i) + ".self_attn.linear_values.weight"
-        ] = qkv_W[-2 * num_kv + num_kv:, :].reshape(hidden_size // heads * num_kv, hidden_size)
+        ] = qkv_W[-2 * num_kv + num_kv :, :].reshape(
+            hidden_size // heads * num_kv, hidden_size
+        )
 
         onmt_cp["model"][
             "decoder.transformer_layers." + str(i) + ".self_attn.final_linear.weight"
@@ -119,12 +121,14 @@ if __name__ == "__main__":
             ] = checkpoint["transformer.h." + str(i) + ".ln_attn.bias"].to(
                 torch.float16
             )
-            onmt_cp["model"]["decoder.transformer_layers." + str(i) + ".layer_norm_res.weight"] = checkpoint[
-                "transformer.h." + str(i) + ".ln_mlp.weight"
-            ].to(torch.float16)
-            onmt_cp["model"]["decoder.transformer_layers." + str(i) + ".layer_norm_res.bias"] = checkpoint[
-                "transformer.h." + str(i) + ".ln_mlp.bias"
-            ].to(torch.float16)
+            onmt_cp["model"][
+                "decoder.transformer_layers." + str(i) + ".layer_norm_res.weight"
+            ] = checkpoint["transformer.h." + str(i) + ".ln_mlp.weight"].to(
+                torch.float16
+            )
+            onmt_cp["model"][
+                "decoder.transformer_layers." + str(i) + ".layer_norm_res.bias"
+            ] = checkpoint["transformer.h." + str(i) + ".ln_mlp.bias"].to(torch.float16)
 
         onmt_cp["model"][
             "decoder.transformer_layers." + str(i) + ".feed_forward.w_1.weight"
