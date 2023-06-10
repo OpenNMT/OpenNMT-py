@@ -28,9 +28,10 @@ class TransformerDecoderLayerBase(nn.Module):
         alignment_heads=0,
         pos_ffn_activation_fn=ActivationFunction.relu,
         add_qkvbias=False,
-        multiquery=False,
+        num_kv=0,
         add_ffnbias=True,
         parallel_residual=False,
+        shared_layer_norm=False,
         layer_norm="standard",
         use_ckpting=[],
     ):
@@ -74,7 +75,7 @@ class TransformerDecoderLayerBase(nn.Module):
                 max_relative_positions=max_relative_positions,
                 attn_type="self",
                 add_qkvbias=add_qkvbias,
-                multiquery=multiquery,
+                num_kv=num_kv,
                 use_ckpting=use_ckpting,
             )
         elif self_attn_type == "average":
@@ -93,12 +94,18 @@ class TransformerDecoderLayerBase(nn.Module):
             use_ckpting=use_ckpting,
         )
         self.parallel_residual = parallel_residual
+        self.shared_layer_norm = shared_layer_norm
         if layer_norm == "standard":
             self.layer_norm_1 = nn.LayerNorm(d_model, eps=1e-6)
+            if parallel_residual and not shared_layer_norm:
+                self.layer_norm_res = nn.LayerNorm(d_model, eps=1e-6)
         elif layer_norm == "rms":
             self.layer_norm_1 = RMSNorm(d_model, eps=1e-6)
+            if parallel_residual and not shared_layer_norm:
+                self.layer_norm_res = RMSNorm(d_model, eps=1e-6)
         else:
             raise ValueError(f"{layer_norm} layer norm type is not supported")
+
         self.dropout = nn.Dropout(dropout)
         self.full_context_alignment = full_context_alignment
         self.alignment_heads = alignment_heads
@@ -199,9 +206,10 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
         alignment_heads=0,
         pos_ffn_activation_fn=ActivationFunction.relu,
         add_qkvbias=False,
-        multiquery=False,
+        num_kv=0,
         add_ffnbias=True,
         parallel_residual=False,
+        shared_layer_norm=False,
         layer_norm="standard",
         use_ckpting=[],
     ):
@@ -222,9 +230,10 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
             alignment_heads,
             pos_ffn_activation_fn=pos_ffn_activation_fn,
             add_qkvbias=add_qkvbias,
-            multiquery=multiquery,
+            num_kv=num_kv,
             add_ffnbias=add_ffnbias,
             parallel_residual=parallel_residual,
+            shared_layer_norm=shared_layer_norm,
             layer_norm=layer_norm,
             use_ckpting=use_ckpting,
         )
@@ -234,7 +243,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
             dropout=attention_dropout,
             attn_type="context",
             add_qkvbias=add_qkvbias,
-            multiquery=multiquery,
+            num_kv=num_kv,
             use_ckpting=use_ckpting,
         )
         if layer_norm == "standard":
@@ -359,9 +368,10 @@ class TransformerDecoderBase(DecoderBase):
             alignment_heads=opt.alignment_heads,
             pos_ffn_activation_fn=opt.pos_ffn_activation_fn,
             add_qkvbias=opt.add_qkvbias,
-            multiquery=opt.multiquery,
+            num_kv=opt.num_kv,
             add_ffnbias=opt.add_ffnbias,
             parallel_residual=opt.parallel_residual,
+            shared_layer_norm=opt.shared_layer_norm,
             layer_norm=opt.layer_norm,
             use_ckpting=opt.use_ckpting,
         )
@@ -446,9 +456,10 @@ class TransformerDecoder(TransformerDecoderBase):
         alignment_heads,
         pos_ffn_activation_fn=ActivationFunction.relu,
         add_qkvbias=False,
-        multiquery=False,
+        num_kv=0,
         add_ffnbias=True,
         parallel_residual=False,
+        shared_layer_norm=False,
         layer_norm="standard",
         use_ckpting=[],
     ):
@@ -471,9 +482,10 @@ class TransformerDecoder(TransformerDecoderBase):
                     alignment_heads=alignment_heads,
                     pos_ffn_activation_fn=pos_ffn_activation_fn,
                     add_qkvbias=add_qkvbias,
-                    multiquery=multiquery,
+                    num_kv=num_kv,
                     add_ffnbias=add_ffnbias,
                     parallel_residual=parallel_residual,
+                    shared_layer_norm=shared_layer_norm,
                     layer_norm=layer_norm,
                     use_ckpting=use_ckpting,
                 )
@@ -618,11 +630,13 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
 
         if self.parallel_residual:
             # feed_forward applies residual, so we remove and apply residual with un-normed
+            if not self.shared_layer_norm:
+                norm_res_layer_in = self.layer_norm_res(layer_in)
+                ff_in = norm_res_layer_in
+            else:
+                ff_in = norm_layer_in
             layer_out = (
-                self.feed_forward(norm_layer_in)
-                - norm_layer_in
-                + layer_in
-                + self.dropout(attn_output)
+                self.feed_forward(ff_in) - ff_in + layer_in + self.dropout(attn_output)
             )
         else:
             layer_out = self.dropout(attn_output) + layer_in
@@ -668,9 +682,10 @@ class TransformerLMDecoder(TransformerDecoderBase):
         alignment_heads=None,
         pos_ffn_activation_fn=ActivationFunction.relu,
         add_qkvbias=False,
-        multiquery=False,
+        num_kv=0,
         add_ffnbias=True,
         parallel_residual=False,
+        shared_layer_norm=False,
         layer_norm="standard",
         use_ckpting=[],
     ):
@@ -692,9 +707,10 @@ class TransformerLMDecoder(TransformerDecoderBase):
                     alignment_heads=None,
                     pos_ffn_activation_fn=pos_ffn_activation_fn,
                     add_qkvbias=add_qkvbias,
-                    multiquery=multiquery,
+                    num_kv=num_kv,
                     add_ffnbias=add_ffnbias,
                     parallel_residual=parallel_residual,
+                    shared_layer_norm=shared_layer_norm,
                     layer_norm=layer_norm,
                     use_ckpting=use_ckpting,
                 )
