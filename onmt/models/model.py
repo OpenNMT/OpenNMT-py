@@ -84,7 +84,11 @@ class BaseModel(nn.Module):
                     ):
                         param.data = checkpoint["generator"][param_name]
                         del checkpoint["generator"][param_name]
-                    elif strict and "lora" not in param_name:
+                    elif (
+                        strict
+                        and "lora" not in param_name
+                        and isinstance(name + "." + param_name, nn.Parameter)
+                    ):
                         raise ValueError(
                             "Missing key in checkpoint: %s" % name + "." + param_name
                         )

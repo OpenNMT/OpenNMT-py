@@ -842,7 +842,14 @@ def model_opts(parser):
         "--multiquery",
         "-multiquery",
         action="store_true",
-        help="Use MultiQUery attention" "Note: https://arxiv.org/pdf/1911.02150.pdf",
+        help="Use MultiQuery attention" "Note: https://arxiv.org/pdf/1911.02150.pdf",
+    )
+    group.add(
+        "--num_kv",
+        "-num_kv",
+        type=int,
+        default=0,
+        help="Number of heads for KV in the variant of MultiQuery attention (egs: Falcon 40B)",
     )
     group.add(
         "--add_ffnbias",
@@ -857,7 +864,13 @@ def model_opts(parser):
         help="Use Parallel residual in Decoder Layer"
         "Note: this is used by GPT-J / Falcon Architecture",
     )
-
+    group.add(
+        "--shared_layer_norm",
+        "-shared_layer_norm",
+        action="store_true",
+        help="Use a shared layer_norm in parallel residual attention"
+        "Note: must be true for Falcon 7B / false for Falcon 40B",
+    )
     # Alignement options
     group = parser.add_argument_group("Model - Alignement")
     group.add(

@@ -153,15 +153,15 @@ class MultiHeadedAttention(nn.Module):
         max_relative_positions: int = 0,
         attn_type: str = None,
         add_qkvbias=False,
-        multiquery=False,
+        num_kv=0,
         use_ckpting=[],
     ) -> None:
         assert model_dim % head_count == 0
         self.dim_per_head = model_dim // head_count
         super(MultiHeadedAttention, self).__init__()
         self.head_count = head_count
-        self.multiquery = multiquery
-        if not multiquery:
+        self.num_kv = num_kv
+        if num_kv == 0:
             self.linear_keys = skip_init(
                 nn.Linear,
                 in_features=model_dim,
@@ -178,13 +178,13 @@ class MultiHeadedAttention(nn.Module):
             self.linear_keys = skip_init(
                 nn.Linear,
                 in_features=model_dim,
-                out_features=self.dim_per_head,
+                out_features=self.dim_per_head * self.num_kv,
                 bias=add_qkvbias,
             )
             self.linear_values = skip_init(
                 nn.Linear,
                 in_features=model_dim,
-                out_features=self.dim_per_head,
+                out_features=self.dim_per_head * self.num_kv,
                 bias=add_qkvbias,
             )
         self.linear_query = skip_init(

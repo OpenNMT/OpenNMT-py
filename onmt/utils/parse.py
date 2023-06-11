@@ -307,6 +307,8 @@ class ArgumentParser(cfargparse.ArgumentParser, DataOptsCheckerMixin):
                 " -1 for Rotary, or > 0 for Relative Position Representations"
                 "as in https://arxiv.org/pdf/1803.02155.pdf"
             )
+        if model_opt.multiquery and model_opt.num_kv == 0:
+            model_opt.num_kv = 1
 
     @classmethod
     def ckpt_model_opts(cls, ckpt_opt):
