@@ -67,9 +67,16 @@ if __name__ == "__main__":
         onmt_safetensor = {}
 
         if shard == 0:
-            onmt_safetensor["decoder.embeddings.make_embedding.emb_luts.0.weight"] = checkpoint["transformer.wte.weight"]
-            onmt_safetensor["decoder.layer_norm.weight"] = checkpoint["transformer.norm_f.weight"]
-            onmt_safetensor["decoder.layer_norm.bias"] = torch.zeros(onmt_safetensor["decoder.layer_norm.weight"].size(0), dtype=torch.float16)
+            onmt_safetensor[
+                "decoder.embeddings.make_embedding.emb_luts.0.weight"
+            ] = checkpoint["transformer.wte.weight"]
+            onmt_safetensor["decoder.layer_norm.weight"] = checkpoint[
+                "transformer.norm_f.weight"
+            ]
+            onmt_safetensor["decoder.layer_norm.bias"] = torch.zeros(
+                onmt_safetensor["decoder.layer_norm.weight"].size(0),
+                dtype=torch.float16,
+            )
 
             onmt_safetensor["generator.weight"] = checkpoint["transformer.wte.weight"]
             onmt_safetensor["generator.bias"] = torch.zeros(
@@ -82,24 +89,29 @@ if __name__ == "__main__":
             1,
         ):
             onmt_safetensor[
-                "decoder.transformer_layers." + str(i) + ".self_attn.linear_query.weight"
+                "decoder.transformer_layers."
+                + str(i)
+                + ".self_attn.linear_query.weight"
             ] = checkpoint["transformer.blocks." + str(i) + ".attn.Wqkv.weight"][
-            :hidden_size, :
+                :hidden_size, :
             ]
             onmt_safetensor[
                 "decoder.transformer_layers." + str(i) + ".self_attn.linear_keys.weight"
             ] = checkpoint["transformer.blocks." + str(i) + ".attn.Wqkv.weight"][
-            hidden_size : (hidden_size * 2), :
+                hidden_size : (hidden_size * 2), :
             ]
             onmt_safetensor[
-                "decoder.transformer_layers." + str(i) + ".self_attn.linear_values.weight"
+                "decoder.transformer_layers."
+                + str(i)
+                + ".self_attn.linear_values.weight"
             ] = checkpoint["transformer.blocks." + str(i) + ".attn.Wqkv.weight"][
-            (hidden_size * 2) :, :
+                (hidden_size * 2) :, :
             ]
 
-
             onmt_safetensor[
-                "decoder.transformer_layers." + str(i) + ".self_attn.final_linear.weight"
+                "decoder.transformer_layers."
+                + str(i)
+                + ".self_attn.final_linear.weight"
             ] = checkpoint["transformer.blocks." + str(i) + ".attn.out_proj.weight"]
 
             onmt_safetensor[
@@ -108,10 +120,10 @@ if __name__ == "__main__":
             onmt_safetensor[
                 "decoder.transformer_layers." + str(i) + ".layer_norm_1.bias"
             ] = torch.zeros(
-            onmt_safetensor[
-                "decoder.transformer_layers." + str(i) + ".layer_norm_1.weight"
-            ].size(0),
-            dtype=torch.float16,
+                onmt_safetensor[
+                    "decoder.transformer_layers." + str(i) + ".layer_norm_1.weight"
+                ].size(0),
+                dtype=torch.float16,
             )
 
             onmt_safetensor[
@@ -123,15 +135,19 @@ if __name__ == "__main__":
             ] = checkpoint["transformer.blocks." + str(i) + ".ffn.down_proj.weight"]
 
             onmt_safetensor[
-                "decoder.transformer_layers." + str(i) + ".feed_forward.layer_norm.weight"
+                "decoder.transformer_layers."
+                + str(i)
+                + ".feed_forward.layer_norm.weight"
             ] = checkpoint["transformer.blocks." + str(i) + ".norm_2.weight"]
             onmt_safetensor[
                 "decoder.transformer_layers." + str(i) + ".feed_forward.layer_norm.bias"
             ] = torch.zeros(
-            onmt_safetensor[
-                "decoder.transformer_layers." + str(i) + ".feed_forward.layer_norm.weight"
-            ].size(0),
-            dtype=torch.float16,
+                onmt_safetensor[
+                    "decoder.transformer_layers."
+                    + str(i)
+                    + ".feed_forward.layer_norm.weight"
+                ].size(0),
+                dtype=torch.float16,
             )
 
         if shard == 0:
