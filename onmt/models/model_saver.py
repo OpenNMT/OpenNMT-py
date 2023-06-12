@@ -194,7 +194,7 @@ class ModelSaver(ModelSaverBase):
 
     def _st_save(self, step, model):
         try:
-            import safetensors
+            from safetensors.torch import save_file
         except ImportError:
             raise ImportError("run: pip install safetensors, to use safetensors")
         if (
@@ -218,7 +218,7 @@ class ModelSaver(ModelSaverBase):
         torch.save(checkpoint, ckpt_path)
         logger.info("Saving safetensors %s_step_%d.pt" % (self.base_path, step))
         model_path = "%s_step_%d.safetensors" % (self.base_path, step)
-        safetensors.save_file(model_state_dict, model_path)
+        save_file(model_state_dict, model_path)
         return ckpt_path, model_path
 
     def _rm_checkpoint(self, name):

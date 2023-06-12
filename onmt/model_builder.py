@@ -380,10 +380,15 @@ def build_model(model_opt, opt, vocabs, checkpoint):
 
     if checkpoint is not None:
         if model_opt.update_vocab:
-            # Update model embeddings with those from the checkpoint
-            # after initialization
-            use_embeddings_from_checkpoint(vocabs, model, checkpoint)
-            # after this checkpoint contains no embeddings
+            if "model" in checkpoint.keys():
+                # Update model embeddings with those from the checkpoint
+                # after initialization
+                use_embeddings_from_checkpoint(vocabs, model, checkpoint)
+                # after this checkpoint contains no embeddings
+            else:
+                raise ValueError(
+                    "Update Vocab is not compatible with safetensors mode (yet"
+                )
 
         # when using LoRa or updating the vocab (no more embeddings in ckpt)
         # => strict=False when loading state_dict

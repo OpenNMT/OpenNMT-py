@@ -185,8 +185,18 @@ def main(opt, device_id):
     model = build_model(model_opt, opt, vocabs, checkpoint)
 
     model.count_parameters(log=logger.info)
-    trainable = {"torch.float32": 0, "torch.float16": 0, "torch.uint8": 0}
-    non_trainable = {"torch.float32": 0, "torch.float16": 0, "torch.uint8": 0}
+    trainable = {
+        "torch.float32": 0,
+        "torch.float16": 0,
+        "torch.uint8": 0,
+        "torch.int8": 0,
+    }
+    non_trainable = {
+        "torch.float32": 0,
+        "torch.float16": 0,
+        "torch.uint8": 0,
+        "torch.int8": 0,
+    }
     for n, p in model.named_parameters():
         if p.requires_grad:
             trainable[str(p.dtype)] += p.numel()

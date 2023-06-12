@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# flake8: noqa
 import json
 import torch
 import argparse
@@ -9,7 +8,6 @@ from onmt.inputters.inputter import vocabs_to_dict
 from onmt.constants import DefaultTokens
 from sentencepiece import SentencePieceProcessor
 import os
-from safetensors import safe_open
 from safetensors.torch import save_file
 
 
@@ -71,7 +69,7 @@ if __name__ == "__main__":
 
     for shard in range(opt.nshards):
 
-        print("starting output shard: %d/%d" % (shard, opt.nshards))
+        print("starting output shard: %d/%d" % (shard + 1, opt.nshards))
         onmt_safetensor = {}
         print("Reading input shard: ", 0)
         checkpoint = torch.load(
@@ -91,8 +89,8 @@ if __name__ == "__main__":
             )
 
         for i in range(
-            (decoder_layers // opt.nshards) * shard,
-            (decoder_layers // opt.nshards) * (shard + 1),
+            -(decoder_layers // -opt.nshards) * shard,
+            min(-(decoder_layers // -opt.nshards) * (shard + 1), decoder_layers),
             1,
         ):
             onmt_safetensor[
@@ -172,8 +170,8 @@ if __name__ == "__main__":
                 )
 
             for i in range(
-                (decoder_layers // opt.nshards) * shard,
-                (decoder_layers // opt.nshards) * (shard + 1),
+                -(decoder_layers // -opt.nshards) * shard,
+                min(-(decoder_layers // -opt.nshards) * (shard + 1), decoder_layers),
                 1,
             ):
                 onmt_safetensor[
@@ -290,7 +288,8 @@ if __name__ == "__main__":
             vocab_size = onmt_safetensor["generator.weight"].size(0)
         if opt.format == "safetensors":
             print("Saving output model shard: %d" % shard)
-            save_file(onmt_safetensor, opt.output + ".{:02d}.safetensors".format(shard))
+            fileout = opt.output[:-3] if opt.output[-3:] == ".pt" else opt.output
+            save_file(onmt_safetensor, fileout + ".{:02d}.safetensors".format(shard))
 
     if opt.format == "pytorch":
         onmt_cp["generator"] = {}

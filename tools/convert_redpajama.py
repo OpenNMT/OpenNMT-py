@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# flake8: noqa
 import json
 import torch
 import argparse
@@ -10,6 +9,7 @@ from onmt.constants import DefaultTokens
 from sentencepiece import SentencePieceProcessor
 import os
 from transformers import AutoModelForCausalLM
+from safetensors.torch import save_file
 
 
 if __name__ == "__main__":
@@ -23,8 +23,18 @@ if __name__ == "__main__":
     parser.add_argument(
         "--output", type=str, required=True, help="""Path to the model directory"""
     )
+    parser.add_argument(
+        "--format",
+        type=str,
+        default="pytorch",
+        choices=["pytorch", "safetensors"],
+        help="""Format to use 'pytorch' or 'safetensors'""",
+    )
+    parser.add_argument(
+        "--nshards", type=int, default=1, help="""Path to the model directory"""
+    )
     opt = parser.parse_args()
-
+    print("Loading the full model in Cpu Ram ...")
     model = AutoModelForCausalLM.from_pretrained(
         opt.model_dir,
         torch_dtype=torch.float16,
@@ -33,12 +43,14 @@ if __name__ == "__main__":
     )
     checkpoint = model.state_dict()
 
+    if opt.format == "pytorch" and opt.nshards > 1:
+        raise ValueError("Saving several shards in pytorch format is not supported")
+
     params_json = os.path.join(opt.model_dir, "config.json")
     with open(params_json, encoding="utf-8") as fparam:
         params = json.load(fparam)
 
     onmt_cp = {}
-    onmt_cp["model"] = {}
 
     decoder_layers = params["num_hidden_layers"]
     src_word_vec_size = params["hidden_size"]
@@ -48,117 +60,159 @@ if __name__ == "__main__":
     vocab_size = params["vocab_size"]
     transformer_ff = params["intermediate_size"]
 
-    onmt_cp["model"][
-        "decoder.embeddings.make_embedding.emb_luts.0.weight"
-    ] = checkpoint["gpt_neox.embed_in.weight"]
+    for shard in range(opt.nshards):
 
-    for i in range(decoder_layers):
-        # redpajama stores QKV in one single tensor but it is not simply piled up Q+K+V
-        # it is heads interleaved to we need to slice first
-        # also it uses the HF rotary so we need to permute Q and K interleave
+        print("starting output shard: %d/%d" % (shard + 1, opt.nshards))
+        onmt_safetensor = {}
 
-        qkv_W = checkpoint[
-            "gpt_neox.layers." + str(i) + ".attention.query_key_value.weight"
-        ].view(heads, 3 * hidden_size // heads, hidden_size)
-        qkv_B = checkpoint[
-            "gpt_neox.layers." + str(i) + ".attention.query_key_value.bias"
-        ].view(heads, 3 * hidden_size // heads)
+        if shard == 0:
+            onmt_safetensor[
+                "decoder.embeddings.make_embedding.emb_luts.0.weight"
+            ] = checkpoint["gpt_neox.embed_in.weight"]
 
-        onmt_cp["model"][
-            "decoder.transformer_layers." + str(i) + ".self_attn.linear_query.weight"
-        ] = (
-            qkv_W[:, : hidden_size // heads, :]
-            .view(heads, 2, hidden_size // heads // 2, hidden_size)
-            .transpose(1, 2)
-            .reshape(hidden_size, hidden_size)
-        )
+            onmt_safetensor["decoder.layer_norm.weight"] = checkpoint[
+                "gpt_neox.final_layer_norm.weight"
+            ]
+            onmt_safetensor["decoder.layer_norm.bias"] = checkpoint[
+                "gpt_neox.final_layer_norm.bias"
+            ]
 
-        onmt_cp["model"][
-            "decoder.transformer_layers." + str(i) + ".self_attn.linear_keys.weight"
-        ] = (
-            qkv_W[:, hidden_size // heads : 2 * hidden_size // heads, :]
-            .view(heads, 2, hidden_size // heads // 2, hidden_size)
-            .transpose(1, 2)
-            .reshape(hidden_size, hidden_size)
-        )
+            onmt_safetensor["generator.weight"] = checkpoint["embed_out.weight"]
+            onmt_safetensor["generator.bias"] = torch.zeros(
+                onmt_safetensor["generator.weight"].size(0), dtype=torch.float16
+            )
 
-        onmt_cp["model"][
-            "decoder.transformer_layers." + str(i) + ".self_attn.linear_values.weight"
-        ] = qkv_W[:, 2 * hidden_size // heads : 3 * hidden_size // heads, :].reshape(
-            hidden_size, hidden_size
-        )
+        for i in range(
+            -(decoder_layers // -opt.nshards) * shard,
+            min(-(decoder_layers // -opt.nshards) * (shard + 1), decoder_layers),
+            1,
+        ):
+            # redpajama stores QKV in one single tensor but it is not simply piled up Q+K+V
+            # it is heads interleaved to we need to slice first
+            # also it uses the HF rotary so we need to permute Q and K interleave
 
-        onmt_cp["model"][
-            "decoder.transformer_layers." + str(i) + ".self_attn.linear_query.bias"
-        ] = (
-            qkv_B[:, : hidden_size // heads]
-            .view(heads, 2, hidden_size // heads // 2)
-            .transpose(1, 2)
-            .reshape(hidden_size)
-        )
+            qkv_W = checkpoint[
+                "gpt_neox.layers." + str(i) + ".attention.query_key_value.weight"
+            ].view(heads, 3 * hidden_size // heads, hidden_size)
+            qkv_B = checkpoint[
+                "gpt_neox.layers." + str(i) + ".attention.query_key_value.bias"
+            ].view(heads, 3 * hidden_size // heads)
 
-        onmt_cp["model"][
-            "decoder.transformer_layers." + str(i) + ".self_attn.linear_keys.bias"
-        ] = (
-            qkv_B[:, hidden_size // heads : 2 * hidden_size // heads]
-            .view(heads, 2, hidden_size // heads // 2)
-            .transpose(1, 2)
-            .reshape(hidden_size)
-        )
+            onmt_safetensor[
+                "decoder.transformer_layers."
+                + str(i)
+                + ".self_attn.linear_query.weight"
+            ] = (
+                qkv_W[:, : hidden_size // heads, :]
+                .view(heads, 2, hidden_size // heads // 2, hidden_size)
+                .transpose(1, 2)
+                .reshape(hidden_size, hidden_size)
+            )
 
-        onmt_cp["model"][
-            "decoder.transformer_layers." + str(i) + ".self_attn.linear_values.bias"
-        ] = qkv_B[:, 2 * hidden_size // heads : 3 * hidden_size // heads].reshape(
-            hidden_size
-        )
+            onmt_safetensor[
+                "decoder.transformer_layers." + str(i) + ".self_attn.linear_keys.weight"
+            ] = (
+                qkv_W[:, hidden_size // heads : 2 * hidden_size // heads, :]
+                .view(heads, 2, hidden_size // heads // 2, hidden_size)
+                .transpose(1, 2)
+                .reshape(hidden_size, hidden_size)
+            )
 
-        onmt_cp["model"][
-            "decoder.transformer_layers." + str(i) + ".self_attn.final_linear.weight"
-        ] = checkpoint["gpt_neox.layers." + str(i) + ".attention.dense.weight"]
-        onmt_cp["model"][
-            "decoder.transformer_layers." + str(i) + ".self_attn.final_linear.bias"
-        ] = checkpoint["gpt_neox.layers." + str(i) + ".attention.dense.bias"]
+            onmt_safetensor[
+                "decoder.transformer_layers."
+                + str(i)
+                + ".self_attn.linear_values.weight"
+            ] = qkv_W[
+                :, 2 * hidden_size // heads : 3 * hidden_size // heads, :
+            ].reshape(
+                hidden_size, hidden_size
+            )
 
-        onmt_cp["model"][
-            "decoder.transformer_layers." + str(i) + ".layer_norm_1.weight"
-        ] = checkpoint["gpt_neox.layers." + str(i) + ".input_layernorm.weight"]
-        onmt_cp["model"][
-            "decoder.transformer_layers." + str(i) + ".layer_norm_1.bias"
-        ] = checkpoint["gpt_neox.layers." + str(i) + ".input_layernorm.bias"]
+            onmt_safetensor[
+                "decoder.transformer_layers." + str(i) + ".self_attn.linear_query.bias"
+            ] = (
+                qkv_B[:, : hidden_size // heads]
+                .view(heads, 2, hidden_size // heads // 2)
+                .transpose(1, 2)
+                .reshape(hidden_size)
+            )
 
-        onmt_cp["model"][
-            "decoder.transformer_layers." + str(i) + ".feed_forward.w_1.weight"
-        ] = checkpoint["gpt_neox.layers." + str(i) + ".mlp.dense_h_to_4h.weight"]
-        onmt_cp["model"][
-            "decoder.transformer_layers." + str(i) + ".feed_forward.w_1.bias"
-        ] = checkpoint["gpt_neox.layers." + str(i) + ".mlp.dense_h_to_4h.bias"]
+            onmt_safetensor[
+                "decoder.transformer_layers." + str(i) + ".self_attn.linear_keys.bias"
+            ] = (
+                qkv_B[:, hidden_size // heads : 2 * hidden_size // heads]
+                .view(heads, 2, hidden_size // heads // 2)
+                .transpose(1, 2)
+                .reshape(hidden_size)
+            )
 
-        onmt_cp["model"][
-            "decoder.transformer_layers." + str(i) + ".feed_forward.w_2.weight"
-        ] = checkpoint["gpt_neox.layers." + str(i) + ".mlp.dense_4h_to_h.weight"]
-        onmt_cp["model"][
-            "decoder.transformer_layers." + str(i) + ".feed_forward.w_2.bias"
-        ] = checkpoint["gpt_neox.layers." + str(i) + ".mlp.dense_4h_to_h.bias"]
+            onmt_safetensor[
+                "decoder.transformer_layers." + str(i) + ".self_attn.linear_values.bias"
+            ] = qkv_B[:, 2 * hidden_size // heads : 3 * hidden_size // heads].reshape(
+                hidden_size
+            )
 
-        onmt_cp["model"][
-            "decoder.transformer_layers." + str(i) + ".feed_forward.layer_norm.weight"
-        ] = checkpoint["gpt_neox.layers." + str(i) + ".post_attention_layernorm.weight"]
-        onmt_cp["model"][
-            "decoder.transformer_layers." + str(i) + ".feed_forward.layer_norm.bias"
-        ] = checkpoint["gpt_neox.layers." + str(i) + ".post_attention_layernorm.bias"]
+            onmt_safetensor[
+                "decoder.transformer_layers."
+                + str(i)
+                + ".self_attn.final_linear.weight"
+            ] = checkpoint["gpt_neox.layers." + str(i) + ".attention.dense.weight"]
+            onmt_safetensor[
+                "decoder.transformer_layers." + str(i) + ".self_attn.final_linear.bias"
+            ] = checkpoint["gpt_neox.layers." + str(i) + ".attention.dense.bias"]
 
-    onmt_cp["model"]["decoder.layer_norm.weight"] = checkpoint[
-        "gpt_neox.final_layer_norm.weight"
-    ]
-    onmt_cp["model"]["decoder.layer_norm.bias"] = checkpoint[
-        "gpt_neox.final_layer_norm.bias"
-    ]
+            onmt_safetensor[
+                "decoder.transformer_layers." + str(i) + ".layer_norm_1.weight"
+            ] = checkpoint["gpt_neox.layers." + str(i) + ".input_layernorm.weight"]
+            onmt_safetensor[
+                "decoder.transformer_layers." + str(i) + ".layer_norm_1.bias"
+            ] = checkpoint["gpt_neox.layers." + str(i) + ".input_layernorm.bias"]
 
-    onmt_cp["generator"] = {}
-    onmt_cp["generator"]["weight"] = checkpoint["embed_out.weight"]
-    onmt_cp["generator"]["bias"] = torch.zeros(
-        onmt_cp["generator"]["weight"].size(0), dtype=torch.float16
-    )
+            onmt_safetensor[
+                "decoder.transformer_layers." + str(i) + ".feed_forward.w_1.weight"
+            ] = checkpoint["gpt_neox.layers." + str(i) + ".mlp.dense_h_to_4h.weight"]
+            onmt_safetensor[
+                "decoder.transformer_layers." + str(i) + ".feed_forward.w_1.bias"
+            ] = checkpoint["gpt_neox.layers." + str(i) + ".mlp.dense_h_to_4h.bias"]
+
+            onmt_safetensor[
+                "decoder.transformer_layers." + str(i) + ".feed_forward.w_2.weight"
+            ] = checkpoint["gpt_neox.layers." + str(i) + ".mlp.dense_4h_to_h.weight"]
+            onmt_safetensor[
+                "decoder.transformer_layers." + str(i) + ".feed_forward.w_2.bias"
+            ] = checkpoint["gpt_neox.layers." + str(i) + ".mlp.dense_4h_to_h.bias"]
+
+            onmt_safetensor[
+                "decoder.transformer_layers."
+                + str(i)
+                + ".feed_forward.layer_norm.weight"
+            ] = checkpoint[
+                "gpt_neox.layers." + str(i) + ".post_attention_layernorm.weight"
+            ]
+            onmt_safetensor[
+                "decoder.transformer_layers." + str(i) + ".feed_forward.layer_norm.bias"
+            ] = checkpoint[
+                "gpt_neox.layers." + str(i) + ".post_attention_layernorm.bias"
+            ]
+
+        if shard == 0:
+            transformer_ff = onmt_safetensor[
+                "decoder.transformer_layers.0.feed_forward.w_1.weight"
+            ].size(0)
+            vocab_size = onmt_safetensor["generator.weight"].size(0)
+        if opt.format == "safetensors":
+            print("Saving output model shard: %d" % shard)
+            fileout = opt.output[:-3] if opt.output[-3:] == ".pt" else opt.output
+            save_file(onmt_safetensor, fileout + ".{:02d}.safetensors".format(shard))
+
+    if opt.format == "pytorch":
+        onmt_cp["generator"] = {}
+        onmt_cp["generator"]["weight"] = onmt_safetensor["generator.weight"]
+        onmt_cp["generator"]["bias"] = onmt_safetensor["generator.bias"]
+        del onmt_safetensor["generator.weight"]
+        del onmt_safetensor["generator.bias"]
+        onmt_cp["model"] = {}
+        onmt_cp["model"] = onmt_safetensor
 
     vocabs = {}
     with open(opt.vocab_file, "r", encoding="utf-8") as vocab:
@@ -362,12 +416,8 @@ if __name__ == "__main__":
         data_task="lm",
         _all_transform={"filtertoolong"},
     )
-
-    totalsize = 0
-    for m in ["model", "generator"]:
-        for item in onmt_cp[m].keys():
-            item2 = onmt_cp[m][item]
-            totalsize += item2.nelement() * item2.element_size()
-    print("Saving parameters: ", totalsize)
-
-    torch.save(onmt_cp, opt.output)
+    print("Saving the pytorch file")
+    if opt.output[-3:] == ".pt":
+        torch.save(onmt_cp, opt.output)
+    else:
+        torch.save(onmt_cp, opt.output + ".pt")

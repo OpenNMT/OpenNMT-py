@@ -195,13 +195,18 @@ class QLinear(type):
                     pass
 
             def forward(self, x: torch.Tensor):
-                result = self.maybe_ckpt(super().forward, x)
                 if self.r > 0 and not self.merged:
-                    result += (
-                        self.lora_dropout(x)
-                        @ self.lora_A.transpose(0, 1)
-                        @ self.lora_B.transpose(0, 1)
-                    ) * self.scaling
+                    result = (
+                        self.maybe_ckpt(super().forward, x)
+                        + (
+                            self.lora_dropout(x)
+                            @ self.lora_A.transpose(0, 1)
+                            @ self.lora_B.transpose(0, 1)
+                        )
+                        * self.scaling
+                    )
+                else:
+                    result = self.maybe_ckpt(super().forward, x)
                 return result
 
         instance = QLoraLinear_cls.__new__(
