@@ -1,4 +1,6 @@
 """Module defining encoders."""
+import os
+import importlib
 from onmt.encoders.encoder import EncoderBase
 from onmt.encoders.transformer import TransformerEncoder
 from onmt.encoders.ggnn_encoder import GGNNEncoder
@@ -47,10 +49,9 @@ def register_encoder(name):
                 f"encoder ({name}: {cls.__name_}) must extend EncoderBase"
             )
         str2enc[name] = cls
+        __all__.append(cls.__name__) # added to be complete
         return cls
-
     return register_encoder_cls
-
 
 # Auto import python files in this directory
 encoder_dir = os.path.dirname(__file__)
