@@ -24,6 +24,7 @@ __all__ = [
     "TransformerLMDecoder",
 ]
 
+
 def get_decoders_cls(decoders_names):
     """Return valid encoder class indicated in `decoders_names`."""
     decoders_cls = {}
@@ -41,13 +42,13 @@ def register_decoder(name):
         if name in str2dec:
             raise ValueError("Cannot register duplicate decoder ({})".format(name))
         if not issubclass(cls, DecoderBase):
-            raise ValueError(
-                f"decoder ({name}: {cls.__name_}) must extend DecoderBase"
-            )
+            raise ValueError(f"decoder ({name}: {cls.__name_}) must extend DecoderBase")
         str2dec[name] = cls
-        __all__.append(cls.__name__) # added to be complete
+        __all__.append(cls.__name__)  # added to be complete
         return cls
+
     return register_decoder_cls
+
 
 # Auto import python files in this directory
 decoder_dir = os.path.dirname(__file__)

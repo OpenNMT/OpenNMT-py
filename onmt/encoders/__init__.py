@@ -28,6 +28,7 @@ __all__ = [
     "str2enc",
 ]
 
+
 def get_encoders_cls(encoder_names):
     """Return valid encoder class indicated in `encoder_names`."""
     encoders_cls = {}
@@ -45,13 +46,13 @@ def register_encoder(name):
         if name in str2enc:
             raise ValueError("Cannot register duplicate encoder ({})".format(name))
         if not issubclass(cls, EncoderBase):
-            raise ValueError(
-                f"encoder ({name}: {cls.__name_}) must extend EncoderBase"
-            )
+            raise ValueError(f"encoder ({name}: {cls.__name_}) must extend EncoderBase")
         str2enc[name] = cls
-        __all__.append(cls.__name__) # added to be complete
+        __all__.append(cls.__name__)  # added to be complete
         return cls
+
     return register_encoder_cls
+
 
 # Auto import python files in this directory
 encoder_dir = os.path.dirname(__file__)
