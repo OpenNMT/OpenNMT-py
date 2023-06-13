@@ -153,5 +153,5 @@ if __name__ == "__main__":
             f.append(safe_open(shard, framework="pt", device="cpu"))
             for key in f[i].keys():
                 shard_dict[key] = model_state_dict[key]
-            logger.info("saving shard", fileout + ".{:02d}.safetensors".format(i))
+            logger.info("saving shard" + fileout + ".{:02d}.safetensors".format(i))
             save_file(shard_dict, fileout + ".{:02d}.safetensors".format(i))
