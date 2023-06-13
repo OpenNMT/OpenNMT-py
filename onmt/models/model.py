@@ -2,7 +2,6 @@
 import torch
 import torch.nn as nn
 import glob
-from itertools import chain
 
 
 class BaseModel(nn.Module):
