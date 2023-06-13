@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# flake8: noqa
 import json
 import torch
 import argparse
@@ -10,6 +9,7 @@ from onmt.constants import DefaultTokens
 from sentencepiece import SentencePieceProcessor
 import os
 from transformers import LlamaForCausalLM
+from safetensors.torch import save_file
 
 
 class Tokenizer:
@@ -22,50 +22,6 @@ class Tokenizer:
         self.pad_id: int = self.sp_model.pad_id()
         assert self.sp_model.vocab_size() == self.sp_model.get_piece_size()
         self.vocab = [self.sp_model.id_to_piece(i) for i in range(self.n_words)]
-
-
-def unpermute(w, n_heads, dim):
-    return (
-        w.view(n_heads, 2, dim // n_heads // 2, dim).transpose(1, 2).reshape(dim, dim)
-    )
-
-
-def translate_state_dict_key(k):  # noqa: C901
-    k = k.replace("base_model.model.", "")
-    if k == "model.embed_tokens.weight":
-        return "decoder.embeddings.make_embedding.emb_luts.0.weight"
-    elif k == "model.norm.weight":
-        return "decoder.layer_norm.weight"
-    elif k == "lm_head.weight":
-        return "weight"
-    elif k.startswith("model.layers."):
-        layer = k.split(".")[2]
-        if k.endswith(".self_attn.q_proj.weight"):
-            return f"decoder.transformer_layers.{layer}.self_attn.linear_query.weight"
-        elif k.endswith(".self_attn.k_proj.weight"):
-            return f"decoder.transformer_layers.{layer}.self_attn.linear_keys.weight"
-        elif k.endswith(".self_attn.v_proj.weight"):
-            return f"decoder.transformer_layers.{layer}.self_attn.linear_values.weight"
-        elif k.endswith(".self_attn.o_proj.weight"):
-            return f"decoder.transformer_layers.{layer}.self_attn.final_linear.weight"
-        elif k.endswith(".mlp.gate_proj.weight"):
-            return f"decoder.transformer_layers.{layer}.feed_forward.w_1.weight"
-        elif k.endswith(".mlp.down_proj.weight"):
-            return f"decoder.transformer_layers.{layer}.feed_forward.w_2.weight"
-        elif k.endswith(".mlp.up_proj.weight"):
-            return f"decoder.transformer_layers.{layer}.feed_forward.w_3.weight"
-        elif k.endswith(".input_layernorm.weight"):
-            return f"decoder.transformer_layers.{layer}.layer_norm_1.weight"
-        elif k.endswith(".post_attention_layernorm.weight"):
-            return f"decoder.transformer_layers.{layer}.feed_forward.layer_norm.weight"
-        elif k.endswith("rotary_emb.inv_freq") or "lora" in k:
-            return None
-        else:
-            print(layer, k)
-            raise NotImplementedError
-    else:
-        print(k)
-        raise NotImplementedError
 
 
 if __name__ == "__main__":
@@ -82,6 +38,16 @@ if __name__ == "__main__":
     parser.add_argument(
         "--output", type=str, required=True, help="""Path to the model directory"""
     )
+    parser.add_argument(
+        "--format",
+        type=str,
+        default="pytorch",
+        choices=["pytorch", "safetensors"],
+        help="""Format to use 'pytorch' or 'safetensors'""",
+    )
+    parser.add_argument(
+        "--nshards", type=int, default=1, help="""Path to the model directory"""
+    )
     opt = parser.parse_args()
 
     model = LlamaForCausalLM.from_pretrained(
@@ -91,6 +57,9 @@ if __name__ == "__main__":
         trust_remote_code=True,
     )
     checkpoint = model.state_dict()
+
+    if opt.format == "pytorch" and opt.nshards > 1:
+        raise ValueError("Saving several shards in pytorch format is not supported")
 
     params_json = os.path.join(opt.model_dir, "config.json")
     with open(params_json, encoding="utf-8") as fparam:
@@ -105,21 +74,101 @@ if __name__ == "__main__":
     transformer_ff = params["intermediate_size"]
 
     onmt_cp = {}
-    onmt_cp["model"] = {}
-    onmt_cp["generator"] = {}
-    for k, v in checkpoint.items():
-        new_k = translate_state_dict_key(k)
-        if new_k is not None:
-            if "linear_query" in new_k or "linear_keys" in new_k:
-                onmt_cp["model"][new_k] = unpermute(v, heads, hidden_size)
-            elif k == "lm_head.weight":
-                onmt_cp["generator"][new_k] = v
-            else:
-                onmt_cp["model"][new_k] = v
 
-    onmt_cp["generator"]["bias"] = torch.zeros(
-        onmt_cp["generator"]["weight"].size(0), dtype=torch.float16
-    )
+    for shard in range(opt.nshards):
+
+        print("starting output shard: %d/%d" % (shard + 1, opt.nshards))
+        onmt_safetensor = {}
+
+        if shard == 0:
+            onmt_safetensor[
+                "decoder.embeddings.make_embedding.emb_luts.0.weight"
+            ] = checkpoint["model.embed_tokens.weight"]
+            onmt_safetensor["decoder.layer_norm.weight"] = checkpoint[
+                "model.norm.weight"
+            ]
+
+            onmt_safetensor["generator.weight"] = checkpoint["lm_head.weight"]
+            onmt_safetensor["generator.bias"] = torch.zeros(
+                onmt_safetensor["generator.weight"].size(0), dtype=torch.float16
+            )
+
+        for i in range(
+            -(decoder_layers // -opt.nshards) * shard,
+            min(-(decoder_layers // -opt.nshards) * (shard + 1), decoder_layers),
+            1,
+        ):
+            onmt_safetensor[
+                "decoder.transformer_layers."
+                + str(i)
+                + ".self_attn.linear_query.weight"
+            ] = (
+                checkpoint["model.layers." + str(i) + ".self_attn.q_proj.weight"]
+                .view(heads, 2, hidden_size // heads // 2, hidden_size)
+                .transpose(1, 2)
+                .reshape(hidden_size, hidden_size)
+            )
+            onmt_safetensor[
+                "decoder.transformer_layers." + str(i) + ".self_attn.linear_keys.weight"
+            ] = (
+                checkpoint["model.layers." + str(i) + ".self_attn.k_proj.weight"]
+                .view(heads, 2, hidden_size // heads // 2, hidden_size)
+                .transpose(1, 2)
+                .reshape(hidden_size, hidden_size)
+            )
+            onmt_safetensor[
+                "decoder.transformer_layers."
+                + str(i)
+                + ".self_attn.linear_values.weight"
+            ] = checkpoint["model.layers." + str(i) + ".self_attn.v_proj.weight"]
+
+            onmt_safetensor[
+                "decoder.transformer_layers."
+                + str(i)
+                + ".self_attn.final_linear.weight"
+            ] = checkpoint["model.layers." + str(i) + ".self_attn.o_proj.weight"]
+
+            onmt_safetensor[
+                "decoder.transformer_layers." + str(i) + ".layer_norm_1.weight"
+            ] = checkpoint["model.layers." + str(i) + ".input_layernorm.weight"]
+
+            onmt_safetensor[
+                "decoder.transformer_layers." + str(i) + ".feed_forward.w_1.weight"
+            ] = checkpoint["model.layers." + str(i) + ".mlp.gate_proj.weight"]
+
+            onmt_safetensor[
+                "decoder.transformer_layers." + str(i) + ".feed_forward.w_2.weight"
+            ] = checkpoint["model.layers." + str(i) + ".mlp.down_proj.weight"]
+            onmt_safetensor[
+                "decoder.transformer_layers." + str(i) + ".feed_forward.w_3.weight"
+            ] = checkpoint["model.layers." + str(i) + ".mlp.up_proj.weight"]
+
+            onmt_safetensor[
+                "decoder.transformer_layers."
+                + str(i)
+                + ".feed_forward.layer_norm.weight"
+            ] = checkpoint[
+                "model.layers." + str(i) + ".post_attention_layernorm.weight"
+            ]
+
+        if shard == 0:
+            transformer_ff = onmt_safetensor[
+                "decoder.transformer_layers.0.feed_forward.w_1.weight"
+            ].size(0)
+            vocab_size = onmt_safetensor["generator.weight"].size(0)
+        if opt.format == "safetensors":
+            print("Saving output model shard: %d" % shard)
+            fileout = opt.output[:-3] if opt.output[-3:] == ".pt" else opt.output
+            save_file(onmt_safetensor, fileout + ".{:02d}.safetensors".format(shard))
+
+    if opt.format == "pytorch":
+        onmt_cp["generator"] = {}
+        onmt_cp["generator"]["weight"] = onmt_safetensor["generator.weight"]
+        onmt_cp["generator"]["bias"] = onmt_safetensor["generator.bias"]
+        del onmt_safetensor["generator.weight"]
+        del onmt_safetensor["generator.bias"]
+        onmt_cp["model"] = {}
+        onmt_cp["model"] = onmt_safetensor
 
     tokenizer = Tokenizer(model_path=opt.tokenizer_model)
     vocabs = {}
@@ -332,12 +381,8 @@ if __name__ == "__main__":
         data_task="lm",
         _all_transform={"filtertoolong"},
     )
-
-    totalsize = 0
-    for m in ["model", "generator"]:
-        for item in onmt_cp[m].keys():
-            item2 = onmt_cp[m][item]
-            totalsize += item2.nelement() * item2.element_size()
-    print("Saving parameters: ", totalsize)
-
-    torch.save(onmt_cp, opt.output)
+    print("Saving the pytorch file")
+    if opt.output[-3:] == ".pt":
+        torch.save(onmt_cp, opt.output)
+    else:
+        torch.save(onmt_cp, opt.output + ".pt")
