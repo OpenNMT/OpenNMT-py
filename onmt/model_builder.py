@@ -129,9 +129,8 @@ def load_test_model(opt, model_path=None):
     else:
         # weights are not in the .pt checkpoint but stored in the safetensors file
         base_name = model_path[:-3] if model_path[-3:] == ".pt" else model_path
-        model_path = base_name + ".safetensors"
         model.load_safe_state_dict(
-            model_path, precision=precision, device=device, strict=True
+            base_name, precision=precision, device=device, strict=True
         )
 
     del checkpoint
