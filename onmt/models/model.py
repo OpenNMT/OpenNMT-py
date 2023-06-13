@@ -132,6 +132,8 @@ class BaseModel(nn.Module):
             raise ImportError("run: pip install safetensors, to use safetensors")
         keyfound = {}
         shards = glob.glob(model_path + ".*.safetensors")
+        if len(shards) == 0:
+            raise ValueError("No safetensors file found")
         f = []
         keys_shard = {}
         for i, shard in enumerate(shards):

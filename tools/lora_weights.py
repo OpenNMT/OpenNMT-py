@@ -73,8 +73,11 @@ if __name__ == "__main__":
             strict=False,
         )
     else:
+        basepath = (
+            opt.base_model[:-3] if opt.base_model[-3:] == ".pt" else opt.base_model
+        )
         model.load_safe_state_dict(
-            opt.base_model,
+            basepath,
             precision=torch.float32,
             device=torch.device("cpu"),
             strict=False,
@@ -88,8 +91,11 @@ if __name__ == "__main__":
             strict=False,
         )
     else:
+        lorapath = (
+            opt.base_model[:-3] if opt.base_model[-3:] == ".pt" else opt.base_model
+        )
         model.load_safe_state_dict(
-            opt.lora_weights,
+            lorapath,
             precision=torch.float32,
             device=torch.device("cpu"),
             strict=False,
