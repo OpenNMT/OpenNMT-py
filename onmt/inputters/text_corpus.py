@@ -58,6 +58,7 @@ class ParallelCorpus(object):
         `offset` and `stride` allow to iterate only on every
         `stride` example, starting from `offset`.
         """
+
         def make_ex(sline, tline, align):
             sline, sfeats = parse_features(
                 sline,
@@ -79,12 +80,14 @@ class ParallelCorpus(object):
             if sfeats is not None:
                 example["src_feats"] = [f for f in sfeats]
             return example
-        
+
         if isinstance(self.src, list):
             fs = self.src
             ft = [] if self.tgt is None else self.tgt
             fa = [] if self.align is None else self.align
-            for i, (sline, tline, align) in enumerate(itertools.zip_longest(fs, ft, fa)):
+            for i, (sline, tline, align) in enumerate(
+                itertools.zip_longest(fs, ft, fa)
+            ):
                 if (i // stride) % stride == offset:
                     yield make_ex(sline, tline, align)
         else:

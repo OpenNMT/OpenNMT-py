@@ -15,7 +15,9 @@ class IterOnDevice(torch.utils.data.IterableDataset):
         super(IterOnDevice).__init__()
         self.iterable = iterable
         self.device_id = device_id
-        self.transform = TransformPipe.build_from([iterable.transforms[name] for name in iterable.transforms])
+        self.transform = TransformPipe.build_from(
+            [iterable.transforms[name] for name in iterable.transforms]
+        )
 
     @staticmethod
     def batch_to_device(tensor_batch, device_id):
