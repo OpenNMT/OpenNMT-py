@@ -16,10 +16,6 @@ from onmt.utils.misc import use_gpu, set_random_seed
 
 
 TASKS = [
-    "high_school_european_history",
-    "high_school_us_history",
-]
-"""
         'abstract_algebra',
         'anatomy',
         'astronomy',
@@ -77,7 +73,7 @@ TASKS = [
         'us_foreign_policy',
         'virology',
         'world_religions']
-"""
+
 choices = ["A", "B", "C", "D"]
 
 
@@ -157,8 +153,8 @@ def evaluate(opt):
         opt, transforms_cls, translator.vocabs
     )  # transforms is a dictionary of each transform and its instance
 
-    data_dir = "/home/vincent/nlp/chain-of-thought-hub/MMLU/data"
-    ntrain = 5
+    data_dir = "eval_llm/MMLU/data/"
+    ntrain = 5  # nshots from dev
 
     start_time = time.time()
     for task in TASKS:
@@ -181,7 +177,6 @@ def evaluate(opt):
                 prompt_split = prompt.split("\n\n")
                 prompt_split.pop(1)
                 prompt = "\n\n".join(prompt_split)
-            print(i, len(prompt))
             label = test_df.iloc[i, test_df.shape[1] - 1]
             records.append({"prompt": prompt, "answer": label})
             src.append(prompt.replace("\n", "｟newline｠"))
@@ -193,23 +188,20 @@ def evaluate(opt):
         )
         infer_iter.num_workers = 0
         infer_iter._init_datasets(0)
-        """
+
         data_transform = [
             infer_iter.transforms[name]
             for name in opt.transforms
             if name in infer_iter.transforms
         ]
-        print(data_transform)
         transform = TransformPipe.build_from(data_transform)
-        print(transform)
-        """
 
         if infer_iter is not None:
             infer_iter = IterOnDevice(infer_iter, opt.gpu)
 
         scores, preds = translator._translate(
             infer_iter,
-            transform=infer_iter.transform,
+            transform=transform,
             attn_debug=opt.attn_debug,
             align_debug=opt.align_debug,
         )
@@ -218,8 +210,6 @@ def evaluate(opt):
         ]  # flatten the list of list
 
         gold_answers = [record["answer"] for record in records]
-        # print(pred_answers)
-        # print(gold_answers)
         run_results[task] = {"pred_answers": pred_answers, "gold_answers": gold_answers}
     with open(output_filename, "w") as f:
         json.dump(run_results, f, ensure_ascii=False, indent=2)
