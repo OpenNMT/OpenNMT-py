@@ -5,6 +5,7 @@ from onmt.constants import CorpusName, CorpusTask
 from onmt.transforms import TransformPipe
 from onmt.inputters.text_utils import process, parse_features, append_features_to_text
 from contextlib import contextmanager
+import itertools
 
 
 @contextmanager
@@ -57,35 +58,46 @@ class ParallelCorpus(object):
         `offset` and `stride` allow to iterate only on every
         `stride` example, starting from `offset`.
         """
-        with exfile_open(self.src, mode="rb") as fs, exfile_open(
-            self.tgt, mode="rb"
-        ) as ft, exfile_open(self.align, mode="rb") as fa:
-            for i, (sline, tline, align) in enumerate(zip(fs, ft, fa)):
+        def make_ex(sline, tline, align):
+            sline, sfeats = parse_features(
+                sline,
+                n_feats=self.n_src_feats,
+                defaults=self.src_feats_defaults,
+            )
+            # 'src_original' and 'tgt_original' store the
+            # original line before tokenization. These
+            # fields are used later on in the feature
+            # transforms.
+            example = {
+                "src": sline,
+                "tgt": tline,
+                "src_original": sline,
+                "tgt_original": tline,
+            }
+            if align is not None:
+                example["align"] = align
+            if sfeats is not None:
+                example["src_feats"] = [f for f in sfeats]
+            return example
+        
+        if isinstance(self.src, list):
+            fs = self.src
+            ft = [] if self.tgt is None else self.tgt
+            fa = [] if self.align is None else self.align
+            for i, (sline, tline, align) in enumerate(itertools.zip_longest(fs, ft, fa)):
                 if (i // stride) % stride == offset:
-                    sline = sline.decode("utf-8")
-                    sline, sfeats = parse_features(
-                        sline,
-                        n_feats=self.n_src_feats,
-                        defaults=self.src_feats_defaults,
-                    )
-                    if tline is not None:
-                        tline = tline.decode("utf-8")
-                    # 'src_original' and 'tgt_original' store the
-                    # original line before tokenization. These
-                    # fields are used later on in the feature
-                    # transforms.
-                    example = {
-                        "src": sline,
-                        "tgt": tline,
-                        "src_original": sline,
-                        "tgt_original": tline,
-                    }
-                    if align is not None:
-                        example["align"] = align.decode("utf-8")
-
-                    if sfeats is not None:
-                        example["src_feats"] = [f for f in sfeats]
-                    yield example
+                    yield make_ex(sline, tline, align)
+        else:
+            with exfile_open(self.src, mode="rb") as fs, exfile_open(
+                self.tgt, mode="rb"
+            ) as ft, exfile_open(self.align, mode="rb") as fa:
+                for i, (sline, tline, align) in enumerate(zip(fs, ft, fa)):
+                    if (i // stride) % stride == offset:
+                        if tline is not None:
+                            tline = tline.decode("utf-8")
+                        if align is not None:
+                            align = align.decode("utf-8")
+                        yield make_ex(sline.decode("utf-8"), tline, align)
 
     def __str__(self):
         cls_name = type(self).__name__
