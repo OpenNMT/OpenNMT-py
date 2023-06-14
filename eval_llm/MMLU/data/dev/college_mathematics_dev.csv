@@ -1,0 +1,8 @@
+"Let V be the set of all real polynomials p(x). Let transformations T, S be defined on V by T:p(x) -> xp(x) and S:p(x) -> p'(x) = d/dx p(x), and interpret (ST)(p(x)) as S(T(p(x))). Which of the following is true?",ST = 0,ST = T,ST = TS,ST - TS is the identity map of V onto itself.,D
+"A tank initially contains a salt solution of 3 grams of salt dissolved in 100 liters of water. A salt solution containing 0.02 grams of salt per liter of water is sprayed into the tank at a rate of 4 liters per minute. The sprayed solution is continually mixed with the salt solution in the tank, and the mixture flows out of the tank at a rate of 4 liters per minute. If the mixing is instantaneous, how many grams of salt are in the tank after 100 minutes have elapsed?",2,2 - e^-2,2 + e^-2,2 + e^-4,D
+"Let A be a real 2x2 matrix. Which of the following statements must be true?
+I. All of the entries of A^2 are nonnegative.
+II. The determinant of A^2 is nonnegative.
+III. If A has two distinct eigenvalues, then A^2 has two distinct eigenvalues.",I only,II only,III only,II and III only,B
+"Suppose that f(1 + x) = f(x) for all real x. If f is a polynomial and f(5) = 11, then f(15/2)",-11,0,11,33/2,C
+"Let A be the set of all ordered pairs of integers (m, n) such that 7m + 12n = 22. What is the greatest negative number in the set B = {m + n : (m, n) \in A}?",-5,-4,-3,-2,B
