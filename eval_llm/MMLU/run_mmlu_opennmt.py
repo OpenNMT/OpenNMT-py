@@ -174,7 +174,7 @@ def evaluate(opt):
             prompt_end = format_example(test_df, i, include_answer=False)
             train_prompt = gen_prompt(dev_df, task, k)
             prompt = train_prompt + prompt_end
-            while len(prompt) > 8192:
+            while len(prompt) > 2048:
                 prompt_split = prompt.split("\n\n")
                 prompt_split.pop(1)
                 prompt = "\n\n".join(prompt_split)
@@ -207,7 +207,7 @@ def evaluate(opt):
             align_debug=opt.align_debug,
         )
         pred_answers = [
-            x for sublist in preds for x in sublist
+            x.lstrip() for sublist in preds for x in sublist
         ]  # flatten the list of list
 
         gold_answers = [record["answer"] for record in records]
