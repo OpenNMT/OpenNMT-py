@@ -1,0 +1,18 @@
+"If a polynomial f(x) over the real numbers has the complex numbers 2 + i and 1 - i as roots, then f(x) could be",x^3 + 5x^2 + 4x + 1,x^4 - 6x^3 + 15x^2 - 18x + 10,x^3 - x^2 + 4x + 1,x^4 + 7x^2 + 10,B
+"What is the volume of the solid in xyz-space bounded by the surfaces y = x^2, y = 2 - x^2, z = 0, and z = y + 3?",8/3,16/3,32/3,104/105,C
+"Suppose A, B, and C are statements such that C is true if exactly one of A and B is true. If C is false, which of the following statements must be true?","If A is true, then B is false.","If A is false, then B is false.","If A is false, then B is true.",Both A and B are true.,B
+"In a survey of 100 undergraduate math majors at a certain college, the following information is
+obtained about the courses they are taking during the Spring semester:
+41 are enrolled in real analysis,
+44 are enrolled in differential equations, 48 are enrolled in linear algebra,
+11 are enrolled in both real analysis and linear algebra,
+14 are enrolled in both real analysis and differential equations,
+19 are enrolled in both differential equations and linear algebra, and 10 are not enrolled in any of these three courses.
+How many of the students surveyed are enrolled in all three of these courses?",1,2,3,4,A
+"k digits are to be chosen at random (with repetitions allowed) from {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}. What is the probability that 0 will not be chosen?",(9/10)^k,(1/10)^k,(k-1)/k,1/10,A
+"In the complex z-plane, the set of points satisfying the equation z^2 = |z|^2 is a",pair of points,circle,half-line,line,D
+"Let S, T, and U be nonempty sets, and let f: S -> T and g: T -> U be functions such that the function g ∘ f : S -> U is one-to-one (injective). Which of the following must be true?",f is one-to-one.,f is onto.,g is one-to-one.,g is onto.,A
+A fair die is tossed 360 times. The probability that a six comes up on 70 or more of the tosses is,greater than 0.50,between 0.16 and 0.50,between 0.02 and 0.16,between 0.01 and 0.02,C
+For what value of b is the line y = 10x tangent to the curve y = e^(bx) at some point in the xy-plane?,10/e,10,10e,e^10,A
+"If the finite group G contains a subgroup of order five but no element of G other than the identity is its own inverse, then the order of G could be",8,20,30,35,D
+"If one arch of the curve y = sin x is revolved around the x-axis, what's the volume of the generated solid?",π^2 / 4,π^2 / 2,2π,π^2,B
