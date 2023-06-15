@@ -32,19 +32,11 @@ def translate(opt):
         copy=translator.copy_attn,
     )
 
-    data_transform = [
-        infer_iter.transforms[name]
-        for name in opt.transforms
-        if name in infer_iter.transforms
-    ]
-    transform = TransformPipe.build_from(data_transform)
-
-    if infer_iter is not None:
-        infer_iter = IterOnDevice(infer_iter, opt.gpu)
+    infer_iter = IterOnDevice(infer_iter, opt.gpu)
 
     _, _ = translator._translate(
         infer_iter,
-        transform=transform,
+        transform=infer_iter.transform,
         attn_debug=opt.attn_debug,
         align_debug=opt.align_debug,
     )

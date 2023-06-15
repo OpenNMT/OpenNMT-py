@@ -343,10 +343,21 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
 
 
 def build_dynamic_dataset_iter(
-    opt, transforms_cls, vocabs, copy=False, task=CorpusTask.TRAIN, stride=1, offset=0
+    opt,
+    transforms_cls,
+    vocabs,
+    copy=False,
+    task=CorpusTask.TRAIN,
+    stride=1,
+    offset=0,
+    src=None,
+    tgt=None,
+    align=None,
 ):
     """
     Build `DynamicDatasetIter` from opt.
+    if src, tgt,align are passed then dataset is built from those lists
+    instead of opt.[src, tgt, align]
     Typically this function is called for CorpusTask.[TRAIN,VALID,INFER]
     from the main tain / translate scripts
     We disable automatic batching in the DataLoader.
@@ -360,7 +371,7 @@ def build_dynamic_dataset_iter(
     advance to avoid the GPU waiting during the refilling of the bucket.
     """
     transforms = make_transforms(opt, transforms_cls, vocabs)
-    corpora = get_corpora(opt, task)
+    corpora = get_corpora(opt, task, src=src, tgt=tgt, align=align)
     if corpora is None:
         assert task != CorpusTask.TRAIN, "only valid corpus is ignorable."
         return None

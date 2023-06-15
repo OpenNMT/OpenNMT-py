@@ -45,7 +45,7 @@ class TestData(unittest.TestCase):
 
     def dataset_build(self, opt):
         try:
-            prepare_transforms_vocabs(opt)
+            prepare_transforms_vocabs(opt, {})
         except SystemExit as err:
             print(err)
         except IOError as err:

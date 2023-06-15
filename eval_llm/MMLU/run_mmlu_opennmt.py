@@ -8,7 +8,10 @@ import pandas as pd
 import torch
 from onmt.utils.logging import init_logger
 from onmt.translate.translator import build_translator
-from onmt.inputters.dynamic_iterator import DynamicDatasetIter
+from onmt.inputters.dynamic_iterator import (
+    build_dynamic_dataset_iter,
+    DynamicDatasetIter,
+)
 from onmt.inputters.inputter import IterOnDevice
 from onmt.inputters.text_corpus import ParallelCorpus
 from onmt.transforms import get_transforms_cls, TransformPipe, make_transforms
@@ -153,9 +156,6 @@ def evaluate(opt):
     translator = build_translator(opt, logger=logger, report_score=True)
     # Build the transforms (along with the tokenizer)
     transforms_cls = get_transforms_cls(opt._all_transform)
-    transforms = make_transforms(
-        opt, transforms_cls, translator.vocabs
-    )  # transforms is a dictionary of each transform and its instance
 
     data_dir = "eval_llm/MMLU/data/"
     ntrain = 5  # nshots from dev
@@ -185,27 +185,15 @@ def evaluate(opt):
             records.append({"prompt": prompt, "answer": label})
             src.append(prompt.replace("\n", "｟newline｠"))
 
-        corpora = {}
-        corpora["infer"] = ParallelCorpus(CorpusName.INFER, src, None)
-        infer_iter = DynamicDatasetIter.from_opt(
-            corpora, transforms, translator.vocabs, opt, CorpusTask.INFER, False
+        infer_iter = build_dynamic_dataset_iter(
+            opt, transforms_cls, translator.vocabs, task=CorpusTask.INFER, src=src
         )
-        infer_iter.num_workers = 0
-        infer_iter._init_datasets(0)
 
-        data_transform = [
-            infer_iter.transforms[name]
-            for name in opt.transforms
-            if name in infer_iter.transforms
-        ]
-        transform = TransformPipe.build_from(data_transform)
-
-        if infer_iter is not None:
-            infer_iter = IterOnDevice(infer_iter, opt.gpu)
+        infer_iter = IterOnDevice(infer_iter, opt.gpu)
 
         scores, preds = translator._translate(
             infer_iter,
-            transform=transform,
+            transform=infer_iter.transform,
             attn_debug=opt.attn_debug,
             align_debug=opt.align_debug,
         )
