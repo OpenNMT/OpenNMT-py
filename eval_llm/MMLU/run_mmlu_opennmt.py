@@ -222,6 +222,7 @@ def evaluate(opt):
     end_time = time.time()
     print("total run time %.2f" % (end_time - start_time))
 
+
 def _get_parser():
     parser = ArgumentParser(description="run_mmlu_opennmt.py")
 
