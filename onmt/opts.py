@@ -585,9 +585,8 @@ def model_opts(parser):
         "-encoder_type",
         type=str,
         default="rnn",
-        choices=["rnn", "brnn", "ggnn", "mean", "transformer", "cnn", "transformer_lm"],
         help="Type of encoder layer to use. Non-RNN layers "
-        "are experimental. Options are "
+        "are experimental. Default options are "
         "[rnn|brnn|ggnn|mean|transformer|cnn|transformer_lm].",
     )
     group.add(
@@ -595,9 +594,8 @@ def model_opts(parser):
         "-decoder_type",
         type=str,
         default="rnn",
-        choices=["rnn", "transformer", "cnn", "transformer_lm"],
         help="Type of decoder layer to use. Non-RNN layers "
-        "are experimental. Options are "
+        "are experimental. Default options are "
         "[rnn|transformer|cnn|transformer].",
     )
 
