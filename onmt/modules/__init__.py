@@ -1,6 +1,4 @@
 """  Attention and normalization modules  """
-import importlib
-import os
 from onmt.modules.util_class import Elementwise
 from onmt.modules.gate import context_gate_factory, ContextGate
 from onmt.modules.global_attention import GlobalAttention

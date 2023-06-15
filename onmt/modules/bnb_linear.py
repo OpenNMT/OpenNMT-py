@@ -191,11 +191,6 @@ def replace_bnb_linear(
     threshold=6.0,
     compute_dtype=torch.float16,  # we could also use bfloat16 when available
 ):
-    try:
-        os.environ["BITSANDBYTES_NOWELCOME"] = "1"
-        import bitsandbytes as bnb
-    except ImportError:
-        raise ImportError("Install bitsandbytes to use 4/8bit compression")
     for name, module in model.named_children():
         if len(list(module.children())) > 0:
             replace_bnb_linear(

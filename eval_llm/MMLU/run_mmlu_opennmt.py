@@ -5,17 +5,12 @@ import json
 import os
 import time
 import pandas as pd
-import torch
 from onmt.utils.logging import init_logger
 from onmt.translate.translator import build_translator
-from onmt.inputters.dynamic_iterator import (
-    build_dynamic_dataset_iter,
-    DynamicDatasetIter,
-)
+from onmt.inputters.dynamic_iterator import build_dynamic_dataset_iter
 from onmt.inputters.inputter import IterOnDevice
-from onmt.inputters.text_corpus import ParallelCorpus
-from onmt.transforms import get_transforms_cls, TransformPipe, make_transforms
-from onmt.constants import CorpusTask, CorpusName
+from onmt.transforms import get_transforms_cls
+from onmt.constants import CorpusTask
 import onmt.opts as opts
 from onmt.utils.parse import ArgumentParser
 from onmt.utils.misc import use_gpu, set_random_seed

@@ -2,9 +2,6 @@
 This file is for models creation, which consults options
 and creates each encoder and decoder accordingly.
 """
-import re
-import os
-import importlib
 import torch
 import torch.nn as nn
 from torch.nn.init import xavier_uniform_, zeros_, uniform_
@@ -268,8 +265,6 @@ def build_base_model(model_opt, vocabs):
                 "%s compression of layer %s" % (model_opt.quant_type, nonlora_to_quant)
             )
             try:
-                os.environ["BITSANDBYTES_NOWELCOME"] = "1"
-                import bitsandbytes as bnb
                 from onmt.modules.bnb_linear import replace_bnb_linear
             except ImportError:
                 raise ImportError("Install bitsandbytes to use 4/8bit compression")

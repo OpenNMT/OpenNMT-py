@@ -4,7 +4,7 @@ from onmt.utils.logging import init_logger
 from onmt.translate.translator import build_translator
 from onmt.inputters.dynamic_iterator import build_dynamic_dataset_iter
 from onmt.inputters.inputter import IterOnDevice
-from onmt.transforms import get_transforms_cls, TransformPipe
+from onmt.transforms import get_transforms_cls
 from onmt.constants import CorpusTask
 import onmt.opts as opts
 from onmt.utils.parse import ArgumentParser
