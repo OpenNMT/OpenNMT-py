@@ -1,0 +1,40 @@
+Which of the following is an example of the use of a device on the Internet of Things (IoT) ?,A car alerts a driver that it is about to hit an object.,A hiker uses a G P S watch to keep track of her position.,A refrigerator orders milk from an online delivery service when the milk in the refrigerator is almost gone.,A runner uses a watch with optical sensors to monitor his heart rate.,C
+"Many Web browsers allow users to open anonymous windows. During a browsing session in an anonymous window, the browser does not record a browsing history or a list of downloaded files. When the anonymous window is exited, cookies created during the session are deleted. Which of the following statements about browsing sessions in an anonymous window is true?","The activities of a user browsing in an anonymous window will not be visible to people who monitor the user's network, such as the system administrator.",Items placed in a Web store's shopping cart for future purchase during the anonymous browsing session will not be saved on the user's computer.,A user will not be able to log in to e-mail or social media accounts during the anonymous browsing session.,A user browsing in an anonymous window will be protected from viruses launched from any web sites visited or files downloaded.,B
+"What is the output of ""abc""[::-1] in Python 3?",Error,abc,cba,c,C
+"In the program below, the initial value of x is 5 and the initial value of y is 10.
+ IF (X < O)
+ {
+ DISPLAY (""Foxtrot"")
+ }
+ ELSE
+ {
+ IF (X > y)
+ {
+   DISPLAY (""Hotel"")
+ }
+ ELSE 
+ {
+   IF (y > O)
+   {
+   DISPLAY (""November"")
+   }
+   ELSE
+   {
+   DISPLAY (""Yankee"")
+   }
+ }
+ }
+ 
+ What is displayed as a result of running the program?",Foxtrot,Hotel,November,Yankee,C
+"A list of numbers has n elements, indexed from 1 to n. The following algorithm is intended to display the number of elements in the list that have a value greater than 100. The algorithm uses the variables count and position. Steps 3 and 4 are missing.
+ Step 1: Set count to 0 and position to 1.
+ Step 2: If the value of the element at index position is greater
+ than 100, increase the value of count by 1.
+ Step 3: (missing step)
+ Step 4: (missing step)
+ Step 5: Display the value of count.
+ Which of the following could be used to replace steps 3 and 4 so that the algorithm works as intended?","Step 3: Increase the value of position by 1.
+ Step 4: Repeat steps 2 and 3 until the value of count is greater than 100.","Step 3: Increase the value of position by 1.
+ Step 4: Repeat steps 2 and 3 until t he value of position is greater than n.","Step 3: Repeat step 2 until the value of count is greater than 100.
+ Step 4: Increase the value of position by 1.","Step 3: Repeat step 2 until the value of position is greater than n.
+ Step 4: Increase the value of count by 1.",D

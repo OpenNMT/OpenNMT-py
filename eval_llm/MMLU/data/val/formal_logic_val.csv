@@ -1,0 +1,40 @@
+"Identify the antecedent of the following conditional proposition: If the Bees win their first game, then neither the Aardvarks nor the Chipmunks win their first games.",The Aardvarks do not win their first game.,The Bees win their first game.,The Chipmunks do not win their first game.,Neither the Aardvarks nor the Chipmunks win their first games.,B
+" Which of the given formulas of PL is the best symbolization of the following sentence?
+Elliott likes to skateboard or he likes to write songs and to play them.",S ∨ (W • P),(S ∨ W) ∨ P,S • (W ∨ P),(S • W) ∨ P,A
+" Which of the given formulas of PL is the best symbolization of the following sentence?
+A married couple can report their combined income and deduct their combined allowable expenses on one return provided that only one had income or they did not live together all year.",(R • D) ⊃ (I ∨ ~L),(I ∨ ~L) ⊃ (R • D),R • [(I ⊃ D) ∨ ~L],~(I ∨ L) ⊃ (R • D),B
+ Select the best translation into predicate logic.Some robbers steal money from a bank. (Bx: x is a bank; Mx: x is money; Rx: x is a robber; Sxyz: x steals y from z),(∃x){Bx • (∃y)[Ry • (∀z)(Mz ⊃ Syzx)]},(∃x)(∃y)(∃z)[(Rx • By) • (Mz • Syxz)],(∃x){Rx ⊃ (∃y)[My ⊃ (∃z)(Bz ⊃ Sxyz)]},(∃x){Rx • (∃y)[My • (∃z)(Bz • Sxyz)]},D
+" Construct a complete truth table for the following pairs of propositions. Then, using the truth tables, determine whether the statements are logically equivalent or contradictory. If neither, determine whether they are consistent or inconsistent. Justify your answers.
+~[(G ⊃ H) ∨ ~H] and ~G ⊃ G",Logically equivalent,Contradictory,"Neither logically equivalent nor contradictory, but consistent",Inconsistent,D
+" Construct a complete truth table for the following argument. Then, using the truth table, determine whether the argument is valid or invalid. If the argument is invalid, choose an option which presents a counterexample. (There may be other counterexamples as well.)
+D ⊃ (~E ⊃ F)
+~D ⊃ E
+~E / F",Valid,Invalid. Counterexample when D and E are true and F is false,Invalid. Counterexample when D is true and E and F are false,Invalid. Counterexample when E is true and D and F are false,A
+" Select the best English interpretation of the given proposition, using the following translation key: Ax: x is an apartment Hx: x is a house Lx: x is large Bxy: x is bigger than y (∀x){(Lx • Ax) ⊃ (∃y)[(Hy • ~Ly) • Bxy]}",All large apartments are bigger than all houses that are not large.,Some house that is not large is bigger than all large apartments.,Any apartment bigger than a house that is not large is large.,Every large apartment is bigger than some house that is not large.,D
+" Use indirect truth tables to determine whether each set of propositions is consistent. If the set is consistent, choose an option with a consistent valuation. (There may be other consistent valuations.)
+(A ∨ B) ∨ C
+~C
+~A ⊃ B",Inconsistent,Consistent. Consistent valuation when A and B are true and C is false,Consistent. Consistent valuation when A and C are true and B is false,Consistent. Consistent valuation when B and C are true and A is false,B
+" Use indirect truth tables to determine whether each set of propositions is consistent. If the set is consistent, choose an option with a consistent valuation. (There may be other consistent valuations.)
+~(J ∨ ~K)
+L ⊃ M
+(J ∨ L) ⊃ (K · M)",Inconsistent,"Consistent. Consistent valuation when J, K, and M are true and L is false",Consistent. Consistent valuation when L and M are true and J and K are false,Consistent. Consistent valuation when K and M are true and J and L are false,D
+"Construct a complete truth table for the following argument. Then, using the truth table, determine whether the argument is valid or invalid. If the argument is invalid, choose an option which presents a counterexample. (There may be other counterexamples as well.)
+~E ∨ F
+~F / E",Valid,Invalid. Counterexample when E and F are true,Invalid. Counterexample when E is true and F is false,Invalid. Counterexample when E and F are false,D
+" Use indirect truth tables to determine whether each set of propositions is consistent. If the set is consistent, choose an option with a consistent valuation. (There may be other consistent valuations.)
+P ≡ Q
+~Q ≡ R
+R ≡ P
+S ≡ ~P
+S ≡ R",Inconsistent,Consistent. Consistent valuation when P and Q are true and R and S are false,"Consistent. Consistent valuation when P, Q, R, and S are true",Consistent. Consistent valuation when R and S are true and P and Q are false,A
+"Use indirect truth tables to determine whether the following argument is valid. If the argument is invalid, choose an option which presents a counterexample. (There may be other counterexamples as well.)
+A ⊃ (~B ≡ C)
+B ≡ D
+~C ≡ ~D / ~A",Valid,"Invalid. Counterexample when A, B, and D are true and C is false",Invalid. Counterexample when A and B are true and C and D are false,"Invalid. Counterexample when A, C, and D are true and B is false",A
+" Construct a complete truth table for the following pairs of propositions. Then, using the truth tables, determine whether the statements are logically equivalent or contradictory. If neither, determine whether they are consistent or inconsistent. Justify your answers.
+A ⊃ ~B and B ⊃ A",Logically equivalent,Contradictory,"Neither logically equivalent nor contradictory, but consistent",Inconsistent,C
+" Use indirect truth tables to determine whether each set of propositions is consistent. If the set is consistent, choose an option with a consistent valuation. (There may be other consistent valuations.)
+(G ≡ H) ⊃ H
+~H ∨ I
+G · ~I",Inconsistent,"Consistent. Consistent valuation when G, H, and I are true",Consistent. Consistent valuation when G and H are true and I is false,Consistent. Consistent valuation when G is true and H and I are false,D

@@ -5,6 +5,7 @@ import codecs
 import torch
 import pyonmttok
 from onmt.constants import DefaultTokens
+from onmt.transforms import TransformPipe
 
 
 class IterOnDevice(torch.utils.data.IterableDataset):

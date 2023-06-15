@@ -1,0 +1,29 @@
+"Exits on a highway are numbered consecutively from 1 to 50. The distance from exit 41 to exit 50 is 100 km. If each exit is at least 6 km from the next exit, what is the longest possible distance, in kilometers, between exit 47 and exit 48?",52,51,50,49,A
+"In a group of 11 people, T of them always tell the truth, and L always lie. Each person names two other people and claims that of the two, exactly one of them is lying. Each person is named in this way by exactly two other people. Find the sum of all possible values of T.",30,12,20,6,B
+"How many integers 1-9 are divisors of the five-digit number 24,516?",6,5,1,32,A
+"Sam has $\frac{5}{8}$ of a pound of chocolate. If he eats $\frac{1}{3}$ of the chocolate he has, how many pounds of chocolate does he eat?",\frac{5}{12},\frac{5}{24},\frac{3}{24},\frac{3}{24},B
+"Alex grows an initial culture of 100 Rhizopus stolonifer fungi on a sample of bread. She wants to model the growth of the fungi according to the exponential equation A = Pe^(rt), where A is the final number of fungi, P is the initial number, r is the growth rate, and t is time elapsed in hours. If after 5 hours she measures the number of fungi to be 750, what is the value of r?",0.403,0.863,2.015,4.317,A
+What is the product of the greatest even prime number and the least odd prime number?,6,9,12,14,A
+"What is the maximum value of $4(x + 7)(2 - x)$, over all real numbers $x$?",-2.5,4,81,56,C
+Divide $11$ by the reciprocal of $1815 \div 11$.,111,1815,121,68,B
+"When $\sqrt[3]{-128}$ is simplified, the result is $a\sqrt[3]{b}$, where $a$ is an integer, and $b$ is a positive integer. If $b$ is as small as possible, then what is $a+b$?",2,-4,6,-2,D
+"Given that $a(a+2b) = \frac{104}3$, $b(b+2c) = \frac{7}{9}$, and $c(c+2a) = -7$, find $|a+b+c|$.",\frac{23}{3},\frac{5}{3},\frac{16}{3},\frac{10}{3},C
+"Let $f(x) = (x+2)^2-5$. If the domain of $f$ is all real numbers, then $f$ does not have an inverse function, but if we restrict the domain of $f$ to an interval $[c,\infty)$, then $f$ may have an inverse function. What is the smallest value of $c$ we can use here, so that $f$ does have an inverse function?",-2,-5,3,-8,A
+"A circle passes through the points (3, 4) and (5, 7). Which of the following points CANNOT lie on the circle?","(–2, –1)","(–1, –2)","(5, 5)","(6, 4)",B
+How many square units are in the region satisfying the inequalities $y \ge |x|$ and $y \le -|x|+3$? Express your answer as a decimal.,4.5,2.25,6.6,3.3,A
+"Andy wants to read several books from the required summer reading list. He must read one each from fiction, nonfiction, science, and history. There are 15 fiction, 12 nonfiction, 5 science, and 21 history books listed. How many different summer reading programs could he select?",53,265,8910,"18,900",D
+"When a spaceship full of scientists landed on Planet Q, they found that $\frac{17}{40}$ of the $160$ aliens had $3$ eyes. How many aliens had $3$ eyes?",67,35,36,68,D
+"If the point $(3,6)$ is on the graph of $y=g(x)$, and $h(x)=(g(x))^2$ for all $x$, then there is one point that must be on the graph of $y=h(x)$. What is the sum of the coordinates of that point?",3,6,39,36,C
+What is the minimum value of $a^2+6a-7$?,-30,-12,-7,-16,D
+"Simplify $\frac{2+2i}{-3+4i}$. Express your answer as a complex number in the form $a+bi$, where $a$ and $b$ are real numbers.",2-14i,\frac{2}{25} + \frac{-14}{25}i,1+0i,0-1i,B
+Compute $i+i^2+i^3+\cdots+i^{258}+i^{259}$.,-1,1,i,0,A
+"For what value of c on 0 < x < 1 is the tangent to the graph of f (x) = e^x - x^2 parallel to the secant line on the interval [0,1]?",-0.248,0.351,0.5,0.693,B
+Let $h(4x-1) = 2x + 7$. For what value of $x$ is $h(x) = x$?,420,69,7,15,D
+"If f : (x, y) → (x + y, 2y – x) for every coordinate pair in the xy-plane, for what points (x, y) is it true that f : (x, y) → (x, y)?","(0, 0) only","The set of points (x, y) such that x = 0","The set of points (x, y) such that y = 0","The set of points (x, y) such that x = y",A
+"Find the sum of the primes between 100 and 200, inclusive, that are 1 or 2 more than a perfect square.",298,126,592,396,A
+Solve for $x$: $(-\frac{1}{3})(-4 -3x)=\frac{1}{2}$,-\frac{5}{6},\frac{7}{6},\frac{5}{3},\frac{1}{6},A
+There are three real numbers $x$ that are not in the domain of $$f(x) = \frac{1}{1+\frac{1}{1+\frac 1x}}.$$ What is the sum of those three numbers?,0.5,0,-1,-1.5,D
+"How many positive cubes divide $3!\cdot 5!\cdot 7!\,$?",6,4,3,1,A
+"Joe's batting average is .323. (That is, he averages 0.323 hits per at bat.) What is the probability that he will get three hits in three at-bats? Express your answer as a decimal to the nearest hundredth.",0.03,0.01,0.3,0.1,A
+A teacher can grade 20 papers during an uninterrupted planning period and 10 papers for each hour he spends at home grading. What function models the number of papers he can grade given that he has 2 uninterrupted planning periods and x full hours devoted to grading at home?,20 + 2x,20x + 10,40x + 10,40 + 10x,D
+What is the smallest two-digit integer $n$ such that switching its digits and then adding 3 results in $2n$?,6,12,96,102,B

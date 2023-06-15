@@ -55,14 +55,11 @@ class BaseModel(nn.Module):
         """Custom state_dict loading to enable moving module on device as they are loaded
 
         Args:
-            checkpoint:
-            precision:
-            device:
-            strict:
-
-        Return:
-
-            * Model"""
+            checkpoint: Pytorch serialized checkpoint
+            precision: precision to move each module to
+            device: device to move each module to
+            strict: if True checks model keys wrt state_dict (both ways)
+        """
 
         # bitsandbytes quantize weights when .cuda() is called
         # for huge models we need to save Ram
@@ -71,6 +68,9 @@ class BaseModel(nn.Module):
         for name, module in self.named_modules():
             for buf_name, buf in module.named_buffers():
                 buf_list.append(buf_name)
+                if len(buf_name.split(".")) == 1:  # only last key
+                    module.to(precision)
+                    module.to(device)
             for param_name, param in module.named_parameters():
                 if len(param_name.split(".")) == 1:  # only last key
                     if name + "." + param_name in checkpoint["model"].keys():
@@ -115,14 +115,11 @@ class BaseModel(nn.Module):
         """Custom state_dict loading to enable moving module on device as they are loaded
 
         Args:
-            checkpoint:
-            precision:
-            device:
-            strict:
-
-        Return:
-
-            * Model"""
+            model_path: Model path
+            precision: same as above
+            device: same as above
+            strict: same as above
+        """
         # bitsandbytes quantize weights when .cuda() is called
         # for huge models we need to save Ram
         # so we load the weights  module by module and transfer them to GPU for quantization
@@ -144,6 +141,9 @@ class BaseModel(nn.Module):
         for name, module in self.named_modules():
             for buf_name, buf in module.named_buffers():
                 buf_list.append(buf_name)
+                if len(buf_name.split(".")) == 1:  # only last key
+                    module.to(precision)
+                    module.to(device)
             for param_name, param in module.named_parameters():
                 if len(param_name.split(".")) == 1:  # only last key
                     if name + "." + param_name in keys_shard.keys():

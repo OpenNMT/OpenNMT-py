@@ -1,0 +1,36 @@
+Suppose that a test that the true value of the intercept coefficient is zero results in non-rejection. What would be the appropriate conclusion?,Drop the intercept and re-run the regression,Retain the intercept,Re-compute the test statistic,The regression line is running exactly through the origin,B
+"In order to determine whether to use a fixed effects or random effects model, a researcher conducts a Hausman test. Which of the following statements is false?","For random effects models, the use of OLS would result in consistent but inefficient parameter estimation","If the Hausman test is not satisfied, the random effects model is more appropriate.","Random effects estimation involves the construction of ""quasi-demeaned"" data",Random effects estimation will not be appropriate if the composite error term is correlated with one or more of the explanatory variables in the model,B
+Suppose that observations are available on the monthly bond prices of 100 companies for 5 years. What type of data are these?,Cross-sectional,Time-series,Panel,Qualitative,C
+"An ""ex ante"" forecasting model is one which",Includes only contemporaneous values of variables on the RHS,Includes only contemporaneous and previous values of variables on the RHS,Includes only previous values of variables on the RHS,Includes only contemporaneous values of exogenous variables on the RHS,C
+"If a researcher uses daily data to examine a particular problem and creates a variable that assigns a numerical value of 1 to Monday observations, what term would best describe this type of number?",Continuous,Cardinal,Ordinal,Nominal,D
+"Consider the following MA(3) process
+
+yt = μ + Εt + θ1Εt-1 + θ2Εt-2 + θ3Εt-3 , where σt is a zero mean white noise process with variance σ2.
+
+Which of the following statements are true?
+
+i) The process yt has zero mean
+
+ii) The autocorrelation function will have a zero value at lag 5
+
+iii) The process yt has variance σ2
+
+iv) The autocorrelation function will have a value of one at lag 0",(ii) and (iv) only,(i) and (iii) only,"(i), (ii), and (iii) only","(i), (ii), (iii), and (iv)",A
+A leptokurtic distribution is one which,Has fatter tails and a smaller mean than a normal distribution with the same mean and variance,Has fatter tails and is more peaked at the mean than a normal distribution with the same mean and variance,Has thinner tails and is more peaked at the mean than a normal distribution with the same mean and variance,Has thinner tails than a normal distribution and is skewed.,B
+Near multicollinearity occurs when,Two or more explanatory variables are perfectly correlated with one another,The explanatory variables are highly correlated with the error term,The explanatory variables are highly correlated with the dependent variable,Two or more explanatory variables are highly correlated with one another,D
+"Consider the following time series model applied to daily data:
+
+
+
+where rt are the returns, and D1, D2, D3 and D4 are dummy variables. D1 = 1 on Monday and zero otherwise; D2 = 1 on Tuesday and zero otherwise, ..., D4 = 1 on Thursday and zero otherwise. What is the interpretation of the parameter estimate for the intercept?",It is the average return on Friday,It is the average return on Monday,It is the Friday deviation from the mean return for the week,It is the Monday deviation from the mean return for the week.,A
+"Which of the following statements are true concerning the class of ARIMA(p,d,q) models?
+
+(i) The ""I"" stands for independent
+
+(ii) An ARIMA(p,1,q) model estimated on a series of logs of prices is equivalent to an ARIMA(p,0,q) model estimated on a set of continuously compounded returns
+
+(iii) It is plausible for financial time series that the optimal value of d could be 2 or 3.
+
+(iv) The estimation of ARIMA models is incompatible with the notion of cointegration",(ii) and (iv) only,(i) and (iii) only,"(i), (ii), and (iii) only","(i), (ii), (iii), and (iv)",A
+"If the residuals from a regression estimated using a small sample of data are not normally distributed, which one of the following consequences may arise?",The coefficient estimates will be unbiased but inconsistent,The coefficient estimates will be biased but consistent,The coefficient estimates will be biased and inconsistent,Test statistics concerning the parameters will not follow their assumed distributions.,D
+"If a threshold autoregressive (TAR) model is termed a ""SETAR"", what must be true about it?",It must follow a Markov process,The model must contain only two regimes,The state-determining variable must be the variable being modelled,The number of lagged variables on the RHS of the equations for each regime must be the same,C
