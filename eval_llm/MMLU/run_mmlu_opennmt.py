@@ -1,3 +1,6 @@
+"""
+    Code taken and adapted from https://github.com/FranxYao/chain-of-thought-hub
+"""
 import json
 import os
 import time
@@ -174,7 +177,7 @@ def evaluate(opt):
             prompt_end = format_example(test_df, i, include_answer=False)
             train_prompt = gen_prompt(dev_df, task, k)
             prompt = train_prompt + prompt_end
-            while len(prompt) > 2048:
+            while len(prompt.split()) > 768:
                 prompt_split = prompt.split("\n\n")
                 prompt_split.pop(1)
                 prompt = "\n\n".join(prompt_split)
@@ -218,7 +221,6 @@ def evaluate(opt):
     compute_metric(output_filename)
     end_time = time.time()
     print("total run time %.2f" % (end_time - start_time))
-
 
 def _get_parser():
     parser = ArgumentParser(description="run_mmlu_opennmt.py")
