@@ -112,7 +112,7 @@ class ParallelCorpus(object):
         )
 
 
-def get_corpora(opts, task=CorpusTask.TRAIN):
+def get_corpora(opts, task=CorpusTask.TRAIN, src=None, tgt=None, align=None):
     corpora_dict = {}
     if task == CorpusTask.TRAIN:
         for corpus_id, corpus_dict in opts.data.items():
@@ -140,8 +140,9 @@ def get_corpora(opts, task=CorpusTask.TRAIN):
     else:
         corpora_dict[CorpusName.INFER] = ParallelCorpus(
             CorpusName.INFER,
-            opts.src,
-            opts.tgt,
+            src if src else opts.src,
+            tgt if tgt else opts.tgt,
+            align if align else None,
             n_src_feats=opts.n_src_feats,
             src_feats_defaults=opts.src_feats_defaults,
         )

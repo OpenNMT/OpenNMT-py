@@ -1,11 +1,9 @@
 from onmt.utils.logging import logger
 from onmt.transforms import register_transform
 from .transform import Transform
-
 import random
 import ahocorasick
 import string
-from typing import Tuple
 
 
 class InlineTagger(object):

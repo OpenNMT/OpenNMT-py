@@ -10,7 +10,7 @@ from onmt.inputters.dynamic_iterator import build_dynamic_dataset_iter
 from onmt.inputters.inputter import IterOnDevice
 from onmt.utils.loss import LossCompute
 from onmt.constants import DefaultTokens, CorpusTask
-from onmt.transforms import get_transforms_cls, TransformPipe
+from onmt.transforms import get_transforms_cls
 from onmt.model_builder import load_test_model
 
 """
@@ -71,20 +71,10 @@ def main():
     valid_loss.to(device)
 
     transforms_cls = get_transforms_cls(opt._all_transform)
-
     infer_iter = build_dynamic_dataset_iter(
         opt, transforms_cls, vocabs, task=CorpusTask.INFER, copy=False
     )
-
-    data_transform = [
-        infer_iter.transforms[name]
-        for name in opt.transforms
-        if name in infer_iter.transforms
-    ]
-    _ = TransformPipe.build_from(data_transform)
-
-    if infer_iter is not None:
-        infer_iter = IterOnDevice(infer_iter, opt.gpu)
+    infer_iter = IterOnDevice(infer_iter, opt.gpu)
 
     model.to(device)
     model.eval()
