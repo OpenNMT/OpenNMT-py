@@ -16,7 +16,7 @@ class IterOnDevice(torch.utils.data.IterableDataset):
         self.iterable = iterable
         self.device_id = device_id
         # temporary as long as translation_server and scoring_preparator still use lists
-        if hasattr(iterable, 'transforms'):
+        if hasattr(iterable, "transforms"):
             self.transform = TransformPipe.build_from(
                 [iterable.transforms[name] for name in iterable.transforms]
             )
