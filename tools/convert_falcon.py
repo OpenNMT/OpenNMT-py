@@ -138,17 +138,17 @@ if __name__ == "__main__":
                             + str(i)
                             + ".self_attention.query_key_value.weight"
                         ]
-                        .view(heads + 2 * num_kv, hidden_size // heads, hidden_size)
+                        .view(-1, heads // num_kv + 2, hidden_size // heads, hidden_size)
                         .to(torch.float16)
                     )
-
+                    print(qkv_W.size())
                     onmt_safetensor[
                         "decoder.transformer_layers."
                         + str(i)
                         + ".self_attn.linear_query.weight"
                     ] = (
-                        qkv_W[: -(2 * num_kv), :]
-                        .view(heads, 2, hidden_size // heads // 2, hidden_size)
+                        qkv_W[:, :-2]
+                        .reshape(heads, 2, hidden_size // heads // 2, hidden_size)
                         .transpose(1, 2)
                         .reshape(hidden_size, hidden_size)
                     )
@@ -158,8 +158,8 @@ if __name__ == "__main__":
                         + str(i)
                         + ".self_attn.linear_keys.weight"
                     ] = (
-                        qkv_W[-2 * num_kv : -2 * num_kv + num_kv, :]
-                        .view(num_kv, 2, hidden_size // heads // 2, hidden_size)
+                        qkv_W[:, [-2]]
+                        .reshape(num_kv, 2, hidden_size // heads // 2, hidden_size)
                         .transpose(1, 2)
                         .reshape(hidden_size // heads * num_kv, hidden_size)
                     )
@@ -168,7 +168,7 @@ if __name__ == "__main__":
                         "decoder.transformer_layers."
                         + str(i)
                         + ".self_attn.linear_values.weight"
-                    ] = qkv_W[-2 * num_kv + num_kv :, :].reshape(
+                    ] = qkv_W[:, [-1]].reshape(
                         hidden_size // heads * num_kv, hidden_size
                     )
                 if (
