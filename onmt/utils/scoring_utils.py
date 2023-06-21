@@ -3,8 +3,8 @@ import os
 from onmt.utils.parse import ArgumentParser
 from onmt.translate import GNMTGlobalScorer, Translator
 from onmt.opts import translate_opts
-from onmt.constants import DefaultTokens
-from onmt.inputters.text_utils import _addcopykeys, tensorify, text_sort_key
+from onmt.constants import DefaultTokens, CorpusTask
+from onmt.inputters.dynamic_iterator import build_dynamic_dataset_iter
 from onmt.inputters.inputter import IterOnDevice
 from onmt.transforms import get_transforms_cls, make_transforms, TransformPipe
 from itertools import repeat
@@ -127,17 +127,24 @@ class ScoringPreparator:
             preds (list): Detokenized predictions
             texts_ref (list): Detokenized target sentences
         """
-        model_opt = self.opt
+        # ########## #
+        # Translator #
+        # ########## #
+
+        # Set translation options
         parser = ArgumentParser()
         translate_opts(parser)
         base_args = ["-model", "dummy"] + ["-src", "dummy"]
         opt = parser.parse_args(base_args)
         opt.gpu = gpu_rank
         ArgumentParser.validate_translate_opts(opt)
-        ArgumentParser.update_model_opts(model_opt)
-        ArgumentParser.validate_model_opts(model_opt)
+
+        # Build translator from options
         scorer = GNMTGlobalScorer.from_opt(opt)
         out_file = codecs.open(os.devnull, "w", "utf-8")
+        model_opt = self.opt
+        ArgumentParser.update_model_opts(model_opt)
+        ArgumentParser.validate_model_opts(model_opt)
         translator = Translator.from_opt(
             model,
             self.vocabs,
@@ -149,57 +156,68 @@ class ScoringPreparator:
             report_score=False,
             logger=None,
         )
-        # translate
-        preds = []
+
+        # ################## #
+        # Inference iterator #
+        # ################## #
+
+        # We don't use valid_iter / train_iter in order to iterate over the examples
+        # in the same order than the sources and references
+        # retrieve from the transformed batches.
+
+        # Retrieve source and references
+        # prepare data for inference iterator
         raw_sources = []
         raw_refs = []
+        src = []
+        tgt = []
         for batch in transformed_batches:
-            # for validation we build an infer_iter per batch
-            # in order to avoid oom issues because there is no
-            # batching strategy in `textbatch_to_tensor`
-            numeric = []
             for i, ex in enumerate(batch):
                 if ex is not None:
                     raw_sources.append(ex["src"])
                     raw_refs.append(ex["tgt"])
                     if isinstance(ex["src"], bytes):
                         ex["src"] = ex["src"].decode("utf-8")
-                    idxs = translator.vocabs["src"](ex["src"])
-                    num_ex = {
-                        "src": {"src": " ".join(ex["src"]), "src_ids": idxs},
-                        "srclen": len(ex["src"]),
-                        "tgt": None,
-                        "indices": i,
-                        "align": None,
-                    }
-                    if "src_feats" in ex:
-                        fs_idxs = [
-                            fv(f)
-                            for fv, f in zip(
-                                translator.vocabs["src_feats"], ex["src_feats"]
-                            )
-                        ]
-                        num_ex["src"]["feats"] = fs_idxs
-                    num_ex = _addcopykeys(translator.vocabs["src"], num_ex)
-                    num_ex["src"]["src"] = ex["src"]
-                    numeric.append(num_ex)
-            numeric.sort(key=text_sort_key, reverse=True)
-            infer_iter = [tensorify(self.vocabs, numeric)]
-            infer_iter = IterOnDevice(infer_iter, opt.gpu)
-            _, preds_ = translator._translate(infer_iter, transform=self.transform)
-            preds += preds_
+                    src.append(" ".join(ex["tgt"]))
+                    tgt.append(" ".join(ex["tgt"]))
 
-        # apply_reverse refs
-        if self.transforms:
-            texts_ref = self.transform.batch_apply_reverse(raw_refs)
+        # build inference iterator
+        # transforms are already applied so we pass an empty transform_cls
+        transforms_cls = {}
+        infer_iter = build_dynamic_dataset_iter(
+            model_opt,
+            transforms_cls,
+            translator.vocabs,
+            task=CorpusTask.INFER,
+            src=src,
+            tgt=tgt
+        )
+        infer_iter = IterOnDevice(infer_iter, opt.gpu)
 
-            # flatten preds
-            preds = [item for preds_ in preds for item in preds_]
-        else:
-            texts_ref = [" ".join(raw_ref) for raw_ref in raw_refs]
-            preds = [" ".join(preds_) for preds_ in preds]
+        # ########## #
+        # Predictions #
+        # ########### #
 
-        # save results
+        # We pass the training transform to make the right `batch_apply_reverse`.
+        _, preds = translator._translate(
+            infer_iter,
+            transform=self.transform,
+            attn_debug=opt.attn_debug,
+            align_debug=opt.align_debug,
+        )
+
+        # ####### #
+        # Outputs #
+        # ####### #
+
+        # Flatten predictions
+        preds = [
+            x.lstrip() for sublist in preds for x in sublist
+        ]
+        texts_ref = self.transform.batch_apply_reverse(raw_refs)
+        print(len(raw_sources), len(texts_ref), len(src), len(preds))
+
+        # Save results
         if len(preds) > 0 and self.opt.scoring_debug:
             path = os.path.join(
                 self.opt.dump_preds, "preds.{}_step_{}.{}".format(mode, step, "txt")
