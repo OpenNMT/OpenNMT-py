@@ -319,6 +319,11 @@ class MultiHeadedAttention(nn.Module):
                 key = key.transpose(1, 2)
         # 2) Calculate and scale scores.
         query /= math.sqrt(self.dim_per_head)
+        # expand key on heads dimension when it's less than query heads (multi-query variant)
+        key = key.view(key.size(0), -1, 1, key.size(2), key.size(3)).repeat(
+            1, 1, query.size(1) // key.size(1), 1, 1
+        )
+        key = key.view(key.size(0), query.size(1), key.size(3), key.size(4))
         # batch x num_heads x query_len x key_len
         scores = torch.matmul(query, key.transpose(2, 3))
 
@@ -350,7 +355,11 @@ class MultiHeadedAttention(nn.Module):
         # 3) Apply attention dropout and compute context vectors.
         attn = self.softmax(scores).to(query.dtype)
         drop_attn = self.dropout(attn)
-
+        # expand value on heads dimension when it's less than query heads (multi-query variant)
+        value = value.view(value.size(0), -1, 1, value.size(2), value.size(3)).repeat(
+            1, 1, query.size(1) // value.size(1), 1, 1
+        )
+        value = value.view(value.size(0), query.size(1), value.size(3), value.size(4))
         context_original = torch.matmul(drop_attn, value)
 
         if self.relative_positions_embeddings is not None:
