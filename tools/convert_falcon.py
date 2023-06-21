@@ -138,7 +138,9 @@ if __name__ == "__main__":
                             + str(i)
                             + ".self_attention.query_key_value.weight"
                         ]
-                        .view(-1, heads // num_kv + 2, hidden_size // heads, hidden_size)
+                        .view(
+                            -1, heads // num_kv + 2, hidden_size // heads, hidden_size
+                        )  # shape 40B [8, 18, 64, 8192] ou 7B [1, 73, 64, 4544]
                         .to(torch.float16)
                     )
                     print(qkv_W.size())
@@ -147,10 +149,14 @@ if __name__ == "__main__":
                         + str(i)
                         + ".self_attn.linear_query.weight"
                     ] = (
-                        qkv_W[:, :-2]
-                        .reshape(heads, 2, hidden_size // heads // 2, hidden_size)
-                        .transpose(1, 2)
-                        .reshape(hidden_size, hidden_size)
+                        qkv_W[:, :-2]  # [8, 16, 64, 8192] ou [1, 71, 64, 4544]
+                        .reshape(
+                            heads, 2, hidden_size // heads // 2, hidden_size
+                        )  # [128, 2, 32, 8192] ou [71, 2, 32, 4544]
+                        .transpose(1, 2)  # invert 1,2 for rotary "llama original way"
+                        .reshape(
+                            hidden_size, hidden_size
+                        )  # [8192, 8192] ou [4544, 4544]
                     )
 
                     onmt_safetensor[
@@ -158,10 +164,14 @@ if __name__ == "__main__":
                         + str(i)
                         + ".self_attn.linear_keys.weight"
                     ] = (
-                        qkv_W[:, [-2]]
-                        .reshape(num_kv, 2, hidden_size // heads // 2, hidden_size)
+                        qkv_W[:, [-2]]  # [8, 1, 64, 8192] ou [1, 1, 64, 4544]
+                        .reshape(
+                            num_kv, 2, hidden_size // heads // 2, hidden_size
+                        )  # [8, 2, 32, 8192] ou [1, 2, 32, 4544]
                         .transpose(1, 2)
-                        .reshape(hidden_size // heads * num_kv, hidden_size)
+                        .reshape(
+                            hidden_size // heads * num_kv, hidden_size
+                        )  # [512, 8192] ou [64, 4544]
                     )
 
                     onmt_safetensor[
