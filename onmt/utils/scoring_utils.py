@@ -167,10 +167,10 @@ class ScoringPreparator:
 
         # Retrieve source and references
         # prepare data for inference iterator
+
         raw_sources = []
         raw_refs = []
         src = []
-        tgt = []
         for batch in transformed_batches:
             for i, ex in enumerate(batch):
                 if ex is not None:
@@ -178,19 +178,19 @@ class ScoringPreparator:
                     raw_refs.append(ex["tgt"])
                     if isinstance(ex["src"], bytes):
                         ex["src"] = ex["src"].decode("utf-8")
-                    src.append(" ".join(ex["tgt"]))
-                    tgt.append(" ".join(ex["tgt"]))
+                    src.append(" ".join(ex["src"]))
 
-        # build inference iterator
-        # transforms are already applied so we pass an empty transform_cls
+        # Build inference iterator
+        # Transforms are already applied so we pass an empty transform_cls
         transforms_cls = {}
+        model_opt.num_workers = 0
+        model_opt.tgt = None
         infer_iter = build_dynamic_dataset_iter(
             model_opt,
             transforms_cls,
             translator.vocabs,
             task=CorpusTask.INFER,
-            src=src,
-            tgt=tgt
+            src=src
         )
         infer_iter = IterOnDevice(infer_iter, opt.gpu)
 
@@ -215,7 +215,6 @@ class ScoringPreparator:
             x.lstrip() for sublist in preds for x in sublist
         ]
         texts_ref = self.transform.batch_apply_reverse(raw_refs)
-        print(len(raw_sources), len(texts_ref), len(src), len(preds))
 
         # Save results
         if len(preds) > 0 and self.opt.scoring_debug:
