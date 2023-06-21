@@ -143,7 +143,7 @@ if __name__ == "__main__":
                         )  # shape 40B [8, 18, 64, 8192] ou 7B [1, 73, 64, 4544]
                         .to(torch.float16)
                     )
-                    print(qkv_W.size())
+
                     onmt_safetensor[
                         "decoder.transformer_layers."
                         + str(i)
