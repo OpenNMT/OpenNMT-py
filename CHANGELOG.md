@@ -2,7 +2,18 @@
 **Notes on versioning**
 
 ## [Unreleased]
-## [3.2.0](https://github.com/OpenNMT/OpenNMT-py/tree/3.2.0) (2023-06-XX)
+
+## [3.3.0](https://github.com/OpenNMT/OpenNMT-py/tree/3.2.0) (2023-06-21)
+
+* Switch to pytorch 2.0.1
+* Eval LLM with MMLU benchmark
+* Fix Falcon 40B conversion / finetuning / inference
+* Plugin encoder/decoder thanks @kleag / @n2oblife
+* Safetensors for model storage (beta)
+* finetuning config templates for supported LLMs
+
+
+## [3.2.0](https://github.com/OpenNMT/OpenNMT-py/tree/3.2.0) (2023-06-07)
 * Skip init during model build (way faster building)
 * Enable quantization of LoRA layers
 * Enable 4bit quantization from bitsandbytes (NF4 / FP4)
