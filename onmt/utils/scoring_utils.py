@@ -186,11 +186,7 @@ class ScoringPreparator:
         model_opt.num_workers = 0
         model_opt.tgt = None
         infer_iter = build_dynamic_dataset_iter(
-            model_opt,
-            transforms_cls,
-            translator.vocabs,
-            task=CorpusTask.INFER,
-            src=src
+            model_opt, transforms_cls, translator.vocabs, task=CorpusTask.INFER, src=src
         )
         infer_iter = IterOnDevice(infer_iter, opt.gpu)
 
@@ -211,9 +207,7 @@ class ScoringPreparator:
         # ####### #
 
         # Flatten predictions
-        preds = [
-            x.lstrip() for sublist in preds for x in sublist
-        ]
+        preds = [x.lstrip() for sublist in preds for x in sublist]
         texts_ref = self.transform.batch_apply_reverse(raw_refs)
 
         # Save results
