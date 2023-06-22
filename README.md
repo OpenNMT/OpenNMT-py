@@ -25,13 +25,13 @@ Otherwise you can just have a look at the [Quickstart](https://opennmt.net/OpenN
 ----
 ## New:
 
-Special note on Pytorch v2: up to v2.0.1 dynamic shapes are not handled properly, hence torch.compile() will not work with OpenNMT-py. We have tested nightly (in May) and it works with a small gain. Next version will be 2.1
-LLM support with converters for: Llama, OpenLlama, Redpajama, MPT-7B, Falcon.
-Support for 8bit and 4bit quantization along with LoRA adapters, with or without checkpointing.
-You can finetune 7B and 13B models on a single RTX 24GB with 4-bit quantization.
-Inference can be forced in 4/8bit using the same layer quantization as in finetuning.
-Once your model is finetuned you can run inference either with OpenNMT-py or faster with CTranslate2.
-MMLU evaluation script, see results [here](https://github.com/OpenNMT/OpenNMT-py/blob/master/eval_llm/MMLU/readme.md)
+* Special note on Pytorch v2: up to v2.0.1 dynamic shapes are not handled properly, hence torch.compile() will not work with OpenNMT-py. We have tested nightly (in May) and it works with a small gain. Next version will be 2.1
+* LLM support with converters for: Llama, OpenLlama, Redpajama, MPT-7B, Falcon.
+* Support for 8bit and 4bit quantization along with LoRA adapters, with or without checkpointing.
+* You can finetune 7B and 13B models on a single RTX 24GB with 4-bit quantization.
+* Inference can be forced in 4/8bit using the same layer quantization as in finetuning.
+* Once your model is finetuned you can run inference either with OpenNMT-py or faster with CTranslate2.
+* MMLU evaluation script, see results [here](https://github.com/OpenNMT/OpenNMT-py/blob/master/eval_llm/MMLU/readme.md)
 
 For all usecases including NMT, you can now use Multiquery instead of Multihead attention (faster at training and inference) and remove biases from all Linear (QKV as well as FeedForward modules).
 
@@ -77,36 +77,20 @@ Note: if you encounter a `MemoryError` during installation, try to use `pip` wit
 pip install -r requirements.opt.txt
 ```
 
-## Features
-
-- [End-to-end training with on-the-fly data processing]([here](https://opennmt.net/OpenNMT-py/FAQ.html#what-are-the-readily-available-on-the-fly-data-transforms).)
-
-- [Transformer models](https://opennmt.net/OpenNMT-py/FAQ.html#how-do-i-use-the-transformer-model)
-- [Encoder-decoder models with multiple RNN cells (LSTM, GRU) and attention types (Luong, Bahdanau)](https://opennmt.net/OpenNMT-py/options/train.html#model-encoder-decoder)
-- [SRU "RNNs faster than CNN"](https://arxiv.org/abs/1709.02755)
-- [Conv2Conv convolution model](https://arxiv.org/abs/1705.03122)
-- [Copy and Coverage Attention](https://opennmt.net/OpenNMT-py/options/train.html#model-attention)
-- [Pretrained Embeddings](https://opennmt.net/OpenNMT-py/FAQ.html#how-do-i-use-pretrained-embeddings-e-g-glove)
-- [Source word features](https://opennmt.net/OpenNMT-py/options/train.html#model-embeddings)
-- [TensorBoard logging](https://opennmt.net/OpenNMT-py/options/train.html#logging)
-- Mixed-precision training with [APEX](https://github.com/NVIDIA/apex), optimized on [Tensor Cores](https://developer.nvidia.com/tensor-cores)
-- [Multi-GPU training](https://opennmt.net/OpenNMT-py/FAQ.html##do-you-support-multi-gpu)
-- [Inference (translation) with batching and beam search](https://opennmt.net/OpenNMT-py/options/translate.html)
-- Model export to [CTranslate2](https://github.com/OpenNMT/CTranslate2), a fast and efficient inference engine
-
-## Documentation
+## Documentation & FAQs
 
 [Full HTML Documentation](https://opennmt.net/OpenNMT-py/quickstart.html)
+
+[FAQs](https://github.com/OpenNMT/OpenNMT-py/blob/master/docs/source/FAQ.md)
 
 ## Acknowledgements
 
 OpenNMT-py is run as a collaborative open-source project.
 Project was incubated by Systran and Harvard NLP in 2016 in Lua and ported to Pytorch in 2017.
 
-Current maintainers:
+Current maintainers (since 2018):
 
-Ubiqus Team: [François Hernandez](https://github.com/francoishernandez) and Team.
-
+[François Hernandez](https://github.com/francoishernandez) and Ubiqus Team.
 [Vincent Nguyen](https://github.com/vince62s) (Seedfall)
 
 ## Citation
