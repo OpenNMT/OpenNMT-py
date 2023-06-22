@@ -204,7 +204,7 @@
 <span></span><span class="sd">&quot;&quot;&quot; Onmt NMT Model base class definition &quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
-<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">chain</span>
+<span class="kn">import</span> <span class="nn">glob</span>
 
 
 <div class="viewcode-block" id="BaseModel"><a class="viewcode-back" href="../../../onmt.html#onmt.models.BaseModel">[docs]</a><span class="k">class</span> <span class="nc">BaseModel</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -258,22 +258,23 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Custom state_dict loading to enable moving module on device as they are loaded</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            checkpoint:</span>
-<span class="sd">            precision:</span>
-<span class="sd">            device:</span>
-<span class="sd">            strict:</span>
-
-<span class="sd">        Return:</span>
-
-<span class="sd">            * Model&quot;&quot;&quot;</span>
+<span class="sd">            checkpoint: Pytorch serialized checkpoint</span>
+<span class="sd">            precision: precision to move each module to</span>
+<span class="sd">            device: device to move each module to</span>
+<span class="sd">            strict: if True checks model keys wrt state_dict (both ways)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># bitsandbytes quantize weights when .cuda() is called</span>
         <span class="c1"># for huge models we need to save Ram</span>
         <span class="c1"># so we load the weights  module by module and transfer them to GPU for quantization</span>
+        <span class="n">buf_list</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">named_modules</span><span class="p">():</span>
-            <span class="k">for</span> <span class="n">param_name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">chain</span><span class="p">(</span>
-                <span class="n">module</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">(),</span> <span class="n">module</span><span class="o">.</span><span class="n">named_buffers</span><span class="p">()</span>
-            <span class="p">):</span>
+            <span class="k">for</span> <span class="n">buf_name</span><span class="p">,</span> <span class="n">buf</span> <span class="ow">in</span> <span class="n">module</span><span class="o">.</span><span class="n">named_buffers</span><span class="p">():</span>
+                <span class="n">buf_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">buf_name</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">buf_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">))</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># only last key</span>
+                    <span class="n">module</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">precision</span><span class="p">)</span>
+                    <span class="n">module</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">param_name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">module</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">():</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">param_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">))</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># only last key</span>
                     <span class="k">if</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="n">param_name</span> <span class="ow">in</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                         <span class="n">param</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">][</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="n">param_name</span><span class="p">]</span>
@@ -292,16 +293,81 @@
                         <span class="p">)</span>
                     <span class="n">module</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">precision</span><span class="p">)</span>
                     <span class="n">module</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;Extra keys in model state_dict do not match the model config </span><span class="si">%s</span><span class="s2">&quot;</span>
-                <span class="o">%</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
-            <span class="p">)</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;generator&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;Extra keys in generator state_dict do not match the model config </span><span class="si">%s</span><span class="s2">&quot;</span>
-                <span class="o">%</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;generator&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
-            <span class="p">)</span></div></div>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">checkpoint</span><span class="p">[</span>
+            <span class="s2">&quot;model&quot;</span>
+        <span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>  <span class="c1"># if some keys are left in checkpoint after deletion</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">buf_list</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Extra keys in model state_dict do not match the model config </span><span class="si">%s</span><span class="s2">&quot;</span>
+                    <span class="o">%</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+                <span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;generator&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">buf_list</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Extra keys in generator state_dict do not match the model config </span><span class="si">%s</span><span class="s2">&quot;</span>
+                    <span class="o">%</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;generator&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+                <span class="p">)</span></div>
+
+<div class="viewcode-block" id="BaseModel.load_safe_state_dict"><a class="viewcode-back" href="../../../onmt.html#onmt.models.BaseModel.load_safe_state_dict">[docs]</a>    <span class="k">def</span> <span class="nf">load_safe_state_dict</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">model_path</span><span class="p">,</span>
+        <span class="n">precision</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
+        <span class="n">device</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">),</span>
+        <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Custom state_dict loading to enable moving module on device as they are loaded</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            model_path: Model path</span>
+<span class="sd">            precision: same as above</span>
+<span class="sd">            device: same as above</span>
+<span class="sd">            strict: same as above</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># bitsandbytes quantize weights when .cuda() is called</span>
+        <span class="c1"># for huge models we need to save Ram</span>
+        <span class="c1"># so we load the weights  module by module and transfer them to GPU for quantization</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">import</span> <span class="nn">safetensors</span>
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s2">&quot;run: pip install safetensors, to use safetensors&quot;</span><span class="p">)</span>
+        <span class="n">keyfound</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">shards</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">model_path</span> <span class="o">+</span> <span class="s2">&quot;.*.safetensors&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">shards</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No safetensors file found&quot;</span><span class="p">)</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">keys_shard</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">shard</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">shards</span><span class="p">):</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">safetensors</span><span class="o">.</span><span class="n">safe_open</span><span class="p">(</span><span class="n">shard</span><span class="p">,</span> <span class="n">framework</span><span class="o">=</span><span class="s2">&quot;pt&quot;</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">f</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">keys_shard</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
+        <span class="n">buf_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">named_modules</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">buf_name</span><span class="p">,</span> <span class="n">buf</span> <span class="ow">in</span> <span class="n">module</span><span class="o">.</span><span class="n">named_buffers</span><span class="p">():</span>
+                <span class="n">buf_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">buf_name</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">buf_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">))</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># only last key</span>
+                    <span class="n">module</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">precision</span><span class="p">)</span>
+                    <span class="n">module</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">param_name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">module</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">():</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">param_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">))</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># only last key</span>
+                    <span class="k">if</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="n">param_name</span> <span class="ow">in</span> <span class="n">keys_shard</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                        <span class="n">param</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="n">keys_shard</span><span class="p">[</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="n">param_name</span><span class="p">]]</span><span class="o">.</span><span class="n">get_tensor</span><span class="p">(</span>
+                            <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="n">param_name</span>
+                        <span class="p">)</span>
+                        <span class="n">keyfound</span><span class="p">[</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="n">param_name</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">elif</span> <span class="n">strict</span> <span class="ow">and</span> <span class="s2">&quot;lora&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">param_name</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                            <span class="s2">&quot;Missing key in safetensors checkpoint: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">name</span>
+                            <span class="o">+</span> <span class="s2">&quot;.&quot;</span>
+                            <span class="o">+</span> <span class="n">param_name</span>
+                        <span class="p">)</span>
+                    <span class="n">module</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">precision</span><span class="p">)</span>
+                    <span class="n">module</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys_shard</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">keyfound</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">and</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">buf_list</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Extra keys in model state_dict do not match the model config </span><span class="si">%s</span><span class="s2">&quot;</span>
+                    <span class="o">%</span> <span class="n">key</span>
+                <span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="NMTModel"><a class="viewcode-back" href="../../../onmt.html#onmt.models.NMTModel">[docs]</a><span class="k">class</span> <span class="nc">NMTModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>

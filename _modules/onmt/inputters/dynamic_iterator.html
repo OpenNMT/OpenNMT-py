@@ -546,10 +546,21 @@
 
 
 <span class="k">def</span> <span class="nf">build_dynamic_dataset_iter</span><span class="p">(</span>
-    <span class="n">opt</span><span class="p">,</span> <span class="n">transforms_cls</span><span class="p">,</span> <span class="n">vocabs</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">task</span><span class="o">=</span><span class="n">CorpusTask</span><span class="o">.</span><span class="n">TRAIN</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">0</span>
+    <span class="n">opt</span><span class="p">,</span>
+    <span class="n">transforms_cls</span><span class="p">,</span>
+    <span class="n">vocabs</span><span class="p">,</span>
+    <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">task</span><span class="o">=</span><span class="n">CorpusTask</span><span class="o">.</span><span class="n">TRAIN</span><span class="p">,</span>
+    <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="n">src</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">tgt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">align</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Build `DynamicDatasetIter` from opt.</span>
+<span class="sd">    if src, tgt,align are passed then dataset is built from those lists</span>
+<span class="sd">    instead of opt.[src, tgt, align]</span>
 <span class="sd">    Typically this function is called for CorpusTask.[TRAIN,VALID,INFER]</span>
 <span class="sd">    from the main tain / translate scripts</span>
 <span class="sd">    We disable automatic batching in the DataLoader.</span>
@@ -563,7 +574,7 @@
 <span class="sd">    advance to avoid the GPU waiting during the refilling of the bucket.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">transforms</span> <span class="o">=</span> <span class="n">make_transforms</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">transforms_cls</span><span class="p">,</span> <span class="n">vocabs</span><span class="p">)</span>
-    <span class="n">corpora</span> <span class="o">=</span> <span class="n">get_corpora</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">task</span><span class="p">)</span>
+    <span class="n">corpora</span> <span class="o">=</span> <span class="n">get_corpora</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">task</span><span class="p">,</span> <span class="n">src</span><span class="o">=</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="o">=</span><span class="n">tgt</span><span class="p">,</span> <span class="n">align</span><span class="o">=</span><span class="n">align</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">corpora</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">assert</span> <span class="n">task</span> <span class="o">!=</span> <span class="n">CorpusTask</span><span class="o">.</span><span class="n">TRAIN</span><span class="p">,</span> <span class="s2">&quot;only valid corpus is ignorable.&quot;</span>
         <span class="k">return</span> <span class="kc">None</span>

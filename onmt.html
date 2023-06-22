@@ -133,6 +133,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#model">Model</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#onmt.models.BaseModel"><code class="docutils literal notranslate"><span class="pre">BaseModel</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#onmt.models.BaseModel.forward"><code class="docutils literal notranslate"><span class="pre">BaseModel.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#onmt.models.BaseModel.load_safe_state_dict"><code class="docutils literal notranslate"><span class="pre">BaseModel.load_safe_state_dict()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#onmt.models.BaseModel.load_state_dict"><code class="docutils literal notranslate"><span class="pre">BaseModel.load_state_dict()</span></code></a></li>
 </ul>
 </li>
@@ -326,23 +327,33 @@ Only valid for transformer decoder.</p></li>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="onmt.models.BaseModel.load_safe_state_dict">
+<span class="sig-name descname"><span class="pre">load_safe_state_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precision</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">torch.float32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">device(type='cpu')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/models/model.html#BaseModel.load_safe_state_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.models.BaseModel.load_safe_state_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Custom state_dict loading to enable moving module on device as they are loaded</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model_path</strong> – Model path</p></li>
+<li><p><strong>precision</strong> – same as above</p></li>
+<li><p><strong>device</strong> – same as above</p></li>
+<li><p><strong>strict</strong> – same as above</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="onmt.models.BaseModel.load_state_dict">
 <span class="sig-name descname"><span class="pre">load_state_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">checkpoint</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precision</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">torch.float32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">device(type='cpu')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/onmt/models/model.html#BaseModel.load_state_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#onmt.models.BaseModel.load_state_dict" title="Permalink to this definition">¶</a></dt>
 <dd><p>Custom state_dict loading to enable moving module on device as they are loaded</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>checkpoint</strong> – </p></li>
-<li><p><strong>precision</strong> – </p></li>
-<li><p><strong>device</strong> – </p></li>
-<li><p><strong>strict</strong> – </p></li>
+<li><p><strong>checkpoint</strong> – Pytorch serialized checkpoint</p></li>
+<li><p><strong>precision</strong> – precision to move each module to</p></li>
+<li><p><strong>device</strong> – device to move each module to</p></li>
+<li><p><strong>strict</strong> – if True checks model keys wrt state_dict (both ways)</p></li>
 </ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p>Model</p></li>
-</ul>
-</p>
 </dd>
 </dl>
 </dd></dl>
