@@ -41,8 +41,6 @@ def build_trainer(opt, device_id, model, vocabs, optim, model_saver=None):
     validset_transforms = opt.data.get("valid", {}).get("transforms", None)
     if validset_transforms:
         scoring_preparator.warm_up(validset_transforms)
-    scorers_cls = get_scorers_cls(opt.train_metrics)
-    train_scorers = build_scorers(opt, scorers_cls)
     scorers_cls = get_scorers_cls(opt.valid_metrics)
     valid_scorers = build_scorers(opt, scorers_cls)
 
@@ -76,7 +74,6 @@ def build_trainer(opt, device_id, model, vocabs, optim, model_saver=None):
         train_loss,
         valid_loss,
         scoring_preparator,
-        train_scorers,
         valid_scorers,
         optim,
         trunc_size,
@@ -85,7 +82,6 @@ def build_trainer(opt, device_id, model, vocabs, optim, model_saver=None):
         accum_steps,
         n_gpu,
         gpu_rank,
-        opt.train_eval_steps,
         report_manager,
         with_align=True if opt.lambda_align > 0 else False,
         model_saver=model_saver if gpu_rank <= 0 else None,
@@ -111,9 +107,7 @@ class Trainer(object):
           training loss computation
         scoring_preparator(:obj:`onmt.translate.utils.ScoringPreparator`):
           preparator for the calculation of metrics via the
-          training_eval_handler method
-        train_scorers (dict): keeps in memory the current values
-          of the training metrics
+          _eval_handler method
         valid_scorers (dict): keeps in memory the current values
           of the validation metrics
         optim(:obj:`onmt.utils.optimizers.Optimizer`):
@@ -124,7 +118,6 @@ class Trainer(object):
         accum_steps(list): steps for accum gradients changes.
         n_gpu (int): number of gpu.
         gpu_rank (int): ordinal rank of the gpu in the list.
-        train_eval_steps (int): process a validation every x steps.
         report_manager(:obj:`onmt.utils.ReportMgrBase`):
           the object that creates reports, or None
         with_align (bool): whether to jointly lear alignment
@@ -147,7 +140,6 @@ class Trainer(object):
         train_loss,
         valid_loss,
         scoring_preparator,
-        train_scorers,
         valid_scorers,
         optim,
         trunc_size=0,
@@ -156,7 +148,6 @@ class Trainer(object):
         accum_steps=[0],
         n_gpu=1,
         gpu_rank=1,
-        train_eval_steps=200,
         report_manager=None,
         with_align=False,
         model_saver=None,
@@ -175,7 +166,6 @@ class Trainer(object):
         self.valid_loss = valid_loss
 
         self.scoring_preparator = scoring_preparator
-        self.train_scorers = train_scorers
         self.valid_scorers = valid_scorers
         self.optim = optim
         self.trunc_size = trunc_size
@@ -186,7 +176,6 @@ class Trainer(object):
         self.n_gpu = n_gpu
         self.gpu_rank = gpu_rank
         self.report_manager = report_manager
-        self.train_eval_steps = train_eval_steps
         self.with_align = with_align
         self.model_saver = model_saver
         self.average_decay = average_decay
@@ -204,7 +193,7 @@ class Trainer(object):
         # Set model in training mode.
         self.model.train()
 
-    def _training_eval_handler(self, scorer, preds, texts_ref):
+    def _eval_handler(self, scorer, preds, texts_ref):
         """Trigger metrics calculations
 
         Args:
@@ -386,7 +375,8 @@ class Trainer(object):
         # Set model in validating mode.
         valid_model.eval()
 
-        transformed_batches = []
+        # raw_srcs = []
+        # raw_refs = []
         with torch.no_grad():
             stats = onmt.utils.Statistics()
             start = time.time()
@@ -394,11 +384,7 @@ class Trainer(object):
                 src = batch["src"]
                 src_len = batch["srclen"]
                 tgt = batch["tgt"]
-                if self.valid_scorers:
-                    transformed_batch = self.scoring_preparator.ids_to_tokens_batch(
-                        batch
-                    )
-                    transformed_batches.append(transformed_batch)
+
                 with torch.cuda.amp.autocast(enabled=self.optim.amp):
                     # F-prop through the model.
                     model_out, attns = valid_model(
@@ -410,7 +396,7 @@ class Trainer(object):
 
                     stats.update(batch_stats)
             logger.info(
-                """valid stats calculation and sentences rebuilding
+                """valid stats calculation
                            took: {} s.""".format(
                     time.time() - start
                 )
@@ -422,32 +408,32 @@ class Trainer(object):
                 start = time.time()
                 preds, texts_ref = self.scoring_preparator.translate(
                     model=self.model,
-                    transformed_batches=transformed_batches,
                     gpu_rank=self.gpu_rank,
                     step=self.optim.training_step,
-                    mode="valid",
                 )
                 logger.info(
-                    """The translation of the valid dataset
+                    """The translation of the valid dataset for dynamic scoring
                                took : {} s.""".format(
                         time.time() - start
                     )
                 )
-            for i, metric in enumerate(self.valid_scorers):
-                logger.info("UPDATING VALIDATION {}".format(metric))
-                self.valid_scorers[metric]["value"] = self._training_eval_handler(
-                    scorer=self.valid_scorers[metric]["scorer"],
-                    preds=preds,
-                    texts_ref=texts_ref,
-                )
-                computed_metrics[metric] = self.valid_scorers[metric]["value"]
-                logger.info(
-                    "validation {}: {}".format(
-                        metric, self.valid_scorers[metric]["value"]
+                for i, metric in enumerate(self.valid_scorers):
+                    logger.info("UPDATING VALIDATION {}".format(metric))
+                    self.valid_scorers[metric]["value"] = self._eval_handler(
+                        scorer=self.valid_scorers[metric]["scorer"],
+                        preds=preds,
+                        texts_ref=texts_ref,
                     )
-                )
-                # Compute stats
-                metric_stats = onmt.utils.Statistics(0, 0, 0, 0, 0, computed_metrics)
+                    computed_metrics[metric] = self.valid_scorers[metric]["value"]
+                    logger.info(
+                        "validation {}: {}".format(
+                            metric, self.valid_scorers[metric]["value"]
+                        )
+                    )
+                    # Compute stats
+                    metric_stats = onmt.utils.Statistics(
+                        0, 0, 0, 0, 0, computed_metrics
+                    )
 
                 # Update statistics.
                 stats.update(metric_stats)
@@ -514,38 +500,6 @@ class Trainer(object):
                             trunc_size=trunc_size,
                         )
 
-                    step = self.optim.training_step
-                    if self.train_scorers != {} and step % self.train_eval_steps == 0:
-                        # Compute and save stats
-                        computed_metrics = {}
-                        transformed_batch = self.scoring_preparator.ids_to_tokens_batch(
-                            batch
-                        )
-                        preds, texts_ref = self.scoring_preparator.translate(
-                            model=self.model,
-                            transformed_batches=[transformed_batch],
-                            gpu_rank=self.gpu_rank,
-                            step=self.optim.training_step,
-                            mode="train",
-                        )
-                        for i, metric in enumerate(self.train_scorers):
-                            logger.info("UPDATING TRAINING {}".format(metric))
-                            self.train_scorers[metric][
-                                "value"
-                            ] = self._training_eval_handler(
-                                scorer=self.train_scorers[metric]["scorer"],
-                                preds=preds,
-                                texts_ref=texts_ref,
-                            )
-                            logger.info(
-                                "training {}: {}".format(
-                                    metric, self.train_scorers[metric]["value"]
-                                )
-                            )
-                            computed_metrics[metric] = self.train_scorers[metric][
-                                "value"
-                            ]
-                        batch_stats.computed_metrics = computed_metrics
                     if loss is not None:
                         loss /= normalization
                         self.optim.backward(loss)
