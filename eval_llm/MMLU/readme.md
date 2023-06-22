@@ -13,6 +13,9 @@ The evaluation script is tkane from the https://github.com/FranxYao/chain-of-tho
 * There are major discrepancies between those scores and Open LLM leaderboard of HF for MPT, Falcon, Redpajama that are way higher on the leaderboard.
 
 
+The 13B models have been scored with the 4-bit loading option, hence for Llama13B a score slightly under the paper (46.9)
+
+
 |                                         | **MPT7B**  | **Redpajama7B** | **Open Llama7B** | **Falcon7B** | **Llama7B** | **Open Llama13B** | **Llama13B** |
 | --------------------------------------- | ---------- | --------------- | ---------------- | ------------ | ----------- | ----------------- | ------------ |
 | **ACC-all**                             | **0.2958** | **0.2745**      | **0.3007**       | **0.2765**   | **0.3525**  | **0.4148**        | **0.4472**   |
