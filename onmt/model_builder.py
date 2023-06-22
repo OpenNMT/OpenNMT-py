@@ -94,6 +94,9 @@ def load_test_model(opt, model_path=None):
 
     model_opt = ArgumentParser.ckpt_model_opts(checkpoint["opt"])
 
+    model_opt.quant_layers = opt.quant_layers
+    model_opt.quant_type = opt.quant_type
+
     ArgumentParser.update_model_opts(model_opt)
     ArgumentParser.validate_model_opts(model_opt)
     vocabs = dict_to_vocabs(checkpoint["vocab"])
@@ -118,6 +121,7 @@ def load_test_model(opt, model_path=None):
     else:
         device = torch.device("cpu")
 
+    logger.info("Loading data into the model")
     if "model" in checkpoint.keys():
         # weights are in the .pt file
         model.load_state_dict(

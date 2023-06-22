@@ -1133,24 +1133,6 @@ def _add_train_general_opts(parser):
         help="rule of thumb: same value as in main model",
     )
 
-    group.add(
-        "--quant_layers",
-        "-quant_layers",
-        default=[],
-        nargs="+",
-        type=str,
-        help="list of layers to be compressed in 4/8bit.",
-    )
-
-    group.add(
-        "--quant_type",
-        "-quant_type",
-        default="bnb_8bit",
-        choices=["bnb_8bit", "bnb_FP4", "bnb_NF4"],
-        type=str,
-        help="Type of compression.",
-    )
-
     _add_reproducibility_opts(parser)
 
     # Init options
@@ -1533,6 +1515,27 @@ def _add_train_dynamic_data(parser):
     )
 
 
+def _add_quant_opts(parser):
+    group = parser.add_argument_group("Quant options")
+    group.add(
+        "--quant_layers",
+        "-quant_layers",
+        default=[],
+        nargs="+",
+        type=str,
+        help="list of layers to be compressed in 4/8bit.",
+    )
+
+    group.add(
+        "--quant_type",
+        "-quant_type",
+        default="bnb_8bit",
+        choices=["bnb_8bit", "bnb_FP4", "bnb_NF4"],
+        type=str,
+        help="Type of compression.",
+    )
+
+
 def train_opts(parser):
     """All options used in train."""
     # options relate to data preprare
@@ -1541,6 +1544,7 @@ def train_opts(parser):
     model_opts(parser)
     _add_train_general_opts(parser)
     _add_train_dynamic_data(parser)
+    _add_quant_opts(parser)
 
 
 def _add_decoding_opts(parser):
@@ -1827,6 +1831,8 @@ def translate_opts(parser, dynamic=False):
 
         # Adding options related to Transforms
         _add_dynamic_transform_opts(parser)
+
+    _add_quant_opts(parser)
 
 
 # Copyright 2016 The Chromium Authors. All rights reserved.
