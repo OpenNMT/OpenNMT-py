@@ -25,10 +25,13 @@ Otherwise you can just have a look at the [Quickstart](https://opennmt.net/OpenN
 ----
 ## New:
 
+Special note on Pytorch v2: up to v2.0.1 dynamic shapes are not handled properly, hence torch.compile() will not work with OpenNMT-py. We have tested nightly (in May) and it works with a small gain. Next version will be 2.1
 LLM support with converters for: Llama, OpenLlama, Redpajama, MPT-7B, Falcon.
 Support for 8bit and 4bit quantization along with LoRA adapters, with or without checkpointing.
 You can finetune 7B and 13B models on a single RTX 24GB with 4-bit quantization.
+Inference can be forced in 4/8bit using the same layer quantization as in finetuning.
 Once your model is finetuned you can run inference either with OpenNMT-py or faster with CTranslate2.
+MMLU evaluation script, see results [here](https://github.com/OpenNMT/OpenNMT-py/blob/master/eval_llm/MMLU/readme.md)
 
 For all usecases including NMT, you can now use Multiquery instead of Multihead attention (faster at training and inference) and remove biases from all Linear (QKV as well as FeedForward modules).
 
@@ -52,7 +55,7 @@ If you used previous versions of OpenNMT-py, you can check the [Changelog](https
 OpenNMT-py requires:
 
 - Python >= 3.8
-- PyTorch >= 1.13 <2
+- PyTorch >= 1.13 <2.1
 
 Install `OpenNMT-py` from `pip`:
 ```bash

@@ -3,7 +3,7 @@
 
 ## [Unreleased]
 
-## [3.3.0](https://github.com/OpenNMT/OpenNMT-py/tree/3.2.0) (2023-06-21)
+## [3.3.0](https://github.com/OpenNMT/OpenNMT-py/tree/3.2.0) (2023-06-22)
 
 * Switch to pytorch 2.0.1
 * Eval LLM with MMLU benchmark
