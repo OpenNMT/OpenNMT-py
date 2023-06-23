@@ -9,17 +9,10 @@ class TestEvents:
         metrics = ["BLEU", "TER"]
         self.scalars = {}
         self.scalars["train"] = [("progress/" + stat) for stat in stats]
-        self.scalars["train_valid"] = self.scalars["train"] + [
-            ("valid/" + stat) for stat in stats
+        self.scalars["valid"] = [("valid/" + stat) for stat in stats]
+        self.scalars["valid_metrics"] = self.scalars["valid"] + [
+            ("valid/" + metric) for metric in metrics
         ]
-        self.scalars["train_metrics"] = self.scalars["train"] + [
-            ("progress/" + metric) for metric in metrics
-        ]
-        self.scalars["train_valid_metrics"] = (
-            self.scalars["train_metrics"]
-            + [("valid/" + stat) for stat in stats]
-            + [("valid/" + metric) for metric in metrics]
-        )
 
     def reload_events(self, path):
         ea = event_accumulator.EventAccumulator(
@@ -49,7 +42,7 @@ if __name__ == "__main__":
         "--tensorboard_checks",
         type=str,
         required=True,
-        choices=["train", "train_metrics", "train_valid", "train_valid_metrics"],
+        choices=["train", "valid", "valid_metrics"],
     )
     args = parser.parse_args()
     test_event = TestEvents()

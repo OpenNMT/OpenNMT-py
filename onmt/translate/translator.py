@@ -612,8 +612,8 @@ class Inference(object):
                 batch_dim=0,
                 batch_offset=batch_offset,
             )
-            scores = scores.view(decoder_in.size(1), -1, scores.size(-1))
-            log_probs = scores.squeeze(0).log()
+            scores = scores.view(-1, decoder_in.size(1), scores.size(-1))
+            log_probs = scores.squeeze(1).log()
             # returns [(batch_size x beam_size) , vocab ] when 1 step
             # or [batch_size, tgt_len, vocab ] when full sentence
         return log_probs, attn
