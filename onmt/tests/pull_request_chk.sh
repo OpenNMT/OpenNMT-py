@@ -64,9 +64,9 @@ ${PYTHON} -m unittest discover >> ${LOG_FILE} 2>&1
 echo "Succeeded" | tee -a ${LOG_FILE}
 
 
-#
+
 # Get Vocabulary test
-#
+
 echo -n "[+] Testing vocabulary building..."
 PYTHONPATH=${PROJECT_ROOT}:${PYTHONPATH} ${PYTHON} onmt/bin/build_vocab.py \
             -config ${DATA_DIR}/data.yaml \
@@ -138,12 +138,13 @@ ${PYTHON} onmt/bin/train.py \
             -word_vec_size 5 -report_every 2 \
             -hidden_size 10 -train_steps 10 -valid_steps 5 \
             -tensorboard "true" \
-            -tensorboard_log_dir $TMP_OUT_DIR/logs_train_valid \
+            -tensorboard_log_dir $TMP_OUT_DIR/logs_train_and_valid \
             -copy_attn >> ${LOG_FILE} 2>&1
-${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_train_valid -tensorboard_checks train_valid
+${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_train_and_valid -tensorboard_checks train
+${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_train_and_valid -tensorboard_checks valid
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
-rm -r $TMP_OUT_DIR/logs_train_valid
+rm -r $TMP_OUT_DIR/logs_train_and_valid
 
 echo -n "  [+] Testing NMT training w/ align..."
 ${PYTHON} onmt/bin/train.py \
@@ -198,13 +199,14 @@ ${PYTHON} onmt/bin/train.py \
             -valid_metrics "BLEU" "TER" \
             -tensorboard "true" \
             -scoring_debug "true" \
-            -dump_preds $TMP_OUT_DIR/dump_pred \
             -copy_attn \
-            -tensorboard_log_dir $TMP_OUT_DIR/logs_train_valid_metrics >> ${LOG_FILE} 2>&1
-${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_train_valid_metrics -tensorboard_checks train_valid_metrics
+            -dump_preds $TMP_OUT_DIR/dump_pred \
+            -tensorboard_log_dir $TMP_OUT_DIR/logs_dynamic-scoring_and_copy >> ${LOG_FILE} 2>&1
+      
+${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_dynamic-scoring_and_copy -tensorboard_checks valid_metrics
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
-rm -r $TMP_OUT_DIR/logs_train_valid_metrics
+rm -r $TMP_OUT_DIR/logs_dynamic-scoring_and_copy
 
 echo -n "  [+] Testing LM training..."
 ${PYTHON} onmt/bin/train.py \
@@ -346,7 +348,7 @@ ${PYTHON} onmt/bin/train.py \
             -batch_size 10 \
             -word_vec_size 5 -hidden_size 10 \
             -num_workers 0 -bucket_size 1024 \
-            -report_every 5 -train_steps 10 \
+            -report_every 5 -train_steps 10 -valid_steps 5\
             -valid_metrics "BLEU" "TER" \
             -save_model $TMP_OUT_DIR/onmt.features.model \
             -save_checkpoint_steps 10 >> ${LOG_FILE} 2>&1

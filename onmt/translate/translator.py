@@ -612,8 +612,8 @@ class Inference(object):
                 batch_dim=0,
                 batch_offset=batch_offset,
             )
-            scores = scores.view(decoder_in.size(1), -1, scores.size(-1))
-            log_probs = scores.squeeze(0).log()
+            scores = scores.view(-1, decoder_in.size(1), scores.size(-1))
+            log_probs = scores.squeeze(1).log()
             # returns [(batch_size x beam_size) , vocab ] when 1 step
             # or [batch_size, tgt_len, vocab ] when full sentence
         return log_probs, attn
@@ -817,7 +817,12 @@ class Translator(Inference):
         # (2) prep decode_strategy. Possibly repeat src objects.
         src_map = batch["src_map"] if use_src_map else None
         target_prefix = batch["tgt"] if self.tgt_file_prefix else None
-        (fn_map_state, enc_out, src_len_tiled, src_map,) = decode_strategy.initialize(
+        (
+            fn_map_state,
+            enc_out,
+            src_len_tiled,
+            src_map,
+        ) = decode_strategy.initialize(
             enc_out, src_len, src_map, target_prefix=target_prefix
         )
 
@@ -1024,7 +1029,12 @@ class GeneratorLM(Inference):
 
         # (3) prep decode_strategy. Possibly repeat src objects.
         src_map = batch["src_map"] if use_src_map else None
-        (fn_map_state, src, src_len_tiled, src_map,) = decode_strategy.initialize(
+        (
+            fn_map_state,
+            src,
+            src_len_tiled,
+            src_map,
+        ) = decode_strategy.initialize(
             src,
             src_len,
             src_map,
