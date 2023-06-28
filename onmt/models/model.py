@@ -98,12 +98,13 @@ class BaseModel(nn.Module):
                     "Extra keys in model state_dict do not match the model config %s"
                     % checkpoint["model"].keys()
                 )
-        for key in checkpoint["generator"].keys():
-            if key not in buf_list:
-                raise ValueError(
-                    "Extra keys in generator state_dict do not match the model config %s"
-                    % checkpoint["generator"].keys()
-                )
+        if checkpoint["generator"]:
+            for key in checkpoint["generator"].keys():
+                if key not in buf_list:
+                    raise ValueError(
+                        "Extra keys in generator state_dict do not match the model config %s"
+                        % checkpoint["generator"].keys()
+                    )
 
     def load_safe_state_dict(
         self,
