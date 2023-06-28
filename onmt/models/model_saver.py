@@ -49,15 +49,15 @@ def load_checkpoint(ckpt_path):
             for key in checkpoint["model"].keys():
                 if "w_1.bias" in key:
                     checkpoint["opt"].add_ffnbias = True
-            if not hasattr(checkpoint["opt"], 'num_kv'):
+            if not hasattr(checkpoint["opt"], "num_kv"):
                 checkpoint["opt"].num_kv = 0
-            if not hasattr(checkpoint["opt"], 'add_ffnbias'):
+            if not hasattr(checkpoint["opt"], "add_ffnbias"):
                 checkpoint["opt"].add_ffnbias = False
-            if not hasattr(checkpoint["opt"], 'parallel_residual'):
+            if not hasattr(checkpoint["opt"], "parallel_residual"):
                 checkpoint["opt"].parallel_residual = False
-            if not hasattr(checkpoint["opt"], 'shared_layer_norm'):
+            if not hasattr(checkpoint["opt"], "shared_layer_norm"):
                 checkpoint["opt"].shared_layer_norm = False
-            if not hasattr(checkpoint["opt"], 'use_ckpting'):
+            if not hasattr(checkpoint["opt"], "use_ckpting"):
                 checkpoint["opt"].use_ckpting = []
 
         # fix v2 compatibility

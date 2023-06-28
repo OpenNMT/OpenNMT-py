@@ -92,7 +92,9 @@ if __name__ == "__main__":
         )
     else:
         lorapath = (
-            opt.lora_weights[:-3] if opt.lora_weights[-3:] == ".pt" else opt.lora_weights
+            opt.lora_weights[:-3]
+            if opt.lora_weights[-3:] == ".pt"
+            else opt.lora_weights
         )
         model.load_safe_state_dict(
             lorapath,
