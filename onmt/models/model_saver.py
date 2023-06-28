@@ -49,9 +49,19 @@ def load_checkpoint(ckpt_path):
             for key in checkpoint["model"].keys():
                 if "w_1.bias" in key:
                     checkpoint["opt"].add_ffnbias = True
+            if not hasattr(checkpoint["opt"], "num_kv"):
+                checkpoint["opt"].num_kv = 0
+            if not hasattr(checkpoint["opt"], "add_ffnbias"):
+                checkpoint["opt"].add_ffnbias = False
+            if not hasattr(checkpoint["opt"], "parallel_residual"):
+                checkpoint["opt"].parallel_residual = False
+            if not hasattr(checkpoint["opt"], "shared_layer_norm"):
+                checkpoint["opt"].shared_layer_norm = False
+            if not hasattr(checkpoint["opt"], "use_ckpting"):
+                checkpoint["opt"].use_ckpting = []
 
         # fix v2 compatibility
-        if "generator" in checkpoint.keys():
+        if "generator" in checkpoint.keys() and checkpoint["generator"]:
             if "0.weight" in checkpoint["generator"]:
                 checkpoint["generator"]["weight"] = checkpoint["generator"].pop(
                     "0.weight"
