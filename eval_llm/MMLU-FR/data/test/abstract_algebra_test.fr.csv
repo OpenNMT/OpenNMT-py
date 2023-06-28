@@ -1,0 +1,100 @@
+"Trouvez le degré de l'extension du champ Q(sqrt(2), sqrt(3), sqrt(18)) sur Q.",0,4,2,6,B
+"Soit p = (1, 2, 5, 4)(2, 3) dans S_5 . Trouver l'indice de <p> dans S_5.",8,2,24,120,C
+Trouvez tous les zéros dans le corps fini indiqué du polynôme donné avec des coefficients dans ce corps. x^5 + 3x^3 + x^2 + 2x dans Z_5,0,1,"0,1","0,4",D
+"Affirmation 1 | Un groupe facteur d'un groupe non abélien est non abélien. Affirmation 2 | Si K est un sous-groupe normal de H et que H est un sous-groupe normal de G, alors K est un sous-groupe normal de G.","Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",B
+"Trouvez le produit des polynômes donnés dans l'anneau polynomial donné. f(x) = 4x - 5, g(x) = 2x^2 - 4x + 2 dans Z_8[x].",2x^2 + 5,6x^2 + 4x + 6,0,x^2 + 1,B
+"Affirmation 1 | Si un groupe a un élément d'ordre 15, il doit avoir au moins 8 éléments d'ordre 15. Affirmation 2 | Si un groupe a plus de 8 éléments d'ordre 15, il doit avoir au moins 16 éléments d'ordre 15.","Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",A
+Affirmation 1 | Toute image homomorphe d'un groupe G est isomorphe à un groupe facteur de G. Affirmation 2 | Les images homomorphes d'un groupe G sont les mêmes (jusqu'à l'isomorphisme) que les groupes facteurs de G.,"Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",A
+Affirmation 1 | Un homomorphisme d'anneau est un à un si et seulement si le noyau est {0}. Affirmation 2 | Q est un idéal dans R.,"Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",D
+Trouver le degré de l'extension du corps Q(sqrt(2) + sqrt(3)) sur Q.,0,4,2,6,B
+Trouvez tous les zéros dans le corps fini indiqué du polynôme donné avec des coefficients dans ce corps. x^3 + 2x + 2 dans Z_7,1,2,"2,3",6,C
+"Affirmation 1 | Si H est un sous-groupe de G et que a appartient à G, alors |aH| = |Ha|. Affirmation 2 | Si H est un sous-groupe de G et que a et b appartiennent à G, alors aH et Hb sont identiques ou disjoints.","Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",C
+"Si A = {1, 2, 3} alors la relation S = {(1, 1), (2, 2)} est",uniquement symétrique,anti-symétrique uniquement,à la fois symétrique et antisymétrique,une relation d'équivalence,C
+"Trouver l'ordre du groupe de facteurs (Z_11 x Z_15)/(<1, 1>)",1,2,5,11,A
+Le polynôme x^3 + 2x^2 + 2x + 1 peut être factorisé en facteurs linéaires dans Z_7[x]. Trouvez cette factorisation.,(x - 2)(x + 2)(x - 1),(x + 1)(x + 4)(x - 2),(x + 1)(x - 4)(x - 2),(x - 1)(x - 4)(x - 2),C
+Trouvez l'ordre maximum possible pour un élément de S_n pour n = 10.,6,12,30,105,C
+Affirmation 1 | R est un champ de division d'un polynôme sur Q. Affirmation 2 | Il existe un champ de 60 éléments.,"Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",B
+"L'inverse de -i dans le groupe multiplicatif {1, -1, i , -i} est",1,-1,i,-i,C
+"Calculer le produit dans l'anneau donné. (2,3)(3,5) dans Z_5 x Z_9","(1,1)","(3,1)","(1,6)","(3,6)",C
+L'ensemble des nombres réels sous l'opération de multiplication habituelle n'est pas un groupe car,la multiplication n'est pas une opération binaire,la multiplication n'est pas associative,l'élément d'identité n'existe pas,le zéro n'a pas d'inverse,D
+"Affirmation 1| Tout groupe d'ordre p^2 où p est premier est abélien. Affirmation 2 | Pour un nombre premier p fixé, un p-sous-groupe de Sylow d'un groupe G est un sous-groupe normal de G si et seulement s'il est le seul p-sous-groupe de Sylow de G.","Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",A
+"Affirmation 1 | Pour les groupes finis G et H, |G + H| = |G||H|. (G + H est le produit direct interne.) Affirmation 2 | Si r divise m et s divise n alors Z_m + Z_n a un sous-groupe isomorphe à Z_r + Z_s.","Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",A
+"Trouvez la somme des polynômes donnés dans l'anneau polynomial donné. f(x) = 4x - 5, g(x) = 2x^2 - 4x + 2 dans Z_8[x].",2x^2 + 5,6x^2 + 4x + 6,0,x^2 + 1,A
+"Affirmation 1 | Tout ensemble de deux vecteurs dans R^2 est linéairement indépendant. Affirmation 2 | Si V = span(v1, ... , vk) et {v1, ... , vk} sont linéairement indépendants, alors dim(V) = k. , vk} sont linéairement indépendants, alors dim(V) = k.","Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",D
+L'ensemble de toutes les racines n-ième de l'unité sous la multiplication des nombres complexes forme a/an,semi-groupe avec identité,semigroupes commutatifs avec identité,groupe,groupe abélien,D
+"Affirmation 1 | Tout idéal maximal est un idéal premier. Affirmation 2 | Si I est un idéal maximal d'un anneau commutatif R, alors R/I est un champ.","Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",B
+"Soit G l'ensemble de toutes les matrices non singulières n x n dont les entrées sont des nombres rationnels. Alors, sous la multiplication, G est a/an",sous-groupe,groupe abélien fini,"groupe infini, non abélien","ininterrompue, abélienne",C
+Affirmation 1 | Tout groupe d'ordre 42 a un sous-groupe normal d'ordre 7. Affirmation 2 | Tout groupe d'ordre 42 a un sous-groupe normal d'ordre 8.,"Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",C
+Déterminer si le polynôme dans Z[x] satisfait un critère d'Eisenstein pour l'irréductibilité sur Q. 8x^3 + 6x^2 - 9x + 24,"Oui, avec p=2.","Oui, avec p=3.","Oui, avec p=5.",Non.,B
+Affirmation 1 | L'image d'un groupe de 6 éléments sous un homomorphisme peut avoir 12 éléments. Affirmation 2 | Il existe un homomorphisme d'un groupe de 6 éléments en un groupe de 12 éléments.,"Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",D
+Affirmation 1 | L'image homomorphique d'un groupe cyclique est cyclique. Affirmation 2 | L'image homomorphe d'un groupe abélien est abélienne.,"Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",A
+"Affirmation 1 | Si H est un sous-groupe d'un groupe G et que a appartient à G, alors aH = Ha. Affirmation 2 | Si H est normal à G et que a appartient à G, alors ah = ha pour tout h dans H.","Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",B
+"Si (G, .) est un groupe tel que (ab)^-1 = a^-1b^-1, pour tout a, b dans G, alors G est a/an",semi-groupe commutatif,groupe abélien,groupe non abélien,Aucun de ces éléments,B
+"Affirmation 1 | Dans un espace vectoriel de dimension finie, tout ensemble de vecteurs linéairement indépendants est contenu dans une base. Affirmation 2 | Si B_1 et B_2 sont des bases pour le même espace vectoriel, alors |B_1| = |B_2|.","Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",A
+"On sait qu'un groupe (G, 0) est abélien. Alors lequel des énoncés suivants est VRAI pour G ?",g = g^-1 pour tout g dans G,g = g^2 pour tout g dans G,"(g o h)^2 = g^2 o h^2 pour tout g,h dans G",G est d'ordre fini,C
+"Affirmation 1 | Si T : V -> W est une transformation linéaire et dim(V ) < dim(W) < 1, alors T doit être injective. Affirmation 2 | Soit dim(V) = n et supposons que T : V -> V est linéaire. Si T est injective, alors c'est une bijection.","Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",A
+"Trouver le degré de l'extension du corps Q(sqrt(2), sqrt(3)) sur Q.",0,4,2,6,B
+Calculer le produit dans l'anneau donné. (20)(-8) dans Z_26,0,1,11,22,D
+Déterminer si le polynôme dans Z[x] satisfait un critère d'Eisenstein pour l'irréductibilité sur Q. x^2 - 12,"Oui, avec p=2.","Oui, avec p=3.","Oui, avec p=5.",Non.,B
+Trouvez le générateur du champ fini Z_7.,1,2,3,4,C
+Affirmation 1 | Toute permutation est un cycle. Affirmation 2 | Tout cycle est une permutation.,"Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",D
+"L'ensemble des entiers Z avec l'opération binaire ""*"" définie comme a*b =a +b+ 1 pour a, b dans Z, est un groupe. L'élément d'identité de ce groupe est",0,1,-1,12,C
+Trouvez la caractéristique de l'anneau Z_3 x 3Z.,0,3,12,30,A
+Affirmation 1 | Tout groupe abélien d'ordre 45 possède un sous-groupe d'ordre 10. Affirmation 2 | Un sous-groupe H d'un groupe G est un sous-groupe normal si et seulement si le nombre de cosets gauches de H est égal au nombre de cosets droits de H.,"Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",B
+Affirmation 1 | Tout domaine intégral de caractéristique 0 est infini. Affirmation 2 | Tout domaine intégral de caractéristique première est fini.,"Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",C
+"Soit A et B des ensembles, f : A -> B et g : B -> A des fonctions telles que pour tout a dans A, g(f(a)) = a. Affirmation 1 | La fonction f doit nécessairement être injective. Affirmation 2 | La fonction f doit nécessairement être surjective.","Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",C
+"Affirmation 1 | Pour tout groupe G et G', il existe un homomorphisme de G en G'. Affirmation 2 | Tout homomorphisme est une carte biunivoque.","Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",C
+Affirmation 1 | Un homomorphisme peut avoir un noyau vide. Affirmation 2 | Il n'est pas possible d'avoir un homomorphisme non trivial d'un groupe fini dans un groupe infini.,"Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",B
+Trouvez tous les c dans Z_3 tels que Z_3[x]/(x^3 + x^2 + c) est un champ.,0,2,1,3,B
+"Affirmation 1 | Si R est un domaine intégral, alors R[x] est un domaine intégral. Affirmation 2 | Si R est un anneau et que f(x) et g(x) sont dans R[x], alors deg (f(x)g(x)) = deg f(x) + deg g(x).","Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",C
+Trouvez l'ordre maximal possible pour un élément de Z_8 x Z_10 x Z_24.,8,120,240,24,B
+Affirmation 1 | Tout groupe solvable est d'ordre puissance-première. Affirmation 2 | Tout groupe d'ordre puissance première est soluble.,"Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",D
+Trouvez tous les c dans Z_3 tels que Z_3[x]/(x^3 + cx^2 + 1) est un champ.,0,2,1,3,B
+"Dans le groupe G = {2, 4, 6, 8) sous la multiplication modulo 10, l'élément identité est",6,8,4,2,A
+"Affirmation 1 | Si G, H et K sont des groupes d'ordre 4, au moins deux d'entre eux sont isomorphes. Affirmation 2 | Si Z_r + Z_s est isomorphe à un sous-groupe Z_m + Z_n, alors r divise m et s divise n.","Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",C
+Trouver le degré de l'extension du corps Q(sqrt(2)) sur Q.,0,2,1,3,B
+Affirmation 1 | Tout groupe abélien libre est sans torsion. Affirmation 2 | Tout groupe abélien sans torsion finiment généré est un groupe abélien libre.,"Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",A
+Affirmation 1 | 4x - 2 est irréductible sur Z. Affirmation 2 | 4x - 2 est irréductible sur Q.,"Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",D
+Trouvez le générateur du champ fini Z_11.,1,2,3,4,B
+Affirmation 1 | Tout groupe d'ordre 159 est cyclique. Affirmation 2 | Tout groupe d'ordre 102 possède un sous-groupe normal propre non trivial.,"Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",A
+"Affirmation 1 | Si H et K sont des sous-groupes de G et que l'un de H ou K est un sous-groupe normal de G, alors HK est un sous-groupe de G. Affirmation 2 | Tous les groupes d'ordre p^2 où p est premier sont abéliens.","Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",A
+Affirmation 1 | L'unité d'un sous-anneau doit être la même que l'unité de l'anneau. Affirmation 2 | Tout domaine est un domaine intégral.,"Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",D
+Affirmation 1 | L'ensemble des matrices 2 x 2 à entrées entières et à déterminant non nul est un groupe sous multiplication matricielle. Affirmation 2 | L'ensemble des matrices 2 x 2 à entrées entières et de déterminant 1 est un groupe sous multiplication matricielle.,"Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",D
+Affirmation 1 | Tout anneau quotient de tout anneau commutatif est à nouveau un anneau commutatif. Affirmation 2 | Un idéal N dans un anneau R avec l'unité 1 est tout R si et seulement si 1 dans N.,"Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",C
+"Si A = (1, 2, 3, 4). Soit ~= {(1, 2), (1, 3), (4, 2)}. Alors ~ est",non antisymétrique,transitif,réflexif,symétrique,B
+Combien y a-t-il d'homomorphismes de Z en Z_2 ?,1,2,un nombre infini,0,B
+Affirmation 1 | Tout champ est aussi un anneau. Affirmation 2 | Tout anneau possède une identité multiplicative.,"Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",C
+"Affirmation 1 | Si R est un anneau et que f(x) et g(x) sont dans R[x], alors deg (f(x)+g(x)) = maximum (deg f(x), deg g(x)). Affirmation 2 | Si F est un corps, alors tout idéal de F[x] est principal.","Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",D
+"Un sous-ensemble H d'un groupe (G,*) est un groupe si","a,b dans H=> a * b dans H",a dans H => a^-1 dans H,"a,b dans H=> a * b^-1 dans H",H contient l'élément d'identité,C
+Le polynôme x^4 + 4 peut être factorisé en facteurs linéaires dans Z_5[x]. Trouvez cette factorisation.,(x - 2)(x + 2)(x - 1)(x + 1),(x+1)^4,(x-1)(x+1)^3,(x-1)^3(x+1),A
+Affirmation 1 | Il existe un groupe abélien libre de tout rang entier positif. Affirmation 2 | Un groupe abélien finiment généré est abélien libre si son nombre de Betti est égal au nombre d'éléments d'un ensemble générateur.,"Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",A
+"(Z,*) est un groupe avec a*b = a+b+1 pour tout a, b dans Z. L'inverse de a est",0,-2,a-2,(2+a)*-1,D
+Trouver le degré de l'extension du corps Q(sqrt(2)*sqrt(3)) sur Q.,0,4,2,6,C
+"En utilisant le théorème de Fermat, trouvez le reste de 3^47 lorsqu'il est divisé par 23.",1,2,3,4,D
+Trouvez la caractéristique de l'anneau Z_3 x Z_3.,0,3,12,30,B
+"Affirmation 1 | Si a et b sont des éléments d'un groupe et que a n'est pas égal à b, alors a^2 n'est pas égal à b^2. Affirmation 2 | L'ensemble des rotations d'un groupe diédral forme un sous-groupe cyclique.","Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",D
+Affirmation 1 | Dans un groupe (ab)^{-2} = b^{-2}a^{-2}. Affirmation 2 | Dans un groupe (ab)^n = a^nb^n.,"Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",B
+"Affirmation 1 | S_n n'est pas abélien pour tout n >= 3. Affirmation 2 | Si a est une permutation qui est un m-cycle et b est une permutation qui est un n-cycle, alors |ab| = lcm(m,n).","Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",C
+Trouvez la caractéristique de l'anneau Z x Z.,0,3,12,30,A
+"Affirmation 1 | Pour n > 1, l'ensemble {1,2, ..., n-1} est un groupe sous la multiplication modulo n. Affirmation 2 | Il existe un entier x tel que 63x mod 100 = 1.","Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",D
+"Affirmation 1 | Si K est un sous-groupe non nul d'un groupe abélien libre finiment engendré, alors K est abélien libre. Affirmation 2 | Si K est un sous-groupe non nul d'un groupe abélien libre finiment engendré, alors G / K est abélien libre.","Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",C
+Affirmation 1 | Le produit direct externe des groupes cycliques est cyclique. Affirmation 2 | Le produit direct externe de D_3 et D_4 est isomorphe à D_12.,"Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",B
+Affirmation 1 | Tout groupe abélien libre non nul a un nombre infini de bases. Affirmation 2 | Tout groupe abélien libre de rang au moins 2 a un nombre infini de bases.,"Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",D
+"Affirmation 1 | Pour tout entier positif n, il existe un groupe cyclique d'ordre n. Affirmation 2 | Tout groupe cyclique fini contient un élément de chaque ordre qui divise l'ordre du groupe.","Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",A
+"Affirmation 1 | Si un groupe a un élément d'ordre 10, alors il a des éléments d'ordre 1, 2 et 5. Affirmation 2 | Si un groupe a un élément d'ordre 2 et un élément d'ordre 3, alors il a un élément d'ordre 6.","Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",C
+"Soit A et B des ensembles, f : A -> B et g : B -> A des fonctions telles que pour tout a dans A, g(f(a)) = a. Affirmation 1 | La fonction g doit nécessairement être injective. Affirmation 2 | La fonction g doit nécessairement être surjective.","Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",D
+Affirmation 1 | Un homomorphisme est un à un si et seulement si le noyau est constitué uniquement de l'élément d'identité. Affirmation 2 | L'image d'un groupe de 6 éléments sous un homomorphisme quelconque peut avoir 4 éléments.,"Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",C
+"Affirmation 1 | Si H et K sont des sous-groupes d'un groupe G, alors |HK| = |H||K|/|H intersection K|. Affirmation 2 | Un groupe d'ordre 2p où p est un nombre premier impair est cyclique ou isomorphe à D_p.","Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",A
+"Pour T : Z x Z -> Z où T(1, 0) = 3 et T(0, 1) = -5, trouver T(-3,2).",-19,-10,19,10,A
+Calculer le produit dans l'anneau donné. (12)(16) dans Z_24,0,1,4,6,A
+Affirmation 1 | Toute permutation est une fonction univoque. Affirmation 2 | Toute fonction est une permutation si et seulement si elle est biunivoque.,"Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",C
+"Affirmation 1 | Si un groupe fini est d'ordre n, alors le groupe contient un sous-groupe d'ordre d pour tout diviseur positif d de n. Affirmation 2 | Si a appartient à un groupe fini, alors |a| divise |G|.","Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",D
+Trouvez tous les cosets du sous-groupe 4Z de 2Z.,4Z,"4Z, 2 + 4Z",2Z,Z,B
+Laquelle des affirmations suivantes est vraie ?,Toute relation d'équivalence est une relation d'ordonnancement partiel.,"Le nombre de relations de la forme A = {x, y, z} à B= (1, 2) est 64.",La relation vide _ est réflexive,Les propriétés d'une relation symétrique et non symétrique sont négatives l'une de l'autre.,B
+Trouvez l'ordre maximum possible pour un élément de S_n pour n = 6.,6,12,30,105,A
+Affirmation 1 | Q est un corps d'extension de Z_2. Affirmation 2 | Tout polynôme non constant sur un corps possède un zéro dans un corps d'extension.,"Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",D
+Affirmation 1 | Si H est un sous-groupe de G et que a appartient à G alors aH est un sous-groupe de G si et seulement si a est dans H. Affirmation 2 | Si H est un sous-groupe de G et que a et b appartiennent à G alors aH = bH si et seulement si ab est dans H.,"Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",C
+Trouvez tous les zéros dans le corps fini indiqué du polynôme donné avec des coefficients dans ce corps. x^2 + 1 dans Z_2,0,1,"0,1",2,B
+Trouvez le nombre d'éléments dans le groupe cyclique indiqué : Le sous-groupe cyclique de Z_30 engendré par 25.,25,5,6,30,C
+"L'élément (4, 2) de Z_12 x Z_8 est d'ordre",4,8,12,6,C
+Affirmation 1 | Tout idéal d'un anneau est un sous-anneau de l'anneau. Affirmation 2 | Tout sous-anneau d'un anneau est un idéal de l'anneau.,"Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",C

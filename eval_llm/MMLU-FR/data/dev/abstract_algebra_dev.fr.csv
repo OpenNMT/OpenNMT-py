@@ -1,0 +1,5 @@
+Trouvez tous les c dans Z_3 tels que Z_3[x]/(x^2 + c) est un champ.,0,1,2,3,B
+"Affirmation 1 | Si aH est un élément d'un groupe factoriel, alors |aH| divise |a|. Affirmation 2 | Si H et K sont des sous-groupes de G, alors HK est un sous-groupe de G.","Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",B
+Affirmation 1 | Chaque élément d'un groupe génère un sous-groupe cyclique du groupe. Affirmation 2 | Le groupe symétrique S_10 a 10 éléments.,"Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",C
+Affirmation 1| Toute fonction d'un ensemble fini sur lui-même doit être une à une. Affirmation 2 | Tout sous-groupe d'un groupe abélien est abélien.,"Vrai, Vrai","Faux, faux","Vrai, Faux","Faux, Vrai",A
+Trouvez la caractéristique de l'anneau 2Z.,0,3,12,30,A
