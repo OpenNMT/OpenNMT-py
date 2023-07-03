@@ -13,12 +13,15 @@ from torch.nn.utils.rnn import pad_sequence
 from onmt.constants import DefaultTokens
 import onmt.model_builder
 import onmt.decoders.ensemble
+from onmt.inputters.dynamic_iterator import build_dynamic_dataset_iter
+from onmt.inputters.inputter import IterOnDevice
+from onmt.transforms import get_transforms_cls
 from onmt.translate.beam_search import BeamSearch, BeamSearchLM
 from onmt.translate.greedy_search import GreedySearch, GreedySearchLM
 from onmt.utils.misc import tile, set_random_seed, report_matrix
 from onmt.utils.alignment import extract_alignment, build_align_pharaoh
 from onmt.modules.copy_generator import collapse_copy_scores
-from onmt.constants import ModelTask
+from onmt.constants import CorpusTask, ModelTask
 
 
 def build_translator(opt, report_score=True, logger=None, out_file=None):
@@ -132,6 +135,7 @@ class Inference(object):
         logger=None,
         seed=-1,
         with_score=False,
+        infer_opt=None,
     ):
         self.model = model
         self.vocabs = vocabs
@@ -202,6 +206,7 @@ class Inference(object):
 
         set_random_seed(seed, self._use_cuda)
         self.with_score = with_score
+        self.infer_opt = infer_opt
 
     @classmethod
     def from_opt(
@@ -268,6 +273,7 @@ class Inference(object):
             logger=logger,
             seed=opt.seed,
             with_score=opt.with_score,
+            infer_opt=opt,
         )
 
     def _log(self, msg):
@@ -297,6 +303,34 @@ class Inference(object):
         else:
             gs = [0] * batch_size
         return gs
+
+    def translate_strings(self, input_sentences=[], transform=None):
+        """Translate a list of strings.
+        Args:
+            input_sentences: list of raw strings (not yet transformed sentences)
+        """
+        transforms_cls = get_transforms_cls(self.infer_opt._all_transform)
+        infer_iter = build_dynamic_dataset_iter(
+            self.infer_opt,
+            transforms_cls,
+            self.vocabs,
+            task=CorpusTask.INFER,
+            src=input_sentences,
+        )
+
+        infer_iter = IterOnDevice(infer_iter, self._gpu)
+        _, preds = self._translate(
+            infer_iter,
+            transform=infer_iter.transform,
+            attn_debug=self.infer_opt.attn_debug,
+            align_debug=self.infer_opt.align_debug,
+        )
+
+        output_sentences = [
+            x.lstrip() for sublist in preds for x in sublist
+        ]  # flatten the list of list
+
+        return output_sentences
 
     def _translate(
         self,

@@ -8,10 +8,6 @@ import ctranslate2
 
 from onmt.utils.logging import init_logger
 from onmt.translate.translator import build_translator
-from onmt.inputters.text_utils import textbatch_to_tensor
-from onmt.inputters.inputter import IterOnDevice
-from onmt.transforms import get_transforms_cls, TransformPipe
-from onmt.transforms import make_transforms
 import onmt.opts as opts
 from onmt.utils.parse import ArgumentParser
 from onmt.utils.misc import use_gpu, set_random_seed
@@ -155,13 +151,6 @@ def load_translator(opt):
             os.path.join(tokenizer_dir, "tokenizer.model")
         )
 
-        transforms_cls = get_transforms_cls(opt._all_transform)
-        transforms = make_transforms(opt, transforms_cls, CACHE["translator"].vocabs)
-        data_transform = [
-            transforms[name] for name in opt.transforms if name in transforms
-        ]
-        CACHE["transform"] = TransformPipe.build_from(data_transform)
-
         CACHE["device"] = (
             CACHE["translator"]._dev.index if CACHE["translator"]._use_cuda else -1
         )
@@ -171,28 +160,9 @@ def make_bot_message_py(prompt):
     # we receive a text box content
     # might be good to split also based on full period (later)
     prompt = prompt.replace("\n", "｟newline｠")
-    batch = []
-    ex = {"src": prompt.split(" "), "tgt": ""}
-    batch.append((ex, None, "infer"))
-    trf_batch = CACHE["transform"].batch_apply(
-        batch, is_train=False, corpus_name="infer"
-    )
-    # we reformat the transformed batch to be numericalized / tensorified
-    batch = []
-    for ex, _, cid in trf_batch:
-        ex["src"] = {"src": " ".join(ex["src"])}
-        ex["tgt"] = {"tgt": " ".join(ex["tgt"])}
-        batch.append(ex)
-
-    infer_iter = textbatch_to_tensor(CACHE["translator"].vocabs, batch)
-    infer_iter = IterOnDevice(infer_iter, CACHE["device"])
-
-    scores, predictions = CACHE["translator"]._translate(
-        infer_iter, transform=CACHE["transform"]
-    )
-    print("\n".join([predictions[i][0] for i in range(len(predictions))]))
-
-    bot_message = "\n".join(sent[0] for sent in predictions)
+    pred_answers = CACHE["translator"].translate_strings(input_sentences=[prompt])
+    print(pred_answers)
+    bot_message = pred_answers[0]
     bot_message = bot_message.replace("｟newline｠", "\n")
 
     return bot_message
@@ -248,9 +218,7 @@ with gr.Blocks() as demo:
     clear.click(lambda: None, None, chatbot, queue=False)
 
 demo.queue()
-demo.launch(server_port=1851, server_name="0.0.0.0")
+demo.launch(server_port=1853, server_name="0.0.0.0")
 
-# What are the 3 best french cities ?
-# Which one is better if I like outdoor activities ?
-# Which one is better if I like cultural outings?
-# What are the best neighborhoods in these 5 cities?
+# What are 5 the best medium-sized cities in France ?
+# Can you describe the second city ?
