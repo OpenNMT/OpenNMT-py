@@ -327,7 +327,7 @@ class Inference(object):
         )
 
         output_sentences = [
-            x.lstrip() for sublist in preds for x in sublist
+            x for sublist in preds for x in sublist
         ]  # flatten the list of list
 
         return output_sentences

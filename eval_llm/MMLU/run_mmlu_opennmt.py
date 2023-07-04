@@ -175,6 +175,7 @@ def evaluate(opt):
             src.append(prompt.replace("\n", "｟newline｠"))
 
         pred_answers = translator.translate_strings(src)
+        pred_answers = [x.strip() for x in pred_answers]
 
         gold_answers = [record["answer"] for record in records]
         run_results[task] = {"pred_answers": pred_answers, "gold_answers": gold_answers}
