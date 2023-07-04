@@ -3,9 +3,9 @@ import numpy as np
 import os
 import sentencepiece as spm
 import time
-
 import ctranslate2
 
+from onmt.bin.translate import translate
 from onmt.utils.logging import init_logger
 from onmt.translate.translator import build_translator
 import onmt.opts as opts
@@ -156,12 +156,11 @@ def load_translator(opt):
         )
 
 
-def make_bot_message_py(prompt):
+def make_bot_message_py(prompt, opt):
     # we receive a text box content
     # might be good to split also based on full period (later)
     prompt = prompt.replace("\n", "｟newline｠")
-    pred_answers = CACHE["translator"].translate_strings(input_sentences=[prompt])
-    print(pred_answers)
+    pred_answers = translate(opt, CACHE["translator"], src=[prompt])
     bot_message = pred_answers[0]
     bot_message = bot_message.replace("｟newline｠", "\n")
 
@@ -200,7 +199,7 @@ with gr.Blocks() as demo:
         if inf_type == "ct2":
             bot_message = make_bot_message_ct2(prompt)
         elif inf_type == "-py":
-            bot_message = make_bot_message_py(prompt)
+            bot_message = make_bot_message_py(prompt, opt)
         history[-1][1] = ""
         for character in bot_message:
             history[-1][1] += character

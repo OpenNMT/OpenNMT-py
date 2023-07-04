@@ -11,7 +11,7 @@ from onmt.utils.parse import ArgumentParser
 from onmt.utils.misc import use_gpu, set_random_seed
 
 
-def translate(opt):
+def translate(opt, translator=None, src=None):
     ArgumentParser.validate_translate_opts(opt)
     ArgumentParser._get_all_transform_translate(opt)
     ArgumentParser._validate_transforms_opts(opt)
@@ -20,7 +20,8 @@ def translate(opt):
 
     set_random_seed(opt.seed, use_gpu(opt))
 
-    translator = build_translator(opt, logger=logger, report_score=True)
+    if translator is None:
+        translator = build_translator(opt, logger=logger, report_score=True)
 
     transforms_cls = get_transforms_cls(opt._all_transform)
 
@@ -30,16 +31,24 @@ def translate(opt):
         translator.vocabs,
         task=CorpusTask.INFER,
         copy=translator.copy_attn,
+        src=src,
     )
 
     infer_iter = IterOnDevice(infer_iter, opt.gpu)
 
-    _, _ = translator._translate(
+    _, preds = translator._translate(
         infer_iter,
         transform=infer_iter.transform,
         attn_debug=opt.attn_debug,
         align_debug=opt.align_debug,
     )
+
+    if src is not None:
+        output_sentences = [
+            x for sublist in preds for x in sublist
+        ]  # flatten the list of list
+
+        return output_sentences
 
 
 def _get_parser():

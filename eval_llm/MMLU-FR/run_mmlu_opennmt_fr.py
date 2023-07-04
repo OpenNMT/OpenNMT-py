@@ -6,6 +6,7 @@ import os
 import time
 import pandas as pd
 from onmt.utils.logging import init_logger
+from onmt.bin.translate import translate
 from onmt.translate.translator import build_translator
 import onmt.opts as opts
 from onmt.utils.parse import ArgumentParser
@@ -174,7 +175,7 @@ def evaluate(opt):
             records.append({"prompt": prompt, "answer": label})
             src.append(prompt.replace("\n", "｟newline｠"))
 
-        pred_answers = translator.translate_strings(src)
+        pred_answers = translate(opt, translator, src)
         pred_answers = [x.strip() for x in pred_answers]
 
         gold_answers = [record["answer"] for record in records]
