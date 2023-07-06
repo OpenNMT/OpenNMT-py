@@ -50,7 +50,7 @@ class TransformerEncoderLayer(nn.Module):
             heads,
             d_model,
             dropout=attention_dropout,
-            is_decoder = False,
+            is_decoder=False,
             max_relative_positions=max_relative_positions,
             relative_positions_buckets=relative_positions_buckets,
             attn_type="self",
