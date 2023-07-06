@@ -35,6 +35,7 @@ class TransformerEncoderLayer(nn.Module):
         dropout,
         attention_dropout,
         max_relative_positions=0,
+        relative_positions_buckets=0,
         pos_ffn_activation_fn=ActivationFunction.relu,
         add_qkvbias=False,
         num_kv=0,
@@ -49,7 +50,9 @@ class TransformerEncoderLayer(nn.Module):
             heads,
             d_model,
             dropout=attention_dropout,
+            is_decoder = False,
             max_relative_positions=max_relative_positions,
+            relative_positions_buckets=relative_positions_buckets,
             attn_type="self",
             add_qkvbias=add_qkvbias,
             num_kv=num_kv,
@@ -141,6 +144,7 @@ class TransformerEncoder(EncoderBase):
         attention_dropout,
         embeddings,
         max_relative_positions,
+        relative_positions_buckets,
         pos_ffn_activation_fn=ActivationFunction.relu,
         add_qkvbias=False,
         num_kv=0,
@@ -161,6 +165,7 @@ class TransformerEncoder(EncoderBase):
                     dropout,
                     attention_dropout,
                     max_relative_positions=max_relative_positions,
+                    relative_positions_buckets=relative_positions_buckets,
                     pos_ffn_activation_fn=pos_ffn_activation_fn,
                     add_qkvbias=add_qkvbias,
                     num_kv=num_kv,
@@ -193,6 +198,7 @@ class TransformerEncoder(EncoderBase):
             else opt.attention_dropout,
             embeddings,
             opt.max_relative_positions,
+            opt.relative_positions_buckets,
             pos_ffn_activation_fn=opt.pos_ffn_activation_fn,
             add_qkvbias=opt.add_qkvbias,
             num_kv=opt.num_kv,
@@ -211,10 +217,10 @@ class TransformerEncoder(EncoderBase):
         # mask is now (batch x 1 x slen x slen)
         # 1 to be expanded to number of heads in MHA
         # Run the forward pass of every layer of the tranformer.
+
         for layer in self.transformer:
             enc_out = layer(enc_out, mask)
         enc_out = self.layer_norm(enc_out)
-
         return enc_out, None, src_len
 
     def update_dropout(self, dropout, attention_dropout):
