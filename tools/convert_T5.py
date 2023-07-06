@@ -5,11 +5,10 @@ import argparse
 import pyonmttok
 from argparse import Namespace
 from onmt.inputters.inputter import vocabs_to_dict
-from onmt.constants import DefaultTokens
 from sentencepiece import SentencePieceProcessor
 import os
 from safetensors.torch import save_file
-from transformers import T5ForConditionalGeneration, T5Tokenizer
+from transformers import T5ForConditionalGeneration
 
 
 class Tokenizer:
