@@ -51,7 +51,7 @@ if __name__ == "__main__":
 
     model = T5ForConditionalGeneration.from_pretrained(
         opt.model_dir,
-        torch_dtype=torch.float32,
+        torch_dtype=torch.float16,
         device_map={"": "cpu"},
         trust_remote_code=True,
     )
@@ -72,7 +72,7 @@ if __name__ == "__main__":
     heads = params["num_heads"]
     vocab_size = params["vocab_size"]
     transformer_ff = params["d_ff"]
-
+    dimperhead = hidden_size // heads
     onmt_cp = {}
 
     for shard in range(opt.nshards):
@@ -83,21 +83,21 @@ if __name__ == "__main__":
         if shard == 0:
             onmt_safetensor[
                 "decoder.embeddings.make_embedding.emb_luts.0.weight"
-            ] = checkpoint["decoder.embed_tokens.weight"].to(torch.float32)
+            ] = checkpoint["decoder.embed_tokens.weight"].to(torch.float16)
             onmt_safetensor["decoder.layer_norm.weight"] = checkpoint[
                 "decoder.final_layer_norm.weight"
-            ].to(torch.float32)
+            ].to(torch.float16)
             onmt_safetensor[
                 "encoder.embeddings.make_embedding.emb_luts.0.weight"
-            ] = checkpoint["encoder.embed_tokens.weight"].to(torch.float32)
+            ] = checkpoint["encoder.embed_tokens.weight"].to(torch.float16)
             onmt_safetensor["encoder.layer_norm.weight"] = checkpoint[
                 "encoder.final_layer_norm.weight"
-            ].to(torch.float32)
+            ].to(torch.float16)
             onmt_safetensor["generator.weight"] = checkpoint["lm_head.weight"].to(
-                torch.float32
+                torch.float16
             )
             onmt_safetensor["generator.bias"] = torch.zeros(
-                onmt_safetensor["generator.weight"].size(0), dtype=torch.float32
+                onmt_safetensor["generator.weight"].size(0), dtype=torch.float16
             )
 
         for i in range(
@@ -105,43 +105,42 @@ if __name__ == "__main__":
             min(-(decoder_layers // -opt.nshards) * (shard + 1), decoder_layers),
             1,
         ):
-            print(i)
             onmt_safetensor[
                 "encoder.transformer." + str(i) + ".self_attn.linear_query.weight"
-            ] = checkpoint[
+            ] = (checkpoint[
                 "encoder.block." + str(i) + ".layer.0.SelfAttention.q.weight"
-            ].to(
-                torch.float32
-            )
+            ] / (dimperhead ** -0.5)).to(
+                torch.float16
+            ) 
             onmt_safetensor[
                 "decoder.transformer_layers."
                 + str(i)
                 + ".self_attn.linear_query.weight"
-            ] = checkpoint[
+            ] = (checkpoint[
                 "decoder.block." + str(i) + ".layer.0.SelfAttention.q.weight"
-            ].to(
-                torch.float32
-            )
+            ] / (dimperhead ** -0.5)).to(
+                torch.float16
+            ) 
             onmt_safetensor[
                 "encoder.transformer." + str(i) + ".self_attn.linear_keys.weight"
             ] = checkpoint[
                 "encoder.block." + str(i) + ".layer.0.SelfAttention.k.weight"
             ].to(
-                torch.float32
+                torch.float16
             )
             onmt_safetensor[
                 "decoder.transformer_layers." + str(i) + ".self_attn.linear_keys.weight"
             ] = checkpoint[
                 "decoder.block." + str(i) + ".layer.0.SelfAttention.k.weight"
             ].to(
-                torch.float32
+                torch.float16
             )
             onmt_safetensor[
                 "encoder.transformer." + str(i) + ".self_attn.linear_values.weight"
             ] = checkpoint[
                 "encoder.block." + str(i) + ".layer.0.SelfAttention.v.weight"
             ].to(
-                torch.float32
+                torch.float16
             )
             onmt_safetensor[
                 "decoder.transformer_layers."
@@ -150,7 +149,7 @@ if __name__ == "__main__":
             ] = checkpoint[
                 "decoder.block." + str(i) + ".layer.0.SelfAttention.v.weight"
             ].to(
-                torch.float32
+                torch.float16
             )
 
             onmt_safetensor[
@@ -158,7 +157,7 @@ if __name__ == "__main__":
             ] = checkpoint[
                 "encoder.block." + str(i) + ".layer.0.SelfAttention.o.weight"
             ].to(
-                torch.float32
+                torch.float16
             )
             onmt_safetensor[
                 "decoder.transformer_layers."
@@ -167,7 +166,7 @@ if __name__ == "__main__":
             ] = checkpoint[
                 "decoder.block." + str(i) + ".layer.0.SelfAttention.o.weight"
             ].to(
-                torch.float32
+                torch.float16
             )
 
             onmt_safetensor[
@@ -177,7 +176,7 @@ if __name__ == "__main__":
             ] = checkpoint[
                 "encoder.block.0.layer.0.SelfAttention.relative_attention_bias.weight"
             ].to(
-                torch.float32
+                torch.float16
             )
             onmt_safetensor[
                 "decoder.transformer_layers."
@@ -186,18 +185,18 @@ if __name__ == "__main__":
             ] = checkpoint[
                 "decoder.block.0.layer.0.SelfAttention.relative_attention_bias.weight"
             ].to(
-                torch.float32
+                torch.float16
             )
 
             onmt_safetensor[
                 "encoder.transformer." + str(i) + ".layer_norm.weight"
             ] = checkpoint["encoder.block." + str(i) + ".layer.0.layer_norm.weight"].to(
-                torch.float32
+                torch.float16
             )
             onmt_safetensor[
                 "decoder.transformer_layers." + str(i) + ".layer_norm_1.weight"
             ] = checkpoint["decoder.block." + str(i) + ".layer.0.layer_norm.weight"].to(
-                torch.float32
+                torch.float16
             )
 
             onmt_safetensor[
@@ -205,7 +204,7 @@ if __name__ == "__main__":
             ] = checkpoint[
                 "encoder.block." + str(i) + ".layer.1.DenseReluDense.wi_0.weight"
             ].to(
-                torch.float32
+                torch.float16
             )
 
             onmt_safetensor[
@@ -213,25 +212,25 @@ if __name__ == "__main__":
             ] = checkpoint[
                 "encoder.block." + str(i) + ".layer.1.DenseReluDense.wo.weight"
             ].to(
-                torch.float32
+                torch.float16
             )
             onmt_safetensor[
                 "encoder.transformer." + str(i) + ".feed_forward.w_3.weight"
             ] = checkpoint[
                 "encoder.block." + str(i) + ".layer.1.DenseReluDense.wi_1.weight"
             ].to(
-                torch.float32
+                torch.float16
             )
 
             onmt_safetensor[
                 "decoder.transformer_layers."
                 + str(i)
                 + ".context_attn.linear_query.weight"
-            ] = checkpoint[
+            ] = (checkpoint[
                 "decoder.block." + str(i) + ".layer.1.EncDecAttention.q.weight"
-            ].to(
-                torch.float32
-            )
+            ] / (dimperhead ** -0.5)).to(
+                torch.float16
+            ) 
             onmt_safetensor[
                 "decoder.transformer_layers."
                 + str(i)
@@ -239,7 +238,7 @@ if __name__ == "__main__":
             ] = checkpoint[
                 "decoder.block." + str(i) + ".layer.1.EncDecAttention.k.weight"
             ].to(
-                torch.float32
+                torch.float16
             )
             onmt_safetensor[
                 "decoder.transformer_layers."
@@ -248,7 +247,7 @@ if __name__ == "__main__":
             ] = checkpoint[
                 "decoder.block." + str(i) + ".layer.1.EncDecAttention.v.weight"
             ].to(
-                torch.float32
+                torch.float16
             )
             onmt_safetensor[
                 "decoder.transformer_layers."
@@ -257,13 +256,13 @@ if __name__ == "__main__":
             ] = checkpoint[
                 "decoder.block." + str(i) + ".layer.1.EncDecAttention.o.weight"
             ].to(
-                torch.float32
+                torch.float16
             )
 
             onmt_safetensor[
                 "decoder.transformer_layers." + str(i) + ".layer_norm_2.weight"
             ] = checkpoint["decoder.block." + str(i) + ".layer.1.layer_norm.weight"].to(
-                torch.float32
+                torch.float16
             )
 
             onmt_safetensor[
@@ -271,7 +270,7 @@ if __name__ == "__main__":
             ] = checkpoint[
                 "decoder.block." + str(i) + ".layer.2.DenseReluDense.wi_0.weight"
             ].to(
-                torch.float32
+                torch.float16
             )
 
             onmt_safetensor[
@@ -279,27 +278,27 @@ if __name__ == "__main__":
             ] = checkpoint[
                 "decoder.block." + str(i) + ".layer.2.DenseReluDense.wo.weight"
             ].to(
-                torch.float32
+                torch.float16
             )
             onmt_safetensor[
                 "decoder.transformer_layers." + str(i) + ".feed_forward.w_3.weight"
             ] = checkpoint[
                 "decoder.block." + str(i) + ".layer.2.DenseReluDense.wi_1.weight"
             ].to(
-                torch.float32
+                torch.float16
             )
 
             onmt_safetensor[
                 "encoder.transformer." + str(i) + ".feed_forward.layer_norm.weight"
             ] = checkpoint["encoder.block." + str(i) + ".layer.1.layer_norm.weight"].to(
-                torch.float32
+                torch.float16
             )
             onmt_safetensor[
                 "decoder.transformer_layers."
                 + str(i)
                 + ".feed_forward.layer_norm.weight"
             ] = checkpoint["decoder.block." + str(i) + ".layer.2.layer_norm.weight"].to(
-                torch.float32
+                torch.float16
             )
 
         if shard == 0:
@@ -322,10 +321,6 @@ if __name__ == "__main__":
         onmt_cp["model"] = onmt_safetensor
 
     tokenizer = Tokenizer(model_path=opt.tokenizer_model)
-    print(tokenizer.n_words)
-    print(tokenizer.pad_id)
-    print(tokenizer.eos_id)
-    print(tokenizer.bos_id)
     vocabs = {}
     vocab = tokenizer.vocab
     # vocab[3] = DefaultTokens.PAD
@@ -427,7 +422,7 @@ if __name__ == "__main__":
         dec_hid_size=hidden_size,
         cnn_kernel_width=3,
         layer_norm="rms",
-        pos_ffn_activation_fn="gelu",
+        pos_ffn_activation_fn="gated-gelu",
         input_feed=1,
         bridge=False,
         rnn_type="LSTM",

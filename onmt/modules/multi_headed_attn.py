@@ -411,7 +411,7 @@ class MultiHeadedAttention(nn.Module):
                 query = query.transpose(1, 2)
                 key = key.transpose(1, 2)
         # 2) Calculate and scale scores.
-        # query /= math.sqrt(self.dim_per_head) !!!!!!!!!!!!!!!!!!!!!! temporary hack for T5
+        query /= math.sqrt(self.dim_per_head)
         # expand key on heads dimension when it's less than query heads (multi-query variant)
         key = key.view(key.size(0), -1, 1, key.size(2), key.size(3)).repeat(
             1, 1, query.size(1) // key.size(1), 1, 1
@@ -421,8 +421,9 @@ class MultiHeadedAttention(nn.Module):
         scores = torch.matmul(query, key.transpose(2, 3))
 
         if self.relative_attention_bias is not None:
+            q_len = key.size(2) if self.layer_cache[0] else query.size(2)
             relative_position_bucket = compute_bias(
-                key.size(2),
+                q_len,
                 key.size(2),
                 self.is_decoder,
                 self.max_relative_positions,
