@@ -422,7 +422,7 @@ class MultiHeadedAttention(nn.Module):
 
         if self.relative_attention_bias is not None:
             relative_position_bucket = compute_bias(
-                query.size(2),
+                key.size(2),
                 key.size(2),
                 self.is_decoder,
                 self.max_relative_positions,
@@ -435,6 +435,8 @@ class MultiHeadedAttention(nn.Module):
             position_bias = values.permute([2, 0, 1]).unsqueeze(
                 0
             )  # shape (1, num_heads, query_length, key_length)
+            if self.layer_cache[0]:
+                position_bias = position_bias[:, :, -query.size(2) :, :]
             scores.add_(position_bias)
 
         elif self.relative_positions_embeddings is not None:
