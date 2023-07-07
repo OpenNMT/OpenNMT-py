@@ -12,6 +12,7 @@ class ActivationFunction(object):
     relu = "relu"
     gelu = "gelu"
     silu = "silu"
+    gated_gelu = "gated-gelu"
 
 
 # for silu, see: https://arxiv.org/pdf/2002.05202.pdf
@@ -19,6 +20,7 @@ ACTIVATION_FUNCTIONS = {
     ActivationFunction.relu: F.relu,
     ActivationFunction.gelu: F.gelu,
     ActivationFunction.silu: F.silu,
+    ActivationFunction.gated_gelu: F.gelu,
 }
 
 
@@ -62,7 +64,7 @@ class PositionwiseFeedForward(nn.Module):
         self.dropout_1 = nn.Dropout(dropout)
         self.activation = ACTIVATION_FUNCTIONS[activation_fn]
         self.dropout_2 = nn.Dropout(dropout)
-        if activation_fn == "silu":
+        if activation_fn == "silu" or activation_fn == "gated-gelu":
             self.w_3 = skip_init(
                 nn.Linear, in_features=d_model, out_features=d_ff, bias=add_ffnbias
             )

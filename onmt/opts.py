@@ -796,6 +796,14 @@ def model_opts(parser):
         "more info: https://arxiv.org/pdf/1803.02155.pdf",
     )
     group.add(
+        "--relative_positions_buckets",
+        "-relative_positions_buckets",
+        type=int,
+        default=0,
+        help="This setting enable relative position bias"
+        "more info: https://github.com/google-research/text-to-text-transfer-transformer",
+    )
+    group.add(
         "--heads",
         "-heads",
         type=int,

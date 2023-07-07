@@ -23,6 +23,7 @@ class TransformerDecoderLayerBase(nn.Module):
         attention_dropout,
         self_attn_type="scaled-dot",
         max_relative_positions=0,
+        relative_positions_buckets=0,
         aan_useffn=False,
         full_context_alignment=False,
         alignment_heads=0,
@@ -73,6 +74,7 @@ class TransformerDecoderLayerBase(nn.Module):
                 d_model,
                 dropout=attention_dropout,
                 max_relative_positions=max_relative_positions,
+                relative_positions_buckets=relative_positions_buckets,
                 attn_type="self",
                 add_qkvbias=add_qkvbias,
                 num_kv=num_kv,
@@ -201,6 +203,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
         attention_dropout,
         self_attn_type="scaled-dot",
         max_relative_positions=0,
+        relative_positions_buckets=0,
         aan_useffn=False,
         full_context_alignment=False,
         alignment_heads=0,
@@ -225,6 +228,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
             attention_dropout,
             self_attn_type,
             max_relative_positions,
+            relative_positions_buckets,
             aan_useffn,
             full_context_alignment,
             alignment_heads,
@@ -362,6 +366,7 @@ class TransformerDecoderBase(DecoderBase):
             else opt.attention_dropout,
             embeddings,
             opt.max_relative_positions,
+            opt.relative_positions_buckets,
             opt.aan_useffn,
             opt.full_context_alignment,
             opt.alignment_layer,
@@ -428,6 +433,8 @@ class TransformerDecoder(TransformerDecoderBase):
             embeddings to use, should have positional encodings
         max_relative_positions (int):
             Max distance between inputs in relative positions representations
+        relative_positions_buckets (int):
+            Number of buckets when using relative position bias
         aan_useffn (bool): Turn on the FFN layer in the AAN decoder
         full_context_alignment (bool):
             whether enable an extra full context decoder forward for alignment
@@ -450,6 +457,7 @@ class TransformerDecoder(TransformerDecoderBase):
         attention_dropout,
         embeddings,
         max_relative_positions,
+        relative_positions_buckets,
         aan_useffn,
         full_context_alignment,
         alignment_layer,
@@ -477,6 +485,7 @@ class TransformerDecoder(TransformerDecoderBase):
                     attention_dropout,
                     self_attn_type=self_attn_type,
                     max_relative_positions=max_relative_positions,
+                    relative_positions_buckets=relative_positions_buckets,
                     aan_useffn=aan_useffn,
                     full_context_alignment=full_context_alignment,
                     alignment_heads=alignment_heads,
@@ -660,6 +669,8 @@ class TransformerLMDecoder(TransformerDecoderBase):
              embeddings to use, should have positional encodings
          max_relative_positions (int):
              Max distance between inputs in relative positions representations
+         relative_positions_buckets (int):
+             Number of buckets when using Relative positions bias
          aan_useffn (bool): Turn on the FFN layer in the AAN decoder
          add_qkvbias (bool): whether to add bias to the Key/Value nn.Linear
     """
@@ -676,6 +687,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
         attention_dropout,
         embeddings,
         max_relative_positions,
+        relative_positions_buckets,
         aan_useffn,
         full_context_alignment=None,
         alignment_layer=None,
@@ -702,6 +714,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
                     attention_dropout,
                     self_attn_type=self_attn_type,
                     max_relative_positions=max_relative_positions,
+                    relative_positions_buckets=relative_positions_buckets,
                     aan_useffn=aan_useffn,
                     full_context_alignment=None,
                     alignment_heads=None,

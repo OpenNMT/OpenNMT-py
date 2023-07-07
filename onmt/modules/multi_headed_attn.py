@@ -16,7 +16,7 @@ from .alibi_position_bias import AlibiPositionalBias
 # are both < 2048 tokens.
 
 
-def rotaryembeddings(dim: int, maxseqlen=4096, base=10000):
+def rotaryembeddings(dim: int, maxseqlen=8192, base=10000):
     inv_freq = 1.0 / (base ** (torch.arange(0, dim, 2).float() / dim))
     tmax = torch.arange(maxseqlen, device=inv_freq.device)
     rope = torch.outer(tmax, inv_freq).float()
@@ -79,6 +79,90 @@ def gen_relative_positions(
     # Shift values to be >= 0
     final_mat = distance_mat_clipped + max_relative_positions
     return final_mat
+
+
+def _relative_position_bucket(
+    relative_position, bidirectional=True, num_buckets=32, max_distance=128
+):
+    """
+    Adapted from Mesh Tensorflow:
+    https://github.com/tensorflow/mesh/blob/0cb87fe07da627bf0b7e60475d59f95ed6b5be3d/
+    mesh_tensorflow/transformer/transformer_layers.py#L593
+    Translate relative position to a bucket number for relative attention.
+    The relative position is defined as memory_position - query_position,
+    i.e. the distance in tokens from the attending position to the attended-to
+    position. If bidirectional=False, then positive relative positions are invalid.
+    We use smaller buckets for small absolute relative_position and larger buckets for
+    larger absolute relative_positions. All relative positions >=max_distance map to the
+    same bucket. All relative positions <=-max_distance map to the same bucket.
+    This should allow for more graceful generalization to longer sequences than the
+    model has been trained on
+
+    Args:
+        relative_position: an int32 Tensor
+        bidirectional: a boolean - whether the attention is bidirectional
+        num_buckets: an integer
+        max_distance: an integer
+
+    Returns:
+        a Tensor with the same shape as relative_position, containing int32 values
+        in the range [0, num_buckets)
+    """
+    relative_buckets = 0
+    if bidirectional:
+        num_buckets //= 2
+        relative_buckets += (relative_position > 0).to(torch.long) * num_buckets
+        relative_position = torch.abs(relative_position)
+    else:
+        relative_position = -torch.min(
+            relative_position, torch.zeros_like(relative_position)
+        )
+    # now relative_position is in the range [0, inf)
+    # half of the buckets are for exact increments in positions
+    max_exact = num_buckets // 2
+    is_small = relative_position < max_exact
+
+    # The other half of the buckets are for logarithmically bigger bins in positions
+    # up to max_distance
+    relative_position_if_large = max_exact + (
+        torch.log(relative_position.float() / max_exact)
+        / math.log(max_distance / max_exact)
+        * (num_buckets - max_exact)
+    ).to(torch.long)
+    relative_position_if_large = torch.min(
+        relative_position_if_large,
+        torch.full_like(relative_position_if_large, num_buckets - 1),
+    )
+
+    relative_buckets += torch.where(
+        is_small, relative_position, relative_position_if_large
+    )
+    return relative_buckets
+
+
+def compute_bias(
+    query_length,
+    key_length,
+    is_decoder,
+    max_relative_positions,
+    relative_positions_buckets,
+    device=None,
+):
+    """Compute binned relative position bias"""
+    context_position = torch.arange(query_length, dtype=torch.long, device=device)[
+        :, None
+    ]
+    memory_position = torch.arange(key_length, dtype=torch.long, device=device)[None, :]
+    relative_position = (
+        memory_position - context_position
+    )  # shape (query_length, key_length)
+    relative_position_bucket = _relative_position_bucket(
+        relative_position,  # shape (query_length, key_length)
+        bidirectional=(not is_decoder),
+        num_buckets=relative_positions_buckets,
+        max_distance=max_relative_positions,
+    )
+    return relative_position_bucket
 
 
 # Help functions to split model dim per head
@@ -150,7 +234,9 @@ class MultiHeadedAttention(nn.Module):
         head_count: int,
         model_dim: int,
         dropout: float = 0.1,
+        is_decoder: bool = True,
         max_relative_positions: int = 0,
+        relative_positions_buckets: int = 0,
         attn_type: str = None,
         add_qkvbias=False,
         num_kv=0,
@@ -195,14 +281,20 @@ class MultiHeadedAttention(nn.Module):
         self.final_linear = skip_init(
             nn.Linear, in_features=model_dim, out_features=model_dim, bias=add_qkvbias
         )
-
+        self.is_decoder = is_decoder
         self.max_relative_positions = max_relative_positions
+        self.relative_positions_buckets = relative_positions_buckets
         self.attn_type = attn_type
         self.layer_cache = (
             False,
             {"keys": torch.tensor([]), "values": torch.tensor([])},
         )
-        if max_relative_positions > 0:
+        if relative_positions_buckets > 0:
+            self.relative_attention_bias = nn.Embedding(
+                relative_positions_buckets, head_count
+            )
+            self.relative_positions_embeddings = None
+        elif max_relative_positions > 0:
             # https://arxiv.org/pdf/1803.02155.pdf
             # in the paper they suggest either two embeds
             # relative_key / relative_value or only
@@ -214,6 +306,7 @@ class MultiHeadedAttention(nn.Module):
             )
         else:
             self.relative_positions_embeddings = None
+            self.relative_attention_bias = None
 
             if max_relative_positions == -1:  # rotary embeddings
                 self.rope = rotaryembeddings(self.dim_per_head)
@@ -327,7 +420,27 @@ class MultiHeadedAttention(nn.Module):
         # batch x num_heads x query_len x key_len
         scores = torch.matmul(query, key.transpose(2, 3))
 
-        if self.relative_positions_embeddings is not None:
+        if self.relative_attention_bias is not None:
+            q_len = key.size(2) if self.layer_cache[0] else query.size(2)
+            relative_position_bucket = compute_bias(
+                q_len,
+                key.size(2),
+                self.is_decoder,
+                self.max_relative_positions,
+                self.relative_positions_buckets,
+                device=key.device,
+            )
+            values = self.relative_attention_bias(
+                relative_position_bucket
+            )  # shape (query_length, key_length, num_heads)
+            position_bias = values.permute([2, 0, 1]).unsqueeze(
+                0
+            )  # shape (1, num_heads, query_length, key_length)
+            if self.layer_cache[0]:
+                position_bias = position_bias[:, :, -query.size(2) :, :]
+            scores.add_(position_bias)
+
+        elif self.relative_positions_embeddings is not None:
             key_len = key.size(2)
             # 1 or key_len x key_len
             relative_positions_matrix = gen_relative_positions(
