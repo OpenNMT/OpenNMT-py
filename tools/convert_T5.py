@@ -22,6 +22,7 @@ we don't change the code in the MHA of OpenNMT-py
 
 """
 
+
 class Tokenizer:
     def __init__(self, model_path: str):
         assert os.path.isfile(model_path), model_path
