@@ -107,20 +107,26 @@ if __name__ == "__main__":
         ):
             onmt_safetensor[
                 "encoder.transformer." + str(i) + ".self_attn.linear_query.weight"
-            ] = (checkpoint[
-                "encoder.block." + str(i) + ".layer.0.SelfAttention.q.weight"
-            ] / (dimperhead ** -0.5)).to(
+            ] = (
+                checkpoint[
+                    "encoder.block." + str(i) + ".layer.0.SelfAttention.q.weight"
+                ]
+                / (dimperhead**-0.5)
+            ).to(
                 torch.float16
-            ) 
+            )
             onmt_safetensor[
                 "decoder.transformer_layers."
                 + str(i)
                 + ".self_attn.linear_query.weight"
-            ] = (checkpoint[
-                "decoder.block." + str(i) + ".layer.0.SelfAttention.q.weight"
-            ] / (dimperhead ** -0.5)).to(
+            ] = (
+                checkpoint[
+                    "decoder.block." + str(i) + ".layer.0.SelfAttention.q.weight"
+                ]
+                / (dimperhead**-0.5)
+            ).to(
                 torch.float16
-            ) 
+            )
             onmt_safetensor[
                 "encoder.transformer." + str(i) + ".self_attn.linear_keys.weight"
             ] = checkpoint[
@@ -226,11 +232,14 @@ if __name__ == "__main__":
                 "decoder.transformer_layers."
                 + str(i)
                 + ".context_attn.linear_query.weight"
-            ] = (checkpoint[
-                "decoder.block." + str(i) + ".layer.1.EncDecAttention.q.weight"
-            ] / (dimperhead ** -0.5)).to(
+            ] = (
+                checkpoint[
+                    "decoder.block." + str(i) + ".layer.1.EncDecAttention.q.weight"
+                ]
+                / (dimperhead**-0.5)
+            ).to(
                 torch.float16
-            ) 
+            )
             onmt_safetensor[
                 "decoder.transformer_layers."
                 + str(i)
