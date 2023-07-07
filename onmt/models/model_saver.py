@@ -59,6 +59,8 @@ def load_checkpoint(ckpt_path):
                 checkpoint["opt"].shared_layer_norm = False
             if not hasattr(checkpoint["opt"], "use_ckpting"):
                 checkpoint["opt"].use_ckpting = []
+            if not hasattr(checkpoint["opt"], "relative_positions_buckets"):
+                checkpoint["opt"].relative_positions_buckets = 0
 
         # fix v2 compatibility
         if "generator" in checkpoint.keys() and checkpoint["generator"]:

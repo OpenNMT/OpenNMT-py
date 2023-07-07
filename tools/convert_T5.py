@@ -11,6 +11,17 @@ from safetensors.torch import save_file
 from transformers import T5ForConditionalGeneration
 
 
+"""
+Special Note to T5 models conversion.
+
+T5 does not rescale MHE query (by dividing by square_root of dim_per_head)
+query /= math.sqrt(self.dim_per_head)
+
+So I decided to rescale all query weights directly in the checkpoint so that
+we don't change the code in the MHA of OpenNMT-py
+
+"""
+
 class Tokenizer:
     def __init__(self, model_path: str):
         assert os.path.isfile(model_path), model_path
