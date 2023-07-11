@@ -316,7 +316,7 @@ def _add_dynamic_vocab_opts(parser, build_vocab_only=False):
     )
     group.add(
         "--default_specials",
-        "-default_specilas",
+        "-default_specials",
         nargs="+",
         type=str,
         default=[
