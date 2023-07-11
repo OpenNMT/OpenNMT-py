@@ -354,6 +354,7 @@ if __name__ == "__main__":
     vocabs["src"] = src_vocab
     vocabs["tgt"] = src_vocab
     vocabs["data_task"] = "seq2seq"
+
     vocabs["decoder_start_token"] = "<blank>"
 
     onmt_cp["vocab"] = {}
@@ -575,3 +576,4 @@ if __name__ == "__main__":
         opt.tokenizer_model,
     )
     print("With OpenNMT-py use the model with the .new extension or rename it")
+

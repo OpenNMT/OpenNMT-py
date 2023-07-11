@@ -203,7 +203,7 @@ class Translation(object):
 
         if self.word_aligns is not None:
             pred_align = self.word_aligns[0]
-            pred_align_pharaoh = build_align_pharaoh(pred_align)
+            pred_align_pharaoh, _ = build_align_pharaoh(pred_align)
             pred_align_sent = " ".join(pred_align_pharaoh)
             msg.append("ALIGN: {}\n".format(pred_align_sent))
 
