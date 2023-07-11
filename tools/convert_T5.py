@@ -576,4 +576,3 @@ if __name__ == "__main__":
         opt.tokenizer_model,
     )
     print("With OpenNMT-py use the model with the .new extension or rename it")
-
