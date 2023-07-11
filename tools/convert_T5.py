@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import sentencepiece_model_pb2 as spmodel
 import json
 import torch
 import argparse
@@ -344,14 +345,17 @@ if __name__ == "__main__":
     tokenizer = Tokenizer(model_path=opt.tokenizer_model)
     vocabs = {}
     vocab = tokenizer.vocab
-    # vocab[3] = DefaultTokens.PAD
+
     src_vocab = pyonmttok.build_vocab_from_tokens(
-        vocab, maximum_size=tokenizer.n_words, special_tokens=["<pad>", "</s>", "<unk>"]
+        vocab,
+        maximum_size=tokenizer.n_words,
+        special_tokens=["<blank>", "</s>", "<unk>"],
     )
     vocabs["src"] = src_vocab
     vocabs["tgt"] = src_vocab
     vocabs["data_task"] = "seq2seq"
-    vocabs["decoder_start_token"] = "<pad>"
+
+    vocabs["decoder_start_token"] = "<blank>"
 
     onmt_cp["vocab"] = {}
     onmt_cp["vocab"] = vocabs_to_dict(vocabs)
@@ -551,7 +555,7 @@ if __name__ == "__main__":
         bucket_size_increment=0,
         prefetch_factor=400,
         brnn=False,
-        data_task="lm",
+        data_task="seq2seq",
         _all_transform={"filtertoolong"},
     )
     print("Saving the pytorch file")
@@ -559,3 +563,16 @@ if __name__ == "__main__":
         torch.save(onmt_cp, opt.output)
     else:
         torch.save(onmt_cp, opt.output + ".pt")
+
+    serializedStr = open(opt.tokenizer_model, "rb").read()
+    m = spmodel.ModelProto()
+    m.ParseFromString(serializedStr)
+    m.pieces[0].piece = "<blank>"
+    with open(opt.tokenizer_model + ".new", "wb") as f:
+        f.write(m.SerializeToString())
+
+    print(
+        "The sentencepiece model %s has been patched with <blank> instead of <pad>",
+        opt.tokenizer_model,
+    )
+    print("With OpenNMT-py use the model with the .new extension or rename it")
