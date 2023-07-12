@@ -120,7 +120,7 @@ class TransformerDecoderLayerBase(nn.Module):
 
         Args:
             * All arguments of _forward.
-            with_align (bool): whether return alignment attention.
+            return_attn (bool): whether return alignment attention.
 
         Returns:
             (FloatTensor, FloatTensor, FloatTensor or None):
@@ -131,7 +131,7 @@ class TransformerDecoderLayerBase(nn.Module):
         """
         with_align = kwargs.pop("with_align", False)
         layer_out, attns = self._forward(*args, **kwargs)
-        top_attn = attns[:, 0, :, :].contiguous()
+        top_attn = None if attns is None else attns[:, 0, :, :].contiguous()
         attn_align = None
         if with_align:
             if self.full_context_alignment:
@@ -174,10 +174,15 @@ class TransformerDecoderLayerBase(nn.Module):
             dec_mask = tgt_pad_mask
         return dec_mask
 
-    def _forward_self_attn(self, norm_layer_in, dec_mask, step):
+    def _forward_self_attn(self, norm_layer_in, dec_mask, step, return_attn=False):
         if self.self_attn_type == "scaled-dot":
             return self.self_attn(
-                norm_layer_in, norm_layer_in, norm_layer_in, mask=dec_mask, step=step
+                norm_layer_in,
+                norm_layer_in,
+                norm_layer_in,
+                mask=dec_mask,
+                step=step,
+                return_attn=return_attn,
             )
         elif self.self_attn_type == "average":
             return self.self_attn(norm_layer_in, mask=dec_mask, step=step)
@@ -269,6 +274,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
         tgt_pad_mask,
         step=None,
         future=False,
+        return_attn=False,
     ):
         """A naive forward pass for transformer decoder.
 
@@ -281,6 +287,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
             tgt_pad_mask (bool): ``(batch_size, 1, T)``
             step (int or None): stepwise decoding counter
             future (bool): If set True, do not apply future_mask.
+            return_attn (bool) : if set True requires attns output
 
         Returns:
             (FloatTensor, FloatTensor):
@@ -307,7 +314,11 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
 
         if self.parallel_residual:
             ctx_attn, attns = self.context_attn(
-                enc_out, enc_out, norm_layer_in, mask=src_pad_mask
+                enc_out,
+                enc_out,
+                norm_layer_in,
+                mask=src_pad_mask,
+                return_attn=return_attn,
             )
             # feed_forward applies residual, so we remove and apply residual with un-normed
             layer_out = (
@@ -321,7 +332,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
             query = self.dropout(self_attn) + layer_in
             norm_query = self.layer_norm_2(query)
             ctx_attn, attns = self.context_attn(
-                enc_out, enc_out, norm_query, mask=src_pad_mask
+                enc_out, enc_out, norm_query, mask=src_pad_mask, return_attn=return_attn
             )
             layer_out = self.feed_forward(self.dropout(ctx_attn) + query)
 
@@ -542,6 +553,7 @@ class TransformerDecoder(TransformerDecoderBase):
         tgt_pad_mask = tgt[:, :, 0].eq(pad_idx).unsqueeze(1)  # [B, 1, T_tgt]
 
         with_align = kwargs.pop("with_align", False)
+        return_attn = with_align or self._copy
         attn_aligns = []
 
         for layer in self.transformer_layers:
@@ -552,6 +564,7 @@ class TransformerDecoder(TransformerDecoderBase):
                 tgt_pad_mask,
                 step=step,
                 with_align=with_align,
+                return_attn=return_attn,
             )
             if attn_align is not None:
                 attn_aligns.append(attn_align)
@@ -604,7 +617,9 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
          See TransformerDecoderLayerBase
     """
 
-    def _forward(self, layer_in, tgt_pad_mask, step=None, future=False):
+    def _forward(
+        self, layer_in, tgt_pad_mask, step=None, future=False, return_attn=False
+    ):
         """A naive forward pass for transformer decoder.
 
         # T: could be 1 in the case of stepwise decoding or tgt_len
@@ -615,6 +630,7 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
             layer_cache (dict or None): cached layer info when stepwise decode
             step (int or None): stepwise decoding counter
             future (bool): If set True, do not apply future_mask.
+            return_attn (bool): If set True return attn
 
         Returns:
             (FloatTensor, FloatTensor):
@@ -635,7 +651,9 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
 
         norm_layer_in = self.layer_norm_1(layer_in)
 
-        attn_output, attns = self._forward_self_attn(norm_layer_in, dec_mask, step)
+        attn_output, attns = self._forward_self_attn(
+            norm_layer_in, dec_mask, step, return_attn=return_attn
+        )
 
         if self.parallel_residual:
             # feed_forward applies residual, so we remove and apply residual with un-normed
@@ -756,6 +774,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
         tgt_pad_mask = tgt[:, :, 0].eq(pad_idx).unsqueeze(1)  # [B, 1, T_tgt]
 
         with_align = kwargs.pop("with_align", False)
+        return_attn = with_align or self._copy
         assert not with_align, "TransformerLMDecoder does not support align"
 
         for layer in self.transformer_layers:
@@ -764,6 +783,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
                 tgt_pad_mask,
                 step=step,
                 with_align=with_align,
+                return_attn=return_attn,
             )
 
         dec_out = self.layer_norm(dec_out)
