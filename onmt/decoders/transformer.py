@@ -119,8 +119,9 @@ class TransformerDecoderLayerBase(nn.Module):
         full context alignement, :cite:`garg2019jointly`.
 
         Args:
-            * All arguments of _forward.
-            return_attn (bool): whether return alignment attention.
+            * All arguments of _forward, of which
+            with_align (bool): needed to compute attn_align
+            return_attn (bool): to force MHA to return attns
 
         Returns:
             (FloatTensor, FloatTensor, FloatTensor or None):
