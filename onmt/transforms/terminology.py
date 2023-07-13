@@ -5,7 +5,6 @@ from .transform import Transform
 
 import spacy
 import ahocorasick
-from typing import Tuple
 
 
 class TermMatcher(object):
