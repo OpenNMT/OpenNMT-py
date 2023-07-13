@@ -33,6 +33,7 @@ setup(
         "rapidfuzz",
         "pyahocorasick",
         "fasttext-wheel",
+        "spacy",
     ],
     entry_points={
         "console_scripts": [
