@@ -3,6 +3,7 @@ import math
 import torch
 from torch import Tensor
 from typing import Optional, Tuple
+from torch.nn import functional as F
 import torch.nn as nn
 from torch.utils.checkpoint import checkpoint
 from torch.nn.utils import skip_init
@@ -26,6 +27,8 @@ def rotaryembeddings(dim: int, maxseqlen=8192, base=10000):
 
 
 def apply_rotary_emb(query, key, rope):
+    query = query.transpose(1, 2)
+    key = key.transpose(1, 2)
     query_ = query.float().reshape(*query.shape[:-1], -1, 2)
     query_ = torch.view_as_complex(query_)
     key_ = key.float().reshape(*key.shape[:-1], -1, 2)
@@ -33,7 +36,9 @@ def apply_rotary_emb(query, key, rope):
     rope = rope.view(1, query_.size(1), 1, query_.size(3))
     query_out = torch.view_as_real(query_ * rope).flatten(3)
     key_out = torch.view_as_real(key_ * rope).flatten(3)
-    return query_out.type_as(query), key_out.type_as(key)
+    return query_out.transpose(1, 2).type_as(query), key_out.transpose(1, 2).type_as(
+        key
+    )
 
 
 # Help functions for max_relative positions
@@ -327,6 +332,7 @@ class MultiHeadedAttention(nn.Module):
         query: Tensor,
         mask: Optional[Tensor] = None,
         step: Optional[int] = 0,
+        return_attn: Optional[bool] = False,
     ) -> Tuple[Tensor, Tensor]:
         """
         Compute the context vector and the attention vectors.
@@ -364,12 +370,7 @@ class MultiHeadedAttention(nn.Module):
                     start_pos = step
                     seqlen = query.size(2)
                     rope = self.rope[start_pos : start_pos + seqlen].to(query.device)
-
-                    query = query.transpose(1, 2)
-                    key = key.transpose(1, 2)
                     query, key = apply_rotary_emb(query, key, rope=rope)
-                    query = query.transpose(1, 2)
-                    key = key.transpose(1, 2)
 
                 if self.layer_cache[1]["keys"].numel() != 0:
                     key = torch.cat((self.layer_cache[1]["keys"], key), dim=2)
@@ -404,84 +405,95 @@ class MultiHeadedAttention(nn.Module):
                 start_pos = 0
                 seqlen = query.size(2)
                 rope = self.rope[start_pos : start_pos + seqlen].to(query.device)
-
-                query = query.transpose(1, 2)
-                key = key.transpose(1, 2)
                 query, key = apply_rotary_emb(query, key, rope=rope)
-                query = query.transpose(1, 2)
-                key = key.transpose(1, 2)
-        # 2) Calculate and scale scores.
-        query /= math.sqrt(self.dim_per_head)
+
         # expand key on heads dimension when it's less than query heads (multi-query variant)
         key = key.view(key.size(0), -1, 1, key.size(2), key.size(3)).repeat(
             1, 1, query.size(1) // key.size(1), 1, 1
         )
         key = key.view(key.size(0), query.size(1), key.size(3), key.size(4))
-        # batch x num_heads x query_len x key_len
-        scores = torch.matmul(query, key.transpose(2, 3))
 
-        if self.relative_attention_bias is not None:
-            q_len = key.size(2) if self.layer_cache[0] else query.size(2)
-            relative_position_bucket = compute_bias(
-                q_len,
-                key.size(2),
-                self.is_decoder,
-                self.max_relative_positions,
-                self.relative_positions_buckets,
-                device=key.device,
+        # 2) When standard pos. enc. or rotary, use flash attention
+        if self.max_relative_positions in [-1, 0] and not return_attn:
+
+            attn_output = F.scaled_dot_product_attention(
+                query, key, value, None, 0.0, is_causal=mask is not None
             )
-            values = self.relative_attention_bias(
-                relative_position_bucket
-            )  # shape (query_length, key_length, num_heads)
-            position_bias = values.permute([2, 0, 1]).unsqueeze(
-                0
-            )  # shape (1, num_heads, query_length, key_length)
-            if self.layer_cache[0]:
-                position_bias = position_bias[:, :, -query.size(2) :, :]
-            scores.add_(position_bias)
+            x = unshape(attn_output)
+            attn_output = self.maybe_ckpt(self.final_linear, x)
+            return attn_output, None
 
-        elif self.relative_positions_embeddings is not None:
-            key_len = key.size(2)
-            # 1 or key_len x key_len
-            relative_positions_matrix = gen_relative_positions(
-                key_len,
-                self.max_relative_positions,
-                cache=self.layer_cache[0],
-                device=key.device,
+        else:
+            query /= math.sqrt(self.dim_per_head)
+            # batch x num_heads x query_len x key_len
+            scores = torch.matmul(query, key.transpose(2, 3))
+
+            if self.relative_attention_bias is not None:
+                q_len = key.size(2) if self.layer_cache[0] else query.size(2)
+                relative_position_bucket = compute_bias(
+                    q_len,
+                    key.size(2),
+                    self.is_decoder,
+                    self.max_relative_positions,
+                    self.relative_positions_buckets,
+                    device=key.device,
+                )
+                values = self.relative_attention_bias(
+                    relative_position_bucket
+                )  # shape (query_length, key_length, num_heads)
+                position_bias = values.permute([2, 0, 1]).unsqueeze(
+                    0
+                )  # shape (1, num_heads, query_length, key_length)
+                if self.layer_cache[0]:
+                    position_bias = position_bias[:, :, -query.size(2) :, :]
+                scores.add_(position_bias)
+
+            elif self.relative_positions_embeddings is not None:
+                key_len = key.size(2)
+                # 1 or key_len x key_len
+                relative_positions_matrix = gen_relative_positions(
+                    key_len,
+                    self.max_relative_positions,
+                    cache=self.layer_cache[0],
+                    device=key.device,
+                )
+                #  1 or key_len x key_len x dim_per_head
+                relations_keys = self.relative_positions_embeddings(
+                    relative_positions_matrix
+                )
+                scores.add_(relative_matmul(query, relations_keys, True))
+            elif self.max_relative_positions == -2:  # Alibi
+                scores = self.alibi(scores)
+
+            scores = scores.float()
+
+            if mask is not None:
+                # not 100% necessary but expand to nb of heads
+                mask = mask.expand(-1, self.head_count, -1, -1)
+                # now mask and scores have the same shape
+                scores = scores.masked_fill(mask, -1e18)
+
+            # 3) Apply attention dropout and compute context vectors.
+            attn = self.softmax(scores).to(query.dtype)
+            drop_attn = self.dropout(attn)
+            # expand value on heads dimension when it's less than query heads (multi-query variant)
+            value = value.view(
+                value.size(0), -1, 1, value.size(2), value.size(3)
+            ).repeat(1, 1, query.size(1) // value.size(1), 1, 1)
+            value = value.view(
+                value.size(0), query.size(1), value.size(3), value.size(4)
             )
-            #  1 or key_len x key_len x dim_per_head
-            relations_keys = self.relative_positions_embeddings(
-                relative_positions_matrix
-            )
-            scores.add_(relative_matmul(query, relations_keys, True))
-        elif self.max_relative_positions == -2:  # Alibi
-            scores = self.alibi(scores)
+            context_original = torch.matmul(drop_attn, value)
 
-        scores = scores.float()
+            if self.relative_positions_embeddings is not None:
+                # We use the same embeddings for key and value
+                relations_values = relations_keys
+                context_original.add_(
+                    relative_matmul(drop_attn, relations_values, False)
+                )
 
-        if mask is not None:
-            # not 100% necessary but expand to nb of heads
-            mask = mask.expand(-1, self.head_count, -1, -1)
-            # now mask and scores have the same shape
-            scores = scores.masked_fill(mask, -1e18)
+            context = unshape(context_original)
 
-        # 3) Apply attention dropout and compute context vectors.
-        attn = self.softmax(scores).to(query.dtype)
-        drop_attn = self.dropout(attn)
-        # expand value on heads dimension when it's less than query heads (multi-query variant)
-        value = value.view(value.size(0), -1, 1, value.size(2), value.size(3)).repeat(
-            1, 1, query.size(1) // value.size(1), 1, 1
-        )
-        value = value.view(value.size(0), query.size(1), value.size(3), value.size(4))
-        context_original = torch.matmul(drop_attn, value)
+            attn_output = self.maybe_ckpt(self.final_linear, context)
 
-        if self.relative_positions_embeddings is not None:
-            # We use the same embeddings for key and value
-            relations_values = relations_keys
-            context_original.add_(relative_matmul(drop_attn, relations_values, False))
-
-        context = unshape(context_original)
-
-        attn_output = self.maybe_ckpt(self.final_linear, context)
-
-        return attn_output, attn
+            return attn_output, attn
