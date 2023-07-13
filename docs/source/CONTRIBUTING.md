@@ -5,6 +5,8 @@ OpenNMT-py is a community developed project and we love developer contributions.
 ## Guidelines
 Before sending a PR, please do this checklist first:
 
+- Please install Black==22.12.0 and run `black .` it will format your changes according to our standards.
+
 - Please run `onmt/tests/pull_request_chk.sh` and fix any errors. When adding new functionality, also add tests to this script. Included checks:
     1. flake8 check for coding style;
     2. unittest;
