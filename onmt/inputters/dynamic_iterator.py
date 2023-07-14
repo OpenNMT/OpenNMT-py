@@ -29,7 +29,7 @@ class MixingStrategy(object):
         iter_keys = iterables.keys()
         weight_keys = weights.keys()
         if iter_keys != weight_keys:
-            raise ValueError(f"keys in {iterables} & {iterables} should be equal.")
+            raise ValueError(f"keys in {iterables} & {weights} should be equal.")
 
     def __iter__(self):
         raise NotImplementedError
