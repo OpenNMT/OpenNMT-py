@@ -48,7 +48,7 @@ class TermMatcher(object):
         self.src_delimiter = src_delimiter
 
     def _create_internal_termbase(self, termbase_path):
-        logger.info("Creating termbase with lemmas for Terminology transform")
+        logger.debug("Creating termbase with lemmas for Terminology transform")
         src_stopwords = self.src_nlp.Defaults.stop_words
         tgt_stopwords = self.tgt_nlp.Defaults.stop_words
         termbase = list()
@@ -67,7 +67,7 @@ class TermMatcher(object):
                     and tgt_lemma.lower() not in tgt_stopwords
                 ):
                     termbase.append((src_lemma, tgt_lemma))
-        logger.info(
+        logger.debug(
             f"Created termbase with {len(termbase)} lemmas "
             f"for Terminology transform"
         )
@@ -332,7 +332,7 @@ class TerminologyTransform(Transform):
             else:
                 ex['src'] = original_src
 
-        logger.info(f"Added terms to {examples_with_terms}/{bucket_size} examples")
+        logger.debug(f"Added terms to {examples_with_terms}/{bucket_size} examples")
         return batch
 
     def apply(self, example, is_train=False, stats=None, **kwargs) -> tuple:
