@@ -322,12 +322,16 @@ class TerminologyTransform(Transform):
         examples_with_terms = 0
 
         for (ex, _, _) in batch:
+            original_src = ex['src']
             augmented_example, is_match = self.apply(ex, is_train, stats, **kwargs)
             if is_match and (
                 examples_with_terms < bucket_size * self.term_corpus_ratio
             ):
                 examples_with_terms += 1
                 ex["src"] = augmented_example["src"]
+            else:
+                ex['src'] = original_src
+
         logger.info(f"Added terms to {examples_with_terms}/{bucket_size} examples")
         return batch
 
