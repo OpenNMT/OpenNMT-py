@@ -1,10 +1,10 @@
-import re
 from onmt.utils.logging import logger
 from onmt.transforms import register_transform
 from .transform import Transform
 
 import spacy
 import ahocorasick
+import re
 
 
 class TermMatcher(object):
@@ -322,7 +322,7 @@ class TerminologyTransform(Transform):
         examples_with_terms = 0
 
         for (ex, _, _) in batch:
-            original_src = ex['src']
+            original_src = ex["src"]
             augmented_example, is_match = self.apply(ex, is_train, stats, **kwargs)
             if is_match and (
                 examples_with_terms < bucket_size * self.term_corpus_ratio
@@ -330,7 +330,7 @@ class TerminologyTransform(Transform):
                 examples_with_terms += 1
                 ex["src"] = augmented_example["src"]
             else:
-                ex['src'] = original_src
+                ex["src"] = original_src
 
         logger.debug(f"Added terms to {examples_with_terms}/{bucket_size} examples")
         return batch
