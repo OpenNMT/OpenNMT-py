@@ -247,7 +247,7 @@ class TerminologyTransform(Transform):
             "--term_example_ratio",
             "-term_example_ratio",
             type=float,
-            default=0.3,
+            default=0.2,
             help="Max terms allowed in an example.",
         )
         group.add(
