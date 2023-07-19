@@ -323,16 +323,20 @@ class TerminologyTransform(Transform):
         bucket_size = len(batch)
         examples_with_terms = 0
 
-        for (ex, _, _) in batch:
-            original_src = ex["src"]
-            augmented_example, is_match = self.apply(ex, is_train, stats, **kwargs)
-            if is_match and (
-                examples_with_terms < bucket_size * self.term_corpus_ratio
-            ):
-                examples_with_terms += 1
-                ex["src"] = augmented_example["src"]
-            else:
-                ex["src"] = original_src
+        for i, (ex, _, _) in enumerate(batch):
+            # Skip half examples to improve performance. This means we set
+            # a hard limit for the `term_corpus_ratio` to 0.5, which is actually
+            # quite high. TODO: We can add this (skipping examples) as an option
+            if i % 2 == 0:
+                original_src = ex["src"]
+                augmented_example, is_match = self.apply(ex, is_train, stats, **kwargs)
+                if is_match and (
+                    examples_with_terms < bucket_size * self.term_corpus_ratio
+                ):
+                    examples_with_terms += 1
+                    ex["src"] = augmented_example["src"]
+                else:
+                    ex["src"] = original_src
 
         logger.debug(f"Added terms to {examples_with_terms}/{bucket_size} examples")
         return batch
