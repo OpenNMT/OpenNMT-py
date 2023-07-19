@@ -252,28 +252,28 @@ class TerminologyTransform(Transform):
             "--src_term_stoken",
             "-src_term_stoken",
             type=str,
-            help="The source term start tag.",
+            help="The source term start token.",
             default="｟src_term_start｠",
         )
         group.add(
             "--tgt_term_stoken",
             "-tgt_term_stoken",
             type=str,
-            help="The target term start tag.",
+            help="The target term start token.",
             default="｟tgt_term_start｠",
         )
         group.add(
             "--tgt_term_etoken",
             "-tgt_term_etoken",
             type=str,
-            help="The target term end tag.",
+            help="The target term end token.",
             default="｟tgt_term_end｠",
         )
         group.add(
             "--term_source_delimiter",
             "-term_source_delimiter",
             type=str,
-            help="Any special token used for augmented src sentences. "
+            help="Any special token used for augmented source sentences. "
             "The default is the fuzzy token used in the "
             "FuzzyMatch transform.",
             default="｟fuzzy｠",
