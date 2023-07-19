@@ -226,13 +226,13 @@ class TerminologyTransform(Transform):
             "--src_spacy_language_model",
             "-src_spacy_language_model",
             type=str,
-            help="Path to the spacy src language model.",
+            help="Name of the spacy language model for the source corpus.",
         )
         group.add(
             "--tgt_spacy_language_model",
             "-tgt_spacy_language_model",
             type=str,
-            help="Path to the spacy tgt language model.",
+            help="Name of the spacy language model for the target corpus.",
         )
         group.add(
             "--term_corpus_ratio",
@@ -270,8 +270,8 @@ class TerminologyTransform(Transform):
             default="｟tgt_term_end｠",
         )
         group.add(
-            "--source_delimiter",
-            "-source_delimiter",
+            "--term_source_delimiter",
+            "-term_source_delimiter",
             type=str,
             help="Any special token used for augmented src sentences. "
             "The default is the fuzzy token used in the "
@@ -285,7 +285,7 @@ class TerminologyTransform(Transform):
         self.tgt_spacy_language_model = self.opts.tgt_spacy_language_model
         self.term_corpus_ratio = self.opts.term_corpus_ratio
         self.term_example_ratio = self.opts.term_example_ratio
-        self.term_source_delimiter = self.opts.src_delimiter
+        self.term_source_delimiter = self.opts.term_source_delimiter
         self.src_term_stoken = self.opts.src_term_stoken
         self.tgt_term_stoken = self.opts.tgt_term_stoken
         self.tgt_term_etoken = self.opts.tgt_term_etoken
