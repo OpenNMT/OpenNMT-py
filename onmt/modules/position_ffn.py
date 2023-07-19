@@ -50,6 +50,9 @@ class PositionwiseFeedForward(nn.Module):
         parallel_gpu=1,
     ):
         super(PositionwiseFeedForward, self).__init__()
+        assert (
+            d_ff % parallel_gpu == 0
+        ), "Model intermediate ffn size must be divisible by the number of partitions"
         self.w_1 = skip_init(
             nn.Linear,
             in_features=d_model,

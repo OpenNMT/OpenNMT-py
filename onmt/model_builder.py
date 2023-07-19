@@ -135,9 +135,7 @@ def load_test_model(opt, device_id=0, model_path=None):
             precision=precision,
             device=device,
             strict=True,
-            # world_size=model_opt.world_size,
-            # parallel_mode=model_opt.parallel_mode,
-            # device_id=device_id,
+            device_id=device_id,
         )
     else:
         # weights are not in the .pt checkpoint but stored in the safetensors file
@@ -147,8 +145,6 @@ def load_test_model(opt, device_id=0, model_path=None):
             precision=precision,
             device=device,
             strict=True,
-            world_size=model_opt.world_size,
-            parallel_mode=model_opt.parallel_mode,
             device_id=device_id,
         )
 

@@ -61,8 +61,8 @@ def load_checkpoint(ckpt_path):
                 checkpoint["opt"].use_ckpting = []
             if not hasattr(checkpoint["opt"], "relative_positions_buckets"):
                 checkpoint["opt"].relative_positions_buckets = 0
-            if not hasattr(checkpoint["opt"], "parallel_mode"):
-                checkpoint["opt"].parallel_mode = "data_parallel"
+        if not hasattr(checkpoint["opt"], "parallel_mode"):
+            checkpoint["opt"].parallel_mode = "data_parallel"
 
         # fix v2 compatibility
         if "generator" in checkpoint.keys() and checkpoint["generator"]:

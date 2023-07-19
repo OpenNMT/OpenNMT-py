@@ -184,7 +184,7 @@ def spawned_train(process_fn, opt, device_id, error_queue):  # noqa: E501
 
 
 def spawned_infer(opt, device_id, error_queue, queue_instruct, queue_result):
-    """Run `process_fn` on `device_id` with data from `batch_queue`."""
+    """Run various functions for translation in spawned process on `device_id`."""
     try:
         gpu_rank = multi_init(opt, device_id)
         if gpu_rank != opt.gpu_ranks[device_id]:
@@ -236,7 +236,13 @@ def spawned_infer(opt, device_id, error_queue, queue_instruct, queue_result):
         error_queue.put((opt.gpu_ranks[device_id], traceback.format_exc()))
 
 
-class mp_inference(object):
+class MPInference(object):
+    """Wrapper Class to run Inference in mulitpocessing with partitioned models.
+
+    Args:
+        opt: inference options
+    """
+
     def __init__(self, opt):
         self.opt = opt
         mp = torch.multiprocessing.get_context("spawn")
@@ -267,6 +273,7 @@ class mp_inference(object):
             self.error_handler.add_child(self.procs[device_id].pid)
 
     def infer_file(self):
+        """File inference. Source file must be the opt.src argument"""
         for device_id in range(self.opt.world_size):
             self.queue_instruct[device_id].put(("infer_file", self.opt))
         scores, preds = [], []
@@ -276,6 +283,7 @@ class mp_inference(object):
         return scores[0], preds[0]
 
     def infer_list(self, src):
+        """List of strings inference `src`"""
         for device_id in range(self.opt.world_size):
             self.queue_instruct[device_id].put(("infer_list", src))
         scores, preds = [], []

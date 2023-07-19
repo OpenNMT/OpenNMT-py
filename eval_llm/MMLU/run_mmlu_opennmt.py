@@ -7,7 +7,7 @@ import os
 import time
 import pandas as pd
 from onmt.utils.logging import init_logger
-from onmt.utils.distributed import mp_inference
+from onmt.utils.distributed import MPInference
 import onmt.opts as opts
 from onmt.utils.parse import ArgumentParser
 from onmt.utils.misc import use_gpu, set_random_seed
@@ -145,7 +145,7 @@ def evaluate(opt):
     output_filename = os.path.join(dir_name, "mmlu_results_%s.json" % base_name[:-3])
 
     # Build the translator (along with the model)
-    engine = mp_inference(opt)
+    engine = MPInference(opt)
 
     data_dir = "eval_llm/MMLU/data/"
     ntrain = 5  # nshots from dev

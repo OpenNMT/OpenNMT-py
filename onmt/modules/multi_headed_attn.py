@@ -249,13 +249,18 @@ class MultiHeadedAttention(nn.Module):
         use_ckpting=[],
         parallel_gpu=1,
     ) -> None:
-        assert model_dim % head_count == 0
+        assert (
+            model_dim % head_count == 0
+        ), "Model dimension must be divisible by the number of heads"
         self.dim_per_head = model_dim // head_count
         super(MultiHeadedAttention, self).__init__()
         self.head_count = head_count
         self.num_kv = num_kv
         self.parallel_gpu = parallel_gpu
         if num_kv == 0:
+            assert (
+                model_dim % parallel_gpu == 0
+            ), "Model dimension must be divisible by the number of partitions"
             self.linear_keys = skip_init(
                 nn.Linear,
                 in_features=model_dim,
@@ -269,6 +274,11 @@ class MultiHeadedAttention(nn.Module):
                 bias=add_qkvbias,
             )
         else:
+            assert (
+                self.dim_per_head * self.num_kv
+            ) % parallel_gpu == 0, (
+                "Model dimension must be divisible by the number of partitions"
+            )
             self.linear_keys = skip_init(
                 nn.Linear,
                 in_features=model_dim,
