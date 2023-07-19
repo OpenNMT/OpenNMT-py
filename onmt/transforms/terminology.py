@@ -49,6 +49,8 @@ class TermMatcher(object):
 
     def _create_internal_termbase(self, termbase_path):
         logger.debug("Creating termbase with lemmas for Terminology transform")
+
+        # Use Spacy's stopwords to get rid of junk entries
         src_stopwords = self.src_nlp.Defaults.stop_words
         tgt_stopwords = self.tgt_nlp.Defaults.stop_words
         termbase = list()
@@ -272,8 +274,8 @@ class TerminologyTransform(Transform):
             default="｟tgt_term_end｠",
         )
         group.add(
-            "--s_delimiter",
-            "-s_delimiter",
+            "--src_delimiter",
+            "-src_delimiter",
             type=str,
             help="Any special token used for augmented src sentences. "
             "The default is the fuzzy token used in the "
@@ -287,7 +289,7 @@ class TerminologyTransform(Transform):
         self.tgt_spacy_language_model = self.opts.tgt_spacy_language_model
         self.term_corpus_ratio = self.opts.term_corpus_ratio
         self.term_example_ratio = self.opts.term_example_ratio
-        self.s_delimiter = self.opts.s_delimiter
+        self.src_delimiter = self.opts.src_delimiter
         self.src_term_stoken = self.opts.src_term_stoken
         self.tgt_term_stoken = self.opts.tgt_term_stoken
         self.tgt_term_etoken = self.opts.tgt_term_etoken
@@ -313,7 +315,7 @@ class TerminologyTransform(Transform):
             self.src_term_stoken,
             self.tgt_term_stoken,
             self.tgt_term_etoken,
-            self.s_delimiter,
+            self.src_delimiter,
             self.term_corpus_ratio,
         )
 
