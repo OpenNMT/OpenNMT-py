@@ -112,6 +112,9 @@ class BaseModel(nn.Module):
         precision=torch.float32,
         device=torch.device("cpu"),
         strict=True,
+        world_size=1,
+        parallel_mode="data_parallel",
+        device_id=0,
     ):
         """Custom state_dict loading to enable moving module on device as they are loaded
 
@@ -148,9 +151,39 @@ class BaseModel(nn.Module):
             for param_name, param in module.named_parameters():
                 if len(param_name.split(".")) == 1:  # only last key
                     if name + "." + param_name in keys_shard.keys():
-                        param.data = f[keys_shard[name + "." + param_name]].get_tensor(
-                            name + "." + param_name
-                        )
+
+                        if name.split(".")[-1] in [
+                            "linear_keys",
+                            "linear_values",
+                            "linear_query",
+                            "w_1",
+                            "w_3",
+                        ]:
+                            col_slice_start = param.data.size(0) * device_id
+                            col_slice_end = param.data.size(0) * (device_id + 1)
+                        else:
+                            col_slice_start = 0
+                            col_slice_end = param.data.size(0)
+                        if param.data.dim() == 2:
+                            if name.split(".")[-1] in ["final_linear", "w_2"]:
+                                row_slice_start = param.data.size(1) * device_id
+                                row_slice_end = param.data.size(1) * (device_id + 1)
+                            else:
+                                row_slice_start = 0
+                                row_slice_end = param.data.size(1)
+                            param.data = f[
+                                keys_shard[name + "." + param_name]
+                            ].get_tensor(name + "." + param_name)[
+                                col_slice_start:col_slice_end,
+                                row_slice_start:row_slice_end,
+                            ]
+                        else:
+                            param.data = f[
+                                keys_shard[name + "." + param_name]
+                            ].get_tensor(name + "." + param_name)[
+                                col_slice_start:col_slice_end
+                            ]
+
                         keyfound[name + "." + param_name] = True
                     elif strict and "lora" not in param_name:
                         raise ValueError(

@@ -7,7 +7,12 @@ import signal
 import math
 import pickle
 import torch.distributed
-from onmt.utils.logging import logger
+from onmt.translate.translator import build_translator
+from onmt.transforms import get_transforms_cls
+from onmt.constants import CorpusTask
+from onmt.utils.logging import init_logger, logger
+from onmt.inputters.dynamic_iterator import build_dynamic_dataset_iter
+from onmt.inputters.inputter import IterOnDevice
 
 
 def is_master(opt, device_id):
@@ -159,7 +164,7 @@ class ErrorHandler(object):
         raise Exception(msg)
 
 
-def consumer(process_fn, opt, device_id, error_queue):  # noqa: E501
+def spawned_train(process_fn, opt, device_id, error_queue):  # noqa: E501
     """Run `process_fn` on `device_id` with data from `batch_queue`."""
     try:
         gpu_rank = multi_init(opt, device_id)
@@ -176,3 +181,110 @@ def consumer(process_fn, opt, device_id, error_queue):  # noqa: E501
         import traceback
 
         error_queue.put((opt.gpu_ranks[device_id], traceback.format_exc()))
+
+
+def spawned_infer(opt, device_id, error_queue, queue_instruct, queue_result):
+    """Run `process_fn` on `device_id` with data from `batch_queue`."""
+    try:
+        gpu_rank = multi_init(opt, device_id)
+        if gpu_rank != opt.gpu_ranks[device_id]:
+            raise AssertionError(
+                "An error occurred in \
+                  Distributed initialization"
+            )
+        torch.cuda.set_device(device_id)
+        init_logger(opt.log_file)
+        translator = build_translator(opt, device_id, logger=logger, report_score=True)
+        transforms_cls = get_transforms_cls(opt._all_transform)
+        while True:
+            instruction = queue_instruct.get()
+            if instruction[0] == "stop":
+                break
+            elif instruction[0] == "infer_list":
+                src = instruction[1]
+                infer_iter = build_dynamic_dataset_iter(
+                    opt,
+                    transforms_cls,
+                    translator.vocabs,
+                    task=CorpusTask.INFER,
+                    src=src,
+                )
+                infer_iter = IterOnDevice(infer_iter, device_id)
+                scores, preds = translator._translate(
+                    infer_iter, infer_iter.transform, opt.attn_debug, opt.align_debug
+                )
+                queue_result.put(scores)
+                queue_result.put(preds)
+            elif instruction[0] == "infer_file":
+                src = instruction[1]
+                infer_iter = build_dynamic_dataset_iter(
+                    opt, transforms_cls, translator.vocabs, task=CorpusTask.INFER
+                )
+                infer_iter = IterOnDevice(infer_iter, device_id)
+                scores, preds = translator._translate(
+                    infer_iter, infer_iter.transform, opt.attn_debug, opt.align_debug
+                )
+                queue_result.put(scores)
+                queue_result.put(preds)
+
+    except KeyboardInterrupt:
+        pass  # killed by parent, do nothing
+    except Exception:
+        # propagate exception to parent process, keeping original traceback
+        import traceback
+
+        error_queue.put((opt.gpu_ranks[device_id], traceback.format_exc()))
+
+
+class mp_inference(object):
+    def __init__(self, opt):
+        self.opt = opt
+        mp = torch.multiprocessing.get_context("spawn")
+        # Create a thread to listen for errors in the child processes.
+        self.error_queue = mp.SimpleQueue()
+        self.error_handler = ErrorHandler(self.error_queue)
+        self.queue_instruct = []
+        self.queue_result = []
+        self.procs = []
+        for device_id in range(opt.world_size):
+            self.queue_instruct.append(mp.Queue())
+            self.queue_result.append(mp.Queue())
+            self.procs.append(
+                mp.Process(
+                    target=spawned_infer,
+                    args=(
+                        opt,
+                        device_id,
+                        self.error_queue,
+                        self.queue_instruct[device_id],
+                        self.queue_result[device_id],
+                    ),
+                    daemon=False,
+                )
+            )
+            self.procs[device_id].start()
+            print(" Starting process pid: %d  " % self.procs[device_id].pid)
+            self.error_handler.add_child(self.procs[device_id].pid)
+
+    def infer_file(self):
+        for device_id in range(self.opt.world_size):
+            self.queue_instruct[device_id].put(("infer_file", self.opt))
+        scores, preds = [], []
+        for device_id in range(self.opt.world_size):
+            scores.append(self.queue_result[device_id].get())
+            preds.append(self.queue_result[device_id].get())
+        return scores[0], preds[0]
+
+    def infer_list(self, src):
+        for device_id in range(self.opt.world_size):
+            self.queue_instruct[device_id].put(("infer_list", src))
+        scores, preds = [], []
+        for device_id in range(self.opt.world_size):
+            scores.append(self.queue_result[device_id].get())
+            preds.append(self.queue_result[device_id].get())
+        return scores[0], preds[0]
+
+    def terminate(self):
+        for device_id in range(self.opt.world_size):
+            self.queue_instruct[device_id].put(("stop"))
+            self.procs[device_id].terminate()

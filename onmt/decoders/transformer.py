@@ -35,6 +35,7 @@ class TransformerDecoderLayerBase(nn.Module):
         shared_layer_norm=False,
         layer_norm="standard",
         use_ckpting=[],
+        parallel_gpu=1,
     ):
         """
         Args:
@@ -79,6 +80,7 @@ class TransformerDecoderLayerBase(nn.Module):
                 add_qkvbias=add_qkvbias,
                 num_kv=num_kv,
                 use_ckpting=use_ckpting,
+                parallel_gpu=parallel_gpu,
             )
         elif self_attn_type == "average":
             self.self_attn = AverageAttention(
@@ -94,6 +96,7 @@ class TransformerDecoderLayerBase(nn.Module):
             parallel_residual,
             layer_norm,
             use_ckpting=use_ckpting,
+            parallel_gpu=parallel_gpu,
         )
         self.parallel_residual = parallel_residual
         self.shared_layer_norm = shared_layer_norm
@@ -221,6 +224,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
         shared_layer_norm=False,
         layer_norm="standard",
         use_ckpting=[],
+        parallel_gpu=1,
     ):
         """
         Args:
@@ -246,6 +250,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
             shared_layer_norm=shared_layer_norm,
             layer_norm=layer_norm,
             use_ckpting=use_ckpting,
+            parallel_gpu=parallel_gpu,
         )
         self.context_attn = MultiHeadedAttention(
             heads,
@@ -255,6 +260,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
             add_qkvbias=add_qkvbias,
             num_kv=num_kv,
             use_ckpting=use_ckpting,
+            parallel_gpu=parallel_gpu,
         )
         if layer_norm == "standard":
             self.layer_norm_2 = nn.LayerNorm(d_model, eps=1e-6)
@@ -391,6 +397,9 @@ class TransformerDecoderBase(DecoderBase):
             shared_layer_norm=opt.shared_layer_norm,
             layer_norm=opt.layer_norm,
             use_ckpting=opt.use_ckpting,
+            parallel_gpu=opt.world_size
+            if opt.parallel_mode == "tensor_parallel"
+            else 1,
         )
 
     def init_state(self, src, enc_out, enc_final_hs):
@@ -482,6 +491,7 @@ class TransformerDecoder(TransformerDecoderBase):
         shared_layer_norm=False,
         layer_norm="standard",
         use_ckpting=[],
+        parallel_gpu=1,
     ):
         super(TransformerDecoder, self).__init__(
             d_model, copy_attn, embeddings, alignment_layer, layer_norm
@@ -509,6 +519,7 @@ class TransformerDecoder(TransformerDecoderBase):
                     shared_layer_norm=shared_layer_norm,
                     layer_norm=layer_norm,
                     use_ckpting=use_ckpting,
+                    parallel_gpu=parallel_gpu,
                 )
                 for i in range(num_layers)
             ]
@@ -719,6 +730,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
         shared_layer_norm=False,
         layer_norm="standard",
         use_ckpting=[],
+        parallel_gpu=1,
     ):
         super(TransformerLMDecoder, self).__init__(
             d_model, copy_attn, embeddings, alignment_layer, layer_norm
@@ -745,6 +757,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
                     shared_layer_norm=shared_layer_norm,
                     layer_norm=layer_norm,
                     use_ckpting=use_ckpting,
+                    parallel_gpu=parallel_gpu,
                 )
                 for i in range(num_layers)
             ]

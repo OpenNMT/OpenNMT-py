@@ -202,14 +202,17 @@ def main(opt, device_id):
         opt, device_id, model, vocabs, optim, model_saver=model_saver
     )
 
+    offset = max(0, device_id) if opt.parallel_mode == "data_parallel" else 0
+    stride = max(1, len(opt.gpu_ranks)) if opt.parallel_mode == "data_parallel" else 1
+
     _train_iter = build_dynamic_dataset_iter(
         opt,
         transforms_cls,
         vocabs,
         task=CorpusTask.TRAIN,
         copy=opt.copy_attn,
-        stride=max(1, len(opt.gpu_ranks)),
-        offset=max(0, device_id),
+        stride=stride,
+        offset=offset,
     )
     train_iter = IterOnDevice(_train_iter, device_id)
 

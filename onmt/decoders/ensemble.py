@@ -128,14 +128,14 @@ class EnsembleModel(NMTModel):
         self.models = nn.ModuleList(models)
 
 
-def load_test_model(opt):
+def load_test_model(opt, device_id=0):
     """Read in multiple models for ensemble."""
     shared_vocabs = None
     shared_model_opt = None
     models = []
     for model_path in opt.models:
         vocabs, model, model_opt = onmt.model_builder.load_test_model(
-            opt, model_path=model_path
+            opt, device_id, model_path=model_path
         )
         if shared_vocabs is None:
             shared_vocabs = vocabs

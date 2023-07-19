@@ -43,6 +43,7 @@ class TransformerEncoderLayer(nn.Module):
         parallel_residual=False,
         layer_norm="standard",
         use_ckpting=[],
+        parallel_gpu=1,
     ):
         super(TransformerEncoderLayer, self).__init__()
 
@@ -57,6 +58,7 @@ class TransformerEncoderLayer(nn.Module):
             add_qkvbias=add_qkvbias,
             num_kv=num_kv,
             use_ckpting=use_ckpting,
+            parallel_gpu=parallel_gpu,
         )
         self.feed_forward = PositionwiseFeedForward(
             d_model,
@@ -67,6 +69,7 @@ class TransformerEncoderLayer(nn.Module):
             parallel_residual,
             layer_norm,
             use_ckpting=use_ckpting,
+            parallel_gpu=parallel_gpu,
         )
         self.parallel_residual = parallel_residual
         if layer_norm == "standard":
@@ -152,6 +155,7 @@ class TransformerEncoder(EncoderBase):
         parallel_residual=False,
         layer_norm="standard",
         use_ckpting=[],
+        parallel_gpu=1,
     ):
         super(TransformerEncoder, self).__init__()
 
@@ -173,6 +177,7 @@ class TransformerEncoder(EncoderBase):
                     parallel_residual=parallel_residual,
                     layer_norm=layer_norm,
                     use_ckpting=use_ckpting,
+                    parallel_gpu=parallel_gpu,
                 )
                 for i in range(num_layers)
             ]
@@ -206,6 +211,9 @@ class TransformerEncoder(EncoderBase):
             parallel_residual=opt.parallel_residual,
             layer_norm=opt.layer_norm,
             use_ckpting=opt.use_ckpting,
+            parallel_gpu=opt.world_size
+            if opt.parallel_mode == "tensor_parallel"
+            else 1,
         )
 
     def forward(self, src, src_len=None):
