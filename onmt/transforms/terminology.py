@@ -39,8 +39,6 @@ class TermMatcher(object):
         }
         self.internal_termbase = self._create_internal_termbase(termbase_path)
         self.automaton = self._create_automaton()
-        self.sents_with_terms = 0
-        self.total_processed_examples = 0
         self.term_corpus_ratio = term_corpus_ratio
         self.src_term_stoken = src_term_stoken
         self.tgt_term_stoken = tgt_term_stoken
@@ -162,9 +160,7 @@ class TermMatcher(object):
                 offset = match_end + 1
                 is_match = True
 
-        self.total_processed_examples += 1
         if is_match:
-            self.sents_with_terms += 1
             source_with_terms.append(lemmatized_source_string[offset:])
             tokenized_source_with_terms = "".join(source_with_terms).split()
 
@@ -224,19 +220,19 @@ class TerminologyTransform(Transform):
             "--termbase_path",
             "-termbase_path",
             type=str,
-            help="Path to a flat term dictionary.",
+            help="Path to a dictionary file with terms.",
         )
         group.add(
             "--src_spacy_language_model",
             "-src_spacy_language_model",
             type=str,
-            help="Path to the src spacy language model.",
+            help="Path to the spacy src language model.",
         )
         group.add(
             "--tgt_spacy_language_model",
             "-tgt_spacy_language_model",
             type=str,
-            help="Path to the tgt spacy language model.",
+            help="Path to the spacy tgt language model.",
         )
         group.add(
             "--term_corpus_ratio",
