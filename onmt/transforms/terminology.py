@@ -17,7 +17,7 @@ class TermMatcher(object):
         src_term_stoken,
         tgt_term_stoken,
         tgt_term_etoken,
-        src_delimiter,
+        delimiter,
         term_corpus_ratio=0.2,
     ):
         self.term_example_ratio = term_example_ratio
@@ -43,7 +43,7 @@ class TermMatcher(object):
         self.src_term_stoken = src_term_stoken
         self.tgt_term_stoken = tgt_term_stoken
         self.tgt_term_etoken = tgt_term_etoken
-        self.src_delimiter = src_delimiter
+        self.delimiter = delimiter
 
     def _create_internal_termbase(self, termbase_path):
         logger.debug("Creating termbase with lemmas for Terminology transform")
@@ -82,7 +82,7 @@ class TermMatcher(object):
 
     def _src_sentence_with_terms(self, source_string, target_string) -> tuple:
 
-        maybe_augmented = source_string.split(self.src_delimiter)
+        maybe_augmented = source_string.split(self.delimiter)
         source_only = maybe_augmented[0].strip()
         augmented_part = (
             maybe_augmented[1].strip() if len(maybe_augmented) > 1 else None
@@ -192,7 +192,7 @@ class TermMatcher(object):
             if augmented_part is not None:
                 final_string = " ".join(
                     completed_tokenized_source
-                    + [self.src_delimiter]
+                    + [self.delimiter]
                     + augmented_part.split()
                 )
             else:
