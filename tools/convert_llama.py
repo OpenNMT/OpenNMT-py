@@ -66,6 +66,7 @@ if __name__ == "__main__":
     tgt_word_vec_size = params["dim"]
     hidden_size = params["dim"]
     heads = params["n_heads"]
+    norm_eps = params["norm_eps"]
 
     for shard in range(opt.nshards):
 
@@ -400,6 +401,7 @@ if __name__ == "__main__":
         dec_hid_size=hidden_size,
         cnn_kernel_width=3,
         layer_norm="rms",
+        norm_eps=norm_eps,
         pos_ffn_activation_fn="silu",
         input_feed=1,
         bridge=False,
