@@ -516,7 +516,7 @@ The following options can be added to the main configuration (valid for all data
 
 Transform name: `terminology`
 
-Class: `onmt.transforms.inlinetags.TerminologyTransform`
+Class: `onmt.transforms.terminology.TerminologyTransform`
 
 Augments source segments with terms so the model can learn to use user-provided terms at inference. It requires a dictionary with source and target terms, delimited with a tab. The transform uses Spacy's lemmatization facilities in order to a) solve the word inflection problem when searching for terms in any form, and b) make the model inflect correctly most target terms at inference. The lemmatization is applied at the dictionary entries and also at the source and target examples, and the term searches during training are performed on the lemmatized examples.
  The format of a processed segment augmented with terms is as follows:
