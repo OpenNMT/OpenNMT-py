@@ -7,6 +7,7 @@ import signal
 import math
 import pickle
 import torch.distributed
+from onmt.utils.misc import use_gpu
 from onmt.translate.translator import build_translator
 from onmt.transforms import get_transforms_cls
 from onmt.constants import CorpusTask
@@ -252,6 +253,13 @@ class MPInference(object):
         self.queue_instruct = []
         self.queue_result = []
         self.procs = []
+
+        if use_gpu(opt) and opt.gpu >= 0:
+            device_id = 0
+            opt.gpu_ranks = [opt.gpu]
+        else:
+            device_id = 0
+
         for device_id in range(opt.world_size):
             self.queue_instruct.append(mp.Queue())
             self.queue_result.append(mp.Queue())
