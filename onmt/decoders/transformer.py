@@ -34,6 +34,7 @@ class TransformerDecoderLayerBase(nn.Module):
         parallel_residual=False,
         shared_layer_norm=False,
         layer_norm="standard",
+        norm_eps=1e-6,
         use_ckpting=[],
     ):
         """
@@ -63,6 +64,7 @@ class TransformerDecoderLayerBase(nn.Module):
                 activation function choice for PositionwiseFeedForward layer
             add_qkvbias (bool): whether to add bias to the Key/Value nn.Linear
             layer_norm (string): type of layer normalization standard/rms
+            norm_eps (float): layer norm epsilon
 
         """
         super(TransformerDecoderLayerBase, self).__init__()
@@ -93,18 +95,19 @@ class TransformerDecoderLayerBase(nn.Module):
             add_ffnbias,
             parallel_residual,
             layer_norm,
+            norm_eps,
             use_ckpting=use_ckpting,
         )
         self.parallel_residual = parallel_residual
         self.shared_layer_norm = shared_layer_norm
         if layer_norm == "standard":
-            self.layer_norm_1 = nn.LayerNorm(d_model, eps=1e-6)
+            self.layer_norm_1 = nn.LayerNorm(d_model, eps=norm_eps)
             if parallel_residual and not shared_layer_norm:
-                self.layer_norm_res = nn.LayerNorm(d_model, eps=1e-6)
+                self.layer_norm_res = nn.LayerNorm(d_model, eps=norm_eps)
         elif layer_norm == "rms":
-            self.layer_norm_1 = RMSNorm(d_model, eps=1e-6)
+            self.layer_norm_1 = RMSNorm(d_model, eps=norm_eps)
             if parallel_residual and not shared_layer_norm:
-                self.layer_norm_res = RMSNorm(d_model, eps=1e-6)
+                self.layer_norm_res = RMSNorm(d_model, eps=norm_eps)
         else:
             raise ValueError(f"{layer_norm} layer norm type is not supported")
 
@@ -220,6 +223,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
         parallel_residual=False,
         shared_layer_norm=False,
         layer_norm="standard",
+        norm_eps=1e-6,
         use_ckpting=[],
     ):
         """
@@ -245,6 +249,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
             parallel_residual=parallel_residual,
             shared_layer_norm=shared_layer_norm,
             layer_norm=layer_norm,
+            norm_eps=norm_eps,
             use_ckpting=use_ckpting,
         )
         self.context_attn = MultiHeadedAttention(
@@ -257,9 +262,9 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
             use_ckpting=use_ckpting,
         )
         if layer_norm == "standard":
-            self.layer_norm_2 = nn.LayerNorm(d_model, eps=1e-6)
+            self.layer_norm_2 = nn.LayerNorm(d_model, eps=norm_eps)
         elif layer_norm == "rms":
-            self.layer_norm_2 = RMSNorm(d_model, eps=1e-6)
+            self.layer_norm_2 = RMSNorm(d_model, eps=norm_eps)
         else:
             raise ValueError(f"{layer_norm} layer norm type is not supported")
 
@@ -341,7 +346,9 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
 
 
 class TransformerDecoderBase(DecoderBase):
-    def __init__(self, d_model, copy_attn, embeddings, alignment_layer, layer_norm):
+    def __init__(
+        self, d_model, copy_attn, embeddings, alignment_layer, layer_norm, norm_eps
+    ):
         super(TransformerDecoderBase, self).__init__()
 
         self.embeddings = embeddings
@@ -354,9 +361,9 @@ class TransformerDecoderBase(DecoderBase):
         # just reuses the context attention.
         self._copy = copy_attn
         if layer_norm == "standard":
-            self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
+            self.layer_norm = nn.LayerNorm(d_model, eps=norm_eps)
         elif layer_norm == "rms":
-            self.layer_norm = RMSNorm(d_model, eps=1e-6)
+            self.layer_norm = RMSNorm(d_model, eps=norm_eps)
         else:
             raise ValueError(f"{layer_norm} layer norm type is not supported")
 
@@ -390,6 +397,7 @@ class TransformerDecoderBase(DecoderBase):
             parallel_residual=opt.parallel_residual,
             shared_layer_norm=opt.shared_layer_norm,
             layer_norm=opt.layer_norm,
+            norm_eps=opt.norm_eps,
             use_ckpting=opt.use_ckpting,
         )
 
@@ -481,10 +489,11 @@ class TransformerDecoder(TransformerDecoderBase):
         parallel_residual=False,
         shared_layer_norm=False,
         layer_norm="standard",
+        norm_eps=1e-6,
         use_ckpting=[],
     ):
         super(TransformerDecoder, self).__init__(
-            d_model, copy_attn, embeddings, alignment_layer, layer_norm
+            d_model, copy_attn, embeddings, alignment_layer, layer_norm, norm_eps
         )
 
         self.transformer_layers = nn.ModuleList(
@@ -508,6 +517,7 @@ class TransformerDecoder(TransformerDecoderBase):
                     parallel_residual=parallel_residual,
                     shared_layer_norm=shared_layer_norm,
                     layer_norm=layer_norm,
+                    norm_eps=norm_eps,
                     use_ckpting=use_ckpting,
                 )
                 for i in range(num_layers)
@@ -718,10 +728,11 @@ class TransformerLMDecoder(TransformerDecoderBase):
         parallel_residual=False,
         shared_layer_norm=False,
         layer_norm="standard",
+        norm_eps=1e-6,
         use_ckpting=[],
     ):
         super(TransformerLMDecoder, self).__init__(
-            d_model, copy_attn, embeddings, alignment_layer, layer_norm
+            d_model, copy_attn, embeddings, alignment_layer, layer_norm, norm_eps
         )
         self.transformer_layers = nn.ModuleList(
             [
@@ -744,6 +755,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
                     parallel_residual=parallel_residual,
                     shared_layer_norm=shared_layer_norm,
                     layer_norm=layer_norm,
+                    norm_eps=norm_eps,
                     use_ckpting=use_ckpting,
                 )
                 for i in range(num_layers)

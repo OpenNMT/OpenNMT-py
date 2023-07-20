@@ -45,6 +45,7 @@ class PositionwiseFeedForward(nn.Module):
         add_ffnbias=True,
         parallel_residual=False,
         layer_norm="standard",
+        norm_eps=1e-6,
         use_ckpting=[],
     ):
         super(PositionwiseFeedForward, self).__init__()
@@ -55,9 +56,9 @@ class PositionwiseFeedForward(nn.Module):
             nn.Linear, in_features=d_ff, out_features=d_model, bias=add_ffnbias
         )
         if layer_norm == "standard" and not parallel_residual:
-            self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
+            self.layer_norm = nn.LayerNorm(d_model, eps=norm_eps)
         elif layer_norm == "rms" and not parallel_residual:
-            self.layer_norm = RMSNorm(d_model, eps=1e-6)
+            self.layer_norm = RMSNorm(d_model, eps=norm_eps)
         elif not parallel_residual:
             raise ValueError(f"{layer_norm} layer norm type is not supported")
         self.parallel_residual = parallel_residual
