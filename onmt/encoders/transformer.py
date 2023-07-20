@@ -42,6 +42,7 @@ class TransformerEncoderLayer(nn.Module):
         add_ffnbias=True,
         parallel_residual=False,
         layer_norm="standard",
+        norm_eps=1e-6,
         use_ckpting=[],
         parallel_gpu=1,
     ):
@@ -68,14 +69,15 @@ class TransformerEncoderLayer(nn.Module):
             add_ffnbias,
             parallel_residual,
             layer_norm,
+            norm_eps,
             use_ckpting=use_ckpting,
             parallel_gpu=parallel_gpu,
         )
         self.parallel_residual = parallel_residual
         if layer_norm == "standard":
-            self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
+            self.layer_norm = nn.LayerNorm(d_model, eps=norm_eps)
         elif layer_norm == "rms":
-            self.layer_norm = RMSNorm(d_model, eps=1e-6)
+            self.layer_norm = RMSNorm(d_model, eps=norm_eps)
         else:
             raise ValueError(f"{layer_norm} layer norm type is not supported")
         self.dropout = nn.Dropout(dropout)
@@ -154,6 +156,7 @@ class TransformerEncoder(EncoderBase):
         add_ffnbias=True,
         parallel_residual=False,
         layer_norm="standard",
+        norm_eps=1e-6,
         use_ckpting=[],
         parallel_gpu=1,
     ):
@@ -176,6 +179,7 @@ class TransformerEncoder(EncoderBase):
                     add_ffnbias=add_ffnbias,
                     parallel_residual=parallel_residual,
                     layer_norm=layer_norm,
+                    norm_eps=norm_eps,
                     use_ckpting=use_ckpting,
                     parallel_gpu=parallel_gpu,
                 )
@@ -183,9 +187,9 @@ class TransformerEncoder(EncoderBase):
             ]
         )
         if layer_norm == "standard":
-            self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
+            self.layer_norm = nn.LayerNorm(d_model, eps=norm_eps)
         elif layer_norm == "rms":
-            self.layer_norm = RMSNorm(d_model, eps=1e-6)
+            self.layer_norm = RMSNorm(d_model, eps=norm_eps)
         else:
             raise ValueError(f"{layer_norm} layer norm type is not supported")
 
@@ -210,6 +214,7 @@ class TransformerEncoder(EncoderBase):
             add_ffnbias=opt.add_ffnbias,
             parallel_residual=opt.parallel_residual,
             layer_norm=opt.layer_norm,
+            norm_eps=opt.norm_eps,
             use_ckpting=opt.use_ckpting,
             parallel_gpu=opt.world_size
             if opt.parallel_mode == "tensor_parallel"

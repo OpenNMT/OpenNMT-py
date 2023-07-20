@@ -16,7 +16,8 @@ class RMSNorm(torch.nn.Module):
         self.weight = nn.Parameter(torch.ones(hidden_size))
 
     def forward(self, hidden_states):
-        variance = hidden_states.to(torch.float32).pow(2).mean(-1, keepdim=True)
+        hidden_states = hidden_states.to(torch.float32)
+        variance = hidden_states.pow(2).mean(-1, keepdim=True)
         hidden_states = hidden_states * torch.rsqrt(variance + self.eps)
         hidden_states = hidden_states.to(self.weight.dtype)
         return hidden_states * self.weight

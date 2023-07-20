@@ -712,6 +712,9 @@ def model_opts(parser):
         " normalization in the transformer architecture. Choices are"
         " standard or rms. Default to standard",
     )
+    group.add(
+        "--norm_eps", "-norm_eps", type=float, default=1e-6, help="Layer norm epsilon"
+    )
 
     group.add(
         "--pos_ffn_activation_fn",
