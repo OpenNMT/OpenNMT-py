@@ -346,7 +346,9 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
 
 
 class TransformerDecoderBase(DecoderBase):
-    def __init__(self, d_model, copy_attn, embeddings, alignment_layer, layer_norm, norm_eps):
+    def __init__(
+        self, d_model, copy_attn, embeddings, alignment_layer, layer_norm, norm_eps
+    ):
         super(TransformerDecoderBase, self).__init__()
 
         self.embeddings = embeddings
