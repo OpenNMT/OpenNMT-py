@@ -433,6 +433,12 @@ class MultiHeadedAttention(nn.Module):
         )
         key = key.view(key.size(0), query.size(1), key.size(3), key.size(4))
 
+        # expand value on heads dimension when it's less than query heads (multi-query variant)
+        value = value.view(value.size(0), -1, 1, value.size(2), value.size(3)).repeat(
+            1, 1, query.size(1) // value.size(1), 1, 1
+        )
+        value = value.view(value.size(0), query.size(1), value.size(3), value.size(4))
+
         # 2) When standard pos. enc. or rotary, use flash attention
         if self.max_relative_positions in [-1, 0] and not return_attn:
 
@@ -501,13 +507,7 @@ class MultiHeadedAttention(nn.Module):
             # 3) Apply attention dropout and compute context vectors.
             attn = self.softmax(scores).to(query.dtype)
             drop_attn = self.dropout(attn)
-            # expand value on heads dimension when it's less than query heads (multi-query variant)
-            value = value.view(
-                value.size(0), -1, 1, value.size(2), value.size(3)
-            ).repeat(1, 1, query.size(1) // value.size(1), 1, 1)
-            value = value.view(
-                value.size(0), query.size(1), value.size(3), value.size(4)
-            )
+
             context_original = torch.matmul(drop_attn, value)
 
             if self.relative_positions_embeddings is not None:
