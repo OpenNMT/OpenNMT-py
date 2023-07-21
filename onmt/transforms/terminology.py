@@ -111,14 +111,14 @@ class TermMatcher(object):
             if term_counter == max_terms_allowed:
                 break
 
-            match_start = match_end - len((src_entry)) + 1
+            match_start = match_end - len(src_entry) + 1
 
             # We ensure that the target lemma is present in the lemmatized
             # target string, that the match is an exact match (there is
             # whitespace before or after the term)
             # and we perform some bound checking.
             if (
-                ((tgt_entry).lower() not in " ".join(lemmatized_target).lower())
+                (tgt_entry.lower() not in " ".join(lemmatized_target).lower())
                 or (
                     len(lemmatized_source_string) != match_end + 1
                     and not (lemmatized_source_string[match_end + 1].isspace())
@@ -143,7 +143,7 @@ class TermMatcher(object):
                         lemma_list_index += len(w) + 1
 
                 # We need to know if the term is multiword
-                num_words_in_src_term = len((src_entry).split())
+                num_words_in_src_term = len(src_entry.split())
                 src_term = " ".join(
                     tokenized_source[
                         lemma_list_index : lemma_list_index + num_words_in_src_term
@@ -152,7 +152,7 @@ class TermMatcher(object):
 
                 # Join multiword target lemmas with a unique separator so
                 # we can treat them as single word and not change the indices.
-                tgt_term = (tgt_entry).replace(" ", "∥").rstrip().lower()
+                tgt_term = tgt_entry.replace(" ", "∥").rstrip().lower()
                 source_with_terms.append(
                     f"{lemmatized_source_string[offset: match_start]}"
                     f"{self.src_term_stoken}∥{src_term}∥{self.tgt_term_stoken}∥"
