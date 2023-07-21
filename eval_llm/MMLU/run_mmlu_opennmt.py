@@ -13,8 +13,7 @@ from onmt.utils.parse import ArgumentParser
 from onmt.utils.misc import use_gpu, set_random_seed
 
 
-TASKS = ["business_ethics"]
-"""
+TASKS = [
     "abstract_algebra",
     "anatomy",
     "astronomy",
@@ -73,7 +72,7 @@ TASKS = ["business_ethics"]
     "virology",
     "world_religions",
 ]
-"""
+
 choices = ["A", "B", "C", "D"]
 
 
