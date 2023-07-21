@@ -67,6 +67,10 @@ if __name__ == "__main__":
     hidden_size = params["dim"]
     heads = params["n_heads"]
     norm_eps = params["norm_eps"]
+    if "n_kv_heads" in params.keys():
+        num_kv = params["n_kv_heads"]
+    else:
+        num_kv = 1
 
     for shard in range(opt.nshards):
 
@@ -86,7 +90,8 @@ if __name__ == "__main__":
 
             onmt_safetensor["generator.weight"] = checkpoint["output.weight"]
             onmt_safetensor["generator.bias"] = torch.zeros(
-                onmt_safetensor["generator.weight"].size(0), dtype=torch.float16
+                onmt_safetensor["generator.weight"].size(0),
+                dtype=checkpoint["output.weight"].dtype,
             )
 
         for i in range(
@@ -167,7 +172,8 @@ if __name__ == "__main__":
                     dim=0,
                 )
                 onmt_safetensor["generator.bias"] = torch.zeros(
-                    onmt_safetensor["generator.weight"].size(0), dtype=torch.float16
+                    onmt_safetensor["generator.weight"].size(0),
+                    dtype=checkpoint["output.weight"].dtype,
                 )
 
             for i in range(
@@ -424,6 +430,7 @@ if __name__ == "__main__":
         add_qkvbias=False,
         add_ffnbias=False,
         multiquery=False,
+        num_kv=num_kv,
         parallel_residual=False,
         lambda_align=0.0,
         alignment_layer=-3,

@@ -586,7 +586,6 @@ class Inference(object):
                 attn = dec_attn["std"]
             else:
                 attn = None
-
             scores = self.model.generator(dec_out.squeeze(1))
             log_probs = F.log_softmax(scores.to(torch.float32), dim=-1)
             # returns [(batch_size x beam_size) , vocab ] when 1 step
