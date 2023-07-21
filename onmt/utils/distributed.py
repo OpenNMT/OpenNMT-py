@@ -7,7 +7,6 @@ import signal
 import math
 import pickle
 import torch.distributed
-from onmt.utils.misc import use_gpu
 from onmt.translate.translator import build_translator
 from onmt.transforms import get_transforms_cls
 from onmt.constants import CorpusTask
@@ -197,6 +196,7 @@ def spawned_infer(opt, device_id, error_queue, queue_instruct, queue_result):
         init_logger(opt.log_file)
         translator = build_translator(opt, device_id, logger=logger, report_score=True)
         transforms_cls = get_transforms_cls(opt._all_transform)
+        print("Device_id: ", device_id, " translator built")
         while True:
             instruction = queue_instruct.get()
             if instruction[0] == "stop":
@@ -217,7 +217,6 @@ def spawned_infer(opt, device_id, error_queue, queue_instruct, queue_result):
                 queue_result.put(scores)
                 queue_result.put(preds)
             elif instruction[0] == "infer_file":
-                src = instruction[1]
                 infer_iter = build_dynamic_dataset_iter(
                     opt, transforms_cls, translator.vocabs, task=CorpusTask.INFER
                 )
@@ -235,72 +234,3 @@ def spawned_infer(opt, device_id, error_queue, queue_instruct, queue_result):
         import traceback
 
         error_queue.put((opt.gpu_ranks[device_id], traceback.format_exc()))
-
-
-class MPInference(object):
-    """Wrapper Class to run Inference in mulitpocessing with partitioned models.
-
-    Args:
-        opt: inference options
-    """
-
-    def __init__(self, opt):
-        self.opt = opt
-        mp = torch.multiprocessing.get_context("spawn")
-        # Create a thread to listen for errors in the child processes.
-        self.error_queue = mp.SimpleQueue()
-        self.error_handler = ErrorHandler(self.error_queue)
-        self.queue_instruct = []
-        self.queue_result = []
-        self.procs = []
-
-        if use_gpu(opt) and opt.gpu >= 0:
-            device_id = 0
-            opt.gpu_ranks = [opt.gpu]
-        else:
-            device_id = 0
-
-        for device_id in range(opt.world_size):
-            self.queue_instruct.append(mp.Queue())
-            self.queue_result.append(mp.Queue())
-            self.procs.append(
-                mp.Process(
-                    target=spawned_infer,
-                    args=(
-                        opt,
-                        device_id,
-                        self.error_queue,
-                        self.queue_instruct[device_id],
-                        self.queue_result[device_id],
-                    ),
-                    daemon=False,
-                )
-            )
-            self.procs[device_id].start()
-            print(" Starting process pid: %d  " % self.procs[device_id].pid)
-            self.error_handler.add_child(self.procs[device_id].pid)
-
-    def infer_file(self):
-        """File inference. Source file must be the opt.src argument"""
-        for device_id in range(self.opt.world_size):
-            self.queue_instruct[device_id].put(("infer_file", self.opt))
-        scores, preds = [], []
-        for device_id in range(self.opt.world_size):
-            scores.append(self.queue_result[device_id].get())
-            preds.append(self.queue_result[device_id].get())
-        return scores[0], preds[0]
-
-    def infer_list(self, src):
-        """List of strings inference `src`"""
-        for device_id in range(self.opt.world_size):
-            self.queue_instruct[device_id].put(("infer_list", src))
-        scores, preds = [], []
-        for device_id in range(self.opt.world_size):
-            scores.append(self.queue_result[device_id].get())
-            preds.append(self.queue_result[device_id].get())
-        return scores[0], preds[0]
-
-    def terminate(self):
-        for device_id in range(self.opt.world_size):
-            self.queue_instruct[device_id].put(("stop"))
-            self.procs[device_id].terminate()

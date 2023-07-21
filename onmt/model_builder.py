@@ -103,8 +103,12 @@ def load_test_model(opt, device_id=0, model_path=None):
         model_opt.gpu_ranks = opt.gpu_ranks
         device = torch.device("cuda", device_id)
     else:
-        if use_gpu(opt) and opt.gpu >= 0:
-            device = torch.device("cuda", opt.gpu)
+        if use_gpu(opt):
+            if len(opt.gpu_ranks) > 0:
+                device_id = opt.gpu_ranks[0]
+            elif opt.gpu > -1:
+                device_id = opt.gpu
+            device = torch.device("cuda", device_id)
         else:
             device = torch.device("cpu")
 

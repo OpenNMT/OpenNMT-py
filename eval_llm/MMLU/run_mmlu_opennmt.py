@@ -7,13 +7,14 @@ import os
 import time
 import pandas as pd
 from onmt.utils.logging import init_logger
-from onmt.utils.distributed import MPInference
+from onmt.inference_engine import InferenceEngine
 import onmt.opts as opts
 from onmt.utils.parse import ArgumentParser
 from onmt.utils.misc import use_gpu, set_random_seed
 
 
-TASKS = [
+TASKS = ["business_ethics"]
+"""
     "abstract_algebra",
     "anatomy",
     "astronomy",
@@ -72,7 +73,7 @@ TASKS = [
     "virology",
     "world_religions",
 ]
-
+"""
 choices = ["A", "B", "C", "D"]
 
 
@@ -145,7 +146,7 @@ def evaluate(opt):
     output_filename = os.path.join(dir_name, "mmlu_results_%s.json" % base_name[:-3])
 
     # Build the translator (along with the model)
-    engine = MPInference(opt)
+    engine = InferenceEngine(opt)
 
     data_dir = "eval_llm/MMLU/data/"
     ntrain = 5  # nshots from dev
