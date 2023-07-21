@@ -512,6 +512,26 @@ The following options can be added to the main configuration (valid for all data
 - `isolated_tag`: The format of an isolated inline tag. Must include the character # (default: "｟ph_#_std｠");
 - `src_delimiter`: Any special token used for augmented src sentences (default: "｟fuzzy｠");
 
+#### Make the model learn to use terminology
+
+Transform name: `terminology`
+
+Class: `onmt.transforms.terminology.TerminologyTransform`
+
+Augments source segments with terms so the model can learn to use user-provided terms at inference. It requires a dictionary with source and target terms, delimited with a tab. The transform uses Spacy's lemmatization facilities in order to a) solve the word inflection problem when searching for terms in any form, and b) make the model inflect correctly most target terms at inference. The lemmatization is applied at the dictionary entries and also at the source and target examples, and the term searches during training are performed on the lemmatized examples.
+ The format of a processed segment augmented with terms is as follows:
+`This is an ｟src_term_start｠ augmented ｟tgt_term_start｠ target_lemma_for_augmented ｟tgt_term_end｠ example.`
+The following options can be added to the main configuration (valid for all datasets using this transform):
+- `termbase_path`: The path to the dictionary text file;
+- `src_spacy_language_model`: Name of the spacy language model for the source corpus;
+- `tgt_spacy_language_model`: Name of the spacy language model for the target corpus;
+- `term_corpus_ratio`: Ratio of corpus to augment with terms # (default: 0.3);
+- `term_example_ratio`: Max terms allowed in an example # (default: 0.2);
+- `src_term_stoken`: The source term start token # (default: "｟src_term_start｠");
+- `tgt_term_stoken`: The target term start token # (default: "｟tgt_term_start｠");
+- `tgt_term_etoken`: The target term end token # (default: "｟tgt_term_end｠");
+- `term_source_delimiter`: Any special token used for augmented src sentences. The default is the fuzzy token used in the FuzzyMatch transform # (default: "｟fuzzy｠");
+
 ### Tokenization
 
 Common options for the tokenization transforms are the following:
