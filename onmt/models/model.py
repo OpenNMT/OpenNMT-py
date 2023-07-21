@@ -69,7 +69,10 @@ class BaseModel(nn.Module):
             for buf_name, buf in module.named_buffers():
                 buf_list.append(buf_name)
                 if len(buf_name.split(".")) == 1:  # only last key
-                    module.to(precision)
+                    if precision == torch.int8:
+                        torch.quantization.quantize_dynamic(module, inplace=True)
+                    else:
+                        module.to(precision)
                     module.to(device)
             for param_name, param in module.named_parameters():
                 if len(param_name.split(".")) == 1:  # only last key
@@ -88,7 +91,10 @@ class BaseModel(nn.Module):
                         raise ValueError(
                             "Missing key in checkpoint: %s" % name + "." + param_name
                         )
-                    module.to(precision)
+                    if precision == torch.int8:
+                        torch.quantization.quantize_dynamic(module, inplace=True)
+                    else:
+                        module.to(precision)
                     module.to(device)
         for key in checkpoint[
             "model"
@@ -143,7 +149,10 @@ class BaseModel(nn.Module):
             for buf_name, buf in module.named_buffers():
                 buf_list.append(buf_name)
                 if len(buf_name.split(".")) == 1:  # only last key
-                    module.to(precision)
+                    if precision == torch.int8:
+                        torch.quantization.quantize_dynamic(module, inplace=True)
+                    else:
+                        module.to(precision)
                     module.to(device)
             for param_name, param in module.named_parameters():
                 if len(param_name.split(".")) == 1:  # only last key
@@ -158,7 +167,10 @@ class BaseModel(nn.Module):
                             + "."
                             + param_name
                         )
-                    module.to(precision)
+                    if precision == torch.int8:
+                        torch.quantization.quantize_dynamic(module, inplace=True)
+                    else:
+                        module.to(precision)
                     module.to(device)
         for key in keys_shard.keys():
             if key not in keyfound.keys() and key not in buf_list:

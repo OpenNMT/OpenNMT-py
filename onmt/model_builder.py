@@ -114,7 +114,7 @@ def load_test_model(opt, model_path=None):
         if opt.gpu >= 0:
             raise ValueError("Dynamic 8-bit quantization is not supported on GPU")
         else:
-            precision = torch.float16
+            precision = torch.int8
 
     if use_gpu(opt) and opt.gpu >= 0:
         device = torch.device("cuda", opt.gpu)
@@ -133,10 +133,7 @@ def load_test_model(opt, model_path=None):
         model.load_safe_state_dict(
             base_name, precision=precision, device=device, strict=True
         )
-
     del checkpoint
-    if opt.precision == "int8":
-        torch.quantization.quantize_dynamic(model, inplace=True)
 
     model.eval()
     model.generator.eval()
