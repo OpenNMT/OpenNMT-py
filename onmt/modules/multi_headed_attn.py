@@ -8,6 +8,7 @@ import torch.nn as nn
 from torch.utils.checkpoint import checkpoint
 from torch.nn.utils import skip_init
 from .alibi_position_bias import AlibiPositionalBias
+import torch.distributed as dist
 
 
 # Help functions for Rotary Embeddings
@@ -246,45 +247,63 @@ class MultiHeadedAttention(nn.Module):
         add_qkvbias=False,
         num_kv=0,
         use_ckpting=[],
+        parallel_gpu=1,
     ) -> None:
-        assert model_dim % head_count == 0
+        assert (
+            model_dim % head_count == 0
+        ), "Model dimension must be divisible by the number of heads"
         self.dim_per_head = model_dim // head_count
         super(MultiHeadedAttention, self).__init__()
         self.head_count = head_count
         self.num_kv = num_kv
+        self.parallel_gpu = parallel_gpu
         if num_kv == 0:
+            assert (
+                model_dim % parallel_gpu == 0
+            ), "Model dimension must be divisible by the number of partitions"
             self.linear_keys = skip_init(
                 nn.Linear,
                 in_features=model_dim,
-                out_features=model_dim,
+                out_features=model_dim // parallel_gpu,
                 bias=add_qkvbias,
             )
             self.linear_values = skip_init(
                 nn.Linear,
                 in_features=model_dim,
-                out_features=model_dim,
+                out_features=model_dim // parallel_gpu,
                 bias=add_qkvbias,
             )
         else:
+            assert (
+                self.dim_per_head * self.num_kv
+            ) % parallel_gpu == 0, (
+                "Model dimension must be divisible by the number of partitions"
+            )
             self.linear_keys = skip_init(
                 nn.Linear,
                 in_features=model_dim,
-                out_features=self.dim_per_head * self.num_kv,
+                out_features=self.dim_per_head * self.num_kv // parallel_gpu,
                 bias=add_qkvbias,
             )
             self.linear_values = skip_init(
                 nn.Linear,
                 in_features=model_dim,
-                out_features=self.dim_per_head * self.num_kv,
+                out_features=self.dim_per_head * self.num_kv // parallel_gpu,
                 bias=add_qkvbias,
             )
         self.linear_query = skip_init(
-            nn.Linear, in_features=model_dim, out_features=model_dim, bias=add_qkvbias
+            nn.Linear,
+            in_features=model_dim,
+            out_features=model_dim // parallel_gpu,
+            bias=add_qkvbias,
         )
         self.softmax = nn.Softmax(dim=-1)
         self.dropout = nn.Dropout(dropout)
         self.final_linear = skip_init(
-            nn.Linear, in_features=model_dim, out_features=model_dim, bias=add_qkvbias
+            nn.Linear,
+            in_features=model_dim // parallel_gpu,
+            out_features=model_dim,
+            bias=add_qkvbias,
         )
         self.is_decoder = is_decoder
         self.max_relative_positions = max_relative_positions
@@ -309,6 +328,7 @@ class MultiHeadedAttention(nn.Module):
             self.relative_positions_embeddings = nn.Embedding(
                 vocab_size, self.dim_per_head
             )
+            self.relative_attention_bias = None
         else:
             self.relative_positions_embeddings = None
             self.relative_attention_bias = None
@@ -426,7 +446,12 @@ class MultiHeadedAttention(nn.Module):
                 query, key, value, None, 0.0, is_causal=mask is not None
             )
             x = unshape(attn_output)
+
             attn_output = self.maybe_ckpt(self.final_linear, x)
+
+            if self.parallel_gpu > 1:
+                dist.all_reduce(attn_output)
+
             return attn_output, None
 
         else:
@@ -475,7 +500,7 @@ class MultiHeadedAttention(nn.Module):
 
             if mask is not None:
                 # not 100% necessary but expand to nb of heads
-                mask = mask.expand(-1, self.head_count, -1, -1)
+                mask = mask.expand(-1, self.head_count // self.parallel_gpu, -1, -1)
                 # now mask and scores have the same shape
                 scores = scores.masked_fill(mask, -1e18)
 
@@ -495,5 +520,8 @@ class MultiHeadedAttention(nn.Module):
             context = unshape(context_original)
 
             attn_output = self.maybe_ckpt(self.final_linear, context)
+
+            if self.parallel_gpu > 1:
+                dist.all_reduce(attn_output)
 
             return attn_output, attn

@@ -6,6 +6,7 @@ import torch.nn.functional as F
 from torch.utils.checkpoint import checkpoint
 from onmt.modules.rmsnorm import RMSNorm
 from torch.nn.utils import skip_init
+import torch.distributed as dist
 
 
 class ActivationFunction(object):
@@ -47,13 +48,23 @@ class PositionwiseFeedForward(nn.Module):
         layer_norm="standard",
         norm_eps=1e-6,
         use_ckpting=[],
+        parallel_gpu=1,
     ):
         super(PositionwiseFeedForward, self).__init__()
+        assert (
+            d_ff % parallel_gpu == 0
+        ), "Model intermediate ffn size must be divisible by the number of partitions"
         self.w_1 = skip_init(
-            nn.Linear, in_features=d_model, out_features=d_ff, bias=add_ffnbias
+            nn.Linear,
+            in_features=d_model,
+            out_features=d_ff // parallel_gpu,
+            bias=add_ffnbias,
         )
         self.w_2 = skip_init(
-            nn.Linear, in_features=d_ff, out_features=d_model, bias=add_ffnbias
+            nn.Linear,
+            in_features=d_ff // parallel_gpu,
+            out_features=d_model,
+            bias=add_ffnbias,
         )
         if layer_norm == "standard" and not parallel_residual:
             self.layer_norm = nn.LayerNorm(d_model, eps=norm_eps)
@@ -67,11 +78,15 @@ class PositionwiseFeedForward(nn.Module):
         self.dropout_2 = nn.Dropout(dropout)
         if activation_fn == "silu" or activation_fn == "gated-gelu":
             self.w_3 = skip_init(
-                nn.Linear, in_features=d_model, out_features=d_ff, bias=add_ffnbias
+                nn.Linear,
+                in_features=d_model,
+                out_features=d_ff // parallel_gpu,
+                bias=add_ffnbias,
             )
         else:
             self.w_3 = None
         self.maybe_ckpt = checkpoint if "ffn" in use_ckpting else lambda f, x: f(x)
+        self.parallel_gpu = parallel_gpu
 
     def forward(self, x):
         """Layer definition.
@@ -85,7 +100,7 @@ class PositionwiseFeedForward(nn.Module):
         if not self.parallel_residual:
             norm_x = self.layer_norm(x)
         else:
-            norm_x = x
+            norm_x = x.clone()
         inter = self.maybe_ckpt(self.w_1, norm_x)
         inter = self.activation(inter)
         if self.w_3 is not None:
@@ -93,6 +108,10 @@ class PositionwiseFeedForward(nn.Module):
         inter = self.dropout_1(inter)
         inter = self.maybe_ckpt(self.w_2, inter)
         inter = self.dropout_2(inter)
+
+        if self.parallel_gpu > 1:
+            dist.all_reduce(inter)
+
         return inter + x
 
     def update_dropout(self, dropout):

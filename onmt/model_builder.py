@@ -87,7 +87,7 @@ def build_decoder(opt, embeddings):
     return str2dec[dec_type].from_opt(opt, embeddings)
 
 
-def load_test_model(opt, model_path=None):
+def load_test_model(opt, device_id=0, model_path=None):
     if model_path is None:
         model_path = opt.models[0]
     checkpoint = load_checkpoint(model_path)
@@ -96,6 +96,21 @@ def load_test_model(opt, model_path=None):
 
     model_opt.quant_layers = opt.quant_layers
     model_opt.quant_type = opt.quant_type
+
+    if opt.world_size > 1 and opt.parallel_mode == "tensor_parallel":
+        model_opt.world_size = opt.world_size
+        model_opt.parallel_mode = opt.parallel_mode
+        model_opt.gpu_ranks = opt.gpu_ranks
+        device = torch.device("cuda", device_id)
+    else:
+        if use_gpu(opt):
+            if len(opt.gpu_ranks) > 0:
+                device_id = opt.gpu_ranks[0]
+            elif opt.gpu > -1:
+                device_id = opt.gpu
+            device = torch.device("cuda", device_id)
+        else:
+            device = torch.device("cpu")
 
     ArgumentParser.update_model_opts(model_opt)
     ArgumentParser.validate_model_opts(model_opt)
@@ -116,22 +131,25 @@ def load_test_model(opt, model_path=None):
         else:
             precision = torch.int8
 
-    if use_gpu(opt) and opt.gpu >= 0:
-        device = torch.device("cuda", opt.gpu)
-    else:
-        device = torch.device("cpu")
-
     logger.info("Loading data into the model")
     if "model" in checkpoint.keys():
         # weights are in the .pt file
         model.load_state_dict(
-            checkpoint, precision=precision, device=device, strict=True
+            checkpoint,
+            precision=precision,
+            device=device,
+            strict=True,
+            device_id=device_id,
         )
     else:
         # weights are not in the .pt checkpoint but stored in the safetensors file
         base_name = model_path[:-3] if model_path[-3:] == ".pt" else model_path
         model.load_safe_state_dict(
-            base_name, precision=precision, device=device, strict=True
+            base_name,
+            precision=precision,
+            device=device,
+            strict=True,
+            device_id=device_id,
         )
     del checkpoint
 

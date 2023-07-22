@@ -21,7 +21,7 @@ from onmt.modules.copy_generator import collapse_copy_scores
 from onmt.constants import ModelTask
 
 
-def build_translator(opt, report_score=True, logger=None, out_file=None):
+def build_translator(opt, device_id=0, report_score=True, logger=None, out_file=None):
     if out_file is None:
         out_file = codecs.open(opt.output, "w+", "utf-8")
 
@@ -30,7 +30,8 @@ def build_translator(opt, report_score=True, logger=None, out_file=None):
         if len(opt.models) > 1
         else onmt.model_builder.load_test_model
     )
-    vocabs, model, model_opt = load_test_model(opt)
+
+    vocabs, model, model_opt = load_test_model(opt, device_id)
 
     scorer = onmt.translate.GNMTGlobalScorer.from_opt(opt)
 

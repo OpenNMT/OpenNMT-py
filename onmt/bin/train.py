@@ -2,7 +2,7 @@
 """Train models with dynamic data."""
 import torch
 from functools import partial
-from onmt.utils.distributed import ErrorHandler, consumer
+from onmt.utils.distributed import ErrorHandler, spawned_train
 from onmt.utils.misc import set_random_seed
 from onmt.utils.logging import init_logger, logger
 from onmt.utils.parse import ArgumentParser
@@ -37,7 +37,7 @@ def train(opt):
         for device_id in range(nb_gpu):
             procs.append(
                 mp.Process(
-                    target=consumer,
+                    target=spawned_train,
                     args=(train_process, opt, device_id, error_queue),
                     daemon=False,
                 )

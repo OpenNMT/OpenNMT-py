@@ -62,6 +62,8 @@ def load_checkpoint(ckpt_path):
             checkpoint["opt"].use_ckpting = []
         if not hasattr(checkpoint["opt"], "relative_positions_buckets"):
             checkpoint["opt"].relative_positions_buckets = 0
+        if not hasattr(checkpoint["opt"], "parallel_mode"):
+            checkpoint["opt"].parallel_mode = "data_parallel"
         if not hasattr(checkpoint["opt"], "norm_eps"):
             checkpoint["opt"].norm_eps = 1e-6
 

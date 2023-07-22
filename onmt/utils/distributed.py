@@ -7,7 +7,12 @@ import signal
 import math
 import pickle
 import torch.distributed
-from onmt.utils.logging import logger
+from onmt.translate.translator import build_translator
+from onmt.transforms import get_transforms_cls
+from onmt.constants import CorpusTask
+from onmt.utils.logging import init_logger, logger
+from onmt.inputters.dynamic_iterator import build_dynamic_dataset_iter
+from onmt.inputters.inputter import IterOnDevice
 
 
 def is_master(opt, device_id):
@@ -159,7 +164,7 @@ class ErrorHandler(object):
         raise Exception(msg)
 
 
-def consumer(process_fn, opt, device_id, error_queue):  # noqa: E501
+def spawned_train(process_fn, opt, device_id, error_queue):  # noqa: E501
     """Run `process_fn` on `device_id` with data from `batch_queue`."""
     try:
         gpu_rank = multi_init(opt, device_id)
@@ -169,6 +174,59 @@ def consumer(process_fn, opt, device_id, error_queue):  # noqa: E501
                   Distributed initialization"
             )
         process_fn(opt, device_id=device_id)
+    except KeyboardInterrupt:
+        pass  # killed by parent, do nothing
+    except Exception:
+        # propagate exception to parent process, keeping original traceback
+        import traceback
+
+        error_queue.put((opt.gpu_ranks[device_id], traceback.format_exc()))
+
+
+def spawned_infer(opt, device_id, error_queue, queue_instruct, queue_result):
+    """Run various functions for translation in spawned process on `device_id`."""
+    try:
+        gpu_rank = multi_init(opt, device_id)
+        if gpu_rank != opt.gpu_ranks[device_id]:
+            raise AssertionError(
+                "An error occurred in \
+                  Distributed initialization"
+            )
+        torch.cuda.set_device(device_id)
+        init_logger(opt.log_file)
+        translator = build_translator(opt, device_id, logger=logger, report_score=True)
+        transforms_cls = get_transforms_cls(opt._all_transform)
+        print("Device_id: ", device_id, " translator built")
+        while True:
+            instruction = queue_instruct.get()
+            if instruction[0] == "stop":
+                break
+            elif instruction[0] == "infer_list":
+                src = instruction[1]
+                infer_iter = build_dynamic_dataset_iter(
+                    opt,
+                    transforms_cls,
+                    translator.vocabs,
+                    task=CorpusTask.INFER,
+                    src=src,
+                )
+                infer_iter = IterOnDevice(infer_iter, device_id)
+                scores, preds = translator._translate(
+                    infer_iter, infer_iter.transform, opt.attn_debug, opt.align_debug
+                )
+                queue_result.put(scores)
+                queue_result.put(preds)
+            elif instruction[0] == "infer_file":
+                infer_iter = build_dynamic_dataset_iter(
+                    opt, transforms_cls, translator.vocabs, task=CorpusTask.INFER
+                )
+                infer_iter = IterOnDevice(infer_iter, device_id)
+                scores, preds = translator._translate(
+                    infer_iter, infer_iter.transform, opt.attn_debug, opt.align_debug
+                )
+                queue_result.put(scores)
+                queue_result.put(preds)
+
     except KeyboardInterrupt:
         pass  # killed by parent, do nothing
     except Exception:

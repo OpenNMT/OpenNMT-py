@@ -49,6 +49,7 @@ def build_trainer(opt, device_id, model, vocabs, optim, model_saver=None):
     accum_count = opt.accum_count
     accum_steps = opt.accum_steps
     n_gpu = opt.world_size
+    parallel_mode = opt.parallel_mode
     average_decay = opt.average_decay
     average_every = opt.average_every
     dropout = opt.dropout
@@ -82,6 +83,7 @@ def build_trainer(opt, device_id, model, vocabs, optim, model_saver=None):
         accum_steps,
         n_gpu,
         gpu_rank,
+        parallel_mode,
         report_manager,
         with_align=True if opt.lambda_align > 0 else False,
         model_saver=model_saver if gpu_rank <= 0 else None,
@@ -148,6 +150,7 @@ class Trainer(object):
         accum_steps=[0],
         n_gpu=1,
         gpu_rank=1,
+        parallel_mode="data_parallel",
         report_manager=None,
         with_align=False,
         model_saver=None,
@@ -175,6 +178,7 @@ class Trainer(object):
         self.accum_steps = accum_steps
         self.n_gpu = n_gpu
         self.gpu_rank = gpu_rank
+        self.parallel_mode = parallel_mode
         self.report_manager = report_manager
         self.with_align = with_align
         self.model_saver = model_saver
@@ -299,7 +303,7 @@ class Trainer(object):
             # UPDATE DROPOUT
             self._maybe_update_dropout(step)
 
-            if self.n_gpu > 1:
+            if self.n_gpu > 1 and self.parallel_mode == "data_parallel":
                 normalization = sum(
                     onmt.utils.distributed.all_gather_list(normalization)
                 )
@@ -525,7 +529,7 @@ class Trainer(object):
 
         # in case of multi step gradient accumulation,
         # update only after accum batches
-        if self.n_gpu > 1:
+        if self.n_gpu > 1 and self.parallel_mode == "data_parallel":
             grads = [
                 p.grad.data
                 for p in self.model.parameters()

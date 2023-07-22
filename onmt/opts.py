@@ -439,6 +439,62 @@ def dynamic_prepare_opts(parser, build_vocab_only=False):
         # as for False, this will be added in _add_train_general_opts
 
 
+def distributed_opts(parser):
+    # GPU
+    group = parser.add_argument_group("Distributed")
+    group.add(
+        "--gpu_ranks",
+        "-gpu_ranks",
+        default=[],
+        nargs="*",
+        type=int,
+        help="list of ranks of each process.",
+    )
+    group.add(
+        "--world_size",
+        "-world_size",
+        default=1,
+        type=int,
+        help="total number of distributed processes.",
+    )
+    group.add(
+        "--parallel_mode",
+        "-parallel_mode",
+        default="data_parallel",
+        choices=["tensor_parallel", "data_parallel"],
+        type=str,
+        help="Distributed mode.",
+    )
+    group.add(
+        "--gpu_backend",
+        "-gpu_backend",
+        default="nccl",
+        type=str,
+        help="Type of torch distributed backend",
+    )
+    group.add(
+        "--gpu_verbose_level",
+        "-gpu_verbose_level",
+        default=0,
+        type=int,
+        help="Gives more info on each process per GPU.",
+    )
+    group.add(
+        "--master_ip",
+        "-master_ip",
+        default="localhost",
+        type=str,
+        help="IP of master for torch.distributed training.",
+    )
+    group.add(
+        "--master_port",
+        "-master_port",
+        default=10000,
+        type=int,
+        help="Port of master for torch.distributed training.",
+    )
+
+
 def model_opts(parser):
     """
     These options are passed to the construction of the model.
@@ -1046,51 +1102,6 @@ def _add_train_general_opts(parser):
         help="Keep X checkpoints (negative: keep all)",
     )
 
-    # GPU
-    group.add(
-        "--gpu_ranks",
-        "-gpu_ranks",
-        default=[],
-        nargs="*",
-        type=int,
-        help="list of ranks of each process.",
-    )
-    group.add(
-        "--world_size",
-        "-world_size",
-        default=1,
-        type=int,
-        help="total number of distributed processes.",
-    )
-    group.add(
-        "--gpu_backend",
-        "-gpu_backend",
-        default="nccl",
-        type=str,
-        help="Type of torch distributed backend",
-    )
-    group.add(
-        "--gpu_verbose_level",
-        "-gpu_verbose_level",
-        default=0,
-        type=int,
-        help="Gives more info on each process per GPU.",
-    )
-    group.add(
-        "--master_ip",
-        "-master_ip",
-        default="localhost",
-        type=str,
-        help="IP of master for torch.distributed training.",
-    )
-    group.add(
-        "--master_port",
-        "-master_port",
-        default=10000,
-        type=int,
-        help="Port of master for torch.distributed training.",
-    )
-
     # LoRa
     group.add(
         "--lora_layers",
@@ -1537,6 +1548,7 @@ def train_opts(parser):
     """All options used in train."""
     # options relate to data preprare
     dynamic_prepare_opts(parser, build_vocab_only=False)
+    distributed_opts(parser)
     # options relate to train
     model_opts(parser)
     _add_train_general_opts(parser)
@@ -1803,6 +1815,8 @@ def translate_opts(parser, dynamic=False):
 
     # Adding option for logging
     _add_logging_opts(parser, is_train=False)
+
+    distributed_opts(parser)
 
     group = parser.add_argument_group("Efficiency")
     group.add("--batch_size", "-batch_size", type=int, default=30, help="Batch size")

@@ -70,7 +70,7 @@ if __name__ == "__main__":
     if "n_kv_heads" in params.keys():
         num_kv = params["n_kv_heads"]
     else:
-        num_kv = 1
+        num_kv = 0
 
     for shard in range(opt.nshards):
 
