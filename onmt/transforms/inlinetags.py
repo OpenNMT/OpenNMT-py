@@ -343,11 +343,17 @@ class InlineTagsTransform(Transform):
         examples_with_tags = 0
 
         for (ex, _, _) in batch:
+            original_src = ex["src"]
+            original_tgt = ex["tgt"]
             augmented_example, is_match = self.apply(ex, is_train, stats, **kwargs)
             if is_match and (examples_with_tags < bucket_size * self.tags_corpus_ratio):
                 examples_with_tags += 1
                 ex["src"] = augmented_example["src"]
                 ex["tgt"] = augmented_example["tgt"]
+            else:
+                ex["src"] = original_src
+                ex["tgt"] = original_tgt
+
         logger.debug(f"Added tags to {examples_with_tags}/{bucket_size} examples")
         return batch
 
