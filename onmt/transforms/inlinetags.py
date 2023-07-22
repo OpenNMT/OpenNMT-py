@@ -342,12 +342,24 @@ class InlineTagsTransform(Transform):
         bucket_size = len(batch)
         examples_with_tags = 0
 
-        for (ex, _, _) in batch:
-            augmented_example, is_match = self.apply(ex, is_train, stats, **kwargs)
-            if is_match and (examples_with_tags < bucket_size * self.tags_corpus_ratio):
-                examples_with_tags += 1
-                ex["src"] = augmented_example["src"]
-                ex["tgt"] = augmented_example["tgt"]
+        for i, (ex, _, _) in enumerate(batch):
+            # Skip half examples to speed up the transform. This sets
+            # a hard limit of 0.5 to the `tags_corpus_ratio`, which is
+            # excessive and should be avoided anyway.
+            if i % 2 == 0:
+                original_src = ex["src"]
+                original_tgt = ex["tgt"]
+                augmented_example, is_match = self.apply(ex, is_train, stats, **kwargs)
+                if is_match and (
+                    examples_with_tags < bucket_size * self.tags_corpus_ratio
+                ):
+                    examples_with_tags += 1
+                    ex["src"] = augmented_example["src"]
+                    ex["tgt"] = augmented_example["tgt"]
+                else:
+                    ex["src"] = original_src
+                    ex["tgt"] = original_tgt
+
         logger.debug(f"Added tags to {examples_with_tags}/{bucket_size} examples")
         return batch
 
