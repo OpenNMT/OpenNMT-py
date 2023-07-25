@@ -100,7 +100,7 @@ class ScoringPreparator:
         ) as f:
             raw_refs = [line.strip("\n") for line in f if line.strip("\n")]
         with codecs.open(
-            valid_iter.corpora_info["valid"]["path_tgt"], "r", encoding="utf-8"
+            valid_iter.corpora_info["valid"]["path_src"], "r", encoding="utf-8"
         ) as f:
             raw_srcs = [line.strip("\n") for line in f if line.strip("\n")]
 
