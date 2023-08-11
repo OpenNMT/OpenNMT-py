@@ -111,6 +111,9 @@ class ModelSaverBase(object):
             if save_format == "safetensors":
                 self.model_queue = deque([], maxlen=keep_checkpoint)
 
+    def warm_up(self, device_id):
+        self.device_id = device_id
+
     def save(self, step, moving_average=None):
         """Main entry point for model saver
 
@@ -205,7 +208,7 @@ class ModelSaver(ModelSaverBase):
         }
 
         logger.info("Saving checkpoint %s_step_%d.pt" % (self.base_path, step))
-        ckpt_path = "%s_step_%d.pt" % (self.base_path, step)
+        ckpt_path = "%s_device_%d_step_%d.pt" % (self.base_path, self.device_id, step)
         torch.save(checkpoint, ckpt_path)
         return ckpt_path, None
 
@@ -234,7 +237,7 @@ class ModelSaver(ModelSaverBase):
         ckpt_path = "%s_step_%d.pt" % (self.base_path, step)
         torch.save(checkpoint, ckpt_path)
         logger.info("Saving safetensors %s_step_%d.pt" % (self.base_path, step))
-        model_path = "%s_step_%d.safetensors" % (self.base_path, step)
+        model_path = "%s_device_%d_step_%d.safetensors" % (self.base_path, self.device_id, step)
         save_file(model_state_dict, model_path)
         return ckpt_path, model_path
 
