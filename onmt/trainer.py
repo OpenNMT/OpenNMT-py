@@ -186,7 +186,7 @@ class Trainer(object):
         self.report_manager = report_manager
         self.with_align = with_align
         self.model_saver = model_saver
-        self.model_saver.warm_up(gpu_rank)
+        self.model_saver.warm_up(gpu_rank, parallel_mode)
         self.average_decay = average_decay
         self.moving_average = None
         self.average_every = average_every

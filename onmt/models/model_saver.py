@@ -111,8 +111,9 @@ class ModelSaverBase(object):
             if save_format == "safetensors":
                 self.model_queue = deque([], maxlen=keep_checkpoint)
 
-    def warm_up(self, device_id):
+    def warm_up(self, device_id, parallel_mode):
         self.device_id = device_id
+        self.parallel_mode = parallel_mode
 
     def save(self, step, moving_average=None):
         """Main entry point for model saver
@@ -208,7 +209,10 @@ class ModelSaver(ModelSaverBase):
         }
 
         logger.info("Saving checkpoint %s_step_%d.pt" % (self.base_path, step))
-        ckpt_path = "%s_device_%d_step_%d.pt" % (self.base_path, self.device_id, step)
+        if self.parallel_mode == "tensor_parallel":
+            ckpt_path = "%s_device_%d_step_%d.pt" % (self.base_path, self.device_id, step)
+        else:
+            ckpt_path = "%s_step_%d.pt" % (self.base_path, step)
         torch.save(checkpoint, ckpt_path)
         return ckpt_path, None
 
