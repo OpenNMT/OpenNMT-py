@@ -210,7 +210,11 @@ class ModelSaver(ModelSaverBase):
 
         logger.info("Saving checkpoint %s_step_%d.pt" % (self.base_path, step))
         if self.parallel_mode == "tensor_parallel":
-            ckpt_path = "%s_device_%d_step_%d.pt" % (self.base_path, self.device_id, step)
+            ckpt_path = "%s_device_%d_step_%d.pt" % (
+                self.base_path,
+                self.device_id,
+                step,
+            )
         else:
             ckpt_path = "%s_step_%d.pt" % (self.base_path, step)
         torch.save(checkpoint, ckpt_path)
