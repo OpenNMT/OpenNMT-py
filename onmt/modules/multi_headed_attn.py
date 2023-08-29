@@ -415,10 +415,14 @@ class MultiHeadedAttention(nn.Module):
 
         # 2) When standard pos. enc. or rotary, use flash attention
         if self.max_relative_positions in [-1, 0] and not return_attn:
-
-            attn_output = F.scaled_dot_product_attention(
-                query, key, value, None, 0.0, is_causal=mask is not None
-            )
+            if self.is_decoder and self.attn_type == "self":
+                attn_output = F.scaled_dot_product_attention(
+                    query, key, value, None, 0.0, is_causal=mask is not None
+                )
+            else:
+                attn_output = F.scaled_dot_product_attention(
+                    query, key, value, ~mask, 0.0, is_causal=False
+                )
             x = unshape(attn_output)
             attn_output = self.maybe_ckpt(self.final_linear, x)
             return attn_output, None
