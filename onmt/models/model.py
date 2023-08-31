@@ -65,6 +65,8 @@ class BaseModel(nn.Module):
         # bitsandbytes quantize weights when .cuda() is called
         # for huge models we need to save Ram
         # so we load the weights  module by module and transfer them to GPU for quantization
+        if device == torch.device("cpu"):
+            device_id = 0
         buf_list = []
         for name, module in self.named_modules():
             for buf_name, buf in module.named_buffers():
