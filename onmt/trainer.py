@@ -10,6 +10,7 @@
 """
 
 import time
+import sys
 import torch
 import traceback
 import onmt.utils
@@ -515,6 +516,9 @@ class Trainer(object):
                             self.optim.training_step,
                         )
                         torch.cuda.empty_cache()
+                        if self.n_gpu > 1 and self.parallel_mode == "tensor_parallel":
+                            torch.distributed.destroy_process_group()
+                            sys.exit()
                     else:
                         traceback.print_exc()
                         raise exc
