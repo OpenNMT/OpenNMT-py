@@ -261,11 +261,9 @@ class LossCompute(nn.Module):
     def _unbottle(self, _v, batch_size):
         return _v.view(-1, batch_size, _v.size(1))
 
-    def ignore_prompt(self,
-                      batch,
-                      response_token='▁Response',
-                      response_right_pattern_length=3
-                      ):
+    def ignore_prompt(
+        self, batch, response_token="▁Response", response_right_pattern_length=3
+    ):
         """
         Mask the prompt in the target side of the bath examples in order
             to set the loss of the prompt to zero.
@@ -285,13 +283,14 @@ class LossCompute(nn.Module):
             Then response_right_pattern_length = 3
         """
         import numpy as np
+
         response_idx = self.vocab[response_token]  # 13291
         ignore_index = self.padding_idx
-        nb_examples = batch['src'].size()[0]
+        nb_examples = batch["src"].size()[0]
         for j in range(nb_examples):
             # Locate the end of the prompt
             response_start = np.where(
-                batch['src'][j, :, 0].cpu().numpy() == response_idx
+                batch["src"][j, :, 0].cpu().numpy() == response_idx
             )[0].tolist()[0]
             response_start += response_right_pattern_length
             # print("# Response")
@@ -304,7 +303,7 @@ class LossCompute(nn.Module):
 
             # Mask the prompt
             for t in range(0, response_start):
-                batch['tgt'][j, t, 0] = ignore_index
+                batch["tgt"][j, t, 0] = ignore_index
         return batch
 
     def forward(self, batch, output, attns, trunc_start=0, trunc_size=None):
