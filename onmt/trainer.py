@@ -496,6 +496,8 @@ class Trainer(object):
                         bptt = True
 
                         # 3. Compute loss.
+                        # The loss of the prompt will be set to zero.
+                        batch = self.train_loss.ignore_prompt(batch)
                         loss, batch_stats = self.train_loss(
                             batch,
                             model_out,
@@ -503,7 +505,6 @@ class Trainer(object):
                             trunc_start=j,
                             trunc_size=trunc_size,
                         )
-
                     if loss is not None:
                         loss /= normalization
                         self.optim.backward(loss)
