@@ -322,7 +322,6 @@ class Trainer(object):
             if (
                 valid_iter is not None
                 and step % valid_steps == 0
-                and self.gpu_rank <= 0
             ):
                 valid_stats = self.validate(
                     valid_iter, moving_average=self.moving_average

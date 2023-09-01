@@ -257,22 +257,15 @@ class ModelSaver(ModelSaverBase):
                     fm_sd[key] = torch.cat(
                         [full_model[i][key].cpu() for i in range(ws)], 1
                     )
+            model_state_dict = fm_sd
 
-            checkpoint = {
-                "model": fm_sd,
-                "generator": generator_state_dict,
-                "vocab": vocabs_to_dict(self.vocabs),
-                "opt": self.model_opt,
-                "optim": self.optim.state_dict(),
-            }
-        else:
-            checkpoint = {
-                "model": model_state_dict,
-                "generator": generator_state_dict,
-                "vocab": vocabs_to_dict(self.vocabs),
-                "opt": self.model_opt,
-                "optim": self.optim.state_dict(),
-            }
+        checkpoint = {
+            "model": model_state_dict,
+            "generator": generator_state_dict,
+            "vocab": vocabs_to_dict(self.vocabs),
+            "opt": self.model_opt,
+            "optim": self.optim.state_dict(),
+        }
         if not torch.distributed.is_initialized() or torch.distributed.get_rank() == 0:
             logger.info("Saving checkpoint %s_step_%d.pt" % (self.base_path, step))
             ckpt_path = "%s_step_%d.pt" % (self.base_path, step)
@@ -298,18 +291,80 @@ class ModelSaver(ModelSaverBase):
         else:
             model_state_dict = model.state_dict()
 
+        if torch.distributed.is_initialized():
+            ws = torch.distributed.get_world_size()
+        else:
+            ws = 1
+        if ws > 1:
+            full_model = [None for _ in range(ws)]
+            torch.distributed.all_gather_object(full_model, model_state_dict)
+            fm_sd = {}
+            for key in full_model[0].keys():
+                if key.split(".")[-1] == "lora_A":
+                    if key.split(".")[-2] in [
+                        "linear_keys",
+                        "linear_values",
+                        "linear_query",
+                        "w_1",
+                        "w_3",
+                    ]:
+                        fm_sd[key] = (
+                            sum([full_model[i][key].cpu() for i in range(ws)]) / ws
+                        )
+                    elif key.split(".")[-2] in ["final_linear", "w_2"]:
+                        fm_sd[key] = torch.cat(
+                            [full_model[i][key].cpu() for i in range(ws)], 1
+                        )
+                elif key.split(".")[-1] == "lora_B":
+                    if key.split(".")[-2] in [
+                        "linear_keys",
+                        "linear_values",
+                        "linear_query",
+                        "w_1",
+                        "w_3",
+                    ]:
+                        fm_sd[key] = torch.cat(
+                            [full_model[i][key].cpu() for i in range(ws)], 0
+                        )
+                    elif key.split(".")[-2] in ["final_linear", "w_2"]:
+                        fm_sd[key] = (
+                            sum([full_model[i][key].cpu() for i in range(ws)]) / ws
+                        )
+                elif key.split(".")[-1] in [
+                    "linear_keys",
+                    "linear_values",
+                    "linear_query",
+                    "w_1",
+                    "w_3",
+                ]:
+                    fm_sd[key] = torch.cat(
+                        [full_model[i][key].cpu() for i in range(ws)], 0
+                    )
+                elif key.split(".")[-1] in ["final_linear", "w_2"]:
+                    fm_sd[key] = torch.cat(
+                        [full_model[i][key].cpu() for i in range(ws)], 1
+                    )
+            model_state_dict = fm_sd
+
         checkpoint = {
             "vocab": vocabs_to_dict(self.vocabs),
             "opt": self.model_opt,
             "optim": self.optim.state_dict(),
         }
 
-        logger.info("Saving checkpoint %s_step_%d.pt" % (self.base_path, step))
-        ckpt_path = "%s_step_%d.pt" % (self.base_path, step)
-        torch.save(checkpoint, ckpt_path)
-        logger.info("Saving safetensors %s_step_%d.pt" % (self.base_path, step))
-        model_path = "%s_step_%d.safetensors" % (self.base_path, step)
-        save_file(model_state_dict, model_path)
+        if not torch.distributed.is_initialized() or torch.distributed.get_rank() == 0:
+            logger.info("Saving checkpoint %s_step_%d.pt" % (self.base_path, step))
+            ckpt_path = "%s_step_%d.pt" % (self.base_path, step)
+            torch.save(checkpoint, ckpt_path)
+            logger.info("Saving safetensors %s_step_%d.pt" % (self.base_path, step))
+            model_path = "%s_step_%d.safetensors" % (self.base_path, step)
+            save_file(model_state_dict, model_path)
+        else:
+            ckpt_path = None
+            model_path = None
+        if torch.distributed.is_initialized():
+            torch.distributed.barrier()
+
         return ckpt_path, model_path
 
     def _rm_checkpoint(self, name):

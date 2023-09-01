@@ -222,7 +222,6 @@ class BaseModel(nn.Module):
                             else:
                                 row_slice_start = 0
                                 row_slice_end = param.data.size(1)
-
                             assert (
                                 param.data.size()
                                 == ckpt_t[
@@ -236,7 +235,6 @@ class BaseModel(nn.Module):
                                 row_slice_start:row_slice_end,
                             ]
                         else:
-
                             assert (
                                 param.data.size()
                                 == ckpt_t[col_slice_start:col_slice_end].size()
