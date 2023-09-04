@@ -1050,6 +1050,12 @@ def model_opts(parser):
         "See https://nvidia.github.io/apex/amp.html#opt-levels.",
     )
     group.add(
+        "--set_prompt_loss_to_zero",
+        "-set_prompt_loss_to_zero",
+        action="store_true",
+        help="Set the prompt loss to zero. Mostly for LLM finetuning",
+    )
+    group.add(
         "--use_ckpting",
         "-use_ckpting",
         default=[],

@@ -220,20 +220,53 @@ class SentencePieceTransform(TokenizerTransform):
             )
             if is_train is False or nbest_size in [0, 1]:
                 # derterministic subwording
-                segmented += sp_model.encode(sentence, out_type=str)
+                if len(sentence.split(DefaultTokens.MASK_BEFORE)) == 2:
+                    # The padding token is inserted at the position indicated by
+                    # the  `DefaultTokens.MASK_BEFORE` placeholder.
+                    x, y = sentence.split(DefaultTokens.MASK_BEFORE)
+                    segmented = (
+                        segmented
+                        + sp_model.encode(x, out_type=str)
+                        + ["<blank>"]
+                        + sp_model.encode(y, out_type=str)
+                    )
+                else:
+                    segmented += sp_model.encode(sentence, out_type=str)
             else:
                 # subword sampling when nbest_size > 1 or -1
                 # alpha should be 0.0 < alpha < 1.0
                 alpha = (
                     self.tgt_subword_alpha if side == "tgt" else self.src_subword_alpha
                 )
-                segmented += sp_model.encode(
-                    sentence,
-                    out_type=str,
-                    enable_sampling=True,
-                    alpha=alpha,
-                    nbest_size=nbest_size,
-                )
+                if len(sentence.split(DefaultTokens.MASK_BEFORE)) == 2:
+                    x, y = sentence.split(DefaultTokens.MASK_BEFORE)
+                    segmented = (
+                        segmented
+                        + sp_model.encode(
+                            x,
+                            out_type=str,
+                            enable_sampling=True,
+                            alpha=alpha,
+                            nbest_size=nbest_size,
+                        )
+                        + ["<blank>"]
+                        + sp_model.encode(
+                            y,
+                            out_type=str,
+                            enable_sampling=True,
+                            alpha=alpha,
+                            nbest_size=nbest_size,
+                        )
+                    )
+                else:
+                    segmented += sp_model.encode(
+                        sentence,
+                        out_type=str,
+                        enable_sampling=True,
+                        alpha=alpha,
+                        nbest_size=nbest_size,
+                    )
+
             segmented += [DefaultTokens.EOS]
 
         return segmented[:-1]

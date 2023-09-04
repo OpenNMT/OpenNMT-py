@@ -261,49 +261,45 @@ class LossCompute(nn.Module):
     def _unbottle(self, _v, batch_size):
         return _v.view(-1, batch_size, _v.size(1))
 
-    def ignore_prompt(
-        self, batch, response_token="▁Response", response_right_pattern_length=3
-    ):
+    def ignore_prompt(self, batch):
         """
-        Mask the prompt in the target side of the bath examples in order
+        Mask the prompt in the target side of the batch examples in order
             to set the loss of the prompt to zero.
         For finetuning on specific tasks.
+        The end of the prompt must be indicated by `the DefaultTokens.MASK_BEFORE`
+            placeholder.
         The masks are supposed to be properly handled by the loss criterion
-            (e.g. nn.CrossEntropyLoss )
+            (e.g. nn.CrossEntropyLoss ).
 
         Args:
-        batch: The current batch.
-        response_token (str): The token used the locate the end of the prompt
-        response_right_pattern_length (int). The number of tokens in the response
-            pattern after the response_token
-
-        Ex: The response pattern is '### Response : ｟newline｠',
-            the response_token is '▁Response'.
-            and the tokenized response pattern is '##', '#', '▁Response', '▁:', '▁', '<0x0A>'].
-            Then response_right_pattern_length = 3
+            batch: The current batch.
         """
-        import numpy as np
-
-        response_idx = self.vocab[response_token]  # 13291
-        ignore_index = self.padding_idx
+        mask_before_idx = self.vocab["<blank>"]
+        # The tokenize transform inserts the Llama token '<blank>' at the position
+        # indicated by the placeholder `DefaultTokens.MASK_BEFORE`.
+        ignore_idx = self.padding_idx
         nb_examples = batch["src"].size()[0]
+
         for j in range(nb_examples):
             # Locate the end of the prompt
-            response_start = np.where(
-                batch["src"][j, :, 0].cpu().numpy() == response_idx
-            )[0].tolist()[0]
-            response_start += response_right_pattern_length
+            response_start = (
+                (batch["src"][j, :, 0].cpu() == mask_before_idx)
+                .nonzero(as_tuple=False)
+                .flatten()
+                .tolist()[0]
+            )
             # print("# Response")
             # nb_decoding_steps = batch['src'].size()[1]
-            # print([vocab.lookup_index(batch['tgt'][j, t, 0])
+            # print([self.vocab.lookup_index(batch['tgt'][j, t, 0])
             #        for t in range(response_start, nb_decoding_steps)])
             # print("# Prompt")
-            # print([vocab.lookup_index(batch['tgt'][j, t, 0])
+            # print([self.vocab.lookup_index(batch['tgt'][j, t, 0])
             #        for t in range(0, response_start)])
 
             # Mask the prompt
             for t in range(0, response_start):
-                batch["tgt"][j, t, 0] = ignore_index
+                batch["tgt"][j, t, 0] = ignore_idx
+            break
         return batch
 
     def forward(self, batch, output, attns, trunc_start=0, trunc_size=None):
