@@ -169,7 +169,7 @@ class TokenizerTransform(Transform):
         sent_list = sentence.split(DefaultTokens.EOS)
         segmented = []
         for _sentence in sent_list:
-            segmented += self.locate_mask(_sentence, side)
+            segmented += self.locate_mask(_sentence, side, is_train)
             segmented += [DefaultTokens.EOS]
         return segmented[:-1]
 
@@ -249,9 +249,11 @@ class SentencePieceTransform(TokenizerTransform):
                 )
             self.load_models = {"src": load_src_model, "tgt": load_tgt_model}
 
-    def segment_with_subword_sampling(self, string, nbest_size, side="src"):
+    def segment_with_subword_sampling(self, nbest_size, string, side="src"):
+        print("sampling ...")
         sp_model = self.load_models[side]
         alpha = self.tgt_subword_alpha if side == "tgt" else self.src_subword_alpha
+        print(self.src_subword_alpha)
         tokens = sp_model.encode(
             string,
             out_type=str,
@@ -262,6 +264,7 @@ class SentencePieceTransform(TokenizerTransform):
         return tokens
 
     def segment_determistic(self, string, side="src"):
+        print("not sampling ...")
         sp_model = self.load_models[side]
         tokens = sp_model.encode(string, out_type=str)
         return tokens
@@ -275,7 +278,7 @@ class SentencePieceTransform(TokenizerTransform):
         else:
             # subword sampling when nbest_size > 1 or -1
             # alpha should be 0.0 < alpha < 1.0
-            tokens = self.segment_with_subword_sampling(string, side, nbest_size)
+            tokens = self.segment_with_subword_sampling(nbest_size, string, side)
         return tokens
 
     def _detokenize(self, tokens, side="src"):
