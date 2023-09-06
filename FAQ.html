@@ -123,6 +123,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#context-doc-aware-transform">Context / Doc aware transform</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#augment-source-segments-with-fuzzy-matches-for-neural-fuzzy-repair">Augment source segments with fuzzy matches for Neural Fuzzy Repair</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#augment-source-and-target-segments-with-inline-tags">Augment source and target segments with inline tags</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#make-the-model-learn-to-use-terminology">Make the model learn to use terminology</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#tokenization">Tokenization</a><ul>
@@ -722,6 +723,26 @@ The Translation Memory (TM) format should be a flat text file, with each line co
 <li><p><code class="docutils literal notranslate"><span class="pre">paired_etag</span></code>: The format of a closing paired inline tag. Must include the character # (default: “｟ph_#_end｠”);</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">isolated_tag</span></code>: The format of an isolated inline tag. Must include the character # (default: “｟ph_#_std｠”);</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">src_delimiter</span></code>: Any special token used for augmented src sentences (default: “｟fuzzy｠”);</p></li>
+</ul>
+</section>
+<section id="make-the-model-learn-to-use-terminology">
+<h3>Make the model learn to use terminology<a class="headerlink" href="#make-the-model-learn-to-use-terminology" title="Permalink to this heading">¶</a></h3>
+<p>Transform name: <code class="docutils literal notranslate"><span class="pre">terminology</span></code></p>
+<p>Class: <code class="docutils literal notranslate"><span class="pre">onmt.transforms.terminology.TerminologyTransform</span></code></p>
+<p>Augments source segments with terms so the model can learn to use user-provided terms at inference. It requires a dictionary with source and target terms, delimited with a tab. The transform uses Spacy’s lemmatization facilities in order to a) solve the word inflection problem when searching for terms in any form, and b) make the model inflect correctly most target terms at inference. The lemmatization is applied at the dictionary entries and also at the source and target examples, and the term searches during training are performed on the lemmatized examples.
+The format of a processed segment augmented with terms is as follows:
+<code class="docutils literal notranslate"><span class="pre">This</span> <span class="pre">is</span> <span class="pre">an</span> <span class="pre">｟src_term_start｠</span> <span class="pre">augmented</span> <span class="pre">｟tgt_term_start｠</span> <span class="pre">target_lemma_for_augmented</span> <span class="pre">｟tgt_term_end｠</span> <span class="pre">example.</span></code>
+The following options can be added to the main configuration (valid for all datasets using this transform):</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">termbase_path</span></code>: The path to the dictionary text file;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src_spacy_language_model</span></code>: Name of the spacy language model for the source corpus;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tgt_spacy_language_model</span></code>: Name of the spacy language model for the target corpus;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">term_corpus_ratio</span></code>: Ratio of corpus to augment with terms # (default: 0.3);</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">term_example_ratio</span></code>: Max terms allowed in an example # (default: 0.2);</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src_term_stoken</span></code>: The source term start token # (default: “｟src_term_start｠”);</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tgt_term_stoken</span></code>: The target term start token # (default: “｟tgt_term_start｠”);</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tgt_term_etoken</span></code>: The target term end token # (default: “｟tgt_term_end｠”);</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">term_source_delimiter</span></code>: Any special token used for augmented src sentences. The default is the fuzzy token used in the FuzzyMatch transform # (default: “｟fuzzy｠”);</p></li>
 </ul>
 </section>
 </section>

@@ -254,6 +254,7 @@
         <span class="n">precision</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
         <span class="n">device</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">),</span>
         <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">device_id</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Custom state_dict loading to enable moving module on device as they are loaded</span>
 
@@ -267,17 +268,60 @@
         <span class="c1"># bitsandbytes quantize weights when .cuda() is called</span>
         <span class="c1"># for huge models we need to save Ram</span>
         <span class="c1"># so we load the weights  module by module and transfer them to GPU for quantization</span>
+        <span class="k">if</span> <span class="n">device</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">):</span>
+            <span class="n">device_id</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">buf_list</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">named_modules</span><span class="p">():</span>
             <span class="k">for</span> <span class="n">buf_name</span><span class="p">,</span> <span class="n">buf</span> <span class="ow">in</span> <span class="n">module</span><span class="o">.</span><span class="n">named_buffers</span><span class="p">():</span>
                 <span class="n">buf_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">buf_name</span><span class="p">)</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">buf_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">))</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># only last key</span>
-                    <span class="n">module</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">precision</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">precision</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">int8</span><span class="p">:</span>
+                        <span class="n">torch</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">quantize_dynamic</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">module</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">precision</span><span class="p">)</span>
                     <span class="n">module</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">param_name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">module</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">():</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">param_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">))</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># only last key</span>
                     <span class="k">if</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="n">param_name</span> <span class="ow">in</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                        <span class="n">param</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">][</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="n">param_name</span><span class="p">]</span>
+                        <span class="n">ckpt_t</span> <span class="o">=</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">][</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="n">param_name</span><span class="p">]</span>
+
+                        <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span>
+                            <span class="s2">&quot;linear_keys&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;linear_values&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;linear_query&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;w_1&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;w_3&quot;</span><span class="p">,</span>
+                        <span class="p">]:</span>
+                            <span class="n">col_slice_start</span> <span class="o">=</span> <span class="n">param</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="n">device_id</span>
+                            <span class="n">col_slice_end</span> <span class="o">=</span> <span class="n">param</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">device_id</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">col_slice_start</span> <span class="o">=</span> <span class="mi">0</span>
+                            <span class="n">col_slice_end</span> <span class="o">=</span> <span class="n">param</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;final_linear&quot;</span><span class="p">,</span> <span class="s2">&quot;w_2&quot;</span><span class="p">]:</span>
+                                <span class="n">row_slice_start</span> <span class="o">=</span> <span class="n">param</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">device_id</span>
+                                <span class="n">row_slice_end</span> <span class="o">=</span> <span class="n">param</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">device_id</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">row_slice_start</span> <span class="o">=</span> <span class="mi">0</span>
+                                <span class="n">row_slice_end</span> <span class="o">=</span> <span class="n">param</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                            <span class="k">assert</span> <span class="p">(</span>
+                                <span class="n">param</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+                                <span class="o">==</span> <span class="n">ckpt_t</span><span class="p">[</span>
+                                    <span class="n">col_slice_start</span><span class="p">:</span><span class="n">col_slice_end</span><span class="p">,</span>
+                                    <span class="n">row_slice_start</span><span class="p">:</span><span class="n">row_slice_end</span><span class="p">,</span>
+                                <span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+                            <span class="p">),</span> <span class="s2">&quot;An error in model&#39;s partition and checkpoint&#39;s slice was detected&quot;</span>
+                            <span class="n">param</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">ckpt_t</span><span class="p">[</span>
+                                <span class="n">col_slice_start</span><span class="p">:</span><span class="n">col_slice_end</span><span class="p">,</span>
+                                <span class="n">row_slice_start</span><span class="p">:</span><span class="n">row_slice_end</span><span class="p">,</span>
+                            <span class="p">]</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="k">assert</span> <span class="p">(</span>
+                                <span class="n">param</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+                                <span class="o">==</span> <span class="n">ckpt_t</span><span class="p">[</span><span class="n">col_slice_start</span><span class="p">:</span><span class="n">col_slice_end</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+                            <span class="p">),</span> <span class="s2">&quot;An error in model&#39;s partition and checkpoint&#39;s slice was detected&quot;</span>
+                            <span class="n">param</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">ckpt_t</span><span class="p">[</span><span class="n">col_slice_start</span><span class="p">:</span><span class="n">col_slice_end</span><span class="p">]</span>
+
                         <span class="k">del</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">][</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="n">param_name</span><span class="p">]</span>
                     <span class="k">elif</span> <span class="p">(</span>
                         <span class="s2">&quot;generator&quot;</span> <span class="ow">in</span> <span class="n">checkpoint</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
@@ -291,7 +335,10 @@
                         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                             <span class="s2">&quot;Missing key in checkpoint: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="n">param_name</span>
                         <span class="p">)</span>
-                    <span class="n">module</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">precision</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">precision</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">int8</span><span class="p">:</span>
+                        <span class="n">torch</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">quantize_dynamic</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">module</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">precision</span><span class="p">)</span>
                     <span class="n">module</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">checkpoint</span><span class="p">[</span>
             <span class="s2">&quot;model&quot;</span>
@@ -301,12 +348,13 @@
                     <span class="s2">&quot;Extra keys in model state_dict do not match the model config </span><span class="si">%s</span><span class="s2">&quot;</span>
                     <span class="o">%</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
                 <span class="p">)</span>
-        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;generator&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">buf_list</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;Extra keys in generator state_dict do not match the model config </span><span class="si">%s</span><span class="s2">&quot;</span>
-                    <span class="o">%</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;generator&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
-                <span class="p">)</span></div>
+        <span class="k">if</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;generator&quot;</span><span class="p">]:</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;generator&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">buf_list</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="s2">&quot;Extra keys in generator state_dict do not match the model config </span><span class="si">%s</span><span class="s2">&quot;</span>
+                        <span class="o">%</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;generator&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+                    <span class="p">)</span></div>
 
 <div class="viewcode-block" id="BaseModel.load_safe_state_dict"><a class="viewcode-back" href="../../../onmt.html#onmt.models.BaseModel.load_safe_state_dict">[docs]</a>    <span class="k">def</span> <span class="nf">load_safe_state_dict</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -314,6 +362,7 @@
         <span class="n">precision</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
         <span class="n">device</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">),</span>
         <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">device_id</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Custom state_dict loading to enable moving module on device as they are loaded</span>
 
@@ -345,14 +394,57 @@
             <span class="k">for</span> <span class="n">buf_name</span><span class="p">,</span> <span class="n">buf</span> <span class="ow">in</span> <span class="n">module</span><span class="o">.</span><span class="n">named_buffers</span><span class="p">():</span>
                 <span class="n">buf_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">buf_name</span><span class="p">)</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">buf_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">))</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># only last key</span>
-                    <span class="n">module</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">precision</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">precision</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">int8</span><span class="p">:</span>
+                        <span class="n">torch</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">quantize_dynamic</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">module</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">precision</span><span class="p">)</span>
                     <span class="n">module</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">param_name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">module</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">():</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">param_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">))</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># only last key</span>
                     <span class="k">if</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="n">param_name</span> <span class="ow">in</span> <span class="n">keys_shard</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                        <span class="n">param</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="n">keys_shard</span><span class="p">[</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="n">param_name</span><span class="p">]]</span><span class="o">.</span><span class="n">get_tensor</span><span class="p">(</span>
+
+                        <span class="n">ckpt_t</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="n">keys_shard</span><span class="p">[</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="n">param_name</span><span class="p">]]</span><span class="o">.</span><span class="n">get_tensor</span><span class="p">(</span>
                             <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="n">param_name</span>
                         <span class="p">)</span>
+                        <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span>
+                            <span class="s2">&quot;linear_keys&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;linear_values&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;linear_query&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;w_1&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;w_3&quot;</span><span class="p">,</span>
+                        <span class="p">]:</span>
+                            <span class="n">col_slice_start</span> <span class="o">=</span> <span class="n">param</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="n">device_id</span>
+                            <span class="n">col_slice_end</span> <span class="o">=</span> <span class="n">param</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">device_id</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">col_slice_start</span> <span class="o">=</span> <span class="mi">0</span>
+                            <span class="n">col_slice_end</span> <span class="o">=</span> <span class="n">param</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;final_linear&quot;</span><span class="p">,</span> <span class="s2">&quot;w_2&quot;</span><span class="p">]:</span>
+                                <span class="n">row_slice_start</span> <span class="o">=</span> <span class="n">param</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">device_id</span>
+                                <span class="n">row_slice_end</span> <span class="o">=</span> <span class="n">param</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">device_id</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">row_slice_start</span> <span class="o">=</span> <span class="mi">0</span>
+                                <span class="n">row_slice_end</span> <span class="o">=</span> <span class="n">param</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                            <span class="k">assert</span> <span class="p">(</span>
+                                <span class="n">param</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+                                <span class="o">==</span> <span class="n">ckpt_t</span><span class="p">[</span>
+                                    <span class="n">col_slice_start</span><span class="p">:</span><span class="n">col_slice_end</span><span class="p">,</span>
+                                    <span class="n">row_slice_start</span><span class="p">:</span><span class="n">row_slice_end</span><span class="p">,</span>
+                                <span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+                            <span class="p">),</span> <span class="s2">&quot;An error in model&#39;s partition and checkpoint&#39;s slice was detected&quot;</span>
+
+                            <span class="n">param</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">ckpt_t</span><span class="p">[</span>
+                                <span class="n">col_slice_start</span><span class="p">:</span><span class="n">col_slice_end</span><span class="p">,</span>
+                                <span class="n">row_slice_start</span><span class="p">:</span><span class="n">row_slice_end</span><span class="p">,</span>
+                            <span class="p">]</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="k">assert</span> <span class="p">(</span>
+                                <span class="n">param</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+                                <span class="o">==</span> <span class="n">ckpt_t</span><span class="p">[</span><span class="n">col_slice_start</span><span class="p">:</span><span class="n">col_slice_end</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+                            <span class="p">),</span> <span class="s2">&quot;An error in model&#39;s partition and checkpoint&#39;s slice was detected&quot;</span>
+
+                            <span class="n">param</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">ckpt_t</span><span class="p">[</span><span class="n">col_slice_start</span><span class="p">:</span><span class="n">col_slice_end</span><span class="p">]</span>
+
                         <span class="n">keyfound</span><span class="p">[</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="n">param_name</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
                     <span class="k">elif</span> <span class="n">strict</span> <span class="ow">and</span> <span class="s2">&quot;lora&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">param_name</span><span class="p">:</span>
                         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
@@ -360,7 +452,10 @@
                             <span class="o">+</span> <span class="s2">&quot;.&quot;</span>
                             <span class="o">+</span> <span class="n">param_name</span>
                         <span class="p">)</span>
-                    <span class="n">module</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">precision</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">precision</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">int8</span><span class="p">:</span>
+                        <span class="n">torch</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">quantize_dynamic</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">module</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">precision</span><span class="p">)</span>
                     <span class="n">module</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys_shard</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">keyfound</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">and</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">buf_list</span><span class="p">:</span>

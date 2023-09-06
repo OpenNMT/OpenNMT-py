@@ -209,12 +209,14 @@
 <span class="kn">from</span> <span class="nn">torch.utils.checkpoint</span> <span class="kn">import</span> <span class="n">checkpoint</span>
 <span class="kn">from</span> <span class="nn">onmt.modules.rmsnorm</span> <span class="kn">import</span> <span class="n">RMSNorm</span>
 <span class="kn">from</span> <span class="nn">torch.nn.utils</span> <span class="kn">import</span> <span class="n">skip_init</span>
+<span class="kn">import</span> <span class="nn">torch.distributed</span> <span class="k">as</span> <span class="nn">dist</span>
 
 
 <span class="k">class</span> <span class="nc">ActivationFunction</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="n">relu</span> <span class="o">=</span> <span class="s2">&quot;relu&quot;</span>
     <span class="n">gelu</span> <span class="o">=</span> <span class="s2">&quot;gelu&quot;</span>
     <span class="n">silu</span> <span class="o">=</span> <span class="s2">&quot;silu&quot;</span>
+    <span class="n">gated_gelu</span> <span class="o">=</span> <span class="s2">&quot;gated-gelu&quot;</span>
 
 
 <span class="c1"># for silu, see: https://arxiv.org/pdf/2002.05202.pdf</span>
@@ -222,6 +224,7 @@
     <span class="n">ActivationFunction</span><span class="o">.</span><span class="n">relu</span><span class="p">:</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">,</span>
     <span class="n">ActivationFunction</span><span class="o">.</span><span class="n">gelu</span><span class="p">:</span> <span class="n">F</span><span class="o">.</span><span class="n">gelu</span><span class="p">,</span>
     <span class="n">ActivationFunction</span><span class="o">.</span><span class="n">silu</span><span class="p">:</span> <span class="n">F</span><span class="o">.</span><span class="n">silu</span><span class="p">,</span>
+    <span class="n">ActivationFunction</span><span class="o">.</span><span class="n">gated_gelu</span><span class="p">:</span> <span class="n">F</span><span class="o">.</span><span class="n">gelu</span><span class="p">,</span>
 <span class="p">}</span>
 
 
@@ -246,32 +249,47 @@
         <span class="n">add_ffnbias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">parallel_residual</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">layer_norm</span><span class="o">=</span><span class="s2">&quot;standard&quot;</span><span class="p">,</span>
+        <span class="n">norm_eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">,</span>
         <span class="n">use_ckpting</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">parallel_gpu</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">PositionwiseFeedForward</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="n">d_ff</span> <span class="o">%</span> <span class="n">parallel_gpu</span> <span class="o">==</span> <span class="mi">0</span>
+        <span class="p">),</span> <span class="s2">&quot;Model intermediate ffn size must be divisible by the number of partitions&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">w_1</span> <span class="o">=</span> <span class="n">skip_init</span><span class="p">(</span>
-            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">,</span> <span class="n">in_features</span><span class="o">=</span><span class="n">d_model</span><span class="p">,</span> <span class="n">out_features</span><span class="o">=</span><span class="n">d_ff</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="n">add_ffnbias</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">,</span>
+            <span class="n">in_features</span><span class="o">=</span><span class="n">d_model</span><span class="p">,</span>
+            <span class="n">out_features</span><span class="o">=</span><span class="n">d_ff</span> <span class="o">//</span> <span class="n">parallel_gpu</span><span class="p">,</span>
+            <span class="n">bias</span><span class="o">=</span><span class="n">add_ffnbias</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">w_2</span> <span class="o">=</span> <span class="n">skip_init</span><span class="p">(</span>
-            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">,</span> <span class="n">in_features</span><span class="o">=</span><span class="n">d_ff</span><span class="p">,</span> <span class="n">out_features</span><span class="o">=</span><span class="n">d_model</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="n">add_ffnbias</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">,</span>
+            <span class="n">in_features</span><span class="o">=</span><span class="n">d_ff</span> <span class="o">//</span> <span class="n">parallel_gpu</span><span class="p">,</span>
+            <span class="n">out_features</span><span class="o">=</span><span class="n">d_model</span><span class="p">,</span>
+            <span class="n">bias</span><span class="o">=</span><span class="n">add_ffnbias</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="n">layer_norm</span> <span class="o">==</span> <span class="s2">&quot;standard&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">parallel_residual</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="n">norm_eps</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">layer_norm</span> <span class="o">==</span> <span class="s2">&quot;rms&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">parallel_residual</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span> <span class="o">=</span> <span class="n">RMSNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span> <span class="o">=</span> <span class="n">RMSNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="n">norm_eps</span><span class="p">)</span>
         <span class="k">elif</span> <span class="ow">not</span> <span class="n">parallel_residual</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">layer_norm</span><span class="si">}</span><span class="s2"> layer norm type is not supported&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parallel_residual</span> <span class="o">=</span> <span class="n">parallel_residual</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dropout_1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">activation</span> <span class="o">=</span> <span class="n">ACTIVATION_FUNCTIONS</span><span class="p">[</span><span class="n">activation_fn</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dropout_2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">activation_fn</span> <span class="o">==</span> <span class="s2">&quot;silu&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">activation_fn</span> <span class="o">==</span> <span class="s2">&quot;silu&quot;</span> <span class="ow">or</span> <span class="n">activation_fn</span> <span class="o">==</span> <span class="s2">&quot;gated-gelu&quot;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">w_3</span> <span class="o">=</span> <span class="n">skip_init</span><span class="p">(</span>
-                <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">,</span> <span class="n">in_features</span><span class="o">=</span><span class="n">d_model</span><span class="p">,</span> <span class="n">out_features</span><span class="o">=</span><span class="n">d_ff</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="n">add_ffnbias</span>
+                <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">,</span>
+                <span class="n">in_features</span><span class="o">=</span><span class="n">d_model</span><span class="p">,</span>
+                <span class="n">out_features</span><span class="o">=</span><span class="n">d_ff</span> <span class="o">//</span> <span class="n">parallel_gpu</span><span class="p">,</span>
+                <span class="n">bias</span><span class="o">=</span><span class="n">add_ffnbias</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">w_3</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">maybe_ckpt</span> <span class="o">=</span> <span class="n">checkpoint</span> <span class="k">if</span> <span class="s2">&quot;ffn&quot;</span> <span class="ow">in</span> <span class="n">use_ckpting</span> <span class="k">else</span> <span class="k">lambda</span> <span class="n">f</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parallel_gpu</span> <span class="o">=</span> <span class="n">parallel_gpu</span>
 
 <div class="viewcode-block" id="PositionwiseFeedForward.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.modules.position_ffn.PositionwiseFeedForward.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Layer definition.</span>
@@ -285,7 +303,7 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">parallel_residual</span><span class="p">:</span>
             <span class="n">norm_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">norm_x</span> <span class="o">=</span> <span class="n">x</span>
+            <span class="n">norm_x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
         <span class="n">inter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maybe_ckpt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">w_1</span><span class="p">,</span> <span class="n">norm_x</span><span class="p">)</span>
         <span class="n">inter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">activation</span><span class="p">(</span><span class="n">inter</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">w_3</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -293,6 +311,10 @@
         <span class="n">inter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout_1</span><span class="p">(</span><span class="n">inter</span><span class="p">)</span>
         <span class="n">inter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maybe_ckpt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">w_2</span><span class="p">,</span> <span class="n">inter</span><span class="p">)</span>
         <span class="n">inter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout_2</span><span class="p">(</span><span class="n">inter</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parallel_gpu</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">dist</span><span class="o">.</span><span class="n">all_reduce</span><span class="p">(</span><span class="n">inter</span><span class="p">)</span>
+
         <span class="k">return</span> <span class="n">inter</span> <span class="o">+</span> <span class="n">x</span></div>
 
     <span class="k">def</span> <span class="nf">update_dropout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dropout</span><span class="p">):</span>

@@ -226,6 +226,7 @@
         <span class="n">attention_dropout</span><span class="p">,</span>
         <span class="n">self_attn_type</span><span class="o">=</span><span class="s2">&quot;scaled-dot&quot;</span><span class="p">,</span>
         <span class="n">max_relative_positions</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">relative_positions_buckets</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
         <span class="n">aan_useffn</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">full_context_alignment</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">alignment_heads</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
@@ -236,7 +237,9 @@
         <span class="n">parallel_residual</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">shared_layer_norm</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">layer_norm</span><span class="o">=</span><span class="s2">&quot;standard&quot;</span><span class="p">,</span>
+        <span class="n">norm_eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">,</span>
         <span class="n">use_ckpting</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">parallel_gpu</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
@@ -265,6 +268,7 @@
 <span class="sd">                activation function choice for PositionwiseFeedForward layer</span>
 <span class="sd">            add_qkvbias (bool): whether to add bias to the Key/Value nn.Linear</span>
 <span class="sd">            layer_norm (string): type of layer normalization standard/rms</span>
+<span class="sd">            norm_eps (float): layer norm epsilon</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">TransformerDecoderLayerBase</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -276,10 +280,12 @@
                 <span class="n">d_model</span><span class="p">,</span>
                 <span class="n">dropout</span><span class="o">=</span><span class="n">attention_dropout</span><span class="p">,</span>
                 <span class="n">max_relative_positions</span><span class="o">=</span><span class="n">max_relative_positions</span><span class="p">,</span>
+                <span class="n">relative_positions_buckets</span><span class="o">=</span><span class="n">relative_positions_buckets</span><span class="p">,</span>
                 <span class="n">attn_type</span><span class="o">=</span><span class="s2">&quot;self&quot;</span><span class="p">,</span>
                 <span class="n">add_qkvbias</span><span class="o">=</span><span class="n">add_qkvbias</span><span class="p">,</span>
                 <span class="n">num_kv</span><span class="o">=</span><span class="n">num_kv</span><span class="p">,</span>
                 <span class="n">use_ckpting</span><span class="o">=</span><span class="n">use_ckpting</span><span class="p">,</span>
+                <span class="n">parallel_gpu</span><span class="o">=</span><span class="n">parallel_gpu</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="k">elif</span> <span class="n">self_attn_type</span> <span class="o">==</span> <span class="s2">&quot;average&quot;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">self_attn</span> <span class="o">=</span> <span class="n">AverageAttention</span><span class="p">(</span>
@@ -294,18 +300,20 @@
             <span class="n">add_ffnbias</span><span class="p">,</span>
             <span class="n">parallel_residual</span><span class="p">,</span>
             <span class="n">layer_norm</span><span class="p">,</span>
+            <span class="n">norm_eps</span><span class="p">,</span>
             <span class="n">use_ckpting</span><span class="o">=</span><span class="n">use_ckpting</span><span class="p">,</span>
+            <span class="n">parallel_gpu</span><span class="o">=</span><span class="n">parallel_gpu</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parallel_residual</span> <span class="o">=</span> <span class="n">parallel_residual</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">shared_layer_norm</span> <span class="o">=</span> <span class="n">shared_layer_norm</span>
         <span class="k">if</span> <span class="n">layer_norm</span> <span class="o">==</span> <span class="s2">&quot;standard&quot;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm_1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm_1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="n">norm_eps</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">parallel_residual</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">shared_layer_norm</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm_res</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm_res</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="n">norm_eps</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">layer_norm</span> <span class="o">==</span> <span class="s2">&quot;rms&quot;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm_1</span> <span class="o">=</span> <span class="n">RMSNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm_1</span> <span class="o">=</span> <span class="n">RMSNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="n">norm_eps</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">parallel_residual</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">shared_layer_norm</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm_res</span> <span class="o">=</span> <span class="n">RMSNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm_res</span> <span class="o">=</span> <span class="n">RMSNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="n">norm_eps</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">layer_norm</span><span class="si">}</span><span class="s2"> layer norm type is not supported&quot;</span><span class="p">)</span>
 
@@ -320,8 +328,9 @@
 <span class="sd">        full context alignement, :cite:`garg2019jointly`.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            * All arguments of _forward.</span>
-<span class="sd">            with_align (bool): whether return alignment attention.</span>
+<span class="sd">            * All arguments of _forward, of which</span>
+<span class="sd">            with_align (bool): needed to compute attn_align</span>
+<span class="sd">            return_attn (bool): to force MHA to return attns</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            (FloatTensor, FloatTensor, FloatTensor or None):</span>
@@ -332,7 +341,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">with_align</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;with_align&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
         <span class="n">layer_out</span><span class="p">,</span> <span class="n">attns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_forward</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="n">top_attn</span> <span class="o">=</span> <span class="n">attns</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
+        <span class="n">top_attn</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">attns</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">attns</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
         <span class="n">attn_align</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">with_align</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_context_alignment</span><span class="p">:</span>
@@ -375,10 +384,15 @@
             <span class="n">dec_mask</span> <span class="o">=</span> <span class="n">tgt_pad_mask</span>
         <span class="k">return</span> <span class="n">dec_mask</span>
 
-    <span class="k">def</span> <span class="nf">_forward_self_attn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">norm_layer_in</span><span class="p">,</span> <span class="n">dec_mask</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_forward_self_attn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">norm_layer_in</span><span class="p">,</span> <span class="n">dec_mask</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">return_attn</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">self_attn_type</span> <span class="o">==</span> <span class="s2">&quot;scaled-dot&quot;</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">self_attn</span><span class="p">(</span>
-                <span class="n">norm_layer_in</span><span class="p">,</span> <span class="n">norm_layer_in</span><span class="p">,</span> <span class="n">norm_layer_in</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">dec_mask</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span>
+                <span class="n">norm_layer_in</span><span class="p">,</span>
+                <span class="n">norm_layer_in</span><span class="p">,</span>
+                <span class="n">norm_layer_in</span><span class="p">,</span>
+                <span class="n">mask</span><span class="o">=</span><span class="n">dec_mask</span><span class="p">,</span>
+                <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">,</span>
+                <span class="n">return_attn</span><span class="o">=</span><span class="n">return_attn</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">self_attn_type</span> <span class="o">==</span> <span class="s2">&quot;average&quot;</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">self_attn</span><span class="p">(</span><span class="n">norm_layer_in</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">dec_mask</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">)</span>
@@ -404,6 +418,7 @@
         <span class="n">attention_dropout</span><span class="p">,</span>
         <span class="n">self_attn_type</span><span class="o">=</span><span class="s2">&quot;scaled-dot&quot;</span><span class="p">,</span>
         <span class="n">max_relative_positions</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">relative_positions_buckets</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
         <span class="n">aan_useffn</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">full_context_alignment</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">alignment_heads</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
@@ -414,7 +429,9 @@
         <span class="n">parallel_residual</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">shared_layer_norm</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">layer_norm</span><span class="o">=</span><span class="s2">&quot;standard&quot;</span><span class="p">,</span>
+        <span class="n">norm_eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">,</span>
         <span class="n">use_ckpting</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">parallel_gpu</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
@@ -428,6 +445,7 @@
             <span class="n">attention_dropout</span><span class="p">,</span>
             <span class="n">self_attn_type</span><span class="p">,</span>
             <span class="n">max_relative_positions</span><span class="p">,</span>
+            <span class="n">relative_positions_buckets</span><span class="p">,</span>
             <span class="n">aan_useffn</span><span class="p">,</span>
             <span class="n">full_context_alignment</span><span class="p">,</span>
             <span class="n">alignment_heads</span><span class="p">,</span>
@@ -438,7 +456,9 @@
             <span class="n">parallel_residual</span><span class="o">=</span><span class="n">parallel_residual</span><span class="p">,</span>
             <span class="n">shared_layer_norm</span><span class="o">=</span><span class="n">shared_layer_norm</span><span class="p">,</span>
             <span class="n">layer_norm</span><span class="o">=</span><span class="n">layer_norm</span><span class="p">,</span>
+            <span class="n">norm_eps</span><span class="o">=</span><span class="n">norm_eps</span><span class="p">,</span>
             <span class="n">use_ckpting</span><span class="o">=</span><span class="n">use_ckpting</span><span class="p">,</span>
+            <span class="n">parallel_gpu</span><span class="o">=</span><span class="n">parallel_gpu</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">context_attn</span> <span class="o">=</span> <span class="n">MultiHeadedAttention</span><span class="p">(</span>
             <span class="n">heads</span><span class="p">,</span>
@@ -448,11 +468,12 @@
             <span class="n">add_qkvbias</span><span class="o">=</span><span class="n">add_qkvbias</span><span class="p">,</span>
             <span class="n">num_kv</span><span class="o">=</span><span class="n">num_kv</span><span class="p">,</span>
             <span class="n">use_ckpting</span><span class="o">=</span><span class="n">use_ckpting</span><span class="p">,</span>
+            <span class="n">parallel_gpu</span><span class="o">=</span><span class="n">parallel_gpu</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="n">layer_norm</span> <span class="o">==</span> <span class="s2">&quot;standard&quot;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm_2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm_2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="n">norm_eps</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">layer_norm</span> <span class="o">==</span> <span class="s2">&quot;rms&quot;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm_2</span> <span class="o">=</span> <span class="n">RMSNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm_2</span> <span class="o">=</span> <span class="n">RMSNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="n">norm_eps</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">layer_norm</span><span class="si">}</span><span class="s2"> layer norm type is not supported&quot;</span><span class="p">)</span>
 
@@ -468,6 +489,7 @@
         <span class="n">tgt_pad_mask</span><span class="p">,</span>
         <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">future</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">return_attn</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;A naive forward pass for transformer decoder.</span>
 
@@ -480,6 +502,7 @@
 <span class="sd">            tgt_pad_mask (bool): ``(batch_size, 1, T)``</span>
 <span class="sd">            step (int or None): stepwise decoding counter</span>
 <span class="sd">            future (bool): If set True, do not apply future_mask.</span>
+<span class="sd">            return_attn (bool) : if set True requires attns output</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            (FloatTensor, FloatTensor):</span>
@@ -506,7 +529,11 @@
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parallel_residual</span><span class="p">:</span>
             <span class="n">ctx_attn</span><span class="p">,</span> <span class="n">attns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context_attn</span><span class="p">(</span>
-                <span class="n">enc_out</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span> <span class="n">norm_layer_in</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">src_pad_mask</span>
+                <span class="n">enc_out</span><span class="p">,</span>
+                <span class="n">enc_out</span><span class="p">,</span>
+                <span class="n">norm_layer_in</span><span class="p">,</span>
+                <span class="n">mask</span><span class="o">=</span><span class="n">src_pad_mask</span><span class="p">,</span>
+                <span class="n">return_attn</span><span class="o">=</span><span class="n">return_attn</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="c1"># feed_forward applies residual, so we remove and apply residual with un-normed</span>
             <span class="n">layer_out</span> <span class="o">=</span> <span class="p">(</span>
@@ -520,7 +547,7 @@
             <span class="n">query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">self_attn</span><span class="p">)</span> <span class="o">+</span> <span class="n">layer_in</span>
             <span class="n">norm_query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm_2</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
             <span class="n">ctx_attn</span><span class="p">,</span> <span class="n">attns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context_attn</span><span class="p">(</span>
-                <span class="n">enc_out</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span> <span class="n">norm_query</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">src_pad_mask</span>
+                <span class="n">enc_out</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span> <span class="n">norm_query</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">src_pad_mask</span><span class="p">,</span> <span class="n">return_attn</span><span class="o">=</span><span class="n">return_attn</span>
             <span class="p">)</span>
             <span class="n">layer_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">feed_forward</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">ctx_attn</span><span class="p">)</span> <span class="o">+</span> <span class="n">query</span><span class="p">)</span>
 
@@ -528,7 +555,9 @@
 
 
 <span class="k">class</span> <span class="nc">TransformerDecoderBase</span><span class="p">(</span><span class="n">DecoderBase</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d_model</span><span class="p">,</span> <span class="n">copy_attn</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">,</span> <span class="n">alignment_layer</span><span class="p">,</span> <span class="n">layer_norm</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">d_model</span><span class="p">,</span> <span class="n">copy_attn</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">,</span> <span class="n">alignment_layer</span><span class="p">,</span> <span class="n">layer_norm</span><span class="p">,</span> <span class="n">norm_eps</span>
+    <span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">TransformerDecoderBase</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span> <span class="o">=</span> <span class="n">embeddings</span>
@@ -541,9 +570,9 @@
         <span class="c1"># just reuses the context attention.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_copy</span> <span class="o">=</span> <span class="n">copy_attn</span>
         <span class="k">if</span> <span class="n">layer_norm</span> <span class="o">==</span> <span class="s2">&quot;standard&quot;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="n">norm_eps</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">layer_norm</span> <span class="o">==</span> <span class="s2">&quot;rms&quot;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span> <span class="o">=</span> <span class="n">RMSNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span> <span class="o">=</span> <span class="n">RMSNorm</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="n">norm_eps</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">layer_norm</span><span class="si">}</span><span class="s2"> layer norm type is not supported&quot;</span><span class="p">)</span>
 
@@ -565,6 +594,7 @@
             <span class="k">else</span> <span class="n">opt</span><span class="o">.</span><span class="n">attention_dropout</span><span class="p">,</span>
             <span class="n">embeddings</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">max_relative_positions</span><span class="p">,</span>
+            <span class="n">opt</span><span class="o">.</span><span class="n">relative_positions_buckets</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">aan_useffn</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">full_context_alignment</span><span class="p">,</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">alignment_layer</span><span class="p">,</span>
@@ -576,7 +606,11 @@
             <span class="n">parallel_residual</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">parallel_residual</span><span class="p">,</span>
             <span class="n">shared_layer_norm</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">shared_layer_norm</span><span class="p">,</span>
             <span class="n">layer_norm</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">layer_norm</span><span class="p">,</span>
+            <span class="n">norm_eps</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">norm_eps</span><span class="p">,</span>
             <span class="n">use_ckpting</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">use_ckpting</span><span class="p">,</span>
+            <span class="n">parallel_gpu</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">world_size</span>
+            <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">parallel_mode</span> <span class="o">==</span> <span class="s2">&quot;tensor_parallel&quot;</span>
+            <span class="k">else</span> <span class="mi">1</span><span class="p">,</span>
         <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">init_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span> <span class="n">enc_final_hs</span><span class="p">):</span>
@@ -631,6 +665,8 @@
 <span class="sd">            embeddings to use, should have positional encodings</span>
 <span class="sd">        max_relative_positions (int):</span>
 <span class="sd">            Max distance between inputs in relative positions representations</span>
+<span class="sd">        relative_positions_buckets (int):</span>
+<span class="sd">            Number of buckets when using relative position bias</span>
 <span class="sd">        aan_useffn (bool): Turn on the FFN layer in the AAN decoder</span>
 <span class="sd">        full_context_alignment (bool):</span>
 <span class="sd">            whether enable an extra full context decoder forward for alignment</span>
@@ -653,6 +689,7 @@
         <span class="n">attention_dropout</span><span class="p">,</span>
         <span class="n">embeddings</span><span class="p">,</span>
         <span class="n">max_relative_positions</span><span class="p">,</span>
+        <span class="n">relative_positions_buckets</span><span class="p">,</span>
         <span class="n">aan_useffn</span><span class="p">,</span>
         <span class="n">full_context_alignment</span><span class="p">,</span>
         <span class="n">alignment_layer</span><span class="p">,</span>
@@ -664,10 +701,12 @@
         <span class="n">parallel_residual</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">shared_layer_norm</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">layer_norm</span><span class="o">=</span><span class="s2">&quot;standard&quot;</span><span class="p">,</span>
+        <span class="n">norm_eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">,</span>
         <span class="n">use_ckpting</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">parallel_gpu</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">TransformerDecoder</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">d_model</span><span class="p">,</span> <span class="n">copy_attn</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">,</span> <span class="n">alignment_layer</span><span class="p">,</span> <span class="n">layer_norm</span>
+            <span class="n">d_model</span><span class="p">,</span> <span class="n">copy_attn</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">,</span> <span class="n">alignment_layer</span><span class="p">,</span> <span class="n">layer_norm</span><span class="p">,</span> <span class="n">norm_eps</span>
         <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">transformer_layers</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">(</span>
@@ -680,6 +719,7 @@
                     <span class="n">attention_dropout</span><span class="p">,</span>
                     <span class="n">self_attn_type</span><span class="o">=</span><span class="n">self_attn_type</span><span class="p">,</span>
                     <span class="n">max_relative_positions</span><span class="o">=</span><span class="n">max_relative_positions</span><span class="p">,</span>
+                    <span class="n">relative_positions_buckets</span><span class="o">=</span><span class="n">relative_positions_buckets</span><span class="p">,</span>
                     <span class="n">aan_useffn</span><span class="o">=</span><span class="n">aan_useffn</span><span class="p">,</span>
                     <span class="n">full_context_alignment</span><span class="o">=</span><span class="n">full_context_alignment</span><span class="p">,</span>
                     <span class="n">alignment_heads</span><span class="o">=</span><span class="n">alignment_heads</span><span class="p">,</span>
@@ -690,7 +730,9 @@
                     <span class="n">parallel_residual</span><span class="o">=</span><span class="n">parallel_residual</span><span class="p">,</span>
                     <span class="n">shared_layer_norm</span><span class="o">=</span><span class="n">shared_layer_norm</span><span class="p">,</span>
                     <span class="n">layer_norm</span><span class="o">=</span><span class="n">layer_norm</span><span class="p">,</span>
+                    <span class="n">norm_eps</span><span class="o">=</span><span class="n">norm_eps</span><span class="p">,</span>
                     <span class="n">use_ckpting</span><span class="o">=</span><span class="n">use_ckpting</span><span class="p">,</span>
+                    <span class="n">parallel_gpu</span><span class="o">=</span><span class="n">parallel_gpu</span><span class="p">,</span>
                 <span class="p">)</span>
                 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_layers</span><span class="p">)</span>
             <span class="p">]</span>
@@ -736,6 +778,7 @@
         <span class="n">tgt_pad_mask</span> <span class="o">=</span> <span class="n">tgt</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">pad_idx</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># [B, 1, T_tgt]</span>
 
         <span class="n">with_align</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;with_align&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">return_attn</span> <span class="o">=</span> <span class="n">with_align</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_copy</span>
         <span class="n">attn_aligns</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer_layers</span><span class="p">:</span>
@@ -746,6 +789,7 @@
                 <span class="n">tgt_pad_mask</span><span class="p">,</span>
                 <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">,</span>
                 <span class="n">with_align</span><span class="o">=</span><span class="n">with_align</span><span class="p">,</span>
+                <span class="n">return_attn</span><span class="o">=</span><span class="n">return_attn</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="k">if</span> <span class="n">attn_align</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">attn_aligns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">attn_align</span><span class="p">)</span>
@@ -798,7 +842,9 @@
 <span class="sd">         See TransformerDecoderLayerBase</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">_forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer_in</span><span class="p">,</span> <span class="n">tgt_pad_mask</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">future</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_forward</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">layer_in</span><span class="p">,</span> <span class="n">tgt_pad_mask</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">future</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">return_attn</span><span class="o">=</span><span class="kc">False</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;A naive forward pass for transformer decoder.</span>
 
 <span class="sd">        # T: could be 1 in the case of stepwise decoding or tgt_len</span>
@@ -809,6 +855,7 @@
 <span class="sd">            layer_cache (dict or None): cached layer info when stepwise decode</span>
 <span class="sd">            step (int or None): stepwise decoding counter</span>
 <span class="sd">            future (bool): If set True, do not apply future_mask.</span>
+<span class="sd">            return_attn (bool): If set True return attn</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            (FloatTensor, FloatTensor):</span>
@@ -829,7 +876,9 @@
 
         <span class="n">norm_layer_in</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm_1</span><span class="p">(</span><span class="n">layer_in</span><span class="p">)</span>
 
-        <span class="n">attn_output</span><span class="p">,</span> <span class="n">attns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_forward_self_attn</span><span class="p">(</span><span class="n">norm_layer_in</span><span class="p">,</span> <span class="n">dec_mask</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+        <span class="n">attn_output</span><span class="p">,</span> <span class="n">attns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_forward_self_attn</span><span class="p">(</span>
+            <span class="n">norm_layer_in</span><span class="p">,</span> <span class="n">dec_mask</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">return_attn</span><span class="o">=</span><span class="n">return_attn</span>
+        <span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parallel_residual</span><span class="p">:</span>
             <span class="c1"># feed_forward applies residual, so we remove and apply residual with un-normed</span>
@@ -863,6 +912,8 @@
 <span class="sd">             embeddings to use, should have positional encodings</span>
 <span class="sd">         max_relative_positions (int):</span>
 <span class="sd">             Max distance between inputs in relative positions representations</span>
+<span class="sd">         relative_positions_buckets (int):</span>
+<span class="sd">             Number of buckets when using Relative positions bias</span>
 <span class="sd">         aan_useffn (bool): Turn on the FFN layer in the AAN decoder</span>
 <span class="sd">         add_qkvbias (bool): whether to add bias to the Key/Value nn.Linear</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -879,6 +930,7 @@
         <span class="n">attention_dropout</span><span class="p">,</span>
         <span class="n">embeddings</span><span class="p">,</span>
         <span class="n">max_relative_positions</span><span class="p">,</span>
+        <span class="n">relative_positions_buckets</span><span class="p">,</span>
         <span class="n">aan_useffn</span><span class="p">,</span>
         <span class="n">full_context_alignment</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">alignment_layer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -890,10 +942,12 @@
         <span class="n">parallel_residual</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">shared_layer_norm</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">layer_norm</span><span class="o">=</span><span class="s2">&quot;standard&quot;</span><span class="p">,</span>
+        <span class="n">norm_eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">,</span>
         <span class="n">use_ckpting</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">parallel_gpu</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">TransformerLMDecoder</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">d_model</span><span class="p">,</span> <span class="n">copy_attn</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">,</span> <span class="n">alignment_layer</span><span class="p">,</span> <span class="n">layer_norm</span>
+            <span class="n">d_model</span><span class="p">,</span> <span class="n">copy_attn</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">,</span> <span class="n">alignment_layer</span><span class="p">,</span> <span class="n">layer_norm</span><span class="p">,</span> <span class="n">norm_eps</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">transformer_layers</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">(</span>
             <span class="p">[</span>
@@ -905,6 +959,7 @@
                     <span class="n">attention_dropout</span><span class="p">,</span>
                     <span class="n">self_attn_type</span><span class="o">=</span><span class="n">self_attn_type</span><span class="p">,</span>
                     <span class="n">max_relative_positions</span><span class="o">=</span><span class="n">max_relative_positions</span><span class="p">,</span>
+                    <span class="n">relative_positions_buckets</span><span class="o">=</span><span class="n">relative_positions_buckets</span><span class="p">,</span>
                     <span class="n">aan_useffn</span><span class="o">=</span><span class="n">aan_useffn</span><span class="p">,</span>
                     <span class="n">full_context_alignment</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                     <span class="n">alignment_heads</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -915,7 +970,9 @@
                     <span class="n">parallel_residual</span><span class="o">=</span><span class="n">parallel_residual</span><span class="p">,</span>
                     <span class="n">shared_layer_norm</span><span class="o">=</span><span class="n">shared_layer_norm</span><span class="p">,</span>
                     <span class="n">layer_norm</span><span class="o">=</span><span class="n">layer_norm</span><span class="p">,</span>
+                    <span class="n">norm_eps</span><span class="o">=</span><span class="n">norm_eps</span><span class="p">,</span>
                     <span class="n">use_ckpting</span><span class="o">=</span><span class="n">use_ckpting</span><span class="p">,</span>
+                    <span class="n">parallel_gpu</span><span class="o">=</span><span class="n">parallel_gpu</span><span class="p">,</span>
                 <span class="p">)</span>
                 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_layers</span><span class="p">)</span>
             <span class="p">]</span>
@@ -946,6 +1003,7 @@
         <span class="n">tgt_pad_mask</span> <span class="o">=</span> <span class="n">tgt</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">pad_idx</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># [B, 1, T_tgt]</span>
 
         <span class="n">with_align</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;with_align&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">return_attn</span> <span class="o">=</span> <span class="n">with_align</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_copy</span>
         <span class="k">assert</span> <span class="ow">not</span> <span class="n">with_align</span><span class="p">,</span> <span class="s2">&quot;TransformerLMDecoder does not support align&quot;</span>
 
         <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer_layers</span><span class="p">:</span>
@@ -954,6 +1012,7 @@
                 <span class="n">tgt_pad_mask</span><span class="p">,</span>
                 <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">,</span>
                 <span class="n">with_align</span><span class="o">=</span><span class="n">with_align</span><span class="p">,</span>
+                <span class="n">return_attn</span><span class="o">=</span><span class="n">return_attn</span><span class="p">,</span>
             <span class="p">)</span>
 
         <span class="n">dec_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_norm</span><span class="p">(</span><span class="n">dec_out</span><span class="p">)</span>
