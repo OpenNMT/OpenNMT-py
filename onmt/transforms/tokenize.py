@@ -150,6 +150,47 @@ class TokenizerTransform(Transform):
         }
         return ", ".join([f"{kw}={arg}" for kw, arg in kwargs.items()])
 
+    def locate_mask(self, sentence, side="src", is_train=False):
+        """Insert the padding token in the tokens list
+        at the position indicated by the mask_before placeholder"""
+        if len(sentence.split(DefaultTokens.MASK_BEFORE)) == 2:
+            s1, s2 = sentence.split(DefaultTokens.MASK_BEFORE)
+            tokens = (
+                self.tokenize_string(s1, side, is_train)
+                + [DefaultTokens.PAD]
+                + self.tokenize_string(s2, side, is_train)
+            )
+        else:
+            tokens = self.tokenize_string(sentence, side, is_train)
+        return tokens
+
+    def _tokenize(self, tokens, side="src", is_train=False):
+        sentence = " ".join(tokens).replace(DefaultTokens.SEP, "\n")
+        sent_list = sentence.split(DefaultTokens.EOS)
+        segmented = []
+        for _sentence in sent_list:
+            segmented += self.locate_mask(_sentence, side)
+            segmented += [DefaultTokens.EOS]
+        return segmented[:-1]
+
+    def apply(self, example, is_train=False, stats=None, **kwargs):
+        """Apply sentencepiece subword encode to src & tgt."""
+        src_out = self._tokenize(example["src"], "src", is_train)
+        if example["tgt"] is not None:
+            tgt_out = self._tokenize(example["tgt"], "tgt", is_train)
+            if stats is not None:
+                n_words = len(example["src"]) + len(example["tgt"])
+                n_subwords = len(src_out) + len(tgt_out)
+                stats.update(SubwordStats(n_subwords, n_words))
+        else:
+            tgt_out = None
+            if stats is not None:
+                n_words = len(example["src"])
+                n_subwords = len(src_out)
+                stats.update(SubwordStats(n_subwords, n_words))
+        example["src"], example["tgt"] = src_out, tgt_out
+        return example
+
 
 class SubwordStats(ObservableStats):
     """Runing statistics for counting tokens before/after subword transform."""
@@ -208,91 +249,39 @@ class SentencePieceTransform(TokenizerTransform):
                 )
             self.load_models = {"src": load_src_model, "tgt": load_tgt_model}
 
-    def _tokenize(self, tokens, side="src", is_train=False):
-        """Do sentencepiece subword tokenize."""
+    def segment_with_subword_sampling(self, string, nbest_size, side="src"):
         sp_model = self.load_models[side]
-        sentence = " ".join(tokens).replace(DefaultTokens.SEP, "\n")
-        sent_list = sentence.split(DefaultTokens.EOS)
-        segmented = []
-        for sentence in sent_list:
-            nbest_size = (
-                self.tgt_subword_nbest if side == "tgt" else self.src_subword_nbest
-            )
-            if is_train is False or nbest_size in [0, 1]:
-                # derterministic subwording
-                if len(sentence.split(DefaultTokens.MASK_BEFORE)) == 2:
-                    # The padding token is inserted at the position indicated by
-                    # the  `DefaultTokens.MASK_BEFORE` placeholder.
-                    x, y = sentence.split(DefaultTokens.MASK_BEFORE)
-                    segmented = (
-                        segmented
-                        + sp_model.encode(x, out_type=str)
-                        + ["<blank>"]
-                        + sp_model.encode(y, out_type=str)
-                    )
-                else:
-                    segmented += sp_model.encode(sentence, out_type=str)
-            else:
-                # subword sampling when nbest_size > 1 or -1
-                # alpha should be 0.0 < alpha < 1.0
-                alpha = (
-                    self.tgt_subword_alpha if side == "tgt" else self.src_subword_alpha
-                )
-                if len(sentence.split(DefaultTokens.MASK_BEFORE)) == 2:
-                    x, y = sentence.split(DefaultTokens.MASK_BEFORE)
-                    segmented = (
-                        segmented
-                        + sp_model.encode(
-                            x,
-                            out_type=str,
-                            enable_sampling=True,
-                            alpha=alpha,
-                            nbest_size=nbest_size,
-                        )
-                        + ["<blank>"]
-                        + sp_model.encode(
-                            y,
-                            out_type=str,
-                            enable_sampling=True,
-                            alpha=alpha,
-                            nbest_size=nbest_size,
-                        )
-                    )
-                else:
-                    segmented += sp_model.encode(
-                        sentence,
-                        out_type=str,
-                        enable_sampling=True,
-                        alpha=alpha,
-                        nbest_size=nbest_size,
-                    )
+        alpha = self.tgt_subword_alpha if side == "tgt" else self.src_subword_alpha
+        tokens = sp_model.encode(
+            string,
+            out_type=str,
+            enable_sampling=True,
+            alpha=alpha,
+            nbest_size=nbest_size,
+        )
+        return tokens
 
-            segmented += [DefaultTokens.EOS]
+    def segment_determistic(self, string, side="src"):
+        sp_model = self.load_models[side]
+        tokens = sp_model.encode(string, out_type=str)
+        return tokens
 
-        return segmented[:-1]
+    def tokenize_string(self, string, side="src", is_train=False):
+        """Apply subword sampling or deterministic subwording"""
+        nbest_size = self.tgt_subword_nbest if side == "tgt" else self.src_subword_nbest
+        if is_train is False or nbest_size in [0, 1]:
+            # derterministic subwording
+            tokens = self.segment_determistic(string, side)
+        else:
+            # subword sampling when nbest_size > 1 or -1
+            # alpha should be 0.0 < alpha < 1.0
+            tokens = self.segment_with_subword_sampling(string, side, nbest_size)
+        return tokens
 
     def _detokenize(self, tokens, side="src"):
         """Apply SentencePiece Detokenizer"""
         sp_model = self.load_models[side]
         return sp_model.DecodePieces(tokens).replace("\n", DefaultTokens.SEP)
-
-    def apply(self, example, is_train=False, stats=None, **kwargs):
-        """Apply sentencepiece subword encode to src & tgt."""
-        src_out = self._tokenize(example["src"], "src", is_train)
-        if example["tgt"] is not None:
-            tgt_out = self._tokenize(example["tgt"], "tgt", is_train)
-            if stats is not None:
-                n_words = len(example["src"]) + len(example["tgt"])
-                n_subwords = len(src_out) + len(tgt_out)
-                stats.update(SubwordStats(n_subwords, n_words))
-        else:
-            tgt_out = None
-            if stats is not None:
-                n_words = len(example["src"])
-                n_subwords = len(src_out)
-                stats.update(SubwordStats(n_subwords, n_words))
-        example["src"], example["tgt"] = src_out, tgt_out
-        return example
 
     def apply_reverse(self, translated):
         """Apply SentencePiece Detokenizer."""
@@ -351,8 +340,9 @@ class BPETransform(TokenizerTransform):
                 load_tgt_model = BPE(codes=tgt_codes, vocab=tgt_vocabulary)
             self.load_models = {"src": load_src_model, "tgt": load_tgt_model}
 
-    def _tokenize(self, tokens, side="src", is_train=False):
+    def tokenize_string(self, string, side="src", is_train=False):
         """Do bpe subword tokenize."""
+        tokens = string.split(" ")
         bpe_model = self.load_models[side]
         dropout = self.dropout[side] if is_train else 0.0
         segmented = bpe_model.segment_tokens(tokens, dropout=dropout)
@@ -362,24 +352,6 @@ class BPETransform(TokenizerTransform):
         """ "Apply bpe subword detokenizer"""
         detokenized = re.sub(r"(@@ )|(@@ ?$)", r"", " ".join(tokens))
         return detokenized
-
-    def apply(self, example, is_train=False, stats=None, **kwargs):
-        """Apply bpe subword encode to src & tgt."""
-        src_out = self._tokenize(example["src"], "src", is_train)
-        if example["tgt"] is not None:
-            tgt_out = self._tokenize(example["tgt"], "tgt", is_train)
-            if stats is not None:
-                n_words = len(example["src"]) + len(example["tgt"])
-                n_subwords = len(src_out) + len(tgt_out)
-                stats.update(SubwordStats(n_subwords, n_words))
-        else:
-            tgt_out = None
-            if stats is not None:
-                n_words = len(example["src"])
-                n_subwords = len(src_out)
-                stats.update(SubwordStats(n_subwords, n_words))
-        example["src"], example["tgt"] = src_out, tgt_out
-        return example
 
     def apply_reverse(self, translated):
         """Apply bpe subword detokenizer"""
@@ -576,10 +548,8 @@ class ONMTTokenizerTransform(TokenizerTransform):
             self.maptable = dict(zip(bs, cs))
             self.revtable = {v: k for k, v in self.maptable.items()}
 
-    def _tokenize(self, tokens, side="src", is_train=False):
-        """Do OpenNMT Tokenizer's tokenize."""
+    def tokenize_string(self, sentence, side="src", is_train=False):
         tokenizer = self.load_models[side]
-        sentence = " ".join(tokens)
         if self.gpt2_pretok:
             sentence = "".join(
                 self.maptable[b]
@@ -601,24 +571,6 @@ class ONMTTokenizerTransform(TokenizerTransform):
         else:
             detokenized = tokenizer.detokenize(tokens)
         return detokenized.replace("\n", DefaultTokens.SEP)
-
-    def apply(self, example, is_train=False, stats=None, **kwargs):
-        """Apply OpenNMT Tokenizer to src & tgt."""
-        src_out = self._tokenize(example["src"], "src")
-        if example["tgt"] is not None:
-            tgt_out = self._tokenize(example["tgt"], "tgt")
-            if stats is not None:
-                n_words = len(example["src"]) + len(example["tgt"])
-                n_subwords = len(src_out) + len(tgt_out)
-                stats.update(SubwordStats(n_subwords, n_words))
-        else:
-            tgt_out = None
-            if stats is not None:
-                n_words = len(example["src"])
-                n_subwords = len(src_out)
-                stats.update(SubwordStats(n_subwords, n_words))
-        example["src"], example["tgt"] = src_out, tgt_out
-        return example
 
     def apply_reverse(self, translated):
         """Apply OpenNMT Tokenizer to src & tgt."""
