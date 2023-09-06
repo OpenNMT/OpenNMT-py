@@ -210,6 +210,8 @@ class ModelSaver(ModelSaverBase):
             ws = 1
         if ws > 1:
             full_model = [None for _ in range(ws)]
+            for key, value in model_state_dict.items():
+                model_state_dict[key] = value.cpu()
             torch.distributed.all_gather_object(full_model, model_state_dict)
             fm_sd = {}
             for key in full_model[0].keys():
@@ -297,6 +299,8 @@ class ModelSaver(ModelSaverBase):
             ws = 1
         if ws > 1:
             full_model = [None for _ in range(ws)]
+            for key, value in model_state_dict.items():
+                model_state_dict[key] = value.cpu()
             torch.distributed.all_gather_object(full_model, model_state_dict)
             fm_sd = {}
             for key in full_model[0].keys():

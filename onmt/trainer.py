@@ -563,7 +563,7 @@ class Trainer(object):
                 if self.earlystopper is None
                 else self.earlystopper.current_tolerance,
                 report_stats,
-                multigpu=self.n_gpu > 1,
+                multigpu=self.n_gpu > 1 and self.parallel_mode == "data_parallel",
             )
 
     def _report_step(self, learning_rate, step, valid_stats=None, train_stats=None):
