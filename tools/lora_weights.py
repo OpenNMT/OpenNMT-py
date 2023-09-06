@@ -62,7 +62,7 @@ if __name__ == "__main__":
     lora_opt = lora_checkpoint["opt"]
 
     lora_opt.quant_layers = []  # we need to remove any quantization to merge weights
-    lora_opt.parallel_mode= 'data_parallel'
+    lora_opt.parallel_mode = "data_parallel"
 
     model = build_base_model(lora_opt, vocabs)
 
