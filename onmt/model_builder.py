@@ -342,7 +342,7 @@ def build_base_model(model_opt, vocabs):
     return model
 
 
-def build_model(model_opt, opt, vocabs, checkpoint):
+def build_model(model_opt, opt, vocabs, checkpoint, device_id):
     logger.info("Building model...")
 
     model = build_base_model(model_opt, vocabs)
@@ -414,6 +414,7 @@ def build_model(model_opt, opt, vocabs, checkpoint):
                 precision=precision,
                 device=device,
                 strict=strict,
+                device_id=device_id,
             )
         else:
             # weights are not in the .pt checkpoint but stored in the safetensors file
@@ -425,6 +426,7 @@ def build_model(model_opt, opt, vocabs, checkpoint):
                 precision=precision,
                 device=device,
                 strict=strict,
+                device_id=device_id,
             )
     else:
         model.to(precision)
