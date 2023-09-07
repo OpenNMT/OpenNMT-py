@@ -150,27 +150,28 @@ class TokenizerTransform(Transform):
         }
         return ", ".join([f"{kw}={arg}" for kw, arg in kwargs.items()])
 
-    def locate_mask(self, sentence, side="src", is_train=False):
-        """Insert the padding token in the tokens list
-        at the position indicated by the mask_before placeholder"""
-        if len(sentence.split(DefaultTokens.MASK_BEFORE)) == 2:
-            s1, s2 = sentence.split(DefaultTokens.MASK_BEFORE)
-            tokens = (
-                self.tokenize_string(s1, side, is_train)
-                + [DefaultTokens.PAD]
-                + self.tokenize_string(s2, side, is_train)
-            )
-        else:
-            tokens = self.tokenize_string(sentence, side, is_train)
-        return tokens
-
     def _tokenize(self, tokens, side="src", is_train=False):
+        """Tokenize a list of words."""
+        # This method embeds a custom logic to correctly handle certain placeholders
+        # in case the tokenizer doesn't preserve them.
         sentence = " ".join(tokens).replace(DefaultTokens.SEP, "\n")
+        # Locate the end-of-sentence placeholders.
         sent_list = sentence.split(DefaultTokens.EOS)
+        # Tokenize each sentence separately.
         segmented = []
         for _sentence in sent_list:
-            segmented += self.locate_mask(_sentence, side, is_train)
-            segmented += [DefaultTokens.EOS]
+            # Locate the mask-before placeholders
+            # (to zero-out the prompt loss during LM finetuning).
+            _sentence_chunks = _sentence.split(DefaultTokens.MASK_BEFORE)
+            # Tokenize each chunk separately and insert the padding token.
+            # between each sequence of tokens.
+            _sentence_tokens = []
+            for _chunk in _sentence_chunks:
+                _sentence_tokens += self.tokenize_string(_chunk, side, is_train) + [
+                    DefaultTokens.PAD
+                ]
+            # Re-insert the eos token.
+            segmented += _sentence_tokens[:-1] + [DefaultTokens.EOS]
         return segmented[:-1]
 
     def apply(self, example, is_train=False, stats=None, **kwargs):
@@ -249,36 +250,24 @@ class SentencePieceTransform(TokenizerTransform):
                 )
             self.load_models = {"src": load_src_model, "tgt": load_tgt_model}
 
-    def segment_with_subword_sampling(self, nbest_size, string, side="src"):
-        print("sampling ...")
-        sp_model = self.load_models[side]
-        alpha = self.tgt_subword_alpha if side == "tgt" else self.src_subword_alpha
-        print(self.src_subword_alpha)
-        tokens = sp_model.encode(
-            string,
-            out_type=str,
-            enable_sampling=True,
-            alpha=alpha,
-            nbest_size=nbest_size,
-        )
-        return tokens
-
-    def segment_determistic(self, string, side="src"):
-        print("not sampling ...")
-        sp_model = self.load_models[side]
-        tokens = sp_model.encode(string, out_type=str)
-        return tokens
-
     def tokenize_string(self, string, side="src", is_train=False):
         """Apply subword sampling or deterministic subwording"""
+        sp_model = self.load_models[side]
         nbest_size = self.tgt_subword_nbest if side == "tgt" else self.src_subword_nbest
         if is_train is False or nbest_size in [0, 1]:
             # derterministic subwording
-            tokens = self.segment_determistic(string, side)
+            tokens = sp_model.encode(string, out_type=str)
         else:
             # subword sampling when nbest_size > 1 or -1
             # alpha should be 0.0 < alpha < 1.0
-            tokens = self.segment_with_subword_sampling(nbest_size, string, side)
+            alpha = self.tgt_subword_alpha if side == "tgt" else self.src_subword_alpha
+            tokens = sp_model.encode(
+                string,
+                out_type=str,
+                enable_sampling=True,
+                alpha=alpha,
+                nbest_size=nbest_size,
+            )
         return tokens
 
     def _detokenize(self, tokens, side="src"):
