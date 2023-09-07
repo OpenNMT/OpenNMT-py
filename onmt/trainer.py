@@ -10,6 +10,7 @@
 """
 
 import time
+import sys
 import torch
 import traceback
 import onmt.utils
@@ -87,7 +88,7 @@ def build_trainer(opt, device_id, model, vocabs, optim, model_saver=None):
         parallel_mode,
         report_manager,
         with_align=True if opt.lambda_align > 0 else False,
-        model_saver=model_saver if gpu_rank <= 0 else None,
+        model_saver=model_saver,
         average_decay=average_decay,
         average_every=average_every,
         model_dtype=opt.model_dtype,
@@ -324,11 +325,7 @@ class Trainer(object):
                 step, train_steps, self.optim.learning_rate(), report_stats
             )
 
-            if (
-                valid_iter is not None
-                and step % valid_steps == 0
-                and self.gpu_rank <= 0
-            ):
+            if valid_iter is not None and step % valid_steps == 0:
                 valid_stats = self.validate(
                     valid_iter, moving_average=self.moving_average
                 )
@@ -525,6 +522,9 @@ class Trainer(object):
                             self.optim.training_step,
                         )
                         torch.cuda.empty_cache()
+                        if self.n_gpu > 1 and self.parallel_mode == "tensor_parallel":
+                            torch.distributed.destroy_process_group()
+                            sys.exit()
                     else:
                         traceback.print_exc()
                         raise exc
@@ -569,7 +569,7 @@ class Trainer(object):
                 if self.earlystopper is None
                 else self.earlystopper.current_tolerance,
                 report_stats,
-                multigpu=self.n_gpu > 1,
+                multigpu=self.n_gpu > 1 and self.parallel_mode == "data_parallel",
             )
 
     def _report_step(self, learning_rate, step, valid_stats=None, train_stats=None):

@@ -3,7 +3,16 @@
 
 ## [Unreleased]
 
-## [3.3.0](https://github.com/OpenNMT/OpenNMT-py/tree/3.2.0) (2023-06-22)
+## [3.4.0](https://github.com/OpenNMT/OpenNMT-py/tree/3.4.0) (2023-09-06)
+
+* bitsandbytes 4/8 bit quantization at inference
+* MMLU-FR results and scoring
+* flan-T5 support
+* flash attention
+* terminology transform
+* tensor parallelism (inference, training)
+
+## [3.3.0](https://github.com/OpenNMT/OpenNMT-py/tree/3.3.0) (2023-06-22)
 
 * Switch to pytorch 2.0.1
 * Eval LLM with MMLU benchmark

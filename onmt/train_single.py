@@ -162,7 +162,7 @@ def main(opt, device_id):
     model_opt = _get_model_opts(opt, checkpoint=checkpoint)
 
     # Build model.
-    model = build_model(model_opt, opt, vocabs, checkpoint)
+    model = build_model(model_opt, opt, vocabs, checkpoint, device_id)
 
     model.count_parameters(log=logger.info)
     trainable = {
@@ -196,7 +196,7 @@ def main(opt, device_id):
     del checkpoint
 
     # Build model saver
-    model_saver = build_model_saver(model_opt, opt, model, vocabs, optim)
+    model_saver = build_model_saver(model_opt, opt, model, vocabs, optim, device_id)
 
     trainer = build_trainer(
         opt, device_id, model, vocabs, optim, model_saver=model_saver
