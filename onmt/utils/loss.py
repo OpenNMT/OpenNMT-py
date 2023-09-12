@@ -288,13 +288,6 @@ class LossCompute(nn.Module):
                 .flatten()
                 .tolist()[0]
             )
-            # print("# Response")
-            # nb_decoding_steps = batch['src'].size()[1]
-            # print([self.vocab.lookup_index(batch['tgt'][j, t, 0])
-            #        for t in range(response_start, nb_decoding_steps)])
-            # print("# Prompt")
-            # print([self.vocab.lookup_index(batch['tgt'][j, t, 0])
-            #        for t in range(0, response_start)])
 
             # Mask the prompt
             for t in range(0, response_start):
