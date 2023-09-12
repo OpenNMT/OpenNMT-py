@@ -102,6 +102,7 @@ def load_test_model(opt, device_id=0, model_path=None):
         model_opt.parallel_mode = opt.parallel_mode
         model_opt.gpu_ranks = opt.gpu_ranks
         device = torch.device("cuda", device_id)
+        offset = device_id
     else:
         if use_gpu(opt):
             if len(opt.gpu_ranks) > 0:
@@ -111,6 +112,7 @@ def load_test_model(opt, device_id=0, model_path=None):
             device = torch.device("cuda", device_id)
         else:
             device = torch.device("cpu")
+        offset = 0
 
     ArgumentParser.update_model_opts(model_opt)
     ArgumentParser.validate_model_opts(model_opt)
@@ -132,6 +134,7 @@ def load_test_model(opt, device_id=0, model_path=None):
             precision = torch.int8
 
     logger.info("Loading data into the model")
+
     if "model" in checkpoint.keys():
         # weights are in the .pt file
         model.load_state_dict(
@@ -139,7 +142,7 @@ def load_test_model(opt, device_id=0, model_path=None):
             precision=precision,
             device=device,
             strict=True,
-            device_id=device_id,
+            offset=offset,
         )
     else:
         # weights are not in the .pt checkpoint but stored in the safetensors file
@@ -149,7 +152,7 @@ def load_test_model(opt, device_id=0, model_path=None):
             precision=precision,
             device=device,
             strict=True,
-            device_id=device_id,
+            offset=offset,
         )
     del checkpoint
 
@@ -386,10 +389,15 @@ def build_model(model_opt, opt, vocabs, checkpoint, device_id):
         logger.info("Switching model to float32 for amp/apex_amp")
         logger.info("Non quantized layer compute is %s", model_opt.model_dtype)
 
-    if use_gpu(opt):
+    if opt.world_size > 1 and opt.parallel_mode == "tensor_parallel":
         device = torch.device("cuda")
+        offset = device_id
     else:
-        device = torch.device("cpu")
+        if use_gpu(opt):
+            device = torch.device("cuda")
+        else:
+            device = torch.device("cpu")
+        offset = 0
 
     if checkpoint is not None:
         if model_opt.update_vocab:
@@ -414,7 +422,7 @@ def build_model(model_opt, opt, vocabs, checkpoint, device_id):
                 precision=precision,
                 device=device,
                 strict=strict,
-                device_id=device_id,
+                offset=offset,
             )
         else:
             # weights are not in the .pt checkpoint but stored in the safetensors file
@@ -426,7 +434,7 @@ def build_model(model_opt, opt, vocabs, checkpoint, device_id):
                 precision=precision,
                 device=device,
                 strict=strict,
-                device_id=device_id,
+                offset=offset,
             )
     else:
         model.to(precision)

@@ -51,7 +51,7 @@ class BaseModel(nn.Module):
         precision=torch.float32,
         device=torch.device("cpu"),
         strict=True,
-        device_id=0,
+        offset=0,
     ):
         """Custom state_dict loading to enable moving module on device as they are loaded
 
@@ -66,7 +66,7 @@ class BaseModel(nn.Module):
         # for huge models we need to save Ram
         # so we load the weights  module by module and transfer them to GPU for quantization
         if device == torch.device("cpu"):
-            device_id = 0
+            offset = 0
         buf_list = []
         for name, module in self.named_modules():
             for buf_name, buf in module.named_buffers():
@@ -89,15 +89,15 @@ class BaseModel(nn.Module):
                             "w_1",
                             "w_3",
                         ]:
-                            col_slice_start = param.data.size(0) * device_id
-                            col_slice_end = param.data.size(0) * (device_id + 1)
+                            col_slice_start = param.data.size(0) * offset
+                            col_slice_end = param.data.size(0) * (offset + 1)
                         else:
                             col_slice_start = 0
                             col_slice_end = param.data.size(0)
                         if param.data.dim() == 2:
                             if name.split(".")[-1] in ["final_linear", "w_2"]:
-                                row_slice_start = param.data.size(1) * device_id
-                                row_slice_end = param.data.size(1) * (device_id + 1)
+                                row_slice_start = param.data.size(1) * offset
+                                row_slice_end = param.data.size(1) * (offset + 1)
                             else:
                                 row_slice_start = 0
                                 row_slice_end = param.data.size(1)
@@ -159,7 +159,7 @@ class BaseModel(nn.Module):
         precision=torch.float32,
         device=torch.device("cpu"),
         strict=True,
-        device_id=0,
+        offset=0,
     ):
         """Custom state_dict loading to enable moving module on device as they are loaded
 
@@ -210,15 +210,15 @@ class BaseModel(nn.Module):
                             "w_1",
                             "w_3",
                         ]:
-                            col_slice_start = param.data.size(0) * device_id
-                            col_slice_end = param.data.size(0) * (device_id + 1)
+                            col_slice_start = param.data.size(0) * offset
+                            col_slice_end = param.data.size(0) * (offset + 1)
                         else:
                             col_slice_start = 0
                             col_slice_end = param.data.size(0)
                         if param.data.dim() == 2:
                             if name.split(".")[-1] in ["final_linear", "w_2"]:
-                                row_slice_start = param.data.size(1) * device_id
-                                row_slice_end = param.data.size(1) * (device_id + 1)
+                                row_slice_start = param.data.size(1) * offset
+                                row_slice_end = param.data.size(1) * (offset + 1)
                             else:
                                 row_slice_start = 0
                                 row_slice_end = param.data.size(1)
