@@ -274,8 +274,6 @@ class LossCompute(nn.Module):
         Args:
             batch: The current batch.
         """
-        # The tokenize transform inserts the Llama token '<blank>' at the position
-        # indicated by the placeholder `DefaultTokens.MASK_BEFORE`.
         nb_examples = batch["src"].size()[0]
 
         for j in range(nb_examples):
