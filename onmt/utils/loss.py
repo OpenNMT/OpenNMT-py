@@ -274,16 +274,14 @@ class LossCompute(nn.Module):
         Args:
             batch: The current batch.
         """
-        mask_before_idx = self.vocab["<blank>"]
         # The tokenize transform inserts the Llama token '<blank>' at the position
         # indicated by the placeholder `DefaultTokens.MASK_BEFORE`.
-        ignore_idx = self.padding_idx
         nb_examples = batch["src"].size()[0]
 
         for j in range(nb_examples):
             # Locate the end of the prompt
             response_start = (
-                (batch["src"][j, :, 0].cpu() == mask_before_idx)
+                (batch["src"][j, :, 0].cpu() == self.padding_idx)
                 .nonzero(as_tuple=False)
                 .flatten()
                 .tolist()[0]
@@ -291,7 +289,7 @@ class LossCompute(nn.Module):
 
             # Mask the prompt
             for t in range(0, response_start):
-                batch["tgt"][j, t, 0] = ignore_idx
+                batch["tgt"][j, t, 0] = self.padding_idx
             break
         return batch
 

@@ -150,6 +150,9 @@ class TokenizerTransform(Transform):
         }
         return ", ".join([f"{kw}={arg}" for kw, arg in kwargs.items()])
 
+    def tokenize_string(self, string, side="src", is_train=False):
+        raise NotImplementedError
+
     def _tokenize(self, tokens, side="src", is_train=False):
         """Tokenize a list of words."""
         # This method embeds a custom logic to correctly handle certain placeholders
@@ -175,7 +178,7 @@ class TokenizerTransform(Transform):
         return segmented[:-1]
 
     def apply(self, example, is_train=False, stats=None, **kwargs):
-        """Apply sentencepiece subword encode to src & tgt."""
+        """Apply subword-based tokenenization to src & tgt."""
         src_out = self._tokenize(example["src"], "src", is_train)
         if example["tgt"] is not None:
             tgt_out = self._tokenize(example["tgt"], "tgt", is_train)
