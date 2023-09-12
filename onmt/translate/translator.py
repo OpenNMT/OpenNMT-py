@@ -578,7 +578,8 @@ class Inference(object):
         # in case of Gold Scoring tgt_len = actual length, batch = 1 batch
 
         dec_out, dec_attn = self.model.decoder(
-            decoder_in, enc_out, src_len=src_len, step=step
+            decoder_in, enc_out, src_len=src_len, step=step, 
+            with_align=self.global_scorer.has_cov_pen
         )
 
         # Generator forward.
