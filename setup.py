@@ -34,6 +34,7 @@ setup(
         "pyahocorasick",
         "fasttext-wheel",
         "spacy",
+        "six",
     ],
     entry_points={
         "console_scripts": [
