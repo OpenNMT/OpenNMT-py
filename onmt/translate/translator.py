@@ -582,7 +582,7 @@ class Inference(object):
             enc_out,
             src_len=src_len,
             step=step,
-            with_align=self.global_scorer.has_cov_pen
+            with_align=self.global_scorer.has_cov_pen,
         )
 
         # Generator forward.
