@@ -26,6 +26,7 @@ class TestTransform(unittest.TestCase):
             "switchout",
             "tokendrop",
             "tokenmask",
+            "insert_mask_before_placeholder",
         ]
         get_transforms_cls(builtin_transform)
 
@@ -781,3 +782,47 @@ class TestFeaturesTransform(unittest.TestCase):
             ex_out["src_feats"][0],
             ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "10", "10", "11"],
         )
+
+
+class TestInsertMaskBeforePlaceholder(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.base_opts = {
+            "response_pattern": "Response : ｟newline｠",
+        }
+
+    def test_insert_mask_before_placeholder(self):
+        insert_mask_before_placeholder_cls = get_transforms_cls(
+            ["insert_mask_before_placeholder"]
+        )["insert_mask_before_placeholder"]
+        opt = Namespace(**self.base_opts)
+        insert_mask_before_placeholder_transform = insert_mask_before_placeholder_cls(
+            opt
+        )
+        ex_in = {
+            "src": "### Instruction: ｟newline｠instruction｟newline｠｟newline｠"
+            "### Response : ｟newline｠response",
+            "tgt": "",
+        }
+        ex_in["src"] = ex_in["src"].split(" ")
+        ex_in["tgt"] = ex_in["src"]
+        ex_out = insert_mask_before_placeholder_transform.apply(ex_in)
+        ex_gold = {
+            "src": [
+                "###",
+                "Instruction:",
+                "｟newline｠instruction｟newline｠｟newline｠###",
+                "Response",
+                ":",
+                "｟newline｠｟_mask_before_｠response",
+            ],
+            "tgt": [
+                "###",
+                "Instruction:",
+                "｟newline｠instruction｟newline｠｟newline｠###",
+                "Response",
+                ":",
+                "｟newline｠｟_mask_before_｠response",
+            ],
+        }
+        self.assertEqual(ex_out, ex_gold)

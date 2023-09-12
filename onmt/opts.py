@@ -1050,10 +1050,12 @@ def model_opts(parser):
         "See https://nvidia.github.io/apex/amp.html#opt-levels.",
     )
     group.add(
-        "--set_prompt_loss_to_zero",
-        "-set_prompt_loss_to_zero",
+        "--zero_out_prompt_loss",
+        "-zero_out_prompt_loss",
         action="store_true",
-        help="Set the prompt loss to zero. Mostly for LLM finetuning",
+        help="Set the prompt loss to zero."
+        "Mostly for LLM finetuning."
+        "Will be enabled only if the `insert_mask_before_placeholder` transform is applied",
     )
     group.add(
         "--use_ckpting",
