@@ -419,7 +419,9 @@ class Inference(object):
                         build_align_pharaoh(align)
                         for align in trans.word_aligns[: self.n_best]
                     ]
-                    n_best_preds_align = [" ".join(align) for align in align_pharaohs]
+                    n_best_preds_align = [
+                        " ".join(align[0]) for align in align_pharaohs
+                    ]
                     n_best_preds = [
                         pred + DefaultTokens.ALIGNMENT_SEPARATOR + align
                         for pred, align in zip(n_best_preds, n_best_preds_align)
