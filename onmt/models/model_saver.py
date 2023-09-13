@@ -139,14 +139,11 @@ class ModelSaverBase(object):
 
         self.last_saved_step = step
 
-        if ckpt_path:  # not None when process id 0
+        if moving_average:
+            for param_data, param in zip(model_params_data, save_model.parameters()):
+                param.data = param_data
 
-            if moving_average:
-                for param_data, param in zip(
-                    model_params_data, save_model.parameters()
-                ):
-                    param.data = param_data
-
+        if ckpt_path is not None:  # not None when process id 0
             if self.keep_checkpoint > 0:
                 if len(self.checkpoint_queue) == self.checkpoint_queue.maxlen:
                     todel = self.checkpoint_queue.popleft()
@@ -259,6 +256,8 @@ class ModelSaver(ModelSaverBase):
                     fm_sd[key] = torch.cat(
                         [full_model[i][key].cpu() for i in range(ws)], 1
                     )
+                else:
+                    fm_sd[key] = full_model[0][key]
             model_state_dict = fm_sd
 
         checkpoint = {
@@ -348,6 +347,8 @@ class ModelSaver(ModelSaverBase):
                     fm_sd[key] = torch.cat(
                         [full_model[i][key].cpu() for i in range(ws)], 1
                     )
+                else:
+                    fm_sd[key] = full_model[0][key]
             model_state_dict = fm_sd
 
         checkpoint = {

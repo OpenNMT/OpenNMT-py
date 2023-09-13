@@ -30,7 +30,7 @@ def multi_init(opt, device_id):
         init_method=dist_init_method,
         world_size=dist_world_size,
         rank=opt.gpu_ranks[device_id],
-        timeout=timedelta(seconds=30),
+        timeout=timedelta(seconds=60),
     )
     gpu_rank = torch.distributed.get_rank()
     if not is_master(opt, device_id):
