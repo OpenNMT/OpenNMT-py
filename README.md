@@ -55,7 +55,7 @@ If you used previous versions of OpenNMT-py, you can check the [Changelog](https
 OpenNMT-py requires:
 
 - Python >= 3.8
-- PyTorch >= 1.13 <2.1
+- PyTorch >= 2.0 <2.1
 
 Install `OpenNMT-py` from `pip`:
 ```bash
