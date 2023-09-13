@@ -274,21 +274,14 @@ class LossCompute(nn.Module):
         Args:
             batch: The current batch.
         """
-        nb_examples = batch["src"].size()[0]
-
-        for j in range(nb_examples):
-            # Locate the end of the prompt
-            response_start = (
-                (batch["src"][j, :, 0].cpu() == self.padding_idx)
-                .nonzero(as_tuple=False)
-                .flatten()
-                .tolist()[0]
-            )
-
-            # Mask the prompt
-            for t in range(0, response_start):
-                batch["tgt"][j, t, 0] = self.padding_idx
-            break
+        # Create a mask with zeros at prompt positions and ones at answer postions.
+        mask = batch["src"].squeeze(dim=2) == self.padding_idx
+        mask = torch.cumsum(mask.int(), 1)
+        mask = mask.unsqueeze(-1)
+        # Apply the mask on the target side.
+        batch["tgt"] *= mask.int()
+        # Put the padding token index at the prompt positions.
+        batch["tgt"] += self.padding_idx * (1 - mask.int())
         return batch
 
     def forward(self, batch, output, attns, trunc_start=0, trunc_size=None):
