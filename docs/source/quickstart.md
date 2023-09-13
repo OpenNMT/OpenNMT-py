@@ -354,6 +354,15 @@ dropout_steps: [0]
 dropout: [0.0]
 attention_dropout: [0.0]
 ```
+If you want to enable the "zero-out prompt loss" mechanism to ignore the prompt when calculating the loss,
+you can add the `insert_mask_before_placeholder` transform as well as the `zero_out_prompt_loss` flag:
+
+```
+transforms: [insert_mask_before_placeholder, sentencepiece, filtertoolong]
+zero_out_prompt_loss: true
+```
+The default value for the response `response_pattern` used to locate the end of the prompt is "Response : ｟newline｠", but you can choose another to align it with your training data.
+
 
 ### Step 3: Finetune
 

@@ -26,6 +26,7 @@ class TestTransform(unittest.TestCase):
             "switchout",
             "tokendrop",
             "tokenmask",
+            "insert_mask_before_placeholder",
         ]
         get_transforms_cls(builtin_transform)
 
@@ -216,6 +217,7 @@ class TestSubwordTransform(unittest.TestCase):
         sp_cls._validate_options(opt)
         sp_transform = sp_cls(opt)
         sp_transform.warm_up()
+
         ex = {
             "src": ["Hello", "world", "."],
             "tgt": ["Bonjour", "le", "monde", "."],
@@ -226,6 +228,7 @@ class TestSubwordTransform(unittest.TestCase):
             "tgt": ["▁B", "on", "j", "o", "ur", "▁le", "▁m", "on", "de", "▁."],
         }
         self.assertEqual(ex, ex_gold)
+
         # test SP regularization:
         sp_transform.src_subword_nbest = 4
         tokens = ["Another", "world", "."]
@@ -236,6 +239,51 @@ class TestSubwordTransform(unittest.TestCase):
         # 2. disable regularization for not training example
         after_sp = sp_transform._tokenize(tokens, is_train=False)
         self.assertEqual(after_sp, gold_sp)
+
+        # Test mask location
+        ex = {
+            "src": "### Instruction: ｟newline｠instruction｟newline｠｟newline｠"
+            "### Response : ｟newline｠｟_mask_before_｠response",
+            "tgt": "",
+        }
+        ex["src"] = ex["src"].split(" ")
+        ex_gold = {
+            "src": [
+                "▁",
+                "#",
+                "#",
+                "#",
+                "▁In",
+                "struct",
+                "ion",
+                ":",
+                "▁in",
+                "struct",
+                "ion",
+                "▁",
+                "#",
+                "#",
+                "#",
+                "▁Re",
+                "s",
+                "p",
+                "on",
+                "s",
+                "e",
+                "▁",
+                ":",
+                "<blank>",
+                "▁re",
+                "s",
+                "p",
+                "on",
+                "s",
+                "e",
+            ],
+            "tgt": [],
+        }
+        sp_transform.apply(ex, is_train=True)
+        self.assertEqual(ex, ex_gold)
 
     def test_pyonmttok_bpe(self):
         onmttok_cls = get_transforms_cls(["onmt_tokenize"])["onmt_tokenize"]
@@ -261,6 +309,49 @@ class TestSubwordTransform(unittest.TestCase):
         }
         self.assertEqual(ex, ex_gold)
 
+        # Test mask location
+        ex = {
+            "src": (
+                "### Instruction: ｟newline｠instruction｟newline｠｟newline｠"
+                "### Response : ｟newline｠｟_mask_before_｠response"
+            ),
+            "tgt": "",
+        }
+        ex["src"] = ex["src"].split(" ")
+        ex_gold = {
+            "src": [
+                "#￭",
+                "#￭",
+                "#",
+                "In￭",
+                "struc￭",
+                "tion￭",
+                ":",
+                "\n￭",
+                "in￭",
+                "struc￭",
+                "tion￭",
+                "\n￭",
+                "\n￭",
+                "#￭",
+                "#￭",
+                "#",
+                "R￭",
+                "es￭",
+                "p￭",
+                "on￭",
+                "se",
+                ":",
+                "\n",
+                "<blank>",
+                "respon￭",
+                "se",
+            ],
+            "tgt": [],
+        }
+        onmttok_transform.apply(ex, is_train=True)
+        self.assertEqual(ex, ex_gold)
+
     def test_pyonmttok_sp(self):
         onmttok_cls = get_transforms_cls(["onmt_tokenize"])["onmt_tokenize"]
         base_opt = copy.copy(self.base_opts)
@@ -284,6 +375,51 @@ class TestSubwordTransform(unittest.TestCase):
         ex_gold = {
             "src": ["▁H", "el", "lo", "▁world", "▁."],
             "tgt": ["▁B", "on", "j", "o", "ur", "▁le", "▁m", "on", "de", "▁."],
+        }
+        self.assertEqual(ex, ex_gold)
+
+        # Test mask location
+        ex = {
+            "src": (
+                "### Instruction: ｟newline｠instruction｟newline｠｟newline｠"
+                "### Response : ｟newline｠｟_mask_before_｠response"
+            ),
+            "tgt": "",
+        }
+        ex["src"] = ex["src"].split(" ")
+        onmttok_transform.apply(ex, is_train=True)
+        ex_gold = {
+            "src": [
+                "▁",
+                "#",
+                "#",
+                "#",
+                "▁In",
+                "struct",
+                "ion",
+                ":",
+                "▁in",
+                "struct",
+                "ion",
+                "▁",
+                "#",
+                "#",
+                "#",
+                "▁Re",
+                "s",
+                "p",
+                "on",
+                "se",
+                "▁",
+                ":",
+                "<blank>",
+                "▁re",
+                "s",
+                "p",
+                "on",
+                "se",
+            ],
+            "tgt": [],
         }
         self.assertEqual(ex, ex_gold)
 
@@ -646,3 +782,47 @@ class TestFeaturesTransform(unittest.TestCase):
             ex_out["src_feats"][0],
             ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "10", "10", "11"],
         )
+
+
+class TestInsertMaskBeforePlaceholder(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.base_opts = {
+            "response_pattern": "Response : ｟newline｠",
+        }
+
+    def test_insert_mask_before_placeholder(self):
+        insert_mask_before_placeholder_cls = get_transforms_cls(
+            ["insert_mask_before_placeholder"]
+        )["insert_mask_before_placeholder"]
+        opt = Namespace(**self.base_opts)
+        insert_mask_before_placeholder_transform = insert_mask_before_placeholder_cls(
+            opt
+        )
+        ex_in = {
+            "src": "### Instruction: ｟newline｠instruction｟newline｠｟newline｠"
+            "### Response : ｟newline｠response",
+            "tgt": "",
+        }
+        ex_in["src"] = ex_in["src"].split(" ")
+        ex_in["tgt"] = ex_in["src"]
+        ex_out = insert_mask_before_placeholder_transform.apply(ex_in)
+        ex_gold = {
+            "src": [
+                "###",
+                "Instruction:",
+                "｟newline｠instruction｟newline｠｟newline｠###",
+                "Response",
+                ":",
+                "｟newline｠｟_mask_before_｠response",
+            ],
+            "tgt": [
+                "###",
+                "Instruction:",
+                "｟newline｠instruction｟newline｠｟newline｠###",
+                "Response",
+                ":",
+                "｟newline｠｟_mask_before_｠response",
+            ],
+        }
+        self.assertEqual(ex_out, ex_gold)

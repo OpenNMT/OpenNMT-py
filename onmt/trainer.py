@@ -56,6 +56,7 @@ def build_trainer(opt, device_id, model, vocabs, optim, model_saver=None):
     dropout = opt.dropout
     attention_dropout = opt.attention_dropout
     dropout_steps = opt.dropout_steps
+    zero_out_prompt_loss = opt.zero_out_prompt_loss
     if device_id >= 0:
         gpu_rank = opt.gpu_ranks[device_id]
     else:
@@ -95,6 +96,7 @@ def build_trainer(opt, device_id, model, vocabs, optim, model_saver=None):
         dropout=dropout,
         attention_dropout=attention_dropout,
         dropout_steps=dropout_steps,
+        zero_out_prompt_loss=zero_out_prompt_loss,
     )
     return trainer
 
@@ -135,7 +137,9 @@ class Trainer(object):
           stopping mecanism
         dropout (float): dropout value in RNN or FF layers.
         attention_dropout (float): dropaout in attention layers.
-        dropout_steps (list): dropout values scheduling in steps."""
+        dropout_steps (list): dropout values scheduling in steps.
+        zero_out_prompt_loss (bool): whether to zero-out the prompt loss
+            (mostly for LLM finetuning)."""
 
     def __init__(
         self,
@@ -162,6 +166,7 @@ class Trainer(object):
         dropout=[0.3],
         attention_dropout=[0.1],
         dropout_steps=[0],
+        zero_out_prompt_loss=False,
     ):
         # Basic attributes.
 
@@ -191,6 +196,7 @@ class Trainer(object):
         self.dropout = dropout
         self.attention_dropout = attention_dropout
         self.dropout_steps = dropout_steps
+        self.zero_out_prompt_loss = zero_out_prompt_loss
 
         for i in range(len(self.accum_count_l)):
             assert self.accum_count_l[i] > 0
@@ -484,7 +490,6 @@ class Trainer(object):
                 # 2. F-prop all but generator.
                 if self.accum_count == 1:
                     self.optim.zero_grad(set_to_none=True)
-
                 try:
                     with torch.cuda.amp.autocast(enabled=self.optim.amp):
                         model_out, attns = self.model(
@@ -493,6 +498,9 @@ class Trainer(object):
                         bptt = True
 
                         # 3. Compute loss.
+                        if self.zero_out_prompt_loss:
+                            # The loss of the prompt will be set to zero.
+                            batch = self.train_loss.ignore_prompt(batch)
                         loss, batch_stats = self.train_loss(
                             batch,
                             model_out,
@@ -500,7 +508,6 @@ class Trainer(object):
                             trunc_start=j,
                             trunc_size=trunc_size,
                         )
-
                     if loss is not None:
                         loss /= normalization
                         self.optim.backward(loss)

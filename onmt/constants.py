@@ -12,6 +12,7 @@ class DefaultTokens(object):
     PHRASE_TABLE_SEPARATOR = "|||"
     ALIGNMENT_SEPARATOR = " ||| "
     SEP = "｟newline｠"
+    MASK_BEFORE = "｟_mask_before_｠"
 
 
 class CorpusName(object):

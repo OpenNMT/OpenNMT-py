@@ -261,6 +261,29 @@ class LossCompute(nn.Module):
     def _unbottle(self, _v, batch_size):
         return _v.view(-1, batch_size, _v.size(1))
 
+    def ignore_prompt(self, batch):
+        """
+        Mask the prompt in the target side of the batch examples in order
+            to set the loss of the prompt to zero.
+        For finetuning on specific tasks.
+        The end of the prompt must be indicated by `the DefaultTokens.MASK_BEFORE`
+            placeholder.
+        The masks are supposed to be properly handled by the loss criterion
+            (e.g. nn.CrossEntropyLoss ).
+
+        Args:
+            batch: The current batch.
+        """
+        # Create a mask with zeros at prompt positions and ones at answer postions.
+        mask = batch["src"].squeeze(dim=2) == self.padding_idx
+        mask = torch.cumsum(mask.int(), 1)
+        mask = mask.unsqueeze(-1)
+        # Apply the mask on the target side.
+        batch["tgt"] *= mask.int()
+        # Put the padding token index at the prompt positions.
+        batch["tgt"] += self.padding_idx * (1 - mask.int())
+        return batch
+
     def forward(self, batch, output, attns, trunc_start=0, trunc_size=None):
         """Compute the forward loss, supports truncated BPTT for long
         sequences by taking a range in the decoder output sequence to
@@ -281,6 +304,7 @@ class LossCompute(nn.Module):
         Returns:
             A tuple with the loss and a :obj:`onmt.utils.Statistics` instance.
         """
+
         if trunc_size is None:
             trunc_size = batch["tgt"].size(1) - trunc_start
         # take into account here the tgt_shift_index (0 / 1 = LM/NMT)
