@@ -59,7 +59,7 @@ def append_features_to_text(text, features):
 def text_sort_key(ex):
     """Sort using the number of tokens in the sequence."""
     if ex["tgt"]:
-        return max(len(ex["src"]["src_ids"]), len(ex["tgt"]["tgt_ids"]))
+        return len(ex["src"]["src_ids"]), len(ex["tgt"]["tgt_ids"])
     return len(ex["src"]["src_ids"])
 
 
