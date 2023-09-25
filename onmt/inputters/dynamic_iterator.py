@@ -296,7 +296,8 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
                 size_so_far = batch_size_fn(nbsents, maxlen)
                 if size_so_far >= batch_size:
                     overflowed = 1 if size_so_far > batch_size else 0
-                    overflowed += (nbsents - overflowed) % batch_size_multiple
+                    if batch_size_multiple > 1:
+                        overflowed += (nbsents - overflowed) % batch_size_multiple
                     if overflowed == 0:
                         yield minibatch
                         minibatch, maxlen, size_so_far, seen = [], 0, 0, set()
