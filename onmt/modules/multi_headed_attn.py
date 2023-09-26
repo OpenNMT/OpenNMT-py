@@ -9,7 +9,7 @@ from torch.utils.checkpoint import checkpoint
 from torch.nn.utils import skip_init
 from .alibi_position_bias import AlibiPositionalBias
 import torch.distributed as dist
-from flash_attn import flash_attn_func
+import importlib
 
 
 # Help functions for Rotary Embeddings
@@ -343,6 +343,14 @@ class MultiHeadedAttention(nn.Module):
 
         self.maybe_ckpt = checkpoint if "mha" in use_ckpting else lambda f, x: f(x)
 
+        try:
+            flash_pack = importlib.import_module("flash_attn")
+            if hasattr(flash_pack, "flash_attn_func"):
+                self.flash_attn_func = getattr(flash_pack, "flash_attn_func")
+                self.flash2 = True
+        except ImportError:
+            self.flash2 = False
+
     def update_dropout(self, dropout: float) -> None:
         self.dropout.p = dropout
         self.dropout_p = dropout
@@ -446,12 +454,13 @@ class MultiHeadedAttention(nn.Module):
         flash2 = (
             torch.cuda.is_available()
             and query.device != torch.device("cpu")
+            and self.flash2
             and torch.cuda.get_device_capability(query.device)[0] >= 8
         )  # https://github.com/Dao-AILab/flash-attention#installation-and-features
         if self.max_relative_positions in [-1, 0] and not return_attn:
             if self.is_decoder and self.attn_type == "self":
                 if flash2:
-                    attn_output = flash_attn_func(
+                    attn_output = self.flash_attn_func(
                         query.transpose(1, 2),
                         key.transpose(1, 2),
                         value.transpose(1, 2),
@@ -469,7 +478,7 @@ class MultiHeadedAttention(nn.Module):
                     )
             else:
                 if flash2:
-                    attn_output = flash_attn_func(
+                    attn_output = self.flash_attn_func(
                         query.transpose(1, 2),
                         key.transpose(1, 2),
                         value.transpose(1, 2),
