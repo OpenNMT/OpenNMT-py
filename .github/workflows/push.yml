@@ -21,6 +21,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install --upgrade setuptools
         pip install packaging
+        pip install wheel
         pip install flash-attn --no-build-isolation
         pip install -e .
         pip install -r requirements.opt.txt
