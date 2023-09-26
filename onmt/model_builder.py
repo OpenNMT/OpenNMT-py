@@ -120,7 +120,9 @@ def load_test_model(opt, device_id=0, model_path=None):
 
     # Avoid functionality on inference
     model_opt.update_vocab = False
-
+    model_opt.attention_dropout = (
+        0.0  # required to force no dropout at inference with flash
+    )
     model = build_base_model(model_opt, vocabs)
 
     precision = torch.float32

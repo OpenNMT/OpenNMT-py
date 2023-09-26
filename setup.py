@@ -35,6 +35,7 @@ setup(
         "fasttext-wheel",
         "spacy",
         "six",
+        "flash-attn",
     ],
     entry_points={
         "console_scripts": [

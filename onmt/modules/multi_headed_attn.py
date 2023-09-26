@@ -9,6 +9,7 @@ from torch.utils.checkpoint import checkpoint
 from torch.nn.utils import skip_init
 from .alibi_position_bias import AlibiPositionalBias
 import torch.distributed as dist
+from flash_attn import flash_attn_func
 
 
 # Help functions for Rotary Embeddings
@@ -299,6 +300,7 @@ class MultiHeadedAttention(nn.Module):
         )
         self.softmax = nn.Softmax(dim=-1)
         self.dropout = nn.Dropout(dropout)
+        self.dropout_p = dropout
         self.final_linear = skip_init(
             nn.Linear,
             in_features=model_dim // parallel_gpu,
@@ -343,6 +345,7 @@ class MultiHeadedAttention(nn.Module):
 
     def update_dropout(self, dropout: float) -> None:
         self.dropout.p = dropout
+        self.dropout_p = dropout
 
     # @torch.jit.script_method
     def forward(
@@ -440,15 +443,44 @@ class MultiHeadedAttention(nn.Module):
         value = value.view(value.size(0), query.size(1), value.size(3), value.size(4))
 
         # 2) When standard pos. enc. or rotary, use flash attention
+        flash2 = (
+            torch.cuda.is_available()
+            and query.device != torch.device("cpu")
+            and torch.cuda.get_device_capability(query.device)[0] >= 8
+        )  # https://github.com/Dao-AILab/flash-attention#installation-and-features
         if self.max_relative_positions in [-1, 0] and not return_attn:
             if self.is_decoder and self.attn_type == "self":
-                attn_output = F.scaled_dot_product_attention(
-                    query, key, value, None, 0.0, is_causal=mask is not None
-                )
+                if flash2:
+                    attn_output = flash_attn_func(
+                        query.transpose(1, 2),
+                        key.transpose(1, 2),
+                        value.transpose(1, 2),
+                        dropout_p=self.dropout_p,
+                        causal=mask is not None,
+                    ).transpose(1, 2)
+                else:
+                    attn_output = F.scaled_dot_product_attention(
+                        query,
+                        key,
+                        value,
+                        None,
+                        self.dropout_p,
+                        is_causal=mask is not None,
+                    )
             else:
-                attn_output = F.scaled_dot_product_attention(
-                    query, key, value, ~mask, 0.0, is_causal=False
-                )
+                if flash2:
+                    attn_output = flash_attn_func(
+                        query.transpose(1, 2),
+                        key.transpose(1, 2),
+                        value.transpose(1, 2),
+                        dropout_p=self.dropout_p,
+                        causal=False,
+                    ).transpose(1, 2)
+                else:
+                    attn_output = F.scaled_dot_product_attention(
+                        query, key, value, ~mask, self.dropout_p, is_causal=False
+                    )
+
             x = unshape(attn_output)
 
             attn_output = self.maybe_ckpt(self.final_linear, x)
