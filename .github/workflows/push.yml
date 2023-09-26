@@ -20,8 +20,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install --upgrade setuptools
-        pip install packaging
-        pip install wheel
+        pip install packaging wheel torch==2.0.1
         pip install flash-attn --no-build-isolation
         pip install -e .
         pip install -r requirements.opt.txt
