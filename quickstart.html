@@ -541,6 +541,13 @@ Here is an example of finetune.yaml file for Llama</p>
 <span class="n">attention_dropout</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">]</span>
 </pre></div>
 </div>
+<p>If you want to enable the “zero-out prompt loss” mechanism to ignore the prompt when calculating the loss,
+you can add the <code class="docutils literal notranslate"><span class="pre">insert_mask_before_placeholder</span></code> transform as well as the <code class="docutils literal notranslate"><span class="pre">zero_out_prompt_loss</span></code> flag:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">transforms</span><span class="p">:</span> <span class="p">[</span><span class="n">insert_mask_before_placeholder</span><span class="p">,</span> <span class="n">sentencepiece</span><span class="p">,</span> <span class="n">filtertoolong</span><span class="p">]</span>
+<span class="n">zero_out_prompt_loss</span><span class="p">:</span> <span class="n">true</span>
+</pre></div>
+</div>
+<p>The default value for the response <code class="docutils literal notranslate"><span class="pre">response_pattern</span></code> used to locate the end of the prompt is “Response : ｟newline｠”, but you can choose another to align it with your training data.</p>
 </section>
 <section id="step-3-finetune">
 <h3>Step 3: Finetune<a class="headerlink" href="#step-3-finetune" title="Permalink to this heading">¶</a></h3>

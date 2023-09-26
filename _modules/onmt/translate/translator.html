@@ -622,7 +622,9 @@
                         <span class="n">build_align_pharaoh</span><span class="p">(</span><span class="n">align</span><span class="p">)</span>
                         <span class="k">for</span> <span class="n">align</span> <span class="ow">in</span> <span class="n">trans</span><span class="o">.</span><span class="n">word_aligns</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_best</span><span class="p">]</span>
                     <span class="p">]</span>
-                    <span class="n">n_best_preds_align</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">align</span><span class="p">)</span> <span class="k">for</span> <span class="n">align</span> <span class="ow">in</span> <span class="n">align_pharaohs</span><span class="p">]</span>
+                    <span class="n">n_best_preds_align</span> <span class="o">=</span> <span class="p">[</span>
+                        <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">align</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">for</span> <span class="n">align</span> <span class="ow">in</span> <span class="n">align_pharaohs</span>
+                    <span class="p">]</span>
                     <span class="n">n_best_preds</span> <span class="o">=</span> <span class="p">[</span>
                         <span class="n">pred</span> <span class="o">+</span> <span class="n">DefaultTokens</span><span class="o">.</span><span class="n">ALIGNMENT_SEPARATOR</span> <span class="o">+</span> <span class="n">align</span>
                         <span class="k">for</span> <span class="n">pred</span><span class="p">,</span> <span class="n">align</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">n_best_preds</span><span class="p">,</span> <span class="n">n_best_preds_align</span><span class="p">)</span>
@@ -781,7 +783,11 @@
         <span class="c1"># in case of Gold Scoring tgt_len = actual length, batch = 1 batch</span>
 
         <span class="n">dec_out</span><span class="p">,</span> <span class="n">dec_attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="p">(</span>
-            <span class="n">decoder_in</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span> <span class="n">src_len</span><span class="o">=</span><span class="n">src_len</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span>
+            <span class="n">decoder_in</span><span class="p">,</span>
+            <span class="n">enc_out</span><span class="p">,</span>
+            <span class="n">src_len</span><span class="o">=</span><span class="n">src_len</span><span class="p">,</span>
+            <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">,</span>
+            <span class="n">with_align</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">global_scorer</span><span class="o">.</span><span class="n">has_cov_pen</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="c1"># Generator forward.</span>

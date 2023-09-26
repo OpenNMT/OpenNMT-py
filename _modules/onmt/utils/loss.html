@@ -464,6 +464,29 @@
     <span class="k">def</span> <span class="nf">_unbottle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_v</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">_v</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">_v</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
 
+<div class="viewcode-block" id="LossCompute.ignore_prompt"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.loss.LossCompute.ignore_prompt">[docs]</a>    <span class="k">def</span> <span class="nf">ignore_prompt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Mask the prompt in the target side of the batch examples in order</span>
+<span class="sd">            to set the loss of the prompt to zero.</span>
+<span class="sd">        For finetuning on specific tasks.</span>
+<span class="sd">        The end of the prompt must be indicated by `the DefaultTokens.MASK_BEFORE`</span>
+<span class="sd">            placeholder.</span>
+<span class="sd">        The masks are supposed to be properly handled by the loss criterion</span>
+<span class="sd">            (e.g. nn.CrossEntropyLoss ).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            batch: The current batch.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Create a mask with zeros at prompt positions and ones at answer postions.</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">padding_idx</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">mask</span><span class="o">.</span><span class="n">int</span><span class="p">(),</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="c1"># Apply the mask on the target side.</span>
+        <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">mask</span><span class="o">.</span><span class="n">int</span><span class="p">()</span>
+        <span class="c1"># Put the padding token index at the prompt positions.</span>
+        <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">padding_idx</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">mask</span><span class="o">.</span><span class="n">int</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">batch</span></div>
+
 <div class="viewcode-block" id="LossCompute.forward"><a class="viewcode-back" href="../../../onmt.html#onmt.utils.loss.LossCompute.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">attns</span><span class="p">,</span> <span class="n">trunc_start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">trunc_size</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the forward loss, supports truncated BPTT for long</span>
 <span class="sd">        sequences by taking a range in the decoder output sequence to</span>
@@ -484,6 +507,7 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            A tuple with the loss and a :obj:`onmt.utils.Statistics` instance.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="k">if</span> <span class="n">trunc_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">trunc_size</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">trunc_start</span>
         <span class="c1"># take into account here the tgt_shift_index (0 / 1 = LM/NMT)</span>
