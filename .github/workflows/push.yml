@@ -21,6 +21,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install --upgrade setuptools
         pip install -e .
+        pip install flash-attn --no-build-isolation
         pip install -r requirements.opt.txt
         pip install sacrebleu
         pip install flake8
