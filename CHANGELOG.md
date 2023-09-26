@@ -3,6 +3,14 @@
 
 ## [Unreleased]
 
+## [3.4.1](https://github.com/OpenNMT/OpenNMT-py/tree/3.4.1) (2023-09-26)
+
+* bug fixes
+* torch 2.x requirement (flash attention requires it)
+* zero-out the prompt loss in LM finetuning
+* batching sorted on src then tgt instead of max len
+* six dependancy
+
 ## [3.4.0](https://github.com/OpenNMT/OpenNMT-py/tree/3.4.0) (2023-09-06)
 
 * bitsandbytes 4/8 bit quantization at inference
