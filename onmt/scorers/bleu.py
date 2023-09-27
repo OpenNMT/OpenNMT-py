@@ -3,7 +3,7 @@ from onmt.scorers import register_scorer
 from sacrebleu import corpus_bleu
 
 
-@register_scorer(metric='BLEU')
+@register_scorer(metric="BLEU")
 class BleuScorer(Scorer):
     """BLEU scorer class."""
 

@@ -1,0 +1,109 @@
+############################
+#### Finetuning corpora ####
+############################
+data:
+    alpaca:
+        path_src: dataAI/alpaca_clean.txt
+        transforms: [sentencepiece, filtertoolong]
+        weight: 10
+    sharegpt:
+        path_src: dataAI/sharegpt.txt
+        transforms: [sentencepiece, filtertoolong]
+        weight: 10
+
+
+################################
+#### Subword and vocabulary #### 
+################################
+src_subword_model: llama/tokenizer.model
+tgt_subword_model: llama/tokenizer.model
+
+src_vocab: vocab.txt
+vocab_size_multiple: 1
+share_vocab: True
+
+
+################
+#### Filter ####
+################
+src_seq_length: 512
+tgt_seq_length: 512
+
+# silently ignore empty lines in the data
+skip_empty_level: silent
+
+#######################
+####  General opts ####
+#######################
+train_from: llama7B-vicuna-onmt
+save_model: finetuned_llama7B/llama7B-vicuna-onmt
+override_opts: true # to apply LoRa
+report_every: 1
+save_checkpoint_steps: 500
+
+save_data:  finetuned_llama7B/samples
+dump_samples: false
+n_sample: 0
+
+tensorboard: true
+tensorboard_log_dir: finetuned_llama7B/logs
+
+#################
+##### Model #####
+#################
+
+# Recall of the overrided opts
+model_task: lm
+decoder_type: transformer_lm
+add_qkvbias: false
+dec_layers: 32
+heads: 32
+hidden_size: 4096
+word_vec_size: 4096
+transformer_ff: 11008
+dropout_steps: [0]
+dropout: [0.0]
+attention_dropout: [0.0]
+
+model_dtype: fp16
+seed: 1234
+param_init: 0.0
+param_init_glorot: true
+batch_size: 896
+normalization: tokens
+valid_batch_size: 256
+train_steps: 4000
+optim: fusedadam
+max_grad_norm: 0.0
+adam_beta2: 0.998
+learning_rate : 2e-05
+
+# LLama compatibiliy
+layer_norm: rms
+pos_ffn_activation_fn: 'silu'
+max_relative_positions: -1
+position_encoding: false
+
+
+# LoRa
+lora_layers: ['linear_values', 'linear_query', 'linear_keys', 'final_linear']
+lora_rank: 2
+lora_dropout: 0.05
+lora_alpha: 16
+lora_embedding: false
+
+# 8bit compression
+quant_layers: ['w_1', 'w_2', 'w_3']
+
+# GPU 
+world_size: 1
+gpu_ranks: [0]
+
+# Optimization
+accum_count: [32]
+accum_steps: [0]
+batch_size: 500 
+valid_batch_size: 500
+batch_type: tokens
+batch_size_multiple: 1
+bucket_size: 1000

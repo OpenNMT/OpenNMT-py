@@ -1,8 +1,55 @@
 
 **Notes on versioning**
 
-
 ## [Unreleased]
+
+## [3.4.0](https://github.com/OpenNMT/OpenNMT-py/tree/3.4.0) (2023-09-06)
+
+* bitsandbytes 4/8 bit quantization at inference
+* MMLU-FR results and scoring
+* flan-T5 support
+* flash attention
+* terminology transform
+* tensor parallelism (inference, training)
+
+## [3.3.0](https://github.com/OpenNMT/OpenNMT-py/tree/3.3.0) (2023-06-22)
+
+* Switch to pytorch 2.0.1
+* Eval LLM with MMLU benchmark
+* Fix Falcon 40B conversion / finetuning / inference
+* Plugin encoder/decoder thanks @kleag / @n2oblife
+* Safetensors for model storage (beta)
+* finetuning config templates for supported LLMs
+
+
+## [3.2.0](https://github.com/OpenNMT/OpenNMT-py/tree/3.2.0) (2023-06-07)
+* Skip init during model build (way faster building)
+* Enable quantization of LoRA layers
+* Enable 4bit quantization from bitsandbytes (NF4 / FP4)
+* Enable "some" bnb.optim Optimizers for benchmarking purpose
+* Refactor model state_dict loading to enable pseudo lazy loading with move on GPU as it loads
+* Enable Gradient checkpointing for FFN, MHA, LoRA modules
+* Make FFN bias optional (same as QKV): llama, mpt, redpajama, openllama converters changed accordingly.
+  Convertv2_v3 set add_qkvbias=True, add_ffnbias=True.
+  load_checkpoint: if w1_bias detected in checkpoint then add_ffnbias=True
+* Add Multi Query attention
+* Add Parallel Residual attention
+* Add Falcon 7B converter
+
+## [3.1.3](https://github.com/OpenNMT/OpenNMT-py/tree/3.1.3) (2023-05-24)
+* Step-by-step Tuto for Vicuna replication thanks Lina
+* MosaicML MPT7B converter and support (Alibi embeddings)
+* Open Llama converter
+* Switch GCLD3 to Fasttext thanks ArtanieTheOne
+* fix coverage attention in beam decoding
+* fix ct2 keys for "Llama / MPT7B based" OpenNMT-y models
+
+## [3.1.2](https://github.com/OpenNMT/OpenNMT-py/tree/3.1.2) (2023-05-10)
+* fixes: transforms (normalize, clean, inlinetags)
+* Llama support (rotary embeddings, RMSNorm, Silu activation)
+* 8bit loading for specific layers (along with LoRa for other layers)
+* subword learner added to build_vocab
+
 ## [3.1.1](https://github.com/OpenNMT/OpenNMT-py/tree/3.1.1) (2023-03-30)
 * fix major bug in 3.1.0 introduced with LoRa (3.1.0 not available)
 

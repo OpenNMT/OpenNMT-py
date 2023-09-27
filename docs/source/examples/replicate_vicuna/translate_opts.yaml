@@ -1,0 +1,12 @@
+transforms: [sentencepiece]
+src_subword_model: llama/tokenizer.model
+tgt_subword_model: llama/tokenizer.model
+gpu: 0
+batch_type: sents
+batch_size: 1
+precision: fp16
+verbose: true
+random_sampling_topk: 40
+random_sampling_topp: 0.75
+random_sampling_temp: 0.1
+beam: 1

@@ -2,16 +2,7 @@
 
 # Quickstart
 
-### Step 0: Install OpenNMT-py
-
-```bash
-pip install --upgrade pip
-pip install OpenNMT-py
-```
-
-If you want a very detailed tutorial on how to use OpenNMT-py please have a look to this [Tuto](https://github.com/ymoslem/OpenNMT-Tutorial)
-
-Thanks to Yasmin Moslem.
+## How to train a model from scratch
 
 ### Step 1: Prepare the data
 
@@ -122,4 +113,261 @@ Now you have a model which you can use to predict on new data. We do this by run
 
 **Note**:
 
-The predictions are going to be quite terrible, as the demo dataset is small. Try running on some larger datasets! For example you can download millions of parallel sentences for [translation](http://www.statmt.org/wmt16/translation-task.html) or [summarization](https://github.com/harvardnlp/sent-summary).
+The predictions are going to be quite terrible, as the demo dataset is small. Try running on some larger datasets! 
+
+For example you can download millions of parallel sentences for [translation](http://www.statmt.org/wmt16/translation-task.html) or [summarization](https://github.com/harvardnlp/sent-summary).
+
+
+## How to generate with a pretrained LLM
+
+### Step 1: Convert a model from Hugging Face Hub
+
+You will find in "tools" a set of converters for models 1) from Hugging Face hub: T5, Falcon, MPT, Openllama, Redpajama, Xgen or 2) the legacy Llama from Meta.
+
+T5 (and variant Flan-T5), Llama and Openllama use Sentencepiece.
+The command line to convert a model to OpenNMT-py is:
+
+```
+python tools/convert_openllama.py --model_dir /path_to_HF_model --tokenizer_model /path_to_tokenizer.model --output /path_to_Openllama-onmt.pt --format ['pytorch', 'safetensors'] --nshards N
+```
+
+Other models uses BPE, we had to reconstruct the BPE model and vocab file:
+
+[MPT bpe model](https://opennmt-models.s3.amazonaws.com/mosaic-MPT/mpt-model.bpe)
+
+[MPT vocab](https://opennmt-models.s3.amazonaws.com/mosaic-MPT/mpt.vocab)
+
+[Redpajama bpe model](https://opennmt-models.s3.amazonaws.com/redpajama/redpajama-model.bpe)
+
+[Redpajama vocab](https://opennmt-models.s3.amazonaws.com/redpajama/redpajama.vocab)
+
+[Falcon bpe model](https://opennmt-models.s3.amazonaws.com/falcon/falcon-model.bpe)
+
+[Falcon vocab](https://opennmt-models.s3.amazonaws.com/falcon/falcon.vocab)
+
+The command line to convert a model to OpenNMT-py is:
+
+```
+python tools/convert_mpt.py --model_dir /path_to_HF_model --vocab_file /path_to_mpt.vocab --output /path_to_MPT-onmt.pt --format ['pytorch', 'safetensors'] --nshards N
+```
+
+`/path_to_HF_model` can be directly a Huggin Face repo.
+
+
+### Step 2: Prepare an inference.yaml config file
+
+Even though it is not mandatory, the best way to run inference is to use a config file; here is an example:
+
+```
+transforms: [sentencepiece]
+
+#### Subword
+src_subword_model: "/path_to/llama7B/tokenizer.model"
+tgt_subword_model: "/path_to/llama7B/tokenizer.model"
+
+# Model info
+model: "/path_to/llama7B/llama7B-onmt.pt"
+
+# Inference
+seed: 42
+max_length: 256
+gpu: 0
+batch_type: sents
+batch_size: 1
+precision: fp16
+#random_sampling_topk: 40
+#random_sampling_topp: 0.75
+#random_sampling_temp: 0.1
+beam_size: 1
+n_best: 1
+report_time: true
+```
+
+or similarly for a model using BPE:
+
+```
+transforms: [onmt_tokenize]
+
+#### Subword
+src_subword_type: bpe
+src_subword_model: "/path_to/mpt7B/mpt-model.bpe"
+src_onmttok_kwargs: '{"mode": "conservative"}'
+
+tgt_subword_type: bpe
+tgt_subword_model: "/path_to/mpt7B/mpt-model.bpe"
+tgt_onmttok_kwargs: '{"mode": "conservative"}'
+gpt2_pretok: true
+# Model info
+model: "/path_to/mpt7B/mpt-onmt.pt"
+
+# Inference
+seed: 42
+max_length: 1
+gpu: 0
+batch_type: sents
+batch_size: 1
+precision: fp16
+#random_sampling_topk: 40
+#random_sampling_topp: 0.75
+#random_sampling_temp: 0.8
+beam_size: 1
+report_time: true
+src: None
+tgt: None
+```
+
+In this second example, we used `max_length: 1` and `src: None` `tgt: None` which is typically the configuration to be used in a scoring script like MMLU where it expects only 1 token as the answer.
+
+You can run this script with the following command line:
+
+```
+python eval_llm/MMLU/run_mmlu_opennmt.py --config myinference.yaml
+```
+
+
+### Step 3: Generate text
+
+Generating text is also easier with an inference config file (in which you can set max_length or ramdom sampling settings):
+
+```
+python onmt/bin/translate.py --config /path_to_config/llama7B/llama-inference.yaml --src /path_to_source/input.txt --output /path_to_target/output.txt
+```
+
+
+## How to finetune a pretrained LLM
+
+### Step 1: Convert a model from Hugging Face Hub
+
+See instructions in the previous section.
+
+### Step 2: Prepare an finetune.yaml config file
+
+Finetuning requires the same settings as for training.
+Here is an example of finetune.yaml file for Llama
+
+```
+# Corpus opts:
+data:
+    alpaca:
+        path_src: "/path_to/dataAI/alpaca_clean.txt"
+        transforms: [sentencepiece, filtertoolong]
+        weight: 10
+
+    valid:
+        path_src: "/path_to/dataAI/valid.txt"
+        transforms: [sentencepiece]
+
+### Transform related opts:
+#### Subword
+src_subword_model: "/path_to/dataAI/llama7B/tokenizer.model"
+tgt_subword_model: "/path_to/dataAI/llama7B/tokenizer.model"
+
+#### Filter
+src_seq_length: 1024
+tgt_seq_length: 1024
+
+#truncated_decoder: 32
+
+# silently ignore empty lines in the data
+skip_empty_level: silent
+
+# General opts
+train_from: "/path_to/dataAI/llama7B/llama7B-onmt.pt"
+save_model: "/path_to/dataAI/llama7B/llama7B-alpaca"
+save_format: safetensors
+keep_checkpoint: 10
+save_checkpoint_steps: 1000
+seed: 1234
+report_every: 10
+train_steps: 5000
+valid_steps: 1000
+
+# Batching
+bucket_size: 32768
+num_workers: 2
+world_size: 1
+gpu_ranks: [0]
+batch_type: "tokens"
+batch_size: 1024
+valid_batch_size: 256
+batch_size_multiple: 1
+accum_count: [32]
+accum_steps: [0]
+
+override_opts: true  # CAREFULL this requires all settings to be defined below
+
+share_vocab: true
+save_data: "/path_to/dataAI/llama7B"
+src_vocab: "/path_to/dataAI/llama7B/llama.vocab"
+src_vocab_size: 32000
+tgt_vocab_size: 32000
+
+decoder_start_token: '<s>'
+# Optimization
+model_dtype: "fp16"
+apex_opt_level: ""
+optim: "fusedadam"
+learning_rate: 0.0001
+warmup_steps: 100
+decay_method: "none"
+#learning_rate_decay: 0.98
+#start_decay_steps: 100
+#decay_steps: 10
+adam_beta2: 0.998
+max_grad_norm: 0
+label_smoothing: 0.0
+param_init: 0
+param_init_glorot: true
+normalization: "tokens"
+
+#4/8bit
+quant_layers: ['w_1', 'w_2', 'w_3', 'linear_values', 'linear_query', 'linear_keys', 'final_linear']
+quant_type: "bnb_NF4"
+
+#LoRa
+lora_layers: ['linear_values', 'linear_query', 'linear_keys', 'final_linear']
+lora_rank: 8
+lora_dropout: 0.05
+lora_alpha: 16
+lora_embedding: false
+
+# Chekpointing
+#use_ckpting: ['ffn', 'lora']
+
+# Model
+model_task: lm
+encoder_type: transformer_lm
+decoder_type: transformer_lm
+layer_norm: rms
+pos_ffn_activation_fn: 'silu'
+max_relative_positions: -1
+position_encoding: false
+add_qkvbias: False
+add_ffnbias: False
+parallel_residual: false
+dec_layers: 32
+heads: 32
+hidden_size: 4096
+word_vec_size: 4096
+transformer_ff: 11008
+dropout_steps: [0]
+dropout: [0.0]
+attention_dropout: [0.0]
+```
+If you want to enable the "zero-out prompt loss" mechanism to ignore the prompt when calculating the loss,
+you can add the `insert_mask_before_placeholder` transform as well as the `zero_out_prompt_loss` flag:
+
+```
+transforms: [insert_mask_before_placeholder, sentencepiece, filtertoolong]
+zero_out_prompt_loss: true
+```
+The default value for the response `response_pattern` used to locate the end of the prompt is "Response : ｟newline｠", but you can choose another to align it with your training data.
+
+
+### Step 3: Finetune
+
+You can the run the training with the regular train.py command line:
+
+```
+python train.py --config /path_to/finetune.yaml
+```

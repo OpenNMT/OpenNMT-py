@@ -9,5 +9,4 @@ class TestStructuredAttention(unittest.TestCase):
         dtree = MatrixTree()
         q = torch.rand(1, 5, 5)
         marg = dtree.forward(q)
-        self.assertTrue(
-            marg.sum(1).allclose(torch.tensor(1.0)))
+        self.assertTrue(marg.sum(1).allclose(torch.tensor(1.0)))

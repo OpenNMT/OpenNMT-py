@@ -114,7 +114,7 @@ Here are what the most important parameters mean:
 * If you train a transformer we support `max_relative_positions` (use 20) instead of position_encoding. 
 * for very fast inference convert your model to CTranslate2 format.
 
-## Position encoding: Absolute vs Relative vs Rotary Embeddings
+## Position encoding: Absolute vs Relative vs Rotary Embeddings vs Alibi
 
 The basic feature is absolute position encoding stemming from the original Transformer Paper.
 However, even with this, we can use SinusoidalInterleaved (default OpenNMT-py) or SinusoidalConcat (default Fairseq imported models)
@@ -122,9 +122,10 @@ However, even with this, we can use SinusoidalInterleaved (default OpenNMT-py) o
 * `position_encoding_type: 'SinusoidalInterleaved'`
 Do not forget to set also `param_init_glorot: true`
 
-If you prefer to use relative position encoding, we support two modes:
+If you prefer to use relative position encoding, we support 3 modes:
 * "Shaw": https://arxiv.org/abs/1803.02155 - you need to set `max_relative_positions: N` where N > 1 (use 16, 20, 32) see paper.
 * "Rope" Rotary Embeddings: https://arxiv.org/abs/2104.09864 - you need to set `max_relative_positions: -1`
+* "Alibi" (used by MPT-7B for example) https://arxiv.org/abs/2108.12409 - you need to set `max_relative_positions: -2`
 
 In both cases, it is necessary to set `position_encoding: false`
 
@@ -245,6 +246,51 @@ data:
 ...
 
 ```
+
+## What special tokens does OpenNMT-py use?
+
+In the v2, special tokens were different for SEQ2SEQ and LM:
+LM was BOS, PAD, EOS with IDs (0, 1, 2) and the first vocab token started at id=3
+SEQ2SEQ was UNK, PAD, BOS, EOS with IDs (0, 1, 2, 3) and first vocab token started at id=4
+
+In v3 we changed this behavior to align things:
+    group.add(
+        "--default_specials",
+        "-default_specilas",
+        nargs="+",
+        type=str,
+        default=[
+            DefaultTokens.UNK,
+            DefaultTokens.PAD,
+            DefaultTokens.BOS,
+            DefaultTokens.EOS,
+        ])
+
+When we train a SEQ2SEQ model we use:
+SRC: srctok1 srctok2 srctok3 .... srctokn
+TGT: BOS tgttok1 tgttok2 ..... tgttokm EOS
+But when training a LM
+SRC: BOS srctok1 srctok2 srctok3 .... srctokn
+TGT: srctok1 srctok2 srctok3 .... srctokn EOS
+
+Having said that, sometimes we need to finetune models (eg: NLLB-200, Llama, ...) with existing vocab
+and special tokens are not the same.
+
+ex with NLLB-200
+BOS id=0
+PAD id=1
+EOS id=2
+UNK id=3
+And the decoder start token is EOS (</s>) which means in fact that the BOS is never used.
+At training, TGT needs to start with EOS instead of BOS in the default OpenNMT-py config.
+
+Example of Llama
+UNK id=0
+BOS id=1
+EOS id=2
+There was no PAD but to avoid conflicts we forced PAD id=3 (which was token '<0x00>' in the original llama tokenizer)
+
+
 
 ## How can I apply on-the-fly tokenization and subword regularization when training?
 
@@ -466,6 +512,26 @@ The following options can be added to the main configuration (valid for all data
 - `isolated_tag`: The format of an isolated inline tag. Must include the character # (default: "｟ph_#_std｠");
 - `src_delimiter`: Any special token used for augmented src sentences (default: "｟fuzzy｠");
 
+#### Make the model learn to use terminology
+
+Transform name: `terminology`
+
+Class: `onmt.transforms.terminology.TerminologyTransform`
+
+Augments source segments with terms so the model can learn to use user-provided terms at inference. It requires a dictionary with source and target terms, delimited with a tab. The transform uses Spacy's lemmatization facilities in order to a) solve the word inflection problem when searching for terms in any form, and b) make the model inflect correctly most target terms at inference. The lemmatization is applied at the dictionary entries and also at the source and target examples, and the term searches during training are performed on the lemmatized examples.
+ The format of a processed segment augmented with terms is as follows:
+`This is an ｟src_term_start｠ augmented ｟tgt_term_start｠ target_lemma_for_augmented ｟tgt_term_end｠ example.`
+The following options can be added to the main configuration (valid for all datasets using this transform):
+- `termbase_path`: The path to the dictionary text file;
+- `src_spacy_language_model`: Name of the spacy language model for the source corpus;
+- `tgt_spacy_language_model`: Name of the spacy language model for the target corpus;
+- `term_corpus_ratio`: Ratio of corpus to augment with terms # (default: 0.3);
+- `term_example_ratio`: Max terms allowed in an example # (default: 0.2);
+- `src_term_stoken`: The source term start token # (default: "｟src_term_start｠");
+- `tgt_term_stoken`: The target term start token # (default: "｟tgt_term_start｠");
+- `tgt_term_etoken`: The target term end token # (default: "｟tgt_term_end｠");
+- `term_source_delimiter`: Any special token used for augmented src sentences. The default is the fuzzy token used in the FuzzyMatch transform # (default: "｟fuzzy｠");
+
 ### Tokenization
 
 Common options for the tokenization transforms are the following:
@@ -655,11 +721,17 @@ Also you can read the blog post here: https://huggingface.co/blog/hf-bitsandbyte
 
 You need to add the following option:
 
-* `quant_layers: ['w_1', 'w_2']` 
+* `quant_layers: ['w_1', 'w_2', 'linear_values', 'linear_query']`
+* `quant_type: ['bnb_NF4']`
 
-These are the layers of the PositionWise Feed-Forward from the Encoder/Decoder.
+You can for instane quantize the layers of the PositionWise Feed-Forward from the Encoder/Decoder and the key/query/values/final from the Multi-head attention.
+Choices for quantization are ["bnb_8bit", "bnb_FP4", "bnb_NF4"]
 
-At the moment, for a given layer you cannot mix LoRa and 8bit compression. (TODO List)
+## How to use gradient checkpointing when dealing with a big model ?
+
+* `use_ckpting: ["ffn", "mha", "lora"]`
+
+Be carefull, the module that you use checkpointing needs to have gradients.
 
 
 ## Can I get word alignments while translating?

@@ -44,6 +44,12 @@ error_exit()
 
 # }
 
+# black check
+echo -n "[+] Doing Black check..."
+${PYTHON} -m black --check . >> ${LOG_FILE} 2>&1
+[ "$?" -eq 0 ] || error_exit
+echo "Succeeded" | tee -a ${LOG_FILE}
+
 # flake8 check
 echo -n "[+] Doing flake8 check..."
 ${PYTHON} -m flake8 >> ${LOG_FILE} 2>&1
@@ -58,9 +64,9 @@ ${PYTHON} -m unittest discover >> ${LOG_FILE} 2>&1
 echo "Succeeded" | tee -a ${LOG_FILE}
 
 
-#
+
 # Get Vocabulary test
-#
+
 echo -n "[+] Testing vocabulary building..."
 PYTHONPATH=${PROJECT_ROOT}:${PYTHONPATH} ${PYTHON} onmt/bin/build_vocab.py \
             -config ${DATA_DIR}/data.yaml \
@@ -109,7 +115,7 @@ ${PYTHON} onmt/bin/train.py \
             -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
             -src_vocab_size 1000 \
             -tgt_vocab_size 1000 \
-            -hidden_size 2 -batch_size 10 \
+            -batch_size 10 \
             -num_workers 0 -bucket_size 1024 \
             -word_vec_size 5 -report_every 5 \
             -hidden_size 10 -train_steps 10 \
@@ -127,17 +133,18 @@ ${PYTHON} onmt/bin/train.py \
             -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
             -src_vocab_size 1000 \
             -tgt_vocab_size 1000 \
-            -hidden_size 2 -batch_size 10 \
+            -batch_size 10 \
             -num_workers 0 -bucket_size 1024 \
             -word_vec_size 5 -report_every 2 \
             -hidden_size 10 -train_steps 10 -valid_steps 5 \
             -tensorboard "true" \
-            -tensorboard_log_dir $TMP_OUT_DIR/logs_train_valid \
+            -tensorboard_log_dir $TMP_OUT_DIR/logs_train_and_valid \
             -copy_attn >> ${LOG_FILE} 2>&1
-${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_train_valid -tensorboard_checks train_valid
+${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_train_and_valid -tensorboard_checks train
+${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_train_and_valid -tensorboard_checks valid
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
-rm -r $TMP_OUT_DIR/logs_train_valid
+rm -r $TMP_OUT_DIR/logs_train_and_valid
 
 echo -n "  [+] Testing NMT training w/ align..."
 ${PYTHON} onmt/bin/train.py \
@@ -161,7 +168,7 @@ ${PYTHON} onmt/bin/train.py \
             -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
             -src_vocab_size 1000 \
             -tgt_vocab_size 1000 \
-            -hidden_size 2 -batch_size 10 \
+            -batch_size 10 \
             -num_workers 0 -bucket_size 1024 \
             -word_vec_size 5 -report_every 5        \
             -coverage_attn true -lambda_coverage 0.1 \
@@ -169,35 +176,8 @@ ${PYTHON} onmt/bin/train.py \
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 
-echo -n "  [+] Testing NMT training w/ dynamic scoring..."
-${PYTHON} onmt/bin/train.py \
-            -config ${DATA_DIR}/data.yaml \
-            -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
-            -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
-            -src_vocab_size 1000 \
-            -tgt_vocab_size 1000 \
-            -encoder_type transformer \
-            -decoder_type transformer \
-            -layers 4 \
-            -word_vec_size 16 \
-            -hidden_size 16 \
-            -heads 2 \
-            -transformer_ff 64 \
-            -num_workers 0 -bucket_size 1024 \
-            -train_steps 20 \
-            -report_every 5 \
-            -train_eval_steps 10 \
-            -train_metrics "BLEU" "TER" \
-            -tensorboard "true" \
-            -scoring_debug "true" \
-            -tensorboard_log_dir $TMP_OUT_DIR/logs_train_metrics \
-            -dump_preds $TMP_OUT_DIR/dump_pred >> ${LOG_FILE} 2>&1
-${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_train_metrics -tensorboard_checks train_metrics
-[ "$?" -eq 0 ] || error_exit
-echo "Succeeded" | tee -a ${LOG_FILE}
-rm -r $TMP_OUT_DIR/logs_train_metrics
 
-echo -n "  [+] Testing NMT training w/ dynamic scoring with validation and copy ..."
+echo -n "  [+] Testing NMT training w/ validation with dynamic scoring and copy ..."
 ${PYTHON} onmt/bin/train.py \
             -config ${DATA_DIR}/data.yaml \
             -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
@@ -215,18 +195,18 @@ ${PYTHON} onmt/bin/train.py \
             -bucket_size 1024 \
             -train_steps 10 \
             -report_every 2 \
-            -train_eval_steps 8 -valid_steps 5 \
-            -train_metrics "BLEU" "TER" \
+            -valid_steps 5 \
             -valid_metrics "BLEU" "TER" \
             -tensorboard "true" \
             -scoring_debug "true" \
-            -dump_preds $TMP_OUT_DIR/dump_pred \
             -copy_attn \
-            -tensorboard_log_dir $TMP_OUT_DIR/logs_train_valid_metrics >> ${LOG_FILE} 2>&1
-${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_train_valid_metrics -tensorboard_checks train_valid_metrics
+            -dump_preds $TMP_OUT_DIR/dump_pred \
+            -tensorboard_log_dir $TMP_OUT_DIR/logs_dynamic-scoring_and_copy >> ${LOG_FILE} 2>&1
+      
+${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_dynamic-scoring_and_copy -tensorboard_checks valid_metrics
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
-rm -r $TMP_OUT_DIR/logs_train_valid_metrics
+rm -r $TMP_OUT_DIR/logs_dynamic-scoring_and_copy
 
 echo -n "  [+] Testing LM training..."
 ${PYTHON} onmt/bin/train.py \
@@ -271,7 +251,7 @@ ${PYTHON} onmt/bin/train.py \
             -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
             -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
             -src_vocab_size 1000 -tgt_vocab_size 1000 \
-            -hidden_size 2 -batch_size 10 \
+            -batch_size 10 \
             -word_vec_size 5 -hidden_size 10 \
             -num_workers 0 -bucket_size 1024 \
             -report_every 5 -train_steps 10 \
@@ -283,7 +263,7 @@ ${PYTHON} onmt/bin/train.py \
             -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
             -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
             -src_vocab_size 1000 -tgt_vocab_size 1000 \
-            -hidden_size 2 -batch_size 10 \
+            -batch_size 10 \
             -word_vec_size 5 -hidden_size 10 \
             -num_workers 0 -bucket_size 1024 \
             -report_every 5 -train_steps 20 \
@@ -349,7 +329,7 @@ ${PYTHON} onmt/bin/train.py \
             -src_vocab $TMP_OUT_DIR/onmt_feat.vocab.src \
             -tgt_vocab $TMP_OUT_DIR/onmt_feat.vocab.tgt \
             -src_vocab_size 1000 -tgt_vocab_size 1000 \
-            -hidden_size 2 -batch_size 10 \
+            -batch_size 10 \
             -word_vec_size 5 -hidden_size 10 \
             -num_workers 0 -bucket_size 1024 \
             -report_every 5 -train_steps 10 \
@@ -365,14 +345,14 @@ ${PYTHON} onmt/bin/train.py \
             -src_vocab $TMP_OUT_DIR/onmt_feat.vocab.src \
             -tgt_vocab $TMP_OUT_DIR/onmt_feat.vocab.tgt \
             -src_vocab_size 1000 -tgt_vocab_size 1000 \
-            -hidden_size 2 -batch_size 10 \
+            -batch_size 10 \
             -word_vec_size 5 -hidden_size 10 \
             -num_workers 0 -bucket_size 1024 \
-            -report_every 5 -train_steps 10 \
-            -train_metrics "BLEU" "TER" \
+            -report_every 5 -train_steps 10 -valid_steps 5\
             -valid_metrics "BLEU" "TER" \
             -save_model $TMP_OUT_DIR/onmt.features.model \
             -save_checkpoint_steps 10 >> ${LOG_FILE} 2>&1
+
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 rm -f $TMP_OUT_DIR/onmt.vocab*
@@ -485,7 +465,7 @@ ${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
             -ban_unk_token \
             -length_penalty none \
             -out $TMP_OUT_DIR/gen_sampling  >> ${LOG_FILE} 2>&1
-diff ${DATA_DIR}/data_lm/gen-nucleus-sampling-sol.txt $TMP_OUT_DIR/gen_sampling
+diff ${DATA_DIR}/data_lm/gen-nucleus-sampling-sol$(python -c "import torch; print(torch.__version__[0])").txt $TMP_OUT_DIR/gen_sampling
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 rm $TMP_OUT_DIR/gen_sampling
@@ -503,7 +483,7 @@ ${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
             -ban_unk_token \
             -min_length 5 \
             -out $TMP_OUT_DIR/gen_sampling  >> ${LOG_FILE} 2>&1
-diff ${DATA_DIR}/data_lm/gen-sampling-beams-sol.txt $TMP_OUT_DIR/gen_sampling
+diff ${DATA_DIR}/data_lm/gen-sampling-beams-sol$(python -c "import torch; print(torch.__version__[0])").txt $TMP_OUT_DIR/gen_sampling
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 rm $TMP_OUT_DIR/gen_sampling

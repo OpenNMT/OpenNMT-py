@@ -6,7 +6,7 @@ import torch.nn as nn
 from onmt.encoders.encoder import EncoderBase
 from onmt.utils.cnn_factory import shape_transform, StackedCNN
 
-SCALE_WEIGHT = 0.5 ** 0.5
+SCALE_WEIGHT = 0.5**0.5
 
 
 class CNNEncoder(EncoderBase):
@@ -14,15 +14,13 @@ class CNNEncoder(EncoderBase):
     :cite:`DBLP:journals/corr/GehringAGYD17`.
     """
 
-    def __init__(self, num_layers, hidden_size,
-                 cnn_kernel_width, dropout, embeddings):
+    def __init__(self, num_layers, hidden_size, cnn_kernel_width, dropout, embeddings):
         super(CNNEncoder, self).__init__()
 
         self.embeddings = embeddings
         input_size = embeddings.embedding_size
         self.linear = nn.Linear(input_size, hidden_size)
-        self.cnn = StackedCNN(num_layers, hidden_size,
-                              cnn_kernel_width, dropout)
+        self.cnn = StackedCNN(num_layers, hidden_size, cnn_kernel_width, dropout)
 
     @classmethod
     def from_opt(cls, opt, embeddings):
@@ -32,7 +30,8 @@ class CNNEncoder(EncoderBase):
             opt.enc_hid_size,
             opt.cnn_kernel_width,
             opt.dropout[0] if type(opt.dropout) is list else opt.dropout,
-            embeddings)
+            embeddings,
+        )
 
     def forward(self, input, src_len=None, hidden=None):
         """See :func:`EncoderBase.forward()`"""

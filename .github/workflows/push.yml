@@ -24,7 +24,11 @@ jobs:
         pip install -r requirements.opt.txt
         pip install sacrebleu
         pip install flake8
+        python -m pip install black==22.* flake8==3.8.*
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    - name: Check code with Black
+      run: |
+        black --check .
     - name: Lint with flake8
       run: |
         flake8 .
@@ -97,9 +101,10 @@ jobs:
           -hidden_size 10 \
           -train_steps 10 -valid_steps 5 \
           -tensorboard "true" \
-          -tensorboard_log_dir /tmp/logs_train_valid \
+          -tensorboard_log_dir /tmp/logs_train_and_valid \
           -copy_attn
-        python onmt/tests/test_events.py --logdir /tmp/logs_train_valid -tensorboard_checks train_valid
+        python onmt/tests/test_events.py --logdir /tmp/logs_train_and_valid -tensorboard_checks train
+                python onmt/tests/test_events.py --logdir /tmp/logs_train_and_valid -tensorboard_checks valid
     - name: Test RNN training with coverage
       run: |
         python train.py \
@@ -137,35 +142,6 @@ jobs:
           -attention_dropout 0.2 0.1 0.1 \
           -report_every 5 \
           -train_steps 10
-    - name : Test Transformer training with dynamic scoring
-      run: |
-        python3 train.py \
-          -config data/data.yaml \
-          -src_vocab /tmp/onmt.vocab.src \
-          -tgt_vocab /tmp/onmt.vocab.tgt \
-          -src_vocab_size 1000 \
-          -tgt_vocab_size 1000 \
-          -encoder_type transformer \
-          -decoder_type transformer \
-          -layers 4 \
-          -word_vec_size 16 \
-          -hidden_size 16 \
-          -num_workers 0 -bucket_size 1024 \
-          -heads 2 \
-          -transformer_ff 64 \
-          -num_workers 0 -bucket_size 1024 \
-          -accum_count 2 4 8 \
-          -accum_steps 0 15000 30000 \
-          -save_model /tmp/onmt.model \
-          -train_steps 20 \
-          -report_every 5 \
-          -train_eval_steps 10 \
-          -train_metrics "BLEU" "TER" \
-          -tensorboard "true" \
-          -scoring_debug "true" \
-          -tensorboard_log_dir /tmp/logs_train_metrics \
-          -dump_preds /tmp/dump_preds
-        python onmt/tests/test_events.py --logdir /tmp/logs_train_metrics -tensorboard_checks train_metrics
     - name : Test Transformer training and validation with dynamic scoring and copy
       run: |
         python3 train.py \
@@ -188,15 +164,13 @@ jobs:
           -save_model /tmp/onmt.model \
           -train_steps 10  -valid_steps 5 \
           -report_every 2 \
-          -train_eval_steps 8 \
-          -train_metrics "BLEU" "TER" \
           -valid_metrics "BLEU" "TER" \
           -tensorboard "true" \
           -scoring_debug "true" \
-          -tensorboard_log_dir /tmp/logs_train_valid_metrics \
+          -tensorboard_log_dir /tmp/logs_dynamic-scoring_and_copy \
           -dump_preds /tmp/dump_preds \
           -copy_attn
-        python onmt/tests/test_events.py --logdir /tmp/logs_train_valid_metrics -tensorboard_checks train_valid_metrics 
+        python onmt/tests/test_events.py --logdir /tmp/logs_dynamic-scoring_and_copy -tensorboard_checks valid_metrics 
     - name: Test LM training
       run: |
         python train.py \
@@ -275,8 +249,7 @@ jobs:
           -hidden_size 2 -batch_size 10 \
           -word_vec_size 5 -hidden_size 10 \
           -num_workers 0 -bucket_size 1024 \
-          -report_every 5 -train_steps 10 \
-          -train_metrics "BLEU" "TER" \
+          -report_every 5 -train_steps 10 -valid_steps 5\
           -valid_metrics "BLEU" "TER" \
           -save_model /tmp/onmt.model \
           -save_checkpoint_steps 10
@@ -370,7 +343,7 @@ jobs:
           -ban_unk_token \
           -length_penalty none \
           -out /tmp/gen
-        diff data/data_lm/gen-nucleus-sampling-sol.txt /tmp/gen && rm /tmp/gen
+        diff data/data_lm/gen-nucleus-sampling-sol$(python -c "import torch; print(torch.__version__[0])").txt /tmp/gen && rm /tmp/gen
     - name: Test LM generation with random sampling multi-beams
       run: |
         python translate.py -model onmt/tests/test_model_lm.pt \
@@ -385,7 +358,7 @@ jobs:
           -ban_unk_token \
           -min_length 5 \
           -out /tmp/gen
-        diff data/data_lm/gen-sampling-beams-sol.txt /tmp/gen && rm /tmp/gen
+        diff data/data_lm/gen-sampling-beams-sol$(python -c "import torch; print(torch.__version__[0])").txt /tmp/gen && rm /tmp/gen
     - name: Test extract_vocabulary tool
       run: |
         python tools/extract_vocabulary.py \

@@ -1,0 +1,145 @@
+
+Run with OpenNMT-py converted flan-T5-XL
+
+ACC-abstract_algebra: 0.2700
+ACC-anatomy: 0.4296
+ACC-astronomy: 0.4737
+ACC-business_ethics: 0.6800
+ACC-clinical_knowledge: 0.5245
+ACC-college_biology: 0.4444
+ACC-college_chemistry: 0.3400
+ACC-college_computer_science: 0.3600
+ACC-college_mathematics: 0.2900
+ACC-college_medicine: 0.4277
+ACC-college_physics: 0.2941
+ACC-computer_security: 0.6400
+ACC-conceptual_physics: 0.4085
+ACC-econometrics: 0.2807
+ACC-electrical_engineering: 0.4552
+ACC-elementary_mathematics: 0.3148
+ACC-formal_logic: 0.3333
+ACC-global_facts: 0.3600
+ACC-high_school_biology: 0.5645
+ACC-high_school_chemistry: 0.3300
+ACC-high_school_computer_science: 0.5100
+ACC-high_school_european_history: 0.7333
+ACC-high_school_geography: 0.6414
+ACC-high_school_government_and_politics: 0.6632
+ACC-high_school_macroeconomics: 0.5359
+ACC-high_school_mathematics: 0.3074
+ACC-high_school_microeconomics: 0.5168
+ACC-high_school_physics: 0.2980
+ACC-high_school_psychology: 0.6771
+ACC-high_school_statistics: 0.3657
+ACC-high_school_us_history: 0.6863
+ACC-high_school_world_history: 0.6667
+ACC-human_aging: 0.5650
+ACC-human_sexuality: 0.5802
+ACC-international_law: 0.6860
+ACC-jurisprudence: 0.6204
+ACC-logical_fallacies: 0.6319
+ACC-machine_learning: 0.3571
+ACC-management: 0.6796
+ACC-marketing: 0.7906
+ACC-medical_genetics: 0.4800
+ACC-miscellaneous: 0.6782
+ACC-moral_disputes: 0.5983
+ACC-moral_scenarios: 0.2436
+ACC-nutrition: 0.4804
+ACC-philosophy: 0.5177
+ACC-prehistory: 0.5216
+ACC-professional_accounting: 0.3723
+ACC-professional_law: 0.3990
+ACC-professional_medicine: 0.4412
+ACC-professional_psychology: 0.4526
+ACC-public_relations: 0.5909
+ACC-security_studies: 0.6531
+ACC-sociology: 0.7363
+ACC-us_foreign_policy: 0.6600
+ACC-virology: 0.4819
+ACC-world_religions: 0.5614
+ACC-all: 0.4929
+total run time 1315.36
+
+Run with Hendrycks script on HuggingFace Checkpoint https://huggingface.co/google/flan-t5-xl
+
+Average accuracy 0.270 - abstract_algebra
+Average accuracy 0.430 - anatomy
+Average accuracy 0.474 - astronomy
+Average accuracy 0.680 - business_ethics
+Average accuracy 0.525 - clinical_knowledge
+Average accuracy 0.444 - college_biology
+Average accuracy 0.340 - college_chemistry
+Average accuracy 0.360 - college_computer_science
+Average accuracy 0.290 - college_mathematics
+Average accuracy 0.428 - college_medicine
+Average accuracy 0.294 - college_physics
+Average accuracy 0.640 - computer_security
+Average accuracy 0.409 - conceptual_physics
+Average accuracy 0.281 - econometrics
+Average accuracy 0.455 - electrical_engineering
+Average accuracy 0.315 - elementary_mathematics
+Average accuracy 0.333 - formal_logic
+Average accuracy 0.360 - global_facts
+Average accuracy 0.565 - high_school_biology
+Average accuracy 0.330 - high_school_chemistry
+Average accuracy 0.510 - high_school_computer_science
+Average accuracy 0.733 - high_school_european_history
+Average accuracy 0.641 - high_school_geography
+Average accuracy 0.663 - high_school_government_and_politics
+Average accuracy 0.536 - high_school_macroeconomics
+Average accuracy 0.307 - high_school_mathematics
+Average accuracy 0.517 - high_school_microeconomics
+Average accuracy 0.298 - high_school_physics
+Average accuracy 0.675 - high_school_psychology
+Average accuracy 0.370 - high_school_statistics
+Average accuracy 0.662 - high_school_us_history
+Average accuracy 0.684 - high_school_world_history
+Average accuracy 0.565 - human_aging
+Average accuracy 0.580 - human_sexuality
+Average accuracy 0.686 - international_law
+Average accuracy 0.620 - jurisprudence
+Average accuracy 0.632 - logical_fallacies
+Average accuracy 0.357 - machine_learning
+Average accuracy 0.680 - management
+Average accuracy 0.791 - marketing
+Average accuracy 0.480 - medical_genetics
+Average accuracy 0.678 - miscellaneous
+Average accuracy 0.598 - moral_disputes
+Average accuracy 0.244 - moral_scenarios
+Average accuracy 0.480 - nutrition
+Average accuracy 0.518 - philosophy
+Average accuracy 0.522 - prehistory
+Average accuracy 0.372 - professional_accounting
+Average accuracy 0.401 - professional_law
+Average accuracy 0.441 - professional_medicine
+Average accuracy 0.453 - professional_psychology
+Average accuracy 0.591 - public_relations
+Average accuracy 0.633 - security_studies
+Average accuracy 0.736 - sociology
+Average accuracy 0.660 - us_foreign_policy
+Average accuracy 0.482 - virology
+Average accuracy 0.561 - world_religions
+Average accuracy 0.318 - math
+Average accuracy 0.483 - health
+Average accuracy 0.380 - physics
+Average accuracy 0.739 - business
+Average accuracy 0.526 - biology
+Average accuracy 0.333 - chemistry
+Average accuracy 0.464 - computer science
+Average accuracy 0.491 - economics
+Average accuracy 0.455 - engineering
+Average accuracy 0.411 - philosophy
+Average accuracy 0.577 - other
+Average accuracy 0.631 - history
+Average accuracy 0.641 - geography
+Average accuracy 0.639 - politics
+Average accuracy 0.557 - psychology
+Average accuracy 0.675 - culture
+Average accuracy 0.434 - law
+Average accuracy 0.390 - STEM
+Average accuracy 0.463 - humanities
+Average accuracy 0.577 - social sciences
+Average accuracy 0.551 - other (business, health, misc.)
+Average accuracy: 0.493
+

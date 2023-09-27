@@ -4,7 +4,7 @@ from onmt.utils.logging import init_logger
 from onmt.translate.translator import build_translator
 from onmt.inputters.dynamic_iterator import build_dynamic_dataset_iter
 from onmt.inputters.inputter import IterOnDevice
-from onmt.transforms import get_transforms_cls, TransformPipe
+from onmt.transforms import get_transforms_cls
 from onmt.constants import CorpusTask
 import onmt.opts as opts
 from onmt.utils.parse import ArgumentParser
@@ -20,34 +20,30 @@ def translate(opt):
 
     set_random_seed(opt.seed, use_gpu(opt))
 
-    translator = build_translator(opt, logger=logger,
-                                  report_score=True)
+    translator = build_translator(opt, logger=logger, report_score=True)
 
     transforms_cls = get_transforms_cls(opt._all_transform)
 
     infer_iter = build_dynamic_dataset_iter(
-        opt, transforms_cls, translator.vocabs, task=CorpusTask.INFER,
-        copy=translator.copy_attn)
+        opt,
+        transforms_cls,
+        translator.vocabs,
+        task=CorpusTask.INFER,
+        copy=translator.copy_attn,
+    )
 
-    data_transform = [
-        infer_iter.transforms[name] for name in
-        opt.transforms if name in infer_iter.transforms
-    ]
-    transform = TransformPipe.build_from(data_transform)
-
-    if infer_iter is not None:
-        infer_iter = IterOnDevice(infer_iter, opt.gpu)
+    infer_iter = IterOnDevice(infer_iter, opt.gpu)
 
     _, _ = translator._translate(
         infer_iter,
-        transform=transform,
+        transform=infer_iter.transform,
         attn_debug=opt.attn_debug,
-        align_debug=opt.align_debug
-        )
+        align_debug=opt.align_debug,
+    )
 
 
 def _get_parser():
-    parser = ArgumentParser(description='translate.py')
+    parser = ArgumentParser(description="translate.py")
 
     opts.config_opts(parser)
     opts.translate_opts(parser, dynamic=True)

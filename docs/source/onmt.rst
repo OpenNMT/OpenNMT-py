@@ -16,7 +16,7 @@ Model
 Trainer
 -------
 
-.. autoclass:: onmt.Trainer
+.. autoclass:: onmt.trainer.Trainer
     :members:
 
 .. autoclass:: onmt.utils.Statistics

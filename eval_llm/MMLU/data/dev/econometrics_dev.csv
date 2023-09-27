@@ -1,0 +1,17 @@
+"For a stationary autoregressive process, shocks will",Eventually die away,Persist indefinitely,Grow exponentially,Never occur,A
+"Consider the following AR(1) model with the disturbances having zero mean and unit variance
+
+yt = 0.2 + 0.4 yt-1 + ut
+
+The (unconditional) mean of y will be given by",0.2,0.4,0.5,0.33,D
+"Suppose that a test statistic has associated with it a p-value of 0.08. Which one of the following statements is true?
+
+(i) If the size of the test were exactly 8%, we would be indifferent between rejecting and not rejecting the null hypothesis
+
+(ii) The null would be rejected if a 10% size of test were used
+
+(iii) The null would not be rejected if a 1% size of test were used
+
+(iv) The null would be rejected if a 5% size of test were used.",(ii) and (iv) only,(i) and (iii) only,"(i), (ii), and (iii) only","(i), (ii), (iii), and (iv)",C
+What would be then consequences for the OLS estimator if heteroscedasticity is present in a regression model but ignored?,It will be biased,It will be inconsistent,It will be inefficient,"All of (a), (b) and (c) will be true.",C
+"Suppose now that a researcher wishes to use information criteria to determine the optimal lag length for a VAR. 500 observations are available for the bi-variate VAR, and the values of the determinant of the variance-covariance matrix of residuals are 0.0336, 0.0169, 0.0084, and 0.0062 for 1, 2, 3, and 4 lags respectively. What is the optimal model order according to Akaike's information criterion?",1 lag,2 lags,3 lags,4 lags,C

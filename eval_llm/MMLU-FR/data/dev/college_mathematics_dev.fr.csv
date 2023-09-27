@@ -1,0 +1,8 @@
+"Soit V l'ensemble de tous les polynômes réels p(x). Soit les transformations T, S définies sur V par T:p(x) -> xp(x) et S:p(x) -> p'(x) = d/dx p(x), et interprétons (ST)(p(x)) comme S(T(p(x))). Lequel des énoncés suivants est vrai ?",ST = 0,ST = T,ST = TS,ST - TS est la carte d'identité de V sur lui-même.,D
+"Un réservoir contient initialement une solution saline de 3 grammes de sel dissous dans 100 litres d'eau. Une solution saline contenant 0,02 gramme de sel par litre d'eau est pulvérisée dans le réservoir à raison de 4 litres par minute. La solution pulvérisée est continuellement mélangée à la solution saline dans le réservoir, et le mélange s'écoule hors du réservoir à un rythme de 4 litres par minute. Si le mélange est instantané, combien de grammes de sel se trouvent dans le réservoir après 100 minutes ?",2,2 - e^-2,2 + e^-2,2 + e^-4,D
+"Soit A une matrice réelle 2x2. Laquelle des affirmations suivantes doit être vraie ?
+I. Toutes les entrées de A^2 sont non négatives.
+II. Le déterminant de A^2 est non négatif.
+III. Si A a deux valeurs propres distinctes, alors A^2 a deux valeurs propres distinctes.",Je ne,II seulement,III uniquement,II et III uniquement,B
+"Supposons que f(1 + x) = f(x) pour tout réel x. Si f est un polynôme et que f(5) = 11, alors f(15/2)",-11,0,11,33/2,C
+"Soit A l'ensemble de toutes les paires ordonnées d'entiers (m, n) telles que 7m + 12n = 22. Quel est le plus grand nombre négatif dans l'ensemble B = {m + n : (m, n) \in A} ?",-5,-4,-3,-2,B

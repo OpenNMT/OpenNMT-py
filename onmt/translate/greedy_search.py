@@ -5,28 +5,24 @@ from onmt.translate.decode_strategy import DecodeStrategy
 
 
 def sample_topp(logits, keep_topp):
-    sorted_logits, sorted_indices = torch.sort(logits,
-                                               descending=True,
-                                               dim=1)
+    sorted_logits, sorted_indices = torch.sort(logits, descending=True, dim=1)
 
-    cumulative_probs = torch.cumsum(F.softmax(sorted_logits,
-                                              dim=-1), dim=-1)
+    cumulative_probs = torch.cumsum(F.softmax(sorted_logits, dim=-1), dim=-1)
     sorted_indices_to_keep = cumulative_probs.lt(keep_topp)
 
     # keep indices until overflowing p
     cumsum_mask = sorted_indices_to_keep.cumsum(dim=1)
     last_included = cumsum_mask[:, -1:]
     last_included.clamp_(0, sorted_indices_to_keep.size()[1] - 1)
-    sorted_indices_to_keep = sorted_indices_to_keep.scatter_(
-        1, last_included, 1)
+    sorted_indices_to_keep = sorted_indices_to_keep.scatter_(1, last_included, 1)
 
     # Set all logits that are not in the top-p to -10000.
     # This puts the probabilities close to 0.
     keep_indices = sorted_indices_to_keep.scatter(
-                                1,
-                                sorted_indices,
-                                sorted_indices_to_keep,
-                                )
+        1,
+        sorted_indices,
+        sorted_indices_to_keep,
+    )
     return logits.masked_fill(~keep_indices, -10000)
 
 
@@ -120,37 +116,70 @@ class GreedySearch(DecodeStrategy):
         beam_size (int): Number of beams to use.
     """
 
-    def __init__(self, pad, bos, eos, unk, start, batch_size, global_scorer,
-                 min_length, block_ngram_repeat, exclusion_tokens,
-                 return_attention, max_length, sampling_temp, keep_topk,
-                 keep_topp, beam_size, ban_unk_token):
+    def __init__(
+        self,
+        pad,
+        bos,
+        eos,
+        unk,
+        start,
+        batch_size,
+        global_scorer,
+        min_length,
+        block_ngram_repeat,
+        exclusion_tokens,
+        return_attention,
+        max_length,
+        sampling_temp,
+        keep_topk,
+        keep_topp,
+        beam_size,
+        ban_unk_token,
+    ):
         super(GreedySearch, self).__init__(
-            pad, bos, eos, unk, start, batch_size, beam_size, global_scorer,
-            min_length, block_ngram_repeat, exclusion_tokens,
-            return_attention, max_length, ban_unk_token)
+            pad,
+            bos,
+            eos,
+            unk,
+            start,
+            batch_size,
+            beam_size,
+            global_scorer,
+            min_length,
+            block_ngram_repeat,
+            exclusion_tokens,
+            return_attention,
+            max_length,
+            ban_unk_token,
+        )
         self.sampling_temp = sampling_temp
         self.keep_topk = keep_topk
         self.keep_topp = keep_topp
         self.topk_scores = None
         self.beam_size = beam_size
 
-    def initialize(self, enc_out, src_len, src_map=None, device=None,
-                   target_prefix=None):
+    def initialize(
+        self, enc_out, src_len, src_map=None, device=None, target_prefix=None
+    ):
         """Initialize for decoding."""
-        (fn_map_state, enc_out,
-            src_map, target_prefix) = self.initialize_tile(
-                enc_out, src_len, src_map, target_prefix)
+        (fn_map_state, enc_out, src_map, target_prefix) = self.initialize_tile(
+            enc_out, src_len, src_map, target_prefix
+        )
         if device is None:
             device = self.get_device_from_enc_out(enc_out)
 
         super(GreedySearch, self).initialize(
-            enc_out, src_len, src_map, device, target_prefix)
+            enc_out, src_len, src_map, device, target_prefix
+        )
         self.select_indices = torch.arange(
-            self.batch_size*self.beam_size, dtype=torch.long, device=device)
-        self.original_batch_idx = fn_map_state(torch.arange(
-            self.batch_size, dtype=torch.long, device=device), dim=0)
-        self.beams_scores = torch.zeros((self.batch_size*self.beam_size, 1),
-                                        dtype=torch.float, device=device)
+            self.batch_size * self.beam_size, dtype=torch.long, device=device
+        )
+        self.original_batch_idx = fn_map_state(
+            torch.arange(self.batch_size, dtype=torch.long, device=device), dim=0
+        )
+        self.beams_scores = torch.zeros(
+            (self.batch_size * self.beam_size, 1), dtype=torch.float, device=device
+        )
         return fn_map_state, enc_out, self.src_len, src_map
 
     @property
@@ -170,16 +199,20 @@ class GreedySearch(DecodeStrategy):
         # maybe fix some prediction at this step by modifying log_probs
         log_probs = self.target_prefixing(log_probs)
         topk_ids, topk_scores = sample_with_temperature(
-            log_probs, self.sampling_temp, self.keep_topk, self.keep_topp)
+            log_probs, self.sampling_temp, self.keep_topk, self.keep_topp
+        )
         return topk_ids, topk_scores
 
     def align_select_indices(self):
-        nb_finished_beams = (self.is_finished.view(-1).size(0) -
-                             self.select_indices.size(0))
+        nb_finished_beams = self.is_finished.view(-1).size(
+            0
+        ) - self.select_indices.size(0)
         if nb_finished_beams:
             self.select_indices = torch.arange(
-                self.select_indices.size(0), dtype=torch.long,
-                device=self.select_indices.device)
+                self.select_indices.size(0),
+                dtype=torch.long,
+                device=self.select_indices.device,
+            )
 
     def advance(self, log_probs, attn):
         """Select next tokens randomly from the top k possible next tokens.
@@ -219,21 +252,23 @@ class GreedySearch(DecodeStrategy):
         finished_batches = self.is_finished.view(-1).nonzero(as_tuple=False)
         step = len(self)
         length_penalty = self.global_scorer.length_penalty(
-            step, alpha=self.global_scorer.alpha)
+            step, alpha=self.global_scorer.alpha
+        )
 
         for b in finished_batches.view(-1):
             b_orig = self.original_batch_idx[b]
-            score = self.beams_scores[b, 0]/length_penalty
+            score = self.beams_scores[b, 0] / length_penalty
             pred = self.alive_seq[b, 1:]
             attention = (
-                self.alive_attn[:, b, :self.src_len[b]]
-                if self.alive_attn is not None else [])
+                self.alive_attn[:, b, : self.src_len[b]]
+                if self.alive_attn is not None
+                else []
+            )
             self.hypotheses[b_orig].append((score, pred, attention))
         self.done = self.is_finished.all()
         if self.done:
             for b in range(self.batch_size):
-                best_hyp = sorted(
-                    self.hypotheses[b], key=lambda x: x[0], reverse=True)
+                best_hyp = sorted(self.hypotheses[b], key=lambda x: x[0], reverse=True)
                 for score, pred, attn in best_hyp:
                     self.scores[b].append(score)
                     self.predictions[b].append(pred)
@@ -265,15 +300,14 @@ class GreedySearchLM(GreedySearch):
         # and therefore needs to follow the generation
         self.src_len += 1
 
-    def initialize(self, src, src_len, src_map=None, device=None,
-                   target_prefix=None):
+    def initialize(self, src, src_len, src_map=None, device=None, target_prefix=None):
         """Initialize for decoding."""
 
         if device is None:
             device = src.device
 
-        (fn_map_state, _, self.src_len,
-            src_map) = super(GreedySearchLM, self).initialize(
-                None, src_len, src_map, device, target_prefix)
+        (fn_map_state, _, self.src_len, src_map) = super(
+            GreedySearchLM, self
+        ).initialize(None, src_len, src_map, device, target_prefix)
 
         return fn_map_state, src, self.src_len, src_map

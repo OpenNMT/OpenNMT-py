@@ -29,14 +29,14 @@ model = load_from_checkpoint(model_path)
 
 parser = ArgumentParser()
 
-parser.add_argument("--nbest-src", type=str, help="src repeated n times",
-                    required=True)
-parser.add_argument("--nbest-hyp", type=str, help="file with nbest to rerank",
-                    required=True)
-parser.add_argument("--nbest-ref", type=str, help="ref repeated n times",
-                    required=False)
-parser.add_argument("--nbest-order", type=int, help="nbest order",
-                    required=True)
+parser.add_argument("--nbest-src", type=str, help="src repeated n times", required=True)
+parser.add_argument(
+    "--nbest-hyp", type=str, help="file with nbest to rerank", required=True
+)
+parser.add_argument(
+    "--nbest-ref", type=str, help="ref repeated n times", required=False
+)
+parser.add_argument("--nbest-order", type=int, help="nbest order", required=True)
 parser.add_argument("--output", type=str, help="output file", required=True)
 
 args = parser.parse_args()
@@ -45,7 +45,7 @@ args = parser.parse_args()
 def chunks(lgth, n):
     """Yield successive n-sized chunks from lgth."""
     for i in range(0, len(lgth), n):
-        yield lgth[i:i + n]
+        yield lgth[i : i + n]
 
 
 with codecs.open(args.nbest_hyp, encoding="utf-8") as file:
@@ -74,15 +74,16 @@ with codecs.open(args.output, "w", encoding="utf-8") as output_file:
             scores = []
             data = []
             for i in range(args.nbest_order):
-                data.append({
-                    "src": nsrc[i],
-                    "mt": nbest[i],
-                    "ref": nref[i],
-                    })
-                seg_scores, \
-                    sys_score = model.predict(data,
-                                              batch_size=args.nbest_order,
-                                              gpus=1)
+                data.append(
+                    {
+                        "src": nsrc[i],
+                        "mt": nbest[i],
+                        "ref": nref[i],
+                    }
+                )
+                seg_scores, sys_score = model.predict(
+                    data, batch_size=args.nbest_order, gpus=1
+                )
                 max_index = seg_scores.index(max(seg_scores))
                 output_file.write(data[max_index]["mt"] + "\n")
                 best_indices.append(max_index)
@@ -92,14 +93,15 @@ with codecs.open(args.output, "w", encoding="utf-8") as output_file:
             scores = []
             data = []
             for i in range(args.nbest_order):
-                data.append({
-                    "src": nsrc[i],
-                    "mt": nbest[i],
-                    })
-                seg_scores, \
-                    sys_score = model.predict(data,
-                                              batch_size=args.nbest_order,
-                                              gpus=1)
+                data.append(
+                    {
+                        "src": nsrc[i],
+                        "mt": nbest[i],
+                    }
+                )
+                seg_scores, sys_score = model.predict(
+                    data, batch_size=args.nbest_order, gpus=1
+                )
                 max_index = seg_scores.index(max(seg_scores))
                 output_file.write(data[max_index]["mt"] + "\n")
                 best_indices.append(max_index)

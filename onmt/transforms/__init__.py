@@ -2,9 +2,14 @@
 import os
 import importlib
 
-from .transform import make_transforms, get_specials,\
-    save_transforms, load_transforms, TransformPipe,\
-    Transform
+from .transform import (
+    make_transforms,
+    get_specials,
+    save_transforms,
+    load_transforms,
+    TransformPipe,
+    Transform,
+)
 
 
 AVAILABLE_TRANSFORMS = {}
@@ -20,9 +25,15 @@ def get_transforms_cls(transform_names):
     return transforms_cls
 
 
-__all__ = ["get_transforms_cls", "get_specials", "make_transforms",
-           "load_transforms", "save_transforms", "TransformPipe",
-           "prepare_transforms"]
+__all__ = [
+    "get_transforms_cls",
+    "get_specials",
+    "make_transforms",
+    "load_transforms",
+    "save_transforms",
+    "TransformPipe",
+    "prepare_transforms",
+]
 
 
 def register_transform(name):
@@ -30,11 +41,11 @@ def register_transform(name):
 
     def register_transfrom_cls(cls):
         if name in AVAILABLE_TRANSFORMS:
-            raise ValueError(
-                'Cannot register duplicate transform ({})'.format(name))
+            raise ValueError("Cannot register duplicate transform ({})".format(name))
         if not issubclass(cls, Transform):
-            raise ValueError('transform ({}: {}) must extend Transform'.format(
-                name, cls.__name__))
+            raise ValueError(
+                "transform ({}: {}) must extend Transform".format(name, cls.__name__)
+            )
         AVAILABLE_TRANSFORMS[name] = cls
         return cls
 
@@ -45,8 +56,10 @@ def register_transform(name):
 transform_dir = os.path.dirname(__file__)
 for file in os.listdir(transform_dir):
     path = os.path.join(transform_dir, file)
-    if not file.startswith('_') and not file.startswith('.') and (
-            file.endswith('.py') or os.path.isdir(path)):
-        file_name = file[:file.find('.py')] if file.endswith('.py') else file
-        module = importlib.import_module(
-            'onmt.transforms.' + file_name)
+    if (
+        not file.startswith("_")
+        and not file.startswith(".")
+        and (file.endswith(".py") or os.path.isdir(path))
+    ):
+        file_name = file[: file.find(".py")] if file.endswith(".py") else file
+        module = importlib.import_module("onmt.transforms." + file_name)

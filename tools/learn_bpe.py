@@ -24,41 +24,59 @@ from collections import defaultdict, Counter
 
 # hack for python2/3 compatibility
 from io import open
+
 argparse.open = open
 
 
 def create_parser():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description="learn BPE-based word segmentation")
+        description="learn BPE-based word segmentation",
+    )
 
     parser.add_argument(
-        '--input', '-i', type=argparse.FileType('r'), default=sys.stdin,
-        metavar='PATH',
-        help="Input text (default: standard input).")
+        "--input",
+        "-i",
+        type=argparse.FileType("r"),
+        default=sys.stdin,
+        metavar="PATH",
+        help="Input text (default: standard input).",
+    )
 
     parser.add_argument(
-        '--output', '-o', type=argparse.FileType('w'), default=sys.stdout,
-        metavar='PATH',
-        help="Output file for BPE codes (default: standard output)")
+        "--output",
+        "-o",
+        type=argparse.FileType("w"),
+        default=sys.stdout,
+        metavar="PATH",
+        help="Output file for BPE codes (default: standard output)",
+    )
     parser.add_argument(
-        '--symbols', '-s', type=int, default=10000,
-        help="Create this many new symbols (each representing a character n-gram) (default: %(default)s))")
+        "--symbols",
+        "-s",
+        type=int,
+        default=10000,
+        help="Create this many new symbols (each representing a character n-gram) (default: %(default)s))",
+    )
     parser.add_argument(
-        '--min-frequency', type=int, default=2, metavar='FREQ',
-        help='Stop if no symbol pair has frequency >= FREQ (default: %(default)s))')
-    parser.add_argument('--dict-input', action="store_true",
-                        help="If set, input file is interpreted as a dictionary where each line contains a word-count pair")
+        "--min-frequency",
+        type=int,
+        default=2,
+        metavar="FREQ",
+        help="Stop if no symbol pair has frequency >= FREQ (default: %(default)s))",
+    )
     parser.add_argument(
-        '--verbose', '-v', action="store_true",
-        help="verbose mode.")
+        "--dict-input",
+        action="store_true",
+        help="If set, input file is interpreted as a dictionary where each line contains a word-count pair",
+    )
+    parser.add_argument("--verbose", "-v", action="store_true", help="verbose mode.")
 
     return parser
 
 
 def get_vocabulary(fobj, is_dict=False):
-    """Read text and return dictionary that encodes vocabulary
-    """
+    """Read text and return dictionary that encodes vocabulary"""
     vocab = Counter()
     for line in fobj:
         if is_dict:
@@ -81,7 +99,6 @@ def update_pair_statistics(pair, changed, stats, indices):
     first, second = pair
     new_pair = first + second
     for j, word, old_word, freq in changed:
-
         # find all instances of pair, and update frequency/indices around it
         i = 0
         while True:
@@ -94,14 +111,18 @@ def update_pair_statistics(pair, changed, stats, indices):
             if i < len(old_word) - 1 and old_word[i + 1] == second:
                 # assuming a symbol sequence "A B C", if "B C" is merged, reduce the frequency of "A B"
                 if i:
-                    prev = old_word[i - 1:i + 1]
+                    prev = old_word[i - 1 : i + 1]
                     stats[prev] -= freq
                     indices[prev][j] -= 1
                 if i < len(old_word) - 2:
                     # assuming a symbol sequence "A B C B", if "B C" is merged, reduce the frequency of "C B".
                     # however, skip this if the sequence is A B C B C, because the frequency of "C B" will be reduced by the previous code block
-                    if old_word[i + 2] != first or i >= len(old_word) - 3 or old_word[i + 3] != second:
-                        nex = old_word[i + 1:i + 3]
+                    if (
+                        old_word[i + 2] != first
+                        or i >= len(old_word) - 3
+                        or old_word[i + 3] != second
+                    ):
+                        nex = old_word[i + 1 : i + 3]
                         stats[nex] -= freq
                         indices[nex][j] -= 1
                 i += 2
@@ -117,13 +138,13 @@ def update_pair_statistics(pair, changed, stats, indices):
                 break
             # assuming a symbol sequence "A BC D", if "B C" is merged, increase the frequency of "A BC"
             if i:
-                prev = word[i - 1:i + 1]
+                prev = word[i - 1 : i + 1]
                 stats[prev] += freq
                 indices[prev][j] += 1
             # assuming a symbol sequence "A BC B", if "B C" is merged, increase the frequency of "BC B"
             # however, if the sequence is A BC BC, skip this step because the count of "BC BC" will be incremented by the previous code block
             if i < len(word) - 1 and word[i + 1] != new_pair:
-                nex = word[i:i + 2]
+                nex = word[i : i + 2]
                 stats[nex] += freq
                 indices[nex][j] += 1
             i += 1
@@ -151,11 +172,10 @@ def get_pair_statistics(vocab):
 def replace_pair(pair, vocab, indices):
     """Replace all occurrences of a symbol pair ('A', 'B') with a new symbol 'AB'"""
     first, second = pair
-    pair_str = ''.join(pair)
-    pair_str = pair_str.replace('\\', '\\\\')
+    pair_str = "".join(pair)
+    pair_str = pair_str.replace("\\", "\\\\")
     changes = []
-    pattern = re.compile(
-        r'(?<!\S)' + re.escape(first + ' ' + second) + r'(?!\S)')
+    pattern = re.compile(r"(?<!\S)" + re.escape(first + " " + second) + r"(?!\S)")
     if sys.version_info < (3, 0):
         iterator = indices[pair].iteritems()
     else:
@@ -164,7 +184,7 @@ def replace_pair(pair, vocab, indices):
         if freq < 1:
             continue
         word, freq = vocab[j]
-        new_word = ' '.join(word)
+        new_word = " ".join(word)
         new_word = pattern.sub(pair_str, new_word)
         new_word = tuple(new_word.split())
 
@@ -191,16 +211,14 @@ def prune_stats(stats, big_stats, threshold):
 
 
 def main(infile, outfile, num_symbols, min_frequency=2, verbose=False, is_dict=False):
-    """Learn num_symbols BPE operations from vocabulary, and write to outfile.
-    """
+    """Learn num_symbols BPE operations from vocabulary, and write to outfile."""
 
     # version 0.2 changes the handling of the end-of-word token ('</w>');
     # version numbering allows bckward compatibility
-    outfile.write('#version: 0.2\n')
+    outfile.write("#version: 0.2\n")
 
     vocab = get_vocabulary(infile, is_dict)
-    vocab = dict([(tuple(x[:-1]) + (x[-1] + '</w>',), y)
-                  for (x, y) in vocab.items()])
+    vocab = dict([(tuple(x[:-1]) + (x[-1] + "</w>",), y) for (x, y) in vocab.items()])
     sorted_vocab = sorted(vocab.items(), key=lambda x: x[1], reverse=True)
 
     stats, indices = get_pair_statistics(sorted_vocab)
@@ -222,13 +240,17 @@ def main(infile, outfile, num_symbols, min_frequency=2, verbose=False, is_dict=F
 
         if stats[most_frequent] < min_frequency:
             sys.stderr.write(
-                'no pair has frequency >= {0}. Stopping\n'.format(min_frequency))
+                "no pair has frequency >= {0}. Stopping\n".format(min_frequency)
+            )
             break
 
         if verbose:
-            sys.stderr.write('pair {0}: {1} {2} -> {1}{2} (frequency {3})\n'.format(
-                i, most_frequent[0], most_frequent[1], stats[most_frequent]))
-        outfile.write('{0} {1}\n'.format(*most_frequent))
+            sys.stderr.write(
+                "pair {0}: {1} {2} -> {1}{2} (frequency {3})\n".format(
+                    i, most_frequent[0], most_frequent[1], stats[most_frequent]
+                )
+            )
+        outfile.write("{0} {1}\n".format(*most_frequent))
         changes = replace_pair(most_frequent, sorted_vocab, indices)
         update_pair_statistics(most_frequent, changes, stats, indices)
         stats[most_frequent] = 0
@@ -236,26 +258,31 @@ def main(infile, outfile, num_symbols, min_frequency=2, verbose=False, is_dict=F
             prune_stats(stats, big_stats, threshold)
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     # python 2/3 compatibility
     if sys.version_info < (3, 0):
-        sys.stderr = codecs.getwriter('UTF-8')(sys.stderr)
-        sys.stdout = codecs.getwriter('UTF-8')(sys.stdout)
-        sys.stdin = codecs.getreader('UTF-8')(sys.stdin)
+        sys.stderr = codecs.getwriter("UTF-8")(sys.stderr)
+        sys.stdout = codecs.getwriter("UTF-8")(sys.stdout)
+        sys.stdin = codecs.getreader("UTF-8")(sys.stdin)
     else:
-        sys.stderr = codecs.getwriter('UTF-8')(sys.stderr.buffer)
-        sys.stdout = codecs.getwriter('UTF-8')(sys.stdout.buffer)
-        sys.stdin = codecs.getreader('UTF-8')(sys.stdin.buffer)
+        sys.stderr = codecs.getwriter("UTF-8")(sys.stderr.buffer)
+        sys.stdout = codecs.getwriter("UTF-8")(sys.stdout.buffer)
+        sys.stdin = codecs.getreader("UTF-8")(sys.stdin.buffer)
 
     parser = create_parser()
     args = parser.parse_args()
 
     # read/write files as UTF-8
-    if args.input.name != '<stdin>':
-        args.input = codecs.open(args.input.name, encoding='utf-8')
-    if args.output.name != '<stdout>':
-        args.output = codecs.open(args.output.name, 'w', encoding='utf-8')
+    if args.input.name != "<stdin>":
+        args.input = codecs.open(args.input.name, encoding="utf-8")
+    if args.output.name != "<stdout>":
+        args.output = codecs.open(args.output.name, "w", encoding="utf-8")
 
-    main(args.input, args.output, args.symbols,
-         args.min_frequency, args.verbose, is_dict=args.dict_input)
+    main(
+        args.input,
+        args.output,
+        args.symbols,
+        args.min_frequency,
+        args.verbose,
+        is_dict=args.dict_input,
+    )

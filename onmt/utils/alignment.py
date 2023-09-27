@@ -18,7 +18,8 @@ def make_batch_align_matrix(index_tensor, size=None, normalize=False):
     n_fill, device = index_tensor.size(0), index_tensor.device
     value_tensor = torch.ones([n_fill], dtype=torch.float)
     dense_tensor = torch.sparse_coo_tensor(
-        index_tensor.t(), value_tensor, size=size, device=device).to_dense()
+        index_tensor.t(), value_tensor, size=size, device=device
+    ).to_dense()
     if normalize:
         row_sum = dense_tensor.sum(-1, keepdim=True)  # sum by row(tgt)
         # threshold on 1 to avoid div by 0
@@ -53,7 +54,8 @@ def extract_alignment(align_matrix, tgt_mask, src_len, n_best):
 
     # treat alignment matrix one by one as each have different lengths
     for i, (am_b, tgt_mask_b, src_len) in enumerate(
-            zip(align_matrix, tgt_mask, src_len)):
+        zip(align_matrix, tgt_mask, src_len)
+    ):
         valid_tgt = ~tgt_mask_b
         valid_tgt_len = valid_tgt.sum()
         if valid_tgt_len == 0:
@@ -61,8 +63,9 @@ def extract_alignment(align_matrix, tgt_mask, src_len, n_best):
             valid_alignment = None
         else:
             # get valid alignment (sub-matrix from full paded aligment matrix)
-            am_valid_tgt = am_b.masked_select(valid_tgt.unsqueeze(-1)) \
-                               .view(valid_tgt_len, -1)
+            am_valid_tgt = am_b.masked_select(valid_tgt.unsqueeze(-1)).view(
+                valid_tgt_len, -1
+            )
             valid_alignment = am_valid_tgt[:, :src_len]  # only keep valid src
         alignments[i // n_best].append(valid_alignment)
 
@@ -77,20 +80,23 @@ def build_align_pharaoh(valid_alignment):
     align_scores = []
     if isinstance(valid_alignment, torch.Tensor):
         tgt_align_src_id = valid_alignment.argmax(dim=-1)
-        align_scores = torch.divide(valid_alignment.max(dim=-1).values,
-                                    valid_alignment.sum(dim=-1))
+        align_scores = torch.divide(
+            valid_alignment.max(dim=-1).values, valid_alignment.sum(dim=-1)
+        )
         for tgt_id, src_id in enumerate(tgt_align_src_id.tolist()):
             align_pairs.append(str(src_id) + "-" + str(tgt_id))
-        align_scores = ["{0}-{1:.5f}".format(i, s)
-                        for i, s in enumerate(align_scores.tolist())]
-        align_pairs.sort(key=lambda x: int(x.split('-')[-1]))  # sort by tgt_id
-        align_pairs.sort(key=lambda x: int(x.split('-')[0]))  # sort by src_id
+        align_scores = [
+            "{0}-{1:.5f}".format(i, s) for i, s in enumerate(align_scores.tolist())
+        ]
+        align_pairs.sort(key=lambda x: int(x.split("-")[-1]))  # sort by tgt_id
+        align_pairs.sort(key=lambda x: int(x.split("-")[0]))  # sort by src_id
         print(align_scores)
     return align_pairs, align_scores
 
 
-def to_word_align(src, tgt, subword_align, subword_align_scores,
-                  m_src='joiner', m_tgt='joiner'):
+def to_word_align(
+    src, tgt, subword_align, subword_align_scores, m_src="joiner", m_tgt="joiner"
+):
     """Convert subword alignment to word alignment.
 
     Args:
@@ -110,31 +116,38 @@ def to_word_align(src, tgt, subword_align, subword_align_scores,
     assert m_tgt in ["joiner", "spacer"], "Invalid value for argument m_tgt!"
 
     src, tgt = src.strip().split(), tgt.strip().split()
-    subword_align = {(int(a), int(b)) for a, b in (x.split("-")
-                     for x in subword_align.split())}
+    subword_align = {
+        (int(a), int(b)) for a, b in (x.split("-") for x in subword_align.split())
+    }
 
-    subword_align_scores = dict((int(a), float(b)) for a, b in (x.split("-")
-                                for x in subword_align_scores.split()))
-
-    src_map = (subword_map_by_spacer(src) if m_src == 'spacer'
-               else subword_map_by_joiner(src))
-
-    tgt_map = (subword_map_by_spacer(tgt) if m_tgt == 'spacer'
-               else subword_map_by_joiner(tgt))
-
-    word_align = list({"{}-{}".format(src_map[a], tgt_map[b])
-                       for a, b in subword_align})
-
-    word_align_scores = list(
-        {"{}-{}".format(tgt_map[a],
-                        subword_align_scores[a])
-         for a in subword_align_scores.keys()}
+    subword_align_scores = dict(
+        (int(a), float(b))
+        for a, b in (x.split("-") for x in subword_align_scores.split())
     )
 
-    word_align.sort(key=lambda x: int(x.split('-')[-1]))  # sort by tgt_id
-    word_align.sort(key=lambda x: int(x.split('-')[0]))  # sort by src_id
+    src_map = (
+        subword_map_by_spacer(src) if m_src == "spacer" else subword_map_by_joiner(src)
+    )
 
-    word_align_scores.sort(key=lambda x: int(x.split('-')[0]))
+    tgt_map = (
+        subword_map_by_spacer(tgt) if m_tgt == "spacer" else subword_map_by_joiner(tgt)
+    )
+
+    word_align = list(
+        {"{}-{}".format(src_map[a], tgt_map[b]) for a, b in subword_align}
+    )
+
+    word_align_scores = list(
+        {
+            "{}-{}".format(tgt_map[a], subword_align_scores[a])
+            for a in subword_align_scores.keys()
+        }
+    )
+
+    word_align.sort(key=lambda x: int(x.split("-")[-1]))  # sort by tgt_id
+    word_align.sort(key=lambda x: int(x.split("-")[0]))  # sort by src_id
+
+    word_align_scores.sort(key=lambda x: int(x.split("-")[0]))
 
     return " ".join(word_align), " ".join(word_align_scores)
 
@@ -153,38 +166,43 @@ def begin_case(token):
 
 
 def case_markup(token):
-    return begin_uppercase(token) \
-        or end_uppercase(token) \
-        or begin_case(token)
+    return begin_uppercase(token) or end_uppercase(token) or begin_case(token)
 
 
-def subword_map_by_joiner(subwords,
-                          original_subwords=None,
-                          marker=SubwordMarker.JOINER):
+def subword_map_by_joiner(
+    subwords, original_subwords=None, marker=SubwordMarker.JOINER
+):
     """Return word id for each subword token (annotate by joiner)."""
 
     flags = [1] * len(subwords)
     j = 0
     finished = True
     for i, tok in enumerate(subwords):
-
-        previous_tok = subwords[i-1] if i else ""  # Previous N-1 token
-        previous_tok_2 = subwords[i-2] if i > 1 else ""  # Previous N-2 token
+        previous_tok = subwords[i - 1] if i else ""  # Previous N-1 token
+        previous_tok_2 = subwords[i - 2] if i > 1 else ""  # Previous N-2 token
         # Keeps track of the original words/subwords
         # ('prior_tokenization' option)
-        current_original_subword = "" if not original_subwords \
-            else original_subwords[j] if j < len(original_subwords) else ""
+        current_original_subword = (
+            ""
+            if not original_subwords
+            else original_subwords[j]
+            if j < len(original_subwords)
+            else ""
+        )
 
         if tok.startswith(marker) and tok != current_original_subword:
             flags[i] = 0
-        elif (previous_tok.endswith(marker)
-                or begin_case(previous_tok)
-                or begin_uppercase(previous_tok)) \
-                and not finished:
+        elif (
+            previous_tok.endswith(marker)
+            or begin_case(previous_tok)
+            or begin_uppercase(previous_tok)
+        ) and not finished:
             flags[i] = 0
-        elif previous_tok_2.endswith(marker) \
-                and case_markup(previous_tok) \
-                and not finished:
+        elif (
+            previous_tok_2.endswith(marker)
+            and case_markup(previous_tok)
+            and not finished
+        ):
             flags[i] = 0
         elif end_uppercase(tok) and tok != current_original_subword:
             flags[i] = 0
@@ -208,16 +226,16 @@ def subword_map_by_spacer(subwords, marker=SubwordMarker.SPACER):
     for i, tok in enumerate(subwords):
         if marker in tok:
             if case_markup(tok.replace(marker, "")):
-                if i < len(subwords)-1:
+                if i < len(subwords) - 1:
                     flags[i] = 1
             else:
                 if i > 0:
-                    previous = subwords[i-1].replace(marker, "")
+                    previous = subwords[i - 1].replace(marker, "")
                     if not case_markup(previous):
                         flags[i] = 1
 
     # In case there is a final case_markup when new_spacer is on
-    for i in range(1, len(subwords)-1):
+    for i in range(1, len(subwords) - 1):
         if case_markup(subwords[-i]):
             flags[-i] = 0
         elif subwords[-i] == marker:

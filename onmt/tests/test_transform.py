@@ -26,6 +26,7 @@ class TestTransform(unittest.TestCase):
             "switchout",
             "tokendrop",
             "tokenmask",
+            "insert_mask_before_placeholder",
         ]
         get_transforms_cls(builtin_transform)
 
@@ -41,7 +42,8 @@ class TestTransform(unittest.TestCase):
 
     def test_transform_specials(self):
         transforms_cls = get_transforms_cls(["prefix"])
-        corpora = yaml.safe_load("""
+        corpora = yaml.safe_load(
+            """
             trainset:
                 path_src: data/src-train.txt
                 path_tgt: data/tgt-train.txt
@@ -49,7 +51,8 @@ class TestTransform(unittest.TestCase):
                 weight: 1
                 src_prefix: "｟_pf_src｠"
                 tgt_prefix: "｟_pf_tgt｠"
-        """)
+        """
+        )
         opt = Namespace(data=corpora)
         specials = get_specials(opt, transforms_cls)
         specials_expected = {"src": ["｟_pf_src｠"], "tgt": ["｟_pf_tgt｠"]}
@@ -58,7 +61,8 @@ class TestTransform(unittest.TestCase):
     def test_transform_pipe(self):
         # 1. Init first transform in the pipe
         prefix_cls = get_transforms_cls(["prefix"])["prefix"]
-        corpora = yaml.safe_load("""
+        corpora = yaml.safe_load(
+            """
             trainset:
                 path_src: data/src-train.txt
                 path_tgt: data/tgt-train.txt
@@ -66,7 +70,8 @@ class TestTransform(unittest.TestCase):
                 weight: 1
                 src_prefix: "｟_pf_src｠"
                 tgt_prefix: "｟_pf_tgt｠"
-        """)
+        """
+        )
         opt = Namespace(data=corpora, seed=-1)
         prefix_transform = prefix_cls(opt)
         prefix_transform.warm_up()
@@ -75,17 +80,13 @@ class TestTransform(unittest.TestCase):
         opt = Namespace(src_seq_length=4, tgt_seq_length=4)
         filter_transform = filter_cls(opt)
         # 3. Sequential combine them into a transform pipe
-        transform_pipe = TransformPipe.build_from(
-            [prefix_transform, filter_transform]
-        )
+        transform_pipe = TransformPipe.build_from([prefix_transform, filter_transform])
         ex = {
             "src": ["Hello", ",", "world", "."],
             "tgt": ["Bonjour", "le", "monde", "."],
         }
         # 4. apply transform pipe for example
-        ex_after = transform_pipe.apply(
-            copy.deepcopy(ex), corpus_name="trainset"
-        )
+        ex_after = transform_pipe.apply(copy.deepcopy(ex), corpus_name="trainset")
         # 5. example after the pipe exceed the length limit, thus filtered
         self.assertIsNone(ex_after)
         # 6. Transform statistics registed (here for filtertoolong)
@@ -99,7 +100,8 @@ class TestTransform(unittest.TestCase):
 class TestMiscTransform(unittest.TestCase):
     def test_prefix(self):
         prefix_cls = get_transforms_cls(["prefix"])["prefix"]
-        corpora = yaml.safe_load("""
+        corpora = yaml.safe_load(
+            """
             trainset:
                 path_src: data/src-train.txt
                 path_tgt: data/tgt-train.txt
@@ -107,7 +109,8 @@ class TestMiscTransform(unittest.TestCase):
                 weight: 1
                 src_prefix: "｟_pf_src｠"
                 tgt_prefix: "｟_pf_tgt｠"
-        """)
+        """
+        )
         opt = Namespace(data=corpora, seed=-1)
         prefix_transform = prefix_cls(opt)
         prefix_transform.warm_up()
@@ -179,8 +182,19 @@ class TestSubwordTransform(unittest.TestCase):
         tokens = ["Another", "world", "."]
         gold_bpe = ["A@@", "no@@", "ther", "world", "."]
         gold_dropout = [
-            "A@@", "n@@", "o@@", "t@@", "h@@", "e@@", "r",
-            "w@@", "o@@", "r@@", "l@@", "d", ".",
+            "A@@",
+            "n@@",
+            "o@@",
+            "t@@",
+            "h@@",
+            "e@@",
+            "r",
+            "w@@",
+            "o@@",
+            "r@@",
+            "l@@",
+            "d",
+            ".",
         ]
         # 1. disable bpe dropout for not training example
         after_bpe = bpe_transform._tokenize(tokens, is_train=False)
@@ -203,6 +217,7 @@ class TestSubwordTransform(unittest.TestCase):
         sp_cls._validate_options(opt)
         sp_transform = sp_cls(opt)
         sp_transform.warm_up()
+
         ex = {
             "src": ["Hello", "world", "."],
             "tgt": ["Bonjour", "le", "monde", "."],
@@ -213,6 +228,7 @@ class TestSubwordTransform(unittest.TestCase):
             "tgt": ["▁B", "on", "j", "o", "ur", "▁le", "▁m", "on", "de", "▁."],
         }
         self.assertEqual(ex, ex_gold)
+
         # test SP regularization:
         sp_transform.src_subword_nbest = 4
         tokens = ["Another", "world", "."]
@@ -224,6 +240,51 @@ class TestSubwordTransform(unittest.TestCase):
         after_sp = sp_transform._tokenize(tokens, is_train=False)
         self.assertEqual(after_sp, gold_sp)
 
+        # Test mask location
+        ex = {
+            "src": "### Instruction: ｟newline｠instruction｟newline｠｟newline｠"
+            "### Response : ｟newline｠｟_mask_before_｠response",
+            "tgt": "",
+        }
+        ex["src"] = ex["src"].split(" ")
+        ex_gold = {
+            "src": [
+                "▁",
+                "#",
+                "#",
+                "#",
+                "▁In",
+                "struct",
+                "ion",
+                ":",
+                "▁in",
+                "struct",
+                "ion",
+                "▁",
+                "#",
+                "#",
+                "#",
+                "▁Re",
+                "s",
+                "p",
+                "on",
+                "s",
+                "e",
+                "▁",
+                ":",
+                "<blank>",
+                "▁re",
+                "s",
+                "p",
+                "on",
+                "s",
+                "e",
+            ],
+            "tgt": [],
+        }
+        sp_transform.apply(ex, is_train=True)
+        self.assertEqual(ex, ex_gold)
+
     def test_pyonmttok_bpe(self):
         onmttok_cls = get_transforms_cls(["onmt_tokenize"])["onmt_tokenize"]
         base_opt = copy.copy(self.base_opts)
@@ -232,6 +293,7 @@ class TestSubwordTransform(unittest.TestCase):
         onmt_args = "{'mode': 'space', 'joiner_annotate': True}"
         base_opt["src_onmttok_kwargs"] = onmt_args
         base_opt["tgt_onmttok_kwargs"] = onmt_args
+        base_opt["gpt2_pretok"] = False
         opt = Namespace(**base_opt)
         onmttok_cls._validate_options(opt)
         onmttok_transform = onmttok_cls(opt)
@@ -247,6 +309,49 @@ class TestSubwordTransform(unittest.TestCase):
         }
         self.assertEqual(ex, ex_gold)
 
+        # Test mask location
+        ex = {
+            "src": (
+                "### Instruction: ｟newline｠instruction｟newline｠｟newline｠"
+                "### Response : ｟newline｠｟_mask_before_｠response"
+            ),
+            "tgt": "",
+        }
+        ex["src"] = ex["src"].split(" ")
+        ex_gold = {
+            "src": [
+                "#￭",
+                "#￭",
+                "#",
+                "In￭",
+                "struc￭",
+                "tion￭",
+                ":",
+                "\n￭",
+                "in￭",
+                "struc￭",
+                "tion￭",
+                "\n￭",
+                "\n￭",
+                "#￭",
+                "#￭",
+                "#",
+                "R￭",
+                "es￭",
+                "p￭",
+                "on￭",
+                "se",
+                ":",
+                "\n",
+                "<blank>",
+                "respon￭",
+                "se",
+            ],
+            "tgt": [],
+        }
+        onmttok_transform.apply(ex, is_train=True)
+        self.assertEqual(ex, ex_gold)
+
     def test_pyonmttok_sp(self):
         onmttok_cls = get_transforms_cls(["onmt_tokenize"])["onmt_tokenize"]
         base_opt = copy.copy(self.base_opts)
@@ -257,6 +362,7 @@ class TestSubwordTransform(unittest.TestCase):
         onmt_args = "{'mode': 'none', 'spacer_annotate': True}"
         base_opt["src_onmttok_kwargs"] = onmt_args
         base_opt["tgt_onmttok_kwargs"] = onmt_args
+        base_opt["gpt2_pretok"] = False
         opt = Namespace(**base_opt)
         onmttok_cls._validate_options(opt)
         onmttok_transform = onmttok_cls(opt)
@@ -269,6 +375,51 @@ class TestSubwordTransform(unittest.TestCase):
         ex_gold = {
             "src": ["▁H", "el", "lo", "▁world", "▁."],
             "tgt": ["▁B", "on", "j", "o", "ur", "▁le", "▁m", "on", "de", "▁."],
+        }
+        self.assertEqual(ex, ex_gold)
+
+        # Test mask location
+        ex = {
+            "src": (
+                "### Instruction: ｟newline｠instruction｟newline｠｟newline｠"
+                "### Response : ｟newline｠｟_mask_before_｠response"
+            ),
+            "tgt": "",
+        }
+        ex["src"] = ex["src"].split(" ")
+        onmttok_transform.apply(ex, is_train=True)
+        ex_gold = {
+            "src": [
+                "▁",
+                "#",
+                "#",
+                "#",
+                "▁In",
+                "struct",
+                "ion",
+                ":",
+                "▁in",
+                "struct",
+                "ion",
+                "▁",
+                "#",
+                "#",
+                "#",
+                "▁Re",
+                "s",
+                "p",
+                "on",
+                "se",
+                "▁",
+                ":",
+                "<blank>",
+                "▁re",
+                "s",
+                "p",
+                "on",
+                "se",
+            ],
+            "tgt": [],
         }
         self.assertEqual(ex, ex_gold)
 
@@ -517,10 +668,31 @@ class TestFeaturesTransform(unittest.TestCase):
         inferfeats_transform = inferfeats_cls(opt)
 
         ex_in = {
-            "src": ['however', '￭,', 'according', 'to', 'the', 'logs',
-                    '￭,', 'she', 'is', 'hard', '￭-￭', 'working', '￭.'],
-            "src_original": ['however,', 'according', 'to', 'the',
-                             'logs,', 'she', 'is', 'hard-working.']
+            "src": [
+                "however",
+                "￭,",
+                "according",
+                "to",
+                "the",
+                "logs",
+                "￭,",
+                "she",
+                "is",
+                "hard",
+                "￭-￭",
+                "working",
+                "￭.",
+            ],
+            "src_original": [
+                "however,",
+                "according",
+                "to",
+                "the",
+                "logs,",
+                "she",
+                "is",
+                "hard-working.",
+            ],
         }
         ex_out = inferfeats_transform.apply(ex_in)
         self.assertIs(ex_out, ex_in)
@@ -529,31 +701,128 @@ class TestFeaturesTransform(unittest.TestCase):
         ex_out = inferfeats_transform.apply(ex_in)
         self.assertEqual(
             ex_out["src_feats"][0],
-            ["1", "1", "2", "3", "4", "5", "5", "6", "7", "8", "8",
-             "8", "8"])
+            ["1", "1", "2", "3", "4", "5", "5", "6", "7", "8", "8", "8", "8"],
+        )
 
-        ex_in["src"] = ['｟mrk_case_modifier_C｠', 'however', '￭,',
-                        'according', 'to', 'the', 'logs', '￭,',
-                        '｟mrk_begin_case_region_U｠', 'she', 'is', 'hard',
-                        '￭-￭', 'working', '｟mrk_end_case_region_U｠', '￭.']
+        ex_in["src"] = [
+            "｟mrk_case_modifier_C｠",
+            "however",
+            "￭,",
+            "according",
+            "to",
+            "the",
+            "logs",
+            "￭,",
+            "｟mrk_begin_case_region_U｠",
+            "she",
+            "is",
+            "hard",
+            "￭-￭",
+            "working",
+            "｟mrk_end_case_region_U｠",
+            "￭.",
+        ]
         ex_in["src_feats"] = [["1", "2", "3", "4", "5", "6", "7", "8"]]
         ex_out = inferfeats_transform.apply(ex_in)
         self.assertEqual(
             ex_out["src_feats"][0],
-            ["1", "1", "1", "2", "3", "4", "5", "5",
-             "6", "6", "7", "8", "8", "8", "8", "8"])
+            [
+                "1",
+                "1",
+                "1",
+                "2",
+                "3",
+                "4",
+                "5",
+                "5",
+                "6",
+                "6",
+                "7",
+                "8",
+                "8",
+                "8",
+                "8",
+                "8",
+            ],
+        )
 
         ex_in = {
-            "src": ['however', '￭,', 'according', 'to', 'the', 'logs',
-                    '￭,', 'she', 'is', 'hard', '￭-￭', 'working', '￭.'],
-            "src_original": ['however', '￭,', 'according', 'to', 'the',
-                             'logs', '￭,', 'she', 'is', 'hard-working',
-                             '￭.'],
-            "src_feats": [["1", "2", "3", "4", "5", "6", "7", "8",
-                           "9", "10", "11"]]
+            "src": [
+                "however",
+                "￭,",
+                "according",
+                "to",
+                "the",
+                "logs",
+                "￭,",
+                "she",
+                "is",
+                "hard",
+                "￭-￭",
+                "working",
+                "￭.",
+            ],
+            "src_original": [
+                "however",
+                "￭,",
+                "according",
+                "to",
+                "the",
+                "logs",
+                "￭,",
+                "she",
+                "is",
+                "hard-working",
+                "￭.",
+            ],
+            "src_feats": [["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"]],
         }
         ex_out = inferfeats_transform.apply(ex_in)
         self.assertEqual(
             ex_out["src_feats"][0],
-            ["1", "2", "3", "4", "5", "6", "7", "8",
-             "9", "10", "10", "10", "11"])
+            ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "10", "10", "11"],
+        )
+
+
+class TestInsertMaskBeforePlaceholder(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.base_opts = {
+            "response_pattern": "Response : ｟newline｠",
+        }
+
+    def test_insert_mask_before_placeholder(self):
+        insert_mask_before_placeholder_cls = get_transforms_cls(
+            ["insert_mask_before_placeholder"]
+        )["insert_mask_before_placeholder"]
+        opt = Namespace(**self.base_opts)
+        insert_mask_before_placeholder_transform = insert_mask_before_placeholder_cls(
+            opt
+        )
+        ex_in = {
+            "src": "### Instruction: ｟newline｠instruction｟newline｠｟newline｠"
+            "### Response : ｟newline｠response",
+            "tgt": "",
+        }
+        ex_in["src"] = ex_in["src"].split(" ")
+        ex_in["tgt"] = ex_in["src"]
+        ex_out = insert_mask_before_placeholder_transform.apply(ex_in)
+        ex_gold = {
+            "src": [
+                "###",
+                "Instruction:",
+                "｟newline｠instruction｟newline｠｟newline｠###",
+                "Response",
+                ":",
+                "｟newline｠｟_mask_before_｠response",
+            ],
+            "tgt": [
+                "###",
+                "Instruction:",
+                "｟newline｠instruction｟newline｠｟newline｠###",
+                "Response",
+                ":",
+                "｟newline｠｟_mask_before_｠response",
+            ],
+        }
+        self.assertEqual(ex_out, ex_gold)

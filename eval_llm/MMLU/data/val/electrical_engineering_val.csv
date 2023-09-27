@@ -1,0 +1,16 @@
+"A 4 pole lap wound dc generator has 4 brushes, if one of the brush is damaged, what will be the change in V, I and P ratings","V, I and P","V/2, I/2 and P/4","V/2, I and P/2","V, I/2 and P/2",D
+No load saturation characteristics are plotted between,no load voltage and field current,no load voltage and armature current,short circuit current and field current,short circuit current and armature current,A
+When checked with an ohm meter an open resistor reads,high but within tolerance.,low but not zero.,zero.,infinite.,D
+Which one of the following is not a vectored interrupt?,TRAP.,RST 7.5.,RST 6.5.,INTR.,D
+"In AC circuits, the connection of measuring instruments cause loading effect errors which may effect",only the magnitude of the quantity being measured.,only phase of the quantity being measured.,both of above.,"magnitude, phase and waveform of the quantity being measured.",D
+"If a circuit consists of two mass elements, two spring elements and four friction elements. Find the order of transfer function?",2,4,6,12,B
+A capacitor carries a charge of 0.1 C at 5 V. Its capacitance is,0.02 F,0.5 F,0.05 F,0.2 F,A
+Inside a hollow conducting sphere,electric field is zero.,electric field is a non zero constant.,electric field changes with magnitude of the charge given to the conductor.,electric field changes with distance from the center of the sphere.,A
+What will be the total flux emitted by a source of 60 candle power?,754.2 lumens.,0.001326 lumens.,60 lumens.,None of these.,A
+"For audio frequency applications, the popular oscillator used is",Wien bridge oscillator,Hartley oscillator,Crystal oscillator,Phase shift oscillator,A
+Which number system has a base of 16,Decimal,Octal,Hexadecimal,None,C
+"A motor has a thermal heating time constant of 50 mm. When the motor runs continuous of full scale, its final temperature rise is 80° C, what would be the temperature rise after 1 hour, if the motor runs continuously on full load?",55.9° C.,58° C.,56° C.,60° C.,A
+Which of the following is/are the advantages of a closed loop control system?,The closed loop systems are accurate.,The closed loop systems are less affected by noise.,both A and B.,nether A nor B.,C
+A digital circuit that can store on bit is a,XOR gate,flip-flop,gate,registor,B
+A combinational PLD with a programmable AND array and a fixed OR array is called a,PLD,PROM,PAL,PLA,C
+For dielectric heating the range of frequency normally employed is,10 KHz to 100 KHz.,100 KHz to 10 MHz.,1 MHz to 10 MHz.,10 MHz to 40 MHz.,D

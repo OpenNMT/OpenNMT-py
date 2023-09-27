@@ -136,17 +136,18 @@ class MosesPunctNormalizer:
     ]
 
     def __init__(self):
-        """
-        """
+        """ """
 
-    def normalize(self,
-                  text,
-                  lang="en",
-                  penn=True,
-                  norm_quote_commas=True,
-                  norm_numbers=True,
-                  pre_replace_unicode_punct=False,
-                  post_remove_control_chars=False):
+    def normalize(
+        self,
+        text,
+        lang="en",
+        penn=True,
+        norm_quote_commas=True,
+        norm_numbers=True,
+        pre_replace_unicode_punct=False,
+        post_remove_control_chars=False,
+    ):
         """
         Returns a string with normalized punctuation.
         :param language: The two-letter language code.
@@ -173,8 +174,7 @@ class MosesPunctNormalizer:
             if lang == "en":
                 self.substitutions.append(self.EN_QUOTATION_FOLLOWED_BY_COMMA)
             elif lang in ["de", "es", "fr"]:
-                self.substitutions.append(
-                    self.DE_ES_FR_QUOTATION_FOLLOWED_BY_COMMA)
+                self.substitutions.append(self.DE_ES_FR_QUOTATION_FOLLOWED_BY_COMMA)
 
         if norm_numbers:
             if lang in ["de", "es", "cz", "cs", "fr"]:
@@ -207,7 +207,7 @@ class MosesPunctNormalizer:
         return regex.sub(r"\p{C}", "", text)
 
 
-@register_transform(name='normalize')
+@register_transform(name="normalize")
 class NormalizeTransform(Transform):
     """
     Normalize source and target based on Moses script.
@@ -221,20 +221,41 @@ class NormalizeTransform(Transform):
         """Add an option for the corpus ratio to apply this transform."""
 
         group = parser.add_argument_group("Transform/Normalize")
-        group.add("--src_lang", "-src_lang", type=str,
-                  default="", help="Source language code")
-        group.add("--tgt_lang", "-tgt_lang", type=str,
-                  default="", help="Target language code")
-        group.add("--penn", "-penn", type=bool,
-                  default=True, help="Penn substitution")
-        group.add("--norm_quote_commas", "-norm_quote_commas", type=bool,
-                  default=True, help="Normalize quotations and commas")
-        group.add("--norm_numbers", "-norm_numbers", type=bool,
-                  default=True, help="Normalize numbers")
-        group.add("--pre_replace_unicode_punct", "-pre_replace_unicode_punct",
-                  type=bool, default=False, help="Replace unicode punct")
-        group.add("--post_remove_control_chars", "-post_remove_control_chars",
-                  type=bool, default=False, help="Remove control chars")
+        group.add(
+            "--src_lang", "-src_lang", type=str, default="", help="Source language code"
+        )
+        group.add(
+            "--tgt_lang", "-tgt_lang", type=str, default="", help="Target language code"
+        )
+        group.add("--penn", "-penn", type=bool, default=True, help="Penn substitution")
+        group.add(
+            "--norm_quote_commas",
+            "-norm_quote_commas",
+            type=bool,
+            default=True,
+            help="Normalize quotations and commas",
+        )
+        group.add(
+            "--norm_numbers",
+            "-norm_numbers",
+            type=bool,
+            default=True,
+            help="Normalize numbers",
+        )
+        group.add(
+            "--pre_replace_unicode_punct",
+            "-pre_replace_unicode_punct",
+            type=bool,
+            default=False,
+            help="Replace unicode punct",
+        )
+        group.add(
+            "--post_remove_control_chars",
+            "-post_remove_control_chars",
+            type=bool,
+            default=False,
+            help="Remove control chars",
+        )
 
     def _parse_opts(self):
         self.src_lang = self.opts.src_lang
@@ -248,7 +269,7 @@ class NormalizeTransform(Transform):
     @staticmethod
     def _get_opt(corpus, opt, def_val):
         """Get opt string of a `corpus`."""
-        if 'normalize' in corpus['transforms']:
+        if "normalize" in corpus["transforms"]:
             value = corpus.get(opt, def_val)
             normalize = value
         else:
@@ -260,11 +281,11 @@ class NormalizeTransform(Transform):
         """Get normalize settings correspond to corpus in `opts`."""
         normalize_dict = {}
         # normalize dict src/tgt for each dataset
-        if hasattr(opts, 'data'):
+        if hasattr(opts, "data"):
             for c_name, corpus in opts.data.items():
                 normalize = cls._get_opt(corpus, opt, def_val)
                 if normalize is not None:
-                    logger.info(f"Get {opt} for {c_name}: {normalize}")
+                    logger.debug(f"Get {opt} for {c_name}: {normalize}")
                     normalize_dict[c_name] = normalize
 
         return normalize_dict
@@ -272,56 +293,54 @@ class NormalizeTransform(Transform):
     def warm_up(self, vocabs=None):
         """Set options for each dataset."""
         super().warm_up(None)
-        self.src_lang_dict = self.get_opt_dict(self.opts, 'src_lang', '')
-        self.tgt_lang_dict = self.get_opt_dict(self.opts, 'tgt_lang', '')
-        self.penn_dict = self.get_opt_dict(self.opts, 'penn', True)
-        self.norm_quote_commas_dict = self.get_opt_dict(self.opts,
-                                                        'norm_quote_commas',
-                                                        True)
-        self.norm_numbers_dict = self.get_opt_dict(self.opts, 'norm_numbers',
-                                                   True)
-        self.pre_dict = self.get_opt_dict(self.opts,
-                                          'pre_replace_unicode_punct',
-                                          False)
-        self.post_dict = self.get_opt_dict(self.opts,
-                                           'post_remove_control_chars',
-                                           False)
-        self.src_lang_dict['infer'] = self.src_lang
-        self.tgt_lang_dict['infer'] = self.tgt_lang
-        self.penn_dict['infer'] = self.penn
-        self.norm_quote_commas_dict['infer'] = self.norm_quote_commas
-        self.norm_numbers_dict['infer'] = self.norm_numbers
-        self.pre_dict['infer'] = self.pre_replace_unicode_punct
-        self.post_dict['infer'] = self.post_remove_control_chars
+        self.src_lang_dict = self.get_opt_dict(self.opts, "src_lang", "")
+        self.tgt_lang_dict = self.get_opt_dict(self.opts, "tgt_lang", "")
+        self.penn_dict = self.get_opt_dict(self.opts, "penn", True)
+        self.norm_quote_commas_dict = self.get_opt_dict(
+            self.opts, "norm_quote_commas", True
+        )
+        self.norm_numbers_dict = self.get_opt_dict(self.opts, "norm_numbers", True)
+        self.pre_dict = self.get_opt_dict(self.opts, "pre_replace_unicode_punct", False)
+        self.post_dict = self.get_opt_dict(
+            self.opts, "post_remove_control_chars", False
+        )
+        self.src_lang_dict["infer"] = self.src_lang
+        self.tgt_lang_dict["infer"] = self.tgt_lang
+        self.penn_dict["infer"] = self.penn
+        self.norm_quote_commas_dict["infer"] = self.norm_quote_commas
+        self.norm_numbers_dict["infer"] = self.norm_numbers
+        self.pre_dict["infer"] = self.pre_replace_unicode_punct
+        self.post_dict["infer"] = self.post_remove_control_chars
 
-        self.mpn =\
-            MosesPunctNormalizer()
+        self.mpn = MosesPunctNormalizer()
 
     def apply(self, example, is_train=False, stats=None, **kwargs):
         """Normalize source and target examples."""
-        corpus_name = kwargs.get('corpus_name', None)
+        corpus_name = kwargs.get("corpus_name", None)
         if corpus_name is None:
-            raise ValueError('corpus_name is required.')
+            raise ValueError("corpus_name is required.")
 
         src_str = self.mpn.normalize(
-            ' '.join(example['src']),
+            " ".join(example["src"]),
             self.src_lang_dict[corpus_name],
             self.penn_dict[corpus_name],
             self.norm_quote_commas_dict[corpus_name],
             self.norm_numbers_dict[corpus_name],
             self.pre_dict[corpus_name],
-            self.post_dict[corpus_name])
-        example['src'] = src_str.split()
+            self.post_dict[corpus_name],
+        )
+        example["src"] = src_str.split()
 
-        if example['tgt'] is not None:
+        if example["tgt"] is not None:
             tgt_str = self.mpn.normalize(
-                ' '.join(example['tgt']),
+                " ".join(example["tgt"]),
                 self.tgt_lang_dict[corpus_name],
                 self.penn_dict[corpus_name],
                 self.norm_quote_commas_dict[corpus_name],
                 self.norm_numbers_dict[corpus_name],
                 self.pre_dict[corpus_name],
-                self.post_dict[corpus_name])
-            example['tgt'] = tgt_str.split()
+                self.post_dict[corpus_name],
+            )
+            example["tgt"] = tgt_str.split()
 
         return example
