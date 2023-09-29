@@ -29,8 +29,9 @@ class InferenceEngineCT2(object):
         self.generator = ctranslate2.Generator(self.opt.models[0], device="cuda")
 
     def build_tokenizer(self):
-        if self.transforms_cls.get('sentencepiece', None) is not None:
+        if self.transforms_cls.get("sentencepiece", None) is not None:
             from onmt.transforms.tokenize import SentencePieceTransform
+
             self.tokenizer = SentencePieceTransform(self.opt)
             self.tokenizer.warm_up()
             self.build_sentencepiece_vocab()
@@ -39,7 +40,9 @@ class InferenceEngineCT2(object):
 
     def build_sentencepiece_vocab(self):
         n_words = self.tokenizer.load_models["src"].vocab_size()
-        vocab = [self.tokenizer.load_models["src"].id_to_piece(i) for i in range(n_words)]
+        vocab = [
+            self.tokenizer.load_models["src"].id_to_piece(i) for i in range(n_words)
+        ]
         vocabs = {}
         vocab[3] = DefaultTokens.PAD
         src_vocab = pyonmttok.build_vocab_from_tokens(
@@ -54,13 +57,15 @@ class InferenceEngineCT2(object):
     def continue_batch(self, batch, add_bos=True):
         for i in range(batch["src"].size()[0]):
             prompt_ids = batch["src"][i, :, 0].cpu().numpy().tolist()
-            prompt_tokens = [self.vocabs['src'].lookup_index(id)
-                             for id in prompt_ids]
+            prompt_tokens = [self.vocabs["src"].lookup_index(id) for id in prompt_ids]
             if add_bos:
                 prompt_tokens.insert(0, "<s>")
 
             step_results = self.generator.generate_tokens(
-                prompt_tokens, sampling_temperature=0.1, sampling_topk=40, max_length=512
+                prompt_tokens,
+                sampling_temperature=0.1,
+                sampling_topk=40,
+                max_length=512,
             )
             output_ids = []
             for step_result in step_results:

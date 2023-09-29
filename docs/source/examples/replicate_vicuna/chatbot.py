@@ -8,23 +8,24 @@ from onmt.utils.parse import ArgumentParser
 from onmt.utils.misc import use_gpu, set_random_seed
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--inference_config_file",
-                    "-inference_config_file",
-                    help="Inference config file",
-                    required=True,
-                    type=str)
-parser.add_argument("-inference_mode", help="Inference mode",
-                    required=True,
-                    type=str)
-parser.add_argument("-model", help="Path to the checkpoint.",
-                    required=True,
-                    type=str)
-parser.add_argument("-max_context_length", help="Maximum size of the chat history.",
-                    type=int,
-                    default=4096)
-parser.add_argument("-server_port", help="Server port for the gradio app.",
-                    default=6006,
-                    type=int)
+parser.add_argument(
+    "--inference_config_file",
+    "-inference_config_file",
+    help="Inference config file",
+    required=True,
+    type=str,
+)
+parser.add_argument("-inference_mode", help="Inference mode", required=True, type=str)
+parser.add_argument("-model", help="Path to the checkpoint.", required=True, type=str)
+parser.add_argument(
+    "-max_context_length",
+    help="Maximum size of the chat history.",
+    type=int,
+    default=4096,
+)
+parser.add_argument(
+    "-server_port", help="Server port for the gradio app.", default=6006, type=int
+)
 
 args = parser.parse_args()
 inference_config_file = args.inference_config_file
@@ -82,9 +83,9 @@ def prune_history(user_messages_sizes, bot_messages_sizes, max_history_size):
     reversed_bot_messages_sizes = bot_messages_sizes[::-1]
     reversed_rounds_indices = list(range(nb_rounds))[::-1]
     # Caluculate antichronological history sizes
-    reversed_round_sizes = [sum(i) for i
-                            in zip(reversed_user_messages_sizes,
-                                   reversed_bot_messages_sizes)]
+    reversed_round_sizes = [
+        sum(i) for i in zip(reversed_user_messages_sizes, reversed_bot_messages_sizes)
+    ]
     reversed_history_sizes = np.cumsum(reversed_round_sizes)
     keep_rounds_indices = []
     # Prune the history from the beginning
@@ -111,16 +112,19 @@ def load_models(opt, inference_mode):
         ArgumentParser.validate_translate_opts_dynamic(opt)
         set_random_seed(opt.seed, use_gpu(opt))
         # Build the translator (along with the model)
-        if inference_mode == 'py':
+        if inference_mode == "py":
             print("Inference with py ...")
             from onmt.inference_engine import InferenceEngine
+
             CACHE["inference_engine"] = InferenceEngine(opt)
             from onmt.transforms.tokenize import SentencePieceTransform
+
             CACHE["tokenizer"] = SentencePieceTransform(opt)
             CACHE["tokenizer"].warm_up()
-        elif inference_mode == 'ct2':
+        elif inference_mode == "ct2":
             print("Inference with ctranslate2 ...")
             from onmt.inference_engine_ct2 import InferenceEngineCT2
+
             CACHE["inference_engine"] = InferenceEngineCT2(opt)
             CACHE["inference_engine"].warm_up()
             CACHE["tokenizer"] = CACHE["inference_engine"].tokenizer
@@ -128,14 +132,15 @@ def load_models(opt, inference_mode):
 
 def make_bot_message(prompt, inference_mode):
     src = [prompt.replace("\n", "｟newline｠")]
-    if inference_mode == 'py':
+    if inference_mode == "py":
         scores, predictions = CACHE["inference_engine"].infer_list(src)
         bot_message = "\n".join(sent[0] for sent in predictions)
-    elif inference_mode == 'ct2':
+    elif inference_mode == "ct2":
         predictions = CACHE["inference_engine"].infer_list(src)
         bot_message = "\n".join(sent for sent in predictions)
     bot_message = bot_message.replace("｟newline｠", "\n")
     return bot_message
+
 
 ######
 # UI #
@@ -147,11 +152,7 @@ with gr.Blocks() as demo:
     msg = gr.Textbox()
     submit = gr.Button("Submit")
     clear = gr.Button("Clear")
-    base_args = (
-        ["-model", model]
-        + ["-src", None]
-        + ["-config", inference_config_file]
-    )
+    base_args = ["-model", model] + ["-src", None] + ["-config", inference_config_file]
     parser = _get_parser()
     opt = parser.parse_args(base_args)
     load_models(opt, inference_mode)
