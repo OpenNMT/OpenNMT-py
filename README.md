@@ -77,6 +77,22 @@ Note: if you encounter a `MemoryError` during installation, try to use `pip` wit
 pip install -r requirements.opt.txt
 ```
 
+Special note on flash attention support:
+
+When using regular `position_encoding=True` or Rotary with `max_relative_positions=-1` OpenNMT-py will try to use an optimized dot-product path.
+
+if you want to use [flash attention 2](https://github.com/Dao-AILab/flash-attention#installation-and-features) then you need to manually install it first:
+
+```bash
+pip install flash-attn --no-build-isolation
+```
+
+if flash attention 2 is not installed, then we will use `F.scaled_dot_product_attention` from pytorch 2.x
+
+When using `max_relative_positions > 0` or Alibi `max_relative_positions=-2` OpenNMT-py will use its legacy code for matrix multiplications.
+
+flash attention is a bit faster and saves some GPU memory.
+
 ## Documentation & FAQs
 
 [Full HTML Documentation](https://opennmt.net/OpenNMT-py/quickstart.html)
