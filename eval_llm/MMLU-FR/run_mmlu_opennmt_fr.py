@@ -1,16 +1,13 @@
 """
     Code taken and adapted from https://github.com/FranxYao/chain-of-thought-hub
 """
+
 import json
 import os
 import time
 import pandas as pd
 from onmt.utils.logging import init_logger
-from onmt.translate.translator import build_translator
-from onmt.inputters.dynamic_iterator import build_dynamic_dataset_iter
-from onmt.inputters.inputter import IterOnDevice
-from onmt.transforms import get_transforms_cls
-from onmt.constants import CorpusTask
+from onmt.inference_engine import InferenceEngine
 import onmt.opts as opts
 from onmt.utils.parse import ArgumentParser
 from onmt.utils.misc import use_gpu, set_random_seed
@@ -148,9 +145,7 @@ def evaluate(opt):
     output_filename = os.path.join(dir_name, "mmlu_results_%s.fr.json" % base_name[:-3])
 
     # Build the translator (along with the model)
-    translator = build_translator(opt, logger=logger, report_score=True)
-    # Build the transforms (along with the tokenizer)
-    transforms_cls = get_transforms_cls(opt._all_transform)
+    engine = InferenceEngine(opt)
 
     data_dir = "eval_llm/MMLU-FR/data/"
     ntrain = 5  # nshots from dev
@@ -180,30 +175,23 @@ def evaluate(opt):
             records.append({"prompt": prompt, "answer": label})
             src.append(prompt.replace("\n", "｟newline｠"))
 
-        infer_iter = build_dynamic_dataset_iter(
-            opt, transforms_cls, translator.vocabs, task=CorpusTask.INFER, src=src
-        )
+        scores, preds = engine.infer_list(src)
 
-        infer_iter = IterOnDevice(infer_iter, opt.gpu)
-
-        scores, preds = translator._translate(
-            infer_iter,
-            transform=infer_iter.transform,
-            attn_debug=opt.attn_debug,
-            align_debug=opt.align_debug,
-        )
         pred_answers = [
             x.lstrip() for sublist in preds for x in sublist
         ]  # flatten the list of list
 
         gold_answers = [record["answer"] for record in records]
         run_results[task] = {"pred_answers": pred_answers, "gold_answers": gold_answers}
+
+    engine.terminate()
+
     with open(output_filename, "w") as f:
         json.dump(run_results, f, ensure_ascii=False, indent=2)
 
     compute_metric(output_filename)
     end_time = time.time()
-    print("total run time %.2f" % (end_time - start_time))
+    logger.info("total run time %.2f" % (end_time - start_time))
 
 
 def _get_parser():

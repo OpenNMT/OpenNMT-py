@@ -37,6 +37,7 @@ class TransformerDecoderLayerBase(nn.Module):
         norm_eps=1e-6,
         use_ckpting=[],
         parallel_gpu=1,
+        sliding_window=0,
     ):
         """
         Args:
@@ -117,6 +118,7 @@ class TransformerDecoderLayerBase(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.full_context_alignment = full_context_alignment
         self.alignment_heads = alignment_heads
+        self.sliding_window = sliding_window
 
     def forward(self, *args, **kwargs):
         """Extend `_forward` for (possibly) multiple decoder pass:
@@ -162,7 +164,8 @@ class TransformerDecoderLayerBase(nn.Module):
     def _forward(self, *args, **kwargs):
         raise NotImplementedError
 
-    def _compute_dec_mask(self, tgt_pad_mask, future):
+    def _compute_dec_mask(self, tgt_pad_mask, future, sliding_window):
+        sliding_window = 4096
         tgt_len = tgt_pad_mask.size(-1)
         if not future:  # apply future_mask, result mask in (B, T, T)
             future_mask = torch.ones(
@@ -170,12 +173,12 @@ class TransformerDecoderLayerBase(nn.Module):
                 device=tgt_pad_mask.device,
                 dtype=torch.uint8,
             )
-            future_mask = future_mask.triu_(1).view(1, tgt_len, tgt_len)
-            # BoolTensor was introduced in pytorch 1.2
-            try:
-                future_mask = future_mask.bool()
-            except AttributeError:
-                pass
+            future_mask = future_mask.tril_(0)
+            if sliding_window > 0:
+                future_mask = future_mask.triu_(-sliding_window)
+            future_mask = future_mask.bool()
+            future_mask = ~future_mask.view(1, tgt_len, tgt_len)
+
             dec_mask = torch.gt(tgt_pad_mask + future_mask, 0)
         else:  # only mask padding, result mask in (B, 1, T)
             dec_mask = tgt_pad_mask
@@ -229,6 +232,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
         norm_eps=1e-6,
         use_ckpting=[],
         parallel_gpu=1,
+        sliding_window=0,
     ):
         """
         Args:
@@ -256,6 +260,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
             norm_eps=norm_eps,
             use_ckpting=use_ckpting,
             parallel_gpu=parallel_gpu,
+            sliding_window=sliding_window,
         )
         self.context_attn = MultiHeadedAttention(
             heads,
@@ -313,7 +318,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
 
         if layer_in.size(1) > 1:
             # masking is necessary when sequence length is greater than one
-            dec_mask = self._compute_dec_mask(tgt_pad_mask, future)
+            dec_mask = self._compute_dec_mask(tgt_pad_mask, future, self.sliding_window)
             dec_mask = dec_mask.unsqueeze(1)
             dec_mask = dec_mask.expand(-1, -1, dec_mask.size(3), -1)
             src_pad_mask = src_pad_mask.expand(-1, -1, dec_mask.size(3), -1)
@@ -408,6 +413,7 @@ class TransformerDecoderBase(DecoderBase):
             parallel_gpu=opt.world_size
             if opt.parallel_mode == "tensor_parallel"
             else 1,
+            sliding_window=opt.sliding_window,
         )
 
     def init_state(self, src, enc_out, enc_final_hs):
@@ -501,6 +507,7 @@ class TransformerDecoder(TransformerDecoderBase):
         norm_eps=1e-6,
         use_ckpting=[],
         parallel_gpu=1,
+        sliding_window=0,
     ):
         super(TransformerDecoder, self).__init__(
             d_model, copy_attn, embeddings, alignment_layer, layer_norm, norm_eps
@@ -530,6 +537,7 @@ class TransformerDecoder(TransformerDecoderBase):
                     norm_eps=norm_eps,
                     use_ckpting=use_ckpting,
                     parallel_gpu=parallel_gpu,
+                    sliding_window=sliding_window,
                 )
                 for i in range(num_layers)
             ]
@@ -665,7 +673,7 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
 
         if layer_in.size(1) > 1:
             # masking is necessary when sequence length is greater than one
-            dec_mask = self._compute_dec_mask(tgt_pad_mask, future)
+            dec_mask = self._compute_dec_mask(tgt_pad_mask, future, self.sliding_window)
             dec_mask = dec_mask.unsqueeze(1)
             dec_mask = dec_mask.expand(-1, -1, dec_mask.size(3), -1)
             # mask now are (batch x 1 x tlen x tlen)
@@ -742,6 +750,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
         norm_eps=1e-6,
         use_ckpting=[],
         parallel_gpu=1,
+        sliding_window=0,
     ):
         super(TransformerLMDecoder, self).__init__(
             d_model, copy_attn, embeddings, alignment_layer, layer_norm, norm_eps
@@ -770,6 +779,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
                     norm_eps=norm_eps,
                     use_ckpting=use_ckpting,
                     parallel_gpu=parallel_gpu,
+                    sliding_window=sliding_window,
                 )
                 for i in range(num_layers)
             ]
