@@ -477,18 +477,9 @@ class MultiHeadedAttention(nn.Module):
                         is_causal=mask is not None,
                     )
             else:
-                if flash2:
-                    attn_output = self.flash_attn_func(
-                        query.transpose(1, 2),
-                        key.transpose(1, 2),
-                        value.transpose(1, 2),
-                        dropout_p=self.dropout_p,
-                        causal=False,
-                    ).transpose(1, 2)
-                else:
-                    attn_output = F.scaled_dot_product_attention(
-                        query, key, value, ~mask, self.dropout_p, is_causal=False
-                    )
+                attn_output = F.scaled_dot_product_attention(
+                    query, key, value, ~mask, self.dropout_p, is_causal=False
+                )
 
             x = unshape(attn_output)
 
