@@ -1,6 +1,6 @@
 import ctranslate2
 import pyonmttok
-from onmt.constants import CorpusTask, DefaultTokens
+from onmt.constants import CorpusTask, DefaultTokens, ModelTask
 from onmt.inputters.dynamic_iterator import build_dynamic_dataset_iter
 from onmt.inputters.inputter import IterOnDevice
 from onmt.transforms import get_transforms_cls
@@ -19,14 +19,68 @@ class InferenceEngineCT2(object):
         self.opt = opt
         self.transforms_cls = get_transforms_cls(self.opt._all_transform)
         self.logger = logger
-        self.device_id = 0
+        if opt.world_size == 1:
+            self.device_id = 0
 
     def warm_up(self):
-        self.build_generator()
+        self.translator = self.build_ct2_translator(self.opt)
         self.build_tokenizer()
 
-    def build_generator(self):
-        self.generator = ctranslate2.Generator(self.opt.models[0], device="cuda")
+    def build_ct2_translator(self, opt):
+        # add model_task in config_file and opts.model_opts(parser) in  _get_parser
+        if opt.model_task == ModelTask.LANGUAGE_MODEL:
+            translator = ctranslate2.Generator(
+                opt.models[0], device="cuda", device_index=opt.gpu_ranks
+            )
+        else:
+            translator = ctranslate2.Translator(
+                self.opt.models[0], device="cuda", device_index=opt.gpu_ranks
+            )
+        return translator
+
+    def _translate(self, infer_iter, opt, add_bos=True):
+        scores = []
+        preds = []
+        for batch in infer_iter:
+            _scores, _preds = self.translate_batch(batch, opt, add_bos)
+            scores += _scores
+            preds += _preds
+        return scores, preds
+
+    def translate_batch(self, batch, opt, add_bos=True):
+        if opt.model_task == ModelTask.LANGUAGE_MODEL:
+            start_tokens = []
+            for i in range(batch["src"].size()[0]):
+                start_ids = batch["src"][i, :, 0].cpu().numpy().tolist()
+                _start_tokens = [
+                    self.vocabs["src"].lookup_index(id)
+                    for id in start_ids
+                    if id != self.vocabs["src"].lookup_token(DefaultTokens.PAD)
+                ]
+                start_tokens.append(_start_tokens)
+            translated_batch = self.translator.generate_batch(
+                start_tokens=start_tokens,
+                batch_type=("examples" if opt.batch_type == "sents" else "tokens"),
+                max_batch_size=opt.batch_size,
+                beam_size=opt.beam_size,
+                min_length=0,
+                max_length=20,
+                return_scores=True,
+                include_prompt_in_result=False,
+                sampling_topk=opt.random_sampling_topk,
+                sampling_topp=opt.random_sampling_topp,
+                sampling_temperature=opt.random_sampling_temp,
+            )
+            scores, preds = (
+                [out.scores for out in translated_batch],
+                [
+                    [self.tokenizer._detokenize(tokens) for tokens in out.sequences]
+                    for out in translated_batch
+                ],
+            )
+            scores = sum(scores, [])
+            preds = sum(preds, [])
+        return scores, preds
 
     def build_tokenizer(self):
         if self.transforms_cls.get("sentencepiece", None) is not None:
@@ -54,45 +108,28 @@ class InferenceEngineCT2(object):
         vocabs["decoder_start_token"] = "<s>"
         self.vocabs = vocabs
 
-    def continue_batch(self, batch, add_bos=True):
-        for i in range(batch["src"].size()[0]):
-            prompt_ids = batch["src"][i, :, 0].cpu().numpy().tolist()
-            prompt_tokens = [self.vocabs["src"].lookup_index(id) for id in prompt_ids]
-            if add_bos:
-                prompt_tokens.insert(0, "<s>")
-
-            step_results = self.generator.generate_tokens(
-                prompt_tokens,
-                sampling_temperature=0.1,
-                sampling_topk=40,
-                max_length=512,
-            )
-            output_ids = []
-            for step_result in step_results:
-                is_new_word = step_result.token.startswith("▁")
-
-                if is_new_word and output_ids:
-                    yield " " + self.tokenizer._detokenize(output_ids)
-                    output_ids = []
-
-                output_ids.append(step_result.token_id)
-
-            if output_ids:
-                yield " " + self.tokenizer._detokenize(output_ids)
-
     def infer_list(self, src):
-        infer_iter = build_dynamic_dataset_iter(
-            self.opt,
-            self.transforms_cls,
-            self.vocabs,
-            task=CorpusTask.INFER,
-            src=src,
-        )
-        infer_iter = IterOnDevice(infer_iter, self.device_id)
-        out = []
-        for batch in infer_iter:
-            words = []
-            for _out in self.continue_batch(batch):
-                words.append(_out)
-            out.append("".join(words))
-        return out
+        if self.opt.world_size == 1:
+            infer_iter = build_dynamic_dataset_iter(
+                self.opt,
+                self.transforms_cls,
+                self.vocabs,
+                task=CorpusTask.INFER,
+                src=src,
+            )
+            infer_iter = IterOnDevice(infer_iter, self.device_id)
+            scores, preds = self._translate(infer_iter, self.opt)
+        return scores, preds
+
+    def infer_file(self):
+        """File inference. Source file must be the opt.src argument"""
+        if self.opt.world_size == 1:
+            infer_iter = build_dynamic_dataset_iter(
+                self.opt,
+                self.transforms_cls,
+                self.vocabs,
+                task=CorpusTask.INFER,
+            )
+            infer_iter = IterOnDevice(infer_iter, self.device_id)
+            scores, preds = self._translate(infer_iter, self.opt)
+            return scores, preds

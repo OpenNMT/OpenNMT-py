@@ -101,6 +101,7 @@ def _get_parser():
     parser = ArgumentParser(description="chatbot.py")
     opts.config_opts(parser)
     opts.translate_opts(parser, dynamic=True)
+    opts.model_opts(parser)
     return parser
 
 
@@ -136,7 +137,8 @@ def make_bot_message(prompt, inference_mode):
         scores, predictions = CACHE["inference_engine"].infer_list(src)
         bot_message = "\n".join(sent[0] for sent in predictions)
     elif inference_mode == "ct2":
-        predictions = CACHE["inference_engine"].infer_list(src)
+        scores, predictions = CACHE["inference_engine"].infer_list(src)
+        print(predictions)
         bot_message = "\n".join(sent for sent in predictions)
     bot_message = bot_message.replace("｟newline｠", "\n")
     return bot_message
