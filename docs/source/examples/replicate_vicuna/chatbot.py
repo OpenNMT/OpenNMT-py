@@ -138,7 +138,6 @@ def make_bot_message(prompt, inference_mode):
         bot_message = "\n".join(sent[0] for sent in predictions)
     elif inference_mode == "ct2":
         scores, predictions = CACHE["inference_engine"].infer_list(src)
-        print(predictions)
         bot_message = "\n".join(sent for sent in predictions)
     bot_message = bot_message.replace("｟newline｠", "\n")
     return bot_message

@@ -64,7 +64,7 @@ class InferenceEngineCT2(object):
                 max_batch_size=opt.batch_size,
                 beam_size=opt.beam_size,
                 min_length=0,
-                max_length=20,
+                max_length=opt.max_length,
                 return_scores=True,
                 include_prompt_in_result=False,
                 sampling_topk=opt.random_sampling_topk,

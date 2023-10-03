@@ -4,6 +4,7 @@ src_subword_model: llama/tokenizer.model
 tgt_subword_model: llama/tokenizer.model
 world_size: 1
 gpu_ranks: [0]
+max_length: 512
 batch_type: sents
 batch_size: 1
 precision: fp16
