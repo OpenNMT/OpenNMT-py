@@ -21,22 +21,35 @@ class InferenceEngineCT2(object):
         self.logger = logger
         if opt.world_size == 1:
             self.device_id = 0
-
-    def warm_up(self):
-        self.translator = self.build_ct2_translator(self.opt)
-        self.build_tokenizer()
-
-    def build_ct2_translator(self, opt):
-        # add model_task in config_file and opts.model_opts(parser) in  _get_parser
+        # Build translator
         if opt.model_task == ModelTask.LANGUAGE_MODEL:
-            translator = ctranslate2.Generator(
+            self.translator = ctranslate2.Generator(
                 opt.models[0], device="cuda", device_index=opt.gpu_ranks
             )
         else:
-            translator = ctranslate2.Translator(
+            self.translator = ctranslate2.Translator(
                 self.opt.models[0], device="cuda", device_index=opt.gpu_ranks
             )
-        return translator
+        # Build tokenizer and vocab
+        if self.transforms_cls.get("sentencepiece", None) is not None:
+            from onmt.transforms.tokenize import SentencePieceTransform
+
+            self.tokenizer = SentencePieceTransform(self.opt)
+            self.tokenizer.warm_up()
+            n_words = self.tokenizer.load_models["src"].vocab_size()
+            vocab = [
+                self.tokenizer.load_models["src"].id_to_piece(i) for i in range(n_words)
+            ]
+            vocabs = {}
+            vocab[3] = DefaultTokens.PAD
+            src_vocab = pyonmttok.build_vocab_from_tokens(
+                vocab, maximum_size=n_words, special_tokens=["<unk>", "<s>", "</s>"]
+            )
+            vocabs["src"] = src_vocab
+            vocabs["tgt"] = src_vocab
+            vocabs["data_task"] = "lm"
+            vocabs["decoder_start_token"] = "<s>"
+            self.vocabs = vocabs
 
     def _translate(self, infer_iter, opt, add_bos=True):
         scores = []
@@ -81,32 +94,6 @@ class InferenceEngineCT2(object):
             scores = sum(scores, [])
             preds = sum(preds, [])
         return scores, preds
-
-    def build_tokenizer(self):
-        if self.transforms_cls.get("sentencepiece", None) is not None:
-            from onmt.transforms.tokenize import SentencePieceTransform
-
-            self.tokenizer = SentencePieceTransform(self.opt)
-            self.tokenizer.warm_up()
-            self.build_sentencepiece_vocab()
-        else:
-            logger.error("Only the sentencepiece tokenize transform is supported.")
-
-    def build_sentencepiece_vocab(self):
-        n_words = self.tokenizer.load_models["src"].vocab_size()
-        vocab = [
-            self.tokenizer.load_models["src"].id_to_piece(i) for i in range(n_words)
-        ]
-        vocabs = {}
-        vocab[3] = DefaultTokens.PAD
-        src_vocab = pyonmttok.build_vocab_from_tokens(
-            vocab, maximum_size=n_words, special_tokens=["<unk>", "<s>", "</s>"]
-        )
-        vocabs["src"] = src_vocab
-        vocabs["tgt"] = src_vocab
-        vocabs["data_task"] = "lm"
-        vocabs["decoder_start_token"] = "<s>"
-        self.vocabs = vocabs
 
     def infer_list(self, src):
         if self.opt.world_size == 1:

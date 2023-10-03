@@ -127,7 +127,6 @@ def load_models(opt, inference_mode):
             from onmt.inference_engine_ct2 import InferenceEngineCT2
 
             CACHE["inference_engine"] = InferenceEngineCT2(opt)
-            CACHE["inference_engine"].warm_up()
             CACHE["tokenizer"] = CACHE["inference_engine"].tokenizer
 
 
