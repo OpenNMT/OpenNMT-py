@@ -1,10 +1,11 @@
 import ctranslate2
+import json
 import pyonmttok
 from onmt.constants import CorpusTask, DefaultTokens, ModelTask
 from onmt.inputters.dynamic_iterator import build_dynamic_dataset_iter
 from onmt.inputters.inputter import IterOnDevice
-from onmt.transforms import get_transforms_cls
 from onmt.utils.logging import logger
+from onmt.transforms import get_transforms_cls, make_transforms, TransformPipe
 
 
 class InferenceEngineCT2(object):
@@ -14,13 +15,12 @@ class InferenceEngineCT2(object):
     Args:
         opt: inference options
     """
-
     def __init__(self, opt):
         self.opt = opt
-        self.transforms_cls = get_transforms_cls(self.opt._all_transform)
         self.logger = logger
         if opt.world_size == 1:
             self.device_id = 0
+        self.transforms_cls = get_transforms_cls(self.opt._all_transform)
         # Build translator
         if opt.model_task == ModelTask.LANGUAGE_MODEL:
             self.translator = ctranslate2.Generator(
@@ -30,26 +30,22 @@ class InferenceEngineCT2(object):
             self.translator = ctranslate2.Translator(
                 self.opt.models[0], device="cuda", device_index=opt.gpu_ranks
             )
-        # Build tokenizer and vocab
-        if self.transforms_cls.get("sentencepiece", None) is not None:
-            from onmt.transforms.tokenize import SentencePieceTransform
-
-            self.tokenizer = SentencePieceTransform(self.opt)
-            self.tokenizer.warm_up()
-            n_words = self.tokenizer.load_models["src"].vocab_size()
-            vocab = [
-                self.tokenizer.load_models["src"].id_to_piece(i) for i in range(n_words)
-            ]
-            vocabs = {}
-            vocab[3] = DefaultTokens.PAD
-            src_vocab = pyonmttok.build_vocab_from_tokens(
-                vocab, maximum_size=n_words, special_tokens=["<unk>", "<s>", "</s>"]
-            )
-            vocabs["src"] = src_vocab
-            vocabs["tgt"] = src_vocab
-            vocabs["data_task"] = "lm"
-            vocabs["decoder_start_token"] = "<s>"
-            self.vocabs = vocabs
+        # Build vocab
+        vocab_path = opt.models[0] + '/vocab.json'
+        with open(vocab_path, 'r') as f:
+            vocab = json.load(f)
+        vocabs = {}
+        src_vocab = pyonmttok.build_vocab_from_tokens(
+            vocab, special_tokens=["<unk>", "<s>", "</s>"]
+        )
+        vocabs["src"] = src_vocab
+        vocabs["tgt"] = src_vocab
+        vocabs["data_task"] = "lm"
+        vocabs["decoder_start_token"] = "<s>"
+        self.vocabs = vocabs
+        # Build transform pipe
+        transforms = make_transforms(opt, self.transforms_cls, self.vocabs)
+        self.transform = TransformPipe.build_from(transforms.values())
 
     def _translate(self, infer_iter, opt, add_bos=True):
         scores = []
@@ -62,17 +58,17 @@ class InferenceEngineCT2(object):
 
     def translate_batch(self, batch, opt, add_bos=True):
         if opt.model_task == ModelTask.LANGUAGE_MODEL:
-            start_tokens = []
+            input_tokens = []
             for i in range(batch["src"].size()[0]):
                 start_ids = batch["src"][i, :, 0].cpu().numpy().tolist()
-                _start_tokens = [
+                _input_tokens = [
                     self.vocabs["src"].lookup_index(id)
                     for id in start_ids
                     if id != self.vocabs["src"].lookup_token(DefaultTokens.PAD)
                 ]
-                start_tokens.append(_start_tokens)
+                input_tokens.append(_input_tokens)
             translated_batch = self.translator.generate_batch(
-                start_tokens=start_tokens,
+                start_tokens=input_tokens,
                 batch_type=("examples" if opt.batch_type == "sents" else "tokens"),
                 max_batch_size=opt.batch_size,
                 beam_size=opt.beam_size,
@@ -84,15 +80,24 @@ class InferenceEngineCT2(object):
                 sampling_topp=opt.random_sampling_topp,
                 sampling_temperature=opt.random_sampling_temp,
             )
-            scores, preds = (
-                [out.scores for out in translated_batch],
-                [
-                    [self.tokenizer._detokenize(tokens) for tokens in out.sequences]
-                    for out in translated_batch
-                ],
+            preds = sum([[self.transform.apply_reverse(tokens) for tokens in out.sequences]
+                         for out in translated_batch], [])
+            scores = sum([out.scores for out in translated_batch], [])
+        elif opt.model_task == ModelTask.SEQ2SEQ:
+            translated_batch = self.translator.translate_batch(
+                input_tokens,
+                batch_type=("examples" if opt.batch_type == "sents" else "tokens"),
+                max_batch_size=opt.batch_size,
+                max_decoding_length=opt.max_length,
+                return_scores=True,
+                sampling_topk=opt.random_sampling_topk,
+                sampling_topp=opt.random_sampling_topp,
+                sampling_temperature=opt.random_sampling_temp
             )
-            scores = sum(scores, [])
-            preds = sum(preds, [])
+            preds = sum([[self.transform.apply_reverse(tokens) for tokens in out.hypotheses]
+                         for out in translated_batch], [])
+            scores = sum([out.scores for out in translated_batch], [])
+
         return scores, preds
 
     def infer_list(self, src):
