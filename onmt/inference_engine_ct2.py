@@ -46,15 +46,6 @@ class InferenceEngineCT2(object):
         transforms = make_transforms(opt, self.transforms_cls, self.vocabs)
         self.transform = TransformPipe.build_from(transforms.values())
 
-    def _translate(self, infer_iter, opt, add_bos=True):
-        scores = []
-        preds = []
-        for batch in infer_iter:
-            _scores, _preds = self.translate_batch(batch, opt, add_bos)
-            scores += _scores
-            preds += _preds
-        return scores, preds
-
     def translate_batch(self, batch, opt, add_bos=True):
         input_tokens = []
         for i in range(batch["src"].size()[0]):
@@ -119,7 +110,12 @@ class InferenceEngineCT2(object):
                 src=src,
             )
             infer_iter = IterOnDevice(infer_iter, self.device_id)
-            scores, preds = self._translate(infer_iter, self.opt)
+        scores = []
+        preds = []
+        for batch in infer_iter:
+            _scores, _preds = self.translate_batch(batch, self.opt)
+            scores += _scores
+            preds += _preds
         return scores, preds
 
     def infer_file(self):
@@ -132,5 +128,10 @@ class InferenceEngineCT2(object):
                 task=CorpusTask.INFER,
             )
             infer_iter = IterOnDevice(infer_iter, self.device_id)
-            scores, preds = self._translate(infer_iter, self.opt)
+            scores = []
+            preds = []
+            for batch in infer_iter:
+                _scores, _preds = self.translate_batch(batch, self.opt)
+                scores += _scores
+                preds += _preds
             return scores, preds
