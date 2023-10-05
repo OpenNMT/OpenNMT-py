@@ -4,6 +4,7 @@ import numpy as np
 import time
 
 import onmt.opts as opts
+from onmt.transforms.tokenize import SentencePieceTransform
 from onmt.utils.parse import ArgumentParser
 from onmt.utils.misc import use_gpu, set_random_seed
 
@@ -17,6 +18,11 @@ parser.add_argument(
 )
 parser.add_argument("-inference_mode", help="Inference mode", required=True, type=str)
 parser.add_argument("-model", help="Path to the checkpoint.", required=True, type=str)
+parser.add_argument(
+    "-src_subword_vocab",
+    help="Path to the checkpoint subword vocab, for ctranslate2 inference",
+    type=str,
+)
 parser.add_argument(
     "-max_context_length",
     help="Maximum size of the chat history.",
@@ -118,16 +124,15 @@ def load_models(opt, inference_mode):
             from onmt.inference_engine import InferenceEngine
 
             CACHE["inference_engine"] = InferenceEngine(opt)
-            from onmt.transforms.tokenize import SentencePieceTransform
-
-            CACHE["tokenizer"] = SentencePieceTransform(opt)
-            CACHE["tokenizer"].warm_up()
         elif inference_mode == "ct2":
             print("Inference with ctranslate2 ...")
             from onmt.inference_engine_ct2 import InferenceEngineCT2
 
+            opt.src_subword_vocab = args.src_subword_vocab
             CACHE["inference_engine"] = InferenceEngineCT2(opt)
-            CACHE["tokenizer"] = CACHE["inference_engine"].tokenizer
+        # We need to build the Llama tokenizer to count tokens and prune the history.
+        CACHE["tokenizer"] = SentencePieceTransform(opt)
+        CACHE["tokenizer"].warm_up()
 
 
 def make_bot_message(prompt, inference_mode):

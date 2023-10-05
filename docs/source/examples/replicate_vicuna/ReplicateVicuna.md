@@ -169,6 +169,7 @@ python3 chatbot.py \
 -inference_config_file translate_opts.yaml \
 -inference_mode ct2 \
 -model finetuned_llama7B/llama7B-vicuna-onmt_step_4000.concat_CT2 \
+-src_subword_vocab finetuned_llama7B/llama7B-vicuna-onmt_step_4000.concat_CT2/vocabulary.json \
 -max_context_length 4096 \
 -server_port 5000
 ```

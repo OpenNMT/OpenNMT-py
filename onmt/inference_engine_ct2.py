@@ -15,6 +15,7 @@ class InferenceEngineCT2(object):
     Args:
         opt: inference options
     """
+
     def __init__(self, opt):
         self.opt = opt
         self.logger = logger
@@ -31,13 +32,11 @@ class InferenceEngineCT2(object):
                 self.opt.models[0], device="cuda", device_index=opt.gpu_ranks
             )
         # Build vocab
-        vocab_path = opt.models[0] + '/vocab.json'
-        with open(vocab_path, 'r') as f:
+        vocab_path = opt.src_subword_vocab
+        with open(vocab_path, "r") as f:
             vocab = json.load(f)
         vocabs = {}
-        src_vocab = pyonmttok.build_vocab_from_tokens(
-            vocab, special_tokens=["<unk>", "<s>", "</s>"]
-        )
+        src_vocab = pyonmttok.build_vocab_from_tokens(vocab)
         vocabs["src"] = src_vocab
         vocabs["tgt"] = src_vocab
         vocabs["data_task"] = "lm"
@@ -57,16 +56,16 @@ class InferenceEngineCT2(object):
         return scores, preds
 
     def translate_batch(self, batch, opt, add_bos=True):
+        input_tokens = []
+        for i in range(batch["src"].size()[0]):
+            start_ids = batch["src"][i, :, 0].cpu().numpy().tolist()
+            _input_tokens = [
+                self.vocabs["src"].lookup_index(id)
+                for id in start_ids
+                if id != self.vocabs["src"].lookup_token(DefaultTokens.PAD)
+            ]
+            input_tokens.append(_input_tokens)
         if opt.model_task == ModelTask.LANGUAGE_MODEL:
-            input_tokens = []
-            for i in range(batch["src"].size()[0]):
-                start_ids = batch["src"][i, :, 0].cpu().numpy().tolist()
-                _input_tokens = [
-                    self.vocabs["src"].lookup_index(id)
-                    for id in start_ids
-                    if id != self.vocabs["src"].lookup_token(DefaultTokens.PAD)
-                ]
-                input_tokens.append(_input_tokens)
             translated_batch = self.translator.generate_batch(
                 start_tokens=input_tokens,
                 batch_type=("examples" if opt.batch_type == "sents" else "tokens"),
@@ -80,8 +79,13 @@ class InferenceEngineCT2(object):
                 sampling_topp=opt.random_sampling_topp,
                 sampling_temperature=opt.random_sampling_temp,
             )
-            preds = sum([[self.transform.apply_reverse(tokens) for tokens in out.sequences]
-                         for out in translated_batch], [])
+            preds = sum(
+                [
+                    [self.transform.apply_reverse(tokens) for tokens in out.sequences]
+                    for out in translated_batch
+                ],
+                [],
+            )
             scores = sum([out.scores for out in translated_batch], [])
         elif opt.model_task == ModelTask.SEQ2SEQ:
             translated_batch = self.translator.translate_batch(
@@ -92,10 +96,15 @@ class InferenceEngineCT2(object):
                 return_scores=True,
                 sampling_topk=opt.random_sampling_topk,
                 sampling_topp=opt.random_sampling_topp,
-                sampling_temperature=opt.random_sampling_temp
+                sampling_temperature=opt.random_sampling_temp,
             )
-            preds = sum([[self.transform.apply_reverse(tokens) for tokens in out.hypotheses]
-                         for out in translated_batch], [])
+            preds = sum(
+                [
+                    [self.transform.apply_reverse(tokens) for tokens in out.hypotheses]
+                    for out in translated_batch
+                ],
+                [],
+            )
             scores = sum([out.scores for out in translated_batch], [])
 
         return scores, preds
