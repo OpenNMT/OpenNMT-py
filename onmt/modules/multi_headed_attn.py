@@ -53,9 +53,7 @@ def relative_matmul(x: Tensor, z: Tensor, transpose: bool) -> Tensor:
     https://arxiv.org/pdf/1803.02155.pdf
     x shape [batch_size x heads x q_len x k_len]
     """
-    batch_size = x.size(0)
-    heads = x.size(1)
-    length = x.size(2)
+    batch_size, heads, length = x.size()
     x_t = x.permute(2, 0, 1, 3)
     x_t_r = x_t.contiguous().view(length, heads * batch_size, -1)
     if transpose:
@@ -438,17 +436,15 @@ class MultiHeadedAttention(nn.Module):
                 rope = self.rope[start_pos : start_pos + seqlen].to(query.device)
                 query, key = apply_rotary_emb(query, key, rope=rope)
 
+        b, h, l, d = key.size()
+        qh = query.size(1)
         # expand key on heads dimension when it's less than query heads (multi-query variant)
-        key = key.view(key.size(0), -1, 1, key.size(2), key.size(3)).repeat(
-            1, 1, query.size(1) // key.size(1), 1, 1
-        )
-        key = key.view(key.size(0), query.size(1), key.size(3), key.size(4))
+        key = key.view(b, -1, 1, l, d).repeat(1, 1, qh // h, 1, 1)
+        key = key.view(b, qh, l, d)
 
         # expand value on heads dimension when it's less than query heads (multi-query variant)
-        value = value.view(value.size(0), -1, 1, value.size(2), value.size(3)).repeat(
-            1, 1, query.size(1) // value.size(1), 1, 1
-        )
-        value = value.view(value.size(0), query.size(1), value.size(3), value.size(4))
+        value = value.view(b, -1, 1, l, d).repeat(1, 1, qh // h, 1, 1)
+        value = value.view(b, qh, l, d)
 
         # 2) When standard pos. enc. or rotary, use flash attention
         flash2 = (
@@ -456,6 +452,7 @@ class MultiHeadedAttention(nn.Module):
             and query.device != torch.device("cpu")
             and self.flash2
             and torch.cuda.get_device_capability(query.device)[0] >= 8
+            and l > 256  # https://github.com/Dao-AILab/flash-attention/issues/591
         )  # https://github.com/Dao-AILab/flash-attention#installation-and-features
         if self.max_relative_positions in [-1, 0] and not return_attn:
             if self.is_decoder and self.attn_type == "self":
@@ -476,19 +473,18 @@ class MultiHeadedAttention(nn.Module):
                         self.dropout_p,
                         is_causal=mask is not None,
                     )
+            elif self.attn_type == "self" and flash2:
+                attn_output = self.flash_attn_func(
+                    query.transpose(1, 2),
+                    key.transpose(1, 2),
+                    value.transpose(1, 2),
+                    dropout_p=self.dropout_p,
+                    causal=False,
+                ).transpose(1, 2)
             else:
-                if flash2:
-                    attn_output = self.flash_attn_func(
-                        query.transpose(1, 2),
-                        key.transpose(1, 2),
-                        value.transpose(1, 2),
-                        dropout_p=self.dropout_p,
-                        causal=False,
-                    ).transpose(1, 2)
-                else:
-                    attn_output = F.scaled_dot_product_attention(
-                        query, key, value, ~mask, self.dropout_p, is_causal=False
-                    )
+                attn_output = F.scaled_dot_product_attention(
+                    query, key, value, ~mask, self.dropout_p, is_causal=False
+                )
 
             x = unshape(attn_output)
 
