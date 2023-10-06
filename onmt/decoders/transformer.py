@@ -164,8 +164,7 @@ class TransformerDecoderLayerBase(nn.Module):
     def _forward(self, *args, **kwargs):
         raise NotImplementedError
 
-    def _compute_dec_mask(self, tgt_pad_mask, future, sliding_window):
-        sliding_window = 4096
+    def _compute_dec_mask(self, tgt_pad_mask, future):
         tgt_len = tgt_pad_mask.size(-1)
         if not future:  # apply future_mask, result mask in (B, T, T)
             future_mask = torch.ones(
@@ -174,8 +173,8 @@ class TransformerDecoderLayerBase(nn.Module):
                 dtype=torch.uint8,
             )
             future_mask = future_mask.tril_(0)
-            if sliding_window > 0:
-                future_mask = future_mask.triu_(-sliding_window)
+            if self.sliding_window > 0:
+                future_mask = future_mask.triu_(-self.sliding_window)
             future_mask = future_mask.bool()
             future_mask = ~future_mask.view(1, tgt_len, tgt_len)
 
@@ -191,6 +190,7 @@ class TransformerDecoderLayerBase(nn.Module):
                 norm_layer_in,
                 norm_layer_in,
                 mask=dec_mask,
+                sliding_window=self.sliding_window,
                 step=step,
                 return_attn=return_attn,
             )
@@ -318,7 +318,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
 
         if layer_in.size(1) > 1:
             # masking is necessary when sequence length is greater than one
-            dec_mask = self._compute_dec_mask(tgt_pad_mask, future, self.sliding_window)
+            dec_mask = self._compute_dec_mask(tgt_pad_mask, future)
             dec_mask = dec_mask.unsqueeze(1)
             dec_mask = dec_mask.expand(-1, -1, dec_mask.size(3), -1)
             src_pad_mask = src_pad_mask.expand(-1, -1, dec_mask.size(3), -1)
@@ -673,7 +673,7 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
 
         if layer_in.size(1) > 1:
             # masking is necessary when sequence length is greater than one
-            dec_mask = self._compute_dec_mask(tgt_pad_mask, future, self.sliding_window)
+            dec_mask = self._compute_dec_mask(tgt_pad_mask, future)
             dec_mask = dec_mask.unsqueeze(1)
             dec_mask = dec_mask.expand(-1, -1, dec_mask.size(3), -1)
             # mask now are (batch x 1 x tlen x tlen)

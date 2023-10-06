@@ -360,6 +360,7 @@ class MultiHeadedAttention(nn.Module):
         value: Tensor,
         query: Tensor,
         mask: Optional[Tensor] = None,
+        sliding_window: Optional[int] = 0,
         step: Optional[int] = 0,
         return_attn: Optional[bool] = False,
     ) -> Tuple[Tensor, Tensor]:
@@ -453,6 +454,7 @@ class MultiHeadedAttention(nn.Module):
             and self.flash2
             and torch.cuda.get_device_capability(query.device)[0] >= 8
             and l > 256  # https://github.com/Dao-AILab/flash-attention/issues/591
+            and sliding_window == 0
         )  # https://github.com/Dao-AILab/flash-attention#installation-and-features
         if self.max_relative_positions in [-1, 0] and not return_attn:
             if self.is_decoder and self.attn_type == "self":
