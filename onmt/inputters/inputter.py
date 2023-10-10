@@ -139,8 +139,10 @@ def _read_vocab_file(vocab_path, min_count):
     if not os.path.exists(vocab_path):
         raise RuntimeError("Vocabulary not found at {}".format(vocab_path))
     else:
-        with codecs.open(vocab_path, "rb", "utf-8") as f:
-            lines = [line.strip("\n") for line in f if line.strip("\n")]
+        with codecs.open(vocab_path, "rb") as f:
+            lines = [line.decode("utf-8") for line in f.read().split(b"\n")]
+            lines = lines[:-1]
+
             first_line = lines[0].split(None, 1)
             has_count = len(first_line) == 2 and first_line[-1].isdigit()
             if has_count:
