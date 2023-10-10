@@ -454,15 +454,18 @@ class MultiHeadedAttention(nn.Module):
         # then use flash2 if seq len > 256 otherwise use xtransformer from pt2 uptream
 
         flash2 = (
-            torch.cuda.is_available()
-            and query.device != torch.device("cpu")
+            query.device != torch.device("cpu")
             and self.flash2
             and torch.cuda.get_device_capability(query.device)[0] >= 8
             and l > 256  # https://github.com/Dao-AILab/flash-attention/issues/591
             and sliding_window == 0
         )  # https://github.com/Dao-AILab/flash-attention#installation-and-features
 
-        if self.max_relative_positions in [-1, 0] and not return_attn:
+        if (
+            self.max_relative_positions in [-1, 0]
+            and not return_attn
+            and query.device != torch.device("cpu")
+        ):
             causal = self.is_decoder and self.attn_type == "self" and mask is not None
             if self.is_decoder and self.attn_type == "self" and flash2:
                 attn_output = self.flash_attn_func(
