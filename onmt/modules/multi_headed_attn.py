@@ -470,10 +470,12 @@ class MultiHeadedAttention(nn.Module):
                     key.transpose(1, 2),
                     value.transpose(1, 2),
                     dropout_p=self.dropout_p,
-                    causal=causal
-                    ).transpose(1, 2)
+                    causal=causal,
+                ).transpose(1, 2)
             else:
-                with torch.backends.cuda.sdp_kernel(enable_flash=False, enable_math=False, enable_mem_efficient=True):
+                with torch.backends.cuda.sdp_kernel(
+                    enable_flash=False, enable_math=False, enable_mem_efficient=True
+                ):
                     attn_output = F.scaled_dot_product_attention(
                         query,
                         key,
