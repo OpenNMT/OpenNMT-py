@@ -17,12 +17,6 @@ parser.add_argument(
     type=str,
 )
 parser.add_argument("-inference_mode", help="Inference mode", required=True, type=str)
-parser.add_argument("-model", help="Path to the checkpoint.", required=True, type=str)
-parser.add_argument(
-    "-src_subword_vocab",
-    help="Path to the checkpoint subword vocab, for ctranslate2 inference",
-    type=str,
-)
 parser.add_argument(
     "-max_context_length",
     help="Maximum size of the chat history.",
@@ -36,7 +30,6 @@ parser.add_argument(
 args = parser.parse_args()
 inference_config_file = args.inference_config_file
 inference_mode = args.inference_mode
-model = args.model
 max_context_length = args.max_context_length
 server_port = args.server_port
 
@@ -128,7 +121,6 @@ def load_models(opt, inference_mode):
             print("Inference with ctranslate2 ...")
             from onmt.inference_engine_ct2 import InferenceEngineCT2
 
-            opt.src_subword_vocab = args.src_subword_vocab
             CACHE["inference_engine"] = InferenceEngineCT2(opt)
         # We need to build the Llama tokenizer to count tokens and prune the history.
         CACHE["tokenizer"] = SentencePieceTransform(opt)
@@ -157,7 +149,7 @@ with gr.Blocks() as demo:
     msg = gr.Textbox()
     submit = gr.Button("Submit")
     clear = gr.Button("Clear")
-    base_args = ["-model", model] + ["-src", None] + ["-config", inference_config_file]
+    base_args = ["-config", inference_config_file]
     parser = _get_parser()
     opt = parser.parse_args(base_args)
     load_models(opt, inference_mode)

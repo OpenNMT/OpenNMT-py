@@ -16,8 +16,9 @@ Here is a short description of the content of your current directory:
 - The converted llama7B checkpoint (`llama7B-vicuna-onmt`) and the vocabulary (`vocab.txt`) that will be genenerated with OpenNMT tools.
 - A subdirectory named "dataAI" with the datasets for the finetuning.
 - A subdirectory named "finetuned_llama7B" that will contain the finetuning samples, tensorboard logs and checkpoints.
-- The `translate_opts.yaml` file with the translation options for the inference with `OpenNMT-py/onmt/bin/translate.py`.
-- A subdirectory named "inputs" containing the `input_examples.txt` file with the input examples for the inference.
+- The `translate_opts_py.yaml` file with the translation options for the inference with `onmt/inference_engine.py`.
+- The `translate_opts_ct2.yaml` file with the translation options for the inference with `inference_engine_ct2.py`.
+- The `input_examples.txt` file with a few input examples.
 - A subdirectory named "outputs" that will contain the inferred outputs of the finetuned model.
 - The `chatbot.py` script (for the ctranslate2 inference with a gradio application).
 
@@ -156,66 +157,33 @@ We provide a gradio chatbot application that can be run with two different infer
 Run one of the following commands:
 ```shell
 python3 chatbot.py \
--inference_config_file translate_opts.yaml \
+-inference_config_file translate_opts_py.yaml \
 -inference_mode py \
--model finetuned_llama7B/llama7B-vicuna-onmt_step_4000.concat_added_key.pt \
 -max_context_length 4096 \
 -server_port 5000
 ```
-or:
+Or:
 
 ```shell
 python3 chatbot.py \
--inference_config_file translate_opts.yaml \
+-inference_config_file translate_opts_ct2.yaml \
 -inference_mode ct2 \
--model finetuned_llama7B/llama7B-vicuna-onmt_step_4000.concat_CT2 \
--src_subword_vocab finetuned_llama7B/llama7B-vicuna-onmt_step_4000.concat_CT2/vocabulary.json \
 -max_context_length 4096 \
 -server_port 5000
 ```
-Where `translate_opts.yaml` is the provided config with the translation options.
+Where `translate_opts_ct2.yaml`  and `translate_opts_py.yaml` are the provided config with the translation options.
 You can test other decoding methods and paramaters.
 
-###  Simple inference with `translate.py` 
-The inputs need to follow the same pattern used in the finetuning examples. 
-Let us create an "inputs" folder and save inside it the file named `input_examples.txt`.
-
-Let us create an "outputs" folder.
+###  Simple inference
 
 To obtain the model's inference you can run this command:
 
 ```shell
-nohup python3 OpenNMT-py/onmt/bin/translate.py\
-    -model finetuned_llama7B/llama7B-vicuna-onmt_step_4000.concat.pt \
-    -src inputs/input_examples.txt \
-    -output outputs/examples_llama7B-vicuna-onmt_step_4000.concat.txt  \
-    -config translate_opts.yaml > infer.log & 
+python3 simple_inference_py.py -config translate_opts_py.yaml
 ```
-
-
-
+or 
 
 ```shell
-python3 chatbot.py \
--inference_config_file translate_opts.yaml \
--inference_mode ct2 \
--model finetuned_llama7B/llama7B-vicuna-onmt_step_4000.concat_CT2 \
--max_context_length 4096 \
--server_port 1852
-```
-You must use `inf_type = "-py"` at the beginning of the `chatbot.py` script.
-
-
-### Inference with `CTranslate` 
-First we need to do the conversion to the ctranslate2 format.
-
-```
-shell
-python3 OpenNMT-py/onmt/bin/release_model.py \
-    --model finetuned_llama7B/llama7B-vicuna-onmt_step_4000.concat.pt \
-    --output finetuned_llama7B/llama7B-vicuna-onmt_step_4000.concat_CT2 \
-    --format ctranslate2 \
-    --quantization int8_float16
+python3 simple_inference_ct2.py -config translate_opts_ct2.yaml
 ```
 
-You can chat with the model using `inf_type = "ct2"` at the beginning of the `chatbot.py` script.
