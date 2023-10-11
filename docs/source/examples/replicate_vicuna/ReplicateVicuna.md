@@ -11,15 +11,16 @@ The maximal context length will be set to 512.
 Here is a short description of the content of your current directory:
 
 - The OpenNMT-py repository.
-- The `replicate_vicuna.yaml` file.
+- The `replicate_vicuna.yaml` file with the finetuning options
 - A subdirectory named "llama" with the llama chekpoints.
-- The converted llama7B checkpoint (`llama7B-vicuna-onmt`) and the vocabulary (`vocab.txt`) that will be genenerated with OpenNMT tools.
+- The llama7B checkpoint converted to `OpenNMT-py` format (`llama7B-vicuna-onmt`) and the vocabulary (`vocab.txt`). They will be genenerated with `OpenNMT-py` tools.
 - A subdirectory named "dataAI" with the datasets for the finetuning.
-- A subdirectory named "finetuned_llama7B" that will contain the finetuning samples, tensorboard logs and checkpoints.
-- The `translate_opts_py.yaml` file with the translation options for the inference with `onmt/inference_engine.py`.
-- The `translate_opts_ct2.yaml` file with the translation options for the inference with `inference_engine_ct2.py`.
+- A subdirectory named "finetuned_llama7B" that will contain the finetuning samples, the tensorboard logs and the checkpoints.
+- The `translate_opts_py.yaml` file with the translation options for the inference with `translate.py`.
+- The `translate_opts_ct2.yaml` file with the translation options for the inference with `cranslate2`.
 - The `input_examples.txt` file with a few input examples.
 - A subdirectory named "outputs" that will contain the inferred outputs of the finetuned model.
+- The `simple_inference_py.py` and `simple_inference_ct2.py` files to compute vicuna's predictions with each of the inference engines linked to the 2 different modes.
 - The `chatbot.py` script (for the ctranslate2 inference with a gradio application).
 
 ## Dependencies
