@@ -15,57 +15,57 @@ class InferenceEngine(object):
     """
 
     def __init__(self, opt):
-        print("###")
         self.opt = opt
 
     def translate_batch(self, batch):
         pass
 
-    # @classmethod
     def _translate(self, infer_iter):
         pass
 
-    # @classmethod
     def infer_file(self):
         """File inference. Source file must be the opt.src argument"""
-        assert self.opt.world_size == 1, 'World size must be equal to 1.'
-        infer_iter = build_dynamic_dataset_iter(
-            self.opt,
-            self.transforms_cls,
-            self.vocabs,
-            task=CorpusTask.INFER,
-        )
-        infer_iter = IterOnDevice(infer_iter, self.device_id)
-        scores, preds = self._translate(infer_iter)
+        if self.opt.world_size == 1:
+            infer_iter = build_dynamic_dataset_iter(
+                self.opt,
+                self.transforms_cls,
+                self.vocabs,
+                task=CorpusTask.INFER,
+            )
+            infer_iter = IterOnDevice(infer_iter, self.device_id)
+            scores, preds = self._translate(infer_iter)
+        else:
+            scores, preds = self.infer_file_parallel()
         return scores, preds
 
     # @classmethod
     def infer_list(self, src):
         """List of strings inference `src`"""
-        assert self.opt.world_size == 1, 'World size must be equal to 1.'
-        infer_iter = build_dynamic_dataset_iter(
-            self.opt,
-            self.transforms_cls,
-            self.vocabs,
-            task=CorpusTask.INFER,
-            src=src,
-        )
-        infer_iter = IterOnDevice(infer_iter, self.device_id)
-        scores, preds = self.translator._translate(
-            infer_iter,
-            infer_iter.transform,
-            self.opt.attn_debug,
-            self.opt.align_debug,
-        )
+        if self.opt.world_size == 1:
+            infer_iter = build_dynamic_dataset_iter(
+                self.opt,
+                self.transforms_cls,
+                self.vocabs,
+                task=CorpusTask.INFER,
+                src=src,
+            )
+            infer_iter = IterOnDevice(infer_iter, self.device_id)
+            scores, preds = self._translate(
+                infer_iter
+            )
+        else:
+            scores, preds = self.infer_list_parallel(src)
         return scores, preds
 
     def infer_file_parallel(self):
         """File inference in mulitprocessing with partitioned models."""
-        pass
+        raise NotImplementedError(
+            "The inference in mulitprocessing with partitioned models is not implemented.")
 
     def infer_list_parallel(self, src):
-        """List of strings inference in mulitprocessing with partitioned models."""
-        pass
+        """The inference in mulitprocessing with partitioned models."""
+        raise NotImplementedError(
+            "The inference in mulitprocessing with partitioned models is not implemented.")
 
     def terminate(self):
         pass
@@ -143,7 +143,6 @@ class InferenceEnginePY(InferenceEngine):
         return scores[0], preds[0]
 
     def infer_list_parallel(self, src):
-        assert self.opt.world_size > 1, 'World size must be greater than 1.'
         for device_id in range(self.opt.world_size):
             self.queue_instruct[device_id].put(("infer_list", src))
         scores, preds = [], []
@@ -217,7 +216,7 @@ class InferenceEngineCT2(InferenceEngine):
                 batch_type=("examples" if opt.batch_type == "sents" else "tokens"),
                 max_batch_size=opt.batch_size,
                 beam_size=opt.beam_size,
-                min_length=0,
+                num_hypotheses=opt.n_best,
                 max_length=opt.max_length,
                 return_scores=True,
                 include_prompt_in_result=False,
@@ -225,33 +224,25 @@ class InferenceEngineCT2(InferenceEngine):
                 sampling_topp=opt.random_sampling_topp,
                 sampling_temperature=opt.random_sampling_temp,
             )
-            preds = sum(
-                [
-                    [self.transform.apply_reverse(tokens) for tokens in out.sequences]
-                    for out in translated_batch
-                ],
-                [],
-            )
-            scores = sum([out.scores for out in translated_batch], [])
+            preds = [[self.transform.apply_reverse(tokens) for tokens in out.sequences]
+                     for out in translated_batch]
+            scores = [out.scores for out in translated_batch]
         elif opt.model_task == ModelTask.SEQ2SEQ:
             translated_batch = self.translator.translate_batch(
                 input_tokens,
                 batch_type=("examples" if opt.batch_type == "sents" else "tokens"),
                 max_batch_size=opt.batch_size,
+                beam_size=opt.beam_size,
+                num_hypotheses=opt.n_best,
                 max_decoding_length=opt.max_length,
                 return_scores=True,
                 sampling_topk=opt.random_sampling_topk,
                 sampling_topp=opt.random_sampling_topp,
                 sampling_temperature=opt.random_sampling_temp,
             )
-            preds = sum(
-                [
-                    [self.transform.apply_reverse(tokens) for tokens in out.hypotheses]
-                    for out in translated_batch
-                ],
-                [],
-            )
-            scores = sum([out.scores for out in translated_batch], [])
+            preds = [[self.transform.apply_reverse(tokens) for tokens in out.hypotheses]
+                     for out in translated_batch]
+            scores = [out.scores for out in translated_batch]
 
         return scores, preds
 

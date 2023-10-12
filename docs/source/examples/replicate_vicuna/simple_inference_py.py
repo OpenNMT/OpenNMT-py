@@ -3,7 +3,7 @@ import os
 import time
 
 import onmt.opts as opts
-from onmt.inference_engine import InferenceEngine
+from onmt.inference_engine import InferenceEnginePY
 from onmt.utils.parse import ArgumentParser
 from onmt.utils.misc import use_gpu, set_random_seed
 
@@ -22,10 +22,12 @@ def _get_parser():
 def evaluate(opt, output_filename):
     run_results = {}
     # Build the translator (along with the model)
-    engine = InferenceEngine(opt)
+    engine = InferenceEnginePY(opt)
     engine.opt.src = DATASET
+    print(os.path.exists(engine.opt.src))
     start = time.time()
     scores, preds = engine.infer_file()
+    engine.terminate()
     scores = [_score.cpu().numpy().tolist() for _score in sum(scores, [])]
     dur = time.time() - start
     print(f"Time to generate {len(preds)} answers: {dur}s")

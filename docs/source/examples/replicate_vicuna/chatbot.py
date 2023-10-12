@@ -114,12 +114,12 @@ def load_models(opt, inference_mode):
         # Build the translator (along with the model)
         if inference_mode == "py":
             print("Inference with py ...")
-            from onmt.inference_engine import InferenceEngine
+            from onmt.inference_engine import InferenceEnginePY
 
-            CACHE["inference_engine"] = InferenceEngine(opt)
+            CACHE["inference_engine"] = InferenceEnginePY(opt)
         elif inference_mode == "ct2":
             print("Inference with ctranslate2 ...")
-            from onmt.inference_engine_ct2 import InferenceEngineCT2
+            from onmt.inference_engine import InferenceEngineCT2
 
             CACHE["inference_engine"] = InferenceEngineCT2(opt)
         # We need to build the Llama tokenizer to count tokens and prune the history.
@@ -134,7 +134,7 @@ def make_bot_message(prompt, inference_mode):
         bot_message = "\n".join(sent[0] for sent in predictions)
     elif inference_mode == "ct2":
         scores, predictions = CACHE["inference_engine"].infer_list(src)
-        bot_message = "\n".join(sent for sent in predictions)
+        bot_message = "\n".join(sent[0] for sent in predictions)
     bot_message = bot_message.replace("｟newline｠", "\n")
     return bot_message
 

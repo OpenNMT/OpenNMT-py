@@ -3,7 +3,7 @@ import os
 import time
 
 import onmt.opts as opts
-from onmt.inference_engine_ct2 import InferenceEngineCT2
+from onmt.inference_engine import InferenceEngineCT2
 from onmt.utils.parse import ArgumentParser
 from onmt.utils.misc import use_gpu, set_random_seed
 
