@@ -20,7 +20,7 @@ Here is a short description of the content of your current directory:
 - The `translate_opts_ct2.yaml` file with the translation options for the inference with `cranslate2`.
 - The `input_examples.txt` file with a few input examples.
 - A subdirectory named "outputs" that will contain the inferred outputs of the finetuned model.
-- The `simple_inference_py.py` and `simple_inference_ct2.py` files to compute vicuna's predictions with each of the inference engines linked to the 2 different modes.
+- The `simple_inference.py` file to compute vicuna's predictions from the `input_examples.txt` file, for the 2 different modes.
 - The `chatbot.py` script (for the ctranslate2 inference with a gradio application).
 
 ## Dependencies
@@ -180,11 +180,6 @@ You can test other decoding methods and paramaters.
 To obtain the model's inference you can run this command:
 
 ```shell
-python3 simple_inference_py.py -config translate_opts_py.yaml
+python3 simple_inference.py -inference_config_file translate_opts_py.yaml -inference_mode py 
+python3 simple_inference.py -inference_config_file translate_opts_ct2.yaml -inference_mode ct2 
 ```
-or 
-
-```shell
-python3 simple_inference_ct2.py -config translate_opts_ct2.yaml
-```
-

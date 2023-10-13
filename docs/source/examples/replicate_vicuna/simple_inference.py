@@ -1,14 +1,28 @@
+import argparse
 import json
 import os
 import time
-
 import onmt.opts as opts
-from onmt.inference_engine import InferenceEnginePY
 from onmt.utils.parse import ArgumentParser
 from onmt.utils.misc import use_gpu, set_random_seed
 
 OUTDIR = "outputs/"
 DATASET = "input_examples.txt"
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "-inference_config_file", help="Inference config file", required=True, type=str
+)
+parser.add_argument(
+    "-inference_mode",
+    help="Inference mode",
+    required=True,
+    type=str,
+    choices=["py", "ct2"],
+)
+args = parser.parse_args()
+inference_config_file = args.inference_config_file
+inference_mode = args.inference_mode
 
 
 def _get_parser():
@@ -22,23 +36,34 @@ def _get_parser():
 def evaluate(opt, output_filename):
     run_results = {}
     # Build the translator (along with the model)
-    engine = InferenceEnginePY(opt)
+    if inference_mode == "py":
+        print("Inference with py ...")
+        from onmt.inference_engine import InferenceEnginePY
+
+        engine = InferenceEnginePY(opt)
+    elif inference_mode == "ct2":
+        from onmt.inference_engine import InferenceEngineCT2
+
+        engine = InferenceEngineCT2(opt)
     engine.opt.src = DATASET
-    print(os.path.exists(engine.opt.src))
     start = time.time()
     scores, preds = engine.infer_file()
     engine.terminate()
-    scores = [_score.cpu().numpy().tolist() for _score in sum(scores, [])]
     dur = time.time() - start
     print(f"Time to generate {len(preds)} answers: {dur}s")
+    if inference_mode == "py":
+        scores = [
+            [_score.cpu().numpy().tolist() for _score in _scores] for _scores in scores
+        ]
     run_results = {"pred_answers": preds, "score": scores, "duration": dur}
     with open(output_filename, "w") as f:
         json.dump(run_results, f, ensure_ascii=False, indent=2)
 
 
 def main():
+    base_args = ["-config", inference_config_file]
     parser = _get_parser()
-    opt = parser.parse_args()
+    opt = parser.parse_args(base_args)
     ArgumentParser.validate_translate_opts(opt)
     ArgumentParser._get_all_transform_translate(opt)
     ArgumentParser._validate_transforms_opts(opt)
@@ -52,5 +77,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-# python3 simple_inference_py.py -config translate_opts_py.yaml

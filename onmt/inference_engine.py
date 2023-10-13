@@ -50,9 +50,7 @@ class InferenceEngine(object):
                 src=src,
             )
             infer_iter = IterOnDevice(infer_iter, self.device_id)
-            scores, preds = self._translate(
-                infer_iter
-            )
+            scores, preds = self._translate(infer_iter)
         else:
             scores, preds = self.infer_list_parallel(src)
         return scores, preds
@@ -60,12 +58,14 @@ class InferenceEngine(object):
     def infer_file_parallel(self):
         """File inference in mulitprocessing with partitioned models."""
         raise NotImplementedError(
-            "The inference in mulitprocessing with partitioned models is not implemented.")
+            "The inference in mulitprocessing with partitioned models is not implemented."
+        )
 
     def infer_list_parallel(self, src):
         """The inference in mulitprocessing with partitioned models."""
         raise NotImplementedError(
-            "The inference in mulitprocessing with partitioned models is not implemented.")
+            "The inference in mulitprocessing with partitioned models is not implemented."
+        )
 
     def terminate(self):
         pass
@@ -81,6 +81,7 @@ class InferenceEnginePY(InferenceEngine):
     def __init__(self, opt):
         import torch
         from onmt.translate.translator import build_translator
+
         super().__init__(opt)
         self.opt = opt
 
@@ -126,14 +127,12 @@ class InferenceEnginePY(InferenceEngine):
 
     def _translate(self, infer_iter):
         scores, preds = self.translator._translate(
-            infer_iter,
-            infer_iter.transform,
-            self.opt.attn_debug,
-            self.opt.align_debug)
+            infer_iter, infer_iter.transform, self.opt.attn_debug, self.opt.align_debug
+        )
         return scores, preds
 
     def infer_file_parallel(self):
-        assert self.opt.world_size > 1, 'World size must be greater than 1.'
+        assert self.opt.world_size > 1, "World size must be greater than 1."
         for device_id in range(self.opt.world_size):
             self.queue_instruct[device_id].put(("infer_file", self.opt))
         scores, preds = [], []
@@ -152,7 +151,6 @@ class InferenceEnginePY(InferenceEngine):
         return scores[0], preds[0]
 
     def terminate(self):
-        assert self.opt.world_size > 1, 'World size must be greater than 1.'
         if self.opt.world_size > 1:
             for device_id in range(self.opt.world_size):
                 self.queue_instruct[device_id].put(("stop"))
@@ -170,10 +168,11 @@ class InferenceEngineCT2(InferenceEngine):
     def __init__(self, opt):
         import ctranslate2
         import pyonmttok
+
         super().__init__(opt)
         self.opt = opt
         self.logger = logger
-        assert self.opt.world_size == 1, 'World size must be equal to 1.'
+        assert self.opt.world_size == 1, "World size must be equal to 1."
         self.device_id = 0
         self.transforms_cls = get_transforms_cls(self.opt._all_transform)
         # Build translator
@@ -224,8 +223,10 @@ class InferenceEngineCT2(InferenceEngine):
                 sampling_topp=opt.random_sampling_topp,
                 sampling_temperature=opt.random_sampling_temp,
             )
-            preds = [[self.transform.apply_reverse(tokens) for tokens in out.sequences]
-                     for out in translated_batch]
+            preds = [
+                [self.transform.apply_reverse(tokens) for tokens in out.sequences]
+                for out in translated_batch
+            ]
             scores = [out.scores for out in translated_batch]
         elif opt.model_task == ModelTask.SEQ2SEQ:
             translated_batch = self.translator.translate_batch(
@@ -240,8 +241,10 @@ class InferenceEngineCT2(InferenceEngine):
                 sampling_topp=opt.random_sampling_topp,
                 sampling_temperature=opt.random_sampling_temp,
             )
-            preds = [[self.transform.apply_reverse(tokens) for tokens in out.hypotheses]
-                     for out in translated_batch]
+            preds = [
+                [self.transform.apply_reverse(tokens) for tokens in out.hypotheses]
+                for out in translated_batch
+            ]
             scores = [out.scores for out in translated_batch]
 
         return scores, preds

@@ -10,13 +10,15 @@ from onmt.utils.misc import use_gpu, set_random_seed
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    "--inference_config_file",
-    "-inference_config_file",
-    help="Inference config file",
+    "-inference_config_file", help="Inference config file", required=True, type=str
+)
+parser.add_argument(
+    "-inference_mode",
+    help="Inference mode",
     required=True,
     type=str,
+    choices=["py", "ct2"],
 )
-parser.add_argument("-inference_mode", help="Inference mode", required=True, type=str)
 parser.add_argument(
     "-max_context_length",
     help="Maximum size of the chat history.",
