@@ -339,7 +339,8 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
             for minibatch in p_batch:
                 # for specific case of rnn_packed need to be sorted
                 # within the batch
-                minibatch.sort(key=self.sort_key, reverse=True)
+                if self.task == CorpusTask.TRAIN:
+                    minibatch.sort(key=self.sort_key, reverse=True)
                 tensor_batch = tensorify(self.vocabs, minibatch)
                 yield tensor_batch
 

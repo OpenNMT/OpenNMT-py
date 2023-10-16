@@ -73,9 +73,10 @@ class PositionwiseFeedForward(nn.Module):
         elif not parallel_residual:
             raise ValueError(f"{layer_norm} layer norm type is not supported")
         self.parallel_residual = parallel_residual
+        self.dropout_p = dropout
         self.dropout_1 = nn.Dropout(dropout)
-        self.activation = ACTIVATION_FUNCTIONS[activation_fn]
         self.dropout_2 = nn.Dropout(dropout)
+        self.activation = ACTIVATION_FUNCTIONS[activation_fn]
         if activation_fn == "silu" or activation_fn == "gated-gelu":
             self.w_3 = skip_init(
                 nn.Linear,
@@ -105,9 +106,11 @@ class PositionwiseFeedForward(nn.Module):
         inter = self.activation(inter)
         if self.w_3 is not None:
             inter.mul_(self.maybe_ckpt(self.w_3, norm_x))
-        inter = self.dropout_1(inter)
+        if self.dropout_p > 0:
+            inter = self.dropout_1(inter)
         inter = self.maybe_ckpt(self.w_2, inter)
-        inter = self.dropout_2(inter)
+        if self.dropout_p > 0:
+            inter = self.dropout_2(inter)
 
         if self.parallel_gpu > 1:
             dist.all_reduce(inter)

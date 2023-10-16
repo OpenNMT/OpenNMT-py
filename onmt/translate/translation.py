@@ -1,6 +1,7 @@
 """ Translation main class """
 import os
-import torch
+
+# import torch
 from onmt.constants import DefaultTokens
 from onmt.utils.alignment import build_align_pharaoh
 
@@ -20,8 +21,7 @@ class TranslationBuilder(object):
        replace_unk (bool): replace unknown words using attention
     """
 
-    def __init__(self, data, vocabs, n_best=1, replace_unk=False, phrase_table=""):
-        self.data = data
+    def __init__(self, vocabs, n_best=1, replace_unk=False, phrase_table=""):
         self.vocabs = vocabs
         self.n_best = n_best
         self.replace_unk = replace_unk
@@ -34,27 +34,9 @@ class TranslationBuilder(object):
                     )
                     self.phrase_table_dict[phrase_src] = phrase_trg
 
-    def _build_source_tokens(self, src):
-        tokens = []
-        for tok in src:
-            tokens.append(self.vocabs["src"].lookup_index(tok))
-            if tokens[-1] == DefaultTokens.PAD:
-                tokens = tokens[:-1]
-                break
-        return tokens
-
-    def _build_target_tokens(self, src, src_raw, pred, attn):
-        tokens = []
-
-        for tok in pred:
-            if tok < len(self.vocabs["tgt"]):
-                tokens.append(self.vocabs["tgt"].lookup_index(tok))
-            else:
-                vl = len(self.vocabs["tgt"])
-                tokens.append(self.vocabs["src"].lookup_index(tok - vl))
-            if tokens[-1] == DefaultTokens.EOS:
-                tokens = tokens[:-1]
-                break
+    def _build_target_tokens(self, src, src_raw, pred, attn, voc):
+        # we miss something for copy_attn / use_src_map
+        tokens = [voc[tok] for tok in pred[:-1]]
         if self.replace_unk and attn is not None and src is not None:
             for i in range(len(tokens)):
                 if tokens[i] == DefaultTokens.UNK:
@@ -91,21 +73,33 @@ class TranslationBuilder(object):
 
         if not any(align):  # when align is a empty nested list
             align = [None] * batch_size
-
-        # Sorting
+        """
         inds, perm = torch.sort(batch["indices"])
 
         src = batch["src"][:, :, 0].index_select(0, perm)
+        srclen = batch["srclen"][:].index_select(0, perm)
         if "tgt" in batch.keys():
             tgt = batch["tgt"][:, :, 0].index_select(0, perm)
         else:
             tgt = None
+        """
+        src = batch["src"][:, :, 0]
+        srclen = batch["srclen"][:]
+        if "tgt" in batch.keys():
+            tgt = batch["tgt"][:, :, 0]
+        else:
+            tgt = None
 
         translations = []
+        voc_src, voc_tgt = (
+            self.vocabs["src"].ids_to_tokens,
+            self.vocabs["tgt"].ids_to_tokens,
+        )
 
+        # These comp lists are costy but less than for loops
         for b in range(batch_size):
             if src is not None:
-                src_raw = self._build_source_tokens(src[b, :])
+                src_raw = [voc_src[tok] for tok in src[b, : srclen[b]]]
             else:
                 src_raw = None
             pred_sents = [
@@ -114,6 +108,7 @@ class TranslationBuilder(object):
                     src_raw,
                     preds[b][n],
                     align[b][n] if align[b] is not None else attn[b][n],
+                    voc_tgt,
                 )
                 for n in range(self.n_best)
             ]
@@ -124,6 +119,7 @@ class TranslationBuilder(object):
                     src_raw,
                     tgt[b, 1:] if tgt is not None else None,
                     None,
+                    voc_tgt,
                 )
 
             translation = Translation(

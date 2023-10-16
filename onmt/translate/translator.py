@@ -6,7 +6,7 @@ import time
 import numpy as np
 from itertools import count, zip_longest
 from copy import deepcopy
-
+import cProfile
 import torch
 import torch.nn.functional as F
 from torch.nn.utils.rnn import pad_sequence
@@ -322,7 +322,6 @@ class Inference(object):
                 of `n_best` predictions
         """
         xlation_builder = onmt.translate.TranslationBuilder(
-            infer_iter,
             self.vocabs,
             self.n_best,
             self.replace_unk,
@@ -391,11 +390,19 @@ class Inference(object):
                     inserted_so_far += len(sub_src) - 1
             return trans_copy
 
+        profile = cProfile.Profile()
+        profile.enable()
+
         for batch in infer_iter:
+
             batch_data = self.translate_batch(batch, attn_debug)
 
             translations = xlation_builder.from_batch(batch_data)
-            if not isinstance(self, GeneratorLM):
+            if (
+                not isinstance(self, GeneratorLM)
+                and (batch["src"] == self._tgt_sep_idx).any().item()
+            ):
+                # For seq2seq when we need to force doc to spit the same number of sents
                 translations = _maybe_retranslate(translations, batch)
 
             for j, trans in enumerate(translations):
@@ -482,6 +489,10 @@ class Inference(object):
                         os.write(1, output.encode("utf-8"))
 
         end_time = time.time()
+        # print(all_predictions)
+        # print(all_scores)
+        profile.disable()
+        profile.print_stats(sort="cumulative")
 
         if self.report_score:
             msg = self._report_score("PRED", pred_score_total, len(all_scores))
