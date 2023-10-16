@@ -6,8 +6,6 @@ import onmt.opts as opts
 from onmt.utils.parse import ArgumentParser
 from onmt.utils.misc import use_gpu, set_random_seed
 
-OUTDIR = "outputs/"
-DATASET = "input_examples.txt"
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -20,9 +18,23 @@ parser.add_argument(
     type=str,
     choices=["py", "ct2"],
 )
+parser.add_argument(
+    "-input_file",
+    help="File with formatted input examples.",
+    required=True,
+    type=str,
+)
+parser.add_argument(
+    "-output_directory",
+    help="Output directory.",
+    required=True,
+    type=str,
+)
 args = parser.parse_args()
 inference_config_file = args.inference_config_file
 inference_mode = args.inference_mode
+input_file = args.input_file
+output_directory = args.output_directory
 
 
 def _get_parser():
@@ -42,10 +54,11 @@ def evaluate(opt, output_filename):
 
         engine = InferenceEnginePY(opt)
     elif inference_mode == "ct2":
+        print("Inference with ct2 ...")
         from onmt.inference_engine import InferenceEngineCT2
 
         engine = InferenceEngineCT2(opt)
-    engine.opt.src = DATASET
+    engine.opt.src = input_file
     start = time.time()
     scores, preds = engine.infer_file()
     engine.terminate()
@@ -71,7 +84,7 @@ def main():
     set_random_seed(opt.seed, use_gpu(opt))
     base_name = os.path.basename(opt.models[0])
     print("# model: ", base_name)
-    output_filename = os.path.join(OUTDIR, f"outputs_{base_name}_py.json")
+    output_filename = os.path.join(output_directory, f"outputs_{base_name}_py.json")
     evaluate(opt, output_filename)
 
 

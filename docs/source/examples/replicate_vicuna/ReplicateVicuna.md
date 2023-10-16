@@ -179,7 +179,20 @@ You can test other decoding methods and paramaters.
 
 To obtain the model's inference you can run this command:
 
+
 ```shell
-python3 simple_inference.py -inference_config_file translate_opts_py.yaml -inference_mode py 
-python3 simple_inference.py -inference_config_file translate_opts_ct2.yaml -inference_mode ct2 
+python3 simple_inference.py \
+    -input_file input_examples.txt \
+    -inference_config_file translate_opts_py.yaml \
+    -inference_mode py \
+    -output_dir outputs
+```
+Or:
+
+```shell
+python3 simple_inference.py \
+    -input_file input_examples.txt \
+    -inference_config_file translate_opts_ct2.yaml \
+    -inference_mode ct2 \
+    -output_dir outputs
 ```

@@ -1,10 +1,13 @@
 model_task: "lm"
-model: finetuned_llama7B / llama7B - vicuna - onmt_step_4000.concat.pt
+model: finetuned_llama7B/llama7B-vicuna-onmt_step_4000.concat.pt
 transforms: [sentencepiece]
-src_subword_model: llama / tokenizer.model
-tgt_subword_model: llama / tokenizer.model
-world_size: 1
-gpu_ranks: [0]
+src_subword_model: /nas-labs/LM/models/llama/tokenizer.model
+tgt_subword_model: /nas-labs/LM/models/llama/tokenizer.model
+# world_size: 1
+# gpu_ranks: [0]
+world_size: 4
+gpu_ranks: [0, 1, 2, 3]
+parallel_mode: tensor_parallel
 gpu: 0
 max_length: 512
 batch_type: sents
