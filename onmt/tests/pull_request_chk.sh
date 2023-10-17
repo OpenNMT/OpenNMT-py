@@ -506,6 +506,20 @@ rm $TMP_OUT_DIR/src-test.txt
 rm $TMP_OUT_DIR/inference_engine_lm_py_outputs_file.json
 rm $TMP_OUT_DIR/inference_engine_lm_py_outputs_list.json
 
+echo "  [+] Testing CT2 LM inference engine .."| tee -a ${LOG_FILE}
+head ${DATA_DIR}/src-test.txt > $TMP_OUT_DIR/src-test.txt
+${PYTHON} onmt/tests/test_inference_engines.py -model ${TEST_DIR}/test_model_lm_ct2 \
+            -model_task lm \
+            -input_file $TMP_OUT_DIR/src-test.txt \
+            -inference_config_file ${DATA_DIR}/inference-engine_py.yaml \
+            -inference_mode ct2 \
+            -out $TMP_OUT_DIR/inference_engine_lm_py_outputs  >> ${LOG_FILE} 2>&1
+[ "$?" -eq 0 ] || error_exit
+echo "Succeeded" | tee -a ${LOG_FILE}
+rm $TMP_OUT_DIR/src-test.txt
+rm $TMP_OUT_DIR/inference_engine_lm_ct2_outputs_file.json
+rm $TMP_OUT_DIR/inference_engine_lm_ct2_outputs_list.json
+
 echo -n "  [+] Testing PY SEQ2SEQ inference engine .."
 echo "  [+] Testing PY SEQ2SEQ inference engine .."| tee -a ${LOG_FILE}
 head ${DATA_DIR}/src-test.txt > $TMP_OUT_DIR/src-test.txt

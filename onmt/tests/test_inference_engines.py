@@ -1,4 +1,3 @@
-import argparse
 import json
 import time
 import onmt.opts as opts
@@ -6,7 +5,7 @@ from onmt.utils.parse import ArgumentParser
 from onmt.utils.misc import use_gpu, set_random_seed
 
 
-parser = argparse.ArgumentParser()
+parser = ArgumentParser()
 parser.add_argument("-model", help="Path to model.", required=True, type=str)
 parser.add_argument(
     "-model_task",
@@ -66,6 +65,7 @@ def evaluate(opt, method="file"):
         print("Inference with ct2 ...")
         from onmt.inference_engine import InferenceEngineCT2
 
+        opt.src_subword_vocab = opt.models[0] + "/vocabulary.json"
         engine = InferenceEngineCT2(opt)
     start = time.time()
     if method == "file":

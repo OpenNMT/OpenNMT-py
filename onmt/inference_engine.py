@@ -171,17 +171,23 @@ class InferenceEngineCT2(InferenceEngine):
         super().__init__(opt)
         self.opt = opt
         self.logger = logger
-        assert self.opt.world_size == 1, "World size must be equal to 1."
-        self.device_id = 0
+        assert self.opt.world_size <= 1, "World size must be less than 1."
+        self.device_id = 0 if opt.world_size == 1 else -1
+        if opt.world_size == 1:
+            self.device_index = opt.gpu_ranks
+            self.device = "cuda"
+        else:
+            self.device_index = 0
+            self.device = "cpu"
         self.transforms_cls = get_transforms_cls(self.opt._all_transform)
         # Build translator
         if opt.model_task == ModelTask.LANGUAGE_MODEL:
             self.translator = ctranslate2.Generator(
-                opt.models[0], device="cuda", device_index=opt.gpu_ranks
+                opt.models[0], device=self.device, device_index=self.device_index
             )
         else:
             self.translator = ctranslate2.Translator(
-                self.opt.models[0], device="cuda", device_index=opt.gpu_ranks
+                self.opt.models[0], device=self.device, device_index=self.device_index
             )
         # Build vocab
         vocab_path = opt.src_subword_vocab
