@@ -193,8 +193,7 @@ def unshape(x: Tensor) -> Tensor:
     return x.transpose(1, 2).contiguous().view(x_0, -1, x_1 * x_3)
 
 
-class MultiHeadedAttention(nn.Module):
-    # class MultiHeadedAttention(torch.jit.ScriptModule):
+class MultiHeadedAttention(torch.nn.Module):
     """Multi-Head Attention module from "Attention is All You Need"
     :cite:`DBLP:journals/corr/VaswaniSPUJGKP17`.
 
@@ -358,7 +357,6 @@ class MultiHeadedAttention(nn.Module):
         self.dropout.p = dropout
         self.dropout_p = dropout
 
-    # @torch.jit.script_method
     def forward(
         self,
         key: Tensor,

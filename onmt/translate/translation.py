@@ -64,12 +64,13 @@ class TranslationBuilder(object):
         )
         batch_size = len(batch["srclen"])
 
-        preds, pred_score, attn, align, gold_score = (
+        preds, pred_score, attn, align, gold_score, ind = (
             translation_batch["predictions"],
             translation_batch["scores"],
             translation_batch["attention"],
             translation_batch["alignment"],
             translation_batch["gold_score"],
+            batch["indices"],
         )
 
         if not any(align):  # when align is a empty nested list
@@ -83,10 +84,7 @@ class TranslationBuilder(object):
             tgt = None
 
         translations = []
-        voc_src, voc_tgt = (
-            self.vocabs["src"].ids_to_tokens,
-            self.vocabs["tgt"].ids_to_tokens,
-        )
+        voc_tgt = self.vocabs["tgt"].ids_to_tokens
 
         # These comp lists are costy but less than for loops
         for b in range(batch_size):
@@ -94,14 +92,11 @@ class TranslationBuilder(object):
                 dyn_voc = dyn_voc_batch[b]
             else:
                 dyn_voc = None
-            if src is not None:
-                src_raw = [voc_src[tok] for tok in src[b, : srclen[b]]]
-            else:
-                src_raw = None
+
             pred_sents = [
                 self._build_target_tokens(
                     src[b, :] if src is not None else None,
-                    src_raw,
+                    srclen[b],
                     preds[b][n],
                     align[b][n] if align[b] is not None else attn[b][n],
                     voc_tgt,
@@ -113,7 +108,7 @@ class TranslationBuilder(object):
             if tgt is not None:
                 gold_sent = self._build_target_tokens(
                     src[b, :] if src is not None else None,
-                    src_raw,
+                    srclen[b],
                     tgt[b, 1:] if tgt is not None else None,
                     None,
                     voc_tgt,
@@ -122,13 +117,14 @@ class TranslationBuilder(object):
 
             translation = Translation(
                 src[b, :] if src is not None else None,
-                src_raw,
+                srclen[b],
                 pred_sents,
                 attn[b],
                 pred_score[b],
                 gold_sent,
                 gold_score[b],
                 align[b],
+                ind[b],
             )
             translations.append(translation)
 
@@ -153,41 +149,44 @@ class Translation(object):
 
     __slots__ = [
         "src",
-        "src_raw",
+        "srclen",
         "pred_sents",
         "attns",
         "pred_scores",
         "gold_sent",
         "gold_score",
         "word_aligns",
+        "indices",
     ]
 
     def __init__(
         self,
         src,
-        src_raw,
+        srclen,
         pred_sents,
         attn,
         pred_scores,
         tgt_sent,
         gold_score,
         word_aligns,
+        indices,
     ):
         self.src = src
-        self.src_raw = src_raw
+        self.srclen = srclen
         self.pred_sents = pred_sents
         self.attns = attn
         self.pred_scores = pred_scores
         self.gold_sent = tgt_sent
         self.gold_score = gold_score
         self.word_aligns = word_aligns
+        self.indices = indices
 
-    def log(self, sent_number):
+    def log(self, sent_number, src_raw=""):
         """
         Log translation.
         """
 
-        msg = ["\nSENT {}: {}\n".format(sent_number, self.src_raw)]
+        msg = ["\nSENT {}: {}\n".format(sent_number, src_raw)]
 
         best_pred = self.pred_sents[0]
         best_score = self.pred_scores[0]

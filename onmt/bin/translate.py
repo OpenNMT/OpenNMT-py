@@ -10,6 +10,8 @@ import onmt.opts as opts
 from onmt.utils.parse import ArgumentParser
 from onmt.utils.misc import use_gpu, set_random_seed
 
+# import cProfile
+
 
 def translate(opt):
     ArgumentParser.validate_translate_opts(opt)
@@ -44,16 +46,19 @@ def translate(opt):
 
 def _get_parser():
     parser = ArgumentParser(description="translate.py")
-
     opts.config_opts(parser)
     opts.translate_opts(parser, dynamic=True)
     return parser
 
 
 def main():
+    # profile = cProfile.Profile()
+    # profile.enable()
     parser = _get_parser()
     opt = parser.parse_args()
     translate(opt)
+    # profile.disable()
+    # profile.print_stats(sort="cumulative")
 
 
 if __name__ == "__main__":

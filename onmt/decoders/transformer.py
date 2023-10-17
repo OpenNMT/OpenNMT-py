@@ -323,7 +323,9 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
 
         norm_layer_in = self.layer_norm_1(layer_in)
 
-        self_attn, _ = self._forward_self_attn(norm_layer_in, dec_mask, step)
+        self_attn, _ = self._forward_self_attn(
+            norm_layer_in, dec_mask, step, return_attn=return_attn
+        )
         if self.dropout_p > 0:
             self_attn = self.dropout(self_attn)
         if self.parallel_residual:
@@ -579,7 +581,9 @@ class TransformerDecoder(TransformerDecoderBase):
         tgt_pad_mask = tgt[:, :, 0].eq(pad_idx).unsqueeze(1)  # [B, 1, T_tgt]
 
         with_align = kwargs.pop("with_align", False)
-        return_attn = with_align or self._copy
+        return_attn = kwargs.pop("return_attn", False)
+        return_attn = with_align or self._copy or return_attn
+
         attn_aligns = []
 
         for layer in self.transformer_layers:
@@ -803,7 +807,8 @@ class TransformerLMDecoder(TransformerDecoderBase):
         tgt_pad_mask = tgt[:, :, 0].eq(pad_idx).unsqueeze(1)  # [B, 1, T_tgt]
 
         with_align = kwargs.pop("with_align", False)
-        return_attn = with_align or self._copy
+        return_attn = kwargs.pop("return_attn", False)
+        return_attn = with_align or self._copy or return_attn
         assert not with_align, "TransformerLMDecoder does not support align"
 
         for layer in self.transformer_layers:
