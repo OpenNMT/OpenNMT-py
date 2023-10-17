@@ -6,7 +6,6 @@ import time
 import numpy as np
 from itertools import count, zip_longest
 from copy import deepcopy
-import cProfile
 import torch
 import torch.nn.functional as F
 from torch.nn.utils.rnn import pad_sequence
@@ -390,9 +389,6 @@ class Inference(object):
                     inserted_so_far += len(sub_src) - 1
             return trans_copy
 
-        profile = cProfile.Profile()
-        profile.enable()
-
         for batch in infer_iter:
 
             batch_data = self.translate_batch(batch, attn_debug)
@@ -489,10 +485,6 @@ class Inference(object):
                         os.write(1, output.encode("utf-8"))
 
         end_time = time.time()
-        # print(all_predictions)
-        # print(all_scores)
-        profile.disable()
-        profile.print_stats(sort="cumulative")
 
         if self.report_score:
             msg = self._report_score("PRED", pred_score_total, len(all_scores))

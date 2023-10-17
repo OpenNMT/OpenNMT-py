@@ -454,38 +454,30 @@ class MultiHeadedAttention(nn.Module):
             value = value.view(b, qh, l, d)
 
         # 2) When standard pos. enc. or rotary, use flash attention
+
+        # Ultimately flashv2 will be part of pytorch https://github.com/pytorch/pytorch/pull/105602
+        # In the meantime: if vanilla tranformer or Rotary embeddings (not rel_pos, not alibi)
+        # then use flash2 if seq len > 256 otherwise use xtransformer from pt2 uptream
+
         flash2 = (
-            torch.cuda.is_available()
-            and query.device != torch.device("cpu")
+            query.device != torch.device("cpu")
             and self.flash2
             and l > 256  # https://github.com/Dao-AILab/flash-attention/issues/591
-        )  # https://github.com/Dao-AILab/flash-attention#installation-and-features
-        if self.max_relative_positions in [-1, 0] and not return_attn:
-            if self.is_decoder and self.attn_type == "self":
-                if flash2:
-                    attn_output = self.flash_attn_func(
-                        query.transpose(1, 2),
-                        key.transpose(1, 2),
-                        value.transpose(1, 2),
-                        dropout_p=self.dropout_p,
-                        causal=mask is not None,
-                    ).transpose(1, 2)
-                else:
-                    attn_output = F.scaled_dot_product_attention(
-                        query,
-                        key,
-                        value,
-                        None,
-                        self.dropout_p,
-                        is_causal=mask is not None,
-                    )
-            elif self.attn_type == "self" and flash2:
+        )
+
+        if (
+            self.max_relative_positions in [-1, 0]
+            and not return_attn
+            and query.device != torch.device("cpu")
+        ):
+            causal = self.is_decoder and self.attn_type == "self" and mask is not None
+            if self.is_decoder and self.attn_type == "self" and flash2:
                 attn_output = self.flash_attn_func(
                     query.transpose(1, 2),
                     key.transpose(1, 2),
                     value.transpose(1, 2),
                     dropout_p=self.dropout_p,
-                    causal=False,
+                    causal=causal,
                 ).transpose(1, 2)
             else:
                 with torch.backends.cuda.sdp_kernel(
