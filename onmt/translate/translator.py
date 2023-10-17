@@ -390,7 +390,6 @@ class Inference(object):
             return trans_copy
 
         for batch in infer_iter:
-
             batch_data = self.translate_batch(batch, attn_debug)
 
             translations = xlation_builder.from_batch(batch_data)

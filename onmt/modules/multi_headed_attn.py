@@ -426,12 +426,9 @@ class MultiHeadedAttention(nn.Module):
                 self.layer_cache[1]["keys"] = key
                 self.layer_cache[1]["values"] = value
         else:
-            # key = self.maybe_ckpt(self.linear_keys, key)
-            # value = self.maybe_ckpt(self.linear_values, value)
-            # query = self.maybe_ckpt(self.linear_query, query)
-            key = self.linear_keys(key)
-            value = self.linear_values(value)
-            query = self.linear_query(query)
+            key = self.maybe_ckpt(self.linear_keys, key)
+            value = self.maybe_ckpt(self.linear_values, value)
+            query = self.maybe_ckpt(self.linear_query, query)
             key = shape(key, self.dim_per_head)
             value = shape(value, self.dim_per_head)
             query = shape(query, self.dim_per_head)

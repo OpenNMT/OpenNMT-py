@@ -1,7 +1,5 @@
 """ Translation main class """
 import os
-
-# import torch
 from onmt.constants import DefaultTokens
 from onmt.utils.alignment import build_align_pharaoh
 
