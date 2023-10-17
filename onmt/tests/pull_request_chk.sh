@@ -483,7 +483,7 @@ ${PYTHON} translate.py -model ${TEST_DIR}/test_model_lm.pt  \
             -ban_unk_token \
             -min_length 5 \
             -out $TMP_OUT_DIR/gen_sampling  >> ${LOG_FILE} 2>&1
-diff ${DATA_DIR}/data_lm/gen-sampling-beams-sol$(python -c "import torch; print(torch.__version__[0])").txt $TMP_OUT_DIR/gen_sampling
+diff ${DATA_DIR}/data_lm/gen-sampling-beams-sol$($PYTHON -c "import torch; print(torch.__version__[0])").txt $TMP_OUT_DIR/gen_sampling
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 rm $TMP_OUT_DIR/gen_sampling
