@@ -25,7 +25,7 @@ class InferenceEngine(object):
 
     def infer_file(self):
         """File inference. Source file must be the opt.src argument"""
-        if self.opt.world_size == 1:
+        if self.opt.world_size <= 1:
             infer_iter = build_dynamic_dataset_iter(
                 self.opt,
                 self.transforms_cls,
@@ -38,10 +38,9 @@ class InferenceEngine(object):
             scores, preds = self.infer_file_parallel()
         return scores, preds
 
-    # @classmethod
     def infer_list(self, src):
         """List of strings inference `src`"""
-        if self.opt.world_size == 1:
+        if self.opt.world_size <= 1:
             infer_iter = build_dynamic_dataset_iter(
                 self.opt,
                 self.transforms_cls,
@@ -118,7 +117,7 @@ class InferenceEnginePY(InferenceEngine):
                 print(" Starting process pid: %d  " % self.procs[device_id].pid)
                 self.error_handler.add_child(self.procs[device_id].pid)
         else:
-            self.device_id = 0
+            self.device_id = 0 if opt.world_size == 1 else -1
             self.translator = build_translator(
                 opt, self.device_id, logger=logger, report_score=True
             )
