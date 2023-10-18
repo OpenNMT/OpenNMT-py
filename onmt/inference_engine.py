@@ -1,7 +1,6 @@
 import json
 from onmt.constants import CorpusTask, DefaultTokens, ModelTask
 from onmt.inputters.dynamic_iterator import build_dynamic_dataset_iter
-from onmt.inputters.inputter import IterOnDevice
 from onmt.utils.distributed import ErrorHandler, spawned_infer
 from onmt.utils.logging import logger
 from onmt.transforms import get_transforms_cls, make_transforms, TransformPipe
@@ -31,8 +30,8 @@ class InferenceEngine(object):
                 self.transforms_cls,
                 self.vocabs,
                 task=CorpusTask.INFER,
+                device_id=self.device_id,
             )
-            infer_iter = IterOnDevice(infer_iter, self.device_id)
             scores, preds = self._translate(infer_iter)
         else:
             scores, preds = self.infer_file_parallel()
@@ -47,8 +46,8 @@ class InferenceEngine(object):
                 self.vocabs,
                 task=CorpusTask.INFER,
                 src=src,
+                device_id=self.device_id,
             )
-            infer_iter = IterOnDevice(infer_iter, self.device_id)
             scores, preds = self._translate(infer_iter)
         else:
             scores, preds = self.infer_list_parallel(src)
@@ -126,7 +125,7 @@ class InferenceEnginePY(InferenceEngine):
 
     def _translate(self, infer_iter):
         scores, preds = self.translator._translate(
-            infer_iter, infer_iter.transform, self.opt.attn_debug, self.opt.align_debug
+            infer_iter, infer_iter.transforms, self.opt.attn_debug, self.opt.align_debug
         )
         return scores, preds
 
@@ -157,7 +156,6 @@ class InferenceEnginePY(InferenceEngine):
 
 
 class InferenceEngineCT2(InferenceEngine):
-
     """Inference engine subclass to run inference with ctranslate2.
 
     Args:

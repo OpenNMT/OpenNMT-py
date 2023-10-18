@@ -29,7 +29,6 @@ from onmt.inputters.text_utils import (
     parse_features,
     append_features_to_text,
 )
-from onmt.inputters.inputter import IterOnDevice
 from onmt.utils.alignment import build_align_pharaoh
 
 
@@ -599,11 +598,17 @@ class ServerModel(object):
                 if isinstance(self.translator, CTranslate2Translator):
                     scores, predictions = self.translator.translate(examples)
                 else:
-                    infer_iter = textbatch_to_tensor(self.translator.vocabs, examples)
-                    device = (
+                    device_id = (
                         self.translator._dev.index if self.translator._use_cuda else -1
                     )
-                    infer_iter = IterOnDevice(infer_iter, device)
+                    device = (
+                        torch.device(device_id)
+                        if device_id >= 0
+                        else torch.device("cpu")
+                    )
+                    infer_iter = textbatch_to_tensor(
+                        self.translator.vocabs, examples, device
+                    )
                     scores, predictions = self.translator._translate(infer_iter)
             except (RuntimeError, Exception) as e:
                 err = "Error: %s" % str(e)

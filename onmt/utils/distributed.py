@@ -13,7 +13,6 @@ from onmt.transforms import get_transforms_cls
 from onmt.constants import CorpusTask
 from onmt.utils.logging import init_logger, logger
 from onmt.inputters.dynamic_iterator import build_dynamic_dataset_iter
-from onmt.inputters.inputter import IterOnDevice
 
 
 def is_master(opt, device_id):
@@ -211,8 +210,8 @@ def spawned_infer(opt, device_id, error_queue, queue_instruct, queue_result):
                     translator.vocabs,
                     task=CorpusTask.INFER,
                     src=src,
+                    device_id=device_id,
                 )
-                infer_iter = IterOnDevice(infer_iter, device_id)
                 scores, preds = translator._translate(
                     infer_iter, infer_iter.transform, opt.attn_debug, opt.align_debug
                 )
@@ -221,9 +220,12 @@ def spawned_infer(opt, device_id, error_queue, queue_instruct, queue_result):
             elif instruction[0] == "infer_file":
                 opt.src = instruction[1].src
                 infer_iter = build_dynamic_dataset_iter(
-                    opt, transforms_cls, translator.vocabs, task=CorpusTask.INFER
+                    opt,
+                    transforms_cls,
+                    translator.vocabs,
+                    task=CorpusTask.INFER,
+                    device_id=device_id,
                 )
-                infer_iter = IterOnDevice(infer_iter, device_id)
                 scores, preds = translator._translate(
                     infer_iter, infer_iter.transform, opt.attn_debug, opt.align_debug
                 )

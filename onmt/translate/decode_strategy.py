@@ -156,7 +156,7 @@ class DecodeStrategy(object):
             device=device,
         )
         self.is_finished = torch.zeros(
-            [self.batch_size, self.parallel_paths], dtype=torch.uint8, device=device
+            [self.batch_size, self.parallel_paths], dtype=torch.bool, device=device
         )
         if target_prefix is not None:
             batch_size, seq_len, n_feats = target_prefix.size()

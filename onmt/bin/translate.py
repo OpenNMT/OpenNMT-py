@@ -3,12 +3,13 @@
 from onmt.utils.logging import init_logger
 from onmt.translate.translator import build_translator
 from onmt.inputters.dynamic_iterator import build_dynamic_dataset_iter
-from onmt.inputters.inputter import IterOnDevice
 from onmt.transforms import get_transforms_cls
 from onmt.constants import CorpusTask
 import onmt.opts as opts
 from onmt.utils.parse import ArgumentParser
 from onmt.utils.misc import use_gpu, set_random_seed
+
+# import cProfile
 
 
 def translate(opt):
@@ -30,13 +31,12 @@ def translate(opt):
         translator.vocabs,
         task=CorpusTask.INFER,
         copy=translator.copy_attn,
+        device_id=opt.gpu,
     )
-
-    infer_iter = IterOnDevice(infer_iter, opt.gpu)
 
     _, _ = translator._translate(
         infer_iter,
-        transform=infer_iter.transform,
+        transform=infer_iter.transforms,
         attn_debug=opt.attn_debug,
         align_debug=opt.align_debug,
     )
@@ -44,16 +44,19 @@ def translate(opt):
 
 def _get_parser():
     parser = ArgumentParser(description="translate.py")
-
     opts.config_opts(parser)
     opts.translate_opts(parser, dynamic=True)
     return parser
 
 
 def main():
+    # profile = cProfile.Profile()
+    # profile.enable()
     parser = _get_parser()
     opt = parser.parse_args()
     translate(opt)
+    # profile.disable()
+    # profile.print_stats(sort="cumulative")
 
 
 if __name__ == "__main__":

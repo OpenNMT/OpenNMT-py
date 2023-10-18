@@ -1,6 +1,5 @@
 """ Translation main class """
 import os
-import torch
 from onmt.constants import DefaultTokens
 from onmt.utils.alignment import build_align_pharaoh
 
@@ -20,8 +19,7 @@ class TranslationBuilder(object):
        replace_unk (bool): replace unknown words using attention
     """
 
-    def __init__(self, data, vocabs, n_best=1, replace_unk=False, phrase_table=""):
-        self.data = data
+    def __init__(self, vocabs, n_best=1, replace_unk=False, phrase_table=""):
         self.vocabs = vocabs
         self.n_best = n_best
         self.replace_unk = replace_unk
@@ -34,27 +32,16 @@ class TranslationBuilder(object):
                     )
                     self.phrase_table_dict[phrase_src] = phrase_trg
 
-    def _build_source_tokens(self, src):
-        tokens = []
-        for tok in src:
-            tokens.append(self.vocabs["src"].lookup_index(tok))
-            if tokens[-1] == DefaultTokens.PAD:
-                tokens = tokens[:-1]
-                break
-        return tokens
-
-    def _build_target_tokens(self, src, src_raw, pred, attn):
-        tokens = []
-
-        for tok in pred:
-            if tok < len(self.vocabs["tgt"]):
-                tokens.append(self.vocabs["tgt"].lookup_index(tok))
-            else:
-                vl = len(self.vocabs["tgt"])
-                tokens.append(self.vocabs["src"].lookup_index(tok - vl))
-            if tokens[-1] == DefaultTokens.EOS:
-                tokens = tokens[:-1]
-                break
+    def _build_target_tokens(self, src, src_raw, pred, attn, voc, dyn_voc):
+        if dyn_voc is None:
+            tokens = [voc[tok] for tok in pred[:-1]]
+        else:
+            tokens = [
+                voc[tok]
+                if tok < len(voc)
+                else dyn_voc.ids_to_tokens[tok - len(self.vocabs["src"].ids_to_tokens)]
+                for tok in pred[:-1]
+            ]
         if self.replace_unk and attn is not None and src is not None:
             for i in range(len(tokens)):
                 if tokens[i] == DefaultTokens.UNK:
@@ -68,52 +55,52 @@ class TranslationBuilder(object):
 
     def from_batch(self, translation_batch):
         batch = translation_batch["batch"]
+        if "src_ex_vocab" in batch.keys():
+            dyn_voc_batch = batch["src_ex_vocab"]
+        else:
+            dyn_voc_batch = None
         assert len(translation_batch["gold_score"]) == len(
             translation_batch["predictions"]
         )
         batch_size = len(batch["srclen"])
 
-        preds, pred_score, attn, align, gold_score, indices = list(
-            zip(
-                *sorted(
-                    zip(
-                        translation_batch["predictions"],
-                        translation_batch["scores"],
-                        translation_batch["attention"],
-                        translation_batch["alignment"],
-                        translation_batch["gold_score"],
-                        batch["indices"],
-                    ),
-                    key=lambda x: x[-1],
-                )
-            )
+        preds, pred_score, attn, align, gold_score, ind = (
+            translation_batch["predictions"],
+            translation_batch["scores"],
+            translation_batch["attention"],
+            translation_batch["alignment"],
+            translation_batch["gold_score"],
+            batch["indices"],
         )
 
         if not any(align):  # when align is a empty nested list
             align = [None] * batch_size
 
-        # Sorting
-        inds, perm = torch.sort(batch["indices"])
-
-        src = batch["src"][:, :, 0].index_select(0, perm)
+        src = batch["src"][:, :, 0]
+        srclen = batch["srclen"][:]
         if "tgt" in batch.keys():
-            tgt = batch["tgt"][:, :, 0].index_select(0, perm)
+            tgt = batch["tgt"][:, :, 0]
         else:
             tgt = None
 
         translations = []
+        voc_tgt = self.vocabs["tgt"].ids_to_tokens
 
+        # These comp lists are costy but less than for loops
         for b in range(batch_size):
-            if src is not None:
-                src_raw = self._build_source_tokens(src[b, :])
+            if dyn_voc_batch is not None:
+                dyn_voc = dyn_voc_batch[b]
             else:
-                src_raw = None
+                dyn_voc = None
+
             pred_sents = [
                 self._build_target_tokens(
                     src[b, :] if src is not None else None,
-                    src_raw,
+                    srclen[b],
                     preds[b][n],
                     align[b][n] if align[b] is not None else attn[b][n],
+                    voc_tgt,
+                    dyn_voc,
                 )
                 for n in range(self.n_best)
             ]
@@ -121,20 +108,23 @@ class TranslationBuilder(object):
             if tgt is not None:
                 gold_sent = self._build_target_tokens(
                     src[b, :] if src is not None else None,
-                    src_raw,
+                    srclen[b],
                     tgt[b, 1:] if tgt is not None else None,
                     None,
+                    voc_tgt,
+                    dyn_voc,
                 )
 
             translation = Translation(
                 src[b, :] if src is not None else None,
-                src_raw,
+                srclen[b],
                 pred_sents,
                 attn[b],
                 pred_score[b],
                 gold_sent,
                 gold_score[b],
                 align[b],
+                ind[b],
             )
             translations.append(translation)
 
@@ -159,41 +149,44 @@ class Translation(object):
 
     __slots__ = [
         "src",
-        "src_raw",
+        "srclen",
         "pred_sents",
         "attns",
         "pred_scores",
         "gold_sent",
         "gold_score",
         "word_aligns",
+        "indices",
     ]
 
     def __init__(
         self,
         src,
-        src_raw,
+        srclen,
         pred_sents,
         attn,
         pred_scores,
         tgt_sent,
         gold_score,
         word_aligns,
+        indices,
     ):
         self.src = src
-        self.src_raw = src_raw
+        self.srclen = srclen
         self.pred_sents = pred_sents
         self.attns = attn
         self.pred_scores = pred_scores
         self.gold_sent = tgt_sent
         self.gold_score = gold_score
         self.word_aligns = word_aligns
+        self.indices = indices
 
-    def log(self, sent_number):
+    def log(self, sent_number, src_raw=""):
         """
         Log translation.
         """
 
-        msg = ["\nSENT {}: {}\n".format(sent_number, self.src_raw)]
+        msg = ["\nSENT {}: {}\n".format(sent_number, src_raw)]
 
         best_pred = self.pred_sents[0]
         best_score = self.pred_scores[0]

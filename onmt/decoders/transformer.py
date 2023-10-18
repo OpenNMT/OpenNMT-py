@@ -115,6 +115,7 @@ class TransformerDecoderLayerBase(nn.Module):
             raise ValueError(f"{layer_norm} layer norm type is not supported")
 
         self.dropout = nn.Dropout(dropout)
+        self.dropout_p = dropout
         self.full_context_alignment = full_context_alignment
         self.alignment_heads = alignment_heads
 
@@ -322,8 +323,11 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
 
         norm_layer_in = self.layer_norm_1(layer_in)
 
-        self_attn, _ = self._forward_self_attn(norm_layer_in, dec_mask, step)
-
+        self_attn, _ = self._forward_self_attn(
+            norm_layer_in, dec_mask, step, return_attn=return_attn
+        )
+        if self.dropout_p > 0:
+            self_attn = self.dropout(self_attn)
         if self.parallel_residual:
             ctx_attn, attns = self.context_attn(
                 enc_out,
@@ -337,16 +341,18 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
                 self.feed_forward(norm_layer_in)
                 - norm_layer_in
                 + layer_in
-                + self.dropout(self_attn)
+                + self_attn
                 + ctx_attn
             )
         else:
-            query = self.dropout(self_attn) + layer_in
+            query = self_attn + layer_in
             norm_query = self.layer_norm_2(query)
             ctx_attn, attns = self.context_attn(
                 enc_out, enc_out, norm_query, mask=src_pad_mask, return_attn=return_attn
             )
-            layer_out = self.feed_forward(self.dropout(ctx_attn) + query)
+            if self.dropout_p > 0:
+                ctx_attn = self.dropout(ctx_attn)
+            layer_out = self.feed_forward(ctx_attn + query)
 
         return layer_out, attns
 
@@ -575,7 +581,9 @@ class TransformerDecoder(TransformerDecoderBase):
         tgt_pad_mask = tgt[:, :, 0].eq(pad_idx).unsqueeze(1)  # [B, 1, T_tgt]
 
         with_align = kwargs.pop("with_align", False)
-        return_attn = with_align or self._copy
+        return_attn = kwargs.pop("return_attn", False)
+        return_attn = with_align or self._copy or return_attn
+
         attn_aligns = []
 
         for layer in self.transformer_layers:
@@ -676,7 +684,8 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
         attn_output, attns = self._forward_self_attn(
             norm_layer_in, dec_mask, step, return_attn=return_attn
         )
-
+        if self.dropout_p > 0:
+            attn_output = self.dropout(attn_output)
         if self.parallel_residual:
             # feed_forward applies residual, so we remove and apply residual with un-normed
             if not self.shared_layer_norm:
@@ -684,11 +693,9 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
                 ff_in = norm_res_layer_in
             else:
                 ff_in = norm_layer_in
-            layer_out = (
-                self.feed_forward(ff_in) - ff_in + layer_in + self.dropout(attn_output)
-            )
+            layer_out = self.feed_forward(ff_in) - ff_in + layer_in + attn_output
         else:
-            layer_out = self.dropout(attn_output) + layer_in
+            layer_out = attn_output + layer_in
             layer_out = self.feed_forward(layer_out)
 
         return layer_out, attns
@@ -800,7 +807,8 @@ class TransformerLMDecoder(TransformerDecoderBase):
         tgt_pad_mask = tgt[:, :, 0].eq(pad_idx).unsqueeze(1)  # [B, 1, T_tgt]
 
         with_align = kwargs.pop("with_align", False)
-        return_attn = with_align or self._copy
+        return_attn = kwargs.pop("return_attn", False)
+        return_attn = with_align or self._copy or return_attn
         assert not with_align, "TransformerLMDecoder does not support align"
 
         for layer in self.transformer_layers:
