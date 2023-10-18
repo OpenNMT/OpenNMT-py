@@ -218,6 +218,7 @@ def spawned_infer(opt, device_id, error_queue, queue_instruct, queue_result):
                 queue_result.put(scores)
                 queue_result.put(preds)
             elif instruction[0] == "infer_file":
+                opt.src = instruction[1].src
                 infer_iter = build_dynamic_dataset_iter(
                     opt,
                     transforms_cls,
