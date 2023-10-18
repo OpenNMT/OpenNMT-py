@@ -411,7 +411,7 @@ def build_dynamic_dataset_iter(
         data_loader = DataLoader(
             data_iter,
             batch_size=None,
-            pin_memory=False,
+            pin_memory=True,
             multiprocessing_context="spawn",
             num_workers=data_iter.num_workers,
             worker_init_fn=data_iter._init_datasets,
