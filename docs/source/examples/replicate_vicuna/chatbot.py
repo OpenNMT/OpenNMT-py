@@ -133,6 +133,7 @@ def make_bot_message(prompt, inference_mode):
     src = [prompt.replace("\n", "｟newline｠")]
     if inference_mode == "py":
         scores, predictions = CACHE["inference_engine"].infer_list(src)
+        # The hypotheses are lists of one element but we still need to take the first one.
         bot_message = "\n".join(sent[0] for sent in predictions)
     elif inference_mode == "ct2":
         scores, predictions = CACHE["inference_engine"].infer_list(src)
