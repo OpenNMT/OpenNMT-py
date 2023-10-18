@@ -12,7 +12,7 @@ from onmt.transforms import (
     get_specials,
     get_transforms_cls,
 )
-from onmt.inputters import build_vocab
+from onmt.inputters import build_vocab, IterOnDevice
 from onmt.inputters.inputter import dict_to_vocabs, vocabs_to_dict
 from onmt.inputters.dynamic_iterator import build_dynamic_dataset_iter
 from onmt.inputters.text_corpus import save_transformed_sample
@@ -205,7 +205,7 @@ def main(opt, device_id):
     offset = max(0, device_id) if opt.parallel_mode == "data_parallel" else 0
     stride = max(1, len(opt.gpu_ranks)) if opt.parallel_mode == "data_parallel" else 1
 
-    train_iter = build_dynamic_dataset_iter(
+    _train_iter = build_dynamic_dataset_iter(
         opt,
         transforms_cls,
         vocabs,
@@ -213,17 +213,15 @@ def main(opt, device_id):
         copy=opt.copy_attn,
         stride=stride,
         offset=offset,
-        device_id=device_id,
     )
+    train_iter = IterOnDevice(_train_iter, device_id)
 
     valid_iter = build_dynamic_dataset_iter(
-        opt,
-        transforms_cls,
-        vocabs,
-        task=CorpusTask.VALID,
-        copy=opt.copy_attn,
-        device_id=device_id,
+        opt, transforms_cls, vocabs, task=CorpusTask.VALID, copy=opt.copy_attn
     )
+
+    if valid_iter is not None:
+        valid_iter = IterOnDevice(valid_iter, device_id)
 
     if len(opt.gpu_ranks):
         logger.info("Starting training on GPU: %s" % opt.gpu_ranks)

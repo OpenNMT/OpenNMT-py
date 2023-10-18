@@ -5,6 +5,7 @@ from onmt.translate import GNMTGlobalScorer, Translator
 from onmt.opts import translate_opts
 from onmt.constants import CorpusTask
 from onmt.inputters.dynamic_iterator import build_dynamic_dataset_iter
+from onmt.inputters.inputter import IterOnDevice
 from onmt.transforms import get_transforms_cls, make_transforms, TransformPipe
 
 
@@ -91,7 +92,6 @@ class ScoringPreparator:
             translator.vocabs,
             task=CorpusTask.VALID,
             copy=model_opt.copy_attn,
-            device_id=opt.gpu,
         )
 
         # Retrieve raw references and sources
@@ -104,13 +104,15 @@ class ScoringPreparator:
         ) as f:
             raw_srcs = [line.strip("\n") for line in f if line.strip("\n")]
 
+        valid_iter = IterOnDevice(valid_iter, opt.gpu)
+
         # ########### #
         # Predictions #
         # ########### #
 
         _, preds = translator._translate(
             valid_iter,
-            transform=valid_iter.transforms,
+            transform=valid_iter.transform,
             attn_debug=opt.attn_debug,
             align_debug=opt.align_debug,
         )

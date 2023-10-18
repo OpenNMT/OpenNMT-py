@@ -165,7 +165,7 @@ def parse_align_idx(align_pharaoh):
     return flatten_align_idx
 
 
-def tensorify(vocabs, minibatch, device):
+def tensorify(vocabs, minibatch):
     """
     This function transforms a batch of example in tensors
     Each example looks like
@@ -186,20 +186,14 @@ def tensorify(vocabs, minibatch, device):
         }
     """
     tensor_batch = {}
-    tbatchsrc = [
-        torch.tensor(ex["src"]["src_ids"], dtype=torch.long, device=device)
-        for ex in minibatch
-    ]
+    tbatchsrc = [torch.LongTensor(ex["src"]["src_ids"]) for ex in minibatch]
     padidx = vocabs["src"][DefaultTokens.PAD]
     tbatchsrc = pad_sequence(tbatchsrc, batch_first=True, padding_value=padidx)
     if "feats" in minibatch[0]["src"]:
         tbatchfs = [tbatchsrc]
         for feat_id in range(len(minibatch[0]["src"]["feats"])):
             tbatchfeat = [
-                torch.tensor(
-                    ex["src"]["feats"][feat_id], dtype=torch.long, device=device
-                )
-                for ex in minibatch
+                torch.LongTensor(ex["src"]["feats"][feat_id]) for ex in minibatch
             ]
             padidx = vocabs["src_feats"][feat_id][DefaultTokens.PAD]
             tbatchfeat = pad_sequence(
@@ -212,26 +206,17 @@ def tensorify(vocabs, minibatch, device):
         tbatchsrc = tbatchsrc[:, :, None]
 
     tensor_batch["src"] = tbatchsrc
-    tensor_batch["indices"] = torch.tensor(
-        [ex["indices"] for ex in minibatch], dtype=torch.long, device=device
-    )
-    tensor_batch["srclen"] = torch.tensor(
-        [len(ex["src"]["src_ids"]) for ex in minibatch], dtype=torch.long, device=device
+    tensor_batch["indices"] = torch.LongTensor([ex["indices"] for ex in minibatch])
+    tensor_batch["srclen"] = torch.LongTensor(
+        [len(ex["src"]["src_ids"]) for ex in minibatch]
     )
 
     if minibatch[0]["tgt"] is not None:
-        tbatchtgt = [
-            torch.tensor(ex["tgt"]["tgt_ids"], dtype=torch.long, device=device)
-            for ex in minibatch
-        ]
+        tbatchtgt = [torch.LongTensor(ex["tgt"]["tgt_ids"]) for ex in minibatch]
         padidx = vocabs["tgt"][DefaultTokens.PAD]
         tbatchtgt = pad_sequence(tbatchtgt, batch_first=True, padding_value=padidx)
         tbatchtgt = tbatchtgt[:, :, None]
-        tbatchtgtlen = torch.tensor(
-            [len(ex["tgt"]["tgt_ids"]) for ex in minibatch],
-            dtype=torch.long,
-            device=device,
-        )
+        tbatchtgtlen = torch.LongTensor([len(ex["tgt"]["tgt_ids"]) for ex in minibatch])
         tensor_batch["tgt"] = tbatchtgt
         tensor_batch["tgtlen"] = tbatchtgtlen
 
@@ -240,16 +225,13 @@ def tensorify(vocabs, minibatch, device):
         for i, ex in enumerate(minibatch):
             for src, tgt in parse_align_idx(ex["align"]):
                 sparse_idx.append([i, tgt + 1, src])
-        tbatchalign = torch.tensor(sparse_idx, dtype=torch.long, device=device)
+        tbatchalign = torch.LongTensor(sparse_idx)
         tensor_batch["align"] = tbatchalign
 
     if "src_map" in minibatch[0].keys():
         src_vocab_size = max([max(ex["src_map"]) for ex in minibatch]) + 1
         src_map = torch.zeros(
-            len(tensor_batch["srclen"]),
-            tbatchsrc.size(1),
-            src_vocab_size,
-            device=device,
+            len(tensor_batch["srclen"]), tbatchsrc.size(1), src_vocab_size
         )
         for i, ex in enumerate(minibatch):
             for j, t in enumerate(ex["src_map"]):
@@ -257,16 +239,9 @@ def tensorify(vocabs, minibatch, device):
         tensor_batch["src_map"] = src_map
 
     if "alignment" in minibatch[0].keys():
-        alignment = torch.zeros(
-            len(tensor_batch["srclen"]),
-            tbatchtgt.size(1),
-            dtype=torch.long,
-            device=device,
-        )
+        alignment = torch.zeros(len(tensor_batch["srclen"]), tbatchtgt.size(1)).long()
         for i, ex in enumerate(minibatch):
-            alignment[i, : len(ex["alignment"])] = torch.tensor(
-                ex["alignment"], dtype=torch.long, device=device
-            )
+            alignment[i, : len(ex["alignment"])] = torch.LongTensor(ex["alignment"])
         tensor_batch["alignment"] = alignment
 
     if "src_ex_vocab" in minibatch[0].keys():
@@ -275,7 +250,7 @@ def tensorify(vocabs, minibatch, device):
     return tensor_batch
 
 
-def textbatch_to_tensor(vocabs, batch, device, is_train=False):
+def textbatch_to_tensor(vocabs, batch, is_train=False):
     """
     This is a hack to transform a simple batch of texts
     into a tensored batch to pass through _translate()
@@ -289,7 +264,7 @@ def textbatch_to_tensor(vocabs, batch, device, is_train=False):
         ex["align"] = None
         numeric.append(numericalize(vocabs, ex))
     numeric.sort(key=text_sort_key, reverse=True)
-    infer_iter = [tensorify(vocabs, numeric, device)]
+    infer_iter = [tensorify(vocabs, numeric)]
     return infer_iter
 
 

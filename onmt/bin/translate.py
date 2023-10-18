@@ -3,6 +3,7 @@
 from onmt.utils.logging import init_logger
 from onmt.translate.translator import build_translator
 from onmt.inputters.dynamic_iterator import build_dynamic_dataset_iter
+from onmt.inputters.inputter import IterOnDevice
 from onmt.transforms import get_transforms_cls
 from onmt.constants import CorpusTask
 import onmt.opts as opts
@@ -31,12 +32,13 @@ def translate(opt):
         translator.vocabs,
         task=CorpusTask.INFER,
         copy=translator.copy_attn,
-        device_id=opt.gpu,
     )
+
+    infer_iter = IterOnDevice(infer_iter, opt.gpu)
 
     _, _ = translator._translate(
         infer_iter,
-        transform=infer_iter.transforms,
+        transform=infer_iter.transform,
         attn_debug=opt.attn_debug,
         align_debug=opt.align_debug,
     )

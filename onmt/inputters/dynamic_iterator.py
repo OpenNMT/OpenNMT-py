@@ -137,7 +137,6 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
         skip_empty_level="warning",
         stride=1,
         offset=0,
-        device_id=-1,
     ):
         super(DynamicDatasetIter).__init__()
         self.corpora = corpora
@@ -149,6 +148,7 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
         self.batch_size = batch_size
         self.batch_type = batch_type
         self.batch_size_multiple = batch_size_multiple
+        self.device = "cpu"
         self.sort_key = text_sort_key
         self.bucket_size = bucket_size
         self.bucket_size_init = bucket_size_init
@@ -162,21 +162,9 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
             raise ValueError(f"Invalid argument skip_empty_level={skip_empty_level}")
         self.skip_empty_level = skip_empty_level
         self.random_shuffler = RandomShuffler()
-        self.device = torch.device(device_id) if device_id >= 0 else torch.device("cpu")
 
     @classmethod
-    def from_opt(
-        cls,
-        corpora,
-        transforms,
-        vocabs,
-        opt,
-        task,
-        copy,
-        stride=1,
-        offset=0,
-        device_id=-1,
-    ):
+    def from_opt(cls, corpora, transforms, vocabs, opt, task, copy, stride=1, offset=0):
         """Initilize `DynamicDatasetIter` with options parsed from `opt`."""
         corpora_info = {}
         batch_size = (
@@ -218,7 +206,6 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
             skip_empty_level=skip_empty_level,
             stride=stride,
             offset=offset,
-            device_id=device_id,
         )
 
     def _init_datasets(self, worker_id):
@@ -354,7 +341,7 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
                 # within the batch
                 if self.task == CorpusTask.TRAIN:
                     minibatch.sort(key=self.sort_key, reverse=True)
-                tensor_batch = tensorify(self.vocabs, minibatch, self.device)
+                tensor_batch = tensorify(self.vocabs, minibatch)
                 yield tensor_batch
 
 
@@ -369,7 +356,6 @@ def build_dynamic_dataset_iter(
     src=None,
     tgt=None,
     align=None,
-    device_id=-1,
 ):
     """
     Build `DynamicDatasetIter` from opt.
@@ -393,15 +379,7 @@ def build_dynamic_dataset_iter(
         assert task != CorpusTask.TRAIN, "only valid corpus is ignorable."
         return None
     data_iter = DynamicDatasetIter.from_opt(
-        corpora,
-        transforms,
-        vocabs,
-        opt,
-        task,
-        copy=copy,
-        stride=stride,
-        offset=offset,
-        device_id=device_id,
+        corpora, transforms, vocabs, opt, task, copy=copy, stride=stride, offset=offset
     )
     data_iter.num_workers = opt.num_workers if hasattr(opt, "num_workers") else 0
     if data_iter.num_workers == 0 or task == CorpusTask.INFER:
