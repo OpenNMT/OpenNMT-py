@@ -359,6 +359,36 @@ jobs:
           -min_length 5 \
           -out /tmp/gen
         diff data/data_lm/gen-sampling-beams-sol$(python -c "import torch; print(torch.__version__[0])").txt /tmp/gen && rm /tmp/gen
+    - name: Test py-LM inference engine
+      run: |
+        head data/src-test.txt > /tmp/src-test.txt
+        python onmt/tests/test_inference_engines.py \
+          -model onmt/tests/test_model_lm.pt \
+          -model_task lm \
+          -input_file /tmp/src-test.txt \
+          -inference_config_file data/inference-engine_py.yaml \
+          -inference_mode py \
+          -out /tmp/inference_engine_lm_py_outputs
+    - name: Test ct2-LM inference engine
+      run: |
+        head data/src-test.txt > /tmp/src-test.txt
+        python onmt/tests/test_inference_engines.py \
+          -model onmt/tests/test_model_lm_ct2 \
+          -model_task lm \
+          -input_file /tmp/src-test.txt \
+          -inference_config_file data/inference-engine_py.yaml \
+          -inference_mode ct2 \
+          -out /tmp/inference_engine_lm_py_outputs
+    - name: Test py-SEQ2SEQ inference engine
+      run: |
+        head data/src-test.txt > /tmp/src-test.txt
+        python onmt/tests/test_inference_engines.py \
+          -model onmt/tests/test_model.pt \
+          -model_task seq2seq \
+          -input_file /tmp/src-test.txt \
+          -inference_config_file data/inference-engine_py.yaml \
+          -inference_mode py \
+          -out /tmp/inference_engine_lm_py_outputs
     - name: Test extract_vocabulary tool
       run: |
         python tools/extract_vocabulary.py \
