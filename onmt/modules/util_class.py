@@ -23,7 +23,10 @@ class Elementwise(nn.ModuleList):
     def forward(self, emb):
         emb_ = [feat.squeeze(2) for feat in emb.split(1, dim=2)]
         assert len(self) == len(emb_)
-        emb_out = [f(x) for f, x in zip(self, emb_)]
+        emb_out = []
+        # for some reason list comprehension is slower in this scenario
+        for f, x in zip(self, emb_):
+            emb_out.append(f(x))
         if self.merge == "first":
             return emb_out[0]
         elif self.merge == "concat" or self.merge == "mlp":

@@ -179,7 +179,8 @@ def shape(x: Tensor, dim_per_head: int) -> Tensor:
     [batchsize x length x modeldim]
     -> [batchsize x heads x length x dimperhead]
     """
-    return x.view(x.size(0), x.size(1), -1, dim_per_head).transpose(1, 2)
+    x_0, x_1, _ = x.size()
+    return x.view(x_0, x_1, -1, dim_per_head).transpose(1, 2)
 
 
 def unshape(x: Tensor) -> Tensor:
@@ -188,11 +189,11 @@ def unshape(x: Tensor) -> Tensor:
     [batchsize x heads x length x dimperhead]
     -> [batchsize x length x modeldim]
     """
-    return x.transpose(1, 2).contiguous().view(x.size(0), -1, x.size(1) * x.size(3))
+    x_0, x_1, _, x_3 = x.size()
+    return x.transpose(1, 2).contiguous().view(x_0, -1, x_1 * x_3)
 
 
-class MultiHeadedAttention(nn.Module):
-    # class MultiHeadedAttention(torch.jit.ScriptModule):
+class MultiHeadedAttention(torch.nn.Module):
     """Multi-Head Attention module from "Attention is All You Need"
     :cite:`DBLP:journals/corr/VaswaniSPUJGKP17`.
 
@@ -343,7 +344,10 @@ class MultiHeadedAttention(nn.Module):
 
         try:
             flash_pack = importlib.import_module("flash_attn")
-            if hasattr(flash_pack, "flash_attn_func"):
+            if (
+                hasattr(flash_pack, "flash_attn_func")
+                and torch.cuda.get_device_capability()[0] >= 8
+            ):
                 self.flash_attn_func = getattr(flash_pack, "flash_attn_func")
                 self.flash2 = True
         except ImportError:
@@ -353,7 +357,6 @@ class MultiHeadedAttention(nn.Module):
         self.dropout.p = dropout
         self.dropout_p = dropout
 
-    # @torch.jit.script_method
     def forward(
         self,
         key: Tensor,
@@ -404,8 +407,6 @@ class MultiHeadedAttention(nn.Module):
 
                 if self.layer_cache[1]["keys"].numel() != 0:
                     key = torch.cat((self.layer_cache[1]["keys"], key), dim=2)
-
-                if self.layer_cache[1]["values"].numel() != 0:
                     value = torch.cat((self.layer_cache[1]["values"], value), dim=2)
                 self.layer_cache[1]["keys"] = key
                 self.layer_cache[1]["values"] = value
@@ -438,14 +439,15 @@ class MultiHeadedAttention(nn.Module):
                 query, key = apply_rotary_emb(query, key, rope=rope)
 
         b, h, l, d = key.size()
-        qh = query.size(1)
-        # expand key on heads dimension when it's less than query heads (multi-query variant)
-        key = key.view(b, -1, 1, l, d).repeat(1, 1, qh // h, 1, 1)
-        key = key.view(b, qh, l, d)
+        if self.num_kv > 0:
+            qh = query.size(1)
+            # expand key on heads dimension when it's less than query heads (multi-query variant)
+            key = key.view(b, -1, 1, l, d).repeat(1, 1, qh // h, 1, 1)
+            key = key.view(b, qh, l, d)
 
-        # expand value on heads dimension when it's less than query heads (multi-query variant)
-        value = value.view(b, -1, 1, l, d).repeat(1, 1, qh // h, 1, 1)
-        value = value.view(b, qh, l, d)
+            # expand value on heads dimension when it's less than query heads (multi-query variant)
+            value = value.view(b, -1, 1, l, d).repeat(1, 1, qh // h, 1, 1)
+            value = value.view(b, qh, l, d)
 
         # 2) When standard pos. enc. or rotary, use flash attention
 
@@ -454,9 +456,7 @@ class MultiHeadedAttention(nn.Module):
         # then use flash2 if seq len > 256 otherwise use xtransformer from pt2 uptream
 
         flash2 = (
-            query.device != torch.device("cpu")
-            and self.flash2
-            and torch.cuda.get_device_capability(query.device)[0] >= 8
+            self.flash2
             and l > 256  # https://github.com/Dao-AILab/flash-attention/issues/591
             and sliding_window == 0
         )  # https://github.com/Dao-AILab/flash-attention#installation-and-features
@@ -483,7 +483,7 @@ class MultiHeadedAttention(nn.Module):
                         query,
                         key,
                         value,
-                        ~mask,
+                        ~mask if mask is not None else None,
                         self.dropout_p,
                         is_causal=causal,
                     )
@@ -549,7 +549,7 @@ class MultiHeadedAttention(nn.Module):
 
             # 3) Apply attention dropout and compute context vectors.
             attn = self.softmax(scores).to(query.dtype)
-            drop_attn = self.dropout(attn)
+            drop_attn = self.dropout(attn) if self.dropout_p > 0 else attn
 
             context_original = torch.matmul(drop_attn, value)
 

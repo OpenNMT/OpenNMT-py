@@ -159,7 +159,9 @@ def load_test_model(opt, device_id=0, model_path=None):
     del checkpoint
 
     model.eval()
-    model.generator.eval()
+    for name, module in model.named_modules():
+        if hasattr(module, "dropout_p"):
+            module.dropout_p = 0.0
     return vocabs, model, model_opt
 
 
