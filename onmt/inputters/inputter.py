@@ -2,37 +2,8 @@
 import os
 import math
 import codecs
-import torch
 import pyonmttok
 from onmt.constants import DefaultTokens
-from onmt.transforms import TransformPipe
-
-
-class IterOnDevice(torch.utils.data.IterableDataset):
-    """Sent items from `iterable` on `device_id` and yield."""
-
-    def __init__(self, iterable, device_id):
-        super(IterOnDevice).__init__()
-        self.iterable = iterable
-        self.device_id = device_id
-        # temporary as long as translation_server and scoring_preparator still use lists
-        if hasattr(iterable, "transforms"):
-            self.transform = TransformPipe.build_from(
-                [iterable.transforms[name] for name in iterable.transforms]
-            )
-
-    @staticmethod
-    def batch_to_device(tensor_batch, device_id):
-        """Move `batch` to `device_id`, cpu if `device_id` < 0."""
-        device = torch.device(device_id) if device_id >= 0 else torch.device("cpu")
-        for key in tensor_batch.keys():
-            if key != "src_ex_vocab":
-                tensor_batch[key] = tensor_batch[key].to(device)
-
-    def __iter__(self):
-        for tensor_batch in self.iterable:
-            self.batch_to_device(tensor_batch, self.device_id)
-            yield tensor_batch
 
 
 def build_vocab(opt, specials):

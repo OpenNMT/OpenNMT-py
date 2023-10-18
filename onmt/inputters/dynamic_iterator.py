@@ -134,6 +134,7 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
         bucket_size_init=-1,
         bucket_size_increment=0,
         copy=False,
+        device=torch.device("cpu"),
         skip_empty_level="warning",
         stride=1,
         offset=0,
@@ -148,12 +149,12 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
         self.batch_size = batch_size
         self.batch_type = batch_type
         self.batch_size_multiple = batch_size_multiple
-        self.device = "cpu"
         self.sort_key = text_sort_key
         self.bucket_size = bucket_size
         self.bucket_size_init = bucket_size_init
         self.bucket_size_increment = bucket_size_increment
         self.copy = copy
+        self.device = device
         if stride <= 0:
             raise ValueError(f"Invalid argument for stride={stride}.")
         self.stride = stride
@@ -164,7 +165,9 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
         self.random_shuffler = RandomShuffler()
 
     @classmethod
-    def from_opt(cls, corpora, transforms, vocabs, opt, task, copy, stride=1, offset=0):
+    def from_opt(
+        cls, corpora, transforms, vocabs, opt, task, copy, device, stride=1, offset=0
+    ):
         """Initilize `DynamicDatasetIter` with options parsed from `opt`."""
         corpora_info = {}
         batch_size = (
@@ -203,6 +206,7 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
             bucket_size_init=bucket_size_init,
             bucket_size_increment=bucket_size_increment,
             copy=copy,
+            device=device,
             skip_empty_level=skip_empty_level,
             stride=stride,
             offset=offset,
@@ -341,8 +345,21 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
                 # within the batch
                 if self.task == CorpusTask.TRAIN:
                     minibatch.sort(key=self.sort_key, reverse=True)
-                tensor_batch = tensorify(self.vocabs, minibatch)
+                tensor_batch = tensorify(self.vocabs, minibatch, self.device)
                 yield tensor_batch
+
+
+class OnDeviceDatasetIter:
+    def __init__(self, data_iter, device):
+        self.data_iter = iter(data_iter)
+        self.device = device
+
+    def __iter__(self):
+        for tensor_batch in self.data_iter:
+            for key in tensor_batch.keys():
+                if key != "src_ex_vocab":
+                    tensor_batch[key] = tensor_batch[key].to(self.device)
+            yield tensor_batch
 
 
 def build_dynamic_dataset_iter(
@@ -356,6 +373,7 @@ def build_dynamic_dataset_iter(
     src=None,
     tgt=None,
     align=None,
+    device_id=-1,
 ):
     """
     Build `DynamicDatasetIter` from opt.
@@ -378,14 +396,38 @@ def build_dynamic_dataset_iter(
     if corpora is None:
         assert task != CorpusTask.TRAIN, "only valid corpus is ignorable."
         return None
-    data_iter = DynamicDatasetIter.from_opt(
-        corpora, transforms, vocabs, opt, task, copy=copy, stride=stride, offset=offset
-    )
-    data_iter.num_workers = opt.num_workers if hasattr(opt, "num_workers") else 0
-    if data_iter.num_workers == 0 or task == CorpusTask.INFER:
+    device = torch.device(device_id) if device_id >= 0 else torch.device("cpu")
+    num_workers = opt.num_workers if hasattr(opt, "num_workers") else 0
+    if num_workers == 0 or task == CorpusTask.INFER:
+        # single thread - create batch directly on GPU if device is gpu
+        data_iter = DynamicDatasetIter.from_opt(
+            corpora,
+            transforms,
+            vocabs,
+            opt,
+            task,
+            copy=copy,
+            stride=stride,
+            offset=offset,
+            device=device,
+        )
+        data_iter.num_workers = num_workers
         data_iter._init_datasets(0)  # when workers=0 init_fn not called
-        data_loader = data_iter
+        return data_iter
     else:
+        # multithread faster to create batch on CPU in each thread and then move it to gpu
+        data_iter = DynamicDatasetIter.from_opt(
+            corpora,
+            transforms,
+            vocabs,
+            opt,
+            task,
+            copy=copy,
+            stride=stride,
+            offset=offset,
+            device=torch.device("cpu"),
+        )
+        data_iter.num_workers = num_workers
         data_loader = DataLoader(
             data_iter,
             batch_size=None,
@@ -395,4 +437,5 @@ def build_dynamic_dataset_iter(
             worker_init_fn=data_iter._init_datasets,
             prefetch_factor=opt.prefetch_factor,
         )
-    return data_loader
+        # Move tensor_batch from cpu to device
+        return OnDeviceDatasetIter(data_loader, device)

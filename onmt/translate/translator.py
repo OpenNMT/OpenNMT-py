@@ -18,6 +18,7 @@ from onmt.utils.misc import tile, set_random_seed, report_matrix
 from onmt.utils.alignment import extract_alignment, build_align_pharaoh
 from onmt.modules.copy_generator import collapse_copy_scores
 from onmt.constants import ModelTask
+from onmt.transforms import TransformPipe
 
 
 def build_translator(opt, device_id=0, report_score=True, logger=None, out_file=None):
@@ -320,6 +321,11 @@ class Inference(object):
             * all_predictions is a list of `batch_size` lists
                 of `n_best` predictions
         """
+        transform_pipe = (
+            TransformPipe.build_from([transform[name] for name in transform])
+            if transform
+            else None
+        )
         xlation_builder = onmt.translate.TranslationBuilder(
             self.vocabs,
             self.n_best,
@@ -432,8 +438,8 @@ class Inference(object):
                         for pred, align in zip(n_best_preds, n_best_preds_align)
                     ]
 
-                if transform is not None:
-                    n_best_preds = transform.batch_apply_reverse(n_best_preds)
+                if transform_pipe is not None:
+                    n_best_preds = transform_pipe.batch_apply_reverse(n_best_preds)
 
                 all_predictions += [n_best_preds]
 

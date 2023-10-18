@@ -7,7 +7,6 @@ from onmt.utils.misc import set_random_seed
 from onmt.utils.logging import init_logger, logger
 from onmt.utils.parse import ArgumentParser
 from onmt.inputters.dynamic_iterator import build_dynamic_dataset_iter
-from onmt.inputters.inputter import IterOnDevice
 from onmt.utils.loss import LossCompute
 from onmt.constants import DefaultTokens, CorpusTask
 from onmt.transforms import get_transforms_cls
@@ -72,9 +71,13 @@ def main():
 
     transforms_cls = get_transforms_cls(opt._all_transform)
     infer_iter = build_dynamic_dataset_iter(
-        opt, transforms_cls, vocabs, task=CorpusTask.INFER, copy=False
+        opt,
+        transforms_cls,
+        vocabs,
+        task=CorpusTask.INFER,
+        copy=False,
+        device_id=opt.gpu,
     )
-    infer_iter = IterOnDevice(infer_iter, opt.gpu)
 
     model.to(device)
     model.eval()
