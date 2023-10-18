@@ -5,46 +5,6 @@ from onmt.utils.parse import ArgumentParser
 from onmt.utils.misc import use_gpu, set_random_seed
 
 
-parser = ArgumentParser()
-parser.add_argument("-model", help="Path to model.", required=True, type=str)
-parser.add_argument(
-    "-model_task",
-    help="Model task.",
-    required=True,
-    type=str,
-    choices=["lm", "seq2seq"],
-)
-parser.add_argument(
-    "-inference_config_file", help="Inference config file", required=True, type=str
-)
-parser.add_argument(
-    "-inference_mode",
-    help="Inference mode",
-    required=True,
-    type=str,
-    choices=["py", "ct2"],
-)
-parser.add_argument(
-    "-input_file",
-    help="File with formatted input examples.",
-    required=True,
-    type=str,
-)
-parser.add_argument(
-    "-out",
-    help="Output filename.",
-    required=True,
-    type=str,
-)
-args = parser.parse_args()
-model = args.model
-model_task = args.model_task
-inference_config_file = args.inference_config_file
-inference_mode = args.inference_mode
-input_file = args.input_file
-out = args.out
-
-
 def _get_parser():
     parser = ArgumentParser(description="simple_inference_engine_py.py")
     opts.config_opts(parser)
@@ -53,7 +13,8 @@ def _get_parser():
     return parser
 
 
-def evaluate(opt, method="file"):
+def evaluate(opt, inference_mode, input_file, out, method):
+    print("# input file", input_file)
     run_results = {}
     # Build the translator (along with the model)
     if inference_mode == "py":
@@ -88,6 +49,41 @@ def evaluate(opt, method="file"):
 
 
 def main():
+    # Required arguments
+    parser = ArgumentParser()
+    parser.add_argument("-model", help="Path to model.", required=True, type=str)
+    parser.add_argument(
+        "-model_task",
+        help="Model task.",
+        required=True,
+        type=str,
+        choices=["lm", "seq2seq"],
+    )
+    parser.add_argument(
+        "-inference_config_file", help="Inference config file", required=True, type=str
+    )
+    parser.add_argument(
+        "-inference_mode",
+        help="Inference mode",
+        required=True,
+        type=str,
+        choices=["py", "ct2"],
+    )
+    parser.add_argument(
+        "-input_file",
+        help="File with formatted input examples.",
+        required=True,
+        type=str,
+    )
+    parser.add_argument(
+        "-out",
+        help="Output filename.",
+        required=True,
+        type=str,
+    )
+    args = parser.parse_args()
+    model = args.model
+    inference_config_file = args.inference_config_file
     base_args = ["-config", inference_config_file]
     parser = _get_parser()
     opt = parser.parse_args(base_args)
@@ -99,8 +95,20 @@ def main():
     opt.models = [model]
     opt.model_task = args.model_task
 
-    evaluate(opt, method="file")
-    evaluate(opt, method="list")
+    evaluate(
+        opt,
+        inference_mode=args.inference_mode,
+        input_file=args.input_file,
+        out=args.out,
+        method="file",
+    )
+    evaluate(
+        opt,
+        inference_mode=args.inference_mode,
+        input_file=args.input_file,
+        out=args.out,
+        method="list",
+    )
 
 
 if __name__ == "__main__":
