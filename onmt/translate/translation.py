@@ -32,23 +32,26 @@ class TranslationBuilder(object):
                     )
                     self.phrase_table_dict[phrase_src] = phrase_trg
 
-    def _build_target_tokens(self, src, src_raw, pred, attn, voc, dyn_voc):
+    def _build_target_tokens(self, src, srclen, pred, attn, voc, dyn_voc):
         if dyn_voc is None:
-            tokens = [voc[tok] for tok in pred[:-1]]
+            tokens = [voc[tok] for tok in pred]
         else:
             tokens = [
                 voc[tok]
                 if tok < len(voc)
                 else dyn_voc.ids_to_tokens[tok - len(self.vocabs["src"].ids_to_tokens)]
-                for tok in pred[:-1]
+                for tok in pred
             ]
+        if tokens[-1] == DefaultTokens.EOS:
+            tokens = tokens[:-1]
+
         if self.replace_unk and attn is not None and src is not None:
             for i in range(len(tokens)):
                 if tokens[i] == DefaultTokens.UNK:
-                    _, max_index = attn[i][: len(src_raw)].max(0)
-                    tokens[i] = src_raw[max_index.item()]
+                    _, max_index = attn[i][:srclen].max(0)
+                    src_tok = self.vocabs["src"].ids_to_tokens[src[max_index.item()]]
+                    tokens[i] = src_tok
                     if self.phrase_table_dict:
-                        src_tok = src_raw[max_index.item()]
                         if src_tok in self.phrase_table_dict:
                             tokens[i] = self.phrase_table_dict[src_tok]
         return tokens
@@ -104,6 +107,7 @@ class TranslationBuilder(object):
                 )
                 for n in range(self.n_best)
             ]
+
             gold_sent = None
             if tgt is not None:
                 gold_sent = self._build_target_tokens(
@@ -136,7 +140,7 @@ class Translation(object):
 
     Attributes:
         src (LongTensor): Source word IDs.
-        src_raw (List[str]): Raw source words.
+        srclen (List[int]): Source lengths.
         pred_sents (List[List[str]]): Words from the n-best translations.
         pred_scores (List[List[float]]): Log-probs of n-best translations.
         attns (List[FloatTensor]) : Attention distribution for each
