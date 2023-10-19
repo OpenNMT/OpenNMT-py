@@ -402,7 +402,7 @@ class MultiHeadedAttention(torch.nn.Module):
                 if self.max_relative_positions == -1:  # Rotary Embeddings
                     start_pos = step
                     seqlen = query.size(2)
-                    rope = self.rope[start_pos : start_pos + seqlen].to(query.device)
+                    rope = self.rope[start_pos : start_pos + seqlen]
                     query, key = apply_rotary_emb(query, key, rope=rope)
 
                 if self.layer_cache[1]["keys"].numel() != 0:

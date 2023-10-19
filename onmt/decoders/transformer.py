@@ -10,7 +10,10 @@ from onmt.modules import MultiHeadedAttention, AverageAttention
 from onmt.modules.position_ffn import PositionwiseFeedForward
 from onmt.modules.position_ffn import ActivationFunction
 from onmt.utils.misc import sequence_mask
-from onmt.modules.rmsnorm import RMSNorm
+try:
+    from apex.normalization import FusedRMSNorm as RMSNorm
+except:
+    from onmt.modules.rmsnorm import RMSNorm
 
 
 class TransformerDecoderLayerBase(nn.Module):
@@ -647,6 +650,8 @@ class TransformerDecoder(TransformerDecoderBase):
                         "values": torch.tensor([], device=enc_out.device),
                     },
                 )
+                if hasattr(layer.self_attn, "rope"):
+                    layer.self_attn.rope = layer.self_attn.rope.to(enc_out.device)
 
 
 class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
@@ -851,3 +856,5 @@ class TransformerLMDecoder(TransformerDecoderBase):
                         "values": torch.tensor([], device=tgt.device),
                     },
                 )
+                if hasattr(layer.self_attn, "rope"):
+                    layer.self_attn.rope = layer.self_attn.rope.to(tgt.device)

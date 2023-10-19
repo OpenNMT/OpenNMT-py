@@ -74,14 +74,10 @@ def tile(x, count, dim=0):
         x = x.permute(perm)
     out_size = list(x.size())
     out_size[0] *= count
-    batch = x.size(0)
     x = (
         x.contiguous()
-        .view(batch, -1)
-        .transpose(0, 1)
-        .repeat(count, 1)
-        .transpose(0, 1)
-        .contiguous()
+        .view(x.size(0), -1)
+        .repeat(1, count)
         .view(*out_size)
     )
     if dim != 0:
