@@ -455,8 +455,7 @@ class MultiHeadedAttention(torch.nn.Module):
         # then use flash2 if seq len > 256 otherwise use xtransformer from pt2 uptream
 
         flash2 = (
-            query.device != torch.device("cpu")
-            and self.flash2
+            self.flash2
             and l > 256  # https://github.com/Dao-AILab/flash-attention/issues/591
         )
 
