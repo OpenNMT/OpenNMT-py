@@ -34,14 +34,17 @@ class TranslationBuilder(object):
 
     def _build_target_tokens(self, src, src_raw, pred, attn, voc, dyn_voc):
         if dyn_voc is None:
-            tokens = [voc[tok] for tok in pred[:-1]]
+            tokens = [voc[tok] for tok in pred]
         else:
             tokens = [
                 voc[tok]
                 if tok < len(voc)
                 else dyn_voc.ids_to_tokens[tok - len(self.vocabs["src"].ids_to_tokens)]
-                for tok in pred[:-1]
+                for tok in pred
             ]
+        if tokens[-1] == DefaultTokens.EOS:
+            tokens = tokens[:-1]
+
         if self.replace_unk and attn is not None and src is not None:
             for i in range(len(tokens)):
                 if tokens[i] == DefaultTokens.UNK:
@@ -104,6 +107,7 @@ class TranslationBuilder(object):
                 )
                 for n in range(self.n_best)
             ]
+
             gold_sent = None
             if tgt is not None:
                 gold_sent = self._build_target_tokens(
