@@ -10,7 +10,11 @@ from onmt.modules import MultiHeadedAttention, AverageAttention
 from onmt.modules.position_ffn import PositionwiseFeedForward
 from onmt.modules.position_ffn import ActivationFunction
 from onmt.utils.misc import sequence_mask
-from onmt.modules.rmsnorm import RMSNorm
+
+try:
+    from apex.normalization import FusedRMSNorm as RMSNorm
+except ImportError:
+    from onmt.modules.rmsnorm import RMSNorm
 
 
 class TransformerDecoderLayerBase(nn.Module):
@@ -37,6 +41,7 @@ class TransformerDecoderLayerBase(nn.Module):
         norm_eps=1e-6,
         use_ckpting=[],
         parallel_gpu=1,
+        sliding_window=0,
     ):
         """
         Args:
@@ -118,6 +123,7 @@ class TransformerDecoderLayerBase(nn.Module):
         self.dropout_p = dropout
         self.full_context_alignment = full_context_alignment
         self.alignment_heads = alignment_heads
+        self.sliding_window = sliding_window
 
     def forward(self, *args, **kwargs):
         """Extend `_forward` for (possibly) multiple decoder pass:
@@ -171,12 +177,12 @@ class TransformerDecoderLayerBase(nn.Module):
                 device=tgt_pad_mask.device,
                 dtype=torch.uint8,
             )
-            future_mask = future_mask.triu_(1).view(1, tgt_len, tgt_len)
-            # BoolTensor was introduced in pytorch 1.2
-            try:
-                future_mask = future_mask.bool()
-            except AttributeError:
-                pass
+            future_mask = future_mask.tril_(0)
+            if self.sliding_window > 0:
+                future_mask = future_mask.triu_(-self.sliding_window)
+            future_mask = future_mask.bool()
+            future_mask = ~future_mask.view(1, tgt_len, tgt_len)
+
             dec_mask = torch.gt(tgt_pad_mask + future_mask, 0)
         else:  # only mask padding, result mask in (B, 1, T)
             dec_mask = tgt_pad_mask
@@ -189,6 +195,7 @@ class TransformerDecoderLayerBase(nn.Module):
                 norm_layer_in,
                 norm_layer_in,
                 mask=dec_mask,
+                sliding_window=self.sliding_window,
                 step=step,
                 return_attn=return_attn,
             )
@@ -230,6 +237,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
         norm_eps=1e-6,
         use_ckpting=[],
         parallel_gpu=1,
+        sliding_window=0,
     ):
         """
         Args:
@@ -257,6 +265,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
             norm_eps=norm_eps,
             use_ckpting=use_ckpting,
             parallel_gpu=parallel_gpu,
+            sliding_window=sliding_window,
         )
         self.context_attn = MultiHeadedAttention(
             heads,
@@ -414,6 +423,7 @@ class TransformerDecoderBase(DecoderBase):
             parallel_gpu=opt.world_size
             if opt.parallel_mode == "tensor_parallel"
             else 1,
+            sliding_window=opt.sliding_window,
         )
 
     def init_state(self, src, enc_out, enc_final_hs):
@@ -507,6 +517,7 @@ class TransformerDecoder(TransformerDecoderBase):
         norm_eps=1e-6,
         use_ckpting=[],
         parallel_gpu=1,
+        sliding_window=0,
     ):
         super(TransformerDecoder, self).__init__(
             d_model, copy_attn, embeddings, alignment_layer, layer_norm, norm_eps
@@ -536,6 +547,7 @@ class TransformerDecoder(TransformerDecoderBase):
                     norm_eps=norm_eps,
                     use_ckpting=use_ckpting,
                     parallel_gpu=parallel_gpu,
+                    sliding_window=sliding_window,
                 )
                 for i in range(num_layers)
             ]
@@ -639,6 +651,8 @@ class TransformerDecoder(TransformerDecoderBase):
                         "values": torch.tensor([], device=enc_out.device),
                     },
                 )
+                if hasattr(layer.self_attn, "rope"):
+                    layer.self_attn.rope = layer.self_attn.rope.to(enc_out.device)
 
 
 class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
@@ -749,6 +763,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
         norm_eps=1e-6,
         use_ckpting=[],
         parallel_gpu=1,
+        sliding_window=0,
     ):
         super(TransformerLMDecoder, self).__init__(
             d_model, copy_attn, embeddings, alignment_layer, layer_norm, norm_eps
@@ -777,6 +792,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
                     norm_eps=norm_eps,
                     use_ckpting=use_ckpting,
                     parallel_gpu=parallel_gpu,
+                    sliding_window=sliding_window,
                 )
                 for i in range(num_layers)
             ]
@@ -841,3 +857,5 @@ class TransformerLMDecoder(TransformerDecoderBase):
                         "values": torch.tensor([], device=tgt.device),
                     },
                 )
+                if hasattr(layer.self_attn, "rope"):
+                    layer.self_attn.rope = layer.self_attn.rope.to(tgt.device)

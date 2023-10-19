@@ -870,6 +870,13 @@ def model_opts(parser):
         help="Number of heads for transformer self-attention",
     )
     group.add(
+        "--sliding_window",
+        "-sliding_window",
+        type=int,
+        default=0,
+        help="sliding window for transformer self-attention",
+    )
+    group.add(
         "--transformer_ff",
         "-transformer_ff",
         type=int,

@@ -9,7 +9,11 @@ from onmt.modules import MultiHeadedAttention
 from onmt.modules.position_ffn import PositionwiseFeedForward
 from onmt.modules.position_ffn import ActivationFunction
 from onmt.utils.misc import sequence_mask
-from onmt.modules.rmsnorm import RMSNorm
+
+try:
+    from apex.normalization import FusedRMSNorm as RMSNorm
+except ImportError:
+    from onmt.modules.rmsnorm import RMSNorm
 
 
 class TransformerEncoderLayer(nn.Module):
