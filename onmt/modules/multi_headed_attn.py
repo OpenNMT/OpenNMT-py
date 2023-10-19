@@ -408,6 +408,10 @@ class MultiHeadedAttention(torch.nn.Module):
                 if self.layer_cache[1]["keys"].numel() != 0:
                     key = torch.cat((self.layer_cache[1]["keys"], key), dim=2)
                     value = torch.cat((self.layer_cache[1]["values"], value), dim=2)
+                    if sliding_window > 0 and key.size(2) > sliding_window:
+                        key = key[:, :, 1:, :]
+                        value = value[:, :, 1:, :]
+
                 self.layer_cache[1]["keys"] = key
                 self.layer_cache[1]["values"] = value
             elif self.attn_type == "context":
@@ -458,8 +462,7 @@ class MultiHeadedAttention(torch.nn.Module):
         flash2 = (
             self.flash2
             and l > 256  # https://github.com/Dao-AILab/flash-attention/issues/591
-            and sliding_window == 0
-        )  # https://github.com/Dao-AILab/flash-attention#installation-and-features
+        )
 
         if (
             self.max_relative_positions in [-1, 0]
@@ -468,12 +471,19 @@ class MultiHeadedAttention(torch.nn.Module):
         ):
             causal = self.is_decoder and self.attn_type == "self" and mask is not None
             if self.is_decoder and self.attn_type == "self" and flash2:
+                if causal:
+                    window_size = (
+                        (-1, -1) if sliding_window == 0 else (sliding_window, 0)
+                    )
+                else:
+                    window_size = (-1, -1)
                 attn_output = self.flash_attn_func(
                     query.transpose(1, 2),
                     key.transpose(1, 2),
                     value.transpose(1, 2),
                     dropout_p=self.dropout_p,
                     causal=causal,
+                    window_size=window_size,
                 ).transpose(1, 2)
             else:
                 with torch.backends.cuda.sdp_kernel(
