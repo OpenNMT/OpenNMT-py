@@ -10,9 +10,10 @@ from onmt.modules import MultiHeadedAttention, AverageAttention
 from onmt.modules.position_ffn import PositionwiseFeedForward
 from onmt.modules.position_ffn import ActivationFunction
 from onmt.utils.misc import sequence_mask
+
 try:
     from apex.normalization import FusedRMSNorm as RMSNorm
-except:
+except ImportError:
     from onmt.modules.rmsnorm import RMSNorm
 
 

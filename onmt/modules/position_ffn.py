@@ -4,9 +4,10 @@
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.checkpoint import checkpoint
+
 try:
     from apex.normalization import FusedRMSNorm as RMSNorm
-except:
+except ImportError:
     from onmt.modules.rmsnorm import RMSNorm
 from torch.nn.utils import skip_init
 import torch.distributed as dist
