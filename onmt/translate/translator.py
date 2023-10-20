@@ -6,7 +6,6 @@ import time
 import numpy as np
 from itertools import count, zip_longest
 from copy import deepcopy
-
 import torch
 import torch.nn.functional as F
 from torch.nn.utils.rnn import pad_sequence
@@ -19,6 +18,7 @@ from onmt.utils.misc import tile, set_random_seed, report_matrix
 from onmt.utils.alignment import extract_alignment, build_align_pharaoh
 from onmt.modules.copy_generator import collapse_copy_scores
 from onmt.constants import ModelTask
+from onmt.transforms import TransformPipe
 
 
 def build_translator(opt, device_id=0, report_score=True, logger=None, out_file=None):
@@ -321,8 +321,12 @@ class Inference(object):
             * all_predictions is a list of `batch_size` lists
                 of `n_best` predictions
         """
+        transform_pipe = (
+            TransformPipe.build_from([transform[name] for name in transform])
+            if transform
+            else None
+        )
         xlation_builder = onmt.translate.TranslationBuilder(
-            infer_iter,
             self.vocabs,
             self.n_best,
             self.replace_unk,
@@ -346,9 +350,9 @@ class Inference(object):
             trans_copy = deepcopy(translations)
             inserted_so_far = 0
             for j, trans in enumerate(translations):
-                if trans.src_raw.count(DefaultTokens.SEP) != trans.pred_sents[0].count(
-                    DefaultTokens.SEP
-                ):
+                if (trans.src == self._tgt_sep_idx).sum().item() != trans.pred_sents[
+                    0
+                ].count(DefaultTokens.SEP):
                     self._log("Mismatch in number of ((newline))")
                     # those two should be the same except feat dim
                     # batch['src'][perm[j], :, :])
@@ -395,8 +399,15 @@ class Inference(object):
             batch_data = self.translate_batch(batch, attn_debug)
 
             translations = xlation_builder.from_batch(batch_data)
-            if not isinstance(self, GeneratorLM):
+            if (
+                not isinstance(self, GeneratorLM)
+                and self._tgt_sep_idx != self._tgt_unk_idx
+                and (batch["src"] == self._tgt_sep_idx).any().item()
+            ):
+                # For seq2seq when we need to force doc to spit the same number of sents
                 translations = _maybe_retranslate(translations, batch)
+
+            voc_src = self.vocabs["src"].ids_to_tokens
 
             for j, trans in enumerate(translations):
                 all_scores += [trans.pred_scores[: self.n_best]]
@@ -427,8 +438,8 @@ class Inference(object):
                         for pred, align in zip(n_best_preds, n_best_preds_align)
                     ]
 
-                if transform is not None:
-                    n_best_preds = transform.batch_apply_reverse(n_best_preds)
+                if transform_pipe is not None:
+                    n_best_preds = transform_pipe.batch_apply_reverse(n_best_preds)
 
                 all_predictions += [n_best_preds]
 
@@ -444,8 +455,9 @@ class Inference(object):
                 self.out_file.flush()
 
                 if self.verbose:
+                    srcs = [voc_src[tok] for tok in trans.src[: trans.srclen]]
                     sent_number = next(counter)
-                    output = trans.log(sent_number)
+                    output = trans.log(sent_number, src_raw=srcs)
                     if self.logger:
                         self.logger.info(output)
                     else:
@@ -456,7 +468,7 @@ class Inference(object):
                     preds.append(DefaultTokens.EOS)
                     attns = trans.attns[0].tolist()
                     if self.data_type == "text":
-                        srcs = trans.src_raw
+                        srcs = [voc_src[tok] for tok in trans.src[: trans.srclen]]
                     else:
                         srcs = [str(item) for item in range(len(attns[0]))]
                     output = report_matrix(srcs, preds, attns)
@@ -472,7 +484,7 @@ class Inference(object):
                         tgts = trans.pred_sents[0]
                     align = trans.word_aligns[0].tolist()
                     if self.data_type == "text":
-                        srcs = trans.src_raw
+                        srcs = [voc_src[tok] for tok in trans.src[: trans.srclen]]
                     else:
                         srcs = [str(item) for item in range(len(align[0]))]
                     output = report_matrix(srcs, tgts, align)
@@ -567,6 +579,7 @@ class Inference(object):
         src_map=None,
         step=None,
         batch_offset=None,
+        return_attn=False,
     ):
         if self.copy_attn:
             # Turn any copied words into UNKs.
@@ -584,7 +597,7 @@ class Inference(object):
             enc_out,
             src_len=src_len,
             step=step,
-            with_align=self.global_scorer.has_cov_pen,
+            return_attn=self.global_scorer.has_cov_pen or return_attn,
         )
 
         # Generator forward.
@@ -844,6 +857,7 @@ class Translator(Inference):
                 src_map=src_map,
                 step=step,
                 batch_offset=decode_strategy.batch_offset,
+                return_attn=decode_strategy.return_attention,
             )
 
             decode_strategy.advance(log_probs, attn)

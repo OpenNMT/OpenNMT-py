@@ -25,11 +25,12 @@ Otherwise you can just have a look at the [Quickstart](https://opennmt.net/OpenN
 ----
 ## New:
 
-* Special note on Pytorch v2: up to v2.0.1 dynamic shapes are not handled properly, hence torch.compile() will not work with OpenNMT-py. We have tested nightly (in May) and it works with a small gain. Next version will be 2.1
-* LLM support with converters for: Llama, OpenLlama, Redpajama, MPT-7B, Falcon.
+* You will need Pytorch v2 preferably v2.1 which fixes some `scaled_dot_product_attention` issues
+* LLM support with converters for: Llama (+ Mistral), OpenLlama, Redpajama, MPT-7B, Falcon.
 * Support for 8bit and 4bit quantization along with LoRA adapters, with or without checkpointing.
 * You can finetune 7B and 13B models on a single RTX 24GB with 4-bit quantization.
 * Inference can be forced in 4/8bit using the same layer quantization as in finetuning.
+* Tensor parallelism when the model does not fit on one GPU's memory (both training and inference)
 * Once your model is finetuned you can run inference either with OpenNMT-py or faster with CTranslate2.
 * MMLU evaluation script, see results [here](https://github.com/OpenNMT/OpenNMT-py/blob/master/eval_llm/MMLU/readme.md)
 
@@ -55,7 +56,7 @@ If you used previous versions of OpenNMT-py, you can check the [Changelog](https
 OpenNMT-py requires:
 
 - Python >= 3.8
-- PyTorch >= 2.0 <2.1
+- PyTorch >= 2.0 <2.2
 
 Install `OpenNMT-py` from `pip`:
 ```bash
@@ -77,6 +78,35 @@ Note: if you encounter a `MemoryError` during installation, try to use `pip` wit
 pip install -r requirements.opt.txt
 ```
 
+## Manual installation of some dependencies
+
+Apex is highly recommended to have fast performance (especially the legacy fusedadam optimizer and FusedRMSNorm)
+
+```shell
+git clone https://github.com/NVIDIA/apex
+cd apex
+pip3 install -v --no-build-isolation --config-settings --build-option="--cpp_ext --cuda_ext --deprecated_fused_adam --xentropy --fast_multihead_attn" ./
+cd ..
+```
+
+Flash attention:
+
+As of Oct. 2023 flash attention 1 has been upstreamed to pytorch v2 but it is recommended to use flash attention 2 with v2.3.1 for sliding window attention support.
+
+When using regular `position_encoding=True` or Rotary with `max_relative_positions=-1` OpenNMT-py will try to use an optimized dot-product path.
+
+if you want to use [flash attention](https://github.com/Dao-AILab/flash-attention#installation-and-features) then you need to manually install it first:
+
+```bash
+pip install flash-attn --no-build-isolation
+```
+
+if flash attention 2 is not installed, then we will use `F.scaled_dot_product_attention` from pytorch 2.x
+
+When using `max_relative_positions > 0` or Alibi `max_relative_positions=-2` OpenNMT-py will use its legacy code for matrix multiplications.
+
+flash attention and `F.scaled_dot_product_attention` are a bit faster and saves some GPU memory.
+
 ## Documentation & FAQs
 
 [Full HTML Documentation](https://opennmt.net/OpenNMT-py/quickstart.html)
@@ -90,7 +120,7 @@ Project was incubated by Systran and Harvard NLP in 2016 in Lua and ported to Py
 
 Current maintainers (since 2018):
 
-[François Hernandez](https://github.com/francoishernandez) and Ubiqus Team.
+[François Hernandez](https://github.com/francoishernandez)
 [Vincent Nguyen](https://github.com/vince62s) (Seedfall)
 
 ## Citation
@@ -98,20 +128,13 @@ Current maintainers (since 2018):
 If you are using OpenNMT-py for academic work, please cite the initial [system demonstration paper](https://www.aclweb.org/anthology/P17-4012) published in ACL 2017:
 
 ```
-@inproceedings{klein-etal-2017-opennmt,
-    title = "{O}pen{NMT}: Open-Source Toolkit for Neural Machine Translation",
-    author = "Klein, Guillaume  and
-      Kim, Yoon  and
-      Deng, Yuntian  and
-      Senellart, Jean  and
-      Rush, Alexander",
-    booktitle = "Proceedings of {ACL} 2017, System Demonstrations",
-    month = jul,
-    year = "2017",
-    address = "Vancouver, Canada",
-    publisher = "Association for Computational Linguistics",
-    url = "https://www.aclweb.org/anthology/P17-4012",
-    pages = "67--72",
+@misc{klein2018opennmt,
+      title={OpenNMT: Neural Machine Translation Toolkit}, 
+      author={Guillaume Klein and Yoon Kim and Yuntian Deng and Vincent Nguyen and Jean Senellart and Alexander M. Rush},
+      year={2018},
+      eprint={1805.11462},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL}
 }
 ```
 

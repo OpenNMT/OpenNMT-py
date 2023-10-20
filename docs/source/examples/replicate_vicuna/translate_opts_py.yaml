@@ -1,0 +1,21 @@
+model_task: "lm"
+model: finetuned_llama7B/llama7B-vicuna-onmt_step_4000.concat.pt
+transforms: [sentencepiece]
+src_subword_model: llama/tokenizer.model
+tgt_subword_model: llama/tokenizer.model
+# world_size: 1
+# gpu_ranks: [0]
+world_size: 4
+gpu_ranks: [0, 1, 2, 3]
+parallel_mode: tensor_parallel
+gpu: 0
+max_length: 512
+batch_type: sents
+batch_size: 1
+precision: fp16
+verbose: true
+random_sampling_topk: 40
+random_sampling_topp: 0.75
+random_sampling_temp: 0.1
+beam: 1
+src: None

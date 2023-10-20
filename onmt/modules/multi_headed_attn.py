@@ -9,6 +9,7 @@ from torch.utils.checkpoint import checkpoint
 from torch.nn.utils import skip_init
 from .alibi_position_bias import AlibiPositionalBias
 import torch.distributed as dist
+import importlib
 
 
 # Help functions for Rotary Embeddings
@@ -52,9 +53,7 @@ def relative_matmul(x: Tensor, z: Tensor, transpose: bool) -> Tensor:
     https://arxiv.org/pdf/1803.02155.pdf
     x shape [batch_size x heads x q_len x k_len]
     """
-    batch_size = x.size(0)
-    heads = x.size(1)
-    length = x.size(2)
+    batch_size, heads, length = x.size()
     x_t = x.permute(2, 0, 1, 3)
     x_t_r = x_t.contiguous().view(length, heads * batch_size, -1)
     if transpose:
@@ -180,7 +179,8 @@ def shape(x: Tensor, dim_per_head: int) -> Tensor:
     [batchsize x length x modeldim]
     -> [batchsize x heads x length x dimperhead]
     """
-    return x.view(x.size(0), x.size(1), -1, dim_per_head).transpose(1, 2)
+    x_0, x_1, _ = x.size()
+    return x.view(x_0, x_1, -1, dim_per_head).transpose(1, 2)
 
 
 def unshape(x: Tensor) -> Tensor:
@@ -189,11 +189,11 @@ def unshape(x: Tensor) -> Tensor:
     [batchsize x heads x length x dimperhead]
     -> [batchsize x length x modeldim]
     """
-    return x.transpose(1, 2).contiguous().view(x.size(0), -1, x.size(1) * x.size(3))
+    x_0, x_1, _, x_3 = x.size()
+    return x.transpose(1, 2).contiguous().view(x_0, -1, x_1 * x_3)
 
 
-class MultiHeadedAttention(nn.Module):
-    # class MultiHeadedAttention(torch.jit.ScriptModule):
+class MultiHeadedAttention(torch.nn.Module):
     """Multi-Head Attention module from "Attention is All You Need"
     :cite:`DBLP:journals/corr/VaswaniSPUJGKP17`.
 
@@ -299,6 +299,7 @@ class MultiHeadedAttention(nn.Module):
         )
         self.softmax = nn.Softmax(dim=-1)
         self.dropout = nn.Dropout(dropout)
+        self.dropout_p = dropout
         self.final_linear = skip_init(
             nn.Linear,
             in_features=model_dim // parallel_gpu,
@@ -341,16 +342,28 @@ class MultiHeadedAttention(nn.Module):
 
         self.maybe_ckpt = checkpoint if "mha" in use_ckpting else lambda f, x: f(x)
 
+        try:
+            flash_pack = importlib.import_module("flash_attn")
+            if (
+                hasattr(flash_pack, "flash_attn_func")
+                and torch.cuda.get_device_capability()[0] >= 8
+            ):
+                self.flash_attn_func = getattr(flash_pack, "flash_attn_func")
+                self.flash2 = True
+        except ImportError:
+            self.flash2 = False
+
     def update_dropout(self, dropout: float) -> None:
         self.dropout.p = dropout
+        self.dropout_p = dropout
 
-    # @torch.jit.script_method
     def forward(
         self,
         key: Tensor,
         value: Tensor,
         query: Tensor,
         mask: Optional[Tensor] = None,
+        sliding_window: Optional[int] = 0,
         step: Optional[int] = 0,
         return_attn: Optional[bool] = False,
     ) -> Tuple[Tensor, Tensor]:
@@ -389,14 +402,16 @@ class MultiHeadedAttention(nn.Module):
                 if self.max_relative_positions == -1:  # Rotary Embeddings
                     start_pos = step
                     seqlen = query.size(2)
-                    rope = self.rope[start_pos : start_pos + seqlen].to(query.device)
+                    rope = self.rope[start_pos : start_pos + seqlen]
                     query, key = apply_rotary_emb(query, key, rope=rope)
 
                 if self.layer_cache[1]["keys"].numel() != 0:
                     key = torch.cat((self.layer_cache[1]["keys"], key), dim=2)
-
-                if self.layer_cache[1]["values"].numel() != 0:
                     value = torch.cat((self.layer_cache[1]["values"], value), dim=2)
+                    if sliding_window > 0 and key.size(2) > sliding_window:
+                        key = key[:, :, 1:, :]
+                        value = value[:, :, 1:, :]
+
                 self.layer_cache[1]["keys"] = key
                 self.layer_cache[1]["values"] = value
             elif self.attn_type == "context":
@@ -427,28 +442,62 @@ class MultiHeadedAttention(nn.Module):
                 rope = self.rope[start_pos : start_pos + seqlen].to(query.device)
                 query, key = apply_rotary_emb(query, key, rope=rope)
 
-        # expand key on heads dimension when it's less than query heads (multi-query variant)
-        key = key.view(key.size(0), -1, 1, key.size(2), key.size(3)).repeat(
-            1, 1, query.size(1) // key.size(1), 1, 1
-        )
-        key = key.view(key.size(0), query.size(1), key.size(3), key.size(4))
+        b, h, l, d = key.size()
+        if self.num_kv > 0:
+            qh = query.size(1)
+            # expand key on heads dimension when it's less than query heads (multi-query variant)
+            key = key.view(b, -1, 1, l, d).repeat(1, 1, qh // h, 1, 1)
+            key = key.view(b, qh, l, d)
 
-        # expand value on heads dimension when it's less than query heads (multi-query variant)
-        value = value.view(value.size(0), -1, 1, value.size(2), value.size(3)).repeat(
-            1, 1, query.size(1) // value.size(1), 1, 1
-        )
-        value = value.view(value.size(0), query.size(1), value.size(3), value.size(4))
+            # expand value on heads dimension when it's less than query heads (multi-query variant)
+            value = value.view(b, -1, 1, l, d).repeat(1, 1, qh // h, 1, 1)
+            value = value.view(b, qh, l, d)
 
         # 2) When standard pos. enc. or rotary, use flash attention
-        if self.max_relative_positions in [-1, 0] and not return_attn:
-            if self.is_decoder and self.attn_type == "self":
-                attn_output = F.scaled_dot_product_attention(
-                    query, key, value, None, 0.0, is_causal=mask is not None
-                )
+
+        # Ultimately flashv2 will be part of pytorch https://github.com/pytorch/pytorch/pull/105602
+        # In the meantime: if vanilla tranformer or Rotary embeddings (not rel_pos, not alibi)
+        # then use flash2 if seq len > 256 otherwise use xtransformer from pt2 uptream
+
+        flash2 = (
+            self.flash2
+            and l > 256  # https://github.com/Dao-AILab/flash-attention/issues/591
+        )
+
+        if (
+            self.max_relative_positions in [-1, 0]
+            and not return_attn
+            and query.device != torch.device("cpu")
+        ):
+            causal = self.is_decoder and self.attn_type == "self" and mask is not None
+            if self.is_decoder and self.attn_type == "self" and flash2:
+                if causal:
+                    window_size = (
+                        (-1, -1) if sliding_window == 0 else (sliding_window, 0)
+                    )
+                else:
+                    window_size = (-1, -1)
+                attn_output = self.flash_attn_func(
+                    query.transpose(1, 2),
+                    key.transpose(1, 2),
+                    value.transpose(1, 2),
+                    dropout_p=self.dropout_p,
+                    causal=causal,
+                    window_size=window_size,
+                ).transpose(1, 2)
             else:
-                attn_output = F.scaled_dot_product_attention(
-                    query, key, value, ~mask, 0.0, is_causal=False
-                )
+                with torch.backends.cuda.sdp_kernel(
+                    enable_flash=False, enable_math=True, enable_mem_efficient=True
+                ):
+                    attn_output = F.scaled_dot_product_attention(
+                        query,
+                        key,
+                        value,
+                        ~mask if mask is not None else None,
+                        self.dropout_p,
+                        is_causal=causal,
+                    )
+
             x = unshape(attn_output)
 
             attn_output = self.maybe_ckpt(self.final_linear, x)
@@ -510,7 +559,7 @@ class MultiHeadedAttention(nn.Module):
 
             # 3) Apply attention dropout and compute context vectors.
             attn = self.softmax(scores).to(query.dtype)
-            drop_attn = self.dropout(attn)
+            drop_attn = self.dropout(attn) if self.dropout_p > 0 else attn
 
             context_original = torch.matmul(drop_attn, value)
 

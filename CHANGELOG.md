@@ -3,6 +3,23 @@
 
 ## [Unreleased]
 
+## [3.4.2](https://github.com/OpenNMT/OpenNMT-py/tree/3.4.2) (2023-10-20)
+
+* torch 2.1 (scaled_dot_product improvements)
+* Mistral 7B sliding window
+* Speed-up inference
+* flash attention 2 (with sliding window) >= v2.3.1
+* use FusedRMSNorm from apex if available
+* fixed attn_debug
+
+## [3.4.1](https://github.com/OpenNMT/OpenNMT-py/tree/3.4.1) (2023-09-26)
+
+* bug fixes
+* torch 2.x requirement (flash attention requires it)
+* zero-out the prompt loss in LM finetuning
+* batching sorted on src then tgt instead of max len
+* six dependancy
+
 ## [3.4.0](https://github.com/OpenNMT/OpenNMT-py/tree/3.4.0) (2023-09-06)
 
 * bitsandbytes 4/8 bit quantization at inference

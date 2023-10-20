@@ -74,16 +74,7 @@ def tile(x, count, dim=0):
         x = x.permute(perm)
     out_size = list(x.size())
     out_size[0] *= count
-    batch = x.size(0)
-    x = (
-        x.contiguous()
-        .view(batch, -1)
-        .transpose(0, 1)
-        .repeat(count, 1)
-        .transpose(0, 1)
-        .contiguous()
-        .view(*out_size)
-    )
+    x = x.contiguous().view(x.size(0), -1).repeat(1, count).view(*out_size)
     if dim != 0:
         x = x.permute(perm).contiguous()
     return x
@@ -123,14 +114,10 @@ def fn_args(fun):
 
 def report_matrix(row_label, column_label, matrix):
     header_format = "{:>10.10} " + "{:>10.7} " * len(row_label)
-    row_format = "{:>10.10} " + "{:>10.7f} " * len(row_label)
     output = header_format.format("", *row_label) + "\n"
     for word, row in zip(column_label, matrix):
-        max_index = row.index(max(row))
-        row_format = row_format.replace("{:>10.7f} ", "{:*>10.7f} ", max_index + 1)
-        row_format = row_format.replace("{:*>10.7f} ", "{:>10.7f} ", max_index)
+        row_format = "{:>10.10} " + "{:>10.7f} " * len(row)
         output += row_format.format(word, *row) + "\n"
-        row_format = "{:>10.10} " + "{:>10.7f} " * len(row_label)
     return output
 
 

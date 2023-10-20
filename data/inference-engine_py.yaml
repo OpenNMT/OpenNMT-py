@@ -1,0 +1,11 @@
+world_size: 0
+max_length: 512
+batch_type: sents
+batch_size: 100
+random_sampling_topk: 40
+random_sampling_topp: 0.75
+random_sampling_temp: 0.1
+beam_size: 2
+n_best: 2
+src: None
+model:  None

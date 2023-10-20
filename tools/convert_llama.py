@@ -71,6 +71,10 @@ if __name__ == "__main__":
         num_kv = params["n_kv_heads"]
     else:
         num_kv = 0
+    if "sliding_window" in params.keys():
+        sliding_window = params["sliding_window"]
+    else:
+        sliding_window = 0
 
     for shard in range(opt.nshards):
 
@@ -425,6 +429,7 @@ if __name__ == "__main__":
         self_attn_type="scaled-dot",
         max_relative_positions=-1,
         heads=heads,
+        sliding_window=sliding_window,
         transformer_ff=transformer_ff,
         aan_useffn=False,
         add_qkvbias=False,

@@ -1,0 +1,6 @@
+{
+  "bos_token": "<s>",
+  "eos_token": "</s>",
+  "layer_norm_epsilon": null,
+  "unk_token": "<unk>"
+}

@@ -98,12 +98,7 @@ class BeamSearchBase(DecodeStrategy):
         self.ratio = ratio
 
         # beam state
-        self.top_beam_finished = torch.zeros([batch_size], dtype=torch.uint8)
-        # BoolTensor was introduced in pytorch 1.2
-        try:
-            self.top_beam_finished = self.top_beam_finished.bool()
-        except AttributeError:
-            pass
+        self.top_beam_finished = torch.zeros([batch_size], dtype=torch.bool)
         self._batch_offset = torch.arange(batch_size, dtype=torch.long)
 
         self.select_indices = None
@@ -211,12 +206,17 @@ class BeamSearchBase(DecodeStrategy):
         for i in range(self.is_finished.size(0)):  # Batch level
             b = self._batch_offset[i]
             finished_hyp = self.is_finished[i].nonzero(as_tuple=False).view(-1)
+
+            if self.ratio > 0:
+                pred_len = self.src_len[i] * self.ratio
+                best_score = self.best_scores[b]
+
             # Store finished hypotheses for this batch.
             for j in finished_hyp:  # Beam level: finished beam j in batch i
                 if self.ratio > 0:
                     s = self.topk_scores[i, j] / (step + 1)
-                    if self.best_scores[b] < s:
-                        self.best_scores[b] = s
+                    best_score = max(s, best_score)
+
                 self.hypotheses[b].append(
                     (
                         self.topk_scores[i, j],
@@ -229,12 +229,12 @@ class BeamSearchBase(DecodeStrategy):
             # End condition is the top beam finished and we can return
             # n_best hypotheses.
             if self.ratio > 0:
-                pred_len = self.src_len[i] * self.ratio
                 finish_flag = (
-                    (self.topk_scores[i, 0] / pred_len) <= self.best_scores[b]
+                    (self.topk_scores[i, 0] / pred_len) <= best_score
                 ) or self.is_finished[i].all()
             else:
                 finish_flag = self.top_beam_finished[i] != 0
+
             if finish_flag and len(self.hypotheses[b]) >= self.beam_size:
                 best_hyp = sorted(self.hypotheses[b], key=lambda x: x[0], reverse=True)[
                     : self.n_best

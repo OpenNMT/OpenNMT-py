@@ -9,7 +9,11 @@ from onmt.modules import MultiHeadedAttention
 from onmt.modules.position_ffn import PositionwiseFeedForward
 from onmt.modules.position_ffn import ActivationFunction
 from onmt.utils.misc import sequence_mask
-from onmt.modules.rmsnorm import RMSNorm
+
+try:
+    from apex.normalization import FusedRMSNorm as RMSNorm
+except ImportError:
+    from onmt.modules.rmsnorm import RMSNorm
 
 
 class TransformerEncoderLayer(nn.Module):
@@ -80,6 +84,7 @@ class TransformerEncoderLayer(nn.Module):
             self.layer_norm = RMSNorm(d_model, eps=norm_eps)
         else:
             raise ValueError(f"{layer_norm} layer norm type is not supported")
+        self.dropout_p = dropout
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, layer_in, mask):
@@ -96,16 +101,15 @@ class TransformerEncoderLayer(nn.Module):
         context, _ = self.self_attn(
             norm_layer_in, norm_layer_in, norm_layer_in, mask=mask
         )
+        if self.dropout_p > 0:
+            context = self.dropout(context)
         if self.parallel_residual:
             # feed_forward applies residual, so we remove and apply residual with un-normed
             layer_out = (
-                self.feed_forward(norm_layer_in)
-                - norm_layer_in
-                + layer_in
-                + self.dropout(context)
+                self.feed_forward(norm_layer_in) - norm_layer_in + layer_in + context
             )
         else:
-            layer_out = self.dropout(context) + layer_in
+            layer_out = context + layer_in
             layer_out = self.feed_forward(layer_out)
 
         return layer_out

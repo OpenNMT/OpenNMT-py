@@ -198,6 +198,7 @@ class Embeddings(nn.Module):
 
         self.position_encoding = position_encoding
         self.dropout = nn.Dropout(p=dropout)
+        self.dropout_p = dropout
 
         if self.position_encoding:
             pe = PositionalEncoding(self.embedding_size, position_encoding_type)
@@ -294,7 +295,10 @@ class Embeddings(nn.Module):
         else:
             source = self.make_embedding(source)
 
-        return self.dropout(source)
+        if self.dropout_p > 0:
+            return self.dropout(source)
+        else:
+            return source
 
     def update_dropout(self, dropout):
         self.dropout.p = dropout
