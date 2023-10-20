@@ -351,7 +351,7 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
 
 class OnDeviceDatasetIter:
     def __init__(self, data_iter, device):
-        self.data_iter = iter(data_iter)
+        self.data_iter = data_iter
         self.device = device
 
     def __iter__(self):

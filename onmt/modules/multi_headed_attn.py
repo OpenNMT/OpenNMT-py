@@ -487,7 +487,7 @@ class MultiHeadedAttention(torch.nn.Module):
                 ).transpose(1, 2)
             else:
                 with torch.backends.cuda.sdp_kernel(
-                    enable_flash=False, enable_math=False, enable_mem_efficient=True
+                    enable_flash=False, enable_math=True, enable_mem_efficient=True
                 ):
                     attn_output = F.scaled_dot_product_attention(
                         query,
