@@ -80,7 +80,7 @@ pip install -r requirements.opt.txt
 
 ## Manual installation of some dependencies
 
-Apex is highly recommended to have fast performance (especially the legacy fusedadam optimizer)
+Apex is highly recommended to have fast performance (especially the legacy fusedadam optimizer and FusedRMSNorm)
 
 ```shell
 git clone https://github.com/NVIDIA/apex
