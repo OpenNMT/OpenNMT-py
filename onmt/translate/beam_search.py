@@ -241,7 +241,7 @@ class BeamSearchBase(DecodeStrategy):
                 ]
                 for n, (score, pred, attn) in enumerate(best_hyp):
                     self.scores[b].append(score)
-                    self.predictions[b].append(pred)  # ``(batch, n_best,)``
+                    self.predictions[b].append(pred.cpu())  # ``(batch, n_best,)``
                     self.attention[b].append(attn if attn is not None else [])
             else:
                 non_finished_batch.append(i)
