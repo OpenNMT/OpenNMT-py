@@ -271,7 +271,7 @@ class GreedySearch(DecodeStrategy):
                 best_hyp = sorted(self.hypotheses[b], key=lambda x: x[0], reverse=True)
                 for score, pred, attn in best_hyp:
                     self.scores[b].append(score)
-                    self.predictions[b].append(pred)
+                    self.predictions[b].append(pred.cpu())
                     self.attention[b].append(attn)
             return
         is_alive = ~self.is_finished.view(-1)
