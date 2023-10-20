@@ -203,7 +203,6 @@
   <h1>Source code for onmt.translate.translation</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot; Translation main class &quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">from</span> <span class="nn">onmt.constants</span> <span class="kn">import</span> <span class="n">DefaultTokens</span>
 <span class="kn">from</span> <span class="nn">onmt.utils.alignment</span> <span class="kn">import</span> <span class="n">build_align_pharaoh</span>
 
@@ -223,8 +222,7 @@
 <span class="sd">       replace_unk (bool): replace unknown words using attention</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">vocabs</span><span class="p">,</span> <span class="n">n_best</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">replace_unk</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">phrase_table</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vocabs</span><span class="p">,</span> <span class="n">n_best</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">replace_unk</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">phrase_table</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vocabs</span> <span class="o">=</span> <span class="n">vocabs</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_best</span> <span class="o">=</span> <span class="n">n_best</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">replace_unk</span> <span class="o">=</span> <span class="n">replace_unk</span>
@@ -237,107 +235,103 @@
                     <span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">phrase_table_dict</span><span class="p">[</span><span class="n">phrase_src</span><span class="p">]</span> <span class="o">=</span> <span class="n">phrase_trg</span>
 
-    <span class="k">def</span> <span class="nf">_build_source_tokens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">):</span>
-        <span class="n">tokens</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">tok</span> <span class="ow">in</span> <span class="n">src</span><span class="p">:</span>
-            <span class="n">tokens</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vocabs</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">lookup_index</span><span class="p">(</span><span class="n">tok</span><span class="p">))</span>
-            <span class="k">if</span> <span class="n">tokens</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">DefaultTokens</span><span class="o">.</span><span class="n">PAD</span><span class="p">:</span>
-                <span class="n">tokens</span> <span class="o">=</span> <span class="n">tokens</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-                <span class="k">break</span>
-        <span class="k">return</span> <span class="n">tokens</span>
+    <span class="k">def</span> <span class="nf">_build_target_tokens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">srclen</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="n">attn</span><span class="p">,</span> <span class="n">voc</span><span class="p">,</span> <span class="n">dyn_voc</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">dyn_voc</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">tokens</span> <span class="o">=</span> <span class="p">[</span><span class="n">voc</span><span class="p">[</span><span class="n">tok</span><span class="p">]</span> <span class="k">for</span> <span class="n">tok</span> <span class="ow">in</span> <span class="n">pred</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tokens</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">voc</span><span class="p">[</span><span class="n">tok</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">tok</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">voc</span><span class="p">)</span>
+                <span class="k">else</span> <span class="n">dyn_voc</span><span class="o">.</span><span class="n">ids_to_tokens</span><span class="p">[</span><span class="n">tok</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vocabs</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">ids_to_tokens</span><span class="p">)]</span>
+                <span class="k">for</span> <span class="n">tok</span> <span class="ow">in</span> <span class="n">pred</span>
+            <span class="p">]</span>
+        <span class="k">if</span> <span class="n">tokens</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">DefaultTokens</span><span class="o">.</span><span class="n">EOS</span><span class="p">:</span>
+            <span class="n">tokens</span> <span class="o">=</span> <span class="n">tokens</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="nf">_build_target_tokens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">src_raw</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="n">attn</span><span class="p">):</span>
-        <span class="n">tokens</span> <span class="o">=</span> <span class="p">[]</span>
-
-        <span class="k">for</span> <span class="n">tok</span> <span class="ow">in</span> <span class="n">pred</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">tok</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vocabs</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]):</span>
-                <span class="n">tokens</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vocabs</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">lookup_index</span><span class="p">(</span><span class="n">tok</span><span class="p">))</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">vl</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vocabs</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">])</span>
-                <span class="n">tokens</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vocabs</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">lookup_index</span><span class="p">(</span><span class="n">tok</span> <span class="o">-</span> <span class="n">vl</span><span class="p">))</span>
-            <span class="k">if</span> <span class="n">tokens</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">DefaultTokens</span><span class="o">.</span><span class="n">EOS</span><span class="p">:</span>
-                <span class="n">tokens</span> <span class="o">=</span> <span class="n">tokens</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-                <span class="k">break</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">replace_unk</span> <span class="ow">and</span> <span class="n">attn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">src</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">)):</span>
                 <span class="k">if</span> <span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">DefaultTokens</span><span class="o">.</span><span class="n">UNK</span><span class="p">:</span>
-                    <span class="n">_</span><span class="p">,</span> <span class="n">max_index</span> <span class="o">=</span> <span class="n">attn</span><span class="p">[</span><span class="n">i</span><span class="p">][:</span> <span class="nb">len</span><span class="p">(</span><span class="n">src_raw</span><span class="p">)]</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-                    <span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">src_raw</span><span class="p">[</span><span class="n">max_index</span><span class="o">.</span><span class="n">item</span><span class="p">()]</span>
+                    <span class="n">_</span><span class="p">,</span> <span class="n">max_index</span> <span class="o">=</span> <span class="n">attn</span><span class="p">[</span><span class="n">i</span><span class="p">][:</span><span class="n">srclen</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                    <span class="n">src_tok</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vocabs</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">ids_to_tokens</span><span class="p">[</span><span class="n">src</span><span class="p">[</span><span class="n">max_index</span><span class="o">.</span><span class="n">item</span><span class="p">()]]</span>
+                    <span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">src_tok</span>
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_table_dict</span><span class="p">:</span>
-                        <span class="n">src_tok</span> <span class="o">=</span> <span class="n">src_raw</span><span class="p">[</span><span class="n">max_index</span><span class="o">.</span><span class="n">item</span><span class="p">()]</span>
                         <span class="k">if</span> <span class="n">src_tok</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_table_dict</span><span class="p">:</span>
                             <span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_table_dict</span><span class="p">[</span><span class="n">src_tok</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">tokens</span>
 
     <span class="k">def</span> <span class="nf">from_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">translation_batch</span><span class="p">):</span>
         <span class="n">batch</span> <span class="o">=</span> <span class="n">translation_batch</span><span class="p">[</span><span class="s2">&quot;batch&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">&quot;src_ex_vocab&quot;</span> <span class="ow">in</span> <span class="n">batch</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">dyn_voc_batch</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;src_ex_vocab&quot;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dyn_voc_batch</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">translation_batch</span><span class="p">[</span><span class="s2">&quot;gold_score&quot;</span><span class="p">])</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span>
             <span class="n">translation_batch</span><span class="p">[</span><span class="s2">&quot;predictions&quot;</span><span class="p">]</span>
         <span class="p">)</span>
         <span class="n">batch_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;srclen&quot;</span><span class="p">])</span>
 
-        <span class="n">preds</span><span class="p">,</span> <span class="n">pred_score</span><span class="p">,</span> <span class="n">attn</span><span class="p">,</span> <span class="n">align</span><span class="p">,</span> <span class="n">gold_score</span><span class="p">,</span> <span class="n">indices</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
-            <span class="nb">zip</span><span class="p">(</span>
-                <span class="o">*</span><span class="nb">sorted</span><span class="p">(</span>
-                    <span class="nb">zip</span><span class="p">(</span>
-                        <span class="n">translation_batch</span><span class="p">[</span><span class="s2">&quot;predictions&quot;</span><span class="p">],</span>
-                        <span class="n">translation_batch</span><span class="p">[</span><span class="s2">&quot;scores&quot;</span><span class="p">],</span>
-                        <span class="n">translation_batch</span><span class="p">[</span><span class="s2">&quot;attention&quot;</span><span class="p">],</span>
-                        <span class="n">translation_batch</span><span class="p">[</span><span class="s2">&quot;alignment&quot;</span><span class="p">],</span>
-                        <span class="n">translation_batch</span><span class="p">[</span><span class="s2">&quot;gold_score&quot;</span><span class="p">],</span>
-                        <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;indices&quot;</span><span class="p">],</span>
-                    <span class="p">),</span>
-                    <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
-                <span class="p">)</span>
-            <span class="p">)</span>
+        <span class="n">preds</span><span class="p">,</span> <span class="n">pred_score</span><span class="p">,</span> <span class="n">attn</span><span class="p">,</span> <span class="n">align</span><span class="p">,</span> <span class="n">gold_score</span><span class="p">,</span> <span class="n">ind</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">translation_batch</span><span class="p">[</span><span class="s2">&quot;predictions&quot;</span><span class="p">],</span>
+            <span class="n">translation_batch</span><span class="p">[</span><span class="s2">&quot;scores&quot;</span><span class="p">],</span>
+            <span class="n">translation_batch</span><span class="p">[</span><span class="s2">&quot;attention&quot;</span><span class="p">],</span>
+            <span class="n">translation_batch</span><span class="p">[</span><span class="s2">&quot;alignment&quot;</span><span class="p">],</span>
+            <span class="n">translation_batch</span><span class="p">[</span><span class="s2">&quot;gold_score&quot;</span><span class="p">],</span>
+            <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;indices&quot;</span><span class="p">],</span>
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">align</span><span class="p">):</span>  <span class="c1"># when align is a empty nested list</span>
             <span class="n">align</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">batch_size</span>
 
-        <span class="c1"># Sorting</span>
-        <span class="n">inds</span><span class="p">,</span> <span class="n">perm</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;indices&quot;</span><span class="p">])</span>
-
-        <span class="n">src</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">][:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">perm</span><span class="p">)</span>
+        <span class="n">src</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">][:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">srclen</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;srclen&quot;</span><span class="p">][:]</span>
         <span class="k">if</span> <span class="s2">&quot;tgt&quot;</span> <span class="ow">in</span> <span class="n">batch</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="n">tgt</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">][:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">perm</span><span class="p">)</span>
+            <span class="n">tgt</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">][:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">tgt</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="n">translations</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">voc_tgt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vocabs</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">ids_to_tokens</span>
 
+        <span class="c1"># These comp lists are costy but less than for loops</span>
         <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">src</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">src_raw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_source_tokens</span><span class="p">(</span><span class="n">src</span><span class="p">[</span><span class="n">b</span><span class="p">,</span> <span class="p">:])</span>
+            <span class="k">if</span> <span class="n">dyn_voc_batch</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">dyn_voc</span> <span class="o">=</span> <span class="n">dyn_voc_batch</span><span class="p">[</span><span class="n">b</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">src_raw</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">dyn_voc</span> <span class="o">=</span> <span class="kc">None</span>
+
             <span class="n">pred_sents</span> <span class="o">=</span> <span class="p">[</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_build_target_tokens</span><span class="p">(</span>
                     <span class="n">src</span><span class="p">[</span><span class="n">b</span><span class="p">,</span> <span class="p">:]</span> <span class="k">if</span> <span class="n">src</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
-                    <span class="n">src_raw</span><span class="p">,</span>
+                    <span class="n">srclen</span><span class="p">[</span><span class="n">b</span><span class="p">],</span>
                     <span class="n">preds</span><span class="p">[</span><span class="n">b</span><span class="p">][</span><span class="n">n</span><span class="p">],</span>
                     <span class="n">align</span><span class="p">[</span><span class="n">b</span><span class="p">][</span><span class="n">n</span><span class="p">]</span> <span class="k">if</span> <span class="n">align</span><span class="p">[</span><span class="n">b</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">attn</span><span class="p">[</span><span class="n">b</span><span class="p">][</span><span class="n">n</span><span class="p">],</span>
+                    <span class="n">voc_tgt</span><span class="p">,</span>
+                    <span class="n">dyn_voc</span><span class="p">,</span>
                 <span class="p">)</span>
                 <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_best</span><span class="p">)</span>
             <span class="p">]</span>
+
             <span class="n">gold_sent</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="k">if</span> <span class="n">tgt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">gold_sent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_target_tokens</span><span class="p">(</span>
                     <span class="n">src</span><span class="p">[</span><span class="n">b</span><span class="p">,</span> <span class="p">:]</span> <span class="k">if</span> <span class="n">src</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
-                    <span class="n">src_raw</span><span class="p">,</span>
+                    <span class="n">srclen</span><span class="p">[</span><span class="n">b</span><span class="p">],</span>
                     <span class="n">tgt</span><span class="p">[</span><span class="n">b</span><span class="p">,</span> <span class="mi">1</span><span class="p">:]</span> <span class="k">if</span> <span class="n">tgt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
                     <span class="kc">None</span><span class="p">,</span>
+                    <span class="n">voc_tgt</span><span class="p">,</span>
+                    <span class="n">dyn_voc</span><span class="p">,</span>
                 <span class="p">)</span>
 
             <span class="n">translation</span> <span class="o">=</span> <span class="n">Translation</span><span class="p">(</span>
                 <span class="n">src</span><span class="p">[</span><span class="n">b</span><span class="p">,</span> <span class="p">:]</span> <span class="k">if</span> <span class="n">src</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
-                <span class="n">src_raw</span><span class="p">,</span>
+                <span class="n">srclen</span><span class="p">[</span><span class="n">b</span><span class="p">],</span>
                 <span class="n">pred_sents</span><span class="p">,</span>
                 <span class="n">attn</span><span class="p">[</span><span class="n">b</span><span class="p">],</span>
                 <span class="n">pred_score</span><span class="p">[</span><span class="n">b</span><span class="p">],</span>
                 <span class="n">gold_sent</span><span class="p">,</span>
                 <span class="n">gold_score</span><span class="p">[</span><span class="n">b</span><span class="p">],</span>
                 <span class="n">align</span><span class="p">[</span><span class="n">b</span><span class="p">],</span>
+                <span class="n">ind</span><span class="p">[</span><span class="n">b</span><span class="p">],</span>
             <span class="p">)</span>
             <span class="n">translations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">translation</span><span class="p">)</span>
 
@@ -349,7 +343,7 @@
 
 <span class="sd">    Attributes:</span>
 <span class="sd">        src (LongTensor): Source word IDs.</span>
-<span class="sd">        src_raw (List[str]): Raw source words.</span>
+<span class="sd">        srclen (List[int]): Source lengths.</span>
 <span class="sd">        pred_sents (List[List[str]]): Words from the n-best translations.</span>
 <span class="sd">        pred_scores (List[List[float]]): Log-probs of n-best translations.</span>
 <span class="sd">        attns (List[FloatTensor]) : Attention distribution for each</span>
@@ -362,41 +356,44 @@
 
     <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">[</span>
         <span class="s2">&quot;src&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;src_raw&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;srclen&quot;</span><span class="p">,</span>
         <span class="s2">&quot;pred_sents&quot;</span><span class="p">,</span>
         <span class="s2">&quot;attns&quot;</span><span class="p">,</span>
         <span class="s2">&quot;pred_scores&quot;</span><span class="p">,</span>
         <span class="s2">&quot;gold_sent&quot;</span><span class="p">,</span>
         <span class="s2">&quot;gold_score&quot;</span><span class="p">,</span>
         <span class="s2">&quot;word_aligns&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;indices&quot;</span><span class="p">,</span>
     <span class="p">]</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">src</span><span class="p">,</span>
-        <span class="n">src_raw</span><span class="p">,</span>
+        <span class="n">srclen</span><span class="p">,</span>
         <span class="n">pred_sents</span><span class="p">,</span>
         <span class="n">attn</span><span class="p">,</span>
         <span class="n">pred_scores</span><span class="p">,</span>
         <span class="n">tgt_sent</span><span class="p">,</span>
         <span class="n">gold_score</span><span class="p">,</span>
         <span class="n">word_aligns</span><span class="p">,</span>
+        <span class="n">indices</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">src</span> <span class="o">=</span> <span class="n">src</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">src_raw</span> <span class="o">=</span> <span class="n">src_raw</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">srclen</span> <span class="o">=</span> <span class="n">srclen</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pred_sents</span> <span class="o">=</span> <span class="n">pred_sents</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">attns</span> <span class="o">=</span> <span class="n">attn</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pred_scores</span> <span class="o">=</span> <span class="n">pred_scores</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">gold_sent</span> <span class="o">=</span> <span class="n">tgt_sent</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">gold_score</span> <span class="o">=</span> <span class="n">gold_score</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">word_aligns</span> <span class="o">=</span> <span class="n">word_aligns</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">indices</span> <span class="o">=</span> <span class="n">indices</span>
 
-<div class="viewcode-block" id="Translation.log"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.Translation.log">[docs]</a>    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sent_number</span><span class="p">):</span>
+<div class="viewcode-block" id="Translation.log"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.Translation.log">[docs]</a>    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sent_number</span><span class="p">,</span> <span class="n">src_raw</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Log translation.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="n">msg</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">SENT </span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sent_number</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_raw</span><span class="p">)]</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">SENT </span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sent_number</span><span class="p">,</span> <span class="n">src_raw</span><span class="p">)]</span>
 
         <span class="n">best_pred</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pred_sents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">best_score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pred_scores</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>

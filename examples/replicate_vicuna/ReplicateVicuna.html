@@ -129,9 +129,9 @@
 <li class="toctree-l2"><a class="reference internal" href="#finetuning">Finetuning</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#inference">Inference</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#concatenation-of-the-checkpoints">Concatenation of the checkpoints</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#input-examples">Input examples</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#inference-with-translate-py">Inference with <code class="docutils literal notranslate"><span class="pre">translate.py</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#inference-with-ctranslate">Inference with <code class="docutils literal notranslate"><span class="pre">CTranslate</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#conversion-to-ctranslate-format">Conversion to ctranslate format</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#multi-round-conversations-with-vicuna">Multi-round conversations with vicuna</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#simple-inference">Simple inference</a></li>
 </ul>
 </li>
 </ul>
@@ -235,14 +235,16 @@
 <p>Here is a short description of the content of your current directory:</p>
 <ul class="simple">
 <li><p>The OpenNMT-py repository.</p></li>
-<li><p>The <code class="docutils literal notranslate"><span class="pre">replicate_vicuna.yaml</span></code> file.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">replicate_vicuna.yaml</span></code> file with the finetuning options</p></li>
 <li><p>A subdirectory named “llama” with the llama chekpoints.</p></li>
-<li><p>The converted llama7B checkpoint (<code class="docutils literal notranslate"><span class="pre">llama7B-vicuna-onmt</span></code>) and the vocabulary (<code class="docutils literal notranslate"><span class="pre">vocab.txt</span></code>) that will be genenerated with OpenNMT tools.</p></li>
+<li><p>The llama7B checkpoint converted to <code class="docutils literal notranslate"><span class="pre">OpenNMT-py</span></code> format (<code class="docutils literal notranslate"><span class="pre">llama7B-vicuna-onmt</span></code>) and the vocabulary (<code class="docutils literal notranslate"><span class="pre">vocab.txt</span></code>). They will be genenerated with <code class="docutils literal notranslate"><span class="pre">OpenNMT-py</span></code> tools.</p></li>
 <li><p>A subdirectory named “dataAI” with the datasets for the finetuning.</p></li>
-<li><p>A subdirectory named “finetuned_llama7B” that will contain the finetuning samples, tensorboard logs and checkpoints.</p></li>
-<li><p>The <code class="docutils literal notranslate"><span class="pre">translate_opts.yaml</span></code> file with the translation options for the inference with <code class="docutils literal notranslate"><span class="pre">OpenNMT-py/onmt/bin/translate.py</span></code>.</p></li>
-<li><p>A subdirectory named “inputs” containing the <code class="docutils literal notranslate"><span class="pre">input_examples.txt</span></code> file with the input examples for the inference.</p></li>
+<li><p>A subdirectory named “finetuned_llama7B” that will contain the finetuning samples, the tensorboard logs and the checkpoints.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">translate_opts_py.yaml</span></code> file with the translation options for the inference with <code class="docutils literal notranslate"><span class="pre">translate.py</span></code>.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">translate_opts_ct2.yaml</span></code> file with the translation options for the inference with <code class="docutils literal notranslate"><span class="pre">cranslate2</span></code>.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">input_examples.txt</span></code> file with a few input examples.</p></li>
 <li><p>A subdirectory named “outputs” that will contain the inferred outputs of the finetuned model.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">simple_inference.py</span></code> file to compute vicuna’s predictions from the <code class="docutils literal notranslate"><span class="pre">input_examples.txt</span></code> file, for the 2 different modes.</p></li>
 <li><p>The <code class="docutils literal notranslate"><span class="pre">chatbot.py</span></code> script (for the ctranslate2 inference with a gradio application).</p></li>
 </ul>
 <section id="dependencies">
@@ -316,9 +318,9 @@ They have been flattened into plain text files. Moreover all occurences of the �
 </section>
 <section id="finetuning">
 <h2>Finetuning<a class="headerlink" href="#finetuning" title="Permalink to this heading">¶</a></h2>
-<p>We provide an example of a finetuning configuration (<code class="docutils literal notranslate"><span class="pre">replicate_alpaca.yaml</span></code>). To enable the application of the LoRa method to the attention layers, the options of the checkpoint need to be overriden.</p>
+<p>We provide an example of a finetuning configuration (<code class="docutils literal notranslate"><span class="pre">replicate_vicuna.yaml</span></code>). To enable the application of the LoRa method to the attention layers, the options of the checkpoint need to be overriden.</p>
 <p>The finetuning can be launched with this command:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>nohup<span class="w"> </span>python3<span class="w"> </span>OpenNMT-py/onmt/bin/train.py<span class="w"> </span>-config<span class="w"> </span>replicate_alpaca-vicuna.yaml<span class="w"> </span>&gt;<span class="w"> </span>finetenune-llama7B-vicuna-onmt.log<span class="w"> </span><span class="p">&amp;</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>nohup<span class="w"> </span>python3<span class="w"> </span>OpenNMT-py/onmt/bin/train.py<span class="w"> </span>-config<span class="w"> </span>replicate_-vicuna.yaml<span class="w"> </span>&gt;<span class="w"> </span>finetenune-llama7B-vicuna-onmt.log<span class="w"> </span><span class="p">&amp;</span>
 </pre></div>
 </div>
 <p>We can start by generating some samples (by turning <code class="docutils literal notranslate"><span class="pre">dump_samples</span></code> to True and <code class="docutils literal notranslate"><span class="pre">n_samples</span></code> to a strictly positive value).</p>
@@ -341,42 +343,57 @@ They have been flattened into plain text files. Moreover all occurences of the �
 </pre></div>
 </div>
 </section>
-<section id="input-examples">
-<h3>Input examples<a class="headerlink" href="#input-examples" title="Permalink to this heading">¶</a></h3>
-<p>The inputs need to follow the same pattern used in the finetuning examples.</p>
-<p>Let us create an “inputs” folder and save inside it the file named <code class="docutils literal notranslate"><span class="pre">input_examples.txt</span></code>.</p>
-</section>
-<section id="inference-with-translate-py">
-<h3>Inference with <code class="docutils literal notranslate"><span class="pre">translate.py</span></code><a class="headerlink" href="#inference-with-translate-py" title="Permalink to this heading">¶</a></h3>
-<p>Let us create an “outputs” folder.</p>
-<p>To obtain the model’s inference you can run this command:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>nohup<span class="w"> </span>python3<span class="w"> </span>OpenNMT-py/onmt/bin/translate.py<span class="se">\</span>
-<span class="w">    </span>-model<span class="w"> </span>finetuned_llama7B/llama7B-vicuna-onmt_step_4000.concat.pt<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>-src<span class="w"> </span>inputs/input_examples.txt<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>-output<span class="w"> </span>outputs/examples_llama7B-vicuna-onmt_step_4000.concat.txt<span class="w">  </span><span class="se">\</span>
-<span class="w">    </span>-config<span class="w"> </span>translate_opts.yaml<span class="w"> </span>&gt;<span class="w"> </span>infer.log<span class="w"> </span><span class="p">&amp;</span><span class="w"> </span>
+<section id="conversion-to-ctranslate-format">
+<h3>Conversion to ctranslate format<a class="headerlink" href="#conversion-to-ctranslate-format" title="Permalink to this heading">¶</a></h3>
+<p>To convert the concatenated checkpoint to ctranslate2 format, run the following command:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>OpenNMT-py/onmt/bin/release_model.py<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--model<span class="w"> </span>finetuned_llama7B/llama7B-vicuna-onmt_step_4000.concat.pt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--output<span class="w"> </span>finetuned_llama7B/llama7B-vicuna-onmt_step_4000.concat_CT2<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--format<span class="w"> </span>ctranslate2<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--quantization<span class="w"> </span>int8_float16
 </pre></div>
 </div>
-<p>Where <code class="docutils literal notranslate"><span class="pre">translate_opts.yaml</span></code> is the provided config with the translation options.
+</section>
+<section id="multi-round-conversations-with-vicuna">
+<h3>Multi-round conversations with vicuna<a class="headerlink" href="#multi-round-conversations-with-vicuna" title="Permalink to this heading">¶</a></h3>
+<p>We provide a gradio chatbot application that can be run with two different inference modes (”py” or ctranslate2).</p>
+<p>Run one of the following commands:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>chatbot.py<span class="w"> </span><span class="se">\</span>
+-inference_config_file<span class="w"> </span>translate_opts_py.yaml<span class="w"> </span><span class="se">\</span>
+-inference_mode<span class="w"> </span>py<span class="w"> </span><span class="se">\</span>
+-max_context_length<span class="w"> </span><span class="m">4096</span><span class="w"> </span><span class="se">\</span>
+-server_port<span class="w"> </span><span class="m">5000</span>
+</pre></div>
+</div>
+<p>Or:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>chatbot.py<span class="w"> </span><span class="se">\</span>
+-inference_config_file<span class="w"> </span>translate_opts_ct2.yaml<span class="w"> </span><span class="se">\</span>
+-inference_mode<span class="w"> </span>ct2<span class="w"> </span><span class="se">\</span>
+-max_context_length<span class="w"> </span><span class="m">4096</span><span class="w"> </span><span class="se">\</span>
+-server_port<span class="w"> </span><span class="m">5000</span>
+</pre></div>
+</div>
+<p>Where <code class="docutils literal notranslate"><span class="pre">translate_opts_ct2.yaml</span></code>  and <code class="docutils literal notranslate"><span class="pre">translate_opts_py.yaml</span></code> are the provided config with the translation options.
 You can test other decoding methods and paramaters.</p>
-<p>We have also provided a gradio application to chat with the model.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>gradio<span class="w"> </span>chatbot.py
-</pre></div>
-</div>
-<p>You must use <code class="docutils literal notranslate"><span class="pre">inf_type</span> <span class="pre">=</span> <span class="pre">&quot;-py&quot;</span></code> at the beginning of the <code class="docutils literal notranslate"><span class="pre">chatbot.py</span></code> script.</p>
 </section>
-<section id="inference-with-ctranslate">
-<h3>Inference with <code class="docutils literal notranslate"><span class="pre">CTranslate</span></code><a class="headerlink" href="#inference-with-ctranslate" title="Permalink to this heading">¶</a></h3>
-<p>First we need to do the conversion to the ctranslate2 format.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">shell</span>
-<span class="n">python3</span> <span class="n">OpenNMT</span><span class="o">-</span><span class="n">py</span><span class="o">/</span><span class="n">onmt</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">release_model</span><span class="o">.</span><span class="n">py</span> \
-    <span class="o">--</span><span class="n">model</span> <span class="n">finetuned_llama7B</span><span class="o">/</span><span class="n">llama7B</span><span class="o">-</span><span class="n">vicuna</span><span class="o">-</span><span class="n">onmt_step_4000</span><span class="o">.</span><span class="n">concat</span><span class="o">.</span><span class="n">pt</span> \
-    <span class="o">--</span><span class="n">output</span> <span class="n">finetuned_llama7B</span><span class="o">/</span><span class="n">llama7B</span><span class="o">-</span><span class="n">vicuna</span><span class="o">-</span><span class="n">onmt_step_4000</span><span class="o">.</span><span class="n">concat_CT2</span> \
-    <span class="o">--</span><span class="nb">format</span> <span class="n">ctranslate2</span> \
-    <span class="o">--</span><span class="n">quantization</span> <span class="n">int8_float16</span>
+<section id="simple-inference">
+<h3>Simple inference<a class="headerlink" href="#simple-inference" title="Permalink to this heading">¶</a></h3>
+<p>To obtain the model’s inference you can run this command:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>simple_inference.py<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-input_file<span class="w"> </span>input_examples.txt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-inference_config_file<span class="w"> </span>translate_opts_py.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-inference_mode<span class="w"> </span>py<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-output_dir<span class="w"> </span>outputs
 </pre></div>
 </div>
-<p>You can chat with the model using <code class="docutils literal notranslate"><span class="pre">inf_type</span> <span class="pre">=</span> <span class="pre">&quot;ct2&quot;</span></code> at the beginning of the <code class="docutils literal notranslate"><span class="pre">chatbot.py</span></code> script.</p>
+<p>Or:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>simple_inference.py<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-input_file<span class="w"> </span>input_examples.txt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-inference_config_file<span class="w"> </span>translate_opts_ct2.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-inference_mode<span class="w"> </span>ct2<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-output_dir<span class="w"> </span>outputs
+</pre></div>
+</div>
 </section>
 </section>
 </section>

@@ -337,6 +337,7 @@
         <span class="n">bucket_size_init</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
         <span class="n">bucket_size_increment</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
         <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">device</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">),</span>
         <span class="n">skip_empty_level</span><span class="o">=</span><span class="s2">&quot;warning&quot;</span><span class="p">,</span>
         <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
         <span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
@@ -351,12 +352,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch_size</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">batch_type</span> <span class="o">=</span> <span class="n">batch_type</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">batch_size_multiple</span> <span class="o">=</span> <span class="n">batch_size_multiple</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="s2">&quot;cpu&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sort_key</span> <span class="o">=</span> <span class="n">text_sort_key</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bucket_size</span> <span class="o">=</span> <span class="n">bucket_size</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bucket_size_init</span> <span class="o">=</span> <span class="n">bucket_size_init</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bucket_size_increment</span> <span class="o">=</span> <span class="n">bucket_size_increment</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">copy</span> <span class="o">=</span> <span class="n">copy</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">device</span>
         <span class="k">if</span> <span class="n">stride</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid argument for stride=</span><span class="si">{</span><span class="n">stride</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">stride</span> <span class="o">=</span> <span class="n">stride</span>
@@ -367,7 +368,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">random_shuffler</span> <span class="o">=</span> <span class="n">RandomShuffler</span><span class="p">()</span>
 
 <div class="viewcode-block" id="DynamicDatasetIter.from_opt"><a class="viewcode-back" href="../../../onmt.inputters.html#onmt.inputters.DynamicDatasetIter.from_opt">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_opt</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">corpora</span><span class="p">,</span> <span class="n">transforms</span><span class="p">,</span> <span class="n">vocabs</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">task</span><span class="p">,</span> <span class="n">copy</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">from_opt</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">corpora</span><span class="p">,</span> <span class="n">transforms</span><span class="p">,</span> <span class="n">vocabs</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">task</span><span class="p">,</span> <span class="n">copy</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">0</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initilize `DynamicDatasetIter` with options parsed from `opt`.&quot;&quot;&quot;</span>
         <span class="n">corpora_info</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">batch_size</span> <span class="o">=</span> <span class="p">(</span>
@@ -406,6 +409,7 @@
             <span class="n">bucket_size_init</span><span class="o">=</span><span class="n">bucket_size_init</span><span class="p">,</span>
             <span class="n">bucket_size_increment</span><span class="o">=</span><span class="n">bucket_size_increment</span><span class="p">,</span>
             <span class="n">copy</span><span class="o">=</span><span class="n">copy</span><span class="p">,</span>
+            <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
             <span class="n">skip_empty_level</span><span class="o">=</span><span class="n">skip_empty_level</span><span class="p">,</span>
             <span class="n">stride</span><span class="o">=</span><span class="n">stride</span><span class="p">,</span>
             <span class="n">offset</span><span class="o">=</span><span class="n">offset</span><span class="p">,</span>
@@ -542,9 +546,23 @@
             <span class="k">for</span> <span class="n">minibatch</span> <span class="ow">in</span> <span class="n">p_batch</span><span class="p">:</span>
                 <span class="c1"># for specific case of rnn_packed need to be sorted</span>
                 <span class="c1"># within the batch</span>
-                <span class="n">minibatch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sort_key</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                <span class="n">tensor_batch</span> <span class="o">=</span> <span class="n">tensorify</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vocabs</span><span class="p">,</span> <span class="n">minibatch</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span> <span class="o">==</span> <span class="n">CorpusTask</span><span class="o">.</span><span class="n">TRAIN</span><span class="p">:</span>
+                    <span class="n">minibatch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sort_key</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">tensor_batch</span> <span class="o">=</span> <span class="n">tensorify</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vocabs</span><span class="p">,</span> <span class="n">minibatch</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
                 <span class="k">yield</span> <span class="n">tensor_batch</span></div>
+
+
+<span class="k">class</span> <span class="nc">OnDeviceDatasetIter</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_iter</span><span class="p">,</span> <span class="n">device</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_iter</span> <span class="o">=</span> <span class="n">data_iter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">device</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">tensor_batch</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_iter</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">tensor_batch</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="o">!=</span> <span class="s2">&quot;src_ex_vocab&quot;</span><span class="p">:</span>
+                    <span class="n">tensor_batch</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">tensor_batch</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+            <span class="k">yield</span> <span class="n">tensor_batch</span>
 
 
 <span class="k">def</span> <span class="nf">build_dynamic_dataset_iter</span><span class="p">(</span>
@@ -558,6 +576,7 @@
     <span class="n">src</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">tgt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">align</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">device_id</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Build `DynamicDatasetIter` from opt.</span>
@@ -580,14 +599,38 @@
     <span class="k">if</span> <span class="n">corpora</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">assert</span> <span class="n">task</span> <span class="o">!=</span> <span class="n">CorpusTask</span><span class="o">.</span><span class="n">TRAIN</span><span class="p">,</span> <span class="s2">&quot;only valid corpus is ignorable.&quot;</span>
         <span class="k">return</span> <span class="kc">None</span>
-    <span class="n">data_iter</span> <span class="o">=</span> <span class="n">DynamicDatasetIter</span><span class="o">.</span><span class="n">from_opt</span><span class="p">(</span>
-        <span class="n">corpora</span><span class="p">,</span> <span class="n">transforms</span><span class="p">,</span> <span class="n">vocabs</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">task</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="n">copy</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="n">stride</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="n">offset</span>
-    <span class="p">)</span>
-    <span class="n">data_iter</span><span class="o">.</span><span class="n">num_workers</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">num_workers</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="s2">&quot;num_workers&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="mi">0</span>
-    <span class="k">if</span> <span class="n">data_iter</span><span class="o">.</span><span class="n">num_workers</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">task</span> <span class="o">==</span> <span class="n">CorpusTask</span><span class="o">.</span><span class="n">INFER</span><span class="p">:</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="n">device_id</span><span class="p">)</span> <span class="k">if</span> <span class="n">device_id</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+    <span class="n">num_workers</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">num_workers</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="s2">&quot;num_workers&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">num_workers</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">task</span> <span class="o">==</span> <span class="n">CorpusTask</span><span class="o">.</span><span class="n">INFER</span><span class="p">:</span>
+        <span class="c1"># single thread - create batch directly on GPU if device is gpu</span>
+        <span class="n">data_iter</span> <span class="o">=</span> <span class="n">DynamicDatasetIter</span><span class="o">.</span><span class="n">from_opt</span><span class="p">(</span>
+            <span class="n">corpora</span><span class="p">,</span>
+            <span class="n">transforms</span><span class="p">,</span>
+            <span class="n">vocabs</span><span class="p">,</span>
+            <span class="n">opt</span><span class="p">,</span>
+            <span class="n">task</span><span class="p">,</span>
+            <span class="n">copy</span><span class="o">=</span><span class="n">copy</span><span class="p">,</span>
+            <span class="n">stride</span><span class="o">=</span><span class="n">stride</span><span class="p">,</span>
+            <span class="n">offset</span><span class="o">=</span><span class="n">offset</span><span class="p">,</span>
+            <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">data_iter</span><span class="o">.</span><span class="n">num_workers</span> <span class="o">=</span> <span class="n">num_workers</span>
         <span class="n">data_iter</span><span class="o">.</span><span class="n">_init_datasets</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># when workers=0 init_fn not called</span>
-        <span class="n">data_loader</span> <span class="o">=</span> <span class="n">data_iter</span>
+        <span class="k">return</span> <span class="n">data_iter</span>
     <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># multithread faster to create batch on CPU in each thread and then move it to gpu</span>
+        <span class="n">data_iter</span> <span class="o">=</span> <span class="n">DynamicDatasetIter</span><span class="o">.</span><span class="n">from_opt</span><span class="p">(</span>
+            <span class="n">corpora</span><span class="p">,</span>
+            <span class="n">transforms</span><span class="p">,</span>
+            <span class="n">vocabs</span><span class="p">,</span>
+            <span class="n">opt</span><span class="p">,</span>
+            <span class="n">task</span><span class="p">,</span>
+            <span class="n">copy</span><span class="o">=</span><span class="n">copy</span><span class="p">,</span>
+            <span class="n">stride</span><span class="o">=</span><span class="n">stride</span><span class="p">,</span>
+            <span class="n">offset</span><span class="o">=</span><span class="n">offset</span><span class="p">,</span>
+            <span class="n">device</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">data_iter</span><span class="o">.</span><span class="n">num_workers</span> <span class="o">=</span> <span class="n">num_workers</span>
         <span class="n">data_loader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span>
             <span class="n">data_iter</span><span class="p">,</span>
             <span class="n">batch_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -597,7 +640,8 @@
             <span class="n">worker_init_fn</span><span class="o">=</span><span class="n">data_iter</span><span class="o">.</span><span class="n">_init_datasets</span><span class="p">,</span>
             <span class="n">prefetch_factor</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">prefetch_factor</span><span class="p">,</span>
         <span class="p">)</span>
-    <span class="k">return</span> <span class="n">data_loader</span>
+        <span class="c1"># Move tensor_batch from cpu to device</span>
+        <span class="k">return</span> <span class="n">OnDeviceDatasetIter</span><span class="p">(</span><span class="n">data_loader</span><span class="p">,</span> <span class="n">device</span><span class="p">)</span>
 </pre></div>
 
            </div>

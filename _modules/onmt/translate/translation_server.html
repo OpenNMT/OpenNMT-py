@@ -232,7 +232,6 @@
     <span class="n">parse_features</span><span class="p">,</span>
     <span class="n">append_features_to_text</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">onmt.inputters.inputter</span> <span class="kn">import</span> <span class="n">IterOnDevice</span>
 <span class="kn">from</span> <span class="nn">onmt.utils.alignment</span> <span class="kn">import</span> <span class="n">build_align_pharaoh</span>
 
 
@@ -802,11 +801,17 @@
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="p">,</span> <span class="n">CTranslate2Translator</span><span class="p">):</span>
                     <span class="n">scores</span><span class="p">,</span> <span class="n">predictions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">examples</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">infer_iter</span> <span class="o">=</span> <span class="n">textbatch_to_tensor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">vocabs</span><span class="p">,</span> <span class="n">examples</span><span class="p">)</span>
-                    <span class="n">device</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">device_id</span> <span class="o">=</span> <span class="p">(</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">_dev</span><span class="o">.</span><span class="n">index</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">_use_cuda</span> <span class="k">else</span> <span class="o">-</span><span class="mi">1</span>
                     <span class="p">)</span>
-                    <span class="n">infer_iter</span> <span class="o">=</span> <span class="n">IterOnDevice</span><span class="p">(</span><span class="n">infer_iter</span><span class="p">,</span> <span class="n">device</span><span class="p">)</span>
+                    <span class="n">device</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="n">device_id</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">device_id</span> <span class="o">&gt;=</span> <span class="mi">0</span>
+                        <span class="k">else</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+                    <span class="p">)</span>
+                    <span class="n">infer_iter</span> <span class="o">=</span> <span class="n">textbatch_to_tensor</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">vocabs</span><span class="p">,</span> <span class="n">examples</span><span class="p">,</span> <span class="n">device</span>
+                    <span class="p">)</span>
                     <span class="n">scores</span><span class="p">,</span> <span class="n">predictions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translator</span><span class="o">.</span><span class="n">_translate</span><span class="p">(</span><span class="n">infer_iter</span><span class="p">)</span>
             <span class="k">except</span> <span class="p">(</span><span class="ne">RuntimeError</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                 <span class="n">err</span> <span class="o">=</span> <span class="s2">&quot;Error: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
