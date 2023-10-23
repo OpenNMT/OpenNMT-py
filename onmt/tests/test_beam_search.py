@@ -534,14 +534,10 @@ class TestBeamSearchAgainstReferenceCase(unittest.TestCase):
         )
         # [5, 3, 2, 6, 0], so beam 2 predicts EOS!
         expected_preds_1 = unreduced_preds - expected_bptr_1 * self.N_WORDS
-        print("step1: ", expected_beam_scores)
-        print("step1: ", beam.topk_log_probs)
         self.assertTrue(beam.topk_log_probs.allclose(expected_beam_scores))
         self.assertTrue(
             beam.topk_scores.allclose(expected_beam_scores / expected_len_pen)
         )
-        print("step1: ", expected_preds_1)
-        print("step1: ", beam.topk_ids)
         self.assertTrue(beam.topk_ids.equal(expected_preds_1))
         self.assertTrue(beam.current_backptr.equal(expected_bptr_1))
         self.assertEqual(
@@ -586,16 +582,10 @@ class TestBeamSearchAgainstReferenceCase(unittest.TestCase):
         # [2, 5, 3, 6, 0] repeat self.BATCH_SZ, so beam 0 predicts EOS!
         expected_preds_2 = unreduced_preds - expected_bptr_2 * self.N_WORDS
         # [-2.4879, -3.8910, -4.1010, -4.2010, -4.4010] repeat self.BATCH_SZ
-        print("step2: ", expected_beam_scores)
-        print("step2: ", beam.topk_log_probs)
-        """
         self.assertTrue(beam.topk_log_probs.allclose(expected_beam_scores))
         self.assertTrue(
             beam.topk_scores.allclose(expected_beam_scores / expected_len_pen)
         )
-        """
-        print("step2: ", expected_preds_2)
-        print("step2: ", beam.topk_ids)
         self.assertTrue(beam.topk_ids.equal(expected_preds_2))
         self.assertTrue(beam.current_backptr.equal(expected_bptr_2))
         # another beam is finished in all batches
@@ -639,16 +629,16 @@ class TestBeamSearchAgainstReferenceCase(unittest.TestCase):
             unreduced_preds, self.N_WORDS, rounding_mode="trunc"
         )
         # [5, 2, 6, 1, 0] repeat self.BATCH_SZ, so beam 1 predicts EOS!
-        # expected_preds_3 = unreduced_preds - expected_bptr_3 * self.N_WORDS
+        expected_preds_3 = unreduced_preds - expected_bptr_3 * self.N_WORDS
         self.assertTrue(beam.topk_log_probs.allclose(expected_beam_scores))
         self.assertTrue(
             beam.topk_scores.allclose(expected_beam_scores / expected_len_pen)
         )
-        # self.assertTrue(beam.topk_ids.equal(expected_preds_3))
+        self.assertTrue(beam.topk_ids.equal(expected_preds_3))
         self.assertTrue(beam.current_backptr.equal(expected_bptr_3))
         # we finish 3 hyps per example in this step
         self.assertEqual(
-            [any(subbeam) for subbeam in beam.is_finished_list].count(True),
+            sum([subbeam.count(True) for subbeam in beam.is_finished_list]),
             self.BATCH_SZ * 3,
         )
         # new beam 1 is old beam 3

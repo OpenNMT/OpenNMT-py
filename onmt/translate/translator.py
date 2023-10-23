@@ -1076,7 +1076,7 @@ class GeneratorLM(Inference):
                 )
 
             decode_strategy.advance(log_probs, attn)
-            any_finished = decode_strategy.is_finished.any()
+            any_finished = any(decode_strategy.is_finished_list)
             if any_finished:
                 decode_strategy.update_finished()
                 if decode_strategy.done:
@@ -1086,10 +1086,10 @@ class GeneratorLM(Inference):
             src_len_tiled += 1
             if any_finished:
                 # Reorder states.
-                src_len_tiled = src_len_tiled.index_select(0, select_indices)
+                src_len_tiled = src_len_tiled[select_indices]
 
                 if src_map is not None:
-                    src_map = src_map.index_select(0, select_indices)
+                    src_map = src_map[select_indices]
 
             if parallel_paths > 1 or any_finished:
                 # select indexes in model state/cache

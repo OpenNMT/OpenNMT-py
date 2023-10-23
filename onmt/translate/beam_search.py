@@ -137,6 +137,10 @@ class BeamSearchBase(DecodeStrategy):
         self.topk_scores = torch.empty(
             (self.batch_size, self.beam_size), dtype=torch.float, device=device
         )
+        self.topk_ids = torch.empty(
+            (self.batch_size, self.beam_size), dtype=torch.long, device=device
+        )
+
         self._batch_index = torch.empty(
             [self.batch_size, self.beam_size], dtype=torch.long, device=device
         )
