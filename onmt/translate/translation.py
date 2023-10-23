@@ -34,7 +34,7 @@ class TranslationBuilder(object):
 
     def _build_target_tokens(self, src, srclen, pred, attn, voc, dyn_voc):
         if dyn_voc is None:
-            tokens = [voc[tok] for tok in pred]
+            tokens = [voc[tok] for tok in pred.tolist()]
         else:
             tokens = [
                 voc[tok]
@@ -95,7 +95,6 @@ class TranslationBuilder(object):
                 dyn_voc = dyn_voc_batch[b]
             else:
                 dyn_voc = None
-
             pred_sents = [
                 self._build_target_tokens(
                     src[b, :] if src is not None else None,

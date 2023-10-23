@@ -98,7 +98,7 @@ class BeamSearchBase(DecodeStrategy):
         self.ratio = ratio
 
         # beam state
-        self.top_beam_finished = torch.zeros([batch_size], dtype=torch.bool)
+        self.top_beam_finished = [False for _ in range(batch_size)]
         self._batch_offset = torch.arange(batch_size, dtype=torch.long)
 
         self.select_indices = None
@@ -120,10 +120,7 @@ class BeamSearchBase(DecodeStrategy):
         super(BeamSearchBase, self).initialize(
             enc_out, src_len, src_map, device, target_prefix
         )
-
-        self.best_scores = torch.full(
-            [self.batch_size], -1e10, dtype=torch.float, device=device
-        )
+        self.best_scores = [-1e10 for _ in range(self.batch_size)]
         self._beam_offset = torch.arange(
             0,
             self.batch_size * self.beam_size,
@@ -139,9 +136,6 @@ class BeamSearchBase(DecodeStrategy):
         # buffers for the topk scores and 'backpointer'
         self.topk_scores = torch.empty(
             (self.batch_size, self.beam_size), dtype=torch.float, device=device
-        )
-        self.topk_ids = torch.empty(
-            (self.batch_size, self.beam_size), dtype=torch.long, device=device
         )
         self._batch_index = torch.empty(
             [self.batch_size, self.beam_size], dtype=torch.long, device=device
@@ -162,12 +156,11 @@ class BeamSearchBase(DecodeStrategy):
     def batch_offset(self):
         return self._batch_offset
 
-    def _pick(self, log_probs, out=None):
+    def _pick(self, log_probs):
         """Take a token pick decision for a step.
 
         Args:
             log_probs (FloatTensor): (B * beam_size, vocab_size)
-            out (Tensor, LongTensor): output buffers to reuse, optional.
 
         Returns:
             topk_scores (FloatTensor): (B, beam_size)
@@ -179,21 +172,21 @@ class BeamSearchBase(DecodeStrategy):
 
         # Flatten probs into a list of possibilities.
         curr_scores = log_probs.reshape(-1, self.beam_size * vocab_size)
-        if out is not None:
-            torch.topk(curr_scores, self.beam_size, dim=-1, out=out)
-            return
+
         topk_scores, topk_ids = torch.topk(curr_scores, self.beam_size, dim=-1)
+        # after this we get topk_ids between 0 and beam_size*vocab_size
+        # topk_ids // vocab_size => indice in beam
+        # topk_ids % vocab_size => true vocab indice
+
         return topk_scores, topk_ids
 
     def update_finished(self):
         # Penalize beams that finished.
         _B_old = self.topk_log_probs.shape[0]
         step = self.alive_seq.shape[-1]  # 1 greater than the step in advance
-        self.topk_log_probs.masked_fill_(self.is_finished, -1e10)
-        # on real data (newstest2017) with the pretrained transformer,
-        # it's faster to not move this back to the original device
-        self.is_finished = self.is_finished.to("cpu")
-        self.top_beam_finished |= self.is_finished[:, 0].eq(1)
+        self.topk_log_probs.masked_fill_(torch.tensor(self.is_finished_list), -1e10)
+        for i, beams in enumerate(self.is_finished_list):
+            self.top_beam_finished[i] |= beams[0]
         predictions = self.alive_seq.view(_B_old, self.beam_size, step)
         attention = (
             self.alive_attn.view(
@@ -203,45 +196,46 @@ class BeamSearchBase(DecodeStrategy):
             else None
         )
         non_finished_batch = []
-        for i in range(self.is_finished.size(0)):  # Batch level
+
+        for i in range(len(self.is_finished_list)):  # Batch level
             b = self._batch_offset[i]
-            finished_hyp = self.is_finished[i].nonzero(as_tuple=False).view(-1)
 
-            if self.ratio > 0:
-                pred_len = self.src_len[i] * self.ratio
-                best_score = self.best_scores[b]
+            if any(self.is_finished_list[i]):
+                # Store finished hypotheses for this batch.
+                for j in [
+                    k for k, fin in enumerate(self.is_finished_list[i]) if fin
+                ]:  # Beam level: finished beam j in batch i
+                    if self.ratio > 0:
+                        s = self.topk_scores[i, j] / (step + 1)
+                        self.best_scores[b] = max(s, self.best_scores[b])
 
-            # Store finished hypotheses for this batch.
-            for j in finished_hyp:  # Beam level: finished beam j in batch i
-                if self.ratio > 0:
-                    s = self.topk_scores[i, j] / (step + 1)
-                    best_score = max(s, best_score)
-
-                self.hypotheses[b].append(
-                    (
-                        self.topk_scores[i, j],
-                        predictions[i, j, 1:],  # Ignore start_token.
-                        attention[i, j, :, : self.src_len[i]]
-                        if attention is not None
-                        else None,
+                    self.hypotheses[b].append(
+                        (
+                            self.topk_scores[i, j],
+                            predictions[i, j, 1:],  # Ignore start_token.
+                            attention[i, j, :, : self.src_len[b]]
+                            if attention is not None
+                            else None,
+                        )
                     )
-                )
+
             # End condition is the top beam finished and we can return
             # n_best hypotheses.
             if self.ratio > 0:
+                pred_len = self.src_len[b] * self.ratio
                 finish_flag = (
-                    (self.topk_scores[i, 0] / pred_len) <= best_score
-                ) or self.is_finished[i].all()
+                    (self.topk_scores[i, 0] / pred_len) <= self.best_scores[b]
+                ) or all(self.is_finished_list[i])
             else:
-                finish_flag = self.top_beam_finished[i] != 0
+                finish_flag = self.top_beam_finished[i]
 
             if finish_flag and len(self.hypotheses[b]) >= self.beam_size:
                 best_hyp = sorted(self.hypotheses[b], key=lambda x: x[0], reverse=True)[
                     : self.n_best
                 ]
-                for n, (score, pred, attn) in enumerate(best_hyp):
+                for score, pred, attn in best_hyp:
                     self.scores[b].append(score)
-                    self.predictions[b].append(pred.cpu())  # ``(batch, n_best,)``
+                    self.predictions[b].append(pred)  # ``(batch, n_best,)``
                     self.attention[b].append(attn if attn is not None else [])
             else:
                 non_finished_batch.append(i)
@@ -261,33 +255,33 @@ class BeamSearchBase(DecodeStrategy):
         self, _B_new, _B_old, non_finished, predictions, attention, step
     ):
         # Remove finished batches for the next step.
-        self.top_beam_finished = self.top_beam_finished.index_select(0, non_finished)
-        self._batch_offset = self._batch_offset.index_select(0, non_finished)
-        non_finished = non_finished.to(self.topk_ids.device)
-        self.topk_log_probs = self.topk_log_probs.index_select(0, non_finished)
-        self._batch_index = self._batch_index.index_select(0, non_finished)
-        self.select_indices = self._batch_index.view(_B_new * self.beam_size)
-        self.alive_seq = predictions.index_select(0, non_finished).view(
-            -1, self.alive_seq.size(-1)
+        self.top_beam_finished = [
+            self.top_beam_finished[index] for index in non_finished
+        ]
+        self._batch_offset = self._batch_offset[non_finished]
+        # self.topk_log_probs = self.topk_log_probs[non_finished]
+        # self._batch_index = self._batch_index[non_finished]
+        self.topk_log_probs, self._batch_index = torch.unbind(
+            torch.stack([self.topk_log_probs, self._batch_index], dim=2)[non_finished],
+            dim=2,
         )
-        self.topk_scores = self.topk_scores.index_select(0, non_finished)
-        self.topk_ids = self.topk_ids.index_select(0, non_finished)
+        self._batch_index = self._batch_index.to(torch.long)
+
+        self.select_indices = self._batch_index.view(_B_new * self.beam_size)
+        self.alive_seq = predictions[non_finished].view(-1, self.alive_seq.size(-1))
+
         self.maybe_update_target_prefix(self.select_indices)
         if self.alive_attn is not None:
             inp_seq_len = self.alive_attn.size(-1)
-            self.alive_attn = attention.index_select(0, non_finished).view(
+            self.alive_attn = attention[non_finished].view(
                 _B_new * self.beam_size, step - 1, inp_seq_len
             )
             if self._cov_pen:
-                self._coverage = (
-                    self._coverage.view(_B_old, self.beam_size, 1, inp_seq_len)
-                    .index_select(0, non_finished)
-                    .view(_B_new * self.beam_size, 1, inp_seq_len)
-                )
+                self._coverage = self._coverage.view(
+                    _B_old, self.beam_size, 1, inp_seq_len
+                )[non_finished].view(_B_new * self.beam_size, 1, inp_seq_len)
                 if self._stepwise_cov_pen:
-                    self._prev_penalty = self._prev_penalty.index_select(
-                        0, non_finished
-                    )
+                    self._prev_penalty = self._prev_penalty[non_finished]
 
     def advance(self, log_probs, attn):
         vocab_size = log_probs.size(-1)
@@ -313,30 +307,33 @@ class BeamSearchBase(DecodeStrategy):
         length_penalty = self.global_scorer.length_penalty(
             step + 1, alpha=self.global_scorer.alpha
         )
-
-        curr_scores = log_probs / length_penalty
+        if length_penalty != 1:
+            curr_scores = log_probs / length_penalty
+        else:
+            curr_scores = log_probs / length_penalty
 
         # Avoid any direction that would repeat unwanted ngrams
         self.block_ngram_repeats(curr_scores)
 
         # Pick up candidate token by curr_scores
-        self._pick(curr_scores, out=(self.topk_scores, self.topk_ids))
+        self.topk_scores, self.topk_ids = self._pick(curr_scores)
 
         # Recover log probs.
         # Length penalty is just a scalar. It doesn't matter if it's applied
         # before or after the topk.
-        torch.mul(self.topk_scores, length_penalty, out=self.topk_log_probs)
+        self.topk_log_probs = self.topk_scores * length_penalty
 
         # Resolve beam origin and map to batch index flat representation.
-        self._batch_index = torch.div(self.topk_ids, vocab_size, rounding_mode="trunc")
-        self._batch_index += self._beam_offset[:_B].unsqueeze(1)
+        self._batch_index = self.topk_ids // vocab_size + self._beam_offset[
+            :_B
+        ].unsqueeze(1)
+        self.topk_ids %= vocab_size
         self.select_indices = self._batch_index.view(_B * self.beam_size)
-        self.topk_ids.fmod_(vocab_size)  # resolve true word ids
 
         # Append last prediction.
         self.alive_seq = torch.cat(
             [
-                self.alive_seq.index_select(0, self.select_indices),
+                self.alive_seq[self.select_indices],
                 self.topk_ids.view(_B * self.beam_size, 1),
             ],
             -1,
@@ -370,7 +367,8 @@ class BeamSearchBase(DecodeStrategy):
             )
             self.topk_scores -= cov_penalty.view(_B, self.beam_size).float()
 
-        self.is_finished = self.topk_ids.eq(self.eos)
+        self.is_finished_list = self.topk_ids.eq(self.eos).tolist()
+
         self.ensure_max_length()
 
 
@@ -440,11 +438,9 @@ class BeamSearchLM(BeamSearchBase):
 
         # in LM task src_len is associated with currently generated src
         # and therefore needs to follow the generation
-        non_finished = non_finished.to(self.topk_ids.device)
-        self.src_len = (
-            self.src_len.view(_B_old, self.beam_size)
-            .index_select(0, non_finished)
-            .view(_B_new * self.beam_size)
+        # non_finished = non_finished.to(self.topk_scores.device)
+        self.src_len = self.src_len.view(_B_old, self.beam_size)[non_finished].view(
+            _B_new * self.beam_size
         )
 
 

@@ -78,8 +78,8 @@ class TestGreedySearch(unittest.TestCase):
                     self.assertTrue(samp.topk_scores[1:].eq(0).all())
                 elif i == min_length:
                     # now batch 0 has ended and no others have
-                    self.assertTrue(samp.is_finished[0, :].eq(1).all())
-                    self.assertTrue(samp.is_finished[1:, 1:].eq(0).all())
+                    self.assertTrue(samp.is_finished[0, :].all())
+                    self.assertTrue((~samp.is_finished[1:, 1:]).all())
                 else:  # i > min_length
                     break
 
@@ -126,7 +126,7 @@ class TestGreedySearch(unittest.TestCase):
 
                 attns = torch.randn(1, batch_sz, 53)
                 samp.advance(word_probs, attns)
-                self.assertTrue(samp.is_finished[0].eq(1).all())
+                self.assertTrue(samp.is_finished[0].all())
                 samp.update_finished()
                 self.assertEqual(
                     [score for score, _, _ in samp.hypotheses[0]],
@@ -149,7 +149,7 @@ class TestGreedySearch(unittest.TestCase):
                 attns = torch.randn(1, batch_sz, 53)
                 samp.advance(word_probs, attns)
 
-                self.assertTrue(samp.is_finished[7].eq(1).all())
+                self.assertTrue(samp.is_finished[7].all())
                 samp.update_finished()
                 self.assertEqual(
                     [score for score, _, _ in samp.hypotheses[8]],
@@ -165,7 +165,7 @@ class TestGreedySearch(unittest.TestCase):
                 attns = torch.randn(1, batch_sz, 53)
                 samp.advance(word_probs, attns)
 
-                self.assertTrue(samp.is_finished.eq(1).all())
+                self.assertTrue(samp.is_finished.all())
                 samp.update_finished()
                 self.assertTrue(samp.done)
 
@@ -213,7 +213,7 @@ class TestGreedySearch(unittest.TestCase):
 
                     attns = torch.randn(1, batch_sz, 53)
                     samp.advance(word_probs, attns)
-                    if samp.is_finished[0].eq(1).all():
+                    if samp.is_finished[0].all():
                         break
                 else:
                     self.fail(
@@ -240,7 +240,7 @@ class TestGreedySearch(unittest.TestCase):
 
                     attns = torch.randn(1, batch_sz, 53)
                     samp.advance(word_probs, attns)
-                    if samp.is_finished[7].eq(1).all():
+                    if samp.is_finished[7].all():
                         break
                 else:
                     self.fail(
@@ -268,7 +268,7 @@ class TestGreedySearch(unittest.TestCase):
                     samp.advance(word_probs, attns)
                     if samp.is_finished.any():
                         samp.update_finished()
-                    if samp.is_finished.eq(1).all():
+                    if samp.is_finished.all():
                         break
                 else:
                     self.fail(
@@ -328,11 +328,9 @@ class TestGreedySearch(unittest.TestCase):
 
                     attns = torch.randn(1, batch_sz, 53)
                     samp.advance(word_probs, attns)
-                    if samp.is_finished[beam_size - 2].eq(1).all():
-                        self.assertFalse(samp.is_finished[: beam_size - 2].eq(1).any())
-                        self.assertFalse(
-                            samp.is_finished[beam_size - 2 + 1].eq(1).any()
-                        )
+                    if samp.is_finished[beam_size - 2].all():
+                        self.assertFalse(samp.is_finished[: beam_size - 2].any())
+                        self.assertFalse(samp.is_finished[beam_size - 2 + 1].any())
                         break
                 else:
                     self.fail(
@@ -365,7 +363,7 @@ class TestGreedySearch(unittest.TestCase):
 
                     attns = torch.randn(1, batch_sz, 53)
                     samp.advance(word_probs, attns)
-                    if samp.is_finished[(batch_sz - 1) * beam_size + 7].eq(1).all():
+                    if samp.is_finished[(batch_sz - 1) * beam_size + 7].all():
                         break
                 else:
                     self.fail(
@@ -393,7 +391,7 @@ class TestGreedySearch(unittest.TestCase):
                     samp.advance(word_probs, attns)
                     if samp.is_finished.any():
                         samp.update_finished()
-                    if samp.is_finished.eq(1).all():
+                    if samp.is_finished.all():
                         break
                 else:
                     self.fail(
@@ -448,7 +446,7 @@ class TestGreedySearch(unittest.TestCase):
 
                     attns = torch.randn(1, batch_sz, 53)
                     samp.advance(word_probs, attns)
-                    if samp.is_finished[0].eq(1).all():
+                    if samp.is_finished[0].all():
                         break
                 else:
                     self.fail(
@@ -478,7 +476,7 @@ class TestGreedySearch(unittest.TestCase):
 
                     attns = torch.randn(1, batch_sz, 53)
                     samp.advance(word_probs, attns)
-                    if samp.is_finished[7].eq(1).all():
+                    if samp.is_finished[7].all():
                         break
                 else:
                     self.fail(
@@ -506,7 +504,7 @@ class TestGreedySearch(unittest.TestCase):
                     samp.advance(word_probs, attns)
                     if samp.is_finished.any():
                         samp.update_finished()
-                    if samp.is_finished.eq(1).all():
+                    if samp.is_finished.all():
                         break
                 else:
                     self.fail(

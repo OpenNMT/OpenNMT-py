@@ -201,6 +201,7 @@ class GreedySearch(DecodeStrategy):
         topk_ids, topk_scores = sample_with_temperature(
             log_probs, self.sampling_temp, self.keep_topk, self.keep_topp
         )
+
         return topk_ids, topk_scores
 
     def align_select_indices(self):
@@ -226,8 +227,8 @@ class GreedySearch(DecodeStrategy):
                 to 1.)
             attn (FloatTensor): Shaped ``(1, B, inp_seq_len)``.
         """
-
-        self.align_select_indices()
+        if hasattr(self, "is_finished"):
+            self.align_select_indices()
 
         self.ensure_min_length(log_probs)
         self.ensure_unk_removed(log_probs)
@@ -237,6 +238,7 @@ class GreedySearch(DecodeStrategy):
         self.beams_scores += self.topk_scores
 
         self.is_finished = topk_ids.eq(self.eos)
+        self.is_finished_list = self.is_finished.tolist()
 
         self.alive_seq = torch.cat([self.alive_seq, topk_ids], -1)
         if self.return_attention:
@@ -249,7 +251,7 @@ class GreedySearch(DecodeStrategy):
     def update_finished(self):
         """Finalize scores and predictions."""
         # shape: (sum(~ self.is_finished), 1)
-        finished_batches = self.is_finished.view(-1).nonzero(as_tuple=False)
+        finished_batches = self.is_finished.view(-1).nonzero()
         step = len(self)
         length_penalty = self.global_scorer.length_penalty(
             step, alpha=self.global_scorer.alpha
@@ -271,7 +273,7 @@ class GreedySearch(DecodeStrategy):
                 best_hyp = sorted(self.hypotheses[b], key=lambda x: x[0], reverse=True)
                 for score, pred, attn in best_hyp:
                     self.scores[b].append(score)
-                    self.predictions[b].append(pred.cpu())
+                    self.predictions[b].append(pred)
                     self.attention[b].append(attn)
             return
         is_alive = ~self.is_finished.view(-1)
