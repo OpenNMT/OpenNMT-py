@@ -863,8 +863,9 @@ class Translator(Inference):
             )
 
             decode_strategy.advance(log_probs, attn)
-            # any_finished = decode_strategy.is_finished.any()
-            any_finished = any(decode_strategy.is_finished_list)
+            any_finished = any(
+                [any(sublist) for sublist in decode_strategy.is_finished_list]
+            )
             if any_finished:
                 decode_strategy.update_finished()
                 if decode_strategy.done:
@@ -1076,7 +1077,9 @@ class GeneratorLM(Inference):
                 )
 
             decode_strategy.advance(log_probs, attn)
-            any_finished = any(decode_strategy.is_finished_list)
+            any_finished = any(
+                [any(sublist) for sublist in decode_strategy.is_finished_list]
+            )
             if any_finished:
                 decode_strategy.update_finished()
                 if decode_strategy.done:

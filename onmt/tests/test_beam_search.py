@@ -547,6 +547,7 @@ class TestBeamSearchAgainstReferenceCase(unittest.TestCase):
         self.assertTrue(
             all([subbeam[2] for subbeam in beam.is_finished_list])
         )  # beam 2 finished
+        beam.topk_log_probs.masked_fill_(torch.tensor(beam.is_finished_list), -1e10)
         beam.update_finished()
         self.assertFalse(any(beam.top_beam_finished))
         self.assertFalse(beam.done)
@@ -597,6 +598,7 @@ class TestBeamSearchAgainstReferenceCase(unittest.TestCase):
         self.assertTrue(all([subbeam[0] for subbeam in beam.is_finished_list]))
         # new beam 0 is old beam 3
         self.assertTrue(expected_bptr_2[:, 0].eq(3).all())
+        beam.topk_log_probs.masked_fill_(torch.tensor(beam.is_finished_list), -1e10)
         beam.update_finished()
         self.assertTrue(all(beam.top_beam_finished))
         self.assertFalse(beam.done)
@@ -643,6 +645,7 @@ class TestBeamSearchAgainstReferenceCase(unittest.TestCase):
         )
         # new beam 1 is old beam 3
         self.assertTrue(expected_bptr_3[:, 1].eq(3).all())
+        beam.topk_log_probs.masked_fill_(torch.tensor(beam.is_finished_list), -1e10)
         beam.update_finished()
         self.assertTrue(all(beam.top_beam_finished))
         self.assertTrue(beam.done)

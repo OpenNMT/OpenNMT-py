@@ -188,7 +188,11 @@ class BeamSearchBase(DecodeStrategy):
         # Penalize beams that finished.
         _B_old = self.topk_log_probs.shape[0]
         step = self.alive_seq.shape[-1]  # 1 greater than the step in advance
-        self.topk_log_probs.masked_fill_(torch.tensor(self.is_finished_list), -1e10)
+        # this is required to pursue finished beams in non finished batches
+        self.topk_log_probs.masked_fill_(
+            torch.tensor(self.is_finished_list, device=self.topk_log_probs.device),
+            -1e10,
+        )
         for i, beams in enumerate(self.is_finished_list):
             self.top_beam_finished[i] |= beams[0]
         predictions = self.alive_seq.view(_B_old, self.beam_size, step)
@@ -314,7 +318,7 @@ class BeamSearchBase(DecodeStrategy):
         if length_penalty != 1:
             curr_scores = log_probs / length_penalty
         else:
-            curr_scores = log_probs / length_penalty
+            curr_scores = log_probs
 
         # Avoid any direction that would repeat unwanted ngrams
         self.block_ngram_repeats(curr_scores)
