@@ -1821,7 +1821,12 @@ def translate_opts(parser, dynamic=False):
         action="store_true",
         help="Report some translation time metrics",
     )
-
+    group.add(
+        "--profile",
+        "-profile",
+        action="store_true",
+        help="Report pytorch profiling stats",
+    )
     # Adding options related to source and target features
     _add_features_opts(parser)
 

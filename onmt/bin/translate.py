@@ -8,6 +8,7 @@ from onmt.constants import CorpusTask
 import onmt.opts as opts
 from onmt.utils.parse import ArgumentParser
 from onmt.utils.misc import use_gpu, set_random_seed
+from torch.profiler import profile, record_function, ProfilerActivity
 
 
 def translate(opt):
@@ -50,7 +51,14 @@ def _get_parser():
 def main():
     parser = _get_parser()
     opt = parser.parse_args()
-    translate(opt)
+    if opt.profile:
+        with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA]) as prof:
+            with record_function("Translate"):
+                translate(opt)
+        print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=30))
+
+    else:
+        translate(opt)
 
 
 if __name__ == "__main__":

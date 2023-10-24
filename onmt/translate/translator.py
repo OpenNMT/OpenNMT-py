@@ -468,7 +468,9 @@ class Inference(object):
                     preds.append(DefaultTokens.EOS)
                     attns = trans.attns[0].tolist()
                     if self.data_type == "text":
-                        srcs = [voc_src[tok] for tok in trans.src[: trans.srclen]]
+                        srcs = [
+                            voc_src[tok] for tok in trans.src[: trans.srclen].tolist()
+                        ]
                     else:
                         srcs = [str(item) for item in range(len(attns[0]))]
                     output = report_matrix(srcs, preds, attns)
@@ -484,7 +486,9 @@ class Inference(object):
                         tgts = trans.pred_sents[0]
                     align = trans.word_aligns[0].tolist()
                     if self.data_type == "text":
-                        srcs = [voc_src[tok] for tok in trans.src[: trans.srclen]]
+                        srcs = [
+                            voc_src[tok] for tok in trans.src[: trans.srclen].tolist()
+                        ]
                     else:
                         srcs = [str(item) for item in range(len(align[0]))]
                     output = report_matrix(srcs, tgts, align)
@@ -845,8 +849,6 @@ class Translator(Inference):
 
         # (3) Begin decoding step by step:
         for step in range(decode_strategy.max_length):
-            # decoder_input = decode_strategy.current_predictions.view(1, -1,
-            #                                                          1)
             decoder_input = decode_strategy.current_predictions.view(-1, 1, 1)
 
             log_probs, attn = self._decode_and_generate(
@@ -861,7 +863,9 @@ class Translator(Inference):
             )
 
             decode_strategy.advance(log_probs, attn)
-            any_finished = decode_strategy.is_finished.any()
+            any_finished = any(
+                [any(sublist) for sublist in decode_strategy.is_finished_list]
+            )
             if any_finished:
                 decode_strategy.update_finished()
                 if decode_strategy.done:
@@ -872,19 +876,17 @@ class Translator(Inference):
             if any_finished:
                 # Reorder states.
                 if isinstance(enc_out, tuple):
-                    enc_out = tuple(x.index_select(0, select_indices) for x in enc_out)
+                    enc_out = tuple(x[select_indices] for x in enc_out)
                 else:
-                    enc_out = enc_out.index_select(0, select_indices)
+                    enc_out = enc_out[select_indices]
 
-                src_len_tiled = src_len_tiled.index_select(0, select_indices)
+                src_len_tiled = src_len_tiled[select_indices]
 
                 if src_map is not None:
-                    src_map = src_map.index_select(0, select_indices)
+                    src_map = src_map[select_indices]
 
             if parallel_paths > 1 or any_finished:
-                self.model.decoder.map_state(
-                    lambda state, dim: state.index_select(dim, select_indices)
-                )
+                self.model.decoder.map_state(lambda state, dim: state[select_indices])
 
         return self.report_results(
             gold_score,
@@ -1073,7 +1075,9 @@ class GeneratorLM(Inference):
                 )
 
             decode_strategy.advance(log_probs, attn)
-            any_finished = decode_strategy.is_finished.any()
+            any_finished = any(
+                [any(sublist) for sublist in decode_strategy.is_finished_list]
+            )
             if any_finished:
                 decode_strategy.update_finished()
                 if decode_strategy.done:
@@ -1083,16 +1087,14 @@ class GeneratorLM(Inference):
             src_len_tiled += 1
             if any_finished:
                 # Reorder states.
-                src_len_tiled = src_len_tiled.index_select(0, select_indices)
+                src_len_tiled = src_len_tiled[select_indices]
 
                 if src_map is not None:
-                    src_map = src_map.index_select(0, select_indices)
+                    src_map = src_map[select_indices]
 
             if parallel_paths > 1 or any_finished:
                 # select indexes in model state/cache
-                self.model.decoder.map_state(
-                    lambda state, dim: state.index_select(dim, select_indices)
-                )
+                self.model.decoder.map_state(lambda state, dim: state[select_indices])
 
         return self.report_results(
             gold_score,

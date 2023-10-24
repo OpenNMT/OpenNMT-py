@@ -121,7 +121,7 @@ class DecodeStrategy(object):
         return mb_device
 
     def initialize_tile(self, enc_out, src_len, src_map=None, target_prefix=None):
-        def fn_map_state(state, dim):
+        def fn_map_state(state, dim=0):
             return tile(state, self.beam_size, dim=dim)
 
         if isinstance(enc_out, tuple):
@@ -155,9 +155,14 @@ class DecodeStrategy(object):
             dtype=torch.long,
             device=device,
         )
-        self.is_finished = torch.zeros(
-            [self.batch_size, self.parallel_paths], dtype=torch.bool, device=device
-        )
+        # not 100% necessary to define those
+        # self.is_finished = torch.zeros(
+        #    [self.batch_size, self.parallel_paths], dtype=torch.bool
+        # )
+        self.is_finished_list = [
+            [False for _ in range(self.parallel_paths)] for _ in range(self.batch_size)
+        ]
+
         if target_prefix is not None:
             batch_size, seq_len, n_feats = target_prefix.size()
             assert (
@@ -189,7 +194,12 @@ class DecodeStrategy(object):
         # add one to account for BOS. Don't account for EOS because hitting
         # this implies it hasn't been found.
         if len(self) == self.max_length + 1:
-            self.is_finished.fill_(1)
+            if hasattr(self, "is_finished"):
+                self.is_finished.fill_(1)
+            self.is_finished_list = [
+                [True for _ in range(self.parallel_paths)]
+                for _ in range(len(self.is_finished_list))
+            ]
 
     def block_ngram_repeats(self, log_probs):
         """We prevent the beam from going in any direction that would repeat
@@ -310,7 +320,7 @@ class DecodeStrategy(object):
         # no need to further change this attr
         if len(self) > self.target_prefix.size(1):
             return
-        self.target_prefix = self.target_prefix.index_select(0, select_index)
+        self.target_prefix = self.target_prefix[select_index]
 
     def advance(self, log_probs, attn):
         """DecodeStrategy subclasses should override :func:`advance()`.

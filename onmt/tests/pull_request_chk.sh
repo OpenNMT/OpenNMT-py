@@ -513,7 +513,7 @@ ${PYTHON} onmt/tests/test_inference_engines.py -model ${TEST_DIR}/test_model_lm_
             -input_file $TMP_OUT_DIR/src-test.txt \
             -inference_config_file ${DATA_DIR}/inference-engine_py.yaml \
             -inference_mode ct2 \
-            -out $TMP_OUT_DIR/inference_engine_lm_py_outputs  >> ${LOG_FILE} 2>&1
+            -out $TMP_OUT_DIR/inference_engine_lm_ct2_outputs  >> ${LOG_FILE} 2>&1
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 rm $TMP_OUT_DIR/src-test.txt

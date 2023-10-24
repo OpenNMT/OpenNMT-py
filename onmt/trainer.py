@@ -306,6 +306,7 @@ class Trainer(object):
         torch.cuda.empty_cache()
 
         for i, (batches, normalization) in enumerate(self._accum_batches(train_iter)):
+
             step = self.optim.training_step
             # UPDATE DROPOUT
             self._maybe_update_dropout(step)
