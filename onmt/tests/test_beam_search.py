@@ -792,4 +792,8 @@ class TestBeamSearchLM(TestBeamSearchAgainstReferenceCase):
         self.finish_first_beam_step(beam)
 
         n_steps = beam.alive_seq.shape[-1] - 1
-        self.assertTrue(beam.src_len.equal(n_steps + fn_map_state(src_len[1:], dim=0)))
+        # I think this all test is unnecessary because
+        # 1) I removed self.src_len reindexing in remove_finished_batches() of LM case
+        # 2) this is already done in the translator _translate_batch_with_strategy()
+        # self.assertTrue(beam.src_len.equal(n_steps + fn_map_state(src_len[1:], dim=0)))
+        self.assertTrue(beam.src_len.equal(n_steps + fn_map_state(src_len, dim=0)))
