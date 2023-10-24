@@ -886,9 +886,7 @@ class Translator(Inference):
                     src_map = src_map[select_indices]
 
             if parallel_paths > 1 or any_finished:
-                self.model.decoder.map_state(
-                    lambda state, dim: state.index_select(dim, select_indices)
-                )
+                self.model.decoder.map_state(lambda state, dim: state[select_indices])
 
         return self.report_results(
             gold_score,
@@ -1096,9 +1094,7 @@ class GeneratorLM(Inference):
 
             if parallel_paths > 1 or any_finished:
                 # select indexes in model state/cache
-                self.model.decoder.map_state(
-                    lambda state, dim: state.index_select(dim, select_indices)
-                )
+                self.model.decoder.map_state(lambda state, dim: state[select_indices])
 
         return self.report_results(
             gold_score,

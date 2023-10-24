@@ -51,13 +51,14 @@ def _get_parser():
 def main():
     parser = _get_parser()
     opt = parser.parse_args()
-    if True:
-        translate(opt)
-    else:
+    if opt.profile:
         with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA]) as prof:
-            with record_function("model_inference"):
+            with record_function("Translate"):
                 translate(opt)
-        print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=20))
+        print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=30))
+
+    else:
+        translate(opt)
 
 
 if __name__ == "__main__":

@@ -320,7 +320,7 @@ class DecodeStrategy(object):
         # no need to further change this attr
         if len(self) > self.target_prefix.size(1):
             return
-        self.target_prefix = self.target_prefix.index_select(0, select_index)
+        self.target_prefix = self.target_prefix[select_index]
 
     def advance(self, log_probs, attn):
         """DecodeStrategy subclasses should override :func:`advance()`.

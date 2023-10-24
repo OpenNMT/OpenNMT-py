@@ -31,7 +31,6 @@ class BeamSearchBase(DecodeStrategy):
         exclusion_tokens (set[int]): See base.
 
     Attributes:
-        top_beam_finished (ByteTensor): Shape ``(B,)``.
         _batch_offset (LongTensor): Shape ``(B,)``.
         _beam_offset (LongTensor): Shape ``(batch_size x beam_size,)``.
         alive_seq (LongTensor): See base.
@@ -98,7 +97,6 @@ class BeamSearchBase(DecodeStrategy):
         self.ratio = ratio
 
         # beam state
-        self.top_beam_finished = [False for _ in range(batch_size)]
         self._batch_offset = torch.arange(batch_size, dtype=torch.long)
 
         self.select_indices = None
@@ -137,6 +135,7 @@ class BeamSearchBase(DecodeStrategy):
         self.topk_scores = torch.empty(
             (self.batch_size, self.beam_size), dtype=torch.float, device=device
         )
+        """
         self.topk_ids = torch.empty(
             (self.batch_size, self.beam_size), dtype=torch.long, device=device
         )
@@ -144,6 +143,7 @@ class BeamSearchBase(DecodeStrategy):
         self._batch_index = torch.empty(
             [self.batch_size, self.beam_size], dtype=torch.long, device=device
         )
+        """
 
     @property
     def current_predictions(self):
@@ -193,8 +193,6 @@ class BeamSearchBase(DecodeStrategy):
             torch.tensor(self.is_finished_list, device=self.topk_log_probs.device),
             -1e10,
         )
-        for i, beams in enumerate(self.is_finished_list):
-            self.top_beam_finished[i] |= beams[0]
         predictions = self.alive_seq.view(_B_old, self.beam_size, step)
         attention = (
             self.alive_attn.view(
@@ -235,7 +233,8 @@ class BeamSearchBase(DecodeStrategy):
                     (self.topk_scores[i, 0] / pred_len) <= self.best_scores[b]
                 ) or all(self.is_finished_list[i])
             else:
-                finish_flag = self.top_beam_finished[i]
+                # early stop when top beam is finished
+                finish_flag = self.is_finished_list[i][0]
 
             if finish_flag and len(self.hypotheses[b]) >= self.beam_size:
                 best_hyp = sorted(self.hypotheses[b], key=lambda x: x[0], reverse=True)[
@@ -263,10 +262,8 @@ class BeamSearchBase(DecodeStrategy):
         self, _B_new, _B_old, non_finished, predictions, attention, step
     ):
         # Remove finished batches for the next step.
-        self.top_beam_finished = [
-            self.top_beam_finished[index] for index in non_finished
-        ]
         self._batch_offset = self._batch_offset[non_finished]
+        # here we combine two slections in one
         # self.topk_log_probs = self.topk_log_probs[non_finished]
         # self._batch_index = self._batch_index[non_finished]
         self.topk_log_probs, self._batch_index = torch.unbind(
@@ -274,7 +271,6 @@ class BeamSearchBase(DecodeStrategy):
             dim=2,
         )
         self._batch_index = self._batch_index.to(torch.long)
-
         self.select_indices = self._batch_index.view(_B_new * self.beam_size)
         self.alive_seq = predictions[non_finished].view(-1, self.alive_seq.size(-1))
 
@@ -335,8 +331,8 @@ class BeamSearchBase(DecodeStrategy):
         self._batch_index = self.topk_ids // vocab_size + self._beam_offset[
             :_B
         ].unsqueeze(1)
-        self.topk_ids %= vocab_size
         self.select_indices = self._batch_index.view(_B * self.beam_size)
+        self.topk_ids %= vocab_size
 
         # Append last prediction.
         self.alive_seq = torch.cat(
@@ -350,7 +346,7 @@ class BeamSearchBase(DecodeStrategy):
         self.maybe_update_forbidden_tokens()
 
         if self.return_attention or self._cov_pen:
-            current_attn = attn.index_select(0, self.select_indices)
+            current_attn = attn[self.select_indices]
             if step == 1:
                 self.alive_attn = current_attn
                 # update global state (step == 1)
@@ -358,11 +354,11 @@ class BeamSearchBase(DecodeStrategy):
                     self._prev_penalty = torch.zeros_like(self.topk_log_probs)
                     self._coverage = current_attn
             else:
-                self.alive_attn = self.alive_attn.index_select(0, self.select_indices)
+                self.alive_attn = self.alive_attn[self.select_indices]
                 self.alive_attn = torch.cat([self.alive_attn, current_attn], 1)
                 # update global state (step > 1)
                 if self._cov_pen:
-                    self._coverage = self._coverage.index_select(0, self.select_indices)
+                    self._coverage = self._coverage[self.select_indices]
                     self._coverage += current_attn
                     self._prev_penalty = self.global_scorer.cov_penalty(
                         self._coverage, beta=self.global_scorer.beta
@@ -446,7 +442,6 @@ class BeamSearchLM(BeamSearchBase):
 
         # in LM task src_len is associated with currently generated src
         # and therefore needs to follow the generation
-        # non_finished = non_finished.to(self.topk_scores.device)
         self.src_len = self.src_len.view(_B_old, self.beam_size)[non_finished].view(
             _B_new * self.beam_size
         )

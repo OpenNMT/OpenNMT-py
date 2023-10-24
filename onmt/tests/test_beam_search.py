@@ -549,7 +549,7 @@ class TestBeamSearchAgainstReferenceCase(unittest.TestCase):
         )  # beam 2 finished
         beam.topk_log_probs.masked_fill_(torch.tensor(beam.is_finished_list), -1e10)
         beam.update_finished()
-        self.assertFalse(any(beam.top_beam_finished))
+        self.assertFalse(any([top_beam[0] for top_beam in beam.is_finished_list]))
         self.assertFalse(beam.done)
         return expected_beam_scores
 
@@ -600,7 +600,7 @@ class TestBeamSearchAgainstReferenceCase(unittest.TestCase):
         self.assertTrue(expected_bptr_2[:, 0].eq(3).all())
         beam.topk_log_probs.masked_fill_(torch.tensor(beam.is_finished_list), -1e10)
         beam.update_finished()
-        self.assertTrue(all(beam.top_beam_finished))
+        self.assertTrue(all([top_beam[0] for top_beam in beam.is_finished_list]))
         self.assertFalse(beam.done)
         return expected_beam_scores
 
@@ -647,7 +647,7 @@ class TestBeamSearchAgainstReferenceCase(unittest.TestCase):
         self.assertTrue(expected_bptr_3[:, 1].eq(3).all())
         beam.topk_log_probs.masked_fill_(torch.tensor(beam.is_finished_list), -1e10)
         beam.update_finished()
-        self.assertTrue(all(beam.top_beam_finished))
+        self.assertTrue(all([top_beam[0] for top_beam in beam.is_finished_list]))
         self.assertTrue(beam.done)
         return expected_beam_scores
 
