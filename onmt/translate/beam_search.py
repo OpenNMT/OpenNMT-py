@@ -442,9 +442,14 @@ class BeamSearchLM(BeamSearchBase):
 
         # in LM task src_len is associated with currently generated src
         # and therefore needs to follow the generation
+        # VN 24/10/2023 given the usage of src_len in update_finished()
+        # I think this is incorrect therefore commenting
+        # indexing needs to be aligned to original batch indexing
+        """
         self.src_len = self.src_len.view(_B_old, self.beam_size)[non_finished].view(
             _B_new * self.beam_size
         )
+        """
 
 
 class GNMTGlobalScorer(object):
