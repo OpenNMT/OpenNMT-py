@@ -73,7 +73,7 @@ class TranslationBuilder(object):
             translation_batch["attention"],
             translation_batch["alignment"],
             translation_batch["gold_score"],
-            batch["indices"],
+            batch["ind_in_bucket"],
         )
 
         if not any(align):  # when align is a empty nested list
@@ -159,7 +159,7 @@ class Translation(object):
         "gold_sent",
         "gold_score",
         "word_aligns",
-        "indices",
+        "ind_in_bucket",
     ]
 
     def __init__(
@@ -172,7 +172,7 @@ class Translation(object):
         tgt_sent,
         gold_score,
         word_aligns,
-        indices,
+        ind_in_bucket,
     ):
         self.src = src
         self.srclen = srclen
@@ -182,7 +182,7 @@ class Translation(object):
         self.gold_sent = tgt_sent
         self.gold_score = gold_score
         self.word_aligns = word_aligns
-        self.indices = indices
+        self.ind_in_bucket = ind_in_bucket
 
     def log(self, sent_number, src_raw=""):
         """

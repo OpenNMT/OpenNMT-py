@@ -89,6 +89,8 @@ def process(task, bucket, **kwargs):
         transform_cid_to_examples[transform_cid].append(example)
 
     processed_bucket = []
+    # careful below it will return a bucket sorted by corpora
+    # but we sort by length later and shuffle batches
     for (transform, cid), sub_bucket in transform_cid_to_examples.items():
         transf_bucket = transform.batch_apply(
             sub_bucket, is_train=(task == CorpusTask.TRAIN), corpus_name=cid
@@ -103,7 +105,8 @@ def process(task, bucket, **kwargs):
         #  'tgt': {'tgt': ...},
         #  'src_original': ['tok1', ...'tokn'],
         #  'tgt_original': ['tok1', ...'tokm'],
-        #  'indices' : seq in bucket
+        #  'cid': corpus id
+        #  'cid_line_number' : cid line number
         #  'align': ...,
         # }
     if len(processed_bucket) > 0:
@@ -173,13 +176,17 @@ def tensorify(vocabs, minibatch, device):
      'tgt': {'tgt': ..., 'tgt_ids': ...},
      'src_original': ['tok1', ...'tokn'],
      'tgt_original': ['tok1', ...'tokm'],
-     'indices' : seq in bucket
+     'cid': corpus id
+     'cid_line_number' : corpus id line number
+     'ind_in_bucket': index in bucket
      'align': ...,
     }
     Returns  Dict of batch Tensors
         {'src': [seqlen, batchsize, n_feats+1],
          'tgt' : [seqlen, batchsize, n_feats=1],
-         'indices' : [batchsize],
+         'cid': [batchsize],
+         'cid_line_number' : [batchsize],
+         'ind_in_bucket': [batchsize],
          'srclen': [batchsize],
          'tgtlen': [batchsize],
          'align': alignment sparse tensor
@@ -188,18 +195,18 @@ def tensorify(vocabs, minibatch, device):
     tensor_batch = {}
     tbatchsrc = [
         torch.tensor(ex["src"]["src_ids"], dtype=torch.long, device=device)
-        for ex in minibatch
+        for ex, indice in minibatch
     ]
     padidx = vocabs["src"][DefaultTokens.PAD]
     tbatchsrc = pad_sequence(tbatchsrc, batch_first=True, padding_value=padidx)
-    if "feats" in minibatch[0]["src"]:
+    if "feats" in minibatch[0][0]["src"]:
         tbatchfs = [tbatchsrc]
-        for feat_id in range(len(minibatch[0]["src"]["feats"])):
+        for feat_id in range(len(minibatch[0][0]["src"]["feats"])):
             tbatchfeat = [
                 torch.tensor(
                     ex["src"]["feats"][feat_id], dtype=torch.long, device=device
                 )
-                for ex in minibatch
+                for ex, indice in minibatch
             ]
             padidx = vocabs["src_feats"][feat_id][DefaultTokens.PAD]
             tbatchfeat = pad_sequence(
@@ -212,66 +219,75 @@ def tensorify(vocabs, minibatch, device):
         tbatchsrc = tbatchsrc[:, :, None]
 
     tensor_batch["src"] = tbatchsrc
-    tensor_batch["indices"] = torch.tensor(
-        [ex["indices"] for ex in minibatch], dtype=torch.long, device=device
-    )
+
     tensor_batch["srclen"] = torch.tensor(
-        [len(ex["src"]["src_ids"]) for ex in minibatch], dtype=torch.long, device=device
+        [len(ex["src"]["src_ids"]) for ex, indice in minibatch],
+        dtype=torch.long,
+        device=device,
     )
 
-    if minibatch[0]["tgt"] is not None:
+    if minibatch[0][0]["tgt"] is not None:
         tbatchtgt = [
             torch.tensor(ex["tgt"]["tgt_ids"], dtype=torch.long, device=device)
-            for ex in minibatch
+            for ex, indice in minibatch
         ]
         padidx = vocabs["tgt"][DefaultTokens.PAD]
         tbatchtgt = pad_sequence(tbatchtgt, batch_first=True, padding_value=padidx)
         tbatchtgt = tbatchtgt[:, :, None]
         tbatchtgtlen = torch.tensor(
-            [len(ex["tgt"]["tgt_ids"]) for ex in minibatch],
+            [len(ex["tgt"]["tgt_ids"]) for ex, indice in minibatch],
             dtype=torch.long,
             device=device,
         )
         tensor_batch["tgt"] = tbatchtgt
         tensor_batch["tgtlen"] = tbatchtgtlen
 
-    if "align" in minibatch[0].keys() and minibatch[0]["align"] is not None:
+    if "align" in minibatch[0][0].keys() and minibatch[0][0]["align"] is not None:
         sparse_idx = []
-        for i, ex in enumerate(minibatch):
+        for i, (ex, indice) in enumerate(minibatch):
             for src, tgt in parse_align_idx(ex["align"]):
                 sparse_idx.append([i, tgt + 1, src])
         tbatchalign = torch.tensor(sparse_idx, dtype=torch.long, device=device)
         tensor_batch["align"] = tbatchalign
 
-    if "src_map" in minibatch[0].keys():
-        src_vocab_size = max([max(ex["src_map"]) for ex in minibatch]) + 1
+    if "src_map" in minibatch[0][0].keys():
+        src_vocab_size = max([max(ex["src_map"]) for ex, indice in minibatch]) + 1
         src_map = torch.zeros(
             len(tensor_batch["srclen"]),
             tbatchsrc.size(1),
             src_vocab_size,
             device=device,
         )
-        for i, ex in enumerate(minibatch):
+        for i, (ex, indice) in enumerate(minibatch):
             for j, t in enumerate(ex["src_map"]):
                 src_map[i, j, t] = 1
         tensor_batch["src_map"] = src_map
 
-    if "alignment" in minibatch[0].keys():
+    if "alignment" in minibatch[0][0].keys():
         alignment = torch.zeros(
             len(tensor_batch["srclen"]),
             tbatchtgt.size(1),
             dtype=torch.long,
             device=device,
         )
-        for i, ex in enumerate(minibatch):
+        for i, (ex, indice) in enumerate(minibatch):
             alignment[i, : len(ex["alignment"])] = torch.tensor(
                 ex["alignment"], dtype=torch.long, device=device
             )
         tensor_batch["alignment"] = alignment
 
-    if "src_ex_vocab" in minibatch[0].keys():
-        tensor_batch["src_ex_vocab"] = [ex["src_ex_vocab"] for ex in minibatch]
+    if "src_ex_vocab" in minibatch[0][0].keys():
+        tensor_batch["src_ex_vocab"] = [ex["src_ex_vocab"] for ex, indice in minibatch]
 
+    tensor_batch["ind_in_bucket"] = torch.tensor(
+        [indice for ex, indice in minibatch], dtype=torch.long, device=device
+    )
+    tensor_batch["cid"] = [ex["cid"] for ex, indice in minibatch]
+    tensor_batch["cid_line_number"] = torch.tensor(
+        [ex["cid_line_number"] for ex, indice in minibatch],
+        dtype=torch.long,
+        device=device,
+    )
     return tensor_batch
 
 
@@ -285,11 +301,12 @@ def textbatch_to_tensor(vocabs, batch, device, is_train=False):
     for i, ex in enumerate(batch):
         # Keep it consistent with dynamic data
         ex["srclen"] = len(ex["src"]["src"].split())
-        ex["indices"] = i
+        ex["in_in_bucket"] = i
+        ex["cid"] = "text"
+        ex["cid_line_number"] = i
         ex["align"] = None
-        numeric.append(numericalize(vocabs, ex))
-    numeric.sort(key=text_sort_key, reverse=True)
-    infer_iter = [tensorify(vocabs, numeric, device)]
+        numeric.append((numericalize(vocabs, ex), i))
+    infer_iter = [(tensorify(vocabs, numeric, device), 0)]  # force bucket_idx to 0
     return infer_iter
 
 

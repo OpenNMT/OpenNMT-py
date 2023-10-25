@@ -66,8 +66,8 @@ class Transform(object):
             is_train (bool): Indicate if src/tgt is training data;bject.
         """
         transformed_batch = []
-        for example, _, cid in batch:
-            example = self.apply(example, is_train=is_train, **kwargs)
+        for exemple, _, cid in batch:
+            example = self.apply(exemple, is_train=is_train, **kwargs)
             if example is not None:
                 transformed_batch.append((example, self, cid))
         return transformed_batch

@@ -102,7 +102,7 @@ def main():
         cumul_length += batch["tgt"][:, 1:, 0].ne(padding_idx).sum().cpu()
         # Now we need to rearrange the batch of ppl
         # in the original order with indices
-        sent_ppl_orig = ppl.gather(0, batch["indices"].argsort(0))
+        sent_ppl_orig = ppl.gather(0, batch["cid_line_number"].argsort(0))
         for j in range(batch_size):
             ppl_file.write(str(sent_ppl_orig[j].item()) + "\n")
     logger.info(

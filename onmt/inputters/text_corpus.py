@@ -207,7 +207,8 @@ class ParallelCorpusIterator(object):
         for i, item in enumerate(stream):
             example = item[0]
             line_number = i * self.stride + self.offset
-            example["indices"] = line_number
+            example["cid_line_number"] = line_number
+            example["cid"] = self.cid
             if example["tgt"] is not None:
                 if (
                     len(example["src"]) == 0
