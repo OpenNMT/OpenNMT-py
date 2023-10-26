@@ -346,7 +346,7 @@ class Inference(object):
         def _maybe_retranslate(translations, batch):
             """Here we handle the cases of mismatch in number of segments
             between source and target. We re-translate seg by seg."""
-            inds, perm = torch.sort(batch["indices"])
+            inds, perm = torch.sort(batch["ind_in_bucket"])
             trans_copy = deepcopy(translations)
             inserted_so_far = 0
             for j, trans in enumerate(translations):
@@ -382,7 +382,7 @@ class Inference(object):
                     t_sub_batch = {
                         "src": t_sub_src.to(device),
                         "srclen": t_sub_src_len.to(device),
-                        "indices": t_sub_src_ind.to(device),
+                        "ind_in_bucket": t_sub_src_ind.to(device),
                     }
                     # new sub-batch ready to be translated
                     sub_data = self.translate_batch(t_sub_batch, attn_debug)
@@ -395,34 +395,27 @@ class Inference(object):
                     inserted_so_far += len(sub_src) - 1
             return trans_copy
 
-        for batch in infer_iter:
-            batch_data = self.translate_batch(batch, attn_debug)
-
-            translations = xlation_builder.from_batch(batch_data)
-            if (
-                not isinstance(self, GeneratorLM)
-                and self._tgt_sep_idx != self._tgt_unk_idx
-                and (batch["src"] == self._tgt_sep_idx).any().item()
-            ):
-                # For seq2seq when we need to force doc to spit the same number of sents
-                translations = _maybe_retranslate(translations, batch)
-
+        def _process_bucket(bucket_translations):
+            bucket_scores = []
+            bucket_predictions = []
+            bucket_score = 0
+            bucket_words = 0
+            bucket_gold_score = 0
+            bucket_gold_words = 0
             voc_src = self.vocabs["src"].ids_to_tokens
-
-            for j, trans in enumerate(translations):
-                all_scores += [trans.pred_scores[: self.n_best]]
-                pred_score_total += trans.pred_scores[0]
-                pred_words_total += len(trans.pred_sents[0])
+            bucket_translations = sorted(
+                bucket_translations, key=lambda x: x.ind_in_bucket
+            )
+            for trans in bucket_translations:
+                bucket_scores += [trans.pred_scores[: self.n_best]]
+                bucket_score += trans.pred_scores[0]
+                bucket_words += len(trans.pred_sents[0])
                 if "tgt" in batch.keys():
-                    gold_score_total += trans.gold_score
-                    gold_words_total += len(trans.gold_sent) + 1
+                    bucket_gold_score += trans.gold_score
+                    bucket_gold_words += len(trans.gold_sent) + 1
 
                 n_best_preds = [
                     " ".join(pred) for pred in trans.pred_sents[: self.n_best]
-                ]
-
-                n_best_scores = [
-                    score.item() for score in trans.pred_scores[: self.n_best]
                 ]
 
                 if self.report_align:
@@ -441,14 +434,16 @@ class Inference(object):
                 if transform_pipe is not None:
                     n_best_preds = transform_pipe.batch_apply_reverse(n_best_preds)
 
-                all_predictions += [n_best_preds]
-
-                out_all = [
-                    pred + "\t" + str(score)
-                    for (pred, score) in zip(n_best_preds, n_best_scores)
-                ]
+                bucket_predictions += [n_best_preds]
 
                 if self.with_score:
+                    n_best_scores = [
+                        score.item() for score in trans.pred_scores[: self.n_best]
+                    ]
+                    out_all = [
+                        pred + "\t" + str(score)
+                        for (pred, score) in zip(n_best_preds, n_best_scores)
+                    ]
                     self.out_file.write("\n".join(out_all) + "\n")
                 else:
                     self.out_file.write("\n".join(n_best_preds) + "\n")
@@ -496,6 +491,72 @@ class Inference(object):
                         self.logger.info(output)
                     else:
                         os.write(1, output.encode("utf-8"))
+            return (
+                bucket_scores,
+                bucket_predictions,
+                bucket_score,
+                bucket_words,
+                bucket_gold_score,
+                bucket_gold_words,
+            )
+
+        bucket_translations = []
+        prev_idx = 0
+
+        for batch, bucket_idx in infer_iter:
+
+            batch_data = self.translate_batch(batch, attn_debug)
+
+            translations = xlation_builder.from_batch(batch_data)
+            if (
+                not isinstance(self, GeneratorLM)
+                and self._tgt_sep_idx != self._tgt_unk_idx
+                and (batch["src"] == self._tgt_sep_idx).any().item()
+            ):
+                # For seq2seq when we need to force doc to spit the same number of sents
+                translations = _maybe_retranslate(translations, batch)
+
+            bucket_translations += translations
+
+            if (
+                not isinstance(infer_iter, list)
+                and len(bucket_translations) >= infer_iter.bucket_size
+            ):
+                bucket_idx += 1
+
+            if bucket_idx != prev_idx:
+                prev_idx = bucket_idx
+                (
+                    bucket_scores,
+                    bucket_predictions,
+                    bucket_score,
+                    bucket_words,
+                    bucket_gold_score,
+                    bucket_gold_words,
+                ) = _process_bucket(bucket_translations)
+                all_scores += bucket_scores
+                all_predictions += bucket_predictions
+                pred_score_total += bucket_score
+                pred_words_total += bucket_words
+                gold_score_total += bucket_gold_score
+                gold_words_total += bucket_gold_words
+                bucket_translations = []
+
+        if len(bucket_translations) > 0:
+            (
+                bucket_scores,
+                bucket_predictions,
+                bucket_score,
+                bucket_words,
+                bucket_gold_score,
+                bucket_gold_words,
+            ) = _process_bucket(bucket_translations)
+            all_scores += bucket_scores
+            all_predictions += bucket_predictions
+            pred_score_total += bucket_score
+            pred_words_total += bucket_words
+            gold_score_total += bucket_gold_score
+            gold_words_total += bucket_gold_words
 
         end_time = time.time()
 

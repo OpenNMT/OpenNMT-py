@@ -176,8 +176,7 @@ ${PYTHON} onmt/bin/train.py \
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 
-
-echo -n "  [+] Testing NMT training w/ validation with dynamic scoring and copy ..."
+echo -n "  [+] Testing NMT transformer training w/ validation with dynamic scoring and copy ..."
 ${PYTHON} onmt/bin/train.py \
             -config ${DATA_DIR}/data.yaml \
             -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
@@ -200,6 +199,7 @@ ${PYTHON} onmt/bin/train.py \
             -tensorboard "true" \
             -scoring_debug "true" \
             -copy_attn \
+            -position_encoding \
             -dump_preds $TMP_OUT_DIR/dump_pred \
             -tensorboard_log_dir $TMP_OUT_DIR/logs_dynamic-scoring_and_copy >> ${LOG_FILE} 2>&1
       
@@ -207,6 +207,99 @@ ${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_dynamic-scoring_a
 [ "$?" -eq 0 ] || error_exit
 echo "Succeeded" | tee -a ${LOG_FILE}
 rm -r $TMP_OUT_DIR/logs_dynamic-scoring_and_copy
+
+echo -n "  [+] Testing NMT transformer training w/ validation with dynamic scoring and maxrelative ..."
+${PYTHON} onmt/bin/train.py \
+            -config ${DATA_DIR}/data.yaml \
+            -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
+            -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
+            -src_vocab_size 1000 \
+            -tgt_vocab_size 1000 \
+            -encoder_type transformer \
+            -decoder_type transformer \
+            -layers 4 \
+            -word_vec_size 16 \
+            -hidden_size 16 \
+            -num_workers 0 -bucket_size 1024 \
+            -heads 2 \
+            -transformer_ff 64 \
+            -bucket_size 1024 \
+            -train_steps 10 \
+            -report_every 2 \
+            -valid_steps 5 \
+            -valid_metrics "BLEU" "TER" \
+            -tensorboard "true" \
+            -scoring_debug "true" \
+            -max_relative_positions 8 \
+            -dump_preds $TMP_OUT_DIR/dump_pred \
+            -tensorboard_log_dir $TMP_OUT_DIR/logs_dynamic-scoring_and_relative >> ${LOG_FILE} 2>&1
+      
+${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_dynamic-scoring_and_relative -tensorboard_checks valid_metrics
+[ "$?" -eq 0 ] || error_exit
+echo "Succeeded" | tee -a ${LOG_FILE}
+rm -r $TMP_OUT_DIR/logs_dynamic-scoring_and_relative
+
+echo -n "  [+] Testing NMT transformer training w/ validation with dynamic scoring and rotary ..."
+${PYTHON} onmt/bin/train.py \
+            -config ${DATA_DIR}/data.yaml \
+            -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
+            -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
+            -src_vocab_size 1000 \
+            -tgt_vocab_size 1000 \
+            -encoder_type transformer \
+            -decoder_type transformer \
+            -layers 4 \
+            -word_vec_size 16 \
+            -hidden_size 16 \
+            -num_workers 0 -bucket_size 1024 \
+            -heads 2 \
+            -transformer_ff 64 \
+            -bucket_size 1024 \
+            -train_steps 10 \
+            -report_every 2 \
+            -valid_steps 5 \
+            -valid_metrics "BLEU" "TER" \
+            -tensorboard "true" \
+            -scoring_debug "true" \
+            -max_relative_positions -1 \
+            -dump_preds $TMP_OUT_DIR/dump_pred \
+            -tensorboard_log_dir $TMP_OUT_DIR/logs_dynamic-scoring_and_rotary >> ${LOG_FILE} 2>&1
+      
+${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_dynamic-scoring_and_rotary -tensorboard_checks valid_metrics
+[ "$?" -eq 0 ] || error_exit
+echo "Succeeded" | tee -a ${LOG_FILE}
+rm -r $TMP_OUT_DIR/logs_dynamic-scoring_and_rotary
+
+echo -n "  [+] Testing NMT transformer training w/ validation with dynamic scoring and alibi ..."
+${PYTHON} onmt/bin/train.py \
+            -config ${DATA_DIR}/data.yaml \
+            -src_vocab $TMP_OUT_DIR/onmt.vocab.src \
+            -tgt_vocab $TMP_OUT_DIR/onmt.vocab.tgt \
+            -src_vocab_size 1000 \
+            -tgt_vocab_size 1000 \
+            -encoder_type transformer \
+            -decoder_type transformer \
+            -layers 4 \
+            -word_vec_size 16 \
+            -hidden_size 16 \
+            -num_workers 0 -bucket_size 1024 \
+            -heads 2 \
+            -transformer_ff 64 \
+            -bucket_size 1024 \
+            -train_steps 10 \
+            -report_every 2 \
+            -valid_steps 5 \
+            -valid_metrics "BLEU" "TER" \
+            -tensorboard "true" \
+            -scoring_debug "true" \
+            -max_relative_positions -2 \
+            -dump_preds $TMP_OUT_DIR/dump_pred \
+            -tensorboard_log_dir $TMP_OUT_DIR/logs_dynamic-scoring_and_alibi >> ${LOG_FILE} 2>&1
+      
+${PYTHON} onmt/tests/test_events.py --logdir $TMP_OUT_DIR/logs_dynamic-scoring_and_alibi -tensorboard_checks valid_metrics
+[ "$?" -eq 0 ] || error_exit
+echo "Succeeded" | tee -a ${LOG_FILE}
+rm -r $TMP_OUT_DIR/logs_dynamic-scoring_and_alibi
 
 echo -n "  [+] Testing LM training..."
 ${PYTHON} onmt/bin/train.py \

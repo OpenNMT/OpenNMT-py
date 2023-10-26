@@ -235,7 +235,7 @@ class Trainer(object):
         batches = []
         normalization = 0
         self.accum_count = self._accum_count(self.optim.training_step)
-        for batch in iterator:
+        for batch, bucket_idx in iterator:
             batches.append(batch)
             if self.norm_method == "tokens":
                 num_tokens = (
@@ -388,7 +388,7 @@ class Trainer(object):
         with torch.no_grad():
             stats = onmt.utils.Statistics()
             start = time.time()
-            for batch in valid_iter:
+            for batch, bucket_idx in valid_iter:
                 src = batch["src"]
                 src_len = batch["srclen"]
                 tgt = batch["tgt"]

@@ -163,6 +163,7 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
             raise ValueError(f"Invalid argument skip_empty_level={skip_empty_level}")
         self.skip_empty_level = skip_empty_level
         self.random_shuffler = RandomShuffler()
+        self.bucket_idx = 0
 
     @classmethod
     def from_opt(
@@ -247,6 +248,14 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
                 bucket.append(numericalize(self.vocabs, example))
         return bucket
 
+    def _add_indice(self, bucket):
+        indice = 0
+        indexed_bucket = []
+        for ex in bucket:
+            indexed_bucket.append((ex, indice))
+            indice += 1
+        return indexed_bucket
+
     def _bucketing(self):
         """
         Add up to bucket_size examples from the mixed corpora according
@@ -258,17 +267,19 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
             _bucket_size = self.bucket_size_init
         else:
             _bucket_size = self.bucket_size
+
         for ex in self.mixer:
             bucket.append(ex)
             if len(bucket) == _bucket_size:
-                yield self._tuple_to_json_with_tokIDs(bucket)
+                yield (self._tuple_to_json_with_tokIDs(bucket), self.bucket_idx)
+                self.bucket_idx += 1
                 bucket = []
                 if _bucket_size < self.bucket_size:
                     _bucket_size += self.bucket_size_increment
                 else:
                     _bucket_size = self.bucket_size
         if bucket:
-            yield self._tuple_to_json_with_tokIDs(bucket)
+            yield (self._tuple_to_json_with_tokIDs(bucket), self.bucket_idx)
 
     def batch_iter(self, data, batch_size, batch_type="sents", batch_size_multiple=1):
         """Yield elements from data in chunks of batch_size,
@@ -290,11 +301,11 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
             return len(ex["src"]["src_ids"])
 
         minibatch, maxlen, size_so_far, seen = [], 0, 0, set()
-        for ex in data:
+        for ex, indice in data:
             src = ex["src"]["src"]
             if src not in seen or (self.task != CorpusTask.TRAIN):
                 seen.add(src)
-                minibatch.append(ex)
+                minibatch.append((ex, indice))
                 nbsents = len(minibatch)
                 maxlen = max(max_src_tgt(ex), maxlen)
                 size_so_far = batch_size_fn(nbsents, maxlen)
@@ -315,7 +326,7 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
                         else:
                             yield minibatch[:-overflowed]
                             minibatch = minibatch[-overflowed:]
-                            maxlen = max([max_src_tgt(ex) for ex in minibatch])
+                            maxlen = max([max_src_tgt(ex) for ex, ind in minibatch])
                             size_so_far = batch_size_fn(len(minibatch), maxlen)
                             seen = set()
 
@@ -323,11 +334,9 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
             yield minibatch
 
     def __iter__(self):
-        for bucket in self._bucketing():
-            # For TRAIN we need to group examples by length
-            # for faster performance, but otherwise, sequential.
-            if self.task == CorpusTask.TRAIN:
-                bucket = sorted(bucket, key=self.sort_key)
+        for bucket, bucket_idx in self._bucketing():
+            bucket = self._add_indice(bucket)
+            bucket = sorted(bucket, key=lambda x: self.sort_key(x[0]))
             p_batch = list(
                 self.batch_iter(
                     bucket,
@@ -340,13 +349,13 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
             # otherwise sequential
             if self.task == CorpusTask.TRAIN:
                 p_batch = self.random_shuffler(p_batch)
-            for minibatch in p_batch:
+            for i, minibatch in enumerate(p_batch):
                 # for specific case of rnn_packed need to be sorted
                 # within the batch
                 if self.task == CorpusTask.TRAIN:
-                    minibatch.sort(key=self.sort_key, reverse=True)
+                    minibatch.sort(key=lambda x: self.sort_key(x[0]), reverse=True)
                 tensor_batch = tensorify(self.vocabs, minibatch, self.device)
-                yield tensor_batch
+                yield (tensor_batch, bucket_idx)
 
 
 class OnDeviceDatasetIter:
@@ -355,11 +364,11 @@ class OnDeviceDatasetIter:
         self.device = device
 
     def __iter__(self):
-        for tensor_batch in self.data_iter:
+        for (tensor_batch, bucket_idx) in self.data_iter:
             for key in tensor_batch.keys():
-                if key != "src_ex_vocab":
+                if key not in ["src_ex_vocab", "cid"]:
                     tensor_batch[key] = tensor_batch[key].to(self.device)
-            yield tensor_batch
+            yield (tensor_batch, bucket_idx)
 
 
 def build_dynamic_dataset_iter(

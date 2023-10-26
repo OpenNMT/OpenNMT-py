@@ -30,7 +30,7 @@ class MeanEncoder(EncoderBase):
 
         if src_len is not None:
             # we avoid padding while mean pooling
-            mask = sequence_mask(src_len).float()
+            mask = (~sequence_mask(src_len)).float()
             mask = mask / src_len.unsqueeze(1).float()
             mean = torch.bmm(mask.unsqueeze(1), emb).squeeze(1)
         else:

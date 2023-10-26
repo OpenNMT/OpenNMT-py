@@ -169,8 +169,96 @@ jobs:
           -scoring_debug "true" \
           -tensorboard_log_dir /tmp/logs_dynamic-scoring_and_copy \
           -dump_preds /tmp/dump_preds \
+          -position_encoding \
           -copy_attn
         python onmt/tests/test_events.py --logdir /tmp/logs_dynamic-scoring_and_copy -tensorboard_checks valid_metrics 
+    - name : Test Transformer training and validation with dynamic scoring and maxrelative
+      run: |
+        python3 train.py \
+          -config data/data.yaml \
+          -src_vocab /tmp/onmt.vocab.src \
+          -tgt_vocab /tmp/onmt.vocab.tgt \
+          -src_vocab_size 1000 \
+          -tgt_vocab_size 1000 \
+          -encoder_type transformer \
+          -decoder_type transformer \
+          -layers 4 \
+          -word_vec_size 16 \
+          -hidden_size 16 \
+          -num_workers 0 -bucket_size 1024 \
+          -heads 2 \
+          -transformer_ff 64 \
+          -num_workers 0 -bucket_size 1024 \
+          -accum_count 2 4 8 \
+          -accum_steps 0 15000 30000 \
+          -save_model /tmp/onmt.model \
+          -train_steps 10  -valid_steps 5 \
+          -report_every 2 \
+          -valid_metrics "BLEU" "TER" \
+          -tensorboard "true" \
+          -scoring_debug "true" \
+          -tensorboard_log_dir /tmp/logs_dynamic-scoring_and_relative \
+          -dump_preds /tmp/dump_preds \
+          -max_relative_positions 8
+        python onmt/tests/test_events.py --logdir /tmp/logs_dynamic-scoring_and_relative -tensorboard_checks valid_metrics 
+    - name : Test Transformer training and validation with dynamic scoring and rotary
+      run: |
+        python3 train.py \
+          -config data/data.yaml \
+          -src_vocab /tmp/onmt.vocab.src \
+          -tgt_vocab /tmp/onmt.vocab.tgt \
+          -src_vocab_size 1000 \
+          -tgt_vocab_size 1000 \
+          -encoder_type transformer \
+          -decoder_type transformer \
+          -layers 4 \
+          -word_vec_size 16 \
+          -hidden_size 16 \
+          -num_workers 0 -bucket_size 1024 \
+          -heads 2 \
+          -transformer_ff 64 \
+          -num_workers 0 -bucket_size 1024 \
+          -accum_count 2 4 8 \
+          -accum_steps 0 15000 30000 \
+          -save_model /tmp/onmt.model \
+          -train_steps 10  -valid_steps 5 \
+          -report_every 2 \
+          -valid_metrics "BLEU" "TER" \
+          -tensorboard "true" \
+          -scoring_debug "true" \
+          -tensorboard_log_dir /tmp/logs_dynamic-scoring_and_rotary \
+          -dump_preds /tmp/dump_preds \
+          -max_relative_positions -1
+        python onmt/tests/test_events.py --logdir /tmp/logs_dynamic-scoring_and_rotary -tensorboard_checks valid_metrics 
+    - name : Test Transformer training and validation with dynamic scoring and alibi
+      run: |
+        python3 train.py \
+          -config data/data.yaml \
+          -src_vocab /tmp/onmt.vocab.src \
+          -tgt_vocab /tmp/onmt.vocab.tgt \
+          -src_vocab_size 1000 \
+          -tgt_vocab_size 1000 \
+          -encoder_type transformer \
+          -decoder_type transformer \
+          -layers 4 \
+          -word_vec_size 16 \
+          -hidden_size 16 \
+          -num_workers 0 -bucket_size 1024 \
+          -heads 2 \
+          -transformer_ff 64 \
+          -num_workers 0 -bucket_size 1024 \
+          -accum_count 2 4 8 \
+          -accum_steps 0 15000 30000 \
+          -save_model /tmp/onmt.model \
+          -train_steps 10  -valid_steps 5 \
+          -report_every 2 \
+          -valid_metrics "BLEU" "TER" \
+          -tensorboard "true" \
+          -scoring_debug "true" \
+          -tensorboard_log_dir /tmp/logs_dynamic-scoring_and_alibi \
+          -dump_preds /tmp/dump_preds \
+          -max_relative_positions 8
+        python onmt/tests/test_events.py --logdir /tmp/logs_dynamic-scoring_and_alibi -tensorboard_checks valid_metrics 
     - name: Test LM training
       run: |
         python train.py \

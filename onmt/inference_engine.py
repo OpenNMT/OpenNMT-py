@@ -255,7 +255,7 @@ class InferenceEngineCT2(InferenceEngine):
     def _translate(self, infer_iter):
         scores = []
         preds = []
-        for batch in infer_iter:
+        for batch, bucket_idx in infer_iter:
             _scores, _preds = self.translate_batch(batch, self.opt)
             scores += _scores
             preds += _preds

@@ -19,7 +19,7 @@ def collapse_copy_scores(
             src_vocab = batch["src_ex_vocab"][b]
         else:
             batch_id = batch_offset[b] if batch_offset is not None else b
-            index = batch["indices"].data[batch_id]
+            index = batch["ind_in_bucket"].data[batch_id]
             src_vocab = src_vocabs[index]
 
         for i in range(1, len(src_vocab)):
@@ -29,8 +29,8 @@ def collapse_copy_scores(
                 blank.append(offset + i)
                 fill.append(ti)
         if blank:
-            blank = torch.Tensor(blank).type_as(batch["indices"].data)
-            fill = torch.Tensor(fill).type_as(batch["indices"].data)
+            blank = torch.Tensor(blank).type_as(batch["ind_in_bucket"].data)
+            fill = torch.Tensor(fill).type_as(batch["ind_in_bucket"].data)
             score = scores[:, b] if batch_dim == 1 else scores[b]
             score.index_add_(1, fill, score.index_select(1, blank))
             score.index_fill_(1, blank, 1e-10)

@@ -53,7 +53,7 @@ def relative_matmul(x: Tensor, z: Tensor, transpose: bool) -> Tensor:
     https://arxiv.org/pdf/1803.02155.pdf
     x shape [batch_size x heads x q_len x k_len]
     """
-    batch_size, heads, length = x.size()
+    batch_size, heads, length, _ = x.size()
     x_t = x.permute(2, 0, 1, 3)
     x_t_r = x_t.contiguous().view(length, heads * batch_size, -1)
     if transpose:
