@@ -169,7 +169,7 @@ class GlobalAttention(nn.Module):
         align = self.score(src, enc_out)
 
         if src_len is not None:
-            mask = sequence_mask(src_len, max_len=align.size(-1))
+            mask = ~sequence_mask(src_len, max_len=align.size(-1))
             mask = mask.unsqueeze(1)  # Make it broadcastable.
             align.masked_fill_(~mask, -float("inf"))
 

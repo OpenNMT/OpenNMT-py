@@ -123,6 +123,7 @@ def load_test_model(opt, device_id=0, model_path=None):
     model_opt.attention_dropout = (
         0.0  # required to force no dropout at inference with flash
     )
+
     model = build_base_model(model_opt, vocabs)
 
     precision = torch.float32
@@ -162,6 +163,7 @@ def load_test_model(opt, device_id=0, model_path=None):
     for name, module in model.named_modules():
         if hasattr(module, "dropout_p"):
             module.dropout_p = 0.0
+
     return vocabs, model, model_opt
 
 

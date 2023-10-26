@@ -172,44 +172,22 @@ class ParallelCorpusIterator(object):
         self.stride = stride
         self.offset = offset
 
-    def _tokenize(self, stream):
-        for example in stream:
+    def _process(self, stream):
+        for i, example in enumerate(stream):
             example["src"] = example["src"].strip("\n").split()
             example["src_original"] = example["src_original"].strip("\n").split()
             if "src_feats" in example:
                 example["src_feats"] = [
                     feat.strip("\n").split() for feat in example["src_feats"]
                 ]
-            if example["tgt"] is not None:
-                example["tgt"] = example["tgt"].strip("\n").split()
-                example["tgt_original"] = example["tgt_original"].strip("\n").split()
-            if "align" in example:
-                example["align"] = example["align"].strip("\n").split()
-            yield example
-
-    def _transform(self, stream):
-        for example in stream:
-            # NOTE: moved to dynamic_iterator.py cf process()
-            # item = self.transform.apply(
-            # example, is_train=self.infinitely, corpus_name=self.cid)
-            item = (example, self.transform, self.cid)
-            if item is not None:
-                yield item
-        report_msg = self.transform.stats()
-        if report_msg != "":
-            logger.info(
-                "* Transform statistics for {}({:.2f}%):\n{}\n".format(
-                    self.cid, 100 / self.stride, report_msg
-                )
-            )
-
-    def _add_index(self, stream):
-        for i, item in enumerate(stream):
-            example = item[0]
             line_number = i * self.stride + self.offset
             example["cid_line_number"] = line_number
             example["cid"] = self.cid
+            if "align" in example:
+                example["align"] = example["align"].strip("\n").split()
             if example["tgt"] is not None:
+                example["tgt"] = example["tgt"].strip("\n").split()
+                example["tgt_original"] = example["tgt_original"].strip("\n").split()
                 if (
                     len(example["src"]) == 0
                     or len(example["tgt"]) == 0
@@ -222,16 +200,21 @@ class ParallelCorpusIterator(object):
                     elif self.skip_empty_level == "warning":
                         logger.warning(empty_msg)
                     if len(example["src"]) == 0 and len(example["tgt"]) == 0:
-                        yield item
+                        yield (example, self.transform, self.cid)
                     continue
-            yield item
+            yield (example, self.transform, self.cid)
+        report_msg = self.transform.stats()
+        if report_msg != "":
+            logger.info(
+                "* Transform statistics for {}({:.2f}%):\n{}\n".format(
+                    self.cid, 100 / self.stride, report_msg
+                )
+            )
 
     def __iter__(self):
         corpus_stream = self.corpus.load(stride=self.stride, offset=self.offset)
-        tokenized_corpus = self._tokenize(corpus_stream)
-        transformed_corpus = self._transform(tokenized_corpus)
-        indexed_corpus = self._add_index(transformed_corpus)
-        yield from indexed_corpus
+        corpus = self._process(corpus_stream)
+        yield from corpus
 
 
 def build_corpora_iters(

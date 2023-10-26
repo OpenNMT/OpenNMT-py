@@ -581,20 +581,18 @@ class TransformerDecoder(TransformerDecoderBase):
                     {"keys": torch.tensor([]), "values": torch.tensor([])},
                 )
 
-        emb = self.embeddings(tgt, step=step)
-        dec_out = emb
-        assert emb.dim() == 3  # len x batch x embedding_dim
+        dec_out = self.embeddings(tgt, step=step)
 
         pad_idx = self.embeddings.word_padding_idx
-        src_lens = kwargs["src_len"]
+        src_len = kwargs["src_len"]
         src_max_len = self.state["src"].shape[1]
-        src_pad_mask = ~sequence_mask(src_lens, src_max_len)  # [B x slen]
-        src_pad_mask = src_pad_mask.unsqueeze(1)  # [B x 1 x slen]
+        src_pad_mask = sequence_mask(src_len, src_max_len).unsqueeze(
+            1
+        )  # [B x 1 x slen]
         tgt_pad_mask = tgt[:, :, 0].eq(pad_idx).unsqueeze(1)  # [B, 1, T_tgt]
 
         with_align = kwargs.pop("with_align", False)
-        return_attn = kwargs.pop("return_attn", False)
-        return_attn = with_align or self._copy or return_attn
+        return_attn = with_align or self._copy or kwargs.pop("return_attn", False)
 
         attn_aligns = []
 

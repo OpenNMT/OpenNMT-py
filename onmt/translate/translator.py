@@ -406,7 +406,7 @@ class Inference(object):
             bucket_translations = sorted(
                 bucket_translations, key=lambda x: x.ind_in_bucket
             )
-            for j, trans in enumerate(bucket_translations):
+            for trans in bucket_translations:
                 bucket_scores += [trans.pred_scores[: self.n_best]]
                 bucket_score += trans.pred_scores[0]
                 bucket_words += len(trans.pred_sents[0])
@@ -416,10 +416,6 @@ class Inference(object):
 
                 n_best_preds = [
                     " ".join(pred) for pred in trans.pred_sents[: self.n_best]
-                ]
-
-                n_best_scores = [
-                    score.item() for score in trans.pred_scores[: self.n_best]
                 ]
 
                 if self.report_align:
@@ -440,12 +436,14 @@ class Inference(object):
 
                 bucket_predictions += [n_best_preds]
 
-                out_all = [
-                    pred + "\t" + str(score)
-                    for (pred, score) in zip(n_best_preds, n_best_scores)
-                ]
-
                 if self.with_score:
+                    n_best_scores = [
+                        score.item() for score in trans.pred_scores[: self.n_best]
+                    ]
+                    out_all = [
+                        pred + "\t" + str(score)
+                        for (pred, score) in zip(n_best_preds, n_best_scores)
+                    ]
                     self.out_file.write("\n".join(out_all) + "\n")
                 else:
                     self.out_file.write("\n".join(n_best_preds) + "\n")
@@ -506,6 +504,7 @@ class Inference(object):
         prev_idx = 0
 
         for batch, bucket_idx in infer_iter:
+
             batch_data = self.translate_batch(batch, attn_debug)
 
             translations = xlation_builder.from_batch(batch_data)

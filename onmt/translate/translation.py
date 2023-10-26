@@ -40,7 +40,7 @@ class TranslationBuilder(object):
                 voc[tok]
                 if tok < len(voc)
                 else dyn_voc.ids_to_tokens[tok - len(self.vocabs["src"].ids_to_tokens)]
-                for tok in pred
+                for tok in pred.tolist()
             ]
         if tokens[-1] == DefaultTokens.EOS:
             tokens = tokens[:-1]

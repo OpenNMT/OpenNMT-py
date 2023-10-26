@@ -228,10 +228,9 @@ class TransformerEncoder(EncoderBase):
     def forward(self, src, src_len=None):
         """See :func:`EncoderBase.forward()`"""
         enc_out = self.embeddings(src)
-        mask = ~sequence_mask(src_len).unsqueeze(1)
-        mask = mask.unsqueeze(1)
+        mask = sequence_mask(src_len).unsqueeze(1).unsqueeze(1)
         mask = mask.expand(-1, -1, mask.size(3), -1)
-        # mask is now (batch x 1 x slen x slen)
+        # Padding mask is now (batch x 1 x slen x slen)
         # 1 to be expanded to number of heads in MHA
         # Run the forward pass of every layer of the tranformer.
 
