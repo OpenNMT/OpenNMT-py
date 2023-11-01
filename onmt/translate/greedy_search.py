@@ -168,9 +168,7 @@ class GreedySearch(DecodeStrategy):
         if device is None:
             device = self.get_device_from_enc_out(enc_out)
 
-        super(GreedySearch, self).initialize(
-            enc_out, src_len, src_map, device, target_prefix
-        )
+        super(GreedySearch, self).initialize(device, target_prefix)
         self.select_indices = torch.arange(
             self.batch_size * self.beam_size, dtype=torch.long, device=device
         )
@@ -180,7 +178,7 @@ class GreedySearch(DecodeStrategy):
         self.beams_scores = torch.zeros(
             (self.batch_size * self.beam_size, 1), dtype=torch.float, device=device
         )
-        return fn_map_state, enc_out, self.src_len, src_map
+        return fn_map_state, enc_out, src_map
 
     @property
     def current_predictions(self):
@@ -245,7 +243,7 @@ class GreedySearch(DecodeStrategy):
             if self.alive_attn is None:
                 self.alive_attn = attn
             else:
-                self.alive_attn = torch.cat([self.alive_attn, attn], 0)
+                self.alive_attn = torch.cat([self.alive_attn, attn], 1)
         self.ensure_max_length()
 
     def update_finished(self):
@@ -262,7 +260,7 @@ class GreedySearch(DecodeStrategy):
             score = self.beams_scores[b, 0] / length_penalty
             pred = self.alive_seq[b, 1:]
             attention = (
-                self.alive_attn[:, b, : self.src_len[b]]
+                self.alive_attn[b, :, : self.src_len[b]]
                 if self.alive_attn is not None
                 else []
             )
@@ -279,8 +277,9 @@ class GreedySearch(DecodeStrategy):
         is_alive = ~self.is_finished.view(-1)
         self.alive_seq = self.alive_seq[is_alive]
         self.beams_scores = self.beams_scores[is_alive]
+        self.src_len = self.src_len[is_alive]
         if self.alive_attn is not None:
-            self.alive_attn = self.alive_attn[:, is_alive]
+            self.alive_attn = self.alive_attn[is_alive]
         self.select_indices = is_alive.nonzero(as_tuple=False).view(-1)
         self.original_batch_idx = self.original_batch_idx[is_alive]
         self.maybe_update_target_prefix(self.select_indices)
@@ -289,18 +288,6 @@ class GreedySearch(DecodeStrategy):
 class GreedySearchLM(GreedySearch):
     def update_finished(self):
         super(GreedySearchLM, self).update_finished()
-        self.update_src_len()
-
-    def update_src_len(self):
-        is_alive = ~self.is_finished.view(-1)
-        self.src_len = self.src_len[is_alive]
-
-    def advance(self, log_probs, attn):
-        super(GreedySearchLM, self).advance(log_probs, attn)
-
-        # in LM task src_len is associated with currently generated src
-        # and therefore needs to follow the generation
-        self.src_len += 1
 
     def initialize(self, src, src_len, src_map=None, device=None, target_prefix=None):
         """Initialize for decoding."""
@@ -308,8 +295,15 @@ class GreedySearchLM(GreedySearch):
         if device is None:
             device = src.device
 
-        (fn_map_state, _, self.src_len, src_map) = super(
-            GreedySearchLM, self
-        ).initialize(None, src_len, src_map, device, target_prefix)
+        (fn_map_state, _, src_map) = super(GreedySearchLM, self).initialize(
+            None, src_len, src_map, device, target_prefix
+        )
 
-        return fn_map_state, src, self.src_len, src_map
+        return fn_map_state, src, src_map
+
+    def advance(self, log_probs, attn):
+        super(GreedySearchLM, self).advance(log_probs, attn)
+
+        # in LM task src_len is associated with currently generated src
+        # and therefore needs to follow the generation
+        self.src_len += 1

@@ -414,7 +414,7 @@ class TestBeamSearch(unittest.TestCase):
             False,
         )
         device_init = torch.zeros(1, 1)
-        _, _, inp_lens, _ = beam.initialize(device_init, inp_lens)
+        _, _, _ = beam.initialize(device_init, inp_lens)
         # inp_lens is tiled in initialize, reassign to make attn match
         for i in range(min_length + 2):
             # non-interesting beams are going to get dummy values
@@ -465,7 +465,9 @@ class TestBeamSearch(unittest.TestCase):
                     self.assertEqual(len(beam.attention[b]), 2)
                     for k in range(2):
                         # second dim is cut down to the non-padded src length
-                        self.assertEqual(beam.attention[b][k].shape[-1], inp_lens[b])
+                        self.assertEqual(
+                            beam.attention[b][k].shape[-1], beam.src_len[b]
+                        )
                     # first dim is equal to the time of death
                     # (beam 0 died at current step - adjust for SOS)
                     self.assertEqual(beam.attention[b][0].shape[0], i + 1)
@@ -756,7 +758,7 @@ class TestBeamSearchLM(TestBeamSearchAgainstReferenceCase):
         )
         device_init = torch.zeros(1, 1)
         src_len = torch.randint(0, 30, (self.BATCH_SZ,))
-        fn_map_state, _, _, _ = beam.initialize(device_init, src_len)
+        fn_map_state, _, _ = beam.initialize(device_init, src_len)
         expected_beam_scores = self.init_step(beam, 1)
         expected_beam_scores = self.first_step(beam, expected_beam_scores, 1)
         expected_beam_scores = self.second_step(beam, expected_beam_scores, 1)
@@ -787,13 +789,9 @@ class TestBeamSearchLM(TestBeamSearchAgainstReferenceCase):
         )
         device_init = torch.zeros(1, 1)
         src_len = torch.randint(0, 30, (self.BATCH_SZ,))
-        fn_map_state, _, _, _ = beam.initialize(device_init, src_len)
+        fn_map_state, _, _ = beam.initialize(device_init, src_len)
         self.init_step(beam, 1)
         self.finish_first_beam_step(beam)
 
         n_steps = beam.alive_seq.shape[-1] - 1
-        # I think this all test is unnecessary because
-        # 1) I removed self.src_len reindexing in remove_finished_batches() of LM case
-        # 2) this is already done in the translator _translate_batch_with_strategy()
-        # self.assertTrue(beam.src_len.equal(n_steps + fn_map_state(src_len[1:], dim=0)))
-        self.assertTrue(beam.src_len.equal(n_steps + fn_map_state(src_len, dim=0)))
+        self.assertTrue(beam.src_len.equal(n_steps + fn_map_state(src_len[1:], dim=0)))

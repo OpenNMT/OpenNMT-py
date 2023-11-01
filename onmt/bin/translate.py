@@ -54,7 +54,11 @@ def main():
     opt = parser.parse_args()
     if opt.profile:
 
-        with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA]) as prof:
+        with profile(
+            activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
+            profile_memory=True,
+            with_stack=True,
+        ) as prof:
             with record_function("Translate"):
                 translate(opt)
         print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=40))

@@ -714,9 +714,6 @@ class Inference(object):
         gold_score,
         batch,
         batch_size,
-        src,
-        src_len,
-        use_src_map,
         decode_strategy,
     ):
         results = {
@@ -901,7 +898,7 @@ class Translator(Inference):
         # (2) prep decode_strategy. Possibly repeat src objects.
         src_map = batch["src_map"] if use_src_map else None
         target_prefix = batch["tgt"] if self.tgt_file_prefix else None
-        (fn_map_state, enc_out, src_len_tiled, src_map,) = decode_strategy.initialize(
+        (fn_map_state, enc_out, src_map) = decode_strategy.initialize(
             enc_out, src_len, src_map, target_prefix=target_prefix
         )
 
@@ -916,7 +913,7 @@ class Translator(Inference):
                 decoder_input,
                 enc_out,
                 batch,
-                src_len=src_len_tiled,
+                src_len=decode_strategy.src_len,
                 src_map=src_map,
                 step=step,
                 batch_offset=decode_strategy.batch_offset,
@@ -941,8 +938,6 @@ class Translator(Inference):
                 else:
                     enc_out = enc_out[select_indices]
 
-                src_len_tiled = src_len_tiled[select_indices]
-
                 if src_map is not None:
                     src_map = src_map[select_indices]
 
@@ -953,9 +948,6 @@ class Translator(Inference):
             gold_score,
             batch,
             batch_size,
-            src,
-            src_len,
-            use_src_map,
             decode_strategy,
         )
 
@@ -1107,7 +1099,7 @@ class GeneratorLM(Inference):
 
         # (3) prep decode_strategy. Possibly repeat src objects.
         src_map = batch["src_map"] if use_src_map else None
-        (fn_map_state, src, src_len_tiled, src_map,) = decode_strategy.initialize(
+        (fn_map_state, src, src_map) = decode_strategy.initialize(
             src,
             src_len,
             src_map,
@@ -1124,7 +1116,7 @@ class GeneratorLM(Inference):
                 decoder_input,
                 None,
                 batch,
-                src_len=src_len_tiled.clone(),
+                src_len=decode_strategy.src_len,
                 src_map=src_map,
                 step=step if step == 0 else step + src_len[0].item(),
                 batch_offset=decode_strategy.batch_offset,
@@ -1143,13 +1135,10 @@ class GeneratorLM(Inference):
                 decode_strategy.update_finished()
                 if decode_strategy.done:
                     break
-
             select_indices = decode_strategy.select_indices
-            src_len_tiled += 1
+
             if any_finished:
                 # Reorder states.
-                src_len_tiled = src_len_tiled[select_indices]
-
                 if src_map is not None:
                     src_map = src_map[select_indices]
 
@@ -1161,9 +1150,6 @@ class GeneratorLM(Inference):
             gold_score,
             batch,
             batch_size,
-            src,
-            src_len,
-            use_src_map,
             decode_strategy,
         )
 
