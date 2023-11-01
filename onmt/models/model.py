@@ -72,9 +72,7 @@ class BaseModel(nn.Module):
             for buf_name, buf in module.named_buffers():
                 buf_list.append(buf_name)
                 if len(buf_name.split(".")) == 1:  # only last key
-                    if precision == torch.int8:
-                        torch.quantization.quantize_dynamic(module, inplace=True)
-                    else:
+                    if precision != torch.int8:
                         module.to(precision)
                     module.to(device)
             for param_name, param in module.named_parameters():
@@ -132,9 +130,7 @@ class BaseModel(nn.Module):
                         raise ValueError(
                             "Missing key in checkpoint: %s" % name + "." + param_name
                         )
-                    if precision == torch.int8:
-                        torch.quantization.quantize_dynamic(module, inplace=True)
-                    else:
+                    if precision != torch.int8:
                         module.to(precision)
                     module.to(device)
         for key in checkpoint[
