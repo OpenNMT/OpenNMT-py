@@ -366,6 +366,7 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid argument skip_empty_level=</span><span class="si">{</span><span class="n">skip_empty_level</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">skip_empty_level</span> <span class="o">=</span> <span class="n">skip_empty_level</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">random_shuffler</span> <span class="o">=</span> <span class="n">RandomShuffler</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bucket_idx</span> <span class="o">=</span> <span class="mi">0</span>
 
 <div class="viewcode-block" id="DynamicDatasetIter.from_opt"><a class="viewcode-back" href="../../../onmt.inputters.html#onmt.inputters.DynamicDatasetIter.from_opt">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_opt</span><span class="p">(</span>
@@ -450,6 +451,14 @@
                 <span class="n">bucket</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">numericalize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vocabs</span><span class="p">,</span> <span class="n">example</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">bucket</span>
 
+    <span class="k">def</span> <span class="nf">_add_indice</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket</span><span class="p">):</span>
+        <span class="n">indice</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">indexed_bucket</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">ex</span> <span class="ow">in</span> <span class="n">bucket</span><span class="p">:</span>
+            <span class="n">indexed_bucket</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">ex</span><span class="p">,</span> <span class="n">indice</span><span class="p">))</span>
+            <span class="n">indice</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">indexed_bucket</span>
+
     <span class="k">def</span> <span class="nf">_bucketing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add up to bucket_size examples from the mixed corpora according</span>
@@ -461,17 +470,19 @@
             <span class="n">_bucket_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bucket_size_init</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">_bucket_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bucket_size</span>
+
         <span class="k">for</span> <span class="n">ex</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="p">:</span>
             <span class="n">bucket</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bucket</span><span class="p">)</span> <span class="o">==</span> <span class="n">_bucket_size</span><span class="p">:</span>
-                <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tuple_to_json_with_tokIDs</span><span class="p">(</span><span class="n">bucket</span><span class="p">)</span>
+                <span class="k">yield</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tuple_to_json_with_tokIDs</span><span class="p">(</span><span class="n">bucket</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">bucket_idx</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">bucket_idx</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="n">bucket</span> <span class="o">=</span> <span class="p">[]</span>
                 <span class="k">if</span> <span class="n">_bucket_size</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">bucket_size</span><span class="p">:</span>
                     <span class="n">_bucket_size</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bucket_size_increment</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">_bucket_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bucket_size</span>
         <span class="k">if</span> <span class="n">bucket</span><span class="p">:</span>
-            <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tuple_to_json_with_tokIDs</span><span class="p">(</span><span class="n">bucket</span><span class="p">)</span>
+            <span class="k">yield</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tuple_to_json_with_tokIDs</span><span class="p">(</span><span class="n">bucket</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">bucket_idx</span><span class="p">)</span>
 
 <div class="viewcode-block" id="DynamicDatasetIter.batch_iter"><a class="viewcode-back" href="../../../onmt.inputters.html#onmt.inputters.DynamicDatasetIter.batch_iter">[docs]</a>    <span class="k">def</span> <span class="nf">batch_iter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">batch_type</span><span class="o">=</span><span class="s2">&quot;sents&quot;</span><span class="p">,</span> <span class="n">batch_size_multiple</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Yield elements from data in chunks of batch_size,</span>
@@ -493,11 +504,11 @@
             <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">ex</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">][</span><span class="s2">&quot;src_ids&quot;</span><span class="p">])</span>
 
         <span class="n">minibatch</span><span class="p">,</span> <span class="n">maxlen</span><span class="p">,</span> <span class="n">size_so_far</span><span class="p">,</span> <span class="n">seen</span> <span class="o">=</span> <span class="p">[],</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">set</span><span class="p">()</span>
-        <span class="k">for</span> <span class="n">ex</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">ex</span><span class="p">,</span> <span class="n">indice</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
             <span class="n">src</span> <span class="o">=</span> <span class="n">ex</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">][</span><span class="s2">&quot;src&quot;</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">src</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">task</span> <span class="o">!=</span> <span class="n">CorpusTask</span><span class="o">.</span><span class="n">TRAIN</span><span class="p">):</span>
                 <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">src</span><span class="p">)</span>
-                <span class="n">minibatch</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span>
+                <span class="n">minibatch</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">ex</span><span class="p">,</span> <span class="n">indice</span><span class="p">))</span>
                 <span class="n">nbsents</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">minibatch</span><span class="p">)</span>
                 <span class="n">maxlen</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">max_src_tgt</span><span class="p">(</span><span class="n">ex</span><span class="p">),</span> <span class="n">maxlen</span><span class="p">)</span>
                 <span class="n">size_so_far</span> <span class="o">=</span> <span class="n">batch_size_fn</span><span class="p">(</span><span class="n">nbsents</span><span class="p">,</span> <span class="n">maxlen</span><span class="p">)</span>
@@ -518,7 +529,7 @@
                         <span class="k">else</span><span class="p">:</span>
                             <span class="k">yield</span> <span class="n">minibatch</span><span class="p">[:</span><span class="o">-</span><span class="n">overflowed</span><span class="p">]</span>
                             <span class="n">minibatch</span> <span class="o">=</span> <span class="n">minibatch</span><span class="p">[</span><span class="o">-</span><span class="n">overflowed</span><span class="p">:]</span>
-                            <span class="n">maxlen</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="n">max_src_tgt</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span> <span class="k">for</span> <span class="n">ex</span> <span class="ow">in</span> <span class="n">minibatch</span><span class="p">])</span>
+                            <span class="n">maxlen</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="n">max_src_tgt</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span> <span class="k">for</span> <span class="n">ex</span><span class="p">,</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">minibatch</span><span class="p">])</span>
                             <span class="n">size_so_far</span> <span class="o">=</span> <span class="n">batch_size_fn</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">minibatch</span><span class="p">),</span> <span class="n">maxlen</span><span class="p">)</span>
                             <span class="n">seen</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
 
@@ -526,11 +537,9 @@
             <span class="k">yield</span> <span class="n">minibatch</span></div>
 
     <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">bucket</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bucketing</span><span class="p">():</span>
-            <span class="c1"># For TRAIN we need to group examples by length</span>
-            <span class="c1"># for faster performance, but otherwise, sequential.</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span> <span class="o">==</span> <span class="n">CorpusTask</span><span class="o">.</span><span class="n">TRAIN</span><span class="p">:</span>
-                <span class="n">bucket</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sort_key</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">bucket</span><span class="p">,</span> <span class="n">bucket_idx</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bucketing</span><span class="p">():</span>
+            <span class="n">bucket</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_indice</span><span class="p">(</span><span class="n">bucket</span><span class="p">)</span>
+            <span class="n">bucket</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sort_key</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
             <span class="n">p_batch</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">batch_iter</span><span class="p">(</span>
                     <span class="n">bucket</span><span class="p">,</span>
@@ -543,13 +552,13 @@
             <span class="c1"># otherwise sequential</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span> <span class="o">==</span> <span class="n">CorpusTask</span><span class="o">.</span><span class="n">TRAIN</span><span class="p">:</span>
                 <span class="n">p_batch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">random_shuffler</span><span class="p">(</span><span class="n">p_batch</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">minibatch</span> <span class="ow">in</span> <span class="n">p_batch</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">minibatch</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">p_batch</span><span class="p">):</span>
                 <span class="c1"># for specific case of rnn_packed need to be sorted</span>
                 <span class="c1"># within the batch</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span> <span class="o">==</span> <span class="n">CorpusTask</span><span class="o">.</span><span class="n">TRAIN</span><span class="p">:</span>
-                    <span class="n">minibatch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sort_key</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="n">minibatch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sort_key</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                 <span class="n">tensor_batch</span> <span class="o">=</span> <span class="n">tensorify</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vocabs</span><span class="p">,</span> <span class="n">minibatch</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
-                <span class="k">yield</span> <span class="n">tensor_batch</span></div>
+                <span class="k">yield</span> <span class="p">(</span><span class="n">tensor_batch</span><span class="p">,</span> <span class="n">bucket_idx</span><span class="p">)</span></div>
 
 
 <span class="k">class</span> <span class="nc">OnDeviceDatasetIter</span><span class="p">:</span>
@@ -558,11 +567,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">device</span>
 
     <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">tensor_batch</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_iter</span><span class="p">:</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">tensor_batch</span><span class="p">,</span> <span class="n">bucket_idx</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_iter</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">tensor_batch</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                <span class="k">if</span> <span class="n">key</span> <span class="o">!=</span> <span class="s2">&quot;src_ex_vocab&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;src_ex_vocab&quot;</span><span class="p">,</span> <span class="s2">&quot;cid&quot;</span><span class="p">]:</span>
                     <span class="n">tensor_batch</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">tensor_batch</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
-            <span class="k">yield</span> <span class="n">tensor_batch</span>
+            <span class="k">yield</span> <span class="p">(</span><span class="n">tensor_batch</span><span class="p">,</span> <span class="n">bucket_idx</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">build_dynamic_dataset_iter</span><span class="p">(</span>

@@ -549,7 +549,7 @@
         <span class="k">def</span> <span class="nf">_maybe_retranslate</span><span class="p">(</span><span class="n">translations</span><span class="p">,</span> <span class="n">batch</span><span class="p">):</span>
 <span class="w">            </span><span class="sd">&quot;&quot;&quot;Here we handle the cases of mismatch in number of segments</span>
 <span class="sd">            between source and target. We re-translate seg by seg.&quot;&quot;&quot;</span>
-            <span class="n">inds</span><span class="p">,</span> <span class="n">perm</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;indices&quot;</span><span class="p">])</span>
+            <span class="n">inds</span><span class="p">,</span> <span class="n">perm</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;ind_in_bucket&quot;</span><span class="p">])</span>
             <span class="n">trans_copy</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">translations</span><span class="p">)</span>
             <span class="n">inserted_so_far</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">trans</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">translations</span><span class="p">):</span>
@@ -585,7 +585,7 @@
                     <span class="n">t_sub_batch</span> <span class="o">=</span> <span class="p">{</span>
                         <span class="s2">&quot;src&quot;</span><span class="p">:</span> <span class="n">t_sub_src</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">),</span>
                         <span class="s2">&quot;srclen&quot;</span><span class="p">:</span> <span class="n">t_sub_src_len</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">),</span>
-                        <span class="s2">&quot;indices&quot;</span><span class="p">:</span> <span class="n">t_sub_src_ind</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">),</span>
+                        <span class="s2">&quot;ind_in_bucket&quot;</span><span class="p">:</span> <span class="n">t_sub_src_ind</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">),</span>
                     <span class="p">}</span>
                     <span class="c1"># new sub-batch ready to be translated</span>
                     <span class="n">sub_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translate_batch</span><span class="p">(</span><span class="n">t_sub_batch</span><span class="p">,</span> <span class="n">attn_debug</span><span class="p">)</span>
@@ -598,34 +598,27 @@
                     <span class="n">inserted_so_far</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sub_src</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
             <span class="k">return</span> <span class="n">trans_copy</span>
 
-        <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">infer_iter</span><span class="p">:</span>
-            <span class="n">batch_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translate_batch</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">attn_debug</span><span class="p">)</span>
-
-            <span class="n">translations</span> <span class="o">=</span> <span class="n">xlation_builder</span><span class="o">.</span><span class="n">from_batch</span><span class="p">(</span><span class="n">batch_data</span><span class="p">)</span>
-            <span class="k">if</span> <span class="p">(</span>
-                <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">GeneratorLM</span><span class="p">)</span>
-                <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_sep_idx</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_unk_idx</span>
-                <span class="ow">and</span> <span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_sep_idx</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-            <span class="p">):</span>
-                <span class="c1"># For seq2seq when we need to force doc to spit the same number of sents</span>
-                <span class="n">translations</span> <span class="o">=</span> <span class="n">_maybe_retranslate</span><span class="p">(</span><span class="n">translations</span><span class="p">,</span> <span class="n">batch</span><span class="p">)</span>
-
+        <span class="k">def</span> <span class="nf">_process_bucket</span><span class="p">(</span><span class="n">bucket_translations</span><span class="p">):</span>
+            <span class="n">bucket_scores</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">bucket_predictions</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">bucket_score</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">bucket_words</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">bucket_gold_score</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">bucket_gold_words</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="n">voc_src</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vocabs</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">ids_to_tokens</span>
-
-            <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">trans</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">translations</span><span class="p">):</span>
-                <span class="n">all_scores</span> <span class="o">+=</span> <span class="p">[</span><span class="n">trans</span><span class="o">.</span><span class="n">pred_scores</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_best</span><span class="p">]]</span>
-                <span class="n">pred_score_total</span> <span class="o">+=</span> <span class="n">trans</span><span class="o">.</span><span class="n">pred_scores</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-                <span class="n">pred_words_total</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">trans</span><span class="o">.</span><span class="n">pred_sents</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">bucket_translations</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+                <span class="n">bucket_translations</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">ind_in_bucket</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">trans</span> <span class="ow">in</span> <span class="n">bucket_translations</span><span class="p">:</span>
+                <span class="n">bucket_scores</span> <span class="o">+=</span> <span class="p">[</span><span class="n">trans</span><span class="o">.</span><span class="n">pred_scores</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_best</span><span class="p">]]</span>
+                <span class="n">bucket_score</span> <span class="o">+=</span> <span class="n">trans</span><span class="o">.</span><span class="n">pred_scores</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">bucket_words</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">trans</span><span class="o">.</span><span class="n">pred_sents</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
                 <span class="k">if</span> <span class="s2">&quot;tgt&quot;</span> <span class="ow">in</span> <span class="n">batch</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                    <span class="n">gold_score_total</span> <span class="o">+=</span> <span class="n">trans</span><span class="o">.</span><span class="n">gold_score</span>
-                    <span class="n">gold_words_total</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">trans</span><span class="o">.</span><span class="n">gold_sent</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+                    <span class="n">bucket_gold_score</span> <span class="o">+=</span> <span class="n">trans</span><span class="o">.</span><span class="n">gold_score</span>
+                    <span class="n">bucket_gold_words</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">trans</span><span class="o">.</span><span class="n">gold_sent</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
 
                 <span class="n">n_best_preds</span> <span class="o">=</span> <span class="p">[</span>
                     <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">pred</span><span class="p">)</span> <span class="k">for</span> <span class="n">pred</span> <span class="ow">in</span> <span class="n">trans</span><span class="o">.</span><span class="n">pred_sents</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_best</span><span class="p">]</span>
-                <span class="p">]</span>
-
-                <span class="n">n_best_scores</span> <span class="o">=</span> <span class="p">[</span>
-                    <span class="n">score</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="k">for</span> <span class="n">score</span> <span class="ow">in</span> <span class="n">trans</span><span class="o">.</span><span class="n">pred_scores</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_best</span><span class="p">]</span>
                 <span class="p">]</span>
 
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_align</span><span class="p">:</span>
@@ -644,14 +637,16 @@
                 <span class="k">if</span> <span class="n">transform_pipe</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">n_best_preds</span> <span class="o">=</span> <span class="n">transform_pipe</span><span class="o">.</span><span class="n">batch_apply_reverse</span><span class="p">(</span><span class="n">n_best_preds</span><span class="p">)</span>
 
-                <span class="n">all_predictions</span> <span class="o">+=</span> <span class="p">[</span><span class="n">n_best_preds</span><span class="p">]</span>
-
-                <span class="n">out_all</span> <span class="o">=</span> <span class="p">[</span>
-                    <span class="n">pred</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
-                    <span class="k">for</span> <span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">score</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">n_best_preds</span><span class="p">,</span> <span class="n">n_best_scores</span><span class="p">)</span>
-                <span class="p">]</span>
+                <span class="n">bucket_predictions</span> <span class="o">+=</span> <span class="p">[</span><span class="n">n_best_preds</span><span class="p">]</span>
 
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">with_score</span><span class="p">:</span>
+                    <span class="n">n_best_scores</span> <span class="o">=</span> <span class="p">[</span>
+                        <span class="n">score</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="k">for</span> <span class="n">score</span> <span class="ow">in</span> <span class="n">trans</span><span class="o">.</span><span class="n">pred_scores</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_best</span><span class="p">]</span>
+                    <span class="p">]</span>
+                    <span class="n">out_all</span> <span class="o">=</span> <span class="p">[</span>
+                        <span class="n">pred</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
+                        <span class="k">for</span> <span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">score</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">n_best_preds</span><span class="p">,</span> <span class="n">n_best_scores</span><span class="p">)</span>
+                    <span class="p">]</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">out_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out_all</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">out_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">n_best_preds</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -671,7 +666,9 @@
                     <span class="n">preds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">DefaultTokens</span><span class="o">.</span><span class="n">EOS</span><span class="p">)</span>
                     <span class="n">attns</span> <span class="o">=</span> <span class="n">trans</span><span class="o">.</span><span class="n">attns</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span> <span class="o">==</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span>
-                        <span class="n">srcs</span> <span class="o">=</span> <span class="p">[</span><span class="n">voc_src</span><span class="p">[</span><span class="n">tok</span><span class="p">]</span> <span class="k">for</span> <span class="n">tok</span> <span class="ow">in</span> <span class="n">trans</span><span class="o">.</span><span class="n">src</span><span class="p">[:</span> <span class="n">trans</span><span class="o">.</span><span class="n">srclen</span><span class="p">]]</span>
+                        <span class="n">srcs</span> <span class="o">=</span> <span class="p">[</span>
+                            <span class="n">voc_src</span><span class="p">[</span><span class="n">tok</span><span class="p">]</span> <span class="k">for</span> <span class="n">tok</span> <span class="ow">in</span> <span class="n">trans</span><span class="o">.</span><span class="n">src</span><span class="p">[:</span> <span class="n">trans</span><span class="o">.</span><span class="n">srclen</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                        <span class="p">]</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="n">srcs</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">attns</span><span class="p">[</span><span class="mi">0</span><span class="p">]))]</span>
                     <span class="n">output</span> <span class="o">=</span> <span class="n">report_matrix</span><span class="p">(</span><span class="n">srcs</span><span class="p">,</span> <span class="n">preds</span><span class="p">,</span> <span class="n">attns</span><span class="p">)</span>
@@ -687,7 +684,9 @@
                         <span class="n">tgts</span> <span class="o">=</span> <span class="n">trans</span><span class="o">.</span><span class="n">pred_sents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                     <span class="n">align</span> <span class="o">=</span> <span class="n">trans</span><span class="o">.</span><span class="n">word_aligns</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_type</span> <span class="o">==</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span>
-                        <span class="n">srcs</span> <span class="o">=</span> <span class="p">[</span><span class="n">voc_src</span><span class="p">[</span><span class="n">tok</span><span class="p">]</span> <span class="k">for</span> <span class="n">tok</span> <span class="ow">in</span> <span class="n">trans</span><span class="o">.</span><span class="n">src</span><span class="p">[:</span> <span class="n">trans</span><span class="o">.</span><span class="n">srclen</span><span class="p">]]</span>
+                        <span class="n">srcs</span> <span class="o">=</span> <span class="p">[</span>
+                            <span class="n">voc_src</span><span class="p">[</span><span class="n">tok</span><span class="p">]</span> <span class="k">for</span> <span class="n">tok</span> <span class="ow">in</span> <span class="n">trans</span><span class="o">.</span><span class="n">src</span><span class="p">[:</span> <span class="n">trans</span><span class="o">.</span><span class="n">srclen</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                        <span class="p">]</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="n">srcs</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">align</span><span class="p">[</span><span class="mi">0</span><span class="p">]))]</span>
                     <span class="n">output</span> <span class="o">=</span> <span class="n">report_matrix</span><span class="p">(</span><span class="n">srcs</span><span class="p">,</span> <span class="n">tgts</span><span class="p">,</span> <span class="n">align</span><span class="p">)</span>
@@ -695,6 +694,72 @@
                         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="n">os</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">output</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="n">bucket_scores</span><span class="p">,</span>
+                <span class="n">bucket_predictions</span><span class="p">,</span>
+                <span class="n">bucket_score</span><span class="p">,</span>
+                <span class="n">bucket_words</span><span class="p">,</span>
+                <span class="n">bucket_gold_score</span><span class="p">,</span>
+                <span class="n">bucket_gold_words</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="n">bucket_translations</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">prev_idx</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">for</span> <span class="n">batch</span><span class="p">,</span> <span class="n">bucket_idx</span> <span class="ow">in</span> <span class="n">infer_iter</span><span class="p">:</span>
+
+            <span class="n">batch_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translate_batch</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">attn_debug</span><span class="p">)</span>
+
+            <span class="n">translations</span> <span class="o">=</span> <span class="n">xlation_builder</span><span class="o">.</span><span class="n">from_batch</span><span class="p">(</span><span class="n">batch_data</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">GeneratorLM</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_sep_idx</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_unk_idx</span>
+                <span class="ow">and</span> <span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tgt_sep_idx</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="p">):</span>
+                <span class="c1"># For seq2seq when we need to force doc to spit the same number of sents</span>
+                <span class="n">translations</span> <span class="o">=</span> <span class="n">_maybe_retranslate</span><span class="p">(</span><span class="n">translations</span><span class="p">,</span> <span class="n">batch</span><span class="p">)</span>
+
+            <span class="n">bucket_translations</span> <span class="o">+=</span> <span class="n">translations</span>
+
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">infer_iter</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">bucket_translations</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">infer_iter</span><span class="o">.</span><span class="n">bucket_size</span>
+            <span class="p">):</span>
+                <span class="n">bucket_idx</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="k">if</span> <span class="n">bucket_idx</span> <span class="o">!=</span> <span class="n">prev_idx</span><span class="p">:</span>
+                <span class="n">prev_idx</span> <span class="o">=</span> <span class="n">bucket_idx</span>
+                <span class="p">(</span>
+                    <span class="n">bucket_scores</span><span class="p">,</span>
+                    <span class="n">bucket_predictions</span><span class="p">,</span>
+                    <span class="n">bucket_score</span><span class="p">,</span>
+                    <span class="n">bucket_words</span><span class="p">,</span>
+                    <span class="n">bucket_gold_score</span><span class="p">,</span>
+                    <span class="n">bucket_gold_words</span><span class="p">,</span>
+                <span class="p">)</span> <span class="o">=</span> <span class="n">_process_bucket</span><span class="p">(</span><span class="n">bucket_translations</span><span class="p">)</span>
+                <span class="n">all_scores</span> <span class="o">+=</span> <span class="n">bucket_scores</span>
+                <span class="n">all_predictions</span> <span class="o">+=</span> <span class="n">bucket_predictions</span>
+                <span class="n">pred_score_total</span> <span class="o">+=</span> <span class="n">bucket_score</span>
+                <span class="n">pred_words_total</span> <span class="o">+=</span> <span class="n">bucket_words</span>
+                <span class="n">gold_score_total</span> <span class="o">+=</span> <span class="n">bucket_gold_score</span>
+                <span class="n">gold_words_total</span> <span class="o">+=</span> <span class="n">bucket_gold_words</span>
+                <span class="n">bucket_translations</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bucket_translations</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="p">(</span>
+                <span class="n">bucket_scores</span><span class="p">,</span>
+                <span class="n">bucket_predictions</span><span class="p">,</span>
+                <span class="n">bucket_score</span><span class="p">,</span>
+                <span class="n">bucket_words</span><span class="p">,</span>
+                <span class="n">bucket_gold_score</span><span class="p">,</span>
+                <span class="n">bucket_gold_words</span><span class="p">,</span>
+            <span class="p">)</span> <span class="o">=</span> <span class="n">_process_bucket</span><span class="p">(</span><span class="n">bucket_translations</span><span class="p">)</span>
+            <span class="n">all_scores</span> <span class="o">+=</span> <span class="n">bucket_scores</span>
+            <span class="n">all_predictions</span> <span class="o">+=</span> <span class="n">bucket_predictions</span>
+            <span class="n">pred_score_total</span> <span class="o">+=</span> <span class="n">bucket_score</span>
+            <span class="n">pred_words_total</span> <span class="o">+=</span> <span class="n">bucket_words</span>
+            <span class="n">gold_score_total</span> <span class="o">+=</span> <span class="n">bucket_gold_score</span>
+            <span class="n">gold_words_total</span> <span class="o">+=</span> <span class="n">bucket_gold_words</span>
 
         <span class="n">end_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 
@@ -852,9 +917,6 @@
         <span class="n">gold_score</span><span class="p">,</span>
         <span class="n">batch</span><span class="p">,</span>
         <span class="n">batch_size</span><span class="p">,</span>
-        <span class="n">src</span><span class="p">,</span>
-        <span class="n">src_len</span><span class="p">,</span>
-        <span class="n">use_src_map</span><span class="p">,</span>
         <span class="n">decode_strategy</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="n">results</span> <span class="o">=</span> <span class="p">{</span>
@@ -1039,7 +1101,7 @@
         <span class="c1"># (2) prep decode_strategy. Possibly repeat src objects.</span>
         <span class="n">src_map</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;src_map&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">use_src_map</span> <span class="k">else</span> <span class="kc">None</span>
         <span class="n">target_prefix</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tgt_file_prefix</span> <span class="k">else</span> <span class="kc">None</span>
-        <span class="p">(</span><span class="n">fn_map_state</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span> <span class="n">src_len_tiled</span><span class="p">,</span> <span class="n">src_map</span><span class="p">,)</span> <span class="o">=</span> <span class="n">decode_strategy</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">fn_map_state</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span> <span class="n">src_map</span><span class="p">)</span> <span class="o">=</span> <span class="n">decode_strategy</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span>
             <span class="n">enc_out</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span> <span class="n">src_map</span><span class="p">,</span> <span class="n">target_prefix</span><span class="o">=</span><span class="n">target_prefix</span>
         <span class="p">)</span>
 
@@ -1048,15 +1110,13 @@
 
         <span class="c1"># (3) Begin decoding step by step:</span>
         <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">decode_strategy</span><span class="o">.</span><span class="n">max_length</span><span class="p">):</span>
-            <span class="c1"># decoder_input = decode_strategy.current_predictions.view(1, -1,</span>
-            <span class="c1">#                                                          1)</span>
             <span class="n">decoder_input</span> <span class="o">=</span> <span class="n">decode_strategy</span><span class="o">.</span><span class="n">current_predictions</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 
             <span class="n">log_probs</span><span class="p">,</span> <span class="n">attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decode_and_generate</span><span class="p">(</span>
                 <span class="n">decoder_input</span><span class="p">,</span>
                 <span class="n">enc_out</span><span class="p">,</span>
                 <span class="n">batch</span><span class="p">,</span>
-                <span class="n">src_len</span><span class="o">=</span><span class="n">src_len_tiled</span><span class="p">,</span>
+                <span class="n">src_len</span><span class="o">=</span><span class="n">decode_strategy</span><span class="o">.</span><span class="n">src_len</span><span class="p">,</span>
                 <span class="n">src_map</span><span class="o">=</span><span class="n">src_map</span><span class="p">,</span>
                 <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">,</span>
                 <span class="n">batch_offset</span><span class="o">=</span><span class="n">decode_strategy</span><span class="o">.</span><span class="n">batch_offset</span><span class="p">,</span>
@@ -1064,7 +1124,9 @@
             <span class="p">)</span>
 
             <span class="n">decode_strategy</span><span class="o">.</span><span class="n">advance</span><span class="p">(</span><span class="n">log_probs</span><span class="p">,</span> <span class="n">attn</span><span class="p">)</span>
-            <span class="n">any_finished</span> <span class="o">=</span> <span class="n">decode_strategy</span><span class="o">.</span><span class="n">is_finished</span><span class="o">.</span><span class="n">any</span><span class="p">()</span>
+            <span class="n">any_finished</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span>
+                <span class="p">[</span><span class="nb">any</span><span class="p">(</span><span class="n">sublist</span><span class="p">)</span> <span class="k">for</span> <span class="n">sublist</span> <span class="ow">in</span> <span class="n">decode_strategy</span><span class="o">.</span><span class="n">is_finished_list</span><span class="p">]</span>
+            <span class="p">)</span>
             <span class="k">if</span> <span class="n">any_finished</span><span class="p">:</span>
                 <span class="n">decode_strategy</span><span class="o">.</span><span class="n">update_finished</span><span class="p">()</span>
                 <span class="k">if</span> <span class="n">decode_strategy</span><span class="o">.</span><span class="n">done</span><span class="p">:</span>
@@ -1075,27 +1137,20 @@
             <span class="k">if</span> <span class="n">any_finished</span><span class="p">:</span>
                 <span class="c1"># Reorder states.</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">enc_out</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
-                    <span class="n">enc_out</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">select_indices</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">enc_out</span><span class="p">)</span>
+                    <span class="n">enc_out</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">select_indices</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">enc_out</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">enc_out</span> <span class="o">=</span> <span class="n">enc_out</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">select_indices</span><span class="p">)</span>
-
-                <span class="n">src_len_tiled</span> <span class="o">=</span> <span class="n">src_len_tiled</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">select_indices</span><span class="p">)</span>
+                    <span class="n">enc_out</span> <span class="o">=</span> <span class="n">enc_out</span><span class="p">[</span><span class="n">select_indices</span><span class="p">]</span>
 
                 <span class="k">if</span> <span class="n">src_map</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">src_map</span> <span class="o">=</span> <span class="n">src_map</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">select_indices</span><span class="p">)</span>
+                    <span class="n">src_map</span> <span class="o">=</span> <span class="n">src_map</span><span class="p">[</span><span class="n">select_indices</span><span class="p">]</span>
 
             <span class="k">if</span> <span class="n">parallel_paths</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">any_finished</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">map_state</span><span class="p">(</span>
-                    <span class="k">lambda</span> <span class="n">state</span><span class="p">,</span> <span class="n">dim</span><span class="p">:</span> <span class="n">state</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">select_indices</span><span class="p">)</span>
-                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">map_state</span><span class="p">(</span><span class="k">lambda</span> <span class="n">state</span><span class="p">,</span> <span class="n">dim</span><span class="p">:</span> <span class="n">state</span><span class="p">[</span><span class="n">select_indices</span><span class="p">])</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_results</span><span class="p">(</span>
             <span class="n">gold_score</span><span class="p">,</span>
             <span class="n">batch</span><span class="p">,</span>
             <span class="n">batch_size</span><span class="p">,</span>
-            <span class="n">src</span><span class="p">,</span>
-            <span class="n">src_len</span><span class="p">,</span>
-            <span class="n">use_src_map</span><span class="p">,</span>
             <span class="n">decode_strategy</span><span class="p">,</span>
         <span class="p">)</span>
 
@@ -1247,7 +1302,7 @@
 
         <span class="c1"># (3) prep decode_strategy. Possibly repeat src objects.</span>
         <span class="n">src_map</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;src_map&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">use_src_map</span> <span class="k">else</span> <span class="kc">None</span>
-        <span class="p">(</span><span class="n">fn_map_state</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">src_len_tiled</span><span class="p">,</span> <span class="n">src_map</span><span class="p">,)</span> <span class="o">=</span> <span class="n">decode_strategy</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">fn_map_state</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">src_map</span><span class="p">)</span> <span class="o">=</span> <span class="n">decode_strategy</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span>
             <span class="n">src</span><span class="p">,</span>
             <span class="n">src_len</span><span class="p">,</span>
             <span class="n">src_map</span><span class="p">,</span>
@@ -1264,7 +1319,7 @@
                 <span class="n">decoder_input</span><span class="p">,</span>
                 <span class="kc">None</span><span class="p">,</span>
                 <span class="n">batch</span><span class="p">,</span>
-                <span class="n">src_len</span><span class="o">=</span><span class="n">src_len_tiled</span><span class="o">.</span><span class="n">clone</span><span class="p">(),</span>
+                <span class="n">src_len</span><span class="o">=</span><span class="n">decode_strategy</span><span class="o">.</span><span class="n">src_len</span><span class="p">,</span>
                 <span class="n">src_map</span><span class="o">=</span><span class="n">src_map</span><span class="p">,</span>
                 <span class="n">step</span><span class="o">=</span><span class="n">step</span> <span class="k">if</span> <span class="n">step</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">step</span> <span class="o">+</span> <span class="n">src_len</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
                 <span class="n">batch_offset</span><span class="o">=</span><span class="n">decode_strategy</span><span class="o">.</span><span class="n">batch_offset</span><span class="p">,</span>
@@ -1276,34 +1331,28 @@
                 <span class="p">)</span>
 
             <span class="n">decode_strategy</span><span class="o">.</span><span class="n">advance</span><span class="p">(</span><span class="n">log_probs</span><span class="p">,</span> <span class="n">attn</span><span class="p">)</span>
-            <span class="n">any_finished</span> <span class="o">=</span> <span class="n">decode_strategy</span><span class="o">.</span><span class="n">is_finished</span><span class="o">.</span><span class="n">any</span><span class="p">()</span>
+            <span class="n">any_finished</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span>
+                <span class="p">[</span><span class="nb">any</span><span class="p">(</span><span class="n">sublist</span><span class="p">)</span> <span class="k">for</span> <span class="n">sublist</span> <span class="ow">in</span> <span class="n">decode_strategy</span><span class="o">.</span><span class="n">is_finished_list</span><span class="p">]</span>
+            <span class="p">)</span>
             <span class="k">if</span> <span class="n">any_finished</span><span class="p">:</span>
                 <span class="n">decode_strategy</span><span class="o">.</span><span class="n">update_finished</span><span class="p">()</span>
                 <span class="k">if</span> <span class="n">decode_strategy</span><span class="o">.</span><span class="n">done</span><span class="p">:</span>
                     <span class="k">break</span>
-
             <span class="n">select_indices</span> <span class="o">=</span> <span class="n">decode_strategy</span><span class="o">.</span><span class="n">select_indices</span>
-            <span class="n">src_len_tiled</span> <span class="o">+=</span> <span class="mi">1</span>
+
             <span class="k">if</span> <span class="n">any_finished</span><span class="p">:</span>
                 <span class="c1"># Reorder states.</span>
-                <span class="n">src_len_tiled</span> <span class="o">=</span> <span class="n">src_len_tiled</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">select_indices</span><span class="p">)</span>
-
                 <span class="k">if</span> <span class="n">src_map</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">src_map</span> <span class="o">=</span> <span class="n">src_map</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">select_indices</span><span class="p">)</span>
+                    <span class="n">src_map</span> <span class="o">=</span> <span class="n">src_map</span><span class="p">[</span><span class="n">select_indices</span><span class="p">]</span>
 
             <span class="k">if</span> <span class="n">parallel_paths</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">any_finished</span><span class="p">:</span>
                 <span class="c1"># select indexes in model state/cache</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">map_state</span><span class="p">(</span>
-                    <span class="k">lambda</span> <span class="n">state</span><span class="p">,</span> <span class="n">dim</span><span class="p">:</span> <span class="n">state</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">select_indices</span><span class="p">)</span>
-                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">map_state</span><span class="p">(</span><span class="k">lambda</span> <span class="n">state</span><span class="p">,</span> <span class="n">dim</span><span class="p">:</span> <span class="n">state</span><span class="p">[</span><span class="n">select_indices</span><span class="p">])</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_results</span><span class="p">(</span>
             <span class="n">gold_score</span><span class="p">,</span>
             <span class="n">batch</span><span class="p">,</span>
             <span class="n">batch_size</span><span class="p">,</span>
-            <span class="n">src</span><span class="p">,</span>
-            <span class="n">src_len</span><span class="p">,</span>
-            <span class="n">use_src_map</span><span class="p">,</span>
             <span class="n">decode_strategy</span><span class="p">,</span>
         <span class="p">)</span>
 

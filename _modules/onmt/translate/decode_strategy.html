@@ -251,10 +251,10 @@
 <span class="sd">      alive_seq (LongTensor): Shape ``(B x parallel_paths, step)``.</span>
 <span class="sd">        This sequence grows in the ``step`` axis on each call to</span>
 <span class="sd">        :func:``advance()``.</span>
-<span class="sd">        is_finished (ByteTensor or NoneType): Shape ``(B, parallel_paths)``.</span>
+<span class="sd">      is_finished (ByteTensor or NoneType): Shape ``(B, parallel_paths)``.</span>
 <span class="sd">        Initialized to ``None``.</span>
 <span class="sd">      alive_attn (FloatTensor or NoneType): If tensor, shape is</span>
-<span class="sd">        ``(step, B x parallel_paths, inp_seq_len)``, where ``inp_seq_len``</span>
+<span class="sd">        ``(B x parallel_paths, step, inp_seq_len)``, where ``inp_seq_len``</span>
 <span class="sd">        is the (max) length of the input sequence.</span>
 <span class="sd">      target_prefix (LongTensor or NoneType): If tensor, shape is</span>
 <span class="sd">        ``(B x parallel_paths, prefix_seq_len)``, where ``prefix_seq_len``</span>
@@ -324,7 +324,7 @@
         <span class="k">return</span> <span class="n">mb_device</span>
 
     <span class="k">def</span> <span class="nf">initialize_tile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span> <span class="n">src_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">target_prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="k">def</span> <span class="nf">fn_map_state</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">dim</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">fn_map_state</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">tile</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">enc_out</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
@@ -336,14 +336,13 @@
             <span class="n">src_map</span> <span class="o">=</span> <span class="n">tile</span><span class="p">(</span><span class="n">src_map</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">src_len</span> <span class="o">=</span> <span class="n">tile</span><span class="p">(</span><span class="n">src_len</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span><span class="p">)</span>
+
         <span class="k">if</span> <span class="n">target_prefix</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">target_prefix</span> <span class="o">=</span> <span class="n">tile</span><span class="p">(</span><span class="n">target_prefix</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">fn_map_state</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span> <span class="n">src_map</span><span class="p">,</span> <span class="n">target_prefix</span>
 
-<div class="viewcode-block" id="DecodeStrategy.initialize"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.DecodeStrategy.initialize">[docs]</a>    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span> <span class="n">src_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">target_prefix</span><span class="o">=</span><span class="kc">None</span>
-    <span class="p">):</span>
+<div class="viewcode-block" id="DecodeStrategy.initialize"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.DecodeStrategy.initialize">[docs]</a>    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">target_prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;DecodeStrategy subclasses should override :func:`initialize()`.</span>
 
 <span class="sd">        `initialize` should be called before all actions.</span>
@@ -358,9 +357,14 @@
             <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span>
             <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
-            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parallel_paths</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span>
-        <span class="p">)</span>
+        <span class="c1"># not 100% necessary to define those</span>
+        <span class="c1"># self.is_finished = torch.zeros(</span>
+        <span class="c1">#    [self.batch_size, self.parallel_paths], dtype=torch.bool</span>
+        <span class="c1"># )</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_finished_list</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">[</span><span class="kc">False</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parallel_paths</span><span class="p">)]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">)</span>
+        <span class="p">]</span>
+
         <span class="k">if</span> <span class="n">target_prefix</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">batch_size</span><span class="p">,</span> <span class="n">seq_len</span><span class="p">,</span> <span class="n">n_feats</span> <span class="o">=</span> <span class="n">target_prefix</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
             <span class="k">assert</span> <span class="p">(</span>
@@ -375,7 +379,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">min_length</span> <span class="o">+=</span> <span class="nb">min</span><span class="p">(</span><span class="n">prefix_non_pad</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">target_prefix</span> <span class="o">=</span> <span class="n">target_prefix</span>  <span class="c1"># NOTE: forced prefix words</span>
-        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="n">enc_out</span><span class="p">,</span> <span class="n">src_len</span><span class="p">,</span> <span class="n">src_map</span></div>
+        <span class="k">return</span> <span class="kc">None</span></div>
 
     <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">alive_seq</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
@@ -392,7 +396,12 @@
         <span class="c1"># add one to account for BOS. Don&#39;t account for EOS because hitting</span>
         <span class="c1"># this implies it hasn&#39;t been found.</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_length</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span><span class="o">.</span><span class="n">fill_</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;is_finished&quot;</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span><span class="o">.</span><span class="n">fill_</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">is_finished_list</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="p">[</span><span class="kc">True</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parallel_paths</span><span class="p">)]</span>
+                <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">is_finished_list</span><span class="p">))</span>
+            <span class="p">]</span>
 
 <div class="viewcode-block" id="DecodeStrategy.block_ngram_repeats"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.DecodeStrategy.block_ngram_repeats">[docs]</a>    <span class="k">def</span> <span class="nf">block_ngram_repeats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log_probs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;We prevent the beam from going in any direction that would repeat</span>
@@ -513,7 +522,7 @@
         <span class="c1"># no need to further change this attr</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_prefix</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
             <span class="k">return</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">target_prefix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_prefix</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">select_index</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_prefix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_prefix</span><span class="p">[</span><span class="n">select_index</span><span class="p">]</span></div>
 
 <div class="viewcode-block" id="DecodeStrategy.advance"><a class="viewcode-back" href="../../../onmt.translation.html#onmt.translate.DecodeStrategy.advance">[docs]</a>    <span class="k">def</span> <span class="nf">advance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log_probs</span><span class="p">,</span> <span class="n">attn</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;DecodeStrategy subclasses should override :func:`advance()`.</span>

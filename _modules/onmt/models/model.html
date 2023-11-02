@@ -275,9 +275,7 @@
             <span class="k">for</span> <span class="n">buf_name</span><span class="p">,</span> <span class="n">buf</span> <span class="ow">in</span> <span class="n">module</span><span class="o">.</span><span class="n">named_buffers</span><span class="p">():</span>
                 <span class="n">buf_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">buf_name</span><span class="p">)</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">buf_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">))</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># only last key</span>
-                    <span class="k">if</span> <span class="n">precision</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">int8</span><span class="p">:</span>
-                        <span class="n">torch</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">quantize_dynamic</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                    <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">precision</span> <span class="o">!=</span> <span class="n">torch</span><span class="o">.</span><span class="n">int8</span><span class="p">:</span>
                         <span class="n">module</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">precision</span><span class="p">)</span>
                     <span class="n">module</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">param_name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">module</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">():</span>
@@ -335,9 +333,7 @@
                         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                             <span class="s2">&quot;Missing key in checkpoint: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="n">param_name</span>
                         <span class="p">)</span>
-                    <span class="k">if</span> <span class="n">precision</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">int8</span><span class="p">:</span>
-                        <span class="n">torch</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">quantize_dynamic</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                    <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">precision</span> <span class="o">!=</span> <span class="n">torch</span><span class="o">.</span><span class="n">int8</span><span class="p">:</span>
                         <span class="n">module</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">precision</span><span class="p">)</span>
                     <span class="n">module</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">checkpoint</span><span class="p">[</span>
