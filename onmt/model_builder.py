@@ -134,7 +134,7 @@ def load_test_model(opt, device_id=0, model_path=None):
         if opt.gpu >= 0:
             raise ValueError("Dynamic 8-bit quantization is not supported on GPU")
         else:
-            precision = torch.int8
+            precision = torch.float32
 
     logger.info("Loading data into the model")
 
@@ -157,6 +157,10 @@ def load_test_model(opt, device_id=0, model_path=None):
             strict=True,
             offset=offset,
         )
+
+    if opt.precision == torch.int8:
+        torch.quantization.quantize_dynamic(model, dtype=torch.qint8, inplace=True)
+
     del checkpoint
 
     model.eval()
