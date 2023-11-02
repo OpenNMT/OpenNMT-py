@@ -5,7 +5,7 @@ import itertools
 from copy import deepcopy
 
 import torch
-
+from torch.nn.init import xavier_uniform_
 from onmt.tests.utils_for_tests import product_dict
 
 
@@ -141,6 +141,9 @@ class TestEmbeddings(unittest.TestCase):
                 n: p for n, p in emb.named_parameters() if p.requires_grad
             }
             if len(trainable_params) > 0:
+                for n, p in emb.named_parameters():
+                    if n == "weight" and p.dim() > 1:
+                        xavier_uniform_(p)
                 old_weights = deepcopy(trainable_params)
                 dummy_in = self.dummy_inputs(params, init_case)
                 res = emb(dummy_in)

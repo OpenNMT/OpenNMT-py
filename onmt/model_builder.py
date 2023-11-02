@@ -341,7 +341,11 @@ def build_base_model(model_opt, vocabs):
 
     # Build Generator.
     if not model_opt.copy_attn:
-        generator = skip_init(nn.Linear, in_features=model_opt.dec_hid_size, out_features=len(vocabs["tgt"]))
+        generator = skip_init(
+            nn.Linear,
+            in_features=model_opt.dec_hid_size,
+            out_features=len(vocabs["tgt"]),
+        )
         if model_opt.share_decoder_embeddings:
             generator.weight = model.decoder.embeddings.word_lut.weight
     else:

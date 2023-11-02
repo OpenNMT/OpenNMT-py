@@ -172,7 +172,13 @@ class Embeddings(nn.Module):
         # is for words. Subsequent ones are for features, if any exist.
         emb_params = zip(vocab_sizes, emb_dims, pad_indices)
         embeddings = [
-            skip_init(nn.Embedding, num_embeddings=vocab, embedding_dim=dim, padding_idx=pad, sparse=sparse)
+            skip_init(
+                nn.Embedding,
+                num_embeddings=vocab,
+                embedding_dim=dim,
+                padding_idx=pad,
+                sparse=sparse,
+            )
             for vocab, dim, pad in emb_params
         ]
         emb_luts = Elementwise(feat_merge, embeddings)
