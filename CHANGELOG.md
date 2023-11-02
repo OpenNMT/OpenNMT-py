@@ -3,6 +3,13 @@
 
 ## [Unreleased]
 
+## [3.4.3](https://github.com/OpenNMT/OpenNMT-py/tree/3.4.3) (2023-11-2)
+
+* Further improvements to beam search and decoding
+* New indexing "in bucket" for faster inference cf #2496
+* Code cleanup
+* Fix int8 for CPU dynamic quantization (still slow...)
+
 ## [3.4.2](https://github.com/OpenNMT/OpenNMT-py/tree/3.4.2) (2023-10-20)
 
 * torch 2.1 (scaled_dot_product improvements)
