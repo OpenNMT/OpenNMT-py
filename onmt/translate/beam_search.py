@@ -182,9 +182,9 @@ class BeamSearchBase(DecodeStrategy):
         return topk_scores, topk_ids
 
     def beams_non_finished(self, i, predictions, attention, step):
-        b = self._batch_offset[i]
 
         if any(self.is_finished_list[i]):
+            b = self._batch_offset[i]
             # Store finished hypotheses for this example in the batch.
             for j in [
                 k for k, fin in enumerate(self.is_finished_list[i]) if fin
@@ -206,23 +206,25 @@ class BeamSearchBase(DecodeStrategy):
                         self.hypotheses[b], key=lambda x: x[0], reverse=True
                     )
 
-        # End condition is the top beam finished and we can return
-        # n_best hypotheses.
-        if self.ratio > 0:
-            pred_len = self.src_len[i] * self.ratio
-            finish_flag = (
-                (self.topk_scores[i, 0] / pred_len) <= self.best_scores[b]
-            ) or all(self.is_finished_list[i])
-        else:
-            # early stop when top beam is finished
-            finish_flag = self.is_finished_list[i][0]
+            # End condition is the top beam finished and we can return
+            # n_best hypotheses.
+            if self.ratio > 0:
+                pred_len = self.src_len[i] * self.ratio
+                finish_flag = (
+                    (self.topk_scores[i, 0] / pred_len) <= self.best_scores[b]
+                ) or all(self.is_finished_list[i])
+            else:
+                # early stop when top beam is finished
+                finish_flag = self.is_finished_list[i][0]
 
-        if finish_flag and len(self.hypotheses[b]) >= self.n_best:
-            for score, pred, attn in self.hypotheses[b][: self.n_best]:
-                self.scores[b].append(score)
-                self.predictions[b].append(pred)  # ``(batch, n_best,)``
-                self.attention[b].append(attn if attn is not None else [])
-            return False
+            if finish_flag and len(self.hypotheses[b]) >= self.n_best:
+                for score, pred, attn in self.hypotheses[b][: self.n_best]:
+                    self.scores[b].append(score)
+                    self.predictions[b].append(pred)  # ``(batch, n_best,)``
+                    self.attention[b].append(attn if attn is not None else [])
+                return False
+            else:
+                return True
         else:
             return True
 
@@ -261,6 +263,11 @@ class BeamSearchBase(DecodeStrategy):
             _B_new, _B_old, non_finished, predictions, attention, step
         )
 
+        # reset the selection for the next step
+        self.select_indices = self._batch_index.view(_B_new * self.beam_size)
+        self.src_len = self.src_len[self.select_indices]
+        self.maybe_update_target_prefix(self.select_indices)
+
     def remove_finished_batches(
         self, _B_new, _B_old, non_finished, predictions, attention, step
     ):
@@ -268,17 +275,14 @@ class BeamSearchBase(DecodeStrategy):
         self._batch_offset = self._batch_offset[non_finished]
         # here we combine two slections in one
         # self.topk_log_probs = self.topk_log_probs[non_finished]
-        # self._batch_index = self._batch_index[non_finished]
+        # self._batch_index = self._batch_index.index_select(0, non_finished)
         self.topk_log_probs, self._batch_index = torch.unbind(
             torch.stack([self.topk_log_probs, self._batch_index], dim=2)[non_finished],
             dim=2,
         )
         self._batch_index = self._batch_index.to(torch.long)
-        self.select_indices = self._batch_index.view(_B_new * self.beam_size)
         self.alive_seq = predictions[non_finished].view(-1, self.alive_seq.size(-1))
-        self.src_len = self.src_len[self.select_indices]
 
-        self.maybe_update_target_prefix(self.select_indices)
         if self.alive_attn is not None:
             inp_seq_len = self.alive_attn.size(-1)
             self.alive_attn = attention[non_finished].view(
@@ -338,7 +342,7 @@ class BeamSearchBase(DecodeStrategy):
         self.select_indices = self._batch_index.view(_B * self.beam_size)
         self.topk_ids %= vocab_size
 
-        # Append last prediction.
+        # Append last prediction to reordered alive sequence
         self.alive_seq = torch.cat(
             [
                 self.alive_seq[self.select_indices],
