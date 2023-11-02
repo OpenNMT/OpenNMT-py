@@ -113,10 +113,8 @@ class BeamSearchBase(DecodeStrategy):
     def initialize(self, *args, **kwargs):
         raise NotImplementedError
 
-    def initialize_(self, enc_out, src_len, src_map, device, target_prefix):
-        super(BeamSearchBase, self).initialize(
-            enc_out, src_len, src_map, device, target_prefix
-        )
+    def initialize_(self, enc_out, src_map, device, target_prefix):
+        super(BeamSearchBase, self).initialize(device, target_prefix)
         self.best_scores = [-1e10 for _ in range(self.batch_size)]
         self._beam_offset = torch.arange(
             0,
@@ -184,9 +182,9 @@ class BeamSearchBase(DecodeStrategy):
         return topk_scores, topk_ids
 
     def beams_non_finished(self, i, predictions, attention, step):
-        b = self._batch_offset[i]
 
         if any(self.is_finished_list[i]):
+            b = self._batch_offset[i]
             # Store finished hypotheses for this example in the batch.
             for j in [
                 k for k, fin in enumerate(self.is_finished_list[i]) if fin
@@ -198,7 +196,7 @@ class BeamSearchBase(DecodeStrategy):
                     (
                         self.topk_scores[i, j],
                         predictions[i, j, 1:],  # Ignore start_token.
-                        attention[i, j, :, : self.src_len[b]]
+                        attention[i, j, :, : self.src_len[i]]
                         if attention is not None
                         else None,
                     )
@@ -208,23 +206,25 @@ class BeamSearchBase(DecodeStrategy):
                         self.hypotheses[b], key=lambda x: x[0], reverse=True
                     )
 
-        # End condition is the top beam finished and we can return
-        # n_best hypotheses.
-        if self.ratio > 0:
-            pred_len = self.src_len[b] * self.ratio
-            finish_flag = (
-                (self.topk_scores[i, 0] / pred_len) <= self.best_scores[b]
-            ) or all(self.is_finished_list[i])
-        else:
-            # early stop when top beam is finished
-            finish_flag = self.is_finished_list[i][0]
+            # End condition is the top beam finished and we can return
+            # n_best hypotheses.
+            if self.ratio > 0:
+                pred_len = self.src_len[i] * self.ratio
+                finish_flag = (
+                    (self.topk_scores[i, 0] / pred_len) <= self.best_scores[b]
+                ) or all(self.is_finished_list[i])
+            else:
+                # early stop when top beam is finished
+                finish_flag = self.is_finished_list[i][0]
 
-        if finish_flag and len(self.hypotheses[b]) >= self.n_best:
-            for score, pred, attn in self.hypotheses[b][: self.n_best]:
-                self.scores[b].append(score)
-                self.predictions[b].append(pred)  # ``(batch, n_best,)``
-                self.attention[b].append(attn if attn is not None else [])
-            return False
+            if finish_flag and len(self.hypotheses[b]) >= self.n_best:
+                for score, pred, attn in self.hypotheses[b][: self.n_best]:
+                    self.scores[b].append(score)
+                    self.predictions[b].append(pred)  # ``(batch, n_best,)``
+                    self.attention[b].append(attn if attn is not None else [])
+                return False
+            else:
+                return True
         else:
             return True
 
@@ -263,6 +263,17 @@ class BeamSearchBase(DecodeStrategy):
             _B_new, _B_old, non_finished, predictions, attention, step
         )
 
+        # reset the selection for the next step
+        self.select_indices = self._batch_index.view(_B_new * self.beam_size)
+        # assert torch.equal(
+        #    self.src_len[self.select_indices],
+        #    self.src_len.view(_B_old, self.beam_size)[non_finished].view(
+        #        _B_new * self.beam_size
+        #    ),
+        # )
+        self.src_len = self.src_len[self.select_indices]
+        self.maybe_update_target_prefix(self.select_indices)
+
     def remove_finished_batches(
         self, _B_new, _B_old, non_finished, predictions, attention, step
     ):
@@ -270,16 +281,14 @@ class BeamSearchBase(DecodeStrategy):
         self._batch_offset = self._batch_offset[non_finished]
         # here we combine two slections in one
         # self.topk_log_probs = self.topk_log_probs[non_finished]
-        # self._batch_index = self._batch_index[non_finished]
+        # self._batch_index = self._batch_index.index_select(0, non_finished)
         self.topk_log_probs, self._batch_index = torch.unbind(
             torch.stack([self.topk_log_probs, self._batch_index], dim=2)[non_finished],
             dim=2,
         )
         self._batch_index = self._batch_index.to(torch.long)
-        self.select_indices = self._batch_index.view(_B_new * self.beam_size)
         self.alive_seq = predictions[non_finished].view(-1, self.alive_seq.size(-1))
 
-        self.maybe_update_target_prefix(self.select_indices)
         if self.alive_attn is not None:
             inp_seq_len = self.alive_attn.size(-1)
             self.alive_attn = attention[non_finished].view(
@@ -339,7 +348,7 @@ class BeamSearchBase(DecodeStrategy):
         self.select_indices = self._batch_index.view(_B * self.beam_size)
         self.topk_ids %= vocab_size
 
-        # Append last prediction.
+        # Append last prediction to reordered alive sequence
         self.alive_seq = torch.cat(
             [
                 self.alive_seq[self.select_indices],
@@ -399,11 +408,9 @@ class BeamSearch(BeamSearchBase):
         if device is None:
             device = self.get_device_from_enc_out(enc_out)
 
-        super(BeamSearch, self).initialize_(
-            enc_out, self.src_len, src_map, device, target_prefix
-        )
+        super(BeamSearch, self).initialize_(enc_out, src_map, device, target_prefix)
 
-        return fn_map_state, enc_out, self.src_len, src_map
+        return fn_map_state, enc_out, src_map
 
 
 class BeamSearchLM(BeamSearchBase):
@@ -423,13 +430,12 @@ class BeamSearchLM(BeamSearchBase):
 
         super(BeamSearchLM, self).initialize_(
             None,
-            self.src_len,
             src_map=src_map,
             device=device,
             target_prefix=target_prefix,
         )
 
-        return fn_map_state, src, self.src_len, src_map
+        return fn_map_state, src, src_map
 
     def advance(self, log_probs, attn):
         super(BeamSearchLM, self).advance(log_probs, attn)
@@ -437,24 +443,6 @@ class BeamSearchLM(BeamSearchBase):
         # in LM task src_len is associated with currently generated src
         # and therefore needs to follow the generation
         self.src_len += 1
-
-    def remove_finished_batches(
-        self, _B_new, _B_old, non_finished, predictions, attention, step
-    ):
-        super(BeamSearchLM, self).remove_finished_batches(
-            _B_new, _B_old, non_finished, predictions, attention, step
-        )
-
-        # in LM task src_len is associated with currently generated src
-        # and therefore needs to follow the generation
-        # VN 24/10/2023 given the usage of src_len in update_finished()
-        # I think this is incorrect therefore commenting
-        # indexing needs to be aligned to original batch indexing
-        """
-        self.src_len = self.src_len.view(_B_old, self.beam_size)[non_finished].view(
-            _B_new * self.beam_size
-        )
-        """
 
 
 class GNMTGlobalScorer(object):
