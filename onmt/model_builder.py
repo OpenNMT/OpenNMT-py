@@ -4,6 +4,7 @@ and creates each encoder and decoder accordingly.
 """
 import torch
 import torch.nn as nn
+from torch.nn.utils import skip_init
 from torch.nn.init import xavier_uniform_, zeros_, uniform_
 import onmt.modules
 from onmt.encoders import str2enc
@@ -340,7 +341,11 @@ def build_base_model(model_opt, vocabs):
 
     # Build Generator.
     if not model_opt.copy_attn:
-        generator = nn.Linear(model_opt.dec_hid_size, len(vocabs["tgt"]))
+        generator = skip_init(
+            nn.Linear,
+            in_features=model_opt.dec_hid_size,
+            out_features=len(vocabs["tgt"]),
+        )
         if model_opt.share_decoder_embeddings:
             generator.weight = model.decoder.embeddings.word_lut.weight
     else:
