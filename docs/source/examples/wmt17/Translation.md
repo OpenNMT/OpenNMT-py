@@ -55,7 +55,6 @@ Training the following big transformer for 50K steps takes less than 10 hours on
 ```bash
 python3 ../../../onmt/bin/build_vocab.py --config wmt17/wmt17_ende.yaml --n_sample -1
 python3 ../../../onmt/bin/train.py --config wmt17/wmt17_ende.yaml
-bash scripts/onmt/train.sh
 ```
 
 Translate test sets with various settings on local GPU and CPUs.
