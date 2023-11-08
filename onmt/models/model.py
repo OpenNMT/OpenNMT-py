@@ -140,7 +140,9 @@ class BaseModel(nn.Module):
                         and checkpoint["generator"] is not None
                         and param_name in checkpoint["generator"].keys()
                     ):
-                        keyname = name + "." + param_name if "linear" in name else param_name
+                        keyname = (
+                            name + "." + param_name if "linear" in name else param_name
+                        )
                         param.data = checkpoint["generator"][keyname]
                         del checkpoint["generator"][keyname]
                     elif strict and "lora" not in param_name:
