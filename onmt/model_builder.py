@@ -304,6 +304,20 @@ def build_base_model(model_opt, vocabs):
             model = replace_bnb_linear(
                 model, module_to_convert=nonlora_to_quant, q_type=model_opt.quant_type
             )
+        elif model_opt.quant_type in ["llm_awq"]:
+            logger.info(
+                "%s compression of layer %s" % (model_opt.quant_type, nonlora_to_quant)
+            )
+            try:
+                from onmt.modules.awq_linear import replace_awq_linear
+            except ImportError:
+                raise ImportError("Install llm-awq to use awq quantized model")
+            model = replace_awq_linear(
+                model,
+                module_to_convert=nonlora_to_quant,
+                w_bit=model_opt.w_bit,
+                group_size=model_opt.group_size,
+            )
         else:
             logger.info("compression type %s not supported." % model_opt.quant_type)
 
