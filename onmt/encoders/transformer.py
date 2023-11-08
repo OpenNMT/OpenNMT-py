@@ -29,6 +29,17 @@ class TransformerEncoderLayer(nn.Module):
         dropout (float): dropout probability(0-1.0).
         pos_ffn_activation_fn (ActivationFunction):
             activation function choice for PositionwiseFeedForward layer
+        add_qkvbias (bool): whether to add bias to the Key/Value nn.Linear
+        num_kv (int): number of heads for KV when different vs Q (multiquery)
+        add_ffnbias (bool): whether to add bias to the FF nn.Linear
+        parallel_residual (bool): Use parallel residual connections in each layer block, as used
+            by the GPT-J and GPT-NeoX models
+        layer_norm (string): type of layer normalization standard/rms
+        norm_eps (float): layer norm epsilon
+        use_ckpting (List): layers for which we checkpoint for backward
+        parallel_gpu (int): Number of gpu for tensor parallelism
+        rotary_interleave (bool): Interleave the head dimensions when rotary
+            embeddings are applied
     """
 
     def __init__(
@@ -49,6 +60,7 @@ class TransformerEncoderLayer(nn.Module):
         norm_eps=1e-6,
         use_ckpting=[],
         parallel_gpu=1,
+        rotary_interleave=True,
     ):
         super(TransformerEncoderLayer, self).__init__()
 
@@ -59,6 +71,7 @@ class TransformerEncoderLayer(nn.Module):
             is_decoder=False,
             max_relative_positions=max_relative_positions,
             relative_positions_buckets=relative_positions_buckets,
+            rotary_interleave=rotary_interleave,
             attn_type="self",
             add_qkvbias=add_qkvbias,
             num_kv=num_kv,
@@ -163,6 +176,7 @@ class TransformerEncoder(EncoderBase):
         norm_eps=1e-6,
         use_ckpting=[],
         parallel_gpu=1,
+        rotary_interleave=True,
     ):
         super(TransformerEncoder, self).__init__()
 
@@ -186,6 +200,7 @@ class TransformerEncoder(EncoderBase):
                     norm_eps=norm_eps,
                     use_ckpting=use_ckpting,
                     parallel_gpu=parallel_gpu,
+                    rotary_interleave=rotary_interleave,
                 )
                 for i in range(num_layers)
             ]
@@ -223,6 +238,7 @@ class TransformerEncoder(EncoderBase):
             parallel_gpu=opt.world_size
             if opt.parallel_mode == "tensor_parallel"
             else 1,
+            rotary_interleave=opt.rotary_interleave,
         )
 
     def forward(self, src, src_len=None):
