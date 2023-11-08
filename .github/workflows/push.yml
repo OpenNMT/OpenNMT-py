@@ -22,16 +22,14 @@ jobs:
         pip install --upgrade setuptools
         pip install -e .
         pip install -r requirements.opt.txt
-        pip install sacrebleu
         pip install flake8
         python -m pip install black==22.* flake8==3.8.*
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         git clone https://github.com/mit-han-lab/llm-awq
         cd llm-awq
         pip install -e .
-        cd awq/kernels
-        python setup.py install
-        cd ../../../
+        cd ..
+        pip install sacrebleu
     - name: Check code with Black
       run: |
         black --check .
