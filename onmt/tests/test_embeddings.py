@@ -147,7 +147,7 @@ class TestEmbeddings(unittest.TestCase):
                 old_weights = deepcopy(trainable_params)
                 dummy_in = self.dummy_inputs(params, init_case)
                 res = emb(dummy_in)
-                pretend_loss = res.sum()
+                pretend_loss = res.mean()
                 pretend_loss.backward()
                 dummy_optim = torch.optim.SGD(trainable_params.values(), 1)
                 dummy_optim.step()
