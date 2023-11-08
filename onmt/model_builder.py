@@ -95,7 +95,7 @@ def load_test_model(opt, device_id=0, model_path=None):
 
     model_opt = ArgumentParser.ckpt_model_opts(checkpoint["opt"])
 
-    if model_opt.quant_type != "llm_awq":
+    if hasattr(model_opt, "quant_type") and model_opt.quant_type != "llm_awq":
         model_opt.quant_layers = opt.quant_layers
         model_opt.quant_type = opt.quant_type
 
