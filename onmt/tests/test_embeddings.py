@@ -137,13 +137,13 @@ class TestEmbeddings(unittest.TestCase):
     def test_embeddings_trainable_params_update(self):
         for params, init_case in itertools.product(self.PARAMS, self.cases()):
             emb = Embeddings(**init_case)
+            for n, p in emb.named_parameters():
+                if "weight" in n and p.dim() > 1:
+                    xavier_uniform_(p)
             trainable_params = {
                 n: p for n, p in emb.named_parameters() if p.requires_grad
             }
             if len(trainable_params) > 0:
-                for n, p in emb.named_parameters():
-                    if n == "weight" and p.dim() > 1:
-                        xavier_uniform_(p)
                 old_weights = deepcopy(trainable_params)
                 dummy_in = self.dummy_inputs(params, init_case)
                 res = emb(dummy_in)
