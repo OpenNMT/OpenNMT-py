@@ -95,8 +95,9 @@ def load_test_model(opt, device_id=0, model_path=None):
 
     model_opt = ArgumentParser.ckpt_model_opts(checkpoint["opt"])
 
-    model_opt.quant_layers = opt.quant_layers
-    model_opt.quant_type = opt.quant_type
+    if model_opt.quant_type != 'llm_awq':
+        model_opt.quant_layers = opt.quant_layers
+        model_opt.quant_type = opt.quant_type
 
     if opt.world_size > 1 and opt.parallel_mode == "tensor_parallel":
         model_opt.world_size = opt.world_size
