@@ -26,6 +26,12 @@ jobs:
         pip install flake8
         python -m pip install black==22.* flake8==3.8.*
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        git clone https://github.com/mit-han-lab/llm-awq
+        cd llm-awq
+        pip install -e .
+        cd awq/kernels
+        python setup.py install
+        cd ../../../
     - name: Check code with Black
       run: |
         black --check .
