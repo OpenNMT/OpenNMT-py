@@ -374,7 +374,7 @@ class TestGreedySearch(unittest.TestCase):
 
                 samp.update_finished()
                 self.assertEqual(
-                    [score for score, _, _ in samp.hypotheses[batch_sz - 1][-1:]],
+                    [score for score, _, _ in samp.hypotheses[batch_sz - 1][:1]],
                     [valid_score_dist_2[0] / temp],
                 )
 

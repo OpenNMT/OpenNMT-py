@@ -810,6 +810,7 @@ class Translator(Inference):
                     eos=self._tgt_eos_idx,
                     unk=self._tgt_unk_idx,
                     start=self._tgt_start_with,
+                    n_best=self.n_best,
                     batch_size=len(batch["srclen"]),
                     global_scorer=self.global_scorer,
                     min_length=self.min_length,
