@@ -28,9 +28,17 @@ def rotaryembeddings(dim: int, maxseqlen=8192, base=10000):
     return rope
 
 
-def apply_rotary_emb(query, key, rope):
+def apply_rotary_emb(query, key, rope, interleave=True):
     query = query.transpose(1, 2)
     key = key.transpose(1, 2)
+    if not interleave:
+        query = torch.cat(
+            (-query[..., query.shape[-1] // 2 :], query[..., : query.shape[-1] // 2]),
+            dim=-1,
+        )
+        key = torch.cat(
+            (-key[..., key.shape[-1] // 2 :], key[..., : key.shape[-1] // 2]), dim=-1
+        )
     query_ = query.float().reshape(*query.shape[:-1], -1, 2)
     query_ = torch.view_as_complex(query_)
     key_ = key.float().reshape(*key.shape[:-1], -1, 2)
@@ -243,6 +251,7 @@ class MultiHeadedAttention(torch.nn.Module):
         is_decoder: bool = True,
         max_relative_positions: int = 0,
         relative_positions_buckets: int = 0,
+        rotary_interleave: bool = True,
         attn_type: str = None,
         add_qkvbias=False,
         num_kv=0,
@@ -336,6 +345,7 @@ class MultiHeadedAttention(torch.nn.Module):
 
             if max_relative_positions == -1:  # rotary embeddings
                 self.rope = rotaryembeddings(self.dim_per_head)
+                self.rotary_interleave = rotary_interleave
 
             if max_relative_positions == -2:  # alibi positional bias
                 self.alibi = AlibiPositionalBias(head_count)
@@ -403,7 +413,9 @@ class MultiHeadedAttention(torch.nn.Module):
                     start_pos = step
                     seqlen = query.size(2)
                     rope = self.rope[start_pos : start_pos + seqlen]
-                    query, key = apply_rotary_emb(query, key, rope=rope)
+                    query, key = apply_rotary_emb(
+                        query, key, rope, interleave=self.rotary_interleave
+                    )
 
                 if self.layer_cache[1]["keys"].numel() != 0:
                     key = torch.cat((self.layer_cache[1]["keys"], key), dim=2)
@@ -440,7 +452,9 @@ class MultiHeadedAttention(torch.nn.Module):
                 start_pos = 0
                 seqlen = query.size(2)
                 rope = self.rope[start_pos : start_pos + seqlen].to(query.device)
-                query, key = apply_rotary_emb(query, key, rope=rope)
+                query, key = apply_rotary_emb(
+                    query, key, rope, interleave=self.rotary_interleave
+                )
 
         b, h, l, d = key.size()
         if self.num_kv > 0:

@@ -863,6 +863,17 @@ def model_opts(parser):
         "more info: https://github.com/google-research/text-to-text-transfer-transformer",
     )
     group.add(
+        "--rotary_interleave",
+        "-rotary_interleave",
+        type=bool,
+        default=True,
+        help="Interleave the head dimensions when rotary"
+        " embeddings are applied."
+        "    Otherwise the head dimensions are sliced in half."
+        "True = default Llama from Meta (original)"
+        "False = used by all Hugging face models",
+    )
+    group.add(
         "--heads",
         "-heads",
         type=int,
@@ -927,7 +938,8 @@ def model_opts(parser):
         "-shared_layer_norm",
         action="store_true",
         help="Use a shared layer_norm in parallel residual attention"
-        "Note: must be true for Falcon 7B / false for Falcon 40B",
+        "Note: must be true for Falcon 7B / false for Falcon 40B"
+        "same for GPT-J and GPT-NeoX models",
     )
     # Alignement options
     group = parser.add_argument_group("Model - Alignement")

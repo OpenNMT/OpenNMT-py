@@ -42,6 +42,7 @@ class TransformerDecoderLayerBase(nn.Module):
         use_ckpting=[],
         parallel_gpu=1,
         sliding_window=0,
+        rotary_interleave=True,
     ):
         """
         Args:
@@ -60,6 +61,9 @@ class TransformerDecoderLayerBase(nn.Module):
             max_relative_positions (int):
                 Max distance between inputs in relative positions
                 representations
+            relative_positions_buckets (int):
+                relative position bias see
+                https://github.com/google-research/text-to-text-transfer-transformer
             aan_useffn (bool): Turn on the FFN layer in the AAN decoder
             full_context_alignment (bool):
                 whether enable an extra full context decoder forward for
@@ -69,9 +73,19 @@ class TransformerDecoderLayerBase(nn.Module):
             pos_ffn_activation_fn (ActivationFunction):
                 activation function choice for PositionwiseFeedForward layer
             add_qkvbias (bool): whether to add bias to the Key/Value nn.Linear
+            num_kv (int): number of heads for KV when different vs Q (multiquery)
+            add_ffnbias (bool): whether to add bias to the FF nn.Linear
+            parallel_residual (bool): Use parallel residual connections in each layer block, as used
+                by the GPT-J and GPT-NeoX models
+            shared_layer_norm (bool): When using parallel residual, share the input and post
+                attention layer norms.
             layer_norm (string): type of layer normalization standard/rms
             norm_eps (float): layer norm epsilon
-
+            use_ckpting (List): layers for which we checkpoint for backward
+            parallel_gpu (int): Number of gpu for tensor parallelism
+            sliding_window (int): Width of the band mask and KV cache (cf Mistral Model)
+            rotary_interleave (bool): Interleave the head dimensions when rotary
+                embeddings are applied
         """
         super(TransformerDecoderLayerBase, self).__init__()
 
@@ -83,6 +97,7 @@ class TransformerDecoderLayerBase(nn.Module):
                 dropout=attention_dropout,
                 max_relative_positions=max_relative_positions,
                 relative_positions_buckets=relative_positions_buckets,
+                rotary_interleave=rotary_interleave,
                 attn_type="self",
                 add_qkvbias=add_qkvbias,
                 num_kv=num_kv,
@@ -238,6 +253,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
         use_ckpting=[],
         parallel_gpu=1,
         sliding_window=0,
+        rotary_interleave=True,
     ):
         """
         Args:
@@ -266,6 +282,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
             use_ckpting=use_ckpting,
             parallel_gpu=parallel_gpu,
             sliding_window=sliding_window,
+            rotary_interleave=rotary_interleave,
         )
         self.context_attn = MultiHeadedAttention(
             heads,
@@ -424,6 +441,7 @@ class TransformerDecoderBase(DecoderBase):
             if opt.parallel_mode == "tensor_parallel"
             else 1,
             sliding_window=opt.sliding_window,
+            rotary_interleave=opt.rotary_interleave,
         )
 
     def init_state(self, src, enc_out, enc_final_hs):
@@ -486,8 +504,21 @@ class TransformerDecoder(TransformerDecoderBase):
         alignment_layer (int): N° Layer to supervise with for alignment guiding
         alignment_heads (int):
             N. of cross attention heads to use for alignment guiding
+        pos_ffn_activation_fn (ActivationFunction):
+            activation function choice for PositionwiseFeedForward layer
         add_qkvbias (bool): whether to add bias to the Key/Value nn.Linear
+        num_kv (int): number of heads for KV when different vs Q (multiquery)
+        add_ffnbias (bool): whether to add bias to the FF nn.Linear
+        parallel_residual (bool): Use parallel residual connections in each layer block, as used
+            by the GPT-J and GPT-NeoX models
+        shared_layer_norm (bool): When using parallel residual, share the input and post
+            attention layer norms.
         layer_norm (string): type of layer normalization standard/rms
+        norm_eps (float): layer norm epsilon
+        use_ckpting (List): layers for which we checkpoint for backward
+        parallel_gpu (int): Number of gpu for tensor parallelism
+        sliding_window (int): Width of the band mask and KV cache (cf Mistral Model)
+        rotary_interleave (bool): Interleave the head dimensions when rotary embeddings are applied
     """
 
     def __init__(
@@ -518,6 +549,7 @@ class TransformerDecoder(TransformerDecoderBase):
         use_ckpting=[],
         parallel_gpu=1,
         sliding_window=0,
+        rotary_interleave=True,
     ):
         super(TransformerDecoder, self).__init__(
             d_model, copy_attn, embeddings, alignment_layer, layer_norm, norm_eps
@@ -548,6 +580,7 @@ class TransformerDecoder(TransformerDecoderBase):
                     use_ckpting=use_ckpting,
                     parallel_gpu=parallel_gpu,
                     sliding_window=sliding_window,
+                    rotary_interleave=rotary_interleave,
                 )
                 for i in range(num_layers)
             ]
@@ -716,22 +749,41 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
 class TransformerLMDecoder(TransformerDecoderBase):
     """The Transformer decoder from GPT-2
     Args:
-         num_layers (int): number of decoder layers.
-         d_model (int): size of the model
-         heads (int): number of heads
-         d_ff (int): size of the inner FF layer
-         copy_attn (bool): if using a separate copy attention
-         self_attn_type (str): type of self-attention scaled-dot, average
-         dropout (float): dropout in residual, self-attn(dot) and feed-forward
-         attention_dropout (float): dropout in context_attn (and self-attn(avg))
-         embeddings (onmt.modules.Embeddings):
-             embeddings to use, should have positional encodings
-         max_relative_positions (int):
-             Max distance between inputs in relative positions representations
-         relative_positions_buckets (int):
-             Number of buckets when using Relative positions bias
-         aan_useffn (bool): Turn on the FFN layer in the AAN decoder
-         add_qkvbias (bool): whether to add bias to the Key/Value nn.Linear
+        num_layers (int): number of decoder layers.
+        d_model (int): size of the model
+        heads (int): number of heads
+        d_ff (int): size of the inner FF layer
+        copy_attn (bool): if using a separate copy attention
+        self_attn_type (str): type of self-attention scaled-dot, average
+        dropout (float): dropout in residual, self-attn(dot) and feed-forward
+        attention_dropout (float): dropout in context_attn (and self-attn(avg))
+        embeddings (onmt.modules.Embeddings):
+            embeddings to use, should have positional encodings
+        max_relative_positions (int):
+            Max distance between inputs in relative positions representations
+        relative_positions_buckets (int):
+            Number of buckets when using Relative positions bias
+        aan_useffn (bool): Turn on the FFN layer in the AAN decoder
+        full_context_alignment (bool):
+            whether enable an extra full context decoder forward for alignment
+        alignment_layer (int): N° Layer to supervise with for alignment guiding
+        alignment_heads (int):
+            N. of cross attention heads to use for alignment guiding
+        pos_ffn_activation_fn (ActivationFunction):
+            activation function choice for PositionwiseFeedForward layer
+        add_qkvbias (bool): whether to add bias to the Key/Value nn.Linear
+        num_kv (int): number of heads for KV when different vs Q (multiquery)
+        add_ffnbias (bool): whether to add bias to the FF nn.Linear
+        parallel_residual (bool): Use parallel residual connections in each layer block, as used
+            by the GPT-J and GPT-NeoX models
+        shared_layer_norm (bool): When using parallel residual, share the input and post
+            attention layer norms.
+        layer_norm (string): type of layer normalization standard/rms
+        norm_eps (float): layer norm epsilon
+        use_ckpting (List): layers for which we checkpoint for backward
+        parallel_gpu (int): Number of gpu for tensor parallelism
+        sliding_window (int): Width of the band mask and KV cache (cf Mistral Model)
+        rotary_interleave (bool): Interleave the head dimensions when rotary embeddings are applied
     """
 
     def __init__(
@@ -762,6 +814,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
         use_ckpting=[],
         parallel_gpu=1,
         sliding_window=0,
+        rotary_interleave=True,
     ):
         super(TransformerLMDecoder, self).__init__(
             d_model, copy_attn, embeddings, alignment_layer, layer_norm, norm_eps
@@ -791,6 +844,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
                     use_ckpting=use_ckpting,
                     parallel_gpu=parallel_gpu,
                     sliding_window=sliding_window,
+                    rotary_interleave=rotary_interleave,
                 )
                 for i in range(num_layers)
             ]
