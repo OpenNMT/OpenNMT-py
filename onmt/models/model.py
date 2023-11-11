@@ -204,7 +204,7 @@ class BaseModel(nn.Module):
         if device == torch.device("cpu"):
             offset = 0
         buf_list = []
-        for buf_name, buf in module.named_buffers():
+        for buf_name, buf in self.named_buffers():
             buf_list.append(buf_name)
         for name, module in self.named_modules():
             named_buf_and_param = list(module.named_buffers()) + list(
