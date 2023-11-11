@@ -46,7 +46,6 @@ class BaseModel(nn.Module):
         raise NotImplementedError
 
     def _load_param(self, name, module, param_name, param, buf_list, ckpt_t, offset):
-
         if name.split(".")[-1] in [
             "linear_keys",
             "linear_values",
@@ -73,7 +72,7 @@ class BaseModel(nn.Module):
                     row_slice_start:row_slice_end,
                 ].size()
             ), "An error in model's partition and checkpoint's slice was detected"
-            if param_name in buf_list:
+            if name + "." + param_name in buf_list:
                 module.register_buffer(
                     param_name,
                     ckpt_t[
@@ -90,7 +89,7 @@ class BaseModel(nn.Module):
             assert (
                 param.data.size() == ckpt_t[col_slice_start:col_slice_end].size()
             ), "An error in model's partition and checkpoint's slice was detected"
-            if param_name in buf_list:
+            if name + "." + param_name in buf_list:
                 module.register_buffer(
                     param_name, ckpt_t[col_slice_start:col_slice_end]
                 )
@@ -120,9 +119,9 @@ class BaseModel(nn.Module):
         if device == torch.device("cpu"):
             offset = 0
         buf_list = []
+        for buf_name, buf in self.named_buffers():
+            buf_list.append(buf_name)
         for name, module in self.named_modules():
-            for buf_name, buf in module.named_buffers():
-                buf_list.append(buf_name)
             named_buf_and_param = list(module.named_buffers()) + list(
                 module.named_parameters()
             )
@@ -205,9 +204,9 @@ class BaseModel(nn.Module):
         if device == torch.device("cpu"):
             offset = 0
         buf_list = []
+        for buf_name, buf in self.named_buffers():
+            buf_list.append(buf_name)
         for name, module in self.named_modules():
-            for buf_name, buf in module.named_buffers():
-                buf_list.append(buf_name)
             named_buf_and_param = list(module.named_buffers()) + list(
                 module.named_parameters()
             )
