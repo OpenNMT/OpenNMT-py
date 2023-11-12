@@ -98,6 +98,8 @@ class GreedySearch(DecodeStrategy):
         eos (int): See base.
         unk (int): See base.
         start (int): See base.
+        n_best (int): Don't stop until at least this many beams have
+            reached EOS.
         batch_size (int): See base.
         global_scorer (onmt.translate.GNMTGlobalScorer): Scorer instance.
         min_length (int): See base.
@@ -123,6 +125,7 @@ class GreedySearch(DecodeStrategy):
         eos,
         unk,
         start,
+        n_best,
         batch_size,
         global_scorer,
         min_length,
@@ -157,6 +160,7 @@ class GreedySearch(DecodeStrategy):
         self.keep_topp = keep_topp
         self.topk_scores = None
         self.beam_size = beam_size
+        self.n_best = n_best
 
     def initialize(
         self, enc_out, src_len, src_map=None, device=None, target_prefix=None
@@ -265,10 +269,14 @@ class GreedySearch(DecodeStrategy):
                 else []
             )
             self.hypotheses[b_orig].append((score, pred, attention))
+            if len(self.hypotheses[b_orig]) >= 2:
+                self.hypotheses[b_orig] = sorted(
+                    self.hypotheses[b_orig], key=lambda x: x[0], reverse=True
+                )
         self.done = self.is_finished.all()
         if self.done:
             for b in range(self.batch_size):
-                best_hyp = sorted(self.hypotheses[b], key=lambda x: x[0], reverse=True)
+                best_hyp = self.hypotheses[b][: self.n_best]
                 for score, pred, attn in best_hyp:
                     self.scores[b].append(score)
                     self.predictions[b].append(pred)

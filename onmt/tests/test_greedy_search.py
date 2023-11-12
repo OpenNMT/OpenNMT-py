@@ -46,6 +46,7 @@ class TestGreedySearch(unittest.TestCase):
                 2,
                 3,
                 1,
+                1,
                 batch_sz,
                 GlobalScorerStub(),
                 min_length,
@@ -99,6 +100,7 @@ class TestGreedySearch(unittest.TestCase):
                     1,
                     2,
                     3,
+                    1,
                     1,
                     batch_sz,
                     GlobalScorerStub(),
@@ -185,6 +187,7 @@ class TestGreedySearch(unittest.TestCase):
                     1,
                     2,
                     3,
+                    1,
                     1,
                     batch_sz,
                     GlobalScorerStub(),
@@ -297,6 +300,7 @@ class TestGreedySearch(unittest.TestCase):
                     2,
                     3,
                     1,
+                    1,
                     batch_sz,
                     GlobalScorerStub(),
                     0,
@@ -374,7 +378,7 @@ class TestGreedySearch(unittest.TestCase):
 
                 samp.update_finished()
                 self.assertEqual(
-                    [score for score, _, _ in samp.hypotheses[batch_sz - 1][-1:]],
+                    [score for score, _, _ in samp.hypotheses[batch_sz - 1][:1]],
                     [valid_score_dist_2[0] / temp],
                 )
 
@@ -418,6 +422,7 @@ class TestGreedySearch(unittest.TestCase):
                     1,
                     2,
                     3,
+                    1,
                     1,
                     batch_sz,
                     GlobalScorerStub(),
