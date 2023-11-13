@@ -466,7 +466,7 @@ class MultiHeadedAttention(torch.nn.Module):
                     self.rope = rotaryembeddings(
                         self.dim_per_head, maxseqlen=(seqlen + 2048)
                     ).to(self.rope.device)
-                rope = self.rope[start_pos : start_pos + seqlen]
+                rope = self.rope[start_pos : start_pos + seqlen].to(query.device)
                 query, key = apply_rotary_emb(
                     query, key, rope, interleave=self.rotary_interleave
                 )
