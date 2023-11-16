@@ -625,7 +625,7 @@ class Inference(object):
             msg = "%s No translations" % (name,)
         else:
             score = score_total / nb_sentences
-            ppl = np.exp(-score_total.item() / nb_sentences)
+            ppl = np.exp(-score_total / nb_sentences)
             msg = "%s SCORE: %.4f, %s PPL: %.2f NB SENTENCES: %d" % (
                 name,
                 score,
@@ -672,7 +672,7 @@ class Inference(object):
             else:
                 attn = None
             scores = self.model.generator(dec_out.squeeze(1))
-            log_probs = F.log_softmax(scores.to(torch.float32), dim=-1)
+            log_probs = F.log_softmax(scores, dim=-1) # we keep float16 if FP16
             # returns [(batch_size x beam_size) , vocab ] when 1 step
             # or [batch_size, tgt_len, vocab ] when full sentence
         else:
