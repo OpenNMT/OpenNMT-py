@@ -236,8 +236,6 @@ class BeamSearchBase(DecodeStrategy):
             torch.tensor(self.is_finished_list, device=self.topk_log_probs.device),
             -65504,
         )
-        #lowmask = torch.tensor([0 if is_fin else -65504 for is_fin in self.is_finished_list], device=self.topk_log_probs.device).unsqueeze(1)
-        #self.topk_log_probs = self.topk_log_probs + lowmask
         predictions = self.alive_seq.view(_B_old, self.beam_size, step)
         attention = (
             self.alive_attn.view(
@@ -251,7 +249,9 @@ class BeamSearchBase(DecodeStrategy):
         non_finished_batch = [
             i
             for i in range(len(self.is_finished_list))
-            if self.beams_non_finished(i, topk_scores_list, predictions, attention, step)
+            if self.beams_non_finished(
+                i, topk_scores_list, predictions, attention, step
+            )
         ]
 
         non_finished = torch.tensor(non_finished_batch)

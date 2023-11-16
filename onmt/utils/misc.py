@@ -64,6 +64,7 @@ def tile(x, count, dim=0):
     """
     return x.repeat_interleave(count, dim)
 
+
 def use_gpu(opt):
     """
     Creates a boolean if gpu used

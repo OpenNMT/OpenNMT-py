@@ -282,7 +282,9 @@ def tensorify(vocabs, minibatch, device):
     tensor_batch["ind_in_bucket"] = [indice for ex, indice in minibatch]
 
     tensor_batch["cid"] = [ex["cid"] for ex, indice in minibatch]
-    tensor_batch["cid_line_number"] = [ex["cid_line_number"] for ex, indice in minibatch]
+    tensor_batch["cid_line_number"] = [
+        ex["cid_line_number"] for ex, indice in minibatch
+    ]
 
     return tensor_batch
 
