@@ -694,7 +694,6 @@ class Inference(object):
                 batch,
                 self._tgt_vocab,
                 batch_dim=0,
-                batch_offset=batch_offset,
             )
             scores = scores.view(-1, decoder_in.size(1), scores.size(-1))
             log_probs = scores.squeeze(1).log()

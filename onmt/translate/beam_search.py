@@ -280,7 +280,7 @@ class BeamSearchBase(DecodeStrategy):
         self, _B_new, _B_old, non_finished, predictions, attention, step
     ):
         # Remove finished batches for the next step.
-        self._batch_offset = self._batch_offset[non_finished]
+        self._batch_offset = self._batch_offset[non_finished]  # CPU
         self.topk_log_probs = self.topk_log_probs[non_finished]
         self._batch_index = self._batch_index[non_finished]
         self.alive_seq = predictions[non_finished].view(-1, self.alive_seq.size(-1))

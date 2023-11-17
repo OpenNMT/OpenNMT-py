@@ -2,9 +2,7 @@ import torch
 import torch.nn as nn
 
 
-def collapse_copy_scores(
-    scores, batch, tgt_vocab, src_vocabs=None, batch_dim=1, batch_offset=None
-):
+def collapse_copy_scores(scores, batch, tgt_vocab, batch_dim=1):
     """
     Given scores from an expanded dictionary
     corresponeding to a batch, sums together copies,
@@ -15,12 +13,7 @@ def collapse_copy_scores(
         blank = []
         fill = []
 
-        if src_vocabs is None:
-            src_vocab = batch["src_ex_vocab"][b]
-        else:
-            batch_id = batch_offset[b] if batch_offset is not None else b
-            index = batch["ind_in_bucket"].data[batch_id]
-            src_vocab = src_vocabs[index]
+        src_vocab = batch["src_ex_vocab"][b]
 
         for i in range(1, len(src_vocab)):
             sw = src_vocab.ids_to_tokens[i]
@@ -29,8 +22,8 @@ def collapse_copy_scores(
                 blank.append(offset + i)
                 fill.append(ti)
         if blank:
-            blank = torch.Tensor(blank).type_as(batch["ind_in_bucket"].data)
-            fill = torch.Tensor(fill).type_as(batch["ind_in_bucket"].data)
+            blank = torch.Tensor(blank).to(torch.int64)
+            fill = torch.Tensor(fill).to(torch.int64)
             score = scores[:, b] if batch_dim == 1 else scores[b]
             score.index_add_(1, fill, score.index_select(1, blank))
             score.index_fill_(1, blank, 1e-10)

@@ -328,7 +328,6 @@ class LossCompute(nn.Module):
                 self._unbottle(scores.clone(), len(batch["srclen"])),
                 batch,
                 self.vocab,
-                None,
             )
             scores_data = self._bottle(scores_data)
             # Correct target copy token instead of <unk>
