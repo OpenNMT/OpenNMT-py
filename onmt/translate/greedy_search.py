@@ -206,8 +206,7 @@ class GreedySearch(DecodeStrategy):
         return topk_ids, topk_scores
 
     def align_select_indices(self):
-        nb_finished_beams = len(self.is_finished_list
-        ) - self.select_indices.size(0)
+        nb_finished_beams = len(self.is_finished_list) - self.select_indices.size(0)
         if nb_finished_beams:
             self.select_indices = torch.arange(
                 self.select_indices.size(0),
@@ -250,7 +249,9 @@ class GreedySearch(DecodeStrategy):
         """Finalize scores and predictions."""
         # shape: (sum(~ self.is_finished), 1)
         step = len(self)
-        non_finished_batch = [i for i, fin in enumerate(self.is_finished_list) if not fin[0]]
+        non_finished_batch = [
+            i for i, fin in enumerate(self.is_finished_list) if not fin[0]
+        ]
         length_penalty = self.global_scorer.length_penalty(
             step, alpha=self.global_scorer.alpha
         )
@@ -267,13 +268,17 @@ class GreedySearch(DecodeStrategy):
         self.done = len(non_finished_batch) == 0
         if self.done:
             for b in range(self.batch_size):
-                best_hyp = sorted(self.hypotheses[b][: self.n_best], key=lambda x: x[0], reverse=True)
+                best_hyp = sorted(
+                    self.hypotheses[b][: self.n_best], key=lambda x: x[0], reverse=True
+                )
                 for score, pred, attn in best_hyp:
                     self.scores[b].append(score)
                     self.predictions[b].append(pred)
                     self.attention[b].append(attn)
             return
-        self.select_indices = torch.tensor(non_finished_batch, device=self.alive_seq.device)
+        self.select_indices = torch.tensor(
+            non_finished_batch, device=self.alive_seq.device
+        )
         self.alive_seq = self.alive_seq[self.select_indices]
         self.beams_scores = self.beams_scores[self.select_indices]
         self.src_len = self.src_len[self.select_indices]
