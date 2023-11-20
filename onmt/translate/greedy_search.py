@@ -250,27 +250,31 @@ class GreedySearch(DecodeStrategy):
         # shape: (sum(~ self.is_finished), 1)
         step = len(self)
         non_finished_batch = [
-            i for i, fin in enumerate(self.is_finished_list) if not fin[0]
+            b for b, fin in enumerate(self.is_finished_list) if not fin[0]
         ]
         length_penalty = self.global_scorer.length_penalty(
             step, alpha=self.global_scorer.alpha
         )
         for b in [i for i, fin in enumerate(self.is_finished_list) if fin[0]]:
             b_orig = self.original_batch_idx[b]
-            score = self.beams_scores[b, 0]
+            score = self.beams_scores[b, 0] / length_penalty
             pred = self.alive_seq[b, 1:]
             attention = (
-                self.alive_attn[b, :, : self.src_len[b]]
+                self.alive_attn[
+                    b,
+                    :,
+                    : self.src_len[b],
+                ]
                 if self.alive_attn is not None
                 else []
             )
-            self.hypotheses[b_orig].append((score / length_penalty, pred, attention))
+            self.hypotheses[b_orig].append((score, pred, attention))
         self.done = len(non_finished_batch) == 0
         if self.done:
             for b in range(self.batch_size):
-                best_hyp = sorted(
-                    self.hypotheses[b][: self.n_best], key=lambda x: x[0], reverse=True
-                )
+                best_hyp = sorted(self.hypotheses[b], key=lambda x: x[0], reverse=True)[
+                    : self.n_best
+                ]
                 for score, pred, attn in best_hyp:
                     self.scores[b].append(score)
                     self.predictions[b].append(pred)

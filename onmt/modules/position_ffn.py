@@ -116,7 +116,7 @@ class PositionwiseFeedForward(nn.Module):
             inter = self.dropout_2(inter)
 
         if self.parallel_gpu > 1:
-            dist.all_reduce(inter)
+            all_reduce(inter)
 
         return inter + x
 
