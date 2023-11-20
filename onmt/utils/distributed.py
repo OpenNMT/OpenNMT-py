@@ -47,9 +47,10 @@ def all_reduce_and_rescale_tensors(tensors, rescale_denom, buffer_size=104857600
         buffer_size: all-reduce chunk size in bytes
     """
     # buffer size in bytes, determine equiv. # of elements based on data type
-    buffer_t = (
-        tensors[0].new(math.ceil(buffer_size / tensors[0].element_size())).zero_()
-    )
+    if len(tensors) > 0:
+        buffer_t = (
+            tensors[0].new(math.ceil(buffer_size / tensors[0].element_size())).zero_()
+        )
     buffer = []
 
     def all_reduce_buffer():
