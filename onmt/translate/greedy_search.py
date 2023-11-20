@@ -1,13 +1,12 @@
 import torch
-import torch.nn.functional as F
-
+from torch.nn.functional import softmax
 from onmt.translate.decode_strategy import DecodeStrategy
 
 
 def sample_topp(logits, keep_topp):
     sorted_logits, sorted_indices = torch.sort(logits, descending=True, dim=1)
 
-    cumulative_probs = torch.cumsum(F.softmax(sorted_logits, dim=-1), dim=-1)
+    cumulative_probs = torch.cumsum(softmax(sorted_logits, dim=-1), dim=-1)
     sorted_indices_to_keep = cumulative_probs.lt(keep_topp)
 
     # keep indices until overflowing p
@@ -207,9 +206,7 @@ class GreedySearch(DecodeStrategy):
         return topk_ids, topk_scores
 
     def align_select_indices(self):
-        nb_finished_beams = self.is_finished.view(-1).size(
-            0
-        ) - self.select_indices.size(0)
+        nb_finished_beams = len(self.is_finished_list) - self.select_indices.size(0)
         if nb_finished_beams:
             self.select_indices = torch.arange(
                 self.select_indices.size(0),
@@ -229,8 +226,7 @@ class GreedySearch(DecodeStrategy):
                 to 1.)
             attn (FloatTensor): Shaped ``(1, B, inp_seq_len)``.
         """
-        if hasattr(self, "is_finished"):
-            self.align_select_indices()
+        self.align_select_indices()
 
         self.ensure_min_length(log_probs)
         self.ensure_unk_removed(log_probs)
@@ -239,8 +235,7 @@ class GreedySearch(DecodeStrategy):
         topk_ids, self.topk_scores = self._pick(log_probs)
         self.beams_scores += self.topk_scores
 
-        self.is_finished = topk_ids.eq(self.eos)
-        self.is_finished_list = self.is_finished.tolist()
+        self.is_finished_list = topk_ids.eq(self.eos).tolist()
 
         self.alive_seq = torch.cat([self.alive_seq, topk_ids], -1)
         if self.return_attention:
@@ -253,43 +248,47 @@ class GreedySearch(DecodeStrategy):
     def update_finished(self):
         """Finalize scores and predictions."""
         # shape: (sum(~ self.is_finished), 1)
-        finished_batches = self.is_finished.view(-1).nonzero()
         step = len(self)
+        non_finished_batch = [
+            b for b, fin in enumerate(self.is_finished_list) if not fin[0]
+        ]
         length_penalty = self.global_scorer.length_penalty(
             step, alpha=self.global_scorer.alpha
         )
-
-        for b in finished_batches.view(-1):
+        for b in [i for i, fin in enumerate(self.is_finished_list) if fin[0]]:
             b_orig = self.original_batch_idx[b]
             score = self.beams_scores[b, 0] / length_penalty
             pred = self.alive_seq[b, 1:]
             attention = (
-                self.alive_attn[b, :, : self.src_len[b]]
+                self.alive_attn[
+                    b,
+                    :,
+                    : self.src_len[b],
+                ]
                 if self.alive_attn is not None
                 else []
             )
             self.hypotheses[b_orig].append((score, pred, attention))
-            if len(self.hypotheses[b_orig]) >= 2:
-                self.hypotheses[b_orig] = sorted(
-                    self.hypotheses[b_orig], key=lambda x: x[0], reverse=True
-                )
-        self.done = self.is_finished.all()
+        self.done = len(non_finished_batch) == 0
         if self.done:
             for b in range(self.batch_size):
-                best_hyp = self.hypotheses[b][: self.n_best]
+                best_hyp = sorted(self.hypotheses[b], key=lambda x: x[0], reverse=True)[
+                    : self.n_best
+                ]
                 for score, pred, attn in best_hyp:
                     self.scores[b].append(score)
                     self.predictions[b].append(pred)
                     self.attention[b].append(attn)
             return
-        is_alive = ~self.is_finished.view(-1)
-        self.alive_seq = self.alive_seq[is_alive]
-        self.beams_scores = self.beams_scores[is_alive]
-        self.src_len = self.src_len[is_alive]
+        self.select_indices = torch.tensor(
+            non_finished_batch, device=self.alive_seq.device
+        )
+        self.alive_seq = self.alive_seq[self.select_indices]
+        self.beams_scores = self.beams_scores[self.select_indices]
+        self.src_len = self.src_len[self.select_indices]
         if self.alive_attn is not None:
-            self.alive_attn = self.alive_attn[is_alive]
-        self.select_indices = is_alive.nonzero(as_tuple=False).view(-1)
-        self.original_batch_idx = self.original_batch_idx[is_alive]
+            self.alive_attn = self.alive_attn[self.select_indices]
+        self.original_batch_idx = self.original_batch_idx[self.select_indices]
         self.maybe_update_target_prefix(self.select_indices)
 
 

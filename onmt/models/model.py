@@ -1,7 +1,7 @@
 """ Onmt NMT Model base class definition """
 import torch
 import torch.nn as nn
-import glob
+from glob import glob
 
 
 class BaseModel(nn.Module):
@@ -192,7 +192,7 @@ class BaseModel(nn.Module):
         except ImportError:
             raise ImportError("run: pip install safetensors, to use safetensors")
         keyfound = {}
-        shards = glob.glob(model_path + ".*.safetensors")
+        shards = glob(model_path + ".*.safetensors")
         if len(shards) == 0:
             raise ValueError("No safetensors file found")
         f = []

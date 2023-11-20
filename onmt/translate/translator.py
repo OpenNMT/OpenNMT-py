@@ -1,17 +1,16 @@
 #!/usr/bin/env python
 """ Translator Class and builder """
+import torch
+from torch.nn.functional import log_softmax
+from torch.nn.utils.rnn import pad_sequence
 import codecs
-import os
-import time
-import numpy as np
+from time import time
+from math import exp
 from itertools import count, zip_longest
 from copy import deepcopy
-import torch
-import torch.nn.functional as F
-from torch.nn.utils.rnn import pad_sequence
-from onmt.constants import DefaultTokens
 import onmt.model_builder
 import onmt.decoders.ensemble
+from onmt.constants import DefaultTokens
 from onmt.translate.beam_search import BeamSearch, BeamSearchLM
 from onmt.translate.greedy_search import GreedySearch, GreedySearchLM
 from onmt.utils.misc import tile, set_random_seed, report_matrix
@@ -341,7 +340,7 @@ class Inference(object):
         all_scores = []
         all_predictions = []
 
-        start_time = time.time()
+        start_time = time()
 
         def _maybe_retranslate(translations, batch):
             """Here we handle the cases of mismatch in number of segments
@@ -453,10 +452,7 @@ class Inference(object):
                     srcs = [voc_src[tok] for tok in trans.src[: trans.srclen]]
                     sent_number = next(counter)
                     output = trans.log(sent_number, src_raw=srcs)
-                    if self.logger:
-                        self.logger.info(output)
-                    else:
-                        os.write(1, output.encode("utf-8"))
+                    self._log(output)
 
                 if attn_debug:
                     preds = trans.pred_sents[0]
@@ -469,10 +465,7 @@ class Inference(object):
                     else:
                         srcs = [str(item) for item in range(len(attns[0]))]
                     output = report_matrix(srcs, preds, attns)
-                    if self.logger:
-                        self.logger.info(output)
-                    else:
-                        os.write(1, output.encode("utf-8"))
+                    self._log(output)
 
                 if align_debug:
                     if self.gold_align:
@@ -487,10 +480,8 @@ class Inference(object):
                     else:
                         srcs = [str(item) for item in range(len(align[0]))]
                     output = report_matrix(srcs, tgts, align)
-                    if self.logger:
-                        self.logger.info(output)
-                    else:
-                        os.write(1, output.encode("utf-8"))
+                    self._log(output)
+
             return (
                 bucket_scores,
                 bucket_predictions,
@@ -558,7 +549,7 @@ class Inference(object):
             gold_score_total += bucket_gold_score
             gold_words_total += bucket_gold_words
 
-        end_time = time.time()
+        end_time = time()
 
         if self.report_score:
             msg = self._report_score("PRED", pred_score_total, len(all_scores))
@@ -625,7 +616,7 @@ class Inference(object):
             msg = "%s No translations" % (name,)
         else:
             score = score_total / nb_sentences
-            ppl = np.exp(-score_total.item() / nb_sentences)
+            ppl = exp(-score_total / nb_sentences)
             msg = "%s SCORE: %.4f, %s PPL: %.2f NB SENTENCES: %d" % (
                 name,
                 score,
@@ -672,7 +663,7 @@ class Inference(object):
             else:
                 attn = None
             scores = self.model.generator(dec_out.squeeze(1))
-            log_probs = F.log_softmax(scores.to(torch.float32), dim=-1)
+            log_probs = log_softmax(scores, dim=-1)  # we keep float16 if FP16
             # returns [(batch_size x beam_size) , vocab ] when 1 step
             # or [batch_size, tgt_len, vocab ] when full sentence
         else:
@@ -694,7 +685,6 @@ class Inference(object):
                 batch,
                 self._tgt_vocab,
                 batch_dim=0,
-                batch_offset=batch_offset,
             )
             scores = scores.view(-1, decoder_in.size(1), scores.size(-1))
             log_probs = scores.squeeze(1).log()
@@ -998,10 +988,7 @@ class GeneratorLM(Inference):
                 " repeated until the input is finished. Then"
                 " generation will start."
             )
-            if self.logger:
-                self.logger.info(warning_msg)
-            else:
-                os.write(1, warning_msg.encode("utf-8"))
+            self._log(warning_msg)
         with torch.no_grad():
             if self.sample_from_topk != 0 or self.sample_from_topp != 0:
                 decode_strategy = GreedySearchLM(

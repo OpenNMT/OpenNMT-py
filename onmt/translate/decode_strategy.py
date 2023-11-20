@@ -183,18 +183,16 @@ class DecodeStrategy(object):
 
     def ensure_min_length(self, log_probs):
         if len(self) <= self.min_length:
-            log_probs[:, self.eos] = -1e20
+            log_probs[:, self.eos] = -65504  # -1e20
 
     def ensure_unk_removed(self, log_probs):
         if self.ban_unk_token:
-            log_probs[:, self.unk] = -1e20
+            log_probs[:, self.unk] = -65504  # -1e20
 
     def ensure_max_length(self):
         # add one to account for BOS. Don't account for EOS because hitting
         # this implies it hasn't been found.
         if len(self) == self.max_length + 1:
-            if hasattr(self, "is_finished"):
-                self.is_finished.fill_(1)
             self.is_finished_list = [
                 [True for _ in range(self.parallel_paths)]
                 for _ in range(len(self.is_finished_list))

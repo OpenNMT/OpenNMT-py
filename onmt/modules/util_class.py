@@ -22,7 +22,6 @@ class Elementwise(nn.ModuleList):
 
     def forward(self, emb):
         emb_ = [feat.squeeze(2) for feat in emb.split(1, dim=2)]
-        assert len(self) == len(emb_)
         emb_out = []
         # for some reason list comprehension is slower in this scenario
         for f, x in zip(self, emb_):
@@ -35,17 +34,3 @@ class Elementwise(nn.ModuleList):
             return sum(emb_out)
         else:
             return emb_out
-
-
-class Cast(nn.Module):
-    """
-    Basic layer that casts its emb to a specific data type. The same tensor
-    is returned if the data type is already correct.
-    """
-
-    def __init__(self, dtype):
-        super(Cast, self).__init__()
-        self._dtype = dtype
-
-    def forward(self, x):
-        return x.to(self._dtype)

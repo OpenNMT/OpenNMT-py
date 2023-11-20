@@ -5,11 +5,11 @@ from onmt.translate.translator import build_translator
 from onmt.inputters.dynamic_iterator import build_dynamic_dataset_iter
 from onmt.transforms import get_transforms_cls
 from onmt.constants import CorpusTask
-import onmt.opts as opts
+from onmt.opts import config_opts, translate_opts
 from onmt.utils.parse import ArgumentParser
 from onmt.utils.misc import use_gpu, set_random_seed
 from torch.profiler import profile, record_function, ProfilerActivity
-import time
+from time import time
 
 
 def translate(opt):
@@ -21,7 +21,7 @@ def translate(opt):
 
     set_random_seed(opt.seed, use_gpu(opt))
 
-    translator = build_translator(opt, logger=logger, report_score=True)
+    translator = build_translator(opt, logger=logger, report_score=False)
 
     transforms_cls = get_transforms_cls(opt._all_transform)
 
@@ -44,16 +44,16 @@ def translate(opt):
 
 def _get_parser():
     parser = ArgumentParser(description="translate.py")
-    opts.config_opts(parser)
-    opts.translate_opts(parser, dynamic=True)
+    config_opts(parser)
+    translate_opts(parser, dynamic=True)
     return parser
 
 
 def main():
     parser = _get_parser()
     opt = parser.parse_args()
-    if opt.profile:
 
+    if opt.profile:
         with profile(
             activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
             profile_memory=True,
@@ -61,11 +61,11 @@ def main():
         ) as prof:
             with record_function("Translate"):
                 translate(opt)
-        print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=40))
+        print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=40))
     else:
-        init_time = time.time()
+        init_time = time()
         translate(opt)
-        print("Time w/o python interpreter load/terminate: ", time.time() - init_time)
+        print("Time w/o python interpreter load/terminate: ", time() - init_time)
 
 
 if __name__ == "__main__":

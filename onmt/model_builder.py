@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 from torch.nn.utils import skip_init
 from torch.nn.init import xavier_uniform_, zeros_, uniform_
-import onmt.modules
+from onmt.models.model import NMTModel, LanguageModel
 from onmt.encoders import str2enc
 from onmt.decoders import str2dec
 from onmt.inputters.inputter import dict_to_vocabs
@@ -218,13 +218,13 @@ def build_task_specific_model(model_opt, vocabs):
             share_embeddings=model_opt.share_embeddings,
             src_emb=src_emb,
         )
-        return onmt.models.NMTModel(encoder=encoder, decoder=decoder)
+        return NMTModel(encoder=encoder, decoder=decoder)
     elif model_opt.model_task == ModelTask.LANGUAGE_MODEL:
         src_emb = build_src_emb(model_opt, vocabs)
         decoder, _ = build_decoder_with_embeddings(
             model_opt, vocabs, share_embeddings=True, src_emb=src_emb
         )
-        return onmt.models.LanguageModel(decoder=decoder)
+        return LanguageModel(decoder=decoder)
     else:
         raise ValueError(f"No model defined for {model_opt.model_task} task")
 
