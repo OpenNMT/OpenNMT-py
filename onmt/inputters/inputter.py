@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
-import math
+from math import ceil
 import codecs
 import pyonmttok
 from onmt.constants import DefaultTokens
@@ -23,7 +23,7 @@ def build_vocab(opt, specials):
         vocab_size = len(vocab)
         if vocab_size % multiple == 0:
             return vocab
-        target_size = int(math.ceil(vocab_size / multiple)) * multiple
+        target_size = int(ceil(vocab_size / multiple)) * multiple
         for i in range(target_size - vocab_size):
             vocab.add_token(DefaultTokens.VOCAB_PAD + str(i))
         return vocab

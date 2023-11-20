@@ -1,6 +1,5 @@
 """Position feed-forward network from "Attention is All You Need"."""
 
-
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.checkpoint import checkpoint
@@ -10,7 +9,7 @@ try:
 except ImportError:
     from onmt.modules.rmsnorm import RMSNorm
 from torch.nn.utils import skip_init
-import torch.distributed as dist
+from torch.distributed import all_reduce
 
 
 class ActivationFunction(object):
