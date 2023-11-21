@@ -107,6 +107,7 @@ class Inference(object):
         n_best=1,
         min_length=0,
         max_length=100,
+        max_length_ratio=1.5,
         ratio=0.0,
         beam_size=30,
         random_sampling_topk=0,
@@ -152,6 +153,7 @@ class Inference(object):
 
         self.n_best = n_best
         self.max_length = max_length
+        self.max_length_ratio = max_length_ratio
 
         self.beam_size = beam_size
         self.random_sampling_temp = random_sampling_temp
@@ -243,6 +245,7 @@ class Inference(object):
             n_best=opt.n_best,
             min_length=opt.min_length,
             max_length=opt.max_length,
+            max_length_ratio=opt.max_length_ratio,
             ratio=opt.ratio,
             beam_size=opt.beam_size,
             random_sampling_topk=opt.random_sampling_topk,
@@ -792,6 +795,12 @@ class Translator(Inference):
 
     def translate_batch(self, batch, attn_debug):
         """Translate a batch of sentences."""
+        if self.max_length_ratio > 0:
+            max_length = int(
+                min(self.max_length, batch["src"].size(1) * self.max_length_ratio + 5)
+            )
+        else:
+            max_length = self.max_length
         with torch.no_grad():
             if self.sample_from_topk != 0 or self.sample_from_topp != 0:
                 decode_strategy = GreedySearch(
@@ -804,7 +813,7 @@ class Translator(Inference):
                     batch_size=len(batch["srclen"]),
                     global_scorer=self.global_scorer,
                     min_length=self.min_length,
-                    max_length=self.max_length,
+                    max_length=max_length,
                     block_ngram_repeat=self.block_ngram_repeat,
                     exclusion_tokens=self._exclusion_idxs,
                     return_attention=attn_debug or self.replace_unk,
@@ -828,7 +837,7 @@ class Translator(Inference):
                     n_best=self.n_best,
                     global_scorer=self.global_scorer,
                     min_length=self.min_length,
-                    max_length=self.max_length,
+                    max_length=max_length,
                     return_attention=attn_debug or self.replace_unk,
                     block_ngram_repeat=self.block_ngram_repeat,
                     exclusion_tokens=self._exclusion_idxs,
