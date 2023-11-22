@@ -717,8 +717,7 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
         dec_mask = None
 
         if layer_in.size(1) > 1:
-            # masking is necessary when sequence length is greater than one
-            dec_mask = self._compute_dec_mask(tgt_pad_mask, future)
+            dec_mask = tgt_pad_mask
             dec_mask = dec_mask.unsqueeze(1)
             dec_mask = dec_mask.expand(-1, -1, dec_mask.size(3), -1)
             # mask now are (batch x 1 x tlen x tlen)

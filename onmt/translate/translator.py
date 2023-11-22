@@ -103,6 +103,7 @@ class Inference(object):
         self,
         model,
         vocabs,
+        model_task,
         gpu=-1,
         n_best=1,
         min_length=0,
@@ -136,6 +137,7 @@ class Inference(object):
     ):
         self.model = model
         self.vocabs = vocabs
+        self.model_task = model_task
         self._tgt_vocab = vocabs["tgt"]
         self._tgt_eos_idx = vocabs["tgt"].lookup_token(DefaultTokens.EOS)
         self._tgt_pad_idx = vocabs["tgt"].lookup_token(DefaultTokens.PAD)
@@ -241,6 +243,7 @@ class Inference(object):
         return cls(
             model,
             vocabs,
+            model_task=model_opt.model_task,
             gpu=opt.gpu,
             n_best=opt.n_best,
             min_length=opt.min_length,
@@ -988,16 +991,6 @@ class GeneratorLM(Inference):
 
     def translate_batch(self, batch, attn_debug):
         """Translate a batch of sentences."""
-        batch_size = len(batch["srclen"])
-        if batch_size != 1:
-            warning_msg = (
-                "GeneratorLM does not support batch_size != 1"
-                " nicely. You can remove this limitation here."
-                " With batch_size > 1 the end of each input is"
-                " repeated until the input is finished. Then"
-                " generation will start."
-            )
-            self._log(warning_msg)
         with torch.no_grad():
             if self.sample_from_topk != 0 or self.sample_from_topp != 0:
                 decode_strategy = GreedySearchLM(
@@ -1061,7 +1054,7 @@ class GeneratorLM(Inference):
             log_probs = log_probs[:, -1, :]
         return log_probs
 
-    def _translate_batch_with_strategy(self, batch, decode_strategy):
+    def _translate_batch_with_strategy(self, batch, decode_strategy, left_pad=True):
         """Translate a batch of sentences step by step using cache.
 
         Args:
@@ -1081,7 +1074,10 @@ class GeneratorLM(Inference):
         src = batch["src"]
         src_len = batch["srclen"]
 
-        src, src_len, target_prefix = self.split_src_to_prevent_padding(src, src_len)
+        if left_pad:
+            target_prefix = None
+        else:
+            src, src_len, target_prefix = self.split_src_to_prevent_padding(src, src_len)
 
         # (2) init decoder
         self.model.decoder.init_state(src, None, None)

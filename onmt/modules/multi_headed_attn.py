@@ -491,41 +491,42 @@ class MultiHeadedAttention(torch.nn.Module):
             self.flash2
             and l > 256  # https://github.com/Dao-AILab/flash-attention/issues/591
         )
+        if False:
 
-        if (
-            self.max_relative_positions in [-1, 0]
-            and not return_attn
-            and query.device != torch.device("cpu")
-        ):
-            causal = self.is_decoder and self.attn_type == "self" and mask is not None
-            if self.is_decoder and self.attn_type == "self" and flash2:
-                if causal:
-                    window_size = (
-                        (-1, -1) if sliding_window == 0 else (sliding_window, 0)
-                    )
+            if (
+                self.max_relative_positions in [-1, 0]
+                and not return_attn
+                and query.device != torch.device("cpu")
+            ):
+                causal = self.is_decoder and self.attn_type == "self" and mask is not None
+                if self.is_decoder and self.attn_type == "self" and flash2:
+                    if causal:
+                        window_size = (
+                            (-1, -1) if sliding_window == 0 else (sliding_window, 0)
+                        )
+                    else:
+                        window_size = (-1, -1)
+                    attn_output = self.flash_attn_func(
+                        query.transpose(1, 2),
+                        key.transpose(1, 2),
+                        value.transpose(1, 2),
+                        dropout_p=self.dropout_p,
+                        causal=causal,
+                        window_size=window_size,
+                    ).transpose(1, 2)
                 else:
-                    window_size = (-1, -1)
-                attn_output = self.flash_attn_func(
-                    query.transpose(1, 2),
-                    key.transpose(1, 2),
-                    value.transpose(1, 2),
-                    dropout_p=self.dropout_p,
-                    causal=causal,
-                    window_size=window_size,
-                ).transpose(1, 2)
-            else:
-                with torch.backends.cuda.sdp_kernel(
-                    enable_flash=False, enable_math=True, enable_mem_efficient=True
-                ):
-                    attn_output = scaled_dot_product_attention(
-                        query,
-                        key,
-                        value,
-                        ~mask if mask is not None else None,
-                        self.dropout_p,
-                        is_causal=causal,
-                    )
-            attn = None
+                    with torch.backends.cuda.sdp_kernel(
+                        enable_flash=False, enable_math=True, enable_mem_efficient=True
+                    ):
+                        attn_output = scaled_dot_product_attention(
+                            query,
+                            key,
+                            value,
+                            ~mask if mask is not None else None,
+                            self.dropout_p,
+                            is_causal=causal,
+                        )
+                attn = None
 
         else:
             query /= sqrt(self.dim_per_head)
