@@ -3,6 +3,6 @@ sentencepiece>=0.1.94,<0.1.98
 subword-nmt>=0.3.7
 rapidfuzz
 scipy
-bitsandbytes>=0.39.1
+bitsandbytes>=0.41.2
 safetensors
 spacy
