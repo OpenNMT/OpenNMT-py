@@ -366,7 +366,12 @@ class OnDeviceDatasetIter:
     def __iter__(self):
         for (tensor_batch, bucket_idx) in self.data_iter:
             for key in tensor_batch.keys():
-                if key not in ["src_ex_vocab", "cid"]:
+                if key not in [
+                    "src_ex_vocab",
+                    "cid",
+                    "ind_in_bucket",
+                    "cid_line_number",
+                ]:
                     tensor_batch[key] = tensor_batch[key].to(self.device)
             yield (tensor_batch, bucket_idx)
 

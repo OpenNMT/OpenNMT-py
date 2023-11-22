@@ -1703,6 +1703,16 @@ def _add_decoding_opts(parser):
         default=250,
         help="Maximum prediction length.",
     )
+    group.add(
+        "--max_length_ratio",
+        "-max_length_ratio",
+        type=float,
+        default=1.25,
+        help="Maximum prediction length ratio."
+        "for European languages 1.25 is large enough"
+        "for target Asian characters need to increase to 2-3"
+        "for special languages (burmese, amharic) to 10",
+    )
     # Decoding content constraint
     group.add(
         "--block_ngram_repeat",

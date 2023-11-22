@@ -1,15 +1,15 @@
 """ Multi-Head Attention module """
-import math
 import torch
+import torch.nn as nn
+from math import log, sqrt
 from torch import Tensor
 from typing import Optional, Tuple
-from torch.nn import functional as F
-import torch.nn as nn
+from torch.nn.functional import scaled_dot_product_attention
 from torch.utils.checkpoint import checkpoint
 from torch.nn.utils import skip_init
 from .alibi_position_bias import AlibiPositionalBias
-import torch.distributed as dist
-import importlib
+from torch.distributed import all_reduce
+from importlib import import_module
 
 
 # Help functions for Rotary Embeddings
@@ -145,7 +145,7 @@ def _relative_position_bucket(
     # up to max_distance
     relative_position_if_large = max_exact + (
         torch.log(relative_position.float() / max_exact)
-        / math.log(max_distance / max_exact)
+        / log(max_distance / max_exact)
         * (num_buckets - max_exact)
     ).to(torch.long)
     relative_position_if_large = torch.min(
@@ -359,7 +359,7 @@ class MultiHeadedAttention(torch.nn.Module):
         self.maybe_ckpt = checkpoint if "mha" in use_ckpting else lambda f, x: f(x)
 
         try:
-            flash_pack = importlib.import_module("flash_attn")
+            flash_pack = import_module("flash_attn")
             if (
                 hasattr(flash_pack, "flash_attn_func")
                 and torch.cuda.get_device_capability()[0] >= 8
@@ -421,7 +421,7 @@ class MultiHeadedAttention(torch.nn.Module):
                     if seqlen > self.rope.size(0):
                         self.rope = rotaryembeddings(
                             self.dim_per_head, maxseqlen=(seqlen + 2048)
-                        )
+                        ).to(self.rope.device)
                     rope = self.rope[start_pos : start_pos + seqlen]
                     query, key = apply_rotary_emb(
                         query, key, rope, interleave=self.rotary_interleave
@@ -465,8 +465,8 @@ class MultiHeadedAttention(torch.nn.Module):
                 if seqlen > self.rope.size(0):
                     self.rope = rotaryembeddings(
                         self.dim_per_head, maxseqlen=(seqlen + 2048)
-                    )
-                rope = self.rope[start_pos : start_pos + seqlen]
+                    ).to(self.rope.device)
+                rope = self.rope[start_pos : start_pos + seqlen].to(query.device)
                 query, key = apply_rotary_emb(
                     query, key, rope, interleave=self.rotary_interleave
                 )
@@ -517,7 +517,7 @@ class MultiHeadedAttention(torch.nn.Module):
                 with torch.backends.cuda.sdp_kernel(
                     enable_flash=False, enable_math=True, enable_mem_efficient=True
                 ):
-                    attn_output = F.scaled_dot_product_attention(
+                    attn_output = scaled_dot_product_attention(
                         query,
                         key,
                         value,
@@ -525,18 +525,10 @@ class MultiHeadedAttention(torch.nn.Module):
                         self.dropout_p,
                         is_causal=causal,
                     )
-
-            x = unshape(attn_output)
-
-            attn_output = self.maybe_ckpt(self.final_linear, x)
-
-            if self.parallel_gpu > 1:
-                dist.all_reduce(attn_output)
-
-            return attn_output, None
+            attn = None
 
         else:
-            query /= math.sqrt(self.dim_per_head)
+            query /= sqrt(self.dim_per_head)
             # batch x num_heads x query_len x key_len
             scores = torch.matmul(query, key.transpose(2, 3))
 
@@ -589,20 +581,20 @@ class MultiHeadedAttention(torch.nn.Module):
             attn = self.softmax(scores).to(query.dtype)
             drop_attn = self.dropout(attn) if self.dropout_p > 0 else attn
 
-            context_original = torch.matmul(drop_attn, value)
+            attn_output = torch.matmul(drop_attn, value)
 
             if self.relative_positions_embeddings is not None:
                 # We use the same embeddings for key and value
                 relations_values = relations_keys
-                context_original.add_(
-                    relative_matmul(drop_attn, relations_values, False)
-                )
+                attn_output.add_(relative_matmul(drop_attn, relations_values, False))
 
-            context = unshape(context_original)
-
+        context = unshape(attn_output)
+        if self.layer_cache[0]:
+            attn_output = self.final_linear(context)
+        else:
             attn_output = self.maybe_ckpt(self.final_linear, context)
 
-            if self.parallel_gpu > 1:
-                dist.all_reduce(attn_output)
+        if self.parallel_gpu > 1:
+            all_reduce(attn_output)
 
-            return attn_output, attn
+        return attn_output, attn
