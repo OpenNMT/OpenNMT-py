@@ -899,15 +899,16 @@ class TransformerLMDecoder(TransformerDecoderBase):
 
     def _init_cache(self, tgt=None):
         for layer in self.transformer_layers:
-            if isinstance(layer.self_attn, AverageAttention):
-                raise NotImplementedError
-            else:
-                layer.self_attn.layer_cache = (
-                    True,
-                    {
-                        "keys": torch.tensor([], device=tgt.device),
-                        "values": torch.tensor([], device=tgt.device),
-                    },
-                )
-                if hasattr(layer.self_attn, "rope"):
-                    layer.self_attn.rope = layer.self_attn.rope.to(tgt.device)
+            if hasattr(layer, "self_attn"):
+                if isinstance(layer.self_attn, AverageAttention):
+                    raise NotImplementedError
+                else:
+                    layer.self_attn.layer_cache = (
+                        True,
+                        {
+                            "keys": torch.tensor([], device=tgt.device),
+                            "values": torch.tensor([], device=tgt.device),
+                        },
+                    )
+                    if hasattr(layer.self_attn, "rope"):
+                        layer.self_attn.rope = layer.self_attn.rope.to(tgt.device)

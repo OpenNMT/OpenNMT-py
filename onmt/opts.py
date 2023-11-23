@@ -1565,9 +1565,25 @@ def _add_quant_opts(parser):
         "--quant_type",
         "-quant_type",
         default="bnb_8bit",
-        choices=["bnb_8bit", "bnb_FP4", "bnb_NF4"],
+        choices=["bnb_8bit", "bnb_FP4", "bnb_NF4", "llm_awq", "aawq_gemm", "aawq_gemv"],
         type=str,
         help="Type of compression.",
+    )
+    group.add(
+        "--w_bit",
+        "-w_bit",
+        type=int,
+        default=4,
+        choices=[4],
+        help="W_bit quantization.",
+    )
+    group.add(
+        "--group_size",
+        "-group_size",
+        default=128,
+        choices=[128],
+        type=int,
+        help="group size quantization.",
     )
 
 

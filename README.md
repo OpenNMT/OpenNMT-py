@@ -63,7 +63,7 @@ Install `OpenNMT-py` from `pip`:
 pip install OpenNMT-py
 ```
 
-or from the sources:
+or from the source:
 ```bash
 git clone https://github.com/OpenNMT/OpenNMT-py.git
 cd OpenNMT-py
@@ -106,6 +106,21 @@ if flash attention 2 is not installed, then we will use `F.scaled_dot_product_at
 When using `max_relative_positions > 0` or Alibi `max_relative_positions=-2` OpenNMT-py will use its legacy code for matrix multiplications.
 
 flash attention and `F.scaled_dot_product_attention` are a bit faster and saves some GPU memory.
+
+
+AWQ:
+
+If you want to run inference or quantize an AWQ model you will need llm-awq and/or AutoAWQ.
+
+For [llm-awq](https://github.com/mit-han-lab/llm-awq):
+    git clone https://github.com/mit-han-lab/llm-awq
+    cd llm-awq
+    pip install -e .
+    cd ..
+
+For [AutoAWQ](https://github.com/casper-hansen/AutoAWQ):
+    pip install autoawq
+
 
 ## Documentation & FAQs
 

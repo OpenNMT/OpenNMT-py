@@ -95,8 +95,13 @@ def load_test_model(opt, device_id=0, model_path=None):
 
     model_opt = ArgumentParser.ckpt_model_opts(checkpoint["opt"])
 
-    model_opt.quant_layers = opt.quant_layers
-    model_opt.quant_type = opt.quant_type
+    if hasattr(model_opt, "quant_type") and model_opt.quant_type not in [
+        "llm_awq",
+        "aawq_gemm",
+        "aawq_gemv",
+    ]:
+        model_opt.quant_layers = opt.quant_layers
+        model_opt.quant_type = opt.quant_type
 
     if opt.world_size > 1 and opt.parallel_mode == "tensor_parallel":
         model_opt.world_size = opt.world_size
@@ -303,6 +308,21 @@ def build_base_model(model_opt, vocabs):
                 raise ImportError("Install bitsandbytes to use 4/8bit compression")
             model = replace_bnb_linear(
                 model, module_to_convert=nonlora_to_quant, q_type=model_opt.quant_type
+            )
+        elif model_opt.quant_type in ["llm_awq", "aawq_gemm", "aawq_gemv"]:
+            logger.info(
+                "%s compression of layer %s" % (model_opt.quant_type, nonlora_to_quant)
+            )
+            try:
+                from onmt.modules.awq_linear import replace_awq_linear
+            except ImportError:
+                raise ImportError("Install llm-awq/AutoAWQ to use awq quantized model")
+            model = replace_awq_linear(
+                model,
+                module_to_convert=nonlora_to_quant,
+                w_bit=model_opt.w_bit,
+                group_size=model_opt.group_size,
+                q_type=model_opt.quant_type,
             )
         else:
             logger.info("compression type %s not supported." % model_opt.quant_type)
