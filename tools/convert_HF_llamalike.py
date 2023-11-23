@@ -3,14 +3,13 @@
 import torch
 import argparse
 import pyonmttok
-import requests
 from argparse import Namespace
 from onmt.inputters.inputter import vocabs_to_dict
 from onmt.constants import DefaultTokens
 from sentencepiece import SentencePieceProcessor
 import os
 from transformers import AutoModelForCausalLM, AutoConfig
-from huggingface_hub import hf_hub_download
+import huggingface_hub
 from safetensors.torch import save_file
 
 
@@ -64,7 +63,7 @@ if __name__ == "__main__":
         directory_path, _ = os.path.split(opt.output)
         os.makedirs(directory_path, exist_ok=True)
         try:
-            tokenizer_model = hf_hub_download(
+            tokenizer_model = huggingface_hub.hf_hub_download(
                 repo_id=opt.model_dir,
                 filename="tokenizer.model",
                 local_dir=directory_path,
