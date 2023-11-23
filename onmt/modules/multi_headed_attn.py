@@ -498,11 +498,11 @@ class MultiHeadedAttention(torch.nn.Module):
             and query.device != torch.device("cpu")
         ):
             causal = self.is_decoder and self.attn_type == "self" and mask is not None and step is None
-            causal = False
-            print(self.is_decoder, self.attn_type, flash2) # True self False
+            # causal = False
+            causal = True
+            # print(self.is_decoder, self.attn_type, flash2) # True self False
             if self.is_decoder and self.attn_type == "self" and flash2:
             # error: 'MultiHeadedAttention' object has no attribute 'flash_attn_func'
-                print('#')
                 if causal:
                     window_size = (
                         (-1, -1) if sliding_window == 0 else (sliding_window, 0)

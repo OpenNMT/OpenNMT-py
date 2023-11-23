@@ -661,8 +661,6 @@ class Inference(object):
             step=step,
             return_attn=self.global_scorer.has_cov_pen or return_attn,
         )
-        print(dec_out)
-
         # Generator forward.
         if not self.copy_attn:
             if "std" in dec_attn:
