@@ -126,7 +126,6 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
         transforms,
         vocabs,
         task,
-        model_task,
         batch_type,
         batch_size,
         batch_size_multiple,
@@ -165,14 +164,14 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
         self.skip_empty_level = skip_empty_level
         self.random_shuffler = RandomShuffler()
         self.bucket_idx = 0
-        if task != CorpusTask.TRAIN and model_task == ModelTask.LANGUAGE_MODEL:
+        if task != CorpusTask.TRAIN and vocabs['data_task'] == ModelTask.LANGUAGE_MODEL:
             self.left_pad = True
         else:
             self.left_pad = False
 
     @classmethod
     def from_opt(
-        cls, corpora, transforms, vocabs, opt, task, model_task, copy, device, stride=1, offset=0
+        cls, corpora, transforms, vocabs, opt, task, copy, device, stride=1, offset=0
     ):
         """Initilize `DynamicDatasetIter` with options parsed from `opt`."""
         corpora_info = {}
@@ -204,7 +203,6 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
             transforms,
             vocabs,
             task,
-            model_task,
             opt.batch_type,
             batch_size,
             batch_size_multiple,
@@ -388,7 +386,6 @@ def build_dynamic_dataset_iter(
     vocabs,
     copy=False,
     task=CorpusTask.TRAIN,
-    model_task=ModelTask.SEQ2SEQ,
     stride=1,
     offset=0,
     src=None,
@@ -427,7 +424,6 @@ def build_dynamic_dataset_iter(
             vocabs,
             opt,
             task,
-            model_task=model_task,
             copy=copy,
             stride=stride,
             offset=offset,

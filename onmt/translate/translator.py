@@ -661,6 +661,7 @@ class Inference(object):
             step=step,
             return_attn=self.global_scorer.has_cov_pen or return_attn,
         )
+        print(dec_out)
 
         # Generator forward.
         if not self.copy_attn:
@@ -1077,7 +1078,9 @@ class GeneratorLM(Inference):
         if left_pad:
             target_prefix = None
         else:
-            src, src_len, target_prefix = self.split_src_to_prevent_padding(src, src_len)
+            src, src_len, target_prefix = self.split_src_to_prevent_padding(
+                src, src_len
+            )
 
         # (2) init decoder
         self.model.decoder.init_state(src, None, None)
@@ -1105,7 +1108,6 @@ class GeneratorLM(Inference):
             decoder_input = (
                 src if step == 0 else decode_strategy.current_predictions.view(-1, 1, 1)
             )
-
             log_probs, attn = self._decode_and_generate(
                 decoder_input,
                 None,

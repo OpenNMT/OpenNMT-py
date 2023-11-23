@@ -30,7 +30,6 @@ class InferenceEngine(object):
                 self.transforms_cls,
                 self.vocabs,
                 task=CorpusTask.INFER,
-                model_task=self.translator.model_task,
                 device_id=self.device_id,
             )
             scores, preds = self._translate(infer_iter)
@@ -46,7 +45,6 @@ class InferenceEngine(object):
                 self.transforms_cls,
                 self.vocabs,
                 task=CorpusTask.INFER,
-                model_task=self.translator.model_task,
                 src=src,
                 device_id=self.device_id,
             )
