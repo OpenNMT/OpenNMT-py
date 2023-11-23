@@ -717,7 +717,7 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
         dec_mask = None
         print(step)
         if layer_in.size(1) > 1:
-            if step is not None:
+            if step is None:
                 # training case. We need to apply the triangular mask
                 dec_mask = self._compute_dec_mask(tgt_pad_mask, future)
             else:

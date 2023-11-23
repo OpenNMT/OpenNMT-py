@@ -498,7 +498,7 @@ class MultiHeadedAttention(torch.nn.Module):
             and query.device != torch.device("cpu")
         ):
             causal = self.is_decoder and self.attn_type == "self" and mask is not None and step is None
-            causal = True
+            causal = False
             print(self.is_decoder, self.attn_type, flash2) # True self False
             if self.is_decoder and self.attn_type == "self" and flash2:
             # error: 'MultiHeadedAttention' object has no attribute 'flash_attn_func'
