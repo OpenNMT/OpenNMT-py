@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# import json
 import torch
 import argparse
 import pyonmttok
