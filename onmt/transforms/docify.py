@@ -68,7 +68,6 @@ class DocifyTransform(Transform):
         doc = {}
         doc["src"] = []
         doc["tgt"] = []
-        doc["ind_in_bucket"] = 0
         doc["cid"] = ""
         doc["cid_line_number"] = 0
 
@@ -82,7 +81,6 @@ class DocifyTransform(Transform):
                     doc = {}
                     doc["src"] = []
                     doc["tgt"] = []
-                    doc["ind_in_bucket"] = ex["ind_in_bucket"]
                     doc["cid"] = ex["cid"]
                     doc["cid_line_number"] = ex["cid_line_number"]
                 elif cur_len > self.doc_length:
@@ -110,7 +108,6 @@ class DocifyTransform(Transform):
                             doc = {}
                             doc["src"] = []
                             doc["tgt"] = []
-                            doc["ind_in_bucket"] = ex["ind_in_bucket"]
                             doc["cid"] = ex["cid"]
                             doc["cid_line_number"] = ex["cid_line_number"]
             else:
@@ -138,7 +135,6 @@ class DocifyTransform(Transform):
                             trf_batch.append((doc, self, cid))
                             doc = {}
                             doc["src"] = []
-                            doc["ind_in_bucket"] = ex["ind_in_bucket"]
                             doc["cid"] = ex["cid"]
                             doc["cid_line_number"] = ex["cid_line_number"]
         if len(doc["src"]) > 0:
