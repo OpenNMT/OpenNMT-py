@@ -103,7 +103,6 @@ class Inference(object):
         self,
         model,
         vocabs,
-        model_task,
         gpu=-1,
         n_best=1,
         min_length=0,
@@ -137,7 +136,6 @@ class Inference(object):
     ):
         self.model = model
         self.vocabs = vocabs
-        self.model_task = model_task
         self._tgt_vocab = vocabs["tgt"]
         self._tgt_eos_idx = vocabs["tgt"].lookup_token(DefaultTokens.EOS)
         self._tgt_pad_idx = vocabs["tgt"].lookup_token(DefaultTokens.PAD)
@@ -243,7 +241,6 @@ class Inference(object):
         return cls(
             model,
             vocabs,
-            model_task=model_opt.model_task,
             gpu=opt.gpu,
             n_best=opt.n_best,
             min_length=opt.min_length,

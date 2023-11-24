@@ -493,7 +493,6 @@ class MultiHeadedAttention(torch.nn.Module):
             self.flash2
             and l > 256  # https://github.com/Dao-AILab/flash-attention/issues/591
         )
-        # if False:
         if (
             self.max_relative_positions in [-1, 0]
             and not return_attn
@@ -517,7 +516,7 @@ class MultiHeadedAttention(torch.nn.Module):
                     window_size=window_size,
                 ).transpose(1, 2)
             else:
-                # Apply scaled_dot_product_attention.
+                # Apply scaled dot product attention.
                 with torch.backends.cuda.sdp_kernel(
                     enable_flash=False, enable_math=True, enable_mem_efficient=True
                 ):
@@ -576,7 +575,6 @@ class MultiHeadedAttention(torch.nn.Module):
             scores = scores.float()
 
             if mask is not None:
-                print(mask)
                 # not 100% necessary but expand to nb of heads
                 mask = mask.expand(-1, self.head_count // self.parallel_gpu, -1, -1)
                 # now mask and scores have the same shape

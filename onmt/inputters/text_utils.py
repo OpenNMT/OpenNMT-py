@@ -168,7 +168,7 @@ def parse_align_idx(align_pharaoh):
     return flatten_align_idx
 
 
-def tensorify(vocabs, minibatch, device, left_pad):
+def tensorify(vocabs, minibatch, device, left_pad=False):
     """
     This function transforms a batch of example in tensors
     Each example looks like
