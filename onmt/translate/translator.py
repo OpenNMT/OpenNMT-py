@@ -658,7 +658,6 @@ class Inference(object):
             step=step,
             return_attn=self.global_scorer.has_cov_pen or return_attn,
         )
-
         # Generator forward.
         if not self.copy_attn:
             if "std" in dec_attn:
@@ -988,16 +987,6 @@ class GeneratorLM(Inference):
 
     def translate_batch(self, batch, attn_debug):
         """Translate a batch of sentences."""
-        batch_size = len(batch["srclen"])
-        if batch_size != 1:
-            warning_msg = (
-                "GeneratorLM does not support batch_size != 1"
-                " nicely. You can remove this limitation here."
-                " With batch_size > 1 the end of each input is"
-                " repeated until the input is finished. Then"
-                " generation will start."
-            )
-            self._log(warning_msg)
         with torch.no_grad():
             if self.sample_from_topk != 0 or self.sample_from_topp != 0:
                 decode_strategy = GreedySearchLM(
@@ -1061,7 +1050,7 @@ class GeneratorLM(Inference):
             log_probs = log_probs[:, -1, :]
         return log_probs
 
-    def _translate_batch_with_strategy(self, batch, decode_strategy):
+    def _translate_batch_with_strategy(self, batch, decode_strategy, left_pad=True):
         """Translate a batch of sentences step by step using cache.
 
         Args:
@@ -1081,7 +1070,12 @@ class GeneratorLM(Inference):
         src = batch["src"]
         src_len = batch["srclen"]
 
-        src, src_len, target_prefix = self.split_src_to_prevent_padding(src, src_len)
+        if left_pad:
+            target_prefix = None
+        else:
+            src, src_len, target_prefix = self.split_src_to_prevent_padding(
+                src, src_len
+            )
 
         # (2) init decoder
         self.model.decoder.init_state(src, None, None)
@@ -1109,7 +1103,6 @@ class GeneratorLM(Inference):
             decoder_input = (
                 src if step == 0 else decode_strategy.current_predictions.view(-1, 1, 1)
             )
-
             log_probs, attn = self._decode_and_generate(
                 decoder_input,
                 None,

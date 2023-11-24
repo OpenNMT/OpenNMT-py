@@ -405,6 +405,7 @@ class MultiHeadedAttention(torch.nn.Module):
         # 1) Project key, value, and query.
         # as a reminder at training layer_cache[0] remains False
         if self.layer_cache[0]:
+            # Retrieve keys and values from the KV cache (decoding mode only).
             if self.attn_type == "self":
                 query, key, value = (
                     self.linear_query(query),
@@ -451,6 +452,7 @@ class MultiHeadedAttention(torch.nn.Module):
                 self.layer_cache[1]["keys"] = key
                 self.layer_cache[1]["values"] = value
         else:
+            # Retrieve keys and values from linear layers (training mode).
             key = self.maybe_ckpt(self.linear_keys, key)
             value = self.maybe_ckpt(self.linear_values, value)
             query = self.maybe_ckpt(self.linear_query, query)
@@ -491,12 +493,12 @@ class MultiHeadedAttention(torch.nn.Module):
             self.flash2
             and l > 256  # https://github.com/Dao-AILab/flash-attention/issues/591
         )
-
         if (
             self.max_relative_positions in [-1, 0]
             and not return_attn
             and query.device != torch.device("cpu")
         ):
+            # Apply flash2 attention.
             causal = self.is_decoder and self.attn_type == "self" and mask is not None
             if self.is_decoder and self.attn_type == "self" and flash2:
                 if causal:
@@ -514,6 +516,7 @@ class MultiHeadedAttention(torch.nn.Module):
                     window_size=window_size,
                 ).transpose(1, 2)
             else:
+                # Apply scaled dot product attention.
                 with torch.backends.cuda.sdp_kernel(
                     enable_flash=False, enable_math=True, enable_mem_efficient=True
                 ):

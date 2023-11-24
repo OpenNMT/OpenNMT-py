@@ -1,7 +1,7 @@
 """Module that contain iterator used for dynamic data."""
 import torch
 from itertools import cycle
-from onmt.constants import CorpusTask
+from onmt.constants import CorpusTask, ModelTask
 from onmt.inputters.text_corpus import get_corpora, build_corpora_iters
 from onmt.inputters.text_utils import (
     text_sort_key,
@@ -164,6 +164,10 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
         self.skip_empty_level = skip_empty_level
         self.random_shuffler = RandomShuffler()
         self.bucket_idx = 0
+        if task != CorpusTask.TRAIN and vocabs["data_task"] == ModelTask.LANGUAGE_MODEL:
+            self.left_pad = True
+        else:
+            self.left_pad = False
 
     @classmethod
     def from_opt(
@@ -354,7 +358,9 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
                 # within the batch
                 if self.task == CorpusTask.TRAIN:
                     minibatch.sort(key=lambda x: self.sort_key(x[0]), reverse=True)
-                tensor_batch = tensorify(self.vocabs, minibatch, self.device)
+                tensor_batch = tensorify(
+                    self.vocabs, minibatch, self.device, self.left_pad
+                )
                 yield (tensor_batch, bucket_idx)
 
 
