@@ -48,6 +48,8 @@ class InferenceEngine(object):
                 src=src,
                 device_id=self.device_id,
             )
+            print("## infer_iter.left_pad: ", infer_iter.left_pad)
+            print("## infer_iter.batch_size: ", infer_iter.batch_size)
             scores, preds = self._translate(infer_iter)
         else:
             scores, preds = self.infer_list_parallel(src)

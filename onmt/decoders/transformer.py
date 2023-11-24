@@ -184,6 +184,25 @@ class TransformerDecoderLayerBase(nn.Module):
     def _forward(self, *args, **kwargs):
         raise NotImplementedError
 
+    # def _compute_dec_mask(self, tgt_pad_mask, future):
+    #     tgt_len = tgt_pad_mask.size(-1)
+    #     if not future:
+    #         # add triangular furure_mask and pad mask, result mask in (B, T, T).
+    #         future_mask = torch.ones(
+    #             [tgt_len, tgt_len],
+    #             device=tgt_pad_mask.device,
+    #             dtype=torch.uint8,
+    #         )
+    #         future_mask = future_mask.tril_(0)
+    #         if self.sliding_window > 0:
+    #             future_mask = future_mask.triu_(-self.sliding_window)
+    #         future_mask = future_mask.bool()
+    #         future_mask = ~future_mask.view(1, tgt_len, tgt_len)
+    #         dec_mask = torch.gt(tgt_pad_mask + future_mask, 0)
+    #     else:  # only mask padding, result mask in (B, 1, T)
+    #         dec_mask = tgt_pad_mask
+    #     return dec_mask
+
     def _compute_dec_mask(self, tgt_pad_mask, future):
         tgt_len = tgt_pad_mask.size(-1)
         if not future:  # apply future_mask, result mask in (B, T, T)
@@ -198,10 +217,13 @@ class TransformerDecoderLayerBase(nn.Module):
             future_mask = future_mask.bool()
             future_mask = ~future_mask.view(1, tgt_len, tgt_len)
 
+
+            patch_mask = ~torch.all(tgt_pad_mask + future_mask, dim=2, keepdim=True).expand_as(tgt_pad_mask + future_mask)
             dec_mask = torch.gt(tgt_pad_mask + future_mask, 0)
+            dec_mask = torch.logical_and(dec_mask, patch_mask)
         else:  # only mask padding, result mask in (B, 1, T)
             dec_mask = tgt_pad_mask
-        return dec_mask
+        return dec_mask 
 
     def _forward_self_attn(self, norm_layer_in, dec_mask, step, return_attn=False):
         if self.self_attn_type == "scaled-dot":
@@ -715,12 +737,12 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
 
         """
         dec_mask = None
+
         if layer_in.size(1) > 1:
-            if step is None:
-                # training case. We need to apply the triangular mask
-                dec_mask = self._compute_dec_mask(tgt_pad_mask, future)
-            else:
-                dec_mask = tgt_pad_mask
+            # Masking is necessary when sequence length is greater than one
+            # The decoding has not started yet,
+            # we compute the scores on the source tokens in one shot.
+            dec_mask = self._compute_dec_mask(tgt_pad_mask, future)
             dec_mask = dec_mask.unsqueeze(1)
             dec_mask = dec_mask.expand(-1, -1, dec_mask.size(3), -1)
             # mask now are (batch x 1 x tlen x tlen)
@@ -861,8 +883,11 @@ class TransformerLMDecoder(TransformerDecoderBase):
     def forward(self, tgt, enc_out=None, step=None, **kwargs):
         """Decode, possibly stepwise."""
         if step == 0:
+            # decoding mode.
+            # Initialize KV cache.
             self._init_cache(tgt)
         elif step is None:
+            # training mode.
             for layer in self.transformer_layers:
                 layer.self_attn.layer_cache = (
                     False,

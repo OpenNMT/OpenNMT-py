@@ -405,6 +405,7 @@ class MultiHeadedAttention(torch.nn.Module):
         # 1) Project key, value, and query.
         # as a reminder at training layer_cache[0] remains False
         if self.layer_cache[0]:
+            # Retrieve keys and values from the KV cache (decoding mode only).
             if self.attn_type == "self":
                 query, key, value = (
                     self.linear_query(query),
@@ -451,6 +452,7 @@ class MultiHeadedAttention(torch.nn.Module):
                 self.layer_cache[1]["keys"] = key
                 self.layer_cache[1]["values"] = value
         else:
+            # Retrieve keys and values from linear layers (training mode).
             key = self.maybe_ckpt(self.linear_keys, key)
             value = self.maybe_ckpt(self.linear_values, value)
             query = self.maybe_ckpt(self.linear_query, query)
@@ -491,16 +493,14 @@ class MultiHeadedAttention(torch.nn.Module):
             self.flash2
             and l > 256  # https://github.com/Dao-AILab/flash-attention/issues/591
         )
-
+        # if False:
         if (
             self.max_relative_positions in [-1, 0]
             and not return_attn
             and query.device != torch.device("cpu")
         ):
-            causal = self.is_decoder and self.attn_type == "self" and mask is not None and step is None
-            # causal = False
-            causal = True
-            # print(self.is_decoder, self.attn_type, flash2) # True self False
+            # applys flash2 attention
+            causal = self.is_decoder and self.attn_type == "self" and mask is not None
             if self.is_decoder and self.attn_type == "self" and flash2:
             # error: 'MultiHeadedAttention' object has no attribute 'flash_attn_func'
                 if causal:
@@ -518,7 +518,7 @@ class MultiHeadedAttention(torch.nn.Module):
                     window_size=window_size,
                 ).transpose(1, 2)
             else:
-                print("##")
+
                 with torch.backends.cuda.sdp_kernel(
                     enable_flash=False, enable_math=True, enable_mem_efficient=True
                 ):
@@ -577,6 +577,7 @@ class MultiHeadedAttention(torch.nn.Module):
             scores = scores.float()
 
             if mask is not None:
+                print(mask)
                 # not 100% necessary but expand to nb of heads
                 mask = mask.expand(-1, self.head_count // self.parallel_gpu, -1, -1)
                 # now mask and scores have the same shape
