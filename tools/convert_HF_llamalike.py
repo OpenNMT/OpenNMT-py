@@ -263,7 +263,7 @@ if __name__ == "__main__":
 
     onmt_cp["vocab"] = {}
     onmt_cp["vocab"] = vocabs_to_dict(vocabs)
-    
+
     directory_path, _ = os.path.split(opt.output)
     os.makedirs(directory_path, exist_ok=True)
     with open(
