@@ -82,7 +82,7 @@ if __name__ == "__main__":
     vocab_size = config.vocab_size
     transformer_ff = config.intermediate_size
 
-    if hasattr(config, "num_key_value_heads"):
+    if hasattr(config, "num_key_value_heads") and config.num_key_value_heads != heads:
         num_kv = config.num_key_value_heads
     else:
         num_kv = 0
@@ -263,13 +263,15 @@ if __name__ == "__main__":
 
     onmt_cp["vocab"] = {}
     onmt_cp["vocab"] = vocabs_to_dict(vocabs)
-    """
+    
+    directory_path, _ = os.path.split(opt.output)
+    os.makedirs(directory_path, exist_ok=True)
     with open(
-        os.path.join(opt.model_dir, "openllama.vocab"), "w", encoding="utf-8"
+        os.path.join(directory_path, "vocab.txt"), "w", encoding="utf-8"
     ) as vocabfile:
         for tok in onmt_cp["vocab"]["src"]:
             vocabfile.write(tok + "\n")
-    """
+
     onmt_cp["opt"] = Namespace(
         config=None,
         save_config=None,
