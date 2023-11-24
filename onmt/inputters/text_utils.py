@@ -195,7 +195,9 @@ def tensorify(vocabs, minibatch, device, left_pad):
     tensor_batch = {}
     if left_pad:
         tbatchsrc = [
-            torch.tensor(ex["src"]["src_ids"], dtype=torch.long, device=device).flip(dims=[0])
+            torch.tensor(ex["src"]["src_ids"], dtype=torch.long, device=device).flip(
+                dims=[0]
+            )
             for ex, indice in minibatch
         ]
     else:

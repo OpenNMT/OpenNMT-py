@@ -184,28 +184,10 @@ class TransformerDecoderLayerBase(nn.Module):
     def _forward(self, *args, **kwargs):
         raise NotImplementedError
 
-    # def _compute_dec_mask(self, tgt_pad_mask, future):
-    #     tgt_len = tgt_pad_mask.size(-1)
-    #     if not future:
-    #         # add triangular furure_mask and pad mask, result mask in (B, T, T).
-    #         future_mask = torch.ones(
-    #             [tgt_len, tgt_len],
-    #             device=tgt_pad_mask.device,
-    #             dtype=torch.uint8,
-    #         )
-    #         future_mask = future_mask.tril_(0)
-    #         if self.sliding_window > 0:
-    #             future_mask = future_mask.triu_(-self.sliding_window)
-    #         future_mask = future_mask.bool()
-    #         future_mask = ~future_mask.view(1, tgt_len, tgt_len)
-    #         dec_mask = torch.gt(tgt_pad_mask + future_mask, 0)
-    #     else:  # only mask padding, result mask in (B, 1, T)
-    #         dec_mask = tgt_pad_mask
-    #     return dec_mask
-
     def _compute_dec_mask(self, tgt_pad_mask, future):
         tgt_len = tgt_pad_mask.size(-1)
-        if not future:  # apply future_mask, result mask in (B, T, T)
+        if not future:
+            # Add triangular future_mask and pad_mask, result mask in (B, T, T).
             future_mask = torch.ones(
                 [tgt_len, tgt_len],
                 device=tgt_pad_mask.device,
@@ -216,14 +198,16 @@ class TransformerDecoderLayerBase(nn.Module):
                 future_mask = future_mask.triu_(-self.sliding_window)
             future_mask = future_mask.bool()
             future_mask = ~future_mask.view(1, tgt_len, tgt_len)
-
-
-            patch_mask = ~torch.all(tgt_pad_mask + future_mask, dim=2, keepdim=True).expand_as(tgt_pad_mask + future_mask)
+            # Patch for scaled dot product attention.
+            patch_mask = ~torch.all(
+                tgt_pad_mask + future_mask, dim=2, keepdim=True
+            ).expand_as(tgt_pad_mask + future_mask)
             dec_mask = torch.gt(tgt_pad_mask + future_mask, 0)
             dec_mask = torch.logical_and(dec_mask, patch_mask)
-        else:  # only mask padding, result mask in (B, 1, T)
+        else:
+            # Only mask padding, result mask in (B, 1, T).
             dec_mask = tgt_pad_mask
-        return dec_mask 
+        return dec_mask
 
     def _forward_self_attn(self, norm_layer_in, dec_mask, step, return_attn=False):
         if self.self_attn_type == "scaled-dot":

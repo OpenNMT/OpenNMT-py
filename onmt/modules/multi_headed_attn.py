@@ -499,10 +499,9 @@ class MultiHeadedAttention(torch.nn.Module):
             and not return_attn
             and query.device != torch.device("cpu")
         ):
-            # applys flash2 attention
+            # Apply flash2 attention.
             causal = self.is_decoder and self.attn_type == "self" and mask is not None
             if self.is_decoder and self.attn_type == "self" and flash2:
-            # error: 'MultiHeadedAttention' object has no attribute 'flash_attn_func'
                 if causal:
                     window_size = (
                         (-1, -1) if sliding_window == 0 else (sliding_window, 0)
@@ -518,7 +517,7 @@ class MultiHeadedAttention(torch.nn.Module):
                     window_size=window_size,
                 ).transpose(1, 2)
             else:
-
+                # Apply scaled_dot_product_attention.
                 with torch.backends.cuda.sdp_kernel(
                     enable_flash=False, enable_math=True, enable_mem_efficient=True
                 ):
