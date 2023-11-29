@@ -23,9 +23,7 @@ jobs:
     strategy:
       matrix:
         cuda_version: [11.8.0, 12.1.0]
-    permissions:
-      id-token: write
-      contents: read
+    permissions: write-all
     steps:
     - name: Checkout opennmt repo
       uses: actions/checkout@v4
