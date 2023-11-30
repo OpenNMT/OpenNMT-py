@@ -731,7 +731,10 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
             dec_mask = dec_mask.expand(-1, -1, dec_mask.size(3), -1)
             # mask now are (batch x 1 x tlen x tlen)
             # 1 = heads to be expanded in MHA
-
+        # else:          
+        #     dec_mask = tgt_pad_mask
+        #     dec_mask = dec_mask.unsqueeze(1)
+ 
         norm_layer_in = self.layer_norm_1(layer_in)
 
         attn_output, attns = self._forward_self_attn(
@@ -870,6 +873,9 @@ class TransformerLMDecoder(TransformerDecoderBase):
             # decoding mode.
             # Initialize KV cache.
             self._init_cache(tgt)
+            pad_idx = self.embeddings.word_padding_idx
+            self.tgt_pad_mask = tgt[:, :, 0].eq(pad_idx).unsqueeze(1)  # [B, 1, T_tgt]
+    
         elif step is None:
             # training mode.
             for layer in self.transformer_layers:
@@ -877,13 +883,17 @@ class TransformerLMDecoder(TransformerDecoderBase):
                     False,
                     {"keys": torch.tensor([]), "values": torch.tensor([])},
                 )
+        # elif step > 0:
+        #     y = torch.zeros((self.tgt_pad_mask.size(0), self.tgt_pad_mask.size(1), 1),  dtype=torch.bool, device=self.tgt_pad_mask.device)
+        #     self.tgt_pad_mask = torch.cat((self.tgt_pad_mask, y), 2)
 
+        print('tgt_pad_mask', self.tgt_pad_mask.size())
+        print(self.tgt_pad_mask)
+    
         dec_out = self.embeddings(tgt, step=step)
 
         assert dec_out.dim() == 3  # batch x len x embedding_dim
 
-        pad_idx = self.embeddings.word_padding_idx
-        tgt_pad_mask = tgt[:, :, 0].eq(pad_idx).unsqueeze(1)  # [B, 1, T_tgt]
 
         with_align = kwargs.pop("with_align", False)
         return_attn = kwargs.pop("return_attn", False)
@@ -893,7 +903,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
         for layer in self.transformer_layers:
             dec_out, attn, _ = layer(
                 dec_out,
-                tgt_pad_mask,
+                self.tgt_pad_mask,
                 step=step,
                 with_align=with_align,
                 return_attn=return_attn,

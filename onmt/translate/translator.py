@@ -1100,6 +1100,7 @@ class GeneratorLM(Inference):
 
         # (4) Begin decoding step by step:
         for step in range(decode_strategy.max_length):
+            print("## step", step)
             decoder_input = (
                 src if step == 0 else decode_strategy.current_predictions.view(-1, 1, 1)
             )
@@ -1150,7 +1151,7 @@ class GeneratorLM(Inference):
         tgt = batch["tgt"]
 
         log_probs, attn = self._decode_and_generate(
-            src,
+            None, # tgt_pad_mask
             None,
             batch,
             src_len=src_len,
