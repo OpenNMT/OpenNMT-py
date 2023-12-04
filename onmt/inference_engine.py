@@ -2,7 +2,7 @@ import json
 from onmt.constants import CorpusTask, DefaultTokens, ModelTask
 from onmt.inputters.dynamic_iterator import build_dynamic_dataset_iter
 from onmt.utils.distributed import ErrorHandler, spawned_infer
-from onmt.utils.logging import logger
+from onmt.utils.logging import init_logger
 from onmt.transforms import get_transforms_cls, make_transforms, TransformPipe
 
 
@@ -82,6 +82,7 @@ class InferenceEnginePY(InferenceEngine):
 
         super().__init__(opt)
         self.opt = opt
+        self.logger = init_logger(opt.log_file)
 
         if opt.world_size > 1:
             mp = torch.multiprocessing.get_context("spawn")
@@ -91,10 +92,6 @@ class InferenceEnginePY(InferenceEngine):
             self.queue_instruct = []
             self.queue_result = []
             self.procs = []
-
-            print("world_size: ", opt.world_size)
-            print("gpu_ranks: ", opt.gpu_ranks)
-            print("opt.gpu: ", opt.gpu)
 
             for device_id in range(opt.world_size):
                 self.queue_instruct.append(mp.Queue())
@@ -113,12 +110,11 @@ class InferenceEnginePY(InferenceEngine):
                     )
                 )
                 self.procs[device_id].start()
-                print(" Starting process pid: %d  " % self.procs[device_id].pid)
                 self.error_handler.add_child(self.procs[device_id].pid)
         else:
-            self.device_id = 0 if opt.world_size == 1 else -1
+            self.device_id = opt.gpu
             self.translator = build_translator(
-                opt, self.device_id, logger=logger, report_score=True
+                opt, self.device_id, logger=self.logger, report_score=True
             )
             self.transforms_cls = get_transforms_cls(opt._all_transform)
             self.vocabs = self.translator.vocabs
@@ -168,9 +164,9 @@ class InferenceEngineCT2(InferenceEngine):
 
         super().__init__(opt)
         self.opt = opt
-        self.logger = logger
+        self.logger = init_logger(opt.log_file)
         assert self.opt.world_size <= 1, "World size must be less than 1."
-        self.device_id = 0 if opt.world_size == 1 else -1
+        self.device_id = opt.gpu
         if opt.world_size == 1:
             self.device_index = opt.gpu_ranks
             self.device = "cuda"

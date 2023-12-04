@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 import torch
+import json
 import argparse
 import pyonmttok
+import safetensors
 from argparse import Namespace
 from onmt.inputters.inputter import vocabs_to_dict
 from onmt.constants import DefaultTokens
 from sentencepiece import SentencePieceProcessor
 import os
-from transformers import AutoModelForCausalLM, AutoConfig
 import huggingface_hub
 from safetensors.torch import save_file
 
@@ -43,21 +44,42 @@ if __name__ == "__main__":
     parser.add_argument(
         "--nshards", type=int, default=1, help="""Path to the model directory"""
     )
+    parser.add_argument(
+        "--token",
+        type=str,
+        default="",
+        help="""HF token""",
+    )
+
     opt = parser.parse_args()
 
-    model = AutoModelForCausalLM.from_pretrained(
-        opt.model_dir,
-        torch_dtype=torch.float16,
-        # device_map={"": "cpu"},
-        trust_remote_code=True,
-    )
-    checkpoint = model.state_dict()
-
-    if opt.format == "pytorch" and opt.nshards > 1:
-        raise ValueError("Saving several shards in pytorch format is not supported")
-
-    if os.path.exists(os.path.join(opt.model_dir, "tokenizer.model")):
-        tokenizer_model = os.path.join(opt.model_dir, "tokenizer.model")
+    if os.path.exists(opt.model_dir):
+        if os.path.exists(os.path.join(opt.model_dir, "config.json")):
+            config_path = os.path.join(opt.model_dir, "config.json")
+        else:
+            raise ValueError("You used a local directory but config.json is missing")
+        if os.path.exists(os.path.join(opt.model_dir, "model.safetensors.index.json")):
+            wmap_path = os.path.join(opt.model_dir, "model.safetensors.index.json")
+        elif os.path.exists(
+            os.path.join(opt.model_dir, "pytorch_model.bin.index.json")
+        ):
+            wmap_path = os.path.join(opt.model_dir, "pytorch_model.bin.index.json")
+        elif os.path.exists(os.path.join(opt.model_dir, "model.safetensors")):
+            wmap_path = None
+            model_path = os.path.join(opt.model_dir, "model.safetensors")
+        elif os.path.exists(os.path.join(opt.model_dir, "pytorch_model.bin")):
+            wmap_path = None
+            model_path = os.path.join(opt.model_dir, "pytorch_model.bin")
+        else:
+            raise ValueError(
+                "Could not find any proper model configuration, please check your files"
+            )
+        if os.path.exists(os.path.join(opt.model_dir, "tokenizer.model")):
+            tokenizer_model = os.path.join(opt.model_dir, "tokenizer.model")
+        else:
+            raise ValueError(
+                "You used a local directory but tokenizer.model is missing"
+            )
     else:
         directory_path, _ = os.path.split(opt.output)
         os.makedirs(directory_path, exist_ok=True)
@@ -66,48 +88,101 @@ if __name__ == "__main__":
                 repo_id=opt.model_dir,
                 filename="tokenizer.model",
                 local_dir=directory_path,
+                token=opt.token,
             )
         except huggingface_hub.utils.EntryNotFoundError:
-            print(
+            raise huggingface_hub.utils.EntryNotFoundError(
                 "Make sure the repo contains tokenizer.model - needed for all Llama-like models"
             )
-            exit()
+        try:
+            config_path = huggingface_hub.hf_hub_download(
+                repo_id=opt.model_dir,
+                filename="config.json",
+                local_dir=directory_path,
+                token=opt.token,
+            )
+        except huggingface_hub.utils.EntryNotFoundError:
+            raise huggingface_hub.utils.EntryNotFoundError(
+                "Something went wrong the repo does not contain any config.json file"
+            )
+        try:
+            wmap_path = huggingface_hub.hf_hub_download(
+                repo_id=opt.model_dir,
+                filename="model.safetensors.index.json",
+                local_dir=directory_path,
+                token=opt.token,
+            )
+        except huggingface_hub.utils.EntryNotFoundError:
+            try:
+                wmap_path = huggingface_hub.hf_hub_download(
+                    repo_id=opt.model_dir,
+                    filename="pytorch_model.bin.index.json",
+                    local_dir=directory_path,
+                    token=opt.token,
+                )
+            except huggingface_hub.utils.EntryNotFoundError:
+                try:
+                    model_path = huggingface_hub.hf_hub_download(
+                        repo_id=opt.model_dir,
+                        filename="model.safetensors",
+                        local_dir=directory_path,
+                        token=opt.token,
+                    )
+                    wmap_path = None
+                except huggingface_hub.utils.EntryNotFoundError:
+                    try:
+                        model_path = huggingface_hub.hf_hub_download(
+                            repo_id=opt.model_dir,
+                            filename="pytorch_model.bin",
+                            local_dir=directory_path,
+                            token=opt.token,
+                        )
+                        wmap_path = None
+                    except huggingface_hub.utils.EntryNotFoundError:
+                        raise huggingface_hub.utils.EntryNotFoundError(
+                            "No valid model files found"
+                        )
 
-    config = AutoConfig.from_pretrained(opt.model_dir)
-    decoder_layers = config.num_hidden_layers
-    src_word_vec_size = config.hidden_size
-    tgt_word_vec_size = config.hidden_size
-    hidden_size = config.hidden_size
-    heads = config.num_attention_heads
-    vocab_size = config.vocab_size
-    transformer_ff = config.intermediate_size
+    with open(config_path, encoding="utf-8") as fconfig:
+        config = json.load(fconfig)
 
-    if hasattr(config, "num_key_value_heads") and config.num_key_value_heads != heads:
-        num_kv = config.num_key_value_heads
+    decoder_layers = config["num_hidden_layers"]
+    src_word_vec_size = config["hidden_size"]
+    tgt_word_vec_size = config["hidden_size"]
+    hidden_size = config["hidden_size"]
+    heads = config["num_attention_heads"]
+    vocab_size = config["vocab_size"]
+    transformer_ff = config["intermediate_size"]
+
+    if (
+        "num_key_value_heads" in config.keys()
+        and config["num_key_value_heads"] != heads
+    ):
+        num_kv = config["num_key_value_heads"]
     else:
         num_kv = 0
-    if hasattr(config, "rms_norm_eps"):
-        norm_eps = config.rms_norm_eps
+    if "rms_norm_eps" in config.keys():
+        norm_eps = config["rms_norm_eps"]
     else:
         norm_eps = 1e-6
-    if hasattr(config, "sliding_window"):
-        sliding_window = config.sliding_window
+    if "sliding_window" in config.keys():
+        sliding_window = config["sliding_window"]
     else:
         sliding_window = 0
 
-    if hasattr(config, "quantization_config"):
+    if "quantization_config" in config.keys():
         if (
-            "quant_method" in config.quantization_config.keys()
-            and config.quantization_config["quant_method"] == "awq"
+            "quant_method" in config["quantization_config"].keys()
+            and config["quantization_config"]["quant_method"] == "awq"
         ):
-            if "backend" in config.quantization_config.keys():
-                backend = config.quantization_config["backend"]
+            if "backend" in config["quantization_config"].keys():
+                backend = config["quantization_config"]["backend"]
                 if backend == "llm-awq":
                     quant_type = "llm_awq"
                 elif backend == "autoawq":
-                    if config.quantization_config["version"].lower() == "gemm":
+                    if config["quantization_config"]["version"].lower() == "gemm":
                         quant_type = "aawq_gemm"
-                    elif config.quantization_config["version"].lower() == "gemv":
+                    elif config["quantization_config"]["version"].lower() == "gemv":
                         quant_type = "aawq_gemv"
                     else:
                         raise ValueError("Unknown quantization config")
@@ -115,22 +190,22 @@ if __name__ == "__main__":
                     raise ValueError("Unknown backend config")
             else:
                 print("Backend not specified in config, using Autoawq")
-                if config.quantization_config["version"].lower() == "gemm":
+                if config["quantization_config"]["version"].lower() == "gemm":
                     quant_type = "aawq_gemm"
-                elif config.quantization_config["version"].lower() == "gemv":
+                elif config["quantization_config"]["version"].lower() == "gemv":
                     quant_type = "aawq_gemv"
                 else:
                     raise ValueError("Unknown quantization config")
         else:
             raise ValueError("Can convert only awq models for now")
-        if "bits" in config.quantization_config.keys():
-            w_bit = config.quantization_config["bits"]
+        if "bits" in config["quantization_config"].keys():
+            w_bit = config["quantization_config"]["bits"]
         else:
-            w_bit = config.quantization_config["w_bit"]
-        if "group_size" in config.quantization_config.keys():
-            group_size = config.quantization_config["group_size"]
+            w_bit = config["quantization_config"]["w_bit"]
+        if "group_size" in config["quantization_config"].keys():
+            group_size = config["quantization_config"]["group_size"]
         else:
-            group_size = config.quantization_config["q_group_size"]
+            group_size = config["quantization_config"]["q_group_size"]
 
         quant_layers = [
             "w_1",
@@ -151,87 +226,158 @@ if __name__ == "__main__":
 
     onmt_cp = {}
 
+    if wmap_path:
+        with open(wmap_path, encoding="utf-8") as fweights:
+            wmap = json.load(fweights)
+
+    def get_load_ckpt(dir_path, file_path):
+        if os.path.exists(os.path.join(dir_path, file_path)):
+            ckpt_path = os.path.join(dir_path, file_path)
+        else:
+            try:
+                ckpt_path = huggingface_hub.hf_hub_download(
+                    repo_id=opt.model_dir,
+                    filename=file_path,
+                    local_dir=dir_path,
+                    token=opt.token,
+                )
+            except huggingface_hub.utils.EntryNotFoundError:
+                raise huggingface_hub.utils.EntryNotFoundError(
+                    "Checkpoint not found on the hub"
+                )
+            except PermissionError:
+                ckpt_path = os.path.join(dir_path, file_path)
+        if ckpt_path[-3:] == ".pt":
+            checkpoint = torch.load(ckpt_path, map_location=torch.device("cpu"))
+        else:
+            checkpoint = ckpt_path
+
+        return checkpoint
+
+    def get_weight(checkpoint, tensor_name):
+        if isinstance(checkpoint, dict):
+            if tensor_name in checkpoint.keys():
+                return checkpoint[tensor_name]
+            else:
+                return None
+        else:
+            with safetensors.safe_open(checkpoint, framework="pt", device="cpu") as f:
+                if tensor_name in f.keys():
+                    return f.get_tensor(tensor_name)
+                else:
+                    return None
+
     for shard in range(opt.nshards):
 
         print("starting output shard: %d/%d" % (shard + 1, opt.nshards))
         onmt_safetensor = {}
 
         if shard == 0:
-            onmt_safetensor[
-                "decoder.embeddings.make_embedding.emb_luts.0.weight"
-            ] = checkpoint["model.embed_tokens.weight"]
-            onmt_safetensor["decoder.layer_norm.weight"] = checkpoint[
-                "model.norm.weight"
+            sourcelist = [
+                "model.embed_tokens.weight",
+                "model.norm.weight",
+                "lm_head.weight",
+            ]
+            targetlist = [
+                "decoder.embeddings.make_embedding.emb_luts.0.weight",
+                "decoder.layer_norm.weight",
+                "generator.weight",
             ]
 
-            onmt_safetensor["generator.weight"] = checkpoint["lm_head.weight"]
+            for source, target in zip(sourcelist, targetlist):
+                if wmap_path:
+                    checkpoint = get_load_ckpt(
+                        os.path.split(wmap_path)[0], wmap["weight_map"][source]
+                    )
+                else:
+                    checkpoint = get_load_ckpt(*os.path.split(model_path))
+                w = get_weight(checkpoint, source)
+                if w is not None:
+                    onmt_safetensor[target] = w
+
             onmt_safetensor["generator.bias"] = torch.zeros(
                 onmt_safetensor["generator.weight"].size(0), dtype=torch.float16
             )
 
-        for i in range(
-            -(decoder_layers // -opt.nshards) * shard,
-            min(-(decoder_layers // -opt.nshards) * (shard + 1), decoder_layers),
-            1,
-        ):
-            onmt_safetensor[
-                "decoder.transformer_layers." + str(i) + ".layer_norm_1.weight"
-            ] = checkpoint["model.layers." + str(i) + ".input_layernorm.weight"]
+        if wmap_path:
+            weightmap = wmap["weight_map"]
+            ckpt_list = []
+            for key in weightmap.keys():
+                if (
+                    key.startswith("model.layers.")
+                    and int(key.split(".")[2])
+                    in range(
+                        -(decoder_layers // -opt.nshards) * shard,
+                        min(
+                            -(decoder_layers // -opt.nshards) * (shard + 1),
+                            decoder_layers,
+                        ),
+                        1,
+                    )
+                    and weightmap[key] not in ckpt_list
+                ):
+                    ckpt_list.append(weightmap[key])
+        else:
+            ckpt_list = [model_path]
 
-            for param in params:
-                onmt_safetensor[
-                    "decoder.transformer_layers."
-                    + str(i)
-                    + ".self_attn.linear_query."
-                    + param
-                ] = checkpoint["model.layers." + str(i) + ".self_attn.q_proj." + param]
-                onmt_safetensor[
-                    "decoder.transformer_layers."
-                    + str(i)
-                    + ".self_attn.linear_keys."
-                    + param
-                ] = checkpoint["model.layers." + str(i) + ".self_attn.k_proj." + param]
-                onmt_safetensor[
-                    "decoder.transformer_layers."
-                    + str(i)
-                    + ".self_attn.linear_values."
-                    + param
-                ] = checkpoint["model.layers." + str(i) + ".self_attn.v_proj." + param]
+        for ckpt in ckpt_list:
+            print("Loading %s" % ckpt)
+            if wmap_path:
+                checkpoint = get_load_ckpt(os.path.split(wmap_path)[0], ckpt)
+            else:
+                checkpoint = get_load_ckpt(*os.path.split(model_path))
+            for i in range(
+                -(decoder_layers // -opt.nshards) * shard,
+                min(-(decoder_layers // -opt.nshards) * (shard + 1), decoder_layers),
+                1,
+            ):
 
-                onmt_safetensor[
-                    "decoder.transformer_layers."
-                    + str(i)
-                    + ".self_attn.final_linear."
-                    + param
-                ] = checkpoint["model.layers." + str(i) + ".self_attn.o_proj." + param]
+                w = get_weight(
+                    checkpoint, "model.layers." + str(i) + ".input_layernorm.weight"
+                )
+                if w is not None:
+                    onmt_safetensor[
+                        "decoder.transformer_layers." + str(i) + ".layer_norm_1.weight"
+                    ] = w
 
-                onmt_safetensor[
-                    "decoder.transformer_layers."
-                    + str(i)
-                    + ".feed_forward.w_1."
-                    + param
-                ] = checkpoint["model.layers." + str(i) + ".mlp.gate_proj." + param]
+                for param in params:
+                    sourcelist = [
+                        ".self_attn.q_proj.",
+                        ".self_attn.k_proj.",
+                        ".self_attn.v_proj.",
+                        ".self_attn.o_proj.",
+                        ".mlp.gate_proj.",
+                        ".mlp.down_proj.",
+                        ".mlp.up_proj.",
+                    ]
+                    targetlist = [
+                        ".self_attn.linear_query.",
+                        ".self_attn.linear_keys.",
+                        ".self_attn.linear_values.",
+                        ".self_attn.final_linear.",
+                        ".feed_forward.w_1.",
+                        ".feed_forward.w_2.",
+                        ".feed_forward.w_3.",
+                    ]
+                    for source, target in zip(sourcelist, targetlist):
+                        w = get_weight(
+                            checkpoint, "model.layers." + str(i) + source + param
+                        )
+                        if w is not None:
+                            onmt_safetensor[
+                                "decoder.transformer_layers." + str(i) + target + param
+                            ] = w
 
-                onmt_safetensor[
-                    "decoder.transformer_layers."
-                    + str(i)
-                    + ".feed_forward.w_2."
-                    + param
-                ] = checkpoint["model.layers." + str(i) + ".mlp.down_proj." + param]
-                onmt_safetensor[
-                    "decoder.transformer_layers."
-                    + str(i)
-                    + ".feed_forward.w_3."
-                    + param
-                ] = checkpoint["model.layers." + str(i) + ".mlp.up_proj." + param]
-
-            onmt_safetensor[
-                "decoder.transformer_layers."
-                + str(i)
-                + ".feed_forward.layer_norm.weight"
-            ] = checkpoint[
-                "model.layers." + str(i) + ".post_attention_layernorm.weight"
-            ]
+                w = get_weight(
+                    checkpoint,
+                    "model.layers." + str(i) + ".post_attention_layernorm.weight",
+                )
+                if w is not None:
+                    onmt_safetensor[
+                        "decoder.transformer_layers."
+                        + str(i)
+                        + ".feed_forward.layer_norm.weight"
+                    ] = w
 
         if shard == 0:
             vocab_size = onmt_safetensor["generator.weight"].size(0)
