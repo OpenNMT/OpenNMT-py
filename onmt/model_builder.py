@@ -100,7 +100,11 @@ def load_test_model(opt, device_id=0, model_path=None):
         "aawq_gemm",
         "aawq_gemv",
     ]:  # if the loaded model is a awq quantized one, inference config cannot overwrite this
-        if hasattr(opt, "quant_type") and opt.quant_type != model_opt.quant_type:
+        if (
+            hasattr(opt, "quant_type")
+            and opt.quant_type != ""
+            and opt.quant_type != model_opt.quant_type
+        ):
             raise ValueError(
                 "Model is a awq quantized model, cannot overwrite with another quant method"
             )

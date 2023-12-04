@@ -246,10 +246,19 @@ def tensorify(vocabs, minibatch, device, left_pad=False):
     )
 
     if minibatch[0][0]["tgt"] is not None:
-        tbatchtgt = [
-            torch.tensor(ex["tgt"]["tgt_ids"], dtype=torch.long, device=device)
-            for ex, indice in minibatch
-        ]
+        if left_pad:
+            tbatchtgt = [
+                torch.tensor(
+                    ex["tgt"]["tgt_ids"], dtype=torch.long, device=device
+                ).flip(dims=[0])
+                for ex, indice in minibatch
+            ]
+        else:
+            tbatchtgt = [
+                torch.tensor(ex["tgt"]["tgt_ids"], dtype=torch.long, device=device)
+                for ex, indice in minibatch
+            ]
+
         padidx = vocabs["tgt"][DefaultTokens.PAD]
         tbatchtgt = pad_sequence(tbatchtgt, batch_first=True, padding_value=padidx)
         tbatchtgt = tbatchtgt[:, :, None]
@@ -258,7 +267,10 @@ def tensorify(vocabs, minibatch, device, left_pad=False):
             dtype=torch.long,
             device=device,
         )
-        tensor_batch["tgt"] = tbatchtgt
+        if left_pad:
+            tensor_batch["tgt"] = tbatchtgt.flip(dims=[1])
+        else:
+            tensor_batch["tgt"] = tbatchtgt
         tensor_batch["tgtlen"] = tbatchtgtlen
 
     if "align" in minibatch[0][0].keys() and minibatch[0][0]["align"] is not None:

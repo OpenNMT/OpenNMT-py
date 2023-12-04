@@ -86,12 +86,12 @@ def main():
     cumul_length = 0
     # Now we can pipe the full file through the model using the Iterator
 
-    for i, batch in enumerate(infer_iter):
+    for i, (batch, bucket_idx) in enumerate(infer_iter):
         # reminder a batch includes .src .tgt .indices and it is sorted
         batch_size = len(batch["srclen"])
         src = batch["src"]
         src_len = batch["srclen"]
-
+        # print(batch)
         outputs, attns = model(src, None, src_len, with_align=False)
         # Compute and retrieve the loss for EACH sentence
         loss, _ = valid_loss(batch, outputs, attns)
@@ -102,7 +102,16 @@ def main():
         cumul_length += batch["tgt"][:, 1:, 0].ne(padding_idx).sum().cpu()
         # Now we need to rearrange the batch of ppl
         # in the original order with indices
-        sent_ppl_orig = ppl.gather(0, batch["cid_line_number"].argsort(0))
+        sent_ppl_orig = ppl.gather(
+            0,
+            torch.tensor(
+                sorted(
+                    range(len(batch["cid_line_number"])),
+                    key=lambda k: batch["cid_line_number"][k],
+                ),
+                device=ppl.device,
+            ),
+        )
         for j in range(batch_size):
             ppl_file.write(str(sent_ppl_orig[j].item()) + "\n")
     logger.info(

@@ -1564,8 +1564,16 @@ def _add_quant_opts(parser):
     group.add(
         "--quant_type",
         "-quant_type",
-        default="bnb_8bit",
-        choices=["bnb_8bit", "bnb_FP4", "bnb_NF4", "llm_awq", "aawq_gemm", "aawq_gemv"],
+        default="",
+        choices=[
+            "",
+            "bnb_8bit",
+            "bnb_FP4",
+            "bnb_NF4",
+            "llm_awq",
+            "aawq_gemm",
+            "aawq_gemv",
+        ],
         type=str,
         help="Type of compression.",
     )

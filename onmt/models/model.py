@@ -46,6 +46,10 @@ class BaseModel(nn.Module):
         raise NotImplementedError
 
     def _load_param(self, name, module, param_name, param, buf_list, ckpt_t, offset):
+        if module.__class__.__name__ == "WQLinear_GEMM":
+            # ugly patch because in_feat and out_feat are reversed in WQLinear_GEMM
+            param.data = param.data.transpose(0, 1)
+            ckpt_t = ckpt_t.transpose(0, 1)
         if name.split(".")[-1] in [
             "linear_keys",
             "linear_values",
@@ -73,13 +77,22 @@ class BaseModel(nn.Module):
                 ].size()
             ), "An error in model's partition and checkpoint's slice was detected"
             if name + "." + param_name in buf_list:
-                module.register_buffer(
-                    param_name,
-                    ckpt_t[
-                        col_slice_start:col_slice_end,
-                        row_slice_start:row_slice_end,
-                    ],
-                )
+                if module.__class__.__name__ == "WQLinear_GEMM":
+                    module.register_buffer(
+                        param_name,
+                        ckpt_t[
+                            col_slice_start:col_slice_end,
+                            row_slice_start:row_slice_end,
+                        ].transpose(0, 1),
+                    )
+                else:
+                    module.register_buffer(
+                        param_name,
+                        ckpt_t[
+                            col_slice_start:col_slice_end,
+                            row_slice_start:row_slice_end,
+                        ],
+                    )
             else:
                 param.data = ckpt_t[
                     col_slice_start:col_slice_end,
