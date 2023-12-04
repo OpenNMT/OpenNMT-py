@@ -194,10 +194,6 @@ class TransformerDecoderLayerBase(nn.Module):
         tgt_len = tgt_pad_mask.size(-1)
         batch_size = tgt_pad_mask.size(0)
         pad_mask = self.reshape_pad_mask(tgt_pad_mask)
-        print(tgt_len, batch_size)
-        print('future', future)
-        print('pad_mask')
-        # print(pad_mask)
         if not future:
             # Add triangular future_mask and pad_mask, result mask in (B, T, T).
             future_mask = torch.ones(
@@ -208,8 +204,6 @@ class TransformerDecoderLayerBase(nn.Module):
             future_mask = future_mask.tril_(0)
             future_mask = future_mask.bool()
             future_mask = ~future_mask.repeat(batch_size, 1, 1)
-            print('future_mask')
-            # print(future_mask)
             dec_mask = torch.logical_or(future_mask, pad_mask)
             dec_mask = dec_mask.unsqueeze(1)
             dec_mask.expand(-1, -1, dec_mask.size(3), -1)
@@ -890,8 +884,6 @@ class TransformerLMDecoder(TransformerDecoderBase):
             y = torch.zeros((self.tgt_pad_mask.size(0), self.tgt_pad_mask.size(1), 1), dtype=torch.bool, device=self.tgt_pad_mask.device)
             self.tgt_pad_mask = torch.cat((self.tgt_pad_mask, y), 2)
 
-        print('tgt_pad_mask', self.tgt_pad_mask.size())
-        print(self.tgt_pad_mask)
     
         dec_out = self.embeddings(tgt, step=step)
 
@@ -903,10 +895,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
         return_attn = with_align or self._copy or return_attn
         assert not with_align, "TransformerLMDecoder does not support align"
 
-        l = 0
         for layer in self.transformer_layers:
-            l += 1
-            print('## layer: ', l)
             dec_out, attn, _ = layer(
                 dec_out,
                 self.tgt_pad_mask,
@@ -914,9 +903,6 @@ class TransformerLMDecoder(TransformerDecoderBase):
                 with_align=with_align,
                 return_attn=return_attn,
             )
-    
-            # if l > 2:
-            #     break
 
         dec_out = self.layer_norm(dec_out)
 

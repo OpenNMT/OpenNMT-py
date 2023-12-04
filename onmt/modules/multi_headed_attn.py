@@ -402,10 +402,8 @@ class MultiHeadedAttention(torch.nn.Module):
            * output context vectors ``(batch, query_len, dim)``
            * Attention vector in heads ``(batch, head, query_len, key_len)``.
         """
-        print('mask: ', mask)
         # 1) Project key, value, and query.
         # as a reminder at training layer_cache[0] remains False
-        print("## key", key.size())
         if self.layer_cache[0]:
             # Retrieve keys and values from the KV cache (decoding mode only).
             if self.attn_type == "self":
@@ -431,8 +429,6 @@ class MultiHeadedAttention(torch.nn.Module):
                     )
 
                 if self.layer_cache[1]["keys"].numel() != 0:
-                    print('## concat')
-                    print('## previous keys', self.layer_cache[1]["keys"].size())
                     key = torch.cat((self.layer_cache[1]["keys"], key), dim=2)
                     value = torch.cat((self.layer_cache[1]["values"], value), dim=2)
                     if sliding_window > 0 and key.size(2) > sliding_window:
@@ -497,15 +493,12 @@ class MultiHeadedAttention(torch.nn.Module):
             self.flash2
             and l > 256  # https://github.com/Dao-AILab/flash-attention/issues/591
         )
-        if False:
-        # if (
-        #     self.max_relative_positions in [-1, 0]
-        #     and not return_attn
-        #     and query.device != torch.device("cpu")
-        # ):
+        if (
+            self.max_relative_positions in [-1, 0]
+            and not return_attn
+            and query.device != torch.device("cpu")
+        ):
             # Apply flash2 attention.
-            print("query", query.size())
-            print("key", key.size())
             causal = self.is_decoder and self.attn_type == "self" and mask is not None
             if self.is_decoder and self.attn_type == "self" and flash2:
                 if causal:
@@ -585,17 +578,10 @@ class MultiHeadedAttention(torch.nn.Module):
                 # not 100% necessary but expand to nb of heads
                 mask = mask.expand(-1, self.head_count // self.parallel_gpu, -1, -1)
                 # now mask and scores have the same shape
-                if mask.size() == scores.size():
-                    scores = scores.masked_fill(mask, -1e18)
-                else: 
-                    print('## size issue')
-                    print(mask.size(), scores.size())
+                scores = scores.masked_fill(mask, -1e18)
 
             # 3) Apply attention dropout and compute context vectors.
             attn = self.softmax(scores).to(query.dtype)
-            print('attn')
-            print(attn.size())
-            print(attn)
             drop_attn = self.dropout(attn) if self.dropout_p > 0 else attn
 
             attn_output = torch.matmul(drop_attn, value)
