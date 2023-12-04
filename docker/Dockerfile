@@ -30,8 +30,21 @@ RUN pip3 install -v --no-build-isolation \
     --global-option="--fast_multihead_attn" \
     ./
 
+# Install flash-attention
+RUN pip install flash-attn --no-build-isolation
+
+# Install llm-awq
+RUN git clone https://github.com/mit-han-lab/llm-awq && \
+    cd llm-awq && \
+    pip install -e . && \
+    cd ..
+
+# Install AutoAWQ
+RUN pip install autoawq
+
 COPY . /opennmt-py
 WORKDIR /opennmt-py
+RUN pip install -r requirements.opt.txt
 RUN pip install -e .
 
 WORKDIR /
