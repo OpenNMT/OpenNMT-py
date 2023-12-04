@@ -619,7 +619,10 @@ class Inference(object):
             msg = "%s No translations" % (name,)
         else:
             score = score_total / nb_sentences
-            ppl = exp(-score_total / nb_sentences)
+            try:
+                ppl = exp(-score_total / nb_sentences)
+            except OverflowError:
+                ppl = float("inf")
             msg = "%s SCORE: %.4f, %s PPL: %.2f NB SENTENCES: %d" % (
                 name,
                 score,
