@@ -6,3 +6,4 @@ scipy
 bitsandbytes>=0.41.2
 safetensors
 spacy
+gradio
