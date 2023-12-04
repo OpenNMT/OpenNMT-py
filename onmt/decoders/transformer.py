@@ -184,8 +184,20 @@ class TransformerDecoderLayerBase(nn.Module):
     def _forward(self, *args, **kwargs):
         raise NotImplementedError
 
+    def reshape_pad_mask(self, x):
+        y = ~x
+        z = torch.matmul(y.transpose(1, 2).float(), y.float()).bool()
+        return ~z
+
+
     def _compute_dec_mask(self, tgt_pad_mask, future):
         tgt_len = tgt_pad_mask.size(-1)
+        batch_size = tgt_pad_mask.size(0)
+        pad_mask = self.reshape_pad_mask(tgt_pad_mask)
+        print(tgt_len, batch_size)
+        print('future', future)
+        print('pad_mask')
+        # print(pad_mask)
         if not future:
             # Add triangular future_mask and pad_mask, result mask in (B, T, T).
             future_mask = torch.ones(
@@ -194,19 +206,17 @@ class TransformerDecoderLayerBase(nn.Module):
                 dtype=torch.uint8,
             )
             future_mask = future_mask.tril_(0)
-            if self.sliding_window > 0:
-                future_mask = future_mask.triu_(-self.sliding_window)
             future_mask = future_mask.bool()
-            future_mask = ~future_mask.view(1, tgt_len, tgt_len)
-            # Patch for scaled dot product attention.
-            patch_mask = ~torch.all(
-                tgt_pad_mask + future_mask, dim=2, keepdim=True
-            ).expand_as(tgt_pad_mask + future_mask)
-            dec_mask = torch.gt(tgt_pad_mask + future_mask, 0)
-            dec_mask = torch.logical_and(dec_mask, patch_mask)
+            future_mask = ~future_mask.repeat(batch_size, 1, 1)
+            print('future_mask')
+            # print(future_mask)
+            dec_mask = torch.logical_or(future_mask, pad_mask)
+            dec_mask = dec_mask.unsqueeze(1)
+            dec_mask.expand(-1, -1, dec_mask.size(3), -1)
         else:
             # Only mask padding, result mask in (B, 1, T).
             dec_mask = tgt_pad_mask
+            dec_mask = dec_mask.unsqueeze(1)
         return dec_mask
 
     def _forward_self_attn(self, norm_layer_in, dec_mask, step, return_attn=False):
@@ -720,20 +730,11 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
             * attns ``(batch_size, head, T, T)``
 
         """
-        dec_mask = None
+        if step is not None:
+            if step > 0:
+                future = True
 
-        if layer_in.size(1) > 1:
-            # Masking is necessary when sequence length is greater than one
-            # The decoding has not started yet,
-            # we compute the scores on the source tokens in one shot.
-            dec_mask = self._compute_dec_mask(tgt_pad_mask, future)
-            dec_mask = dec_mask.unsqueeze(1)
-            dec_mask = dec_mask.expand(-1, -1, dec_mask.size(3), -1)
-            # mask now are (batch x 1 x tlen x tlen)
-            # 1 = heads to be expanded in MHA
-        # else:          
-        #     dec_mask = tgt_pad_mask
-        #     dec_mask = dec_mask.unsqueeze(1)
+        dec_mask = self._compute_dec_mask(tgt_pad_mask, future)
  
         norm_layer_in = self.layer_norm_1(layer_in)
 
@@ -879,13 +880,15 @@ class TransformerLMDecoder(TransformerDecoderBase):
         elif step is None:
             # training mode.
             for layer in self.transformer_layers:
+
                 layer.self_attn.layer_cache = (
                     False,
                     {"keys": torch.tensor([]), "values": torch.tensor([])},
                 )
-        # elif step > 0:
-        #     y = torch.zeros((self.tgt_pad_mask.size(0), self.tgt_pad_mask.size(1), 1),  dtype=torch.bool, device=self.tgt_pad_mask.device)
-        #     self.tgt_pad_mask = torch.cat((self.tgt_pad_mask, y), 2)
+
+        else:
+            y = torch.zeros((self.tgt_pad_mask.size(0), self.tgt_pad_mask.size(1), 1), dtype=torch.bool, device=self.tgt_pad_mask.device)
+            self.tgt_pad_mask = torch.cat((self.tgt_pad_mask, y), 2)
 
         print('tgt_pad_mask', self.tgt_pad_mask.size())
         print(self.tgt_pad_mask)
@@ -900,7 +903,10 @@ class TransformerLMDecoder(TransformerDecoderBase):
         return_attn = with_align or self._copy or return_attn
         assert not with_align, "TransformerLMDecoder does not support align"
 
+        l = 0
         for layer in self.transformer_layers:
+            l += 1
+            print('## layer: ', l)
             dec_out, attn, _ = layer(
                 dec_out,
                 self.tgt_pad_mask,
@@ -908,6 +914,9 @@ class TransformerLMDecoder(TransformerDecoderBase):
                 with_align=with_align,
                 return_attn=return_attn,
             )
+    
+            # if l > 2:
+            #     break
 
         dec_out = self.layer_norm(dec_out)
 
