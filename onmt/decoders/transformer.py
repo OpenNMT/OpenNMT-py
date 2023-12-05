@@ -184,16 +184,8 @@ class TransformerDecoderLayerBase(nn.Module):
     def _forward(self, *args, **kwargs):
         raise NotImplementedError
 
-    def reshape_pad_mask(self, x):
-        y = ~x
-        z = torch.matmul(y.transpose(1, 2).float(), y.float()).bool()
-        return ~z
-
-
     def _compute_dec_mask(self, tgt_pad_mask, future):
         tgt_len = tgt_pad_mask.size(-1)
-        batch_size = tgt_pad_mask.size(0)
-        pad_mask = self.reshape_pad_mask(tgt_pad_mask)
         if not future:
             # Add triangular future_mask and pad_mask, result mask in (B, T, T).
             future_mask = torch.ones(
@@ -202,15 +194,19 @@ class TransformerDecoderLayerBase(nn.Module):
                 dtype=torch.uint8,
             )
             future_mask = future_mask.tril_(0)
+            if self.sliding_window > 0:
+                future_mask = future_mask.triu_(-self.sliding_window)
             future_mask = future_mask.bool()
-            future_mask = ~future_mask.repeat(batch_size, 1, 1)
-            dec_mask = torch.logical_or(future_mask, pad_mask)
-            dec_mask = dec_mask.unsqueeze(1)
-            dec_mask.expand(-1, -1, dec_mask.size(3), -1)
+            future_mask = ~future_mask.view(1, tgt_len, tgt_len)
+            # # Patch for scaled dot product attention.
+            # patch_mask = ~torch.all(
+            #     tgt_pad_mask + future_mask, dim=2, keepdim=True
+            # ).expand_as(tgt_pad_mask + future_mask)
+            dec_mask = torch.gt(tgt_pad_mask + future_mask, 0)
+            # dec_mask = torch.logical_and(dec_mask, patch_mask)
         else:
             # Only mask padding, result mask in (B, 1, T).
             dec_mask = tgt_pad_mask
-            dec_mask = dec_mask.unsqueeze(1)
         return dec_mask
 
     def _forward_self_attn(self, norm_layer_in, dec_mask, step, return_attn=False):
@@ -724,11 +720,22 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
             * attns ``(batch_size, head, T, T)``
 
         """
-        if step is not None:
-            if step > 0:
-                future = True
+        dec_mask = None
+        if layer_in.size(1) > 1:
+            # step > 0
+            # The 2 masks (for future and pad tokens) are necessary when sequence length is greater than.
+            # The decoding has not started yet,
+            # We compute the scores on the source tokens in one shot.
 
-        dec_mask = self._compute_dec_mask(tgt_pad_mask, future)
+            dec_mask = self._compute_dec_mask(tgt_pad_mask, future=False)
+            dec_mask = dec_mask.unsqueeze(1)
+            dec_mask = dec_mask.expand(-1, -1, dec_mask.size(3), -1)
+        else:
+            # We only apply the attention mask for pad tokens.
+            dec_mask = self._compute_dec_mask(tgt_pad_mask, future=True)
+            dec_mask = dec_mask.unsqueeze(1)
+     
+
  
         norm_layer_in = self.layer_norm_1(layer_in)
 
@@ -884,7 +891,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
             y = torch.zeros((self.tgt_pad_mask.size(0), self.tgt_pad_mask.size(1), 1), dtype=torch.bool, device=self.tgt_pad_mask.device)
             self.tgt_pad_mask = torch.cat((self.tgt_pad_mask, y), 2)
 
-    
+        print('self.tgt_pad_mask', self.tgt_pad_mask)
         dec_out = self.embeddings(tgt, step=step)
 
         assert dec_out.dim() == 3  # batch x len x embedding_dim
@@ -895,7 +902,11 @@ class TransformerLMDecoder(TransformerDecoderBase):
         return_attn = with_align or self._copy or return_attn
         assert not with_align, "TransformerLMDecoder does not support align"
 
+        l = 0
+    
         for layer in self.transformer_layers:
+            # l += 1
+            # print('layer', l)
             dec_out, attn, _ = layer(
                 dec_out,
                 self.tgt_pad_mask,
@@ -903,6 +914,8 @@ class TransformerLMDecoder(TransformerDecoderBase):
                 with_align=with_align,
                 return_attn=return_attn,
             )
+            # if l == 2:
+            #     break
 
         dec_out = self.layer_norm(dec_out)
 
