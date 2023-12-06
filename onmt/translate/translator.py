@@ -660,11 +660,13 @@ class Inference(object):
         )
         # Generator forward.
         if not self.copy_attn:
+            # print('here')
             if "std" in dec_attn:
                 attn = dec_attn["std"]
             else:
                 attn = None
             scores = self.model.generator(dec_out.squeeze(1))
+            # print(dec_attn.size())
             log_probs = log_softmax(scores, dim=-1)  # we keep float16 if FP16
             # returns [(batch_size x beam_size) , vocab ] when 1 step
             # or [batch_size, tgt_len, vocab ] when full sentence
@@ -1031,6 +1033,7 @@ class GeneratorLM(Inference):
                     ratio=self.ratio,
                     ban_unk_token=self.ban_unk_token,
                 )
+            print("##  decode_strategy",  decode_strategy)
             return self._translate_batch_with_strategy(batch, decode_strategy)
 
     @classmethod
@@ -1069,6 +1072,7 @@ class GeneratorLM(Inference):
         # (1) split src into src and target_prefix to avoid padding.
         src = batch["src"]
         src_len = batch["srclen"]
+        print("## src_len:", src_len)
 
         if left_pad:
             target_prefix = None
@@ -1113,7 +1117,6 @@ class GeneratorLM(Inference):
                 step=step if step == 0 else step + src_len[0].item(),
                 batch_offset=decode_strategy.batch_offset,
             )
-
             if step == 0:
                 log_probs = self.tile_to_beam_size_after_initial_step(
                     fn_map_state, log_probs

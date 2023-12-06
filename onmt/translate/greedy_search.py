@@ -231,8 +231,14 @@ class GreedySearch(DecodeStrategy):
         self.ensure_min_length(log_probs)
         self.ensure_unk_removed(log_probs)
         self.block_ngram_repeats(log_probs)
-
+        print("## advance")
+        print("log_probs")
+        print((log_probs))
         topk_ids, self.topk_scores = self._pick(log_probs)
+        print("topk_ids")
+        print(topk_ids)
+        print("topk_scores")
+        print(self.topk_scores)
         self.beams_scores += self.topk_scores
 
         self.is_finished_list = topk_ids.eq(self.eos).tolist()

@@ -917,8 +917,8 @@ class TransformerLMDecoder(TransformerDecoderBase):
                 with_align=with_align,
                 return_attn=return_attn,
             )
-            # if l == 2:
-            #     break
+            if l == 2:
+                break
 
         dec_out = self.layer_norm(dec_out)
 

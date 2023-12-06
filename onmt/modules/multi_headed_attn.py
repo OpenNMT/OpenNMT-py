@@ -405,10 +405,10 @@ class MultiHeadedAttention(torch.nn.Module):
         """
         # 1) Project key, value, and query.
         # as a reminder at training layer_cache[0] remains False
-        print('mask', mask.size())
-        print(mask)
-        print('tgt_pad_mask')
-        print(tgt_pad_mask)
+        # print('mask', mask.size())
+        # print(mask)
+        # print('tgt_pad_mask')
+        # print(tgt_pad_mask)
         if self.layer_cache[0]:
             # Retrieve keys and values from the KV cache (decoding mode only).
             if self.attn_type == "self":
@@ -423,6 +423,7 @@ class MultiHeadedAttention(torch.nn.Module):
 
                 if self.max_relative_positions == -1:  # Rotary Embeddings
                     start_pos = step
+                    print("#", start_pos)
                     seqlen = query.size(2)
                     print('seqlen', seqlen)
                     if seqlen > self.rope.size(0):
@@ -506,8 +507,10 @@ class MultiHeadedAttention(torch.nn.Module):
         # ):
         if False:
             # Apply flash2 attention.
+            flash2 = False
             causal = self.is_decoder and self.attn_type == "self" and mask is not None
             if self.is_decoder and self.attn_type == "self" and flash2:
+                print("## FLASH2")
                 if causal:
                     window_size = (
                         (-1, -1) if sliding_window == 0 else (sliding_window, 0)
@@ -524,6 +527,7 @@ class MultiHeadedAttention(torch.nn.Module):
                 ).transpose(1, 2)
             else:
                 # Apply scaled dot product attention.
+                print("## SDPA")
                 with torch.backends.cuda.sdp_kernel(
                     enable_flash=False, enable_math=True, enable_mem_efficient=True
                 ):
@@ -540,13 +544,15 @@ class MultiHeadedAttention(torch.nn.Module):
         else:
             query /= sqrt(self.dim_per_head)
             # batch x num_heads x query_len x 
-            print('query', query.size())
-            # print(query[:, 0, :, :]) # print on first head
-            print('key', key.size())
-            # print(key[:, 0, :, :])
+            # print('query', query.size())
+            # # print(query[:, 0, :, :]) # print on first head
+            # print('key', key.size())
+            # # print(key[:, 0, :, :])
             scores = torch.matmul(query, key.transpose(2, 3))
-            print('query', 'scores', 'mask')
-            print(query.size(), scores.size(), mask.size())
+            print('scores before mask', scores.size())
+            print(scores[:, 0, :, :])
+            # print('query', 'scores', 'mask')
+            # print(query.size(), scores.size(), mask.size())
 
             if self.relative_attention_bias is not None:
                 q_len = key.size(2) if self.layer_cache[0] else query.size(2)
@@ -592,9 +598,14 @@ class MultiHeadedAttention(torch.nn.Module):
                 mask = mask.expand(-1, self.head_count // self.parallel_gpu, -1, -1)
                 # now mask and scores have the same shape
                 scores = scores.masked_fill(mask, -1e18)
+                print('scores after mask', scores.size())
+                print(scores[:, 0, :, :])
+                # scores = scores.masked_fill(mask, -1e1800)
 
             # 3) Apply attention dropout and compute context vectors.
             attn = self.softmax(scores).to(query.dtype)
+            print('attn', attn.size())
+            print(attn[:, 0, :, :]) # first 
             drop_attn = self.dropout(attn) if self.dropout_p > 0 else attn
 
             attn_output = torch.matmul(drop_attn, value)
@@ -614,23 +625,23 @@ class MultiHeadedAttention(torch.nn.Module):
 
         if tgt_pad_mask is not None:
             if tgt_pad_mask.size(0) > 1 and context.size(1) > 1:
-                import pickle
-                with open('tgt_pad_mask.pickle', 'wb') as handle:
-                    pickle.dump(tgt_pad_mask, handle, protocol=pickle.HIGHEST_PROTOCOL)
-                with open('context.pickle', 'wb') as handle:
-                    pickle.dump(context, handle, protocol=pickle.HIGHEST_PROTOCOL)
-                print("###")
+                # import pickle
+                # with open('tgt_pad_mask.pickle', 'wb') as handle:
+                #     pickle.dump(tgt_pad_mask, handle, protocol=pickle.HIGHEST_PROTOCOL)
+                # with open('context.pickle', 'wb') as handle:
+                #     pickle.dump(context, handle, protocol=pickle.HIGHEST_PROTOCOL)
+                # print("###")
                 x = tgt_pad_mask.squeeze(1).unsqueeze(2).expand(-1, -1, context.size(2))
                 context =  context.masked_fill(x, 0)
                 print('context', context.size())
                 print(context[:, :, 0]) # on first dim
 
         if self.layer_cache[0]:
-            print('#')
+            # print('#')
             attn_output = self.final_linear(context)
         else:
             attn_output = self.maybe_ckpt(self.final_linear, context)
-            print("##")
+            # print("##")
         print('attn output after linear', attn_output.size())
         print(attn_output[:, :, 0]) # on first dim
         if self.parallel_gpu > 1:
