@@ -209,7 +209,7 @@ class TransformerDecoderLayerBase(nn.Module):
             dec_mask = tgt_pad_mask
         return dec_mask
 
-    def _forward_self_attn(self, norm_layer_in, dec_mask, step, return_attn=False):
+    def _forward_self_attn(self, norm_layer_in, dec_mask, step, return_attn=False, tgt_pad_mask=None):
         if self.self_attn_type == "scaled-dot":
             return self.self_attn(
                 norm_layer_in,
@@ -219,6 +219,7 @@ class TransformerDecoderLayerBase(nn.Module):
                 sliding_window=self.sliding_window,
                 step=step,
                 return_attn=return_attn,
+                tgt_pad_mask=tgt_pad_mask
             )
         elif self.self_attn_type == "average":
             return self.self_attn(norm_layer_in, mask=dec_mask, step=step)
@@ -721,7 +722,8 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
 
         """
         dec_mask = None
-        if layer_in.size(1) > 1:
+        print('layer_in.size(1)',  layer_in.size(1))
+        if layer_in.size(1) > 1 and step == 0:
             # step > 0
             # The 2 masks (for future and pad tokens) are necessary when sequence length is greater than.
             # The decoding has not started yet,
@@ -740,7 +742,7 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
         norm_layer_in = self.layer_norm_1(layer_in)
 
         attn_output, attns = self._forward_self_attn(
-            norm_layer_in, dec_mask, step, return_attn=return_attn
+            norm_layer_in, dec_mask, step, return_attn=return_attn, tgt_pad_mask=tgt_pad_mask
         )
         if self.dropout_p > 0:
             attn_output = self.dropout(attn_output)
@@ -891,7 +893,8 @@ class TransformerLMDecoder(TransformerDecoderBase):
             y = torch.zeros((self.tgt_pad_mask.size(0), self.tgt_pad_mask.size(1), 1), dtype=torch.bool, device=self.tgt_pad_mask.device)
             self.tgt_pad_mask = torch.cat((self.tgt_pad_mask, y), 2)
 
-        print('self.tgt_pad_mask', self.tgt_pad_mask)
+        print('self.tgt_pad_mask', self.tgt_pad_mask.size())
+        print(self.tgt_pad_mask)
         dec_out = self.embeddings(tgt, step=step)
 
         assert dec_out.dim() == 3  # batch x len x embedding_dim
@@ -905,8 +908,8 @@ class TransformerLMDecoder(TransformerDecoderBase):
         l = 0
     
         for layer in self.transformer_layers:
-            # l += 1
-            # print('layer', l)
+            l += 1
+            print('layer', l)
             dec_out, attn, _ = layer(
                 dec_out,
                 self.tgt_pad_mask,

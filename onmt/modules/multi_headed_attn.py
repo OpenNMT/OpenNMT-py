@@ -382,6 +382,7 @@ class MultiHeadedAttention(torch.nn.Module):
         sliding_window: Optional[int] = 0,
         step: Optional[int] = 0,
         return_attn: Optional[bool] = False,
+        tgt_pad_mask: Optional[Tensor] = None,
     ) -> Tuple[Tensor, Tensor]:
         """
         Compute the context vector and the attention vectors.
@@ -404,6 +405,10 @@ class MultiHeadedAttention(torch.nn.Module):
         """
         # 1) Project key, value, and query.
         # as a reminder at training layer_cache[0] remains False
+        print('mask', mask.size())
+        print(mask)
+        print('tgt_pad_mask')
+        print(tgt_pad_mask)
         if self.layer_cache[0]:
             # Retrieve keys and values from the KV cache (decoding mode only).
             if self.attn_type == "self":
@@ -419,6 +424,7 @@ class MultiHeadedAttention(torch.nn.Module):
                 if self.max_relative_positions == -1:  # Rotary Embeddings
                     start_pos = step
                     seqlen = query.size(2)
+                    print('seqlen', seqlen)
                     if seqlen > self.rope.size(0):
                         self.rope = rotaryembeddings(
                             self.dim_per_head, maxseqlen=(seqlen + 2048)
@@ -493,11 +499,12 @@ class MultiHeadedAttention(torch.nn.Module):
             self.flash2
             and l > 256  # https://github.com/Dao-AILab/flash-attention/issues/591
         )
-        if (
-            self.max_relative_positions in [-1, 0]
-            and not return_attn
-            and query.device != torch.device("cpu")
-        ):
+        # if (
+        #     self.max_relative_positions in [-1, 0]
+        #     and not return_attn
+        #     and query.device != torch.device("cpu")
+        # ):
+        if False:
             # Apply flash2 attention.
             causal = self.is_decoder and self.attn_type == "self" and mask is not None
             if self.is_decoder and self.attn_type == "self" and flash2:
@@ -532,8 +539,14 @@ class MultiHeadedAttention(torch.nn.Module):
 
         else:
             query /= sqrt(self.dim_per_head)
-            # batch x num_heads x query_len x key_len
+            # batch x num_heads x query_len x 
+            print('query', query.size())
+            # print(query[:, 0, :, :]) # print on first head
+            print('key', key.size())
+            # print(key[:, 0, :, :])
             scores = torch.matmul(query, key.transpose(2, 3))
+            print('query', 'scores', 'mask')
+            print(query.size(), scores.size(), mask.size())
 
             if self.relative_attention_bias is not None:
                 q_len = key.size(2) if self.layer_cache[0] else query.size(2)
@@ -591,12 +604,35 @@ class MultiHeadedAttention(torch.nn.Module):
                 relations_values = relations_keys
                 attn_output.add_(relative_matmul(drop_attn, relations_values, False))
 
+        print('attn output before linear', attn_output.size())
+        print(attn_output[:, 0, :, :]) # on first head 
+
         context = unshape(attn_output)
+        print('context', context.size())
+        print(context[:, :, 0]) # on first dim
+
+
+        if tgt_pad_mask is not None:
+            if tgt_pad_mask.size(0) > 1 and context.size(1) > 1:
+                import pickle
+                with open('tgt_pad_mask.pickle', 'wb') as handle:
+                    pickle.dump(tgt_pad_mask, handle, protocol=pickle.HIGHEST_PROTOCOL)
+                with open('context.pickle', 'wb') as handle:
+                    pickle.dump(context, handle, protocol=pickle.HIGHEST_PROTOCOL)
+                print("###")
+                x = tgt_pad_mask.squeeze(1).unsqueeze(2).expand(-1, -1, context.size(2))
+                context =  context.masked_fill(x, 0)
+                print('context', context.size())
+                print(context[:, :, 0]) # on first dim
+
         if self.layer_cache[0]:
+            print('#')
             attn_output = self.final_linear(context)
         else:
             attn_output = self.maybe_ckpt(self.final_linear, context)
-
+            print("##")
+        print('attn output after linear', attn_output.size())
+        print(attn_output[:, :, 0]) # on first dim
         if self.parallel_gpu > 1:
             all_reduce(attn_output)
 
