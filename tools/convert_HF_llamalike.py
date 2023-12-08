@@ -103,7 +103,8 @@ if __name__ == "__main__":
                 tokenizer_model = None
             else:
                 raise ValueError(
-                    "You used a local directory but tokenizer.model and/or tokenizer.json are missing"
+                    "You used a local directory but tokenizer.model",
+                    " and/or tokenizer.json are missing",
                 )
     else:
         directory_path, _ = os.path.split(opt.output)
@@ -124,7 +125,7 @@ if __name__ == "__main__":
                     token=opt.token,
                 )
                 tokenizer_model = None
-            except:
+            except huggingface_hub.utils.EntryNotFoundError:
                 raise huggingface_hub.utils.EntryNotFoundError(
                     "Make sure the repo contains tokenizer.model or tokenizer.json"
                 )
