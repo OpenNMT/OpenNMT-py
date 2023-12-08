@@ -134,7 +134,7 @@ key2 = generate_padded_seq_embedding(seq2_embedding, pad_embedding, nb_pad_token
 ref_key2 = seq2_embedding
 keys = torch.cat((key1, key2), dim=0)
 # print(key1.size(), key2.size(), keys.size())
-offsets = [0, 5]
+offsets = [0, offset]
 init_rope = rotaryembeddings(dimperhead)
 # print(init_rope.size()) # torch.Size([2048, 128]
 
@@ -147,7 +147,7 @@ init_rope = rotaryembeddings(dimperhead)
 ref_scores = PS(queries[1, :, :].unsqueeze(0), ref_key2, offsets=[0], step=0)
 scores = PS(queries, keys, offsets, step=0)
 print(ref_scores[:, 0, :, :])
-print(scores[:, 0, :, -length2:])
+print(scores[1, 0, :, -length2:])
 
 # scores = PS(queries, keys, offsets, step=5)
 # print(scores[:, 0, :, :])
