@@ -873,6 +873,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
 
     def forward(self, tgt, enc_out=None, step=None, **kwargs):
         """Decode, possibly stepwise."""
+        print('## in TransformerLMDecoder forward', 'step', step)
         if step == 0:
             # decoding mode.
             # Initialize KV cache.
@@ -917,8 +918,8 @@ class TransformerLMDecoder(TransformerDecoderBase):
                 with_align=with_align,
                 return_attn=return_attn,
             )
-            if l == 2:
-                break
+            # if l == 2:
+            #     break
 
         dec_out = self.layer_norm(dec_out)
 

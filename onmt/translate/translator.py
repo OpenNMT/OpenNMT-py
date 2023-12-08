@@ -1114,7 +1114,8 @@ class GeneratorLM(Inference):
                 batch,
                 src_len=decode_strategy.src_len,
                 src_map=src_map,
-                step=step if step == 0 else step + src_len[0].item(),
+                step=step,
+                # step=step if step == 0 else step + src_len[0].item(),
                 batch_offset=decode_strategy.batch_offset,
             )
             if step == 0:

@@ -36,7 +36,7 @@ def rotate_half(x):
     return torch.cat((-x2, x1), dim=-1)
 
 
-def apply_rotary_emb(query, key, rope, interleave):
+def apply_rotary_emb(query, key, ropes, interleave):
     if interleave:
         query = query.transpose(1, 2)
         key = key.transpose(1, 2)
@@ -44,18 +44,44 @@ def apply_rotary_emb(query, key, rope, interleave):
         query_ = torch.view_as_complex(query_)
         key_ = key.float().reshape(*key.shape[:-1], -1, 2)
         key_ = torch.view_as_complex(key_)
-        rope = rope[:, : rope.size(1) // 2].view(1, query_.size(1), 1, query_.size(3))
-        query_out = torch.view_as_real(query_ * rope).flatten(3)
-        key_out = torch.view_as_real(key_ * rope).flatten(3)
+    
+        query_out = []
+        key_out  = []
+        for i, _rope in enumerate(ropes):
+            print(i, query_.size(), _rope.size()) 
+            _rope = _rope[:, : _rope.size(1) // 2].view(1, query_.size(1), 1, query_.size(3))
+            query_out.append(torch.view_as_real(query_[i, :, :]* _rope).flatten(3))
+            key_out.append(torch.view_as_real(key_[i, :, :] * _rope).flatten(3))
+        query_out = torch.cat(query_out, dim=0)
+        key_out = torch.cat(key_out, dim=0)
         return query_out.transpose(1, 2).type_as(query), key_out.transpose(
             1, 2
         ).type_as(key)
-    else:
-        cos, sin = rope.real, rope.imag
-        q_embed = (query * cos) + (rotate_half(query) * sin)
-        k_embed = (key * cos) + (rotate_half(key) * sin)
-        return q_embed.type_as(query), k_embed.type_as(key)
+    # else:
+    #     cos, sin = rope.real, rope.imag
+    #     q_embed = (query * cos) + (rotate_half(query) * sin)
+    #     k_embed = (key * cos) + (rotate_half(key) * sin)
+    #     return q_embed.type_as(query), k_embed.type_as(key)
 
+
+def Phi(query, key, dimperhead, offsets, step, interleave=True):
+    query = shape(query, dimperhead)
+    key = shape(key, dimperhead)
+    init_rope = rotaryembeddings(dimperhead)
+    seqlen = query.size(2)  # 1
+    start_pos = step
+    print(start_pos, seqlen)
+    if seqlen > init_rope.size(0):
+        init_rope = rotaryembeddings(dimperhead, maxseqlen=(seqlen + 2048)).to(init_rope.device)
+    ropes = [init_rope[step + _offset: step + _offset + seqlen].to(query.device) for _offset in offsets]
+    query_out, key_out = apply_rotary_emb(query, key, ropes, interleave)
+    return query_out, key_out
+
+def PS(queries, keys, dimperhead, offsets, step):
+    query_out, key_out = Phi(queries, keys, dimperhead, offsets, step)
+    scores = torch.matmul(query_out, key_out.transpose(2, 3))
+    print(scores.size())
+    return scores
 
 # Help functions for max_relative positions
 # https://arxiv.org/abs/1803.02155
@@ -417,23 +443,28 @@ class MultiHeadedAttention(torch.nn.Module):
                     self.linear_keys(query),
                     self.linear_values(query),
                 )
-                query = shape(query, self.dim_per_head)
-                key = shape(key, self.dim_per_head)
+                # query = shape(query, self.dim_per_head)
+                # key = shape(key, self.dim_per_head)
                 value = shape(value, self.dim_per_head)
 
                 if self.max_relative_positions == -1:  # Rotary Embeddings
-                    start_pos = step
-                    print("#", start_pos)
-                    seqlen = query.size(2)
-                    print('seqlen', seqlen)
-                    if seqlen > self.rope.size(0):
-                        self.rope = rotaryembeddings(
-                            self.dim_per_head, maxseqlen=(seqlen + 2048)
-                        ).to(self.rope.device)
-                    rope = self.rope[start_pos : start_pos + seqlen]
-                    query, key = apply_rotary_emb(
-                        query, key, rope, interleave=self.rotary_interleave
-                    )
+                    if tgt_pad_mask is not None:
+                        offsets = tgt_pad_mask.sum(dim=2).flatten().tolist()
+                        query, key = Phi(
+                            query, key, self.dim_per_head,
+                            offsets, step, interleave=self.rotary_interleave)
+                    # start_pos = step
+                    # print("#", start_pos)
+                    # seqlen = query.size(2)
+                    # print('seqlen', seqlen)
+                    # if seqlen > self.rope.size(0):
+                    #     self.rope = rotaryembeddings(
+                    #         self.dim_per_head, maxseqlen=(seqlen + 2048)
+                    #     ).to(self.rope.device)
+                    # rope = self.rope[start_pos : start_pos + seqlen]
+                    # query, key = apply_rotary_emb(
+                    #     query, key, rope, interleave=self.rotary_interleave
+                    # )
 
                 if self.layer_cache[1]["keys"].numel() != 0:
                     key = torch.cat((self.layer_cache[1]["keys"], key), dim=2)
@@ -464,21 +495,26 @@ class MultiHeadedAttention(torch.nn.Module):
             value = self.maybe_ckpt(self.linear_values, value)
             query = self.maybe_ckpt(self.linear_query, query)
 
-            key = shape(key, self.dim_per_head)
+            # key = shape(key, self.dim_per_head)
             value = shape(value, self.dim_per_head)
-            query = shape(query, self.dim_per_head)
+            # query = shape(query, self.dim_per_head)
 
             if self.max_relative_positions == -1:  # Rotary Embeddings
-                start_pos = 0
-                seqlen = query.size(2)
-                if seqlen > self.rope.size(0):
-                    self.rope = rotaryembeddings(
-                        self.dim_per_head, maxseqlen=(seqlen + 2048)
-                    ).to(self.rope.device)
-                rope = self.rope[start_pos : start_pos + seqlen].to(query.device)
-                query, key = apply_rotary_emb(
-                    query, key, rope, interleave=self.rotary_interleave
-                )
+                if tgt_pad_mask is not None:
+                    offsets = tgt_pad_mask.sum(dim=2).flatten().tolist()
+                    query, key = Phi(
+                        query, key, self.dim_per_head,
+                        offsets, step, interleave=self.rotary_interleave)
+                # start_pos = 0
+                # seqlen = query.size(2)
+                # if seqlen > self.rope.size(0):
+                #     self.rope = rotaryembeddings(
+                #         self.dim_per_head, maxseqlen=(seqlen + 2048)
+                #     ).to(self.rope.device)
+                # rope = self.rope[start_pos : start_pos + seqlen].to(query.device)
+                # query, key = apply_rotary_emb(
+                #     query, key, rope, interleave=self.rotary_interleave
+                # )
 
         b, h, l, d = key.size()
         if self.num_kv > 0:
@@ -605,7 +641,7 @@ class MultiHeadedAttention(torch.nn.Module):
             # 3) Apply attention dropout and compute context vectors.
             attn = self.softmax(scores).to(query.dtype)
             print('attn', attn.size())
-            print(attn[:, 0, :, :]) # first 
+            print(attn[:, 0, :, :]) # first head
             drop_attn = self.dropout(attn) if self.dropout_p > 0 else attn
 
             attn_output = torch.matmul(drop_attn, value)
