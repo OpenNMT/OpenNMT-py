@@ -313,7 +313,7 @@ def build_base_model(model_opt, vocabs):
     ]
 
     if hasattr(model_opt, "quant_layers") and len(nonlora_to_quant) > 0:
-        if model_opt.quant_type in ["bnb_8bit", "bnb_FP4", "bnb_NF4"]:
+        if model_opt.quant_type in ["bnb_8bit", "bnb_FP4", "bnb_NF4", "bnb_sparse"]:
             logger.info(
                 "%s compression of layer %s" % (model_opt.quant_type, nonlora_to_quant)
             )

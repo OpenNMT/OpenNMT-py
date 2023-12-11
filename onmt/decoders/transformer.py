@@ -9,6 +9,7 @@ from onmt.decoders.decoder import DecoderBase
 from onmt.modules import MultiHeadedAttention, AverageAttention
 from onmt.modules.position_ffn import PositionwiseFeedForward
 from onmt.modules.position_ffn import ActivationFunction
+from onmt.modules.moe import MoE
 from onmt.utils.misc import sequence_mask
 
 try:
@@ -43,6 +44,8 @@ class TransformerDecoderLayerBase(nn.Module):
         parallel_gpu=1,
         sliding_window=0,
         rotary_interleave=True,
+        num_experts=0,
+        num_experts_per_tok=2,
     ):
         """
         Args:
@@ -109,18 +112,34 @@ class TransformerDecoderLayerBase(nn.Module):
                 d_model, dropout=attention_dropout, aan_useffn=aan_useffn
             )
 
-        self.feed_forward = PositionwiseFeedForward(
-            d_model,
-            d_ff,
-            dropout,
-            pos_ffn_activation_fn,
-            add_ffnbias,
-            parallel_residual,
-            layer_norm,
-            norm_eps,
-            use_ckpting=use_ckpting,
-            parallel_gpu=parallel_gpu,
-        )
+        if num_experts > 0:
+            self.feed_forward = MoE(
+                num_experts,
+                num_experts_per_tok,
+                d_model,
+                d_ff,
+                dropout,
+                pos_ffn_activation_fn,
+                add_ffnbias,
+                parallel_residual,
+                layer_norm,
+                norm_eps,
+                use_ckpting=use_ckpting,
+                parallel_gpu=parallel_gpu,
+            )
+        else:
+            self.feed_forward = PositionwiseFeedForward(
+                d_model,
+                d_ff,
+                dropout,
+                pos_ffn_activation_fn,
+                add_ffnbias,
+                parallel_residual,
+                layer_norm,
+                norm_eps,
+                use_ckpting=use_ckpting,
+                parallel_gpu=parallel_gpu,
+            )
         self.parallel_residual = parallel_residual
         self.shared_layer_norm = shared_layer_norm
         if layer_norm == "standard":
@@ -260,6 +279,8 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
         parallel_gpu=1,
         sliding_window=0,
         rotary_interleave=True,
+        num_experts=0,
+        num_experts_per_tok=2,
     ):
         """
         Args:
@@ -289,6 +310,8 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
             parallel_gpu=parallel_gpu,
             sliding_window=sliding_window,
             rotary_interleave=rotary_interleave,
+            num_experts=num_experts,
+            num_experts_per_tok=num_experts_per_tok,
         )
         self.context_attn = MultiHeadedAttention(
             heads,
@@ -448,6 +471,8 @@ class TransformerDecoderBase(DecoderBase):
             else 1,
             sliding_window=opt.sliding_window,
             rotary_interleave=opt.rotary_interleave,
+            num_experts=opt.num_experts,
+            num_experts_per_tok=opt.num_experts_per_tok,
         )
 
     def init_state(self, src, enc_out, enc_final_hs):
@@ -556,6 +581,8 @@ class TransformerDecoder(TransformerDecoderBase):
         parallel_gpu=1,
         sliding_window=0,
         rotary_interleave=True,
+        num_experts=0,
+        num_experts_per_tok=2,
     ):
         super(TransformerDecoder, self).__init__(
             d_model, copy_attn, embeddings, alignment_layer, layer_norm, norm_eps
@@ -587,6 +614,8 @@ class TransformerDecoder(TransformerDecoderBase):
                     parallel_gpu=parallel_gpu,
                     sliding_window=sliding_window,
                     rotary_interleave=rotary_interleave,
+                    num_experts=num_experts,
+                    num_experts_per_tok=num_experts_per_tok,
                 )
                 for i in range(num_layers)
             ]
@@ -823,6 +852,8 @@ class TransformerLMDecoder(TransformerDecoderBase):
         parallel_gpu=1,
         sliding_window=0,
         rotary_interleave=True,
+        num_experts=0,
+        num_experts_per_tok=2,
     ):
         super(TransformerLMDecoder, self).__init__(
             d_model, copy_attn, embeddings, alignment_layer, layer_norm, norm_eps
@@ -853,6 +884,8 @@ class TransformerLMDecoder(TransformerDecoderBase):
                     parallel_gpu=parallel_gpu,
                     sliding_window=sliding_window,
                     rotary_interleave=rotary_interleave,
+                    num_experts=num_experts,
+                    num_experts_per_tok=num_experts_per_tok,
                 )
                 for i in range(num_layers)
             ]
