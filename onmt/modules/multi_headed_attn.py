@@ -36,7 +36,7 @@ def rotate_half(x):
     return torch.cat((-x2, x1), dim=-1)
 
 
-def apply_rotary_emb(query, key, ropes, interleave):
+def apply_rotary_emb(query, key, rope, interleave):
     if interleave:
         query = query.transpose(1, 2)
         key = key.transpose(1, 2)
@@ -44,52 +44,18 @@ def apply_rotary_emb(query, key, ropes, interleave):
         query_ = torch.view_as_complex(query_)
         key_ = key.float().reshape(*key.shape[:-1], -1, 2)
         key_ = torch.view_as_complex(key_)
-    
-        query_out = []
-        key_out  = []
-        for i, _rope in enumerate(ropes):
-            print(i, query_.size(), _rope.size()) 
-            _rope = _rope[:, : _rope.size(1) // 2].view(1, query_.size(1), 1, query_.size(3))
-            query_out.append(torch.view_as_real(query_[i, :, :]* _rope).flatten(3))
-            key_out.append(torch.view_as_real(key_[i, :, :] * _rope).flatten(3))
-        query_out = torch.cat(query_out, dim=0)
-        key_out = torch.cat(key_out, dim=0)
+        rope = rope[:, : rope.size(1) // 2].view(1, query_.size(1), 1, query_.size(3))
+        query_out = torch.view_as_real(query_ * rope).flatten(3)
+        key_out = torch.view_as_real(key_ * rope).flatten(3)
         return query_out.transpose(1, 2).type_as(query), key_out.transpose(
             1, 2
         ).type_as(key)
-    # else:
-    #     cos, sin = rope.real, rope.imag
-    #     q_embed = (query * cos) + (rotate_half(query) * sin)
-    #     k_embed = (key * cos) + (rotate_half(key) * sin)
-    #     return q_embed.type_as(query), k_embed.type_as(key)
+    else:
+        cos, sin = rope.real, rope.imag
+        q_embed = (query * cos) + (rotate_half(query) * sin)
+        k_embed = (key * cos) + (rotate_half(key) * sin)
+        return q_embed.type_as(query), k_embed.type_as(key)
 
-
-def Phi(query, key, dimperhead, offsets, step, interleave=True):
-    query = shape(query, dimperhead)
-    key = shape(key, dimperhead)
-    init_rope = rotaryembeddings(dimperhead)
-    seqlen = query.size(2)  # 1
-    print('step', 'seqlen', 'offsets')
-    print(step, seqlen, offsets)
-    if step > 0:
-        start_positions = [step - offsets[i] for i, _ in enumerate(offsets)]
-    elif step == 0:
-        start_positions = [0 for i, _ in enumerate(offsets)]
-    if seqlen > init_rope.size(0):
-        init_rope = rotaryembeddings(dimperhead, maxseqlen=(seqlen + 2048)).to(init_rope.device)
-    ropes = []
-    for i, _ in enumerate(start_positions):
-        (m, n) = (start_positions[i], start_positions[i] + seqlen)
-        print(m, n)
-        ropes.append(init_rope[m: n].to(query.device))
-    query_out, key_out = apply_rotary_emb(query, key, ropes, interleave)
-    return query_out, key_out
-
-def PS(queries, keys, dimperhead, offsets, step):
-    query_out, key_out = Phi(queries, keys, dimperhead, offsets, step)
-    scores = torch.matmul(query_out, key_out.transpose(2, 3))
-    print(scores.size())
-    return scores
 
 # Help functions for max_relative positions
 # https://arxiv.org/abs/1803.02155
@@ -439,10 +405,7 @@ class MultiHeadedAttention(torch.nn.Module):
         """
         # 1) Project key, value, and query.
         # as a reminder at training layer_cache[0] remains False
-        # print('mask', mask.size())
-        # print(mask)
-        # print('tgt_pad_mask')
-        # print(tgt_pad_mask)
+
         if self.layer_cache[0]:
             # Retrieve keys and values from the KV cache (decoding mode only).
             if self.attn_type == "self":
@@ -451,28 +414,21 @@ class MultiHeadedAttention(torch.nn.Module):
                     self.linear_keys(query),
                     self.linear_values(query),
                 )
-                # query = shape(query, self.dim_per_head)
-                # key = shape(key, self.dim_per_head)
+                query = shape(query, self.dim_per_head)
+                key = shape(key, self.dim_per_head)
                 value = shape(value, self.dim_per_head)
 
                 if self.max_relative_positions == -1:  # Rotary Embeddings
-                    if tgt_pad_mask is not None:
-                        offsets = tgt_pad_mask.sum(dim=2).flatten().tolist()
-                        query, key = Phi(
-                            query, key, self.dim_per_head,
-                            offsets, step, interleave=self.rotary_interleave)
-                    # start_pos = step
-                    # print("#", start_pos)
-                    # seqlen = query.size(2)
-                    # print('seqlen', seqlen)
-                    # if seqlen > self.rope.size(0):
-                    #     self.rope = rotaryembeddings(
-                    #         self.dim_per_head, maxseqlen=(seqlen + 2048)
-                    #     ).to(self.rope.device)
-                    # rope = self.rope[start_pos : start_pos + seqlen]
-                    # query, key = apply_rotary_emb(
-                    #     query, key, rope, interleave=self.rotary_interleave
-                    # )
+                    start_pos = step
+                    seqlen = query.size(2)
+                    if seqlen > self.rope.size(0):
+                        self.rope = rotaryembeddings(
+                            self.dim_per_head, maxseqlen=(seqlen + 2048)
+                        ).to(self.rope.device)
+                    rope = self.rope[start_pos : start_pos + seqlen]
+                    query, key = apply_rotary_emb(
+                        query, key, rope, interleave=self.rotary_interleave
+                    )
 
                 if self.layer_cache[1]["keys"].numel() != 0:
                     key = torch.cat((self.layer_cache[1]["keys"], key), dim=2)
@@ -503,26 +459,21 @@ class MultiHeadedAttention(torch.nn.Module):
             value = self.maybe_ckpt(self.linear_values, value)
             query = self.maybe_ckpt(self.linear_query, query)
 
-            # key = shape(key, self.dim_per_head)
+            key = shape(key, self.dim_per_head)
             value = shape(value, self.dim_per_head)
-            # query = shape(query, self.dim_per_head)
+            query = shape(query, self.dim_per_head)
 
             if self.max_relative_positions == -1:  # Rotary Embeddings
-                if tgt_pad_mask is not None:
-                    offsets = tgt_pad_mask.sum(dim=2).flatten().tolist()
-                    query, key = Phi(
-                        query, key, self.dim_per_head,
-                        offsets, step, interleave=self.rotary_interleave)
-                # start_pos = 0
-                # seqlen = query.size(2)
-                # if seqlen > self.rope.size(0):
-                #     self.rope = rotaryembeddings(
-                #         self.dim_per_head, maxseqlen=(seqlen + 2048)
-                #     ).to(self.rope.device)
-                # rope = self.rope[start_pos : start_pos + seqlen].to(query.device)
-                # query, key = apply_rotary_emb(
-                #     query, key, rope, interleave=self.rotary_interleave
-                # )
+                start_pos = 0
+                seqlen = query.size(2)
+                if seqlen > self.rope.size(0):
+                    self.rope = rotaryembeddings(
+                        self.dim_per_head, maxseqlen=(seqlen + 2048)
+                    ).to(self.rope.device)
+                rope = self.rope[start_pos : start_pos + seqlen].to(query.device)
+                query, key = apply_rotary_emb(
+                    query, key, rope, interleave=self.rotary_interleave
+                )
 
         b, h, l, d = key.size()
         if self.num_kv > 0:
@@ -544,17 +495,14 @@ class MultiHeadedAttention(torch.nn.Module):
             self.flash2
             and l > 256  # https://github.com/Dao-AILab/flash-attention/issues/591
         )
-        # if (
-        #     self.max_relative_positions in [-1, 0]
-        #     and not return_attn
-        #     and query.device != torch.device("cpu")
-        # ):
-        if False:
+        if (
+            self.max_relative_positions in [-1, 0]
+            and not return_attn
+            and query.device != torch.device("cpu")
+        ):
             # Apply flash2 attention.
-            flash2 = False
             causal = self.is_decoder and self.attn_type == "self" and mask is not None
             if self.is_decoder and self.attn_type == "self" and flash2:
-                print("## FLASH2")
                 if causal:
                     window_size = (
                         (-1, -1) if sliding_window == 0 else (sliding_window, 0)
@@ -571,7 +519,6 @@ class MultiHeadedAttention(torch.nn.Module):
                 ).transpose(1, 2)
             else:
                 # Apply scaled dot product attention.
-                print("## SDPA")
                 with torch.backends.cuda.sdp_kernel(
                     enable_flash=False, enable_math=True, enable_mem_efficient=True
                 ):
@@ -587,16 +534,7 @@ class MultiHeadedAttention(torch.nn.Module):
 
         else:
             query /= sqrt(self.dim_per_head)
-            # batch x num_heads x query_len x 
-            # print('query', query.size())
-            # # print(query[:, 0, :, :]) # print on first head
-            # print('key', key.size())
-            # # print(key[:, 0, :, :])
             scores = torch.matmul(query, key.transpose(2, 3))
-            print('scores before mask', scores.size())
-            print(scores[:, 0, :, :])
-            # print('query', 'scores', 'mask')
-            # print(query.size(), scores.size(), mask.size())
 
             if self.relative_attention_bias is not None:
                 q_len = key.size(2) if self.layer_cache[0] else query.size(2)
@@ -632,7 +570,7 @@ class MultiHeadedAttention(torch.nn.Module):
                     relative_positions_matrix
                 )
                 scores.add_(relative_matmul(query, relations_keys, True))
-            elif self.max_relative_positions == -2:  # Alibi
+            elif self.max_relative_positions == -2:
                 scores = self.alibi(scores)
 
             scores = scores.float()
@@ -642,14 +580,9 @@ class MultiHeadedAttention(torch.nn.Module):
                 mask = mask.expand(-1, self.head_count // self.parallel_gpu, -1, -1)
                 # now mask and scores have the same shape
                 scores = scores.masked_fill(mask, -1e18)
-                print('scores after mask', scores.size())
-                print(scores[:, 0, :, :])
-                # scores = scores.masked_fill(mask, -1e1800)
 
             # 3) Apply attention dropout and compute context vectors.
             attn = self.softmax(scores).to(query.dtype)
-            print('attn', attn.size())
-            print(attn[:, 0, :, :]) # first head
             drop_attn = self.dropout(attn) if self.dropout_p > 0 else attn
 
             attn_output = torch.matmul(drop_attn, value)
@@ -659,36 +592,16 @@ class MultiHeadedAttention(torch.nn.Module):
                 relations_values = relations_keys
                 attn_output.add_(relative_matmul(drop_attn, relations_values, False))
 
-        print('attn output before linear', attn_output.size())
-        print(attn_output[:, 0, :, :]) # on first head 
-
         context = unshape(attn_output)
-        print('context', context.size())
-        print(context[:, :, 0]) # on first dim
-
-
         if tgt_pad_mask is not None:
             if tgt_pad_mask.size(0) > 1 and context.size(1) > 1:
-                # import pickle
-                # with open('tgt_pad_mask.pickle', 'wb') as handle:
-                #     pickle.dump(tgt_pad_mask, handle, protocol=pickle.HIGHEST_PROTOCOL)
-                # with open('context.pickle', 'wb') as handle:
-                #     pickle.dump(context, handle, protocol=pickle.HIGHEST_PROTOCOL)
-                # print("###")
                 x = tgt_pad_mask.squeeze(1).unsqueeze(2).expand(-1, -1, context.size(2))
-                context =  context.masked_fill(x, 0)
-                print('context', context.size())
-                print(context[:, :, 0]) # on first dim
+                context = context.masked_fill(x, 0)
 
         if self.layer_cache[0]:
-            # print('#')
             attn_output = self.final_linear(context)
         else:
             attn_output = self.maybe_ckpt(self.final_linear, context)
-            # print("##")
-        print('attn output after linear', attn_output.size())
-        print(attn_output[:, :, 0]) # on first dim
         if self.parallel_gpu > 1:
             all_reduce(attn_output)
-
         return attn_output, attn

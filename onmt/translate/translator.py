@@ -660,13 +660,11 @@ class Inference(object):
         )
         # Generator forward.
         if not self.copy_attn:
-            # print('here')
             if "std" in dec_attn:
                 attn = dec_attn["std"]
             else:
                 attn = None
             scores = self.model.generator(dec_out.squeeze(1))
-            # print(dec_attn.size())
             log_probs = log_softmax(scores, dim=-1)  # we keep float16 if FP16
             # returns [(batch_size x beam_size) , vocab ] when 1 step
             # or [batch_size, tgt_len, vocab ] when full sentence
@@ -1033,7 +1031,6 @@ class GeneratorLM(Inference):
                     ratio=self.ratio,
                     ban_unk_token=self.ban_unk_token,
                 )
-            print("##  decode_strategy",  decode_strategy)
             return self._translate_batch_with_strategy(batch, decode_strategy)
 
     @classmethod
@@ -1072,7 +1069,6 @@ class GeneratorLM(Inference):
         # (1) split src into src and target_prefix to avoid padding.
         src = batch["src"]
         src_len = batch["srclen"]
-        print("## src_len:", src_len)
 
         if left_pad:
             target_prefix = None
@@ -1104,18 +1100,15 @@ class GeneratorLM(Inference):
 
         # (4) Begin decoding step by step:
         for step in range(decode_strategy.max_length):
-            print("## step", step)
             decoder_input = (
                 src if step == 0 else decode_strategy.current_predictions.view(-1, 1, 1)
             )
-            print('## src_len', src_len)
             log_probs, attn = self._decode_and_generate(
                 decoder_input,
                 None,
                 batch,
                 src_len=decode_strategy.src_len,
                 src_map=src_map,
-                # step=step if step == 0 else step + src_len[0].item(),
                 step=step if step == 0 else step + src_len[-1].item(),
                 batch_offset=decode_strategy.batch_offset,
             )
@@ -1151,12 +1144,10 @@ class GeneratorLM(Inference):
         )
 
     def _score_target(self, batch, enc_out, src_len, src_map):
-        src = batch["src"]
         src_len = batch["srclen"]
         tgt = batch["tgt"]
 
         log_probs, attn = self._decode_and_generate(
-            None, # tgt_pad_mask
             None,
             batch,
             src_len=src_len,

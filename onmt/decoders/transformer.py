@@ -209,7 +209,9 @@ class TransformerDecoderLayerBase(nn.Module):
             dec_mask = tgt_pad_mask
         return dec_mask
 
-    def _forward_self_attn(self, norm_layer_in, dec_mask, step, return_attn=False, tgt_pad_mask=None):
+    def _forward_self_attn(
+        self, norm_layer_in, dec_mask, step, return_attn=False, tgt_pad_mask=None
+    ):
         if self.self_attn_type == "scaled-dot":
             return self.self_attn(
                 norm_layer_in,
@@ -219,7 +221,7 @@ class TransformerDecoderLayerBase(nn.Module):
                 sliding_window=self.sliding_window,
                 step=step,
                 return_attn=return_attn,
-                tgt_pad_mask=tgt_pad_mask
+                tgt_pad_mask=tgt_pad_mask,
             )
         elif self.self_attn_type == "average":
             return self.self_attn(norm_layer_in, mask=dec_mask, step=step)
@@ -722,13 +724,13 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
 
         """
         dec_mask = None
-        print('layer_in.size(1)',  layer_in.size(1))
+
         if layer_in.size(1) > 1 and step == 0:
             # step > 0
-            # The 2 masks (for future and pad tokens) are necessary when sequence length is greater than.
+            # The 2 masks (for future and pad tokens) are necessary
+            # when sequence length is greater than.
             # The decoding has not started yet,
             # We compute the scores on the source tokens in one shot.
-
             dec_mask = self._compute_dec_mask(tgt_pad_mask, future=False)
             dec_mask = dec_mask.unsqueeze(1)
             dec_mask = dec_mask.expand(-1, -1, dec_mask.size(3), -1)
@@ -736,13 +738,15 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
             # We only apply the attention mask for pad tokens.
             dec_mask = self._compute_dec_mask(tgt_pad_mask, future=True)
             dec_mask = dec_mask.unsqueeze(1)
-     
 
- 
         norm_layer_in = self.layer_norm_1(layer_in)
 
         attn_output, attns = self._forward_self_attn(
-            norm_layer_in, dec_mask, step, return_attn=return_attn, tgt_pad_mask=tgt_pad_mask
+            norm_layer_in,
+            dec_mask,
+            step,
+            return_attn=return_attn,
+            tgt_pad_mask=tgt_pad_mask,
         )
         if self.dropout_p > 0:
             attn_output = self.dropout(attn_output)
@@ -873,14 +877,11 @@ class TransformerLMDecoder(TransformerDecoderBase):
 
     def forward(self, tgt, enc_out=None, step=None, **kwargs):
         """Decode, possibly stepwise."""
-        print('## in TransformerLMDecoder forward', 'step', step)
         if step == 0:
             # decoding mode.
             # Initialize KV cache.
             self._init_cache(tgt)
-            pad_idx = self.embeddings.word_padding_idx
-            self.tgt_pad_mask = tgt[:, :, 0].eq(pad_idx).unsqueeze(1)  # [B, 1, T_tgt]
-    
+
         elif step is None:
             # training mode.
             for layer in self.transformer_layers:
@@ -890,27 +891,20 @@ class TransformerLMDecoder(TransformerDecoderBase):
                     {"keys": torch.tensor([]), "values": torch.tensor([])},
                 )
 
-        else:
-            y = torch.zeros((self.tgt_pad_mask.size(0), self.tgt_pad_mask.size(1), 1), dtype=torch.bool, device=self.tgt_pad_mask.device)
-            self.tgt_pad_mask = torch.cat((self.tgt_pad_mask, y), 2)
+        if step is not None:
+            pad_idx = self.embeddings.word_padding_idx
+            self.tgt_pad_mask = tgt[:, :, 0].eq(pad_idx).unsqueeze(1)
 
-        print('self.tgt_pad_mask', self.tgt_pad_mask.size())
-        print(self.tgt_pad_mask)
         dec_out = self.embeddings(tgt, step=step)
 
         assert dec_out.dim() == 3  # batch x len x embedding_dim
-
 
         with_align = kwargs.pop("with_align", False)
         return_attn = kwargs.pop("return_attn", False)
         return_attn = with_align or self._copy or return_attn
         assert not with_align, "TransformerLMDecoder does not support align"
 
-        l = 0
-    
         for layer in self.transformer_layers:
-            l += 1
-            print('layer', l)
             dec_out, attn, _ = layer(
                 dec_out,
                 self.tgt_pad_mask,
@@ -918,9 +912,6 @@ class TransformerLMDecoder(TransformerDecoderBase):
                 with_align=with_align,
                 return_attn=return_attn,
             )
-            # if l == 2:
-            #     break
-
         dec_out = self.layer_norm(dec_out)
 
         attns = {"std": attn}
