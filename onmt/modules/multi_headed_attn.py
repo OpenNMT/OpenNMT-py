@@ -69,11 +69,19 @@ def Phi(query, key, dimperhead, offsets, step, interleave=True):
     key = shape(key, dimperhead)
     init_rope = rotaryembeddings(dimperhead)
     seqlen = query.size(2)  # 1
-    start_pos = step
-    print(start_pos, seqlen)
+    print('step', 'seqlen', 'offsets')
+    print(step, seqlen, offsets)
+    if step > 0:
+        start_positions = [step - offsets[i] for i, _ in enumerate(offsets)]
+    elif step == 0:
+        start_positions = [0 for i, _ in enumerate(offsets)]
     if seqlen > init_rope.size(0):
         init_rope = rotaryembeddings(dimperhead, maxseqlen=(seqlen + 2048)).to(init_rope.device)
-    ropes = [init_rope[step + _offset: step + _offset + seqlen].to(query.device) for _offset in offsets]
+    ropes = []
+    for i, _ in enumerate(start_positions):
+        (m, n) = (start_positions[i], start_positions[i] + seqlen)
+        print(m, n)
+        ropes.append(init_rope[m: n].to(query.device))
     query_out, key_out = apply_rotary_emb(query, key, ropes, interleave)
     return query_out, key_out
 

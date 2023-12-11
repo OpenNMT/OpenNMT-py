@@ -1108,14 +1108,15 @@ class GeneratorLM(Inference):
             decoder_input = (
                 src if step == 0 else decode_strategy.current_predictions.view(-1, 1, 1)
             )
+            print('## src_len', src_len)
             log_probs, attn = self._decode_and_generate(
                 decoder_input,
                 None,
                 batch,
                 src_len=decode_strategy.src_len,
                 src_map=src_map,
-                step=step,
                 # step=step if step == 0 else step + src_len[0].item(),
+                step=step if step == 0 else step + src_len[-1].item(),
                 batch_offset=decode_strategy.batch_offset,
             )
             if step == 0:
