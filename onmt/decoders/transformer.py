@@ -881,7 +881,9 @@ class TransformerLMDecoder(TransformerDecoderBase):
             # decoding mode.
             # Initialize KV cache.
             self._init_cache(tgt)
-
+            pad_idx = self.embeddings.word_padding_idx
+            self.tgt_pad_mask = tgt[:, :, 0].eq(pad_idx).unsqueeze(1)  # [B, 1, T_tgt]
+    
         elif step is None:
             # training mode.
             for layer in self.transformer_layers:
@@ -891,9 +893,14 @@ class TransformerLMDecoder(TransformerDecoderBase):
                     {"keys": torch.tensor([]), "values": torch.tensor([])},
                 )
 
-        if step is not None:
-            pad_idx = self.embeddings.word_padding_idx
-            self.tgt_pad_mask = tgt[:, :, 0].eq(pad_idx).unsqueeze(1)
+        else:
+            select_indices = kwargs.pop("select_indices", None)
+            if select_indices is not None:
+                # Reduce the pad mask to unfinished hypotheses.
+                self.tgt_pad_mask = torch.index_select(self.tgt_pad_mask, dim=0, index=select_indices)
+            # Increase pad mask by concatenation.
+            y = torch.zeros((self.tgt_pad_mask.size(0), self.tgt_pad_mask.size(1), 1), dtype=torch.bool, device=self.tgt_pad_mask.device)
+            self.tgt_pad_mask = torch.cat((self.tgt_pad_mask, y), 2)
 
         dec_out = self.embeddings(tgt, step=step)
 

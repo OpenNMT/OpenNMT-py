@@ -405,7 +405,7 @@ class MultiHeadedAttention(torch.nn.Module):
         """
         # 1) Project key, value, and query.
         # as a reminder at training layer_cache[0] remains False
-
+        current_batch_size = query.size()[0]
         if self.layer_cache[0]:
             # Retrieve keys and values from the KV cache (decoding mode only).
             if self.attn_type == "self":
@@ -499,6 +499,7 @@ class MultiHeadedAttention(torch.nn.Module):
             self.max_relative_positions in [-1, 0]
             and not return_attn
             and query.device != torch.device("cpu")
+            and current_batch_size == 1
         ):
             # Apply flash2 attention.
             causal = self.is_decoder and self.attn_type == "self" and mask is not None
