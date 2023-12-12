@@ -406,6 +406,7 @@ class MultiHeadedAttention(torch.nn.Module):
         # 1) Project key, value, and query.
         # as a reminder at training layer_cache[0] remains False
         current_batch_size = query.size()[0]
+        
         if self.layer_cache[0]:
             # Retrieve keys and values from the KV cache (decoding mode only).
             if self.attn_type == "self":
@@ -579,6 +580,7 @@ class MultiHeadedAttention(torch.nn.Module):
             if mask is not None:
                 # not 100% necessary but expand to nb of heads
                 mask = mask.expand(-1, self.head_count // self.parallel_gpu, -1, -1)
+                print(mask.size(), scores.size())
                 # now mask and scores have the same shape
                 scores = scores.masked_fill(mask, -1e18)
 

@@ -725,7 +725,7 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
         """
         dec_mask = None
 
-        if layer_in.size(1) > 1 and step == 0:
+        if layer_in.size(1) > 1:
             # step > 0
             # The 2 masks (for future and pad tokens) are necessary
             # when sequence length is greater than.
@@ -878,16 +878,19 @@ class TransformerLMDecoder(TransformerDecoderBase):
     def forward(self, tgt, enc_out=None, step=None, **kwargs):
         """Decode, possibly stepwise."""
 
-        # Initialize pad mask.
-        pad_idx = self.embeddings.word_padding_idx
-        self.tgt_pad_mask = tgt[:, :, 0].eq(pad_idx).unsqueeze(1)  # [B, 1, T_tgt]
+
 
         if step == 0:
             # decoding mode.
             # Initialize KV cache.
             self._init_cache(tgt)
 
-        elif step is None:
+        if step == 0 or step is None:
+            # Initialize pad mask.
+            pad_idx = self.embeddings.word_padding_idx
+            self.tgt_pad_mask = tgt[:, :, 0].eq(pad_idx).unsqueeze(1)  # [B, 1, T_tgt]
+
+        if step is None:
             # training mode.
             for layer in self.transformer_layers:
 
@@ -895,19 +898,21 @@ class TransformerLMDecoder(TransformerDecoderBase):
                     False,
                     {"keys": torch.tensor([]), "values": torch.tensor([])},
                 )
+            # self.tgt_pad_mask = None
 
-        else:
-            select_indices = kwargs.pop("select_indices", None)
-            print("select_indices", select_indices)
-            if self.tgt_pad_mask is not None:
-                print("self.tgt_pad_mask", self.tgt_pad_mask.size())
-                print("self.tgt_pad_mask")
+        if step is not None:
+            if step > 0:
+                select_indices = kwargs.pop("select_indices", None)
                 # Update pad mask.
                 if select_indices is not None:
+                    
                     # Reduce the pad mask to unfinished hypotheses.
                     self.tgt_pad_mask = torch.index_select(
                         self.tgt_pad_mask, dim=0, index=select_indices
                     )
+                    # Expand on beam_size hypotheses.
+                    self.tgt_pad_mask = self.tgt_pad_mask
+
                 # Increase pad mask by concatenation.
                 y = torch.zeros(
                     (self.tgt_pad_mask.size(0), self.tgt_pad_mask.size(1), 1),
