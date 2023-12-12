@@ -877,13 +877,16 @@ class TransformerLMDecoder(TransformerDecoderBase):
 
     def forward(self, tgt, enc_out=None, step=None, **kwargs):
         """Decode, possibly stepwise."""
+
+        # Initialize pad mask.
+        pad_idx = self.embeddings.word_padding_idx
+        self.tgt_pad_mask = tgt[:, :, 0].eq(pad_idx).unsqueeze(1)  # [B, 1, T_tgt]
+
         if step == 0:
             # decoding mode.
             # Initialize KV cache.
             self._init_cache(tgt)
-            pad_idx = self.embeddings.word_padding_idx
-            self.tgt_pad_mask = tgt[:, :, 0].eq(pad_idx).unsqueeze(1)  # [B, 1, T_tgt]
-    
+
         elif step is None:
             # training mode.
             for layer in self.transformer_layers:
@@ -895,12 +898,23 @@ class TransformerLMDecoder(TransformerDecoderBase):
 
         else:
             select_indices = kwargs.pop("select_indices", None)
-            if select_indices is not None:
-                # Reduce the pad mask to unfinished hypotheses.
-                self.tgt_pad_mask = torch.index_select(self.tgt_pad_mask, dim=0, index=select_indices)
-            # Increase pad mask by concatenation.
-            y = torch.zeros((self.tgt_pad_mask.size(0), self.tgt_pad_mask.size(1), 1), dtype=torch.bool, device=self.tgt_pad_mask.device)
-            self.tgt_pad_mask = torch.cat((self.tgt_pad_mask, y), 2)
+            print("select_indices", select_indices)
+            if self.tgt_pad_mask is not None:
+                print("self.tgt_pad_mask", self.tgt_pad_mask.size())
+                print("self.tgt_pad_mask")
+                # Update pad mask.
+                if select_indices is not None:
+                    # Reduce the pad mask to unfinished hypotheses.
+                    self.tgt_pad_mask = torch.index_select(
+                        self.tgt_pad_mask, dim=0, index=select_indices
+                    )
+                # Increase pad mask by concatenation.
+                y = torch.zeros(
+                    (self.tgt_pad_mask.size(0), self.tgt_pad_mask.size(1), 1),
+                    dtype=torch.bool,
+                    device=self.tgt_pad_mask.device,
+                )
+                self.tgt_pad_mask = torch.cat((self.tgt_pad_mask, y), 2)
 
         dec_out = self.embeddings(tgt, step=step)
 
