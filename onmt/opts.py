@@ -493,6 +493,13 @@ def distributed_opts(parser):
         type=int,
         help="Port of master for torch.distributed training.",
     )
+    group.add(
+        "--timeout",
+        "-timeout",
+        default=60,
+        type=int,
+        help="Timeout for one GOU to wait for the others.",
+    )
 
 
 def model_opts(parser):
