@@ -382,7 +382,6 @@ class MultiHeadedAttention(torch.nn.Module):
         sliding_window: Optional[int] = 0,
         step: Optional[int] = 0,
         return_attn: Optional[bool] = False,
-        tgt_pad_mask: Optional[Tensor] = None,
     ) -> Tuple[Tensor, Tensor]:
         """
         Compute the context vector and the attention vectors.
@@ -406,7 +405,21 @@ class MultiHeadedAttention(torch.nn.Module):
         # 1) Project key, value, and query.
         # as a reminder at training layer_cache[0] remains False
         current_batch_size = query.size()[0]
-        
+
+        key_pad_mask = self.layer_cache[1].get("key_pad_mask", None)
+        if key_pad_mask is not None:
+            # Increase the cached key pad mask by concatenation.
+            # For decoding only.
+            if step > 0:
+                y = torch.zeros(
+                    (key_pad_mask.size(0), key_pad_mask.size(1), 1),
+                    dtype=torch.bool,
+                    device=key_pad_mask.device,
+                )
+                self.layer_cache[1]["key_pad_mask"] = torch.cat((key_pad_mask, y), 2)
+                key_pad_mask = self.layer_cache[1]["key_pad_mask"]
+                mask = key_pad_mask.unsqueeze(1)
+
         if self.layer_cache[0]:
             # Retrieve keys and values from the KV cache (decoding mode only).
             if self.attn_type == "self":
@@ -536,6 +549,7 @@ class MultiHeadedAttention(torch.nn.Module):
 
         else:
             query /= sqrt(self.dim_per_head)
+            # batch x num_heads x query_len x key_len
             scores = torch.matmul(query, key.transpose(2, 3))
 
             if self.relative_attention_bias is not None:
@@ -572,7 +586,7 @@ class MultiHeadedAttention(torch.nn.Module):
                     relative_positions_matrix
                 )
                 scores.add_(relative_matmul(query, relations_keys, True))
-            elif self.max_relative_positions == -2:
+            elif self.max_relative_positions == -2:  # Alibi
                 scores = self.alibi(scores)
 
             scores = scores.float()
@@ -580,7 +594,6 @@ class MultiHeadedAttention(torch.nn.Module):
             if mask is not None:
                 # not 100% necessary but expand to nb of heads
                 mask = mask.expand(-1, self.head_count // self.parallel_gpu, -1, -1)
-                print(mask.size(), scores.size())
                 # now mask and scores have the same shape
                 scores = scores.masked_fill(mask, -1e18)
 
@@ -596,15 +609,17 @@ class MultiHeadedAttention(torch.nn.Module):
                 attn_output.add_(relative_matmul(drop_attn, relations_values, False))
 
         context = unshape(attn_output)
-        if tgt_pad_mask is not None:
-            if tgt_pad_mask.size(0) > 1 and context.size(1) > 1:
-                x = tgt_pad_mask.squeeze(1).unsqueeze(2).expand(-1, -1, context.size(2))
+        if key_pad_mask is not None:
+            if key_pad_mask.size(0) > 1 and context.size(1) > 1:
+                x = key_pad_mask.squeeze(1).unsqueeze(2).expand(-1, -1, context.size(2))
                 context = context.masked_fill(x, 0)
 
         if self.layer_cache[0]:
             attn_output = self.final_linear(context)
         else:
             attn_output = self.maybe_ckpt(self.final_linear, context)
+
         if self.parallel_gpu > 1:
             all_reduce(attn_output)
+
         return attn_output, attn

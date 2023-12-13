@@ -198,20 +198,13 @@ class TransformerDecoderLayerBase(nn.Module):
                 future_mask = future_mask.triu_(-self.sliding_window)
             future_mask = future_mask.bool()
             future_mask = ~future_mask.view(1, tgt_len, tgt_len)
-            # # Patch for scaled dot product attention.
-            # patch_mask = ~torch.all(
-            #     tgt_pad_mask + future_mask, dim=2, keepdim=True
-            # ).expand_as(tgt_pad_mask + future_mask)
             dec_mask = torch.gt(tgt_pad_mask + future_mask, 0)
-            # dec_mask = torch.logical_and(dec_mask, patch_mask)
         else:
             # Only mask padding, result mask in (B, 1, T).
             dec_mask = tgt_pad_mask
         return dec_mask
 
-    def _forward_self_attn(
-        self, norm_layer_in, dec_mask, step, return_attn=False, tgt_pad_mask=None
-    ):
+    def _forward_self_attn(self, norm_layer_in, dec_mask, step, return_attn=False):
         if self.self_attn_type == "scaled-dot":
             return self.self_attn(
                 norm_layer_in,
@@ -221,7 +214,6 @@ class TransformerDecoderLayerBase(nn.Module):
                 sliding_window=self.sliding_window,
                 step=step,
                 return_attn=return_attn,
-                tgt_pad_mask=tgt_pad_mask,
             )
         elif self.self_attn_type == "average":
             return self.self_attn(norm_layer_in, mask=dec_mask, step=step)
@@ -474,7 +466,16 @@ class TransformerDecoderBase(DecoderBase):
                 if layer.self_attn.layer_cache[1]["keys"].numel() != 0:
                     x = fn(layer.self_attn.layer_cache[1]["keys"], 0)
                     y = fn(layer.self_attn.layer_cache[1]["values"], 0)
-                    layer.self_attn.layer_cache = True, {"keys": x, "values": y}
+                    if (
+                        layer.self_attn.layer_cache[1].get("key_pad_mask", None)
+                        is not None
+                    ):
+                        z = fn(layer.self_attn.layer_cache[1]["key_pad_mask"], 0)
+                        layer.self_attn.layer_cache = True, {
+                            "keys": x,
+                            "values": y,
+                            "key_pad_mask": z,
+                        }
 
     def detach_state(self):
         raise NotImplementedError
@@ -726,27 +727,19 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
         dec_mask = None
 
         if layer_in.size(1) > 1:
-            # step > 0
-            # The 2 masks (for future and pad tokens) are necessary
-            # when sequence length is greater than.
+            # Masking is necessary when sequence length is greater than one
             # The decoding has not started yet,
             # We compute the scores on the source tokens in one shot.
             dec_mask = self._compute_dec_mask(tgt_pad_mask, future=False)
             dec_mask = dec_mask.unsqueeze(1)
             dec_mask = dec_mask.expand(-1, -1, dec_mask.size(3), -1)
-        else:
-            # We only apply the attention mask for pad tokens.
-            dec_mask = self._compute_dec_mask(tgt_pad_mask, future=True)
-            dec_mask = dec_mask.unsqueeze(1)
+            # mask now are (batch x 1 x tlen x tlen)
+            # 1 = heads to be expanded in MHA
 
         norm_layer_in = self.layer_norm_1(layer_in)
 
         attn_output, attns = self._forward_self_attn(
-            norm_layer_in,
-            dec_mask,
-            step,
-            return_attn=return_attn,
-            tgt_pad_mask=tgt_pad_mask,
+            norm_layer_in, dec_mask, step, return_attn=return_attn
         )
         if self.dropout_p > 0:
             attn_output = self.dropout(attn_output)
@@ -878,17 +871,10 @@ class TransformerLMDecoder(TransformerDecoderBase):
     def forward(self, tgt, enc_out=None, step=None, **kwargs):
         """Decode, possibly stepwise."""
 
-
-
         if step == 0:
             # decoding mode.
-            # Initialize KV cache.
+            # Initialize KV and key_pad_mask cache.
             self._init_cache(tgt)
-
-        if step == 0 or step is None:
-            # Initialize pad mask.
-            pad_idx = self.embeddings.word_padding_idx
-            self.tgt_pad_mask = tgt[:, :, 0].eq(pad_idx).unsqueeze(1)  # [B, 1, T_tgt]
 
         if step is None:
             # training mode.
@@ -898,28 +884,12 @@ class TransformerLMDecoder(TransformerDecoderBase):
                     False,
                     {"keys": torch.tensor([]), "values": torch.tensor([])},
                 )
-            # self.tgt_pad_mask = None
-
-        if step is not None:
-            if step > 0:
-                select_indices = kwargs.pop("select_indices", None)
-                # Update pad mask.
-                if select_indices is not None:
-                    
-                    # Reduce the pad mask to unfinished hypotheses.
-                    self.tgt_pad_mask = torch.index_select(
-                        self.tgt_pad_mask, dim=0, index=select_indices
-                    )
-                    # Expand on beam_size hypotheses.
-                    self.tgt_pad_mask = self.tgt_pad_mask
-
-                # Increase pad mask by concatenation.
-                y = torch.zeros(
-                    (self.tgt_pad_mask.size(0), self.tgt_pad_mask.size(1), 1),
-                    dtype=torch.bool,
-                    device=self.tgt_pad_mask.device,
-                )
-                self.tgt_pad_mask = torch.cat((self.tgt_pad_mask, y), 2)
+        if step == 0 or step is None:
+            tgt_pad_mask = (
+                tgt[:, :, 0].eq(self.embeddings.word_padding_idx).unsqueeze(1)
+            )
+        else:
+            tgt_pad_mask = None
 
         dec_out = self.embeddings(tgt, step=step)
 
@@ -933,7 +903,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
         for layer in self.transformer_layers:
             dec_out, attn, _ = layer(
                 dec_out,
-                self.tgt_pad_mask,
+                tgt_pad_mask=tgt_pad_mask,
                 step=step,
                 with_align=with_align,
                 return_attn=return_attn,
@@ -958,6 +928,9 @@ class TransformerLMDecoder(TransformerDecoderBase):
                         {
                             "keys": torch.tensor([], device=tgt.device),
                             "values": torch.tensor([], device=tgt.device),
+                            "key_pad_mask": tgt[:, :, 0]
+                            .eq(self.embeddings.word_padding_idx)
+                            .unsqueeze(1),
                         },
                     )
                     if hasattr(layer.self_attn, "rope"):

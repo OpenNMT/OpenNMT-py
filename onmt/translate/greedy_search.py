@@ -231,6 +231,7 @@ class GreedySearch(DecodeStrategy):
         self.ensure_min_length(log_probs)
         self.ensure_unk_removed(log_probs)
         self.block_ngram_repeats(log_probs)
+
         topk_ids, self.topk_scores = self._pick(log_probs)
         self.beams_scores += self.topk_scores
 
