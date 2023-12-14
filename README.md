@@ -53,6 +53,30 @@ If you used previous versions of OpenNMT-py, you can check the [Changelog](https
 
 ## Setup
 
+### Using docker
+
+To facilitate setup and reproducibility, some docker images are made available via the Github Container Registry:
+https://github.com/OpenNMT/OpenNMT-py/pkgs/container/opennmt-py
+
+You can adapt the workflow and build your own image(s) depending on specific needs by using `build.sh` and `Dockerfile` in the `docker` directory of the repo.
+
+```
+docker pull ghcr.io/opennmt/opennmt-py:3.4.3-ubuntu22.04-cuda12.1
+```
+
+Example oneliner to run a container and open a bash shell within it
+```
+docker run --rm -it --runtime=nvidia ghcr.io/opennmt/opennmt-py:test-ubuntu22.04-cuda12.1
+```
+Note: you need to have the [Nvidia Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) (formerly nvidia-docker) installed to properly take advantage of the CUDA/GPU features.
+
+Depending on your needs you can add various flags:
+- `-p 5000:5000` to forward some exposed port from your container to your host;
+- `-v /some/local/directory:/some/container/directory` to mount some local directory to some container directory;
+- `--entrypoint some_command` to directly run some specific command as the container entry point (instead of the default bash shell);
+
+### Installing locally
+
 OpenNMT-py requires:
 
 - Python >= 3.8
@@ -78,7 +102,7 @@ Note: if you encounter a `MemoryError` during installation, try to use `pip` wit
 pip install -r requirements.opt.txt
 ```
 
-## Manual installation of some dependencies
+### Manual installation of some dependencies
 
 Apex is highly recommended to have fast performance (especially the legacy fusedadam optimizer and FusedRMSNorm)
 

@@ -1,0 +1,38 @@
+name: Build Docker Images
+
+on:
+  workflow_dispatch:
+    inputs:
+      onmt_version:
+        description: "OpenNMT version"
+        required: true
+        type: string
+  # to facilitate initial tests in PR
+  push:
+    branches:
+      - "docker"
+
+run-name: ${{ github.workflow }} -- ${{ inputs.onmt_version || 'test' }}
+
+env:
+  ONMT_VERSION: ${{ inputs.onmt_version || 'test' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        cuda_version: [11.8.0, 12.1.0]
+    permissions: write-all
+    steps:
+    - name: Checkout opennmt repo
+      uses: actions/checkout@v4
+    - name: Login to ghcr
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Build
+      run: |
+        docker/build.sh ${{ env.ONMT_VERSION }} ${{ matrix.cuda_version}}
