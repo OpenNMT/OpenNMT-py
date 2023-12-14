@@ -838,7 +838,7 @@ def model_opts(parser):
         type=str,
         default="scaled-dot",
         help="Self attention type in Transformer decoder "
-        'layer -- currently "scaled-dot" or "average" ',
+        'layer -- currently "scaled-dot", "scaled-dot-flash" or "average" ',
     )
     group.add(
         "--max_relative_positions",

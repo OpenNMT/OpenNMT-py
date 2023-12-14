@@ -259,6 +259,7 @@ class MultiHeadedAttention(torch.nn.Module):
         relative_positions_buckets: int = 0,
         rotary_interleave: bool = True,
         attn_type: str = None,
+        self_attn_type: str = None,
         add_qkvbias=False,
         num_kv=0,
         use_ckpting=[],
@@ -325,6 +326,7 @@ class MultiHeadedAttention(torch.nn.Module):
         self.max_relative_positions = max_relative_positions
         self.relative_positions_buckets = relative_positions_buckets
         self.attn_type = attn_type
+        self.self_attn_type = self_attn_type
         self.layer_cache = (
             False,
             {"keys": torch.tensor([]), "values": torch.tensor([])},
@@ -382,6 +384,7 @@ class MultiHeadedAttention(torch.nn.Module):
         sliding_window: Optional[int] = 0,
         step: Optional[int] = 0,
         return_attn: Optional[bool] = False,
+        flash_attention=True,
     ) -> Tuple[Tensor, Tensor]:
         """
         Compute the context vector and the attention vectors.
@@ -404,7 +407,6 @@ class MultiHeadedAttention(torch.nn.Module):
         """
         # 1) Project key, value, and query.
         # as a reminder at training layer_cache[0] remains False
-        current_batch_size = query.size()[0]
 
         key_pad_mask = self.layer_cache[1].get("key_pad_mask", None)
         if key_pad_mask is not None:
@@ -513,7 +515,7 @@ class MultiHeadedAttention(torch.nn.Module):
             self.max_relative_positions in [-1, 0]
             and not return_attn
             and query.device != torch.device("cpu")
-            and current_batch_size == 1
+            and self.self_attn_type == "flash-scaled-dot"
         ):
             # Apply flash2 attention.
             causal = self.is_decoder and self.attn_type == "self" and mask is not None

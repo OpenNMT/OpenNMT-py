@@ -57,7 +57,7 @@ class TransformerDecoderLayerBase(nn.Module):
             attention_dropout (float): dropout in context_attn  (and
                 self-attn(avg))
             self_attn_type (string): type of self-attention scaled-dot,
-                average
+                flash-scaled-dot, average
             max_relative_positions (int):
                 Max distance between inputs in relative positions
                 representations
@@ -90,7 +90,7 @@ class TransformerDecoderLayerBase(nn.Module):
         super(TransformerDecoderLayerBase, self).__init__()
 
         self.self_attn_type = self_attn_type
-        if self_attn_type == "scaled-dot":
+        if self_attn_type in ("scaled-dot", "flash-scaled-dot"):
             self.self_attn = MultiHeadedAttention(
                 heads,
                 d_model,
@@ -99,6 +99,7 @@ class TransformerDecoderLayerBase(nn.Module):
                 relative_positions_buckets=relative_positions_buckets,
                 rotary_interleave=rotary_interleave,
                 attn_type="self",
+                self_attn_type=self_attn_type,
                 add_qkvbias=add_qkvbias,
                 num_kv=num_kv,
                 use_ckpting=use_ckpting,
@@ -290,6 +291,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
             d_model,
             dropout=attention_dropout,
             attn_type="context",
+            self_attn_type=self_attn_type,
             add_qkvbias=add_qkvbias,
             num_kv=num_kv,
             use_ckpting=use_ckpting,
@@ -471,11 +473,13 @@ class TransformerDecoderBase(DecoderBase):
                         is not None
                     ):
                         z = fn(layer.self_attn.layer_cache[1]["key_pad_mask"], 0)
-                        layer.self_attn.layer_cache = True, {
-                            "keys": x,
-                            "values": y,
-                            "key_pad_mask": z,
-                        }
+                    else:
+                        z = None
+                    layer.self_attn.layer_cache = True, {
+                        "keys": x,
+                        "values": y,
+                        "key_pad_mask": z,
+                    }
 
     def detach_state(self):
         raise NotImplementedError
@@ -499,7 +503,7 @@ class TransformerDecoder(TransformerDecoderBase):
         heads (int): number of heads
         d_ff (int): size of the inner FF layer
         copy_attn (bool): if using a separate copy attention
-        self_attn_type (str): type of self-attention scaled-dot, average
+        self_attn_type (str): type of self-attention scaled-dot, scaled-dot-flash, average
         dropout (float): dropout in residual, self-attn(dot) and feed-forward
         attention_dropout (float): dropout in context_attn (and self-attn(avg))
         embeddings (onmt.modules.Embeddings):
@@ -712,7 +716,7 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
         Args:
             layer_in (FloatTensor): ``(batch_size, T, model_dim)``
             tgt_pad_mask (bool): ``(batch_size, 1, T)``
-            layer_cache (dict or None): cached layer info when stepwise decode
+            layer_cache (dict or None): cached layer info when stcompute_deepwise decode
             step (int or None): stepwise decoding counter
             future (bool): If set True, do not apply future_mask.
             return_attn (bool): If set True return attn
@@ -730,7 +734,7 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
             # Masking is necessary when sequence length is greater than one
             # The decoding has not started yet,
             # We compute the scores on the source tokens in one shot.
-            dec_mask = self._compute_dec_mask(tgt_pad_mask, future=False)
+            dec_mask = self._compute_dec_mask(tgt_pad_mask, future)
             dec_mask = dec_mask.unsqueeze(1)
             dec_mask = dec_mask.expand(-1, -1, dec_mask.size(3), -1)
             # mask now are (batch x 1 x tlen x tlen)
@@ -879,17 +883,17 @@ class TransformerLMDecoder(TransformerDecoderBase):
         if step is None:
             # training mode.
             for layer in self.transformer_layers:
-
                 layer.self_attn.layer_cache = (
                     False,
-                    {"keys": torch.tensor([]), "values": torch.tensor([])},
+                    {
+                        "keys": torch.tensor([]),
+                        "values": torch.tensor([]),
+                        "key_pad_mask": None,
+                    },
                 )
-        if step == 0 or step is None:
-            tgt_pad_mask = (
-                tgt[:, :, 0].eq(self.embeddings.word_padding_idx).unsqueeze(1)
-            )
-        else:
-            tgt_pad_mask = None
+
+        pad_idx = self.embeddings.word_padding_idx
+        tgt_pad_mask = tgt[:, :, 0].eq(pad_idx).unsqueeze(1)  # [B, 1, T_tgt]
 
         dec_out = self.embeddings(tgt, step=step)
 
@@ -903,7 +907,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
         for layer in self.transformer_layers:
             dec_out, attn, _ = layer(
                 dec_out,
-                tgt_pad_mask=tgt_pad_mask,
+                tgt_pad_mask,
                 step=step,
                 with_align=with_align,
                 return_attn=return_attn,

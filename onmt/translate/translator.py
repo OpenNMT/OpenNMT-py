@@ -639,7 +639,6 @@ class Inference(object):
         step=None,
         batch_offset=None,
         return_attn=False,
-        select_indices=None,
     ):
         if self.copy_attn:
             # Turn any copied words into UNKs.
@@ -658,7 +657,6 @@ class Inference(object):
             src_len=src_len,
             step=step,
             return_attn=self.global_scorer.has_cov_pen or return_attn,
-            select_indices=select_indices,
         )
         # Generator forward.
         if not self.copy_attn:
@@ -1092,7 +1090,6 @@ class GeneratorLM(Inference):
         )
 
         # (3) prep decode_strategy. Possibly repeat src objects.
-
         src_map = batch["src_map"] if use_src_map else None
         (fn_map_state, src, src_map) = decode_strategy.initialize(
             src,
@@ -1100,8 +1097,6 @@ class GeneratorLM(Inference):
             src_map,
             target_prefix=target_prefix,
         )
-
-        select_indices = None
 
         # (4) Begin decoding step by step:
         for step in range(decode_strategy.max_length):
@@ -1116,7 +1111,6 @@ class GeneratorLM(Inference):
                 src_map=src_map,
                 step=step if step == 0 else step + max(src_len.tolist()),
                 batch_offset=decode_strategy.batch_offset,
-                select_indices=select_indices,
             )
 
             if step == 0:
@@ -1151,10 +1145,12 @@ class GeneratorLM(Inference):
         )
 
     def _score_target(self, batch, enc_out, src_len, src_map):
+        src = batch["src"]
         src_len = batch["srclen"]
         tgt = batch["tgt"]
 
         log_probs, attn = self._decode_and_generate(
+            src,
             None,
             batch,
             src_len=src_len,
