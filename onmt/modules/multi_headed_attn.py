@@ -416,9 +416,9 @@ class MultiHeadedAttention(torch.nn.Module):
                 key = shape(key, self.dim_per_head)
                 value = shape(value, self.dim_per_head)
 
+                start_pos = step
+                seqlen = query.size(2)
                 if self.max_relative_positions == -1:  # Rotary Embeddings
-                    start_pos = step
-                    seqlen = query.size(2)
                     if seqlen > self.rope.size(0):
                         self.rope = rotaryembeddings(
                             self.dim_per_head, maxseqlen=(seqlen + 2048)
@@ -428,15 +428,21 @@ class MultiHeadedAttention(torch.nn.Module):
                         query, key, rope, interleave=self.rotary_interleave
                     )
 
-                if self.layer_cache[1]["keys"].numel() != 0:
-                    key = torch.cat((self.layer_cache[1]["keys"], key), dim=2)
-                    value = torch.cat((self.layer_cache[1]["values"], value), dim=2)
-                    if sliding_window > 0 and key.size(2) > sliding_window:
-                        key = key[:, :, 1:, :]
-                        value = value[:, :, 1:, :]
+                self.layer_cache[1]["keys"][
+                    :, :, start_pos : start_pos + seqlen, :
+                ] = key
+                self.layer_cache[1]["values"][
+                    :, :, start_pos : start_pos + seqlen, :
+                ] = value
 
-                self.layer_cache[1]["keys"] = key
-                self.layer_cache[1]["values"] = value
+                """
+                if sliding_window > 0 and key.size(2) > sliding_window:
+                    key = key[:, :, 1:, :]
+                    value = value[:, :, 1:, :]
+                """
+
+                key = self.layer_cache[1]["keys"][:, :, : start_pos + seqlen, :]
+                value = self.layer_cache[1]["values"][:, :, : start_pos + seqlen, :]
             elif self.attn_type == "context":
                 query = self.linear_query(query)
                 query = shape(query, self.dim_per_head)

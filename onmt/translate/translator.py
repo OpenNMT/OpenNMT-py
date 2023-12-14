@@ -1102,6 +1102,7 @@ class GeneratorLM(Inference):
         )
 
         # (4) Begin decoding step by step:
+        beg_time = time()
         for step in range(decode_strategy.max_length):
             decoder_input = (
                 src if step == 0 else decode_strategy.current_predictions.view(-1, 1, 1)
@@ -1139,6 +1140,8 @@ class GeneratorLM(Inference):
             if parallel_paths > 1 or any_finished:
                 # select indexes in model state/cache
                 self.model.decoder.map_state(lambda state, dim: state[select_indices])
+            if step == 0:
+                print("step0 time: ", time() - beg_time)
 
         return self.report_results(
             gold_score,

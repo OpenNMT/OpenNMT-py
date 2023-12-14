@@ -145,6 +145,7 @@ def load_test_model(opt, device_id=0, model_path=None):
         0.0  # required to force no dropout at inference with flash
     )
 
+    model_opt.max_length = opt.max_length
     model = build_base_model(model_opt, vocabs)
 
     precision = torch.float32

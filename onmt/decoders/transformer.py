@@ -43,6 +43,7 @@ class TransformerDecoderLayerBase(nn.Module):
         parallel_gpu=1,
         sliding_window=0,
         rotary_interleave=True,
+        max_length=256,
     ):
         """
         Args:
@@ -260,6 +261,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
         parallel_gpu=1,
         sliding_window=0,
         rotary_interleave=True,
+        max_length=256,
     ):
         """
         Args:
@@ -289,6 +291,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
             parallel_gpu=parallel_gpu,
             sliding_window=sliding_window,
             rotary_interleave=rotary_interleave,
+            max_length=max_length,
         )
         self.context_attn = MultiHeadedAttention(
             heads,
@@ -448,6 +451,7 @@ class TransformerDecoderBase(DecoderBase):
             else 1,
             sliding_window=opt.sliding_window,
             rotary_interleave=opt.rotary_interleave,
+            max_length=opt.max_length,
         )
 
     def init_state(self, src, enc_out, enc_final_hs):
@@ -556,6 +560,7 @@ class TransformerDecoder(TransformerDecoderBase):
         parallel_gpu=1,
         sliding_window=0,
         rotary_interleave=True,
+        max_length=256,
     ):
         super(TransformerDecoder, self).__init__(
             d_model, copy_attn, embeddings, alignment_layer, layer_norm, norm_eps
@@ -587,6 +592,7 @@ class TransformerDecoder(TransformerDecoderBase):
                     parallel_gpu=parallel_gpu,
                     sliding_window=sliding_window,
                     rotary_interleave=rotary_interleave,
+                    max_length=max_length,
                 )
                 for i in range(num_layers)
             ]
@@ -823,6 +829,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
         parallel_gpu=1,
         sliding_window=0,
         rotary_interleave=True,
+        max_length=256,
     ):
         super(TransformerLMDecoder, self).__init__(
             d_model, copy_attn, embeddings, alignment_layer, layer_norm, norm_eps
@@ -853,10 +860,18 @@ class TransformerLMDecoder(TransformerDecoderBase):
                     parallel_gpu=parallel_gpu,
                     sliding_window=sliding_window,
                     rotary_interleave=rotary_interleave,
+                    max_length=max_length,
                 )
                 for i in range(num_layers)
             ]
         )
+        if num_kv == 0:
+            self.num_kv_heads = heads
+
+        else:
+            self.num_kv_heads = num_kv
+        self.dimperhead = d_model // heads
+        self.max_length = max_length
 
     def init_state(self, src=None, enc_out=None, enc_final_hs=None):
         super(TransformerLMDecoder, self).init_state(None, None, None)
@@ -916,9 +931,25 @@ class TransformerLMDecoder(TransformerDecoderBase):
                 else:
                     layer.self_attn.layer_cache = (
                         True,
-                        {
-                            "keys": torch.tensor([], device=tgt.device),
-                            "values": torch.tensor([], device=tgt.device),
+                        {  # [batchsize x heads x length x dimperhead]
+                            "keys": torch.zeros(
+                                [
+                                    tgt.size(0),
+                                    self.num_kv_heads,
+                                    self.max_length + tgt.size(1),
+                                    self.dimperhead,
+                                ],
+                                device=tgt.device,
+                            ).half(),
+                            "values": torch.zeros(
+                                [
+                                    tgt.size(0),
+                                    self.num_kv_heads,
+                                    self.max_length + tgt.size(1),
+                                    self.dimperhead,
+                                ],
+                                device=tgt.device,
+                            ).half(),
                         },
                     )
                     if hasattr(layer.self_attn, "rope"):
