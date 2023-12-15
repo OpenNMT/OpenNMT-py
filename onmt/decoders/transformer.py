@@ -197,8 +197,8 @@ class TransformerDecoderLayerBase(nn.Module):
             if self.sliding_window > 0:
                 future_mask = future_mask.triu_(-self.sliding_window)
             future_mask = future_mask.bool()
-            # Patch for scaled dot product attention.
             future_mask = ~future_mask.view(1, tgt_len, tgt_len)
+            # Patch for scaled dot product attention.
             patch_mask = ~torch.all(
                 tgt_pad_mask + future_mask, dim=2, keepdim=True
             ).expand_as(tgt_pad_mask + future_mask)
@@ -295,7 +295,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
             d_model,
             dropout=attention_dropout,
             attn_type="context",
-            self_attn_type=self_attn_type,
+            self_attn_type=self.self_attn_type,
             add_qkvbias=add_qkvbias,
             num_kv=num_kv,
             use_ckpting=use_ckpting,
@@ -720,7 +720,7 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
         Args:
             layer_in (FloatTensor): ``(batch_size, T, model_dim)``
             tgt_pad_mask (bool): ``(batch_size, 1, T)``
-            layer_cache (dict or None): cached layer info when stcompute_deepwise decode
+            layer_cache (dict or None): cached layer info when stepwise decode
             step (int or None): stepwise decoding counter
             future (bool): If set True, do not apply future_mask.
             return_attn (bool): If set True return attn
@@ -884,7 +884,8 @@ class TransformerLMDecoder(TransformerDecoderBase):
             # Initialize KV and key_pad_mask cache.
             self._init_cache(tgt)
 
-        if step is None:
+        elif step is None:
+
             # training mode.
             for layer in self.transformer_layers:
                 layer.self_attn.layer_cache = (
@@ -896,9 +897,10 @@ class TransformerLMDecoder(TransformerDecoderBase):
                     },
                 )
 
+        dec_out = self.embeddings(tgt, step=step)
+
         pad_idx = self.embeddings.word_padding_idx
         tgt_pad_mask = tgt[:, :, 0].eq(pad_idx).unsqueeze(1)  # [B, 1, T_tgt]
-        dec_out = self.embeddings(tgt, step=step)
 
         assert dec_out.dim() == 3  # batch x len x embedding_dim
 

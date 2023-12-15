@@ -836,7 +836,7 @@ def model_opts(parser):
         "--self_attn_type",
         "-self_attn_type",
         type=str,
-        default="scaled-dot",
+        default="scaled-dot-flash",
         help="Self attention type in Transformer decoder "
         'layer -- currently "scaled-dot", "scaled-dot-flash" or "average" ',
     )
