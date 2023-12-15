@@ -384,7 +384,7 @@ class MultiHeadedAttention(torch.nn.Module):
         sliding_window: Optional[int] = 0,
         step: Optional[int] = 0,
         return_attn: Optional[bool] = False,
-        flash_attention=True,
+        self_attn_type: str = None,
     ) -> Tuple[Tensor, Tensor]:
         """
         Compute the context vector and the attention vectors.
@@ -407,21 +407,7 @@ class MultiHeadedAttention(torch.nn.Module):
         """
         # 1) Project key, value, and query.
         # as a reminder at training layer_cache[0] remains False
-
         key_pad_mask = self.layer_cache[1].get("key_pad_mask", None)
-        if key_pad_mask is not None:
-            # Increase the cached key pad mask by concatenation.
-            # For decoding only.
-            if step > 0:
-                y = torch.zeros(
-                    (key_pad_mask.size(0), key_pad_mask.size(1), 1),
-                    dtype=torch.bool,
-                    device=key_pad_mask.device,
-                )
-                self.layer_cache[1]["key_pad_mask"] = torch.cat((key_pad_mask, y), 2)
-                key_pad_mask = self.layer_cache[1]["key_pad_mask"]
-                mask = key_pad_mask.unsqueeze(1)
-
         if self.layer_cache[0]:
             # Retrieve keys and values from the KV cache (decoding mode only).
             if self.attn_type == "self":
@@ -469,6 +455,21 @@ class MultiHeadedAttention(torch.nn.Module):
                     )
                 self.layer_cache[1]["keys"] = key
                 self.layer_cache[1]["values"] = value
+
+            if key_pad_mask is not None:
+                # Increase the cached key pad mask by concatenation.
+                # For decoding only.
+                if step > 0:
+                    y = torch.zeros(
+                        (key_pad_mask.size(0), key_pad_mask.size(1), 1),
+                        dtype=torch.bool,
+                        device=key_pad_mask.device,
+                    )
+                    self.layer_cache[1]["key_pad_mask"] = torch.cat(
+                        (key_pad_mask, y), 2
+                    )
+                    key_pad_mask = self.layer_cache[1]["key_pad_mask"]
+                    mask = key_pad_mask.unsqueeze(1)
         else:
             # Retrieve keys and values from linear layers (training mode).
             key = self.maybe_ckpt(self.linear_keys, key)
@@ -511,11 +512,12 @@ class MultiHeadedAttention(torch.nn.Module):
             self.flash2
             and l > 256  # https://github.com/Dao-AILab/flash-attention/issues/591
         )
+
         if (
             self.max_relative_positions in [-1, 0]
             and not return_attn
             and query.device != torch.device("cpu")
-            and self.self_attn_type == "flash-scaled-dot"
+            and self.self_attn_type == "scaled-dot-flash"
         ):
             # Apply flash2 attention.
             causal = self.is_decoder and self.attn_type == "self" and mask is not None

@@ -25,7 +25,7 @@ class TransformerDecoderLayerBase(nn.Module):
         d_ff,
         dropout,
         attention_dropout,
-        self_attn_type="scaled-dot",
+        self_attn_type="scaled_dot",
         max_relative_positions=0,
         relative_positions_buckets=0,
         aan_useffn=False,
@@ -88,9 +88,7 @@ class TransformerDecoderLayerBase(nn.Module):
                 embeddings are applied
         """
         super(TransformerDecoderLayerBase, self).__init__()
-
-        self.self_attn_type = self_attn_type
-        if self_attn_type in ("scaled-dot", "flash-scaled-dot"):
+        if self_attn_type in ["scaled-dot", "scaled-dot-flash"]:
             self.self_attn = MultiHeadedAttention(
                 heads,
                 d_model,
@@ -140,6 +138,7 @@ class TransformerDecoderLayerBase(nn.Module):
         self.full_context_alignment = full_context_alignment
         self.alignment_heads = alignment_heads
         self.sliding_window = sliding_window
+        self.self_attn_type = self_attn_type
 
     def forward(self, *args, **kwargs):
         """Extend `_forward` for (possibly) multiple decoder pass:
@@ -198,15 +197,20 @@ class TransformerDecoderLayerBase(nn.Module):
             if self.sliding_window > 0:
                 future_mask = future_mask.triu_(-self.sliding_window)
             future_mask = future_mask.bool()
+            # Patch for scaled dot product attention.
             future_mask = ~future_mask.view(1, tgt_len, tgt_len)
+            patch_mask = ~torch.all(
+                tgt_pad_mask + future_mask, dim=2, keepdim=True
+            ).expand_as(tgt_pad_mask + future_mask)
             dec_mask = torch.gt(tgt_pad_mask + future_mask, 0)
+            dec_mask = torch.logical_and(dec_mask, patch_mask)
         else:
             # Only mask padding, result mask in (B, 1, T).
             dec_mask = tgt_pad_mask
         return dec_mask
 
     def _forward_self_attn(self, norm_layer_in, dec_mask, step, return_attn=False):
-        if self.self_attn_type == "scaled-dot":
+        if self.self_attn_type in ["scaled-dot", "scaled-dot-flash"]:
             return self.self_attn(
                 norm_layer_in,
                 norm_layer_in,
@@ -733,7 +737,7 @@ class TransformerLMDecoderLayer(TransformerDecoderLayerBase):
         if layer_in.size(1) > 1:
             # Masking is necessary when sequence length is greater than one
             # The decoding has not started yet,
-            # We compute the scores on the source tokens in one shot.
+            # we compute the scores on the source tokens in one shot.
             dec_mask = self._compute_dec_mask(tgt_pad_mask, future)
             dec_mask = dec_mask.unsqueeze(1)
             dec_mask = dec_mask.expand(-1, -1, dec_mask.size(3), -1)
@@ -770,7 +774,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
         heads (int): number of heads
         d_ff (int): size of the inner FF layer
         copy_attn (bool): if using a separate copy attention
-        self_attn_type (str): type of self-attention scaled-dot, average
+        self_attn_type (str): type of self-attention scaled-dot, scaled-dot-flash, average
         dropout (float): dropout in residual, self-attn(dot) and feed-forward
         attention_dropout (float): dropout in context_attn (and self-attn(avg))
         embeddings (onmt.modules.Embeddings):
@@ -894,7 +898,6 @@ class TransformerLMDecoder(TransformerDecoderBase):
 
         pad_idx = self.embeddings.word_padding_idx
         tgt_pad_mask = tgt[:, :, 0].eq(pad_idx).unsqueeze(1)  # [B, 1, T_tgt]
-
         dec_out = self.embeddings(tgt, step=step)
 
         assert dec_out.dim() == 3  # batch x len x embedding_dim

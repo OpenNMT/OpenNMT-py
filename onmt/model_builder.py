@@ -131,6 +131,9 @@ def load_test_model(opt, device_id=0, model_path=None):
             device = torch.device("cpu")
         offset = 0
 
+    if hasattr(opt, "self_attn_type"):
+        model_opt.self_attn_type = opt.self_attn_type
+
     ArgumentParser.update_model_opts(model_opt)
     ArgumentParser.validate_model_opts(model_opt)
     vocabs = dict_to_vocabs(checkpoint["vocab"])
