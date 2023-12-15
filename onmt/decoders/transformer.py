@@ -88,6 +88,7 @@ class TransformerDecoderLayerBase(nn.Module):
                 embeddings are applied
         """
         super(TransformerDecoderLayerBase, self).__init__()
+
         if self_attn_type in ["scaled-dot", "scaled-dot-flash"]:
             self.self_attn = MultiHeadedAttention(
                 heads,
@@ -883,9 +884,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
             # decoding mode.
             # Initialize KV and key_pad_mask cache.
             self._init_cache(tgt)
-
         elif step is None:
-
             # training mode.
             for layer in self.transformer_layers:
                 layer.self_attn.layer_cache = (
@@ -896,13 +895,12 @@ class TransformerLMDecoder(TransformerDecoderBase):
                         "key_pad_mask": None,
                     },
                 )
-
         dec_out = self.embeddings(tgt, step=step)
+
+        assert dec_out.dim() == 3  # batch x len x embedding_dim
 
         pad_idx = self.embeddings.word_padding_idx
         tgt_pad_mask = tgt[:, :, 0].eq(pad_idx).unsqueeze(1)  # [B, 1, T_tgt]
-
-        assert dec_out.dim() == 3  # batch x len x embedding_dim
 
         with_align = kwargs.pop("with_align", False)
         return_attn = kwargs.pop("return_attn", False)
@@ -917,6 +915,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
                 with_align=with_align,
                 return_attn=return_attn,
             )
+
         dec_out = self.layer_norm(dec_out)
 
         attns = {"std": attn}
