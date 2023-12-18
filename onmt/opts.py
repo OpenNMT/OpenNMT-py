@@ -1826,7 +1826,14 @@ def translate_opts(parser, dynamic=False):
         "Necessary for models whose output layers can assign "
         "zero probability.",
     )
-
+    group.add(
+        "--self_attn_type",
+        "-self_attn_type",
+        type=str,
+        default="scaled-dot-flash",
+        help="Self attention type in Transformer decoder "
+        'layer -- currently "scaled-dot", "scaled-dot-flash" or "average" ',
+    )
     group = parser.add_argument_group("Data")
     group.add(
         "--data_type",
@@ -1834,7 +1841,6 @@ def translate_opts(parser, dynamic=False):
         default="text",
         help="Type of the source input. Options: [text].",
     )
-
     group.add(
         "--src",
         "-src",
