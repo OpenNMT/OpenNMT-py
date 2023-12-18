@@ -1112,7 +1112,7 @@ class GeneratorLM(Inference):
                 batch,
                 src_len=decode_strategy.src_len,
                 src_map=src_map,
-                step=step if step == 0 else step + max(src_len.tolist()),
+                step=step if step == 0 else step + max(src_len.tolist()) - 1,
                 batch_offset=decode_strategy.batch_offset,
             )
 
