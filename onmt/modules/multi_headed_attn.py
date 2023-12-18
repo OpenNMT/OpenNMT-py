@@ -480,7 +480,6 @@ class MultiHeadedAttention(torch.nn.Module):
                         (key_pad_mask, y), 2
                     )
                     key_pad_mask = self.layer_cache[1]["key_pad_mask"]
-                    mask = key_pad_mask.unsqueeze(1)
         else:
             # Retrieve keys and values from linear layers (training mode).
             key = self.maybe_ckpt(self.linear_keys, key)
