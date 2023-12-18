@@ -25,7 +25,7 @@ class TransformerDecoderLayerBase(nn.Module):
         d_ff,
         dropout,
         attention_dropout,
-        self_attn_type="scaled-dot",
+        self_attn_type="scaled_dot",
         max_relative_positions=0,
         relative_positions_buckets=0,
         aan_useffn=False,
@@ -58,7 +58,7 @@ class TransformerDecoderLayerBase(nn.Module):
             attention_dropout (float): dropout in context_attn  (and
                 self-attn(avg))
             self_attn_type (string): type of self-attention scaled-dot,
-                average
+                flash-scaled-dot, average
             max_relative_positions (int):
                 Max distance between inputs in relative positions
                 representations
@@ -90,8 +90,7 @@ class TransformerDecoderLayerBase(nn.Module):
         """
         super(TransformerDecoderLayerBase, self).__init__()
 
-        self.self_attn_type = self_attn_type
-        if self_attn_type == "scaled-dot":
+        if self_attn_type in ["scaled-dot", "scaled-dot-flash"]:
             self.self_attn = MultiHeadedAttention(
                 heads,
                 d_model,
@@ -100,6 +99,7 @@ class TransformerDecoderLayerBase(nn.Module):
                 relative_positions_buckets=relative_positions_buckets,
                 rotary_interleave=rotary_interleave,
                 attn_type="self",
+                self_attn_type=self_attn_type,
                 add_qkvbias=add_qkvbias,
                 num_kv=num_kv,
                 use_ckpting=use_ckpting,
@@ -140,6 +140,7 @@ class TransformerDecoderLayerBase(nn.Module):
         self.full_context_alignment = full_context_alignment
         self.alignment_heads = alignment_heads
         self.sliding_window = sliding_window
+        self.self_attn_type = self_attn_type
 
     def forward(self, *args, **kwargs):
         """Extend `_forward` for (possibly) multiple decoder pass:
@@ -211,7 +212,7 @@ class TransformerDecoderLayerBase(nn.Module):
         return dec_mask
 
     def _forward_self_attn(self, norm_layer_in, dec_mask, step, return_attn=False):
-        if self.self_attn_type == "scaled-dot":
+        if self.self_attn_type in ["scaled-dot", "scaled-dot-flash"]:
             return self.self_attn(
                 norm_layer_in,
                 norm_layer_in,
@@ -298,6 +299,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
             d_model,
             dropout=attention_dropout,
             attn_type="context",
+            self_attn_type=self.self_attn_type,
             add_qkvbias=add_qkvbias,
             num_kv=num_kv,
             use_ckpting=use_ckpting,
@@ -475,7 +477,18 @@ class TransformerDecoderBase(DecoderBase):
                 if layer.self_attn.layer_cache[1]["keys"].numel() != 0:
                     x = fn(layer.self_attn.layer_cache[1]["keys"], 0)
                     y = fn(layer.self_attn.layer_cache[1]["values"], 0)
-                    layer.self_attn.layer_cache = True, {"keys": x, "values": y}
+                    if (
+                        layer.self_attn.layer_cache[1].get("key_pad_mask", None)
+                        is not None
+                    ):
+                        z = fn(layer.self_attn.layer_cache[1]["key_pad_mask"], 0)
+                    else:
+                        z = None
+                    layer.self_attn.layer_cache = True, {
+                        "keys": x,
+                        "values": y,
+                        "key_pad_mask": z,
+                    }
 
     def detach_state(self):
         raise NotImplementedError
@@ -499,7 +512,7 @@ class TransformerDecoder(TransformerDecoderBase):
         heads (int): number of heads
         d_ff (int): size of the inner FF layer
         copy_attn (bool): if using a separate copy attention
-        self_attn_type (str): type of self-attention scaled-dot, average
+        self_attn_type (str): type of self-attention scaled-dot, scaled-dot-flash, average
         dropout (float): dropout in residual, self-attn(dot) and feed-forward
         attention_dropout (float): dropout in context_attn (and self-attn(avg))
         embeddings (onmt.modules.Embeddings):
@@ -597,6 +610,13 @@ class TransformerDecoder(TransformerDecoderBase):
                 for i in range(num_layers)
             ]
         )
+        if num_kv == 0:
+            self.num_kv_heads = heads
+
+        else:
+            self.num_kv_heads = num_kv
+        self.dimperhead = d_model // heads
+        self.max_length = max_length
 
     def detach_state(self):
         self.state["src"] = self.state["src"].detach()
@@ -611,7 +631,7 @@ class TransformerDecoder(TransformerDecoderBase):
         if enc_out is None:
             enc_out = self.embeddings(tgt)
         if step == 0:
-            self._init_cache(enc_out)
+            self._init_cache(tgt, enc_out)
         elif step is None:
             for layer in self.transformer_layers:
                 if isinstance(layer.self_attn, AverageAttention):
@@ -666,7 +686,7 @@ class TransformerDecoder(TransformerDecoderBase):
         # TODO change the way attns is returned dict => list or tuple (onnx)
         return dec_out, attns
 
-    def _init_cache(self, enc_out):
+    def _init_cache(self, tgt, enc_out):
         batch_size = enc_out.size(0)
         depth = enc_out.size(-1)
 
@@ -689,9 +709,28 @@ class TransformerDecoder(TransformerDecoderBase):
             else:
                 layer.self_attn.layer_cache = (
                     True,
-                    {
-                        "keys": torch.tensor([], device=enc_out.device),
-                        "values": torch.tensor([], device=enc_out.device),
+                    {  # [batchsize x heads x length x dimperhead]
+                        "keys": torch.zeros(
+                            [
+                                tgt.size(0),
+                                self.num_kv_heads,
+                                self.max_length + tgt.size(1),
+                                self.dimperhead,
+                            ],
+                            device=tgt.device,
+                        ).half(),
+                        "values": torch.zeros(
+                            [
+                                tgt.size(0),
+                                self.num_kv_heads,
+                                self.max_length + tgt.size(1),
+                                self.dimperhead,
+                            ],
+                            device=tgt.device,
+                        ).half(),
+                        "key_pad_mask": tgt[:, :, 0]
+                        .eq(self.embeddings.word_padding_idx)
+                        .unsqueeze(1),
                     },
                 )
                 if hasattr(layer.self_attn, "rope"):
@@ -768,7 +807,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
         heads (int): number of heads
         d_ff (int): size of the inner FF layer
         copy_attn (bool): if using a separate copy attention
-        self_attn_type (str): type of self-attention scaled-dot, average
+        self_attn_type (str): type of self-attention scaled-dot, scaled-dot-flash, average
         dropout (float): dropout in residual, self-attn(dot) and feed-forward
         attention_dropout (float): dropout in context_attn (and self-attn(avg))
         embeddings (onmt.modules.Embeddings):
@@ -881,18 +920,22 @@ class TransformerLMDecoder(TransformerDecoderBase):
 
     def forward(self, tgt, enc_out=None, step=None, **kwargs):
         """Decode, possibly stepwise."""
+
         if step == 0:
             # decoding mode.
-            # Initialize KV cache.
+            # Initialize KV and key_pad_mask cache.
             self._init_cache(tgt)
         elif step is None:
             # training mode.
             for layer in self.transformer_layers:
                 layer.self_attn.layer_cache = (
                     False,
-                    {"keys": torch.tensor([]), "values": torch.tensor([])},
+                    {
+                        "keys": torch.tensor([]),
+                        "values": torch.tensor([]),
+                        "key_pad_mask": None,
+                    },
                 )
-
         dec_out = self.embeddings(tgt, step=step)
 
         assert dec_out.dim() == 3  # batch x len x embedding_dim
@@ -950,6 +993,9 @@ class TransformerLMDecoder(TransformerDecoderBase):
                                 ],
                                 device=tgt.device,
                             ).half(),
+                            "key_pad_mask": tgt[:, :, 0]
+                            .eq(self.embeddings.word_padding_idx)
+                            .unsqueeze(1),
                         },
                     )
                     if hasattr(layer.self_attn, "rope"):
