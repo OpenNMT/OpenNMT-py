@@ -10,11 +10,7 @@ from onmt.modules import MultiHeadedAttention, AverageAttention
 from onmt.modules.position_ffn import PositionwiseFeedForward
 from onmt.modules.position_ffn import ActivationFunction
 from onmt.utils.misc import sequence_mask
-
-try:
-    from apex.normalization import FusedRMSNorm as RMSNorm
-except ImportError:
-    from onmt.modules.rmsnorm import RMSNorm
+from onmt.modules.rmsnorm import RMSNorm
 
 
 class TransformerDecoderLayerBase(nn.Module):
@@ -43,7 +39,6 @@ class TransformerDecoderLayerBase(nn.Module):
         parallel_gpu=1,
         sliding_window=0,
         rotary_interleave=True,
-        max_length=256,
     ):
         """
         Args:
@@ -262,7 +257,6 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
         parallel_gpu=1,
         sliding_window=0,
         rotary_interleave=True,
-        max_length=256,
     ):
         """
         Args:
@@ -292,7 +286,6 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
             parallel_gpu=parallel_gpu,
             sliding_window=sliding_window,
             rotary_interleave=rotary_interleave,
-            max_length=max_length,
         )
         self.context_attn = MultiHeadedAttention(
             heads,
@@ -453,7 +446,6 @@ class TransformerDecoderBase(DecoderBase):
             else 1,
             sliding_window=opt.sliding_window,
             rotary_interleave=opt.rotary_interleave,
-            max_length=opt.max_length,
         )
 
     def init_state(self, src, enc_out, enc_final_hs):
@@ -573,7 +565,6 @@ class TransformerDecoder(TransformerDecoderBase):
         parallel_gpu=1,
         sliding_window=0,
         rotary_interleave=True,
-        max_length=256,
     ):
         super(TransformerDecoder, self).__init__(
             d_model, copy_attn, embeddings, alignment_layer, layer_norm, norm_eps
@@ -605,18 +596,10 @@ class TransformerDecoder(TransformerDecoderBase):
                     parallel_gpu=parallel_gpu,
                     sliding_window=sliding_window,
                     rotary_interleave=rotary_interleave,
-                    max_length=max_length,
                 )
                 for i in range(num_layers)
             ]
         )
-        if num_kv == 0:
-            self.num_kv_heads = heads
-
-        else:
-            self.num_kv_heads = num_kv
-        self.dimperhead = d_model // heads
-        self.max_length = max_length
 
     def detach_state(self):
         self.state["src"] = self.state["src"].detach()
@@ -631,7 +614,7 @@ class TransformerDecoder(TransformerDecoderBase):
         if enc_out is None:
             enc_out = self.embeddings(tgt)
         if step == 0:
-            self._init_cache(tgt, enc_out)
+            self._init_cache(enc_out)
         elif step is None:
             for layer in self.transformer_layers:
                 if isinstance(layer.self_attn, AverageAttention):
@@ -686,7 +669,7 @@ class TransformerDecoder(TransformerDecoderBase):
         # TODO change the way attns is returned dict => list or tuple (onnx)
         return dec_out, attns
 
-    def _init_cache(self, tgt, enc_out):
+    def _init_cache(self, enc_out):
         batch_size = enc_out.size(0)
         depth = enc_out.size(-1)
 
@@ -709,28 +692,9 @@ class TransformerDecoder(TransformerDecoderBase):
             else:
                 layer.self_attn.layer_cache = (
                     True,
-                    {  # [batchsize x heads x length x dimperhead]
-                        "keys": torch.zeros(
-                            [
-                                tgt.size(0),
-                                self.num_kv_heads,
-                                self.max_length + tgt.size(1),
-                                self.dimperhead,
-                            ],
-                            device=tgt.device,
-                        ).half(),
-                        "values": torch.zeros(
-                            [
-                                tgt.size(0),
-                                self.num_kv_heads,
-                                self.max_length + tgt.size(1),
-                                self.dimperhead,
-                            ],
-                            device=tgt.device,
-                        ).half(),
-                        "key_pad_mask": tgt[:, :, 0]
-                        .eq(self.embeddings.word_padding_idx)
-                        .unsqueeze(1),
+                    {
+                        "keys": torch.tensor([], device=enc_out.device),
+                        "values": torch.tensor([], device=enc_out.device),
                     },
                 )
                 if hasattr(layer.self_attn, "rope"):
@@ -868,7 +832,6 @@ class TransformerLMDecoder(TransformerDecoderBase):
         parallel_gpu=1,
         sliding_window=0,
         rotary_interleave=True,
-        max_length=256,
     ):
         super(TransformerLMDecoder, self).__init__(
             d_model, copy_attn, embeddings, alignment_layer, layer_norm, norm_eps
@@ -899,18 +862,10 @@ class TransformerLMDecoder(TransformerDecoderBase):
                     parallel_gpu=parallel_gpu,
                     sliding_window=sliding_window,
                     rotary_interleave=rotary_interleave,
-                    max_length=max_length,
                 )
                 for i in range(num_layers)
             ]
         )
-        if num_kv == 0:
-            self.num_kv_heads = heads
-
-        else:
-            self.num_kv_heads = num_kv
-        self.dimperhead = d_model // heads
-        self.max_length = max_length
 
     def init_state(self, src=None, enc_out=None, enc_final_hs=None):
         super(TransformerLMDecoder, self).init_state(None, None, None)
@@ -974,25 +929,9 @@ class TransformerLMDecoder(TransformerDecoderBase):
                 else:
                     layer.self_attn.layer_cache = (
                         True,
-                        {  # [batchsize x heads x length x dimperhead]
-                            "keys": torch.zeros(
-                                [
-                                    tgt.size(0),
-                                    self.num_kv_heads,
-                                    self.max_length + tgt.size(1),
-                                    self.dimperhead,
-                                ],
-                                device=tgt.device,
-                            ).half(),
-                            "values": torch.zeros(
-                                [
-                                    tgt.size(0),
-                                    self.num_kv_heads,
-                                    self.max_length + tgt.size(1),
-                                    self.dimperhead,
-                                ],
-                                device=tgt.device,
-                            ).half(),
+                        {
+                            "keys": torch.tensor([], device=tgt.device),
+                            "values": torch.tensor([], device=tgt.device),
                             "key_pad_mask": tgt[:, :, 0]
                             .eq(self.embeddings.word_padding_idx)
                             .unsqueeze(1),
@@ -1000,3 +939,5 @@ class TransformerLMDecoder(TransformerDecoderBase):
                     )
                     if hasattr(layer.self_attn, "rope"):
                         layer.self_attn.rope = layer.self_attn.rope.to(tgt.device)
+                        layer.self_attn.cos = layer.self_attn.cos.to(tgt.device)
+                        layer.self_attn.sin = layer.self_attn.sin.to(tgt.device)

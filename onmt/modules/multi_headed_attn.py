@@ -11,7 +11,6 @@ from .alibi_position_bias import AlibiPositionalBias
 from torch.distributed import all_reduce
 from importlib import import_module
 
-
 # Help functions for Rotary Embeddings
 # https://arxiv.org/pdf/2104.09864.pdf
 # too convoluted to make maxseqlen a parameter.
@@ -353,8 +352,17 @@ class MultiHeadedAttention(torch.nn.Module):
 
             if max_relative_positions == -1:  # rotary embeddings
                 self.rope = rotaryembeddings(self.dim_per_head)
+                self.cos = (
+                    self.rope[:, : self.rope.size(1) // 2].real.contiguous().half()
+                )
+                self.sin = (
+                    self.rope[:, : self.rope.size(1) // 2].imag.contiguous().half()
+                )
                 self.rotary_interleave = rotary_interleave
-
+            else:
+                self.cos = None
+                self.sin = None
+                self.rotary_interleave = None
             if max_relative_positions == -2:  # alibi positional bias
                 self.alibi = AlibiPositionalBias(head_count)
 
@@ -367,6 +375,9 @@ class MultiHeadedAttention(torch.nn.Module):
                 and torch.cuda.get_device_capability()[0] >= 8
             ):
                 self.flash_attn_func = getattr(flash_pack, "flash_attn_func")
+                self.flash_attn_with_kvcache = getattr(
+                    flash_pack, "flash_attn_with_kvcache"
+                )
                 self.flash2 = True
         except ImportError:
             self.flash2 = False
@@ -422,36 +433,88 @@ class MultiHeadedAttention(torch.nn.Module):
 
                 start_pos = step
                 seqlen = query.size(2)
-                print(start_pos, seqlen)
-                if self.max_relative_positions == -1:  # Rotary Embeddings
-                    if seqlen > self.rope.size(0):
-                        self.rope = rotaryembeddings(
-                            self.dim_per_head, maxseqlen=(seqlen + 2048)
-                        ).to(self.rope.device)
-                    rope = self.rope[start_pos : start_pos + seqlen]
-                    query, key = apply_rotary_emb(
-                        query, key, rope, interleave=self.rotary_interleave
-                    )
 
-                print(key.size())
-                self.layer_cache[1]["keys"][
-                    :, :, start_pos : start_pos + seqlen, :
-                ] = key
-                print(self.layer_cache[1]["keys"].size())
-                self.layer_cache[1]["values"][
-                    :, :, start_pos : start_pos + seqlen, :
-                ] = value
+                if (
+                    step == 0
+                    or not self.flash2
+                    or self.max_relative_positions not in [0, -1]
+                    or query.size(0) > 8
+                ):
+                    if self.max_relative_positions == -1:  # Rotary Embeddings
+                        if seqlen > self.rope.size(0):
+                            self.rope = rotaryembeddings(
+                                self.dim_per_head, maxseqlen=(seqlen + 2048)
+                            ).to(self.rope.device)
+                        rope = self.rope[start_pos : start_pos + seqlen]
+                        query, key = apply_rotary_emb(
+                            query, key, rope, interleave=self.rotary_interleave
+                        )
 
-                """
-                if sliding_window > 0 and key.size(2) > sliding_window:
-                    key = key[:, :, 1:, :]
-                    value = value[:, :, 1:, :]
-                """
+                    if self.layer_cache[1]["keys"].numel() != 0:
+                        key = torch.cat((self.layer_cache[1]["keys"], key), dim=2)
+                        value = torch.cat((self.layer_cache[1]["values"], value), dim=2)
+                        if sliding_window > 0 and key.size(2) > sliding_window:
+                            key = key[:, :, 1:, :]
+                            value = value[:, :, 1:, :]
 
-                key = self.layer_cache[1]["keys"][:, :, : start_pos + seqlen, :]
-                print(key.size())
-                print()
-                value = self.layer_cache[1]["values"][:, :, : start_pos + seqlen, :]
+                    self.layer_cache[1]["keys"] = key
+                    self.layer_cache[1]["values"] = value
+
+                else:
+                    if self.max_relative_positions == -1:  # Rotary Embeddings
+                        if seqlen > self.rope.size(0):
+                            self.rope = rotaryembeddings(
+                                self.dim_per_head, maxseqlen=(seqlen + 2048)
+                            ).to(self.rope.device)
+                            self.cos = (
+                                self.rope[:, : self.rope.size(1) // 2]
+                                .real.contiguous()
+                                .half()
+                            )
+                            self.sin = (
+                                self.rope[:, : self.rope.size(1) // 2]
+                                .imag.contiguous()
+                                .half()
+                            )
+                    if start_pos >= self.layer_cache[1]["keys"].size(2):
+                        self.layer_cache[1]["keys"] = torch.cat(
+                            [
+                                self.layer_cache[1]["keys"],
+                                torch.zeros(
+                                    self.layer_cache[1]["keys"].shape[:-2]
+                                    + (32,)
+                                    + self.layer_cache[1]["keys"].shape[-1:],
+                                    device=query.device,
+                                ).half(),
+                            ],
+                            dim=-2,
+                        )
+                        self.layer_cache[1]["values"] = torch.cat(
+                            [
+                                self.layer_cache[1]["values"],
+                                torch.zeros(
+                                    self.layer_cache[1]["values"].shape[:-2]
+                                    + (32,)
+                                    + self.layer_cache[1]["values"].shape[-1:],
+                                    device=query.device,
+                                ).half(),
+                            ],
+                            dim=-2,
+                        )
+                    context = self.flash_attn_with_kvcache(
+                        query.transpose(1, 2),
+                        self.layer_cache[1]["keys"].transpose(1, 2),
+                        self.layer_cache[1]["values"].transpose(1, 2),
+                        key.transpose(1, 2),
+                        value.transpose(1, 2),
+                        rotary_cos=self.cos,
+                        rotary_sin=self.sin,
+                        cache_seqlens=step,
+                        rotary_interleaved=self.rotary_interleave,
+                    ).transpose(1, 2)
+                    attn_output = self.final_linear(unshape(context))
+                    return attn_output, None
+
             elif self.attn_type == "context":
                 query = self.linear_query(query)
                 query = shape(query, self.dim_per_head)
