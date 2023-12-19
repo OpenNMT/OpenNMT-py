@@ -7,7 +7,12 @@ import torch.nn as nn
 try:
     os.environ["BITSANDBYTES_NOWELCOME"] = "1"
     from bitsandbytes import MatmulLtState
-    from bitsandbytes.nn import Linear4bit, Linear8bitLt, Params4bit, Int8Params
+    from bitsandbytes.nn import (
+        Linear4bit,
+        Linear8bitLt,
+        Params4bit,
+        Int8Params,
+    )
 except ImportError:
     raise ImportError("Install bitsandbytes to use 4/8bit compression")
 
