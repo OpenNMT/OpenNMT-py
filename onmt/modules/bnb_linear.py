@@ -12,8 +12,6 @@ try:
         Linear8bitLt,
         Params4bit,
         Int8Params,
-        LinearSparse,
-        ParamsSparse,
     )
 except ImportError:
     raise ImportError("Install bitsandbytes to use 4/8bit compression")
@@ -71,17 +69,4 @@ def replace_bnb_linear(
                     quant_type=q_type[-3:].lower(),
                 )
                 model._modules[name].compute_dtype = compute_dtype
-            elif q_type in ["bnb_sparse"]:
-                model._modules[name] = nn.utils.skip_init(
-                    LinearSparse,
-                    module.in_features,
-                    module.out_features,
-                    module.bias is not None,
-                    device=torch.device("cpu"),
-                )
-                model._modules[name].weight = ParamsSparse(
-                    model._modules[name].weight.data,
-                    requires_grad=False,
-                    sparsity_level=0.98,
-                )
     return model

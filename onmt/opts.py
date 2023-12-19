@@ -1584,7 +1584,6 @@ def _add_quant_opts(parser):
             "bnb_8bit",
             "bnb_FP4",
             "bnb_NF4",
-            "bnb_sparse",
             "llm_awq",
             "aawq_gemm",
             "aawq_gemv",
