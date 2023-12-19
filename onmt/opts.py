@@ -902,6 +902,20 @@ def model_opts(parser):
         help="Size of hidden transformer feed-forward",
     )
     group.add(
+        "--num_experts",
+        "-num_experts",
+        type=int,
+        default=0,
+        help="Number of experts",
+    )
+    group.add(
+        "--num_experts_per_tok",
+        "-num_experts_per_tok",
+        type=int,
+        default=2,
+        help="Number of experts per token",
+    )
+    group.add(
         "--aan_useffn",
         "-aan_useffn",
         action="store_true",
