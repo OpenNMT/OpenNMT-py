@@ -514,6 +514,8 @@ class MultiHeadedAttention(torch.nn.Module):
                         rotary_interleaved=self.rotary_interleave,
                     ).transpose(1, 2)
                     attn_output = self.final_linear(unshape(context))
+                    if self.parallel_gpu > 1:
+                        all_reduce(attn_output)
                     return attn_output, None
 
             elif self.attn_type == "context":

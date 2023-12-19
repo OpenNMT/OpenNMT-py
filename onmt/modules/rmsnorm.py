@@ -6,7 +6,7 @@ import torch.nn as nn
 try:
     import awq_inference_engine
 
-    AWQ_INFERENCE_ENGINE = False
+    AWQ_INFERENCE_ENGINE = True
 except ImportError:
     AWQ_INFERENCE_ENGINE = False
 
