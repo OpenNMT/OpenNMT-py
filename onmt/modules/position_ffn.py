@@ -3,16 +3,7 @@
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.checkpoint import checkpoint
-
-try:
-    import awq_inference_engine
-    from onmt.modules.rmsnorm import RMSNorm
-except ImportError:
-    try:
-        from apex.normalization import FusedRMSNorm as RMSNorm
-    except ImportError:
-        from onmt.modules.rmsnorm import RMSNorm
-
+from onmt.modules.rmsnorm import RMSNorm
 from torch.nn.utils import skip_init
 from torch.distributed import all_reduce
 

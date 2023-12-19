@@ -439,6 +439,7 @@ class MultiHeadedAttention(torch.nn.Module):
                     or not self.flash2
                     or self.max_relative_positions not in [0, -1]
                     or query.size(0) > 8
+                    or query.dtype != torch.float16
                 ):
                     if self.max_relative_positions == -1:  # Rotary Embeddings
                         if seqlen > self.rope.size(0):
