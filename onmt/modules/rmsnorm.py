@@ -26,12 +26,12 @@ class RMSNorm(torch.nn.Module):
     def forward(self, hidden_states):
         if AWQ_INFERENCE_ENGINE:
             output = torch.empty_like(hidden_states)
-            if hidden_states.dim() == 2: # patch for multi experts
+            if hidden_states.dim() == 2:  # patch for multi experts
                 hidden_states = hidden_states.unsqueeze(0)
             awq_inference_engine.layernorm_forward_cuda(
                 hidden_states, self.weight, output, self.eps
             )
-            if hidden_states.dim() == 2: # patch for multi experts
+            if hidden_states.dim() == 2:  # patch for multi experts
                 output = output.unsqueeze(0)
             return output
         else:
