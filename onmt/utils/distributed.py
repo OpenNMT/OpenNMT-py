@@ -212,7 +212,7 @@ def spawned_infer(opt, device_id, error_queue, queue_instruct, queue_result):
                     device_id=device_id,
                 )
                 scores, preds = translator._translate(
-                    infer_iter, infer_iter.transform, opt.attn_debug, opt.align_debug
+                    infer_iter, infer_iter.transforms, opt.attn_debug, opt.align_debug
                 )
                 queue_result.put(scores)
                 queue_result.put(preds)
