@@ -509,8 +509,12 @@ class MultiHeadedAttention(torch.nn.Module):
                             dim=-2,
                         )
                     if sliding_window > 0 and key.size(2) > sliding_window:
-                        self.layer_cache[1]["keys"] = self.layer_cache[1]["keys"][:, :, 1:, :]
-                        self.layer_cache[1]["values"] = self.layer_cache[1]["values"][:, :, 1:, :]
+                        self.layer_cache[1]["keys"] = self.layer_cache[1]["keys"][
+                            :, :, 1:, :
+                        ]
+                        self.layer_cache[1]["values"] = self.layer_cache[1]["values"][
+                            :, :, 1:, :
+                        ]
                     context = self.flash_attn_with_kvcache(
                         query.transpose(1, 2),
                         self.layer_cache[1]["keys"].transpose(1, 2),
