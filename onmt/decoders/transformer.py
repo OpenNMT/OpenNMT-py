@@ -11,11 +11,7 @@ from onmt.modules.position_ffn import PositionwiseFeedForward
 from onmt.modules.position_ffn import ActivationFunction
 from onmt.modules.moe import MoE
 from onmt.utils.misc import sequence_mask
-
-try:
-    from apex.normalization import FusedRMSNorm as RMSNorm
-except ImportError:
-    from onmt.modules.rmsnorm import RMSNorm
+from onmt.modules.rmsnorm import RMSNorm
 
 
 class TransformerDecoderLayerBase(nn.Module):
@@ -44,6 +40,7 @@ class TransformerDecoderLayerBase(nn.Module):
         parallel_gpu=1,
         sliding_window=0,
         rotary_interleave=True,
+        rotary_theta=1e4,
         num_experts=0,
         num_experts_per_tok=2,
     ):
@@ -89,6 +86,7 @@ class TransformerDecoderLayerBase(nn.Module):
             sliding_window (int): Width of the band mask and KV cache (cf Mistral Model)
             rotary_interleave (bool): Interleave the head dimensions when rotary
                 embeddings are applied
+            rotary_theta (int): rotary base theta
         """
         super(TransformerDecoderLayerBase, self).__init__()
 
@@ -100,6 +98,7 @@ class TransformerDecoderLayerBase(nn.Module):
                 max_relative_positions=max_relative_positions,
                 relative_positions_buckets=relative_positions_buckets,
                 rotary_interleave=rotary_interleave,
+                rotary_theta=rotary_theta,
                 attn_type="self",
                 self_attn_type=self_attn_type,
                 add_qkvbias=add_qkvbias,
@@ -280,6 +279,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
         parallel_gpu=1,
         sliding_window=0,
         rotary_interleave=True,
+        rotary_theta=1e4,
         num_experts=0,
         num_experts_per_tok=2,
     ):
@@ -311,6 +311,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
             parallel_gpu=parallel_gpu,
             sliding_window=sliding_window,
             rotary_interleave=rotary_interleave,
+            rotary_theta=rotary_theta,
             num_experts=num_experts,
             num_experts_per_tok=num_experts_per_tok,
         )
@@ -473,6 +474,7 @@ class TransformerDecoderBase(DecoderBase):
             else 1,
             sliding_window=opt.sliding_window,
             rotary_interleave=opt.rotary_interleave,
+            rotary_theta=opt.rotary_theta,
             num_experts=opt.num_experts,
             num_experts_per_tok=opt.num_experts_per_tok,
         )
@@ -563,6 +565,7 @@ class TransformerDecoder(TransformerDecoderBase):
         parallel_gpu (int): Number of gpu for tensor parallelism
         sliding_window (int): Width of the band mask and KV cache (cf Mistral Model)
         rotary_interleave (bool): Interleave the head dimensions when rotary embeddings are applied
+        rotary_theta (int): rotary base theta
     """
 
     def __init__(
@@ -594,6 +597,7 @@ class TransformerDecoder(TransformerDecoderBase):
         parallel_gpu=1,
         sliding_window=0,
         rotary_interleave=True,
+        rotary_theta=1e4,
         num_experts=0,
         num_experts_per_tok=2,
     ):
@@ -627,6 +631,7 @@ class TransformerDecoder(TransformerDecoderBase):
                     parallel_gpu=parallel_gpu,
                     sliding_window=sliding_window,
                     rotary_interleave=rotary_interleave,
+                    rotary_theta=rotary_theta,
                     num_experts=num_experts,
                     num_experts_per_tok=num_experts_per_tok,
                 )
@@ -834,6 +839,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
         parallel_gpu (int): Number of gpu for tensor parallelism
         sliding_window (int): Width of the band mask and KV cache (cf Mistral Model)
         rotary_interleave (bool): Interleave the head dimensions when rotary embeddings are applied
+        rotary_theta (int): rotary base theta
     """
 
     def __init__(
@@ -865,6 +871,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
         parallel_gpu=1,
         sliding_window=0,
         rotary_interleave=True,
+        rotary_theta=1e4,
         num_experts=0,
         num_experts_per_tok=2,
     ):
@@ -897,6 +904,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
                     parallel_gpu=parallel_gpu,
                     sliding_window=sliding_window,
                     rotary_interleave=rotary_interleave,
+                    rotary_theta=rotary_theta,
                     num_experts=num_experts,
                     num_experts_per_tok=num_experts_per_tok,
                 )
@@ -976,3 +984,5 @@ class TransformerLMDecoder(TransformerDecoderBase):
                     )
                     if hasattr(layer.self_attn, "rope"):
                         layer.self_attn.rope = layer.self_attn.rope.to(tgt.device)
+                        layer.self_attn.cos = layer.self_attn.cos.to(tgt.device)
+                        layer.self_attn.sin = layer.self_attn.sin.to(tgt.device)

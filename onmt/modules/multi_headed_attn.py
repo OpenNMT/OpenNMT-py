@@ -11,7 +11,6 @@ from .alibi_position_bias import AlibiPositionalBias
 from torch.distributed import all_reduce
 from importlib import import_module
 
-
 # Help functions for Rotary Embeddings
 # https://arxiv.org/pdf/2104.09864.pdf
 # too convoluted to make maxseqlen a parameter.
@@ -258,6 +257,7 @@ class MultiHeadedAttention(torch.nn.Module):
         max_relative_positions: int = 0,
         relative_positions_buckets: int = 0,
         rotary_interleave: bool = True,
+        rotary_theta: int = 1e4,
         attn_type: str = None,
         self_attn_type: str = None,
         add_qkvbias=False,
@@ -352,9 +352,19 @@ class MultiHeadedAttention(torch.nn.Module):
             self.relative_attention_bias = None
 
             if max_relative_positions == -1:  # rotary embeddings
-                self.rope = rotaryembeddings(self.dim_per_head)
+                self.rope = rotaryembeddings(self.dim_per_head, base=rotary_theta)
+                self.cos = (
+                    self.rope[:, : self.rope.size(1) // 2].real.contiguous().half()
+                )
+                self.sin = (
+                    self.rope[:, : self.rope.size(1) // 2].imag.contiguous().half()
+                )
                 self.rotary_interleave = rotary_interleave
-
+                self.rotary_theta = rotary_theta
+            else:
+                self.cos = None
+                self.sin = None
+                self.rotary_interleave = None
             if max_relative_positions == -2:  # alibi positional bias
                 self.alibi = AlibiPositionalBias(head_count)
 
@@ -367,6 +377,9 @@ class MultiHeadedAttention(torch.nn.Module):
                 and torch.cuda.get_device_capability()[0] >= 8
             ):
                 self.flash_attn_func = getattr(flash_pack, "flash_attn_func")
+                self.flash_attn_with_kvcache = getattr(
+                    flash_pack, "flash_attn_with_kvcache"
+                )
                 self.flash2 = True
         except ImportError:
             self.flash2 = False
@@ -420,27 +433,104 @@ class MultiHeadedAttention(torch.nn.Module):
                 key = shape(key, self.dim_per_head)
                 value = shape(value, self.dim_per_head)
 
-                if self.max_relative_positions == -1:  # Rotary Embeddings
-                    start_pos = step
-                    seqlen = query.size(2)
-                    if seqlen > self.rope.size(0):
-                        self.rope = rotaryembeddings(
-                            self.dim_per_head, maxseqlen=(seqlen + 2048)
-                        ).to(self.rope.device)
-                    rope = self.rope[start_pos : start_pos + seqlen]
-                    query, key = apply_rotary_emb(
-                        query, key, rope, interleave=self.rotary_interleave
-                    )
+                start_pos = step
+                seqlen = query.size(2)
 
-                if self.layer_cache[1]["keys"].numel() != 0:
-                    key = torch.cat((self.layer_cache[1]["keys"], key), dim=2)
-                    value = torch.cat((self.layer_cache[1]["values"], value), dim=2)
+                if (
+                    step == 0
+                    or not self.flash2
+                    or self.max_relative_positions not in [0, -1]
+                    or query.size(0) > 128
+                    or query.dtype != torch.float16
+                ):
+                    if self.max_relative_positions == -1:  # Rotary Embeddings
+                        if seqlen > self.rope.size(0):
+                            self.rope = rotaryembeddings(
+                                self.dim_per_head,
+                                maxseqlen=(seqlen + 2048),
+                                base=self.rotary_theta,
+                            ).to(self.rope.device)
+                        rope = self.rope[start_pos : start_pos + seqlen]
+                        query, key = apply_rotary_emb(
+                            query, key, rope, interleave=self.rotary_interleave
+                        )
+
+                    if self.layer_cache[1]["keys"].numel() != 0:
+                        key = torch.cat((self.layer_cache[1]["keys"], key), dim=2)
+                        value = torch.cat((self.layer_cache[1]["values"], value), dim=2)
+                        if sliding_window > 0 and key.size(2) > sliding_window:
+                            key = key[:, :, 1:, :]
+                            value = value[:, :, 1:, :]
+
+                    self.layer_cache[1]["keys"] = key
+                    self.layer_cache[1]["values"] = value
+
+                else:
+                    if self.max_relative_positions == -1:  # Rotary Embeddings
+                        if seqlen > self.rope.size(0):
+                            self.rope = rotaryembeddings(
+                                self.dim_per_head,
+                                maxseqlen=(seqlen + 2048),
+                                base=self.rotary_theta,
+                            ).to(self.rope.device)
+                            self.cos = (
+                                self.rope[:, : self.rope.size(1) // 2]
+                                .real.contiguous()
+                                .half()
+                            )
+                            self.sin = (
+                                self.rope[:, : self.rope.size(1) // 2]
+                                .imag.contiguous()
+                                .half()
+                            )
+                    if start_pos >= self.layer_cache[1]["keys"].size(2):
+                        self.layer_cache[1]["keys"] = torch.cat(
+                            [
+                                self.layer_cache[1]["keys"],
+                                torch.zeros(
+                                    self.layer_cache[1]["keys"].shape[:-2]
+                                    + (32,)
+                                    + self.layer_cache[1]["keys"].shape[-1:],
+                                    device=query.device,
+                                ).half(),
+                            ],
+                            dim=-2,
+                        )
+                        self.layer_cache[1]["values"] = torch.cat(
+                            [
+                                self.layer_cache[1]["values"],
+                                torch.zeros(
+                                    self.layer_cache[1]["values"].shape[:-2]
+                                    + (32,)
+                                    + self.layer_cache[1]["values"].shape[-1:],
+                                    device=query.device,
+                                ).half(),
+                            ],
+                            dim=-2,
+                        )
                     if sliding_window > 0 and key.size(2) > sliding_window:
-                        key = key[:, :, 1:, :]
-                        value = value[:, :, 1:, :]
+                        self.layer_cache[1]["keys"] = self.layer_cache[1]["keys"][
+                            :, :, 1:, :
+                        ]
+                        self.layer_cache[1]["values"] = self.layer_cache[1]["values"][
+                            :, :, 1:, :
+                        ]
+                    context = self.flash_attn_with_kvcache(
+                        query.transpose(1, 2),
+                        self.layer_cache[1]["keys"].transpose(1, 2),
+                        self.layer_cache[1]["values"].transpose(1, 2),
+                        key.transpose(1, 2),
+                        value.transpose(1, 2),
+                        rotary_cos=self.cos,
+                        rotary_sin=self.sin,
+                        cache_seqlens=step,
+                        rotary_interleaved=self.rotary_interleave,
+                    ).transpose(1, 2)
+                    attn_output = self.final_linear(unshape(context))
+                    if self.parallel_gpu > 1:
+                        all_reduce(attn_output)
+                    return attn_output, None
 
-                self.layer_cache[1]["keys"] = key
-                self.layer_cache[1]["values"] = value
             elif self.attn_type == "context":
                 query = self.linear_query(query)
                 query = shape(query, self.dim_per_head)
@@ -484,7 +574,9 @@ class MultiHeadedAttention(torch.nn.Module):
                 seqlen = query.size(2)
                 if seqlen > self.rope.size(0):
                     self.rope = rotaryembeddings(
-                        self.dim_per_head, maxseqlen=(seqlen + 2048)
+                        self.dim_per_head,
+                        maxseqlen=(seqlen + 2048),
+                        base=self.rotary_theta,
                     ).to(self.rope.device)
                 rope = self.rope[start_pos : start_pos + seqlen].to(query.device)
                 query, key = apply_rotary_emb(

@@ -2,6 +2,7 @@
 import torch
 import torch.nn as nn
 from onmt.modules.position_ffn import PositionwiseFeedForward
+from torch.distributed import all_reduce
 
 
 class MoE(nn.Module):
@@ -40,12 +41,15 @@ class MoE(nn.Module):
         )
         self.gate = nn.Linear(d_model, num_experts, bias=False)
         self.num_experts_per_tok = num_experts_per_tok
+        self.parallel_gpu = parallel_gpu
 
     def forward(self, x):
         orig_shape = x.shape
         x = x.view(-1, x.shape[-1])
 
         scores = self.gate(x)
+        if self.parallel_gpu > 1:
+            all_reduce(scores)
         expert_weights, expert_indices = torch.topk(
             scores, self.num_experts_per_tok, dim=-1
         )

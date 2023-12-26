@@ -881,6 +881,13 @@ def model_opts(parser):
         "False = used by all Hugging face models",
     )
     group.add(
+        "--rotary_theta",
+        "-rotary_theta",
+        type=int,
+        default=10000,
+        help="Rotary theta base length" "1e4 for Llama2.Mistral" "1e6 for Mixtral",
+    )
+    group.add(
         "--heads",
         "-heads",
         type=int,

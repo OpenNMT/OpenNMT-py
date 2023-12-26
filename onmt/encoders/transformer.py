@@ -40,6 +40,7 @@ class TransformerEncoderLayer(nn.Module):
         parallel_gpu (int): Number of gpu for tensor parallelism
         rotary_interleave (bool): Interleave the head dimensions when rotary
             embeddings are applied
+        rotary_theta (int): rotary base theta
     """
 
     def __init__(
@@ -61,6 +62,7 @@ class TransformerEncoderLayer(nn.Module):
         use_ckpting=[],
         parallel_gpu=1,
         rotary_interleave=True,
+        rotary_theta=1e4,
     ):
         super(TransformerEncoderLayer, self).__init__()
 
@@ -72,6 +74,7 @@ class TransformerEncoderLayer(nn.Module):
             max_relative_positions=max_relative_positions,
             relative_positions_buckets=relative_positions_buckets,
             rotary_interleave=rotary_interleave,
+            rotary_theta=rotary_theta,
             attn_type="self",
             add_qkvbias=add_qkvbias,
             num_kv=num_kv,
@@ -177,6 +180,7 @@ class TransformerEncoder(EncoderBase):
         use_ckpting=[],
         parallel_gpu=1,
         rotary_interleave=True,
+        rotary_theta=1e4,
     ):
         super(TransformerEncoder, self).__init__()
 
@@ -201,6 +205,7 @@ class TransformerEncoder(EncoderBase):
                     use_ckpting=use_ckpting,
                     parallel_gpu=parallel_gpu,
                     rotary_interleave=rotary_interleave,
+                    rotary_theta=rotary_theta,
                 )
                 for i in range(num_layers)
             ]
@@ -239,6 +244,7 @@ class TransformerEncoder(EncoderBase):
             if opt.parallel_mode == "tensor_parallel"
             else 1,
             rotary_interleave=opt.rotary_interleave,
+            rotary_theta=opt.rotary_theta,
         )
 
     def forward(self, src, src_len=None):

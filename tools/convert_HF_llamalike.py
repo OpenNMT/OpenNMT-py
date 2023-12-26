@@ -223,8 +223,14 @@ if __name__ == "__main__":
         norm_eps = config["layer_norm_epsilon"]
     else:
         norm_eps = 1e-6
+    if "rope_theta" in config.keys():
+        rope_theta = config["rope_theta"]
+    else:
+        rope_theta = 1e4
     if "sliding_window" in config.keys():
         sliding_window = config["sliding_window"]
+        if sliding_window is None:
+            sliding_window = 4096
     else:
         sliding_window = 0
 
@@ -633,6 +639,7 @@ if __name__ == "__main__":
         self_attn_type="scaled-dot",
         max_relative_positions=-1,
         rotary_interleave=False,
+        rotary_theta=rope_theta,
         heads=heads,
         sliding_window=sliding_window,
         transformer_ff=transformer_ff,
