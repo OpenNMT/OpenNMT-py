@@ -1,4 +1,4 @@
-ARG CUDA_VERSION=11.8.0
+ARG CUDA_VERSION=12.1.0
 FROM nvidia/cuda:$CUDA_VERSION-devel-ubuntu22.04
 
 RUN apt-get update && apt-get install -y locales gcc g++ python3-dev
@@ -32,12 +32,6 @@ RUN pip3 install -v --no-build-isolation \
 
 # Install flash-attention
 RUN pip install flash-attn --no-build-isolation
-
-# Install llm-awq
-RUN git clone https://github.com/mit-han-lab/llm-awq && \
-    cd llm-awq && \
-    pip install -e . && \
-    cd ..
 
 # Install AutoAWQ
 RUN pip install autoawq

@@ -242,12 +242,12 @@ if __name__ == "__main__":
             if "backend" in config["quantization_config"].keys():
                 backend = config["quantization_config"]["backend"]
                 if backend == "llm-awq":
-                    quant_type = "llm_awq"
+                    quant_type = "awq_gemv"
                 elif backend == "autoawq":
                     if config["quantization_config"]["version"].lower() == "gemm":
-                        quant_type = "aawq_gemm"
+                        quant_type = "awq_gemm"
                     elif config["quantization_config"]["version"].lower() == "gemv":
-                        quant_type = "aawq_gemv"
+                        quant_type = "awq_gemv"
                     else:
                         raise ValueError("Unknown quantization config")
                 else:
@@ -255,9 +255,9 @@ if __name__ == "__main__":
             else:
                 print("Backend not specified in config, using Autoawq")
                 if config["quantization_config"]["version"].lower() == "gemm":
-                    quant_type = "aawq_gemm"
+                    quant_type = "awq_gemm"
                 elif config["quantization_config"]["version"].lower() == "gemv":
-                    quant_type = "aawq_gemv"
+                    quant_type = "awq_gemv"
                 else:
                     raise ValueError("Unknown quantization config")
         else:
