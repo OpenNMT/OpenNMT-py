@@ -147,6 +147,7 @@ class InferenceEnginePY(InferenceEngine):
         self.translator.with_scores = True
         scored_bucket = {}
         for batch, bucket_idx in infer_iter:
+            print("# new batch")
             batch_data = self.translator.translate_batch(batch, attn_debug=False)
             batch_gold_scores = batch_data["gold_score"].cpu().numpy().tolist()
             batch_inds_in_bucket = batch["ind_in_bucket"]

@@ -1155,6 +1155,8 @@ class GeneratorLM(Inference):
         src_len = batch["srclen"]
         tgt = batch["tgt"]
 
+        pad_idx = self.model.decoder.embeddings.word_padding_idx
+        src_pad_mask = src[:, :, 0].eq(pad_idx).unsqueeze(2)
         log_probs, attn = self._decode_and_generate(
             src,
             None,
@@ -1165,6 +1167,8 @@ class GeneratorLM(Inference):
 
         log_probs[:, :, self._tgt_pad_idx] = 0
         gold_scores = log_probs.gather(2, tgt)
+        # gold_scores = gold_scores.float()
+        # gold_scores = gold_scores.masked_fill(src_pad_mask, 0)
         gold_scores = gold_scores.sum(dim=1).view(-1)
 
         return gold_scores
