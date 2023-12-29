@@ -65,6 +65,24 @@ class InferenceEngine(object):
             "The inference in mulitprocessing with partitioned models is not implemented."
         )
 
+    def _score(self, infer_iter):
+        pass
+
+    def score_list(self, tgt):
+        """List of strings scoring tgt`"""
+        if self.opt.world_size <= 1:
+            infer_iter = build_dynamic_dataset_iter(
+                self.opt,
+                self.transforms_cls,
+                self.vocabs,
+                task=CorpusTask.INFER,
+                src=tgt,
+                tgt=tgt,
+                device_id=self.device_id,
+            )
+            scored_bucket = self._score(infer_iter)
+            return scored_bucket
+
     def terminate(self):
         pass
 
@@ -124,6 +142,18 @@ class InferenceEnginePY(InferenceEngine):
             infer_iter, infer_iter.transforms, self.opt.attn_debug, self.opt.align_debug
         )
         return scores, preds
+
+    def _score(self, infer_iter):
+        self.translator.with_scores = True
+        scored_bucket = {}
+        for batch, bucket_idx in infer_iter:
+            batch_data = self.translator.translate_batch(batch, attn_debug=False)
+            batch_gold_scores = batch_data["gold_score"].cpu().numpy().tolist()
+            batch_inds_in_bucket = batch["ind_in_bucket"]
+            for i, _score in enumerate(batch_gold_scores):
+                scored_bucket[batch_inds_in_bucket[i]] = _score
+        score_results = [scored_bucket[i] for i in range(len(scored_bucket))]
+        return score_results
 
     def infer_file_parallel(self):
         assert self.opt.world_size > 1, "World size must be greater than 1."
@@ -256,3 +286,8 @@ class InferenceEngineCT2(InferenceEngine):
             scores += _scores
             preds += _preds
         return scores, preds
+
+    def _score(self, infer_iter):
+        raise NotImplementedError(
+            "The scoring with InferenceEngineCT2 is not implemented."
+        )
