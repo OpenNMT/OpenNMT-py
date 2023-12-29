@@ -17,7 +17,7 @@ cd $ROOT_DIR
 
 ONMT_VERSION="$1"
 CUDA_VERSION="$2"
-[ -z "$CUDA_VERSION" ] && CUDA_VERSION="11.8.0"
+[ -z "$CUDA_VERSION" ] && CUDA_VERSION="12.1.0"
 
 IMAGE="ghcr.io/opennmt/opennmt-py"
 TAG="$ONMT_VERSION-ubuntu22.04-cuda${CUDA_VERSION%.*}"

@@ -134,13 +134,7 @@ flash attention and `F.scaled_dot_product_attention` are a bit faster and saves 
 
 AWQ:
 
-If you want to run inference or quantize an AWQ model you will need llm-awq and/or AutoAWQ.
-
-For [llm-awq](https://github.com/mit-han-lab/llm-awq):
-    git clone https://github.com/mit-han-lab/llm-awq
-    cd llm-awq
-    pip install -e .
-    cd ..
+If you want to run inference or quantize an AWQ model you will need AutoAWQ.
 
 For [AutoAWQ](https://github.com/casper-hansen/AutoAWQ):
     pip install autoawq
