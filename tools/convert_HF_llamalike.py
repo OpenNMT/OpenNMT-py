@@ -29,9 +29,65 @@ key_maps["LlamaForCausalLM"] = {
     ".feed_forward.layer_norm.weight": ".post_attention_layernorm.weight",
 }
 key_maps["MistralForCausalLM"] = key_maps["LlamaForCausalLM"]
-ln_table = {"LlamaForCausalLM": "rms", "MistralForCausalLM": "rms"}
-act_table = {"LlamaForCausalLM": "silu", "MistralForCausalLM": "silu"}
-decoder_start_table = {"LlamaForCausalLM": "<s>", "MistralForCausalLM": "<s>"}
+key_maps["MixtralForCausalLM"] = {
+    "layer_prefix": "model.layers.",
+    "decoder.embeddings.make_embedding.emb_luts.0.weight": "model.embed_tokens.weight",
+    "decoder.layer_norm.weight": "model.norm.weight",
+    "generator.weight": "lm_head.weight",
+    ".self_attn.linear_query.": ".self_attn.q_proj.",
+    ".self_attn.linear_keys.": ".self_attn.k_proj.",
+    ".self_attn.linear_values.": ".self_attn.v_proj.",
+    ".self_attn.final_linear.": ".self_attn.o_proj.",
+    ".layer_norm_1.weight": ".input_layernorm.weight",
+    ".feed_forward.gate.weight": ".block_sparse_moe.gate.weight",
+    ".feed_forward.experts.0.w_1.": ".block_sparse_moe.experts.0.w1.",
+    ".feed_forward.experts.0.w_2.": ".block_sparse_moe.experts.0.w2.",
+    ".feed_forward.experts.0.w_3.": ".block_sparse_moe.experts.0.w3.",
+    ".feed_forward.experts.0.layer_norm.weight": ".post_attention_layernorm.weight",
+    ".feed_forward.experts.1.w_1.": ".block_sparse_moe.experts.1.w1.",
+    ".feed_forward.experts.1.w_2.": ".block_sparse_moe.experts.1.w2.",
+    ".feed_forward.experts.1.w_3.": ".block_sparse_moe.experts.1.w3.",
+    ".feed_forward.experts.1.layer_norm.weight": ".post_attention_layernorm.weight",
+    ".feed_forward.experts.2.w_1.": ".block_sparse_moe.experts.2.w1.",
+    ".feed_forward.experts.2.w_2.": ".block_sparse_moe.experts.2.w2.",
+    ".feed_forward.experts.2.w_3.": ".block_sparse_moe.experts.2.w3.",
+    ".feed_forward.experts.2.layer_norm.weight": ".post_attention_layernorm.weight",
+    ".feed_forward.experts.3.w_1.": ".block_sparse_moe.experts.3.w1.",
+    ".feed_forward.experts.3.w_2.": ".block_sparse_moe.experts.3.w2.",
+    ".feed_forward.experts.3.w_3.": ".block_sparse_moe.experts.3.w3.",
+    ".feed_forward.experts.3.layer_norm.weight": ".post_attention_layernorm.weight",
+    ".feed_forward.experts.4.w_1.": ".block_sparse_moe.experts.4.w1.",
+    ".feed_forward.experts.4.w_2.": ".block_sparse_moe.experts.4.w2.",
+    ".feed_forward.experts.4.w_3.": ".block_sparse_moe.experts.4.w3.",
+    ".feed_forward.experts.4.layer_norm.weight": ".post_attention_layernorm.weight",
+    ".feed_forward.experts.5.w_1.": ".block_sparse_moe.experts.5.w1.",
+    ".feed_forward.experts.5.w_2.": ".block_sparse_moe.experts.5.w2.",
+    ".feed_forward.experts.5.w_3.": ".block_sparse_moe.experts.5.w3.",
+    ".feed_forward.experts.5.layer_norm.weight": ".post_attention_layernorm.weight",
+    ".feed_forward.experts.6.w_1.": ".block_sparse_moe.experts.6.w1.",
+    ".feed_forward.experts.6.w_2.": ".block_sparse_moe.experts.6.w2.",
+    ".feed_forward.experts.6.w_3.": ".block_sparse_moe.experts.6.w3.",
+    ".feed_forward.experts.6.layer_norm.weight": ".post_attention_layernorm.weight",
+    ".feed_forward.experts.7.w_1.": ".block_sparse_moe.experts.7.w1.",
+    ".feed_forward.experts.7.w_2.": ".block_sparse_moe.experts.7.w2.",
+    ".feed_forward.experts.7.w_3.": ".block_sparse_moe.experts.7.w3.",
+    ".feed_forward.experts.7.layer_norm.weight": ".post_attention_layernorm.weight",
+}
+ln_table = {
+    "LlamaForCausalLM": "rms",
+    "MistralForCausalLM": "rms",
+    "MixtralForCausalLM": "rms",
+}
+act_table = {
+    "LlamaForCausalLM": "silu",
+    "MistralForCausalLM": "silu",
+    "MixtralForCausalLM": "silu",
+}
+decoder_start_table = {
+    "LlamaForCausalLM": "<s>",
+    "MistralForCausalLM": "<s>",
+    "MixtralForCausalLM": "<s>",
+}
 
 
 class Tokenizer:
@@ -233,7 +289,14 @@ if __name__ == "__main__":
             sliding_window = 4096
     else:
         sliding_window = 0
-
+    if "num_local_experts" in config.keys():
+        num_experts = config["num_local_experts"]
+    else:
+        num_local_experts = 0
+    if "num_experts_per_tok" in config.keys():
+        num_experts_per_tok = config["num_experts_per_tok"]
+    else:
+        num_experts_per_tok = 0
     if "quantization_config" in config.keys():
         if (
             "quant_method" in config["quantization_config"].keys()
@@ -403,6 +466,30 @@ if __name__ == "__main__":
                         ".feed_forward.w_1.",
                         ".feed_forward.w_2.",
                         ".feed_forward.w_3.",
+                        ".feed_forward.experts.0.w_1.",
+                        ".feed_forward.experts.0.w_2.",
+                        ".feed_forward.experts.0.w_3.",
+                        ".feed_forward.experts.1.w_1.",
+                        ".feed_forward.experts.1.w_2.",
+                        ".feed_forward.experts.1.w_3.",
+                        ".feed_forward.experts.2.w_1.",
+                        ".feed_forward.experts.2.w_2.",
+                        ".feed_forward.experts.2.w_3.",
+                        ".feed_forward.experts.3.w_1.",
+                        ".feed_forward.experts.3.w_2.",
+                        ".feed_forward.experts.3.w_3.",
+                        ".feed_forward.experts.4.w_1.",
+                        ".feed_forward.experts.4.w_2.",
+                        ".feed_forward.experts.4.w_3.",
+                        ".feed_forward.experts.5.w_1.",
+                        ".feed_forward.experts.5.w_2.",
+                        ".feed_forward.experts.5.w_3.",
+                        ".feed_forward.experts.6.w_1.",
+                        ".feed_forward.experts.6.w_2.",
+                        ".feed_forward.experts.6.w_3.",
+                        ".feed_forward.experts.7.w_1.",
+                        ".feed_forward.experts.7.w_2.",
+                        ".feed_forward.experts.7.w_3.",
                     ]
                     for target in targetlist:
                         if target in key_maps[arch].keys():
@@ -471,19 +558,56 @@ if __name__ == "__main__":
                                 + ".layer_norm_res."
                                 + p
                             ] = w
-                    if ".feed_forward.layer_norm.weight" in key_maps[arch].keys():
+                    if ".feed_forward.layer_norm." + p in key_maps[arch].keys():
                         w = get_weight(
                             checkpoint,
                             key_maps[arch]["layer_prefix"]
                             + str(i)
-                            + key_maps[arch][".feed_forward.layer_norm.weight"],
+                            + key_maps[arch][".feed_forward.layer_norm." + p],
                         )
                         if w is not None:
                             onmt_safetensor[
                                 "decoder.transformer_layers."
                                 + str(i)
-                                + ".feed_forward.layer_norm.weight"
+                                + ".feed_forward.layer_norm."
+                                + p
                             ] = w
+
+                    if ".feed_forward.gate." + p in key_maps[arch].keys():
+                        w = get_weight(
+                            checkpoint,
+                            key_maps[arch]["layer_prefix"]
+                            + str(i)
+                            + key_maps[arch][".feed_forward.gate." + p],
+                        )
+                        if w is not None:
+                            onmt_safetensor[
+                                "decoder.transformer_layers."
+                                + str(i)
+                                + ".feed_forward.gate."
+                                + p
+                            ] = w
+
+                    for j in range(num_experts):
+                        if (
+                            f".feed_forward.experts.{j}.layer_norm." + p
+                            in key_maps[arch].keys()
+                        ):
+                            w = get_weight(
+                                checkpoint,
+                                key_maps[arch]["layer_prefix"]
+                                + str(i)
+                                + key_maps[arch][
+                                    f".feed_forward.experts.{j}.layer_norm." + p
+                                ],
+                            )
+                            if w is not None:
+                                onmt_safetensor[
+                                    "decoder.transformer_layers."
+                                    + str(i)
+                                    + f".feed_forward.experts.{j}.layer_norm."
+                                    + p
+                                ] = w
 
         if shard == 0:
             vocab_size = onmt_safetensor["generator.weight"].size(0)
@@ -741,6 +865,8 @@ if __name__ == "__main__":
         quant_type=quant_type,
         w_bit=w_bit,
         group_size=group_size,
+        num_experts=num_experts,
+        num_experts_per_tok=num_experts_per_tok,
     )
     print("Saving the pytorch file")
     if opt.output[-3:] == ".pt":
