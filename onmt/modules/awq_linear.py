@@ -4,18 +4,12 @@ import torch.nn as nn
 def replace_awq_linear(
     model, module_to_convert=[], w_bit=4, group_size=128, q_type="llm_awq"
 ):
-    if q_type == "llm_awq":
-        try:
-            from awq.quantize.qmodule import WQLinear
-        except ImportError:
-            raise ImportError("Install llm-awq to use awq")
-        AWQLin = WQLinear
-    elif q_type in ["aawq_gemm", "aawq_gemv"]:
+    if q_type in ["awq_gemm", "awq_gemv"]:
         try:
             from awq.modules.linear import WQLinear_GEMM, WQLinear_GEMV
         except ImportError:
             raise ImportError("Install AutoAWQ to use awq")
-        if q_type == "aawq_gemm":
+        if q_type == "awq_gemm":
             AWQLin = WQLinear_GEMM
         else:
             AWQLin = WQLinear_GEMV

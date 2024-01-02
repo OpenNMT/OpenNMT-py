@@ -96,9 +96,8 @@ def load_test_model(opt, device_id=0, model_path=None):
     model_opt = ArgumentParser.ckpt_model_opts(checkpoint["opt"])
 
     if hasattr(model_opt, "quant_type") and model_opt.quant_type in [
-        "llm_awq",
-        "aawq_gemm",
-        "aawq_gemv",
+        "awq_gemm",
+        "awq_gemv",
     ]:  # if the loaded model is a awq quantized one, inference config cannot overwrite this
         if (
             hasattr(opt, "quant_type")
@@ -110,9 +109,8 @@ def load_test_model(opt, device_id=0, model_path=None):
             )
 
     elif hasattr(opt, "quant_type") and opt.quant_type not in [
-        "llm_awq",
-        "aawq_gemm",
-        "aawq_gemv",
+        "awq_gemm",
+        "awq_gemv",
     ]:  # we still want to be able to load fp16/32 models with bnb 4bit to minimize ram footprint
         model_opt.quant_layers = opt.quant_layers
         model_opt.quant_type = opt.quant_type
@@ -327,14 +325,14 @@ def build_base_model(model_opt, vocabs):
             model = replace_bnb_linear(
                 model, module_to_convert=nonlora_to_quant, q_type=model_opt.quant_type
             )
-        elif model_opt.quant_type in ["llm_awq", "aawq_gemm", "aawq_gemv"]:
+        elif model_opt.quant_type in ["awq_gemm", "awq_gemv"]:
             logger.info(
                 "%s compression of layer %s" % (model_opt.quant_type, nonlora_to_quant)
             )
             try:
                 from onmt.modules.awq_linear import replace_awq_linear
             except ImportError:
-                raise ImportError("Install llm-awq/AutoAWQ to use awq quantized model")
+                raise ImportError("Install AutoAWQ to use awq quantized model")
             model = replace_awq_linear(
                 model,
                 module_to_convert=nonlora_to_quant,
