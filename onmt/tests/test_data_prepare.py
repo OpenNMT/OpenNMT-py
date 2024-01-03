@@ -7,7 +7,7 @@ import glob
 import os
 
 from onmt.utils.parse import ArgumentParser
-from onmt.opts import dynamic_prepare_opts
+from onmt.opts import data_prepare_opts
 from onmt.train_single import prepare_transforms_vocabs
 from onmt.constants import CorpusName
 
@@ -17,7 +17,7 @@ SAVE_DATA_PREFIX = "data/test_data_prepare"
 
 def get_default_opts():
     parser = ArgumentParser(description="data sample prepare")
-    dynamic_prepare_opts(parser)
+    data_prepare_opts(parser)
 
     default_opts = [
         "-config",

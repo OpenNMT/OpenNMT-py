@@ -38,8 +38,7 @@ Corpus PPL is in the logger.info
 
 def _get_parser():
     parser = ArgumentParser(description="LM_scoring.py")
-    opts.config_opts(parser)
-    opts.translate_opts(parser, dynamic=True)
+    opts.translate_opts(parser)
     return parser
 
 

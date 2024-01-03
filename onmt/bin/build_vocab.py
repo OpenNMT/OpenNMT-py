@@ -8,7 +8,7 @@ from functools import partial
 from onmt.utils.logging import init_logger, logger
 from onmt.utils.misc import set_random_seed, check_path
 from onmt.utils.parse import ArgumentParser
-from onmt.opts import dynamic_prepare_opts
+from onmt.opts import data_prepare_opts
 from onmt.inputters.text_corpus import build_corpora_iters, get_corpora
 from onmt.inputters.text_utils import process, append_features_to_text
 from onmt.transforms import make_transforms, get_transforms_cls
@@ -273,7 +273,7 @@ def build_vocab_main(opts):
 
 def _get_parser():
     parser = ArgumentParser(description="build_vocab.py")
-    dynamic_prepare_opts(parser, build_vocab_only=True)
+    data_prepare_opts(parser, build_vocab_only=True)
     return parser
 
 

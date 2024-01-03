@@ -2,7 +2,7 @@ import codecs
 import os
 from onmt.utils.parse import ArgumentParser
 from onmt.translate import GNMTGlobalScorer, Translator
-from onmt.opts import config_opts, translate_opts
+from onmt.opts import translate_opts
 from onmt.constants import CorpusTask
 from onmt.inputters.dynamic_iterator import build_dynamic_dataset_iter
 from onmt.transforms import get_transforms_cls, make_transforms, TransformPipe
@@ -51,7 +51,6 @@ class ScoringPreparator:
 
         # Set "default" translation options on empty cfgfile
         parser = ArgumentParser()
-        config_opts(parser)
         translate_opts(parser)
         base_args = ["-model", "dummy"] + ["-src", "dummy"]
         opt = parser.parse_args(base_args)

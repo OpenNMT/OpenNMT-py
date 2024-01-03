@@ -196,9 +196,7 @@ def evaluate(opt):
 
 def _get_parser():
     parser = ArgumentParser(description="run_mmlu_opennmt_fr.py")
-
-    opts.config_opts(parser)
-    opts.translate_opts(parser, dynamic=True)
+    opts.translate_opts(parser)
     return parser
 
 
