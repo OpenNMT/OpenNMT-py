@@ -737,6 +737,8 @@ class TransformerDecoder(TransformerDecoderBase):
                 )
                 if hasattr(layer.self_attn, "rope"):
                     layer.self_attn.rope = layer.self_attn.rope.to(enc_out.device)
+                    layer.self_attn.cos = layer.self_attn.cos.to(enc_out.device)
+                    layer.self_attn.sin = layer.self_attn.sin.to(enc_out.device)
 
 
 class TransformerLMDecoderLayer(TransformerDecoderLayerBase):

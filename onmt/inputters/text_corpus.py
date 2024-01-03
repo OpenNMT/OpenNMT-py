@@ -130,7 +130,7 @@ def get_corpora(opts, task=CorpusTask.TRAIN, src=None, tgt=None, align=None):
             corpora_dict[CorpusName.VALID] = ParallelCorpus(
                 CorpusName.VALID,
                 opts.data[CorpusName.VALID]["path_src"],
-                opts.data[CorpusName.VALID]["path_tgt"],
+                opts.data[CorpusName.VALID]["path_tgt"] if tgt is None else None,
                 opts.data[CorpusName.VALID]["path_align"],
                 n_src_feats=opts.n_src_feats,
                 src_feats_defaults=opts.src_feats_defaults,
