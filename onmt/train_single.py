@@ -34,6 +34,7 @@ def prepare_transforms_vocabs(opt, transforms_cls):
         opt.transforms = validset_transforms
         if opt.data.get("valid", {}).get("tgt_prefix", None):
             opt.tgt_prefix = opt.data.get("valid", {}).get("tgt_prefix", None)
+            opt.tgt_file_prefix = True
         if opt.data.get("valid", {}).get("src_prefix", None):
             opt.src_prefix = opt.data.get("valid", {}).get("src_prefix", None)
         if opt.data.get("valid", {}).get("tgt_suffix", None):
