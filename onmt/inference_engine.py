@@ -81,7 +81,7 @@ class InferenceEngine(object):
             )
             score_results = self._score(infer_iter)
         else:
-            score_results = self.infer_file_parallel()
+            score_results = self.score_file_parallel()
         return score_results
 
     def score_list(self, src):
@@ -181,7 +181,7 @@ class InferenceEnginePY(InferenceEngine):
         score_results = []
         for device_id in range(self.opt.world_size):
             score_results.append(self.queue_result[device_id].get())
-        return score_results
+        return score_results[0]
 
     def infer_file_parallel(self):
         assert self.opt.world_size > 1, "World size must be greater than 1."
