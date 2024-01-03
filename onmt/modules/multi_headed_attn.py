@@ -381,6 +381,8 @@ class MultiHeadedAttention(torch.nn.Module):
                     flash_pack, "flash_attn_with_kvcache"
                 )
                 self.flash2 = True
+            else:
+                self.flash2 = False
         except ImportError:
             self.flash2 = False
 

@@ -68,7 +68,23 @@ class InferenceEngine(object):
     def _score(self, infer_iter):
         pass
 
-    def score_list(self, tgt):
+    def score_file(self):
+        """File scoring. Source file must be the opt.src argument"""
+        if self.opt.world_size <= 1:
+            infer_iter = build_dynamic_dataset_iter(
+                self.opt,
+                self.transforms_cls,
+                self.vocabs,
+                task=CorpusTask.INFER,
+                device_id=self.device_id,
+                tgt=self.opt.src,
+            )
+            score_results = self._score(infer_iter)
+        else:
+            score_results = self.infer_file_parallel()
+        return score_results
+
+    def score_list(self, src):
         """List of strings scoring tgt`"""
         if self.opt.world_size <= 1:
             infer_iter = build_dynamic_dataset_iter(
@@ -76,12 +92,14 @@ class InferenceEngine(object):
                 self.transforms_cls,
                 self.vocabs,
                 task=CorpusTask.INFER,
-                src=tgt,
-                tgt=tgt,
+                src=src,
+                tgt=src,
                 device_id=self.device_id,
             )
-            scored_bucket = self._score(infer_iter)
-            return scored_bucket
+            score_results = self._score(infer_iter)
+        else:
+            score_results = self.score_list_parallel(src)
+        return score_results
 
     def terminate(self):
         pass
@@ -145,14 +163,24 @@ class InferenceEnginePY(InferenceEngine):
 
     def _score(self, infer_iter):
         self.translator.with_scores = True
-        scored_bucket = {}
-        for batch, bucket_idx in infer_iter:
-            batch_data = self.translator.translate_batch(batch, attn_debug=False)
-            batch_gold_scores = batch_data["gold_score"].cpu().numpy().tolist()
-            batch_inds_in_bucket = batch["ind_in_bucket"]
-            for i, _score in enumerate(batch_gold_scores):
-                scored_bucket[batch_inds_in_bucket[i]] = _score
-        score_results = [scored_bucket[i] for i in range(len(scored_bucket))]
+        return self.translator._score(infer_iter)
+
+    def score_list_parallel(self, src):
+        assert self.opt.world_size > 1, "World size must be greater than 1."
+        for device_id in range(self.opt.world_size):
+            self.queue_instruct[device_id].put(("score_list", src))
+        score_results = []
+        for device_id in range(self.opt.world_size):
+            score_results.append(self.queue_result[device_id].get())
+        return score_results
+
+    def score_file_parallel(self):
+        assert self.opt.world_size > 1, "World size must be greater than 1."
+        for device_id in range(self.opt.world_size):
+            self.queue_instruct[device_id].put(("score_file", self.opt))
+        score_results = []
+        for device_id in range(self.opt.world_size):
+            score_results.append(self.queue_result[device_id].get())
         return score_results
 
     def infer_file_parallel(self):
@@ -166,6 +194,7 @@ class InferenceEnginePY(InferenceEngine):
         return scores[0], preds[0]
 
     def infer_list_parallel(self, src):
+        assert self.opt.world_size > 1, "World size must be greater than 1."
         for device_id in range(self.opt.world_size):
             self.queue_instruct[device_id].put(("infer_list", src))
         scores, preds = [], []
