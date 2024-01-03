@@ -39,8 +39,7 @@ output_directory = args.output_directory
 
 def _get_parser():
     parser = ArgumentParser(description="simple_inference_engine_py.py")
-    opts.config_opts(parser)
-    opts.translate_opts(parser, dynamic=True)
+    opts.translate_opts(parser)
     opts.model_opts(parser)
     return parser
 

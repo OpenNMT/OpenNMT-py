@@ -100,8 +100,7 @@ def prune_history(user_messages_sizes, bot_messages_sizes, max_history_size):
 
 def _get_parser():
     parser = ArgumentParser(description="chatbot.py")
-    opts.config_opts(parser)
-    opts.translate_opts(parser, dynamic=True)
+    opts.translate_opts(parser)
     opts.model_opts(parser)
     return parser
 

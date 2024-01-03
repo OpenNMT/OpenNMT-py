@@ -7,8 +7,7 @@ from onmt.utils.misc import use_gpu, set_random_seed
 
 def _get_parser():
     parser = ArgumentParser(description="simple_inference_engine_py.py")
-    opts.config_opts(parser)
-    opts.translate_opts(parser, dynamic=True)
+    opts.translate_opts(parser)
     return parser
 
 
