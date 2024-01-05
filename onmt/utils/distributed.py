@@ -230,6 +230,31 @@ def spawned_infer(opt, device_id, error_queue, queue_instruct, queue_result):
                 )
                 queue_result.put(scores)
                 queue_result.put(preds)
+            elif instruction[0] == "score_list":
+                tgt = instruction[1]
+                infer_iter = build_dynamic_dataset_iter(
+                    opt,
+                    transforms_cls,
+                    translator.vocabs,
+                    task=CorpusTask.INFER,
+                    src=tgt,
+                    tgt=tgt,
+                    device_id=device_id,
+                )
+                score_results = translator._score(infer_iter)
+                queue_result.put(score_results)
+            elif instruction[0] == "score_file":
+                opt.src = instruction[1].src
+                opt.tgt = instruction[1].src
+                infer_iter = build_dynamic_dataset_iter(
+                    opt,
+                    transforms_cls,
+                    translator.vocabs,
+                    task=CorpusTask.INFER,
+                    device_id=device_id,
+                )
+                score_results = translator._score(infer_iter)
+                queue_result.put(score_results)
 
     except KeyboardInterrupt:
         pass  # killed by parent, do nothing

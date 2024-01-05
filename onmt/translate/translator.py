@@ -580,6 +580,19 @@ class Inference(object):
 
         return all_scores, all_predictions
 
+    def _score(self, infer_iter):
+        self.with_scores = True
+        scored_bucket = {}
+        for batch, bucket_idx in infer_iter:
+            batch_data = self.translate_batch(batch, attn_debug=False)
+            batch_gold_scores = batch_data["gold_score"].cpu().numpy().tolist()
+            batch_tgt_lengths = batch["tgtlen"].cpu().numpy().tolist()
+            batch_inds_in_bucket = batch["ind_in_bucket"]
+            for i, _score in enumerate(batch_gold_scores):
+                scored_bucket[batch_inds_in_bucket[i]] = (_score, batch_tgt_lengths[i])
+        score_results = [scored_bucket[i] for i in range(len(scored_bucket))]
+        return score_results
+
     def _align_pad_prediction(self, predictions, bos, pad):
         """
         Padding predictions in batch and add BOS.
