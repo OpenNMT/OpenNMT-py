@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from onmt.inference_engine import InferenceEnginePY
-from onmt.opts import config_opts, translate_opts
+from onmt.opts import translate_opts
 from onmt.utils.parse import ArgumentParser
 from onmt.utils.misc import use_gpu, set_random_seed
 from torch.profiler import profile, record_function, ProfilerActivity
@@ -23,8 +23,7 @@ def translate(opt):
 
 def _get_parser():
     parser = ArgumentParser(description="translate.py")
-    config_opts(parser)
-    translate_opts(parser, dynamic=True)
+    translate_opts(parser)
     return parser
 
 

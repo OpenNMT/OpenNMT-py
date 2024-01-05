@@ -49,12 +49,15 @@ class ScoringPreparator:
         # Translator #
         # ########## #
 
-        # Set translation options
+        # Set "default" translation options on empty cfgfile
         parser = ArgumentParser()
         translate_opts(parser)
         base_args = ["-model", "dummy"] + ["-src", "dummy"]
         opt = parser.parse_args(base_args)
         opt.gpu = gpu_rank
+        if hasattr(self.opt, "tgt_file_prefix"):
+            opt.tgt_file_prefix = self.opt.tgt_file_prefix
+        opt.beam_size = 1  # prevent OOM when GPU is almost full at training
         ArgumentParser.validate_translate_opts(opt)
 
         # Build translator from options
@@ -85,24 +88,25 @@ class ScoringPreparator:
         model_opt.num_workers = 0
         model_opt.tgt = None
 
+        # Retrieve raw references and sources
+        with codecs.open(
+            model_opt.data["valid"]["path_tgt"], "r", encoding="utf-8"
+        ) as f:
+            raw_refs = [line.strip("\n") for line in f if line.strip("\n")]
+        with codecs.open(
+            model_opt.data["valid"]["path_src"], "r", encoding="utf-8"
+        ) as f:
+            raw_srcs = [line.strip("\n") for line in f if line.strip("\n")]
+
         valid_iter = build_dynamic_dataset_iter(
             model_opt,
             transforms_cls,
             translator.vocabs,
             task=CorpusTask.VALID,
+            tgt="",  # This force to clear the target side (needed when using tgt_file_prefix)
             copy=model_opt.copy_attn,
             device_id=opt.gpu,
         )
-
-        # Retrieve raw references and sources
-        with codecs.open(
-            valid_iter.corpora_info["valid"]["path_tgt"], "r", encoding="utf-8"
-        ) as f:
-            raw_refs = [line.strip("\n") for line in f if line.strip("\n")]
-        with codecs.open(
-            valid_iter.corpora_info["valid"]["path_src"], "r", encoding="utf-8"
-        ) as f:
-            raw_srcs = [line.strip("\n") for line in f if line.strip("\n")]
 
         # ########### #
         # Predictions #

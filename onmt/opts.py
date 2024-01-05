@@ -164,8 +164,8 @@ def _add_reproducibility_opts(parser):
     )
 
 
-def _add_dynamic_corpus_opts(parser, build_vocab_only=False):
-    """Options related to training corpus, type: a list of dictionary."""
+def _add_dataset_opts(parser, build_vocab_only=False):
+    """Options related to training datasets, type: a list of dictionary."""
     group = parser.add_argument_group("Data")
     group.add(
         "-data",
@@ -278,7 +278,7 @@ def _add_features_opts(parser):
     )
 
 
-def _add_dynamic_vocab_opts(parser, build_vocab_only=False):
+def _add_vocab_opts(parser, build_vocab_only=False):
     """Options related to vocabulary and features.
 
     Add all options relate to vocabulary or features to parser.
@@ -412,7 +412,7 @@ def _add_dynamic_vocab_opts(parser, build_vocab_only=False):
         )
 
 
-def _add_dynamic_transform_opts(parser):
+def _add_transform_opts(parser):
     """Options related to transforms.
 
     Options that specified in the definitions of each transform class
@@ -422,7 +422,7 @@ def _add_dynamic_transform_opts(parser):
         transform_cls.add_options(parser)
 
 
-def dynamic_prepare_opts(parser, build_vocab_only=False):
+def data_prepare_opts(parser, build_vocab_only=False):
     """Options related to data prepare in dynamic mode.
 
     Add all dynamic data prepare related options to parser.
@@ -430,9 +430,9 @@ def dynamic_prepare_opts(parser, build_vocab_only=False):
     will be used in `onmt/bin/build_vocab.py`.
     """
     config_opts(parser)
-    _add_dynamic_corpus_opts(parser, build_vocab_only=build_vocab_only)
-    _add_dynamic_vocab_opts(parser, build_vocab_only=build_vocab_only)
-    _add_dynamic_transform_opts(parser)
+    _add_dataset_opts(parser, build_vocab_only=build_vocab_only)
+    _add_vocab_opts(parser, build_vocab_only=build_vocab_only)
+    _add_transform_opts(parser)
 
     if build_vocab_only:
         _add_reproducibility_opts(parser)
@@ -1126,6 +1126,39 @@ def _add_train_general_opts(parser):
     )
 
     group.add(
+        "-bucket_size",
+        "--bucket_size",
+        type=int,
+        default=262144,
+        help="""A bucket is a buffer of bucket_size examples to pick
+                   from the various Corpora. The dynamic iterator batches
+                   batch_size batchs from the bucket and shuffle them.""",
+    )
+    group.add(
+        "-bucket_size_init",
+        "--bucket_size_init",
+        type=int,
+        default=-1,
+        help="""The bucket is initalized with this awith this
+               amount of examples (optional)""",
+    )
+    group.add(
+        "-bucket_size_increment",
+        "--bucket_size_increment",
+        type=int,
+        default=0,
+        help="""The bucket size is incremented with this
+              amount of examples (optional)""",
+    )
+    group.add(
+        "-prefetch_factor",
+        "--prefetch_factor",
+        type=int,
+        default=200,
+        help="""number of mini-batches loaded in advance to avoid the
+                   GPU waiting during the refilling of the bucket.""",
+    )
+    group.add(
         "--save_model",
         "-save_model",
         default="model",
@@ -1541,43 +1574,6 @@ def _add_train_general_opts(parser):
     _add_logging_opts(parser, is_train=True)
 
 
-def _add_train_dynamic_data(parser):
-    group = parser.add_argument_group("Dynamic data")
-    group.add(
-        "-bucket_size",
-        "--bucket_size",
-        type=int,
-        default=262144,
-        help="""A bucket is a buffer of bucket_size examples to pick
-                   from the various Corpora. The dynamic iterator batches
-                   batch_size batchs from the bucket and shuffle them.""",
-    )
-    group.add(
-        "-bucket_size_init",
-        "--bucket_size_init",
-        type=int,
-        default=-1,
-        help="""The bucket is initalized with this awith this
-               amount of examples (optional)""",
-    )
-    group.add(
-        "-bucket_size_increment",
-        "--bucket_size_increment",
-        type=int,
-        default=0,
-        help="""The bucket size is incremented with this
-              amount of examples (optional)""",
-    )
-    group.add(
-        "-prefetch_factor",
-        "--prefetch_factor",
-        type=int,
-        default=200,
-        help="""number of mini-batches loaded in advance to avoid the
-                   GPU waiting during the refilling of the bucket.""",
-    )
-
-
 def _add_quant_opts(parser):
     group = parser.add_argument_group("Quant options")
     group.add(
@@ -1624,13 +1620,10 @@ def _add_quant_opts(parser):
 
 def train_opts(parser):
     """All options used in train."""
-    # options relate to data preprare
-    dynamic_prepare_opts(parser, build_vocab_only=False)
+    data_prepare_opts(parser, build_vocab_only=False)
     distributed_opts(parser)
-    # options relate to train
     model_opts(parser)
     _add_train_general_opts(parser)
-    _add_train_dynamic_data(parser)
     _add_quant_opts(parser)
 
 
@@ -1796,8 +1789,9 @@ def _add_decoding_opts(parser):
     )
 
 
-def translate_opts(parser, dynamic=False):
+def translate_opts(parser):
     """Translation / inference options"""
+    config_opts(parser)
     group = parser.add_argument_group("Model")
     group.add(
         "--model",
@@ -1929,18 +1923,17 @@ def translate_opts(parser, dynamic=False):
     )
     group.add("--gpu", "-gpu", type=int, default=-1, help="Device to run on")
 
-    if dynamic:
-        group.add(
-            "-transforms",
-            "--transforms",
-            default=[],
-            nargs="+",
-            choices=AVAILABLE_TRANSFORMS.keys(),
-            help="Default transform pipeline to apply to data.",
-        )
+    group.add(
+        "-transforms",
+        "--transforms",
+        default=[],
+        nargs="+",
+        choices=AVAILABLE_TRANSFORMS.keys(),
+        help="Default transform pipeline to apply to data.",
+    )
 
-        # Adding options related to Transforms
-        _add_dynamic_transform_opts(parser)
+    # Adding options related to Transforms
+    _add_transform_opts(parser)
 
     _add_quant_opts(parser)
 
