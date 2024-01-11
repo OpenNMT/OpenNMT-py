@@ -540,8 +540,10 @@ class Trainer(object):
         if self.n_gpu > 1 and self.parallel_mode == "data_parallel":
             grads = [
                 p.grad.data
+                if p.grad is not None
+                else torch.zeros(p.shape).cuda(p.device)
                 for p in self.model.parameters()
-                if p.requires_grad and p.grad is not None
+                if p.requires_grad
             ]
             onmt.utils.distributed.all_reduce_and_rescale_tensors(
                 grads, float(self.n_gpu)
