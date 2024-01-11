@@ -41,6 +41,7 @@ class TransformerEncoderLayer(nn.Module):
         rotary_interleave (bool): Interleave the head dimensions when rotary
             embeddings are applied
         rotary_theta (int): rotary base theta
+        rotary_dim (int): rotary dim when different to dim per head
     """
 
     def __init__(
@@ -63,6 +64,7 @@ class TransformerEncoderLayer(nn.Module):
         parallel_gpu=1,
         rotary_interleave=True,
         rotary_theta=1e4,
+        rotary_dim=0,
     ):
         super(TransformerEncoderLayer, self).__init__()
 
@@ -75,6 +77,7 @@ class TransformerEncoderLayer(nn.Module):
             relative_positions_buckets=relative_positions_buckets,
             rotary_interleave=rotary_interleave,
             rotary_theta=rotary_theta,
+            rotary_dim=rotary_dim,
             attn_type="self",
             add_qkvbias=add_qkvbias,
             num_kv=num_kv,
@@ -181,6 +184,7 @@ class TransformerEncoder(EncoderBase):
         parallel_gpu=1,
         rotary_interleave=True,
         rotary_theta=1e4,
+        rotary_dim=0,
     ):
         super(TransformerEncoder, self).__init__()
 
@@ -206,6 +210,7 @@ class TransformerEncoder(EncoderBase):
                     parallel_gpu=parallel_gpu,
                     rotary_interleave=rotary_interleave,
                     rotary_theta=rotary_theta,
+                    rotary_dim=rotary_dim,
                 )
                 for i in range(num_layers)
             ]
@@ -245,6 +250,7 @@ class TransformerEncoder(EncoderBase):
             else 1,
             rotary_interleave=opt.rotary_interleave,
             rotary_theta=opt.rotary_theta,
+            rotary_dim=opt.rotary_dim,
         )
 
     def forward(self, src, src_len=None):

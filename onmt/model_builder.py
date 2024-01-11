@@ -35,7 +35,10 @@ def build_embeddings(opt, vocabs, for_encoder=True):
     if for_encoder:
         emb_dim = opt.src_word_vec_size
         word_padding_idx = vocabs["src"][DefaultTokens.PAD]
-        num_word_embeddings = len(vocabs["src"])
+        if hasattr(opt, "src_vocab_size"):
+            num_word_embeddings = max(len(vocabs["src"]), opt.src_vocab_size)
+        else:
+            num_word_embeddings = len(vocabs["src"])
         if "src_feats" in vocabs:
             feat_pad_indices = [fv[DefaultTokens.PAD] for fv in vocabs["src_feats"]]
             num_feat_embeddings = [len(fv) for fv in vocabs["src_feats"]]
@@ -43,7 +46,10 @@ def build_embeddings(opt, vocabs, for_encoder=True):
     else:
         emb_dim = opt.tgt_word_vec_size
         word_padding_idx = vocabs["tgt"][DefaultTokens.PAD]
-        num_word_embeddings = len(vocabs["tgt"])
+        if hasattr(opt, "tgt_vocab_size"):
+            num_word_embeddings = max(len(vocabs["tgt"]), opt.tgt_vocab_size)
+        else:
+            num_word_embeddings = len(vocabs["tgt"])
         freeze_word_vecs = opt.freeze_word_vecs_dec
 
     emb = Embeddings(
