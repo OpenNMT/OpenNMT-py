@@ -51,8 +51,20 @@ def apply_rotary_emb(query, key, rope, interleave):
         ).type_as(key)
     else:
         cos, sin = rope.real, rope.imag
-        q_embed = (query * cos) + (rotate_half(query) * sin)
-        k_embed = (key * cos) + (rotate_half(key) * sin)
+        rotary_dim = cos.size(1)
+        head_dim = query.size(3)
+        if rotary_dim < head_dim:
+            q_embed = (query[:, :, :, :rotary_dim] * cos) + (
+                rotate_half(query[:, :, :, :rotary_dim]) * sin
+            )
+            k_embed = (key[:, :, :, :rotary_dim] * cos) + (
+                rotate_half(key[:, :, :, :rotary_dim]) * sin
+            )
+            q_embed = torch.cat([q_embed, query[:, :, :, rotary_dim:]], dim=-1)
+            k_embed = torch.cat([k_embed, key[:, :, :, rotary_dim:]], dim=-1)
+        else:
+            q_embed = (query * cos) + (rotate_half(query) * sin)
+            k_embed = (key * cos) + (rotate_half(key) * sin)
         return q_embed.type_as(query), k_embed.type_as(key)
 
 
@@ -258,6 +270,7 @@ class MultiHeadedAttention(torch.nn.Module):
         relative_positions_buckets: int = 0,
         rotary_interleave: bool = True,
         rotary_theta: int = 1e4,
+        rotary_dim: int = 0,
         attn_type: str = None,
         self_attn_type: str = None,
         add_qkvbias=False,
@@ -352,7 +365,11 @@ class MultiHeadedAttention(torch.nn.Module):
             self.relative_attention_bias = None
 
             if max_relative_positions == -1:  # rotary embeddings
-                self.rope = rotaryembeddings(self.dim_per_head, base=rotary_theta)
+                if rotary_dim == 0:
+                    self.rotary_dim = self.dim_per_head
+                else:
+                    self.rotary_dim = rotary_dim
+                self.rope = rotaryembeddings(self.rotary_dim, base=rotary_theta)
                 self.cos = (
                     self.rope[:, : self.rope.size(1) // 2].real.contiguous().half()
                 )
@@ -431,10 +448,10 @@ class MultiHeadedAttention(torch.nn.Module):
                     self.linear_keys(query),
                     self.linear_values(query),
                 )
+
                 query = shape(query, self.dim_per_head)
                 key = shape(key, self.dim_per_head)
                 value = shape(value, self.dim_per_head)
-
                 start_pos = step
                 seqlen = query.size(2)
 
@@ -449,7 +466,7 @@ class MultiHeadedAttention(torch.nn.Module):
                     if self.max_relative_positions == -1:  # Rotary Embeddings
                         if seqlen > self.rope.size(0):
                             self.rope = rotaryembeddings(
-                                self.dim_per_head,
+                                self.rotary_dim,
                                 maxseqlen=(seqlen + 2048),
                                 base=self.rotary_theta,
                             ).to(self.rope.device)
@@ -472,7 +489,7 @@ class MultiHeadedAttention(torch.nn.Module):
                     if self.max_relative_positions == -1:  # Rotary Embeddings
                         if seqlen > self.rope.size(0):
                             self.rope = rotaryembeddings(
-                                self.dim_per_head,
+                                self.rotary_dim,
                                 maxseqlen=(seqlen + 2048),
                                 base=self.rotary_theta,
                             ).to(self.rope.device)
@@ -577,7 +594,7 @@ class MultiHeadedAttention(torch.nn.Module):
                 seqlen = query.size(2)
                 if seqlen > self.rope.size(0):
                     self.rope = rotaryembeddings(
-                        self.dim_per_head,
+                        self.rotary_dim,
                         maxseqlen=(seqlen + 2048),
                         base=self.rotary_theta,
                     ).to(self.rope.device)

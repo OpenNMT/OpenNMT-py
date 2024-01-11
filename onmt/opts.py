@@ -888,6 +888,13 @@ def model_opts(parser):
         help="Rotary theta base length" "1e4 for Llama2.Mistral" "1e6 for Mixtral",
     )
     group.add(
+        "--rotary_dim",
+        "-rotary_dim",
+        type=int,
+        default=0,
+        help="Rotary dim when model requires it to be different to head dim",
+    )
+    group.add(
         "--heads",
         "-heads",
         type=int,

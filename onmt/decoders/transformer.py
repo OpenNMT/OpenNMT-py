@@ -41,6 +41,7 @@ class TransformerDecoderLayerBase(nn.Module):
         sliding_window=0,
         rotary_interleave=True,
         rotary_theta=1e4,
+        rotary_dim=0,
         num_experts=0,
         num_experts_per_tok=2,
     ):
@@ -87,6 +88,9 @@ class TransformerDecoderLayerBase(nn.Module):
             rotary_interleave (bool): Interleave the head dimensions when rotary
                 embeddings are applied
             rotary_theta (int): rotary base theta
+            rotary_dim (int): in some cases the rotary dim is lower than head dim
+            num_experts (int): Number of experts for MoE
+            num_experts_per_tok (int): Number of experts choice per token
         """
         super(TransformerDecoderLayerBase, self).__init__()
 
@@ -99,6 +103,7 @@ class TransformerDecoderLayerBase(nn.Module):
                 relative_positions_buckets=relative_positions_buckets,
                 rotary_interleave=rotary_interleave,
                 rotary_theta=rotary_theta,
+                rotary_dim=rotary_dim,
                 attn_type="self",
                 self_attn_type=self_attn_type,
                 add_qkvbias=add_qkvbias,
@@ -280,6 +285,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
         sliding_window=0,
         rotary_interleave=True,
         rotary_theta=1e4,
+        rotary_dim=0,
         num_experts=0,
         num_experts_per_tok=2,
     ):
@@ -312,6 +318,7 @@ class TransformerDecoderLayer(TransformerDecoderLayerBase):
             sliding_window=sliding_window,
             rotary_interleave=rotary_interleave,
             rotary_theta=rotary_theta,
+            rotary_dim=rotary_dim,
             num_experts=num_experts,
             num_experts_per_tok=num_experts_per_tok,
         )
@@ -475,6 +482,7 @@ class TransformerDecoderBase(DecoderBase):
             sliding_window=opt.sliding_window,
             rotary_interleave=opt.rotary_interleave,
             rotary_theta=opt.rotary_theta,
+            rotary_dim=opt.rotary_dim,
             num_experts=opt.num_experts,
             num_experts_per_tok=opt.num_experts_per_tok,
         )
@@ -566,6 +574,9 @@ class TransformerDecoder(TransformerDecoderBase):
         sliding_window (int): Width of the band mask and KV cache (cf Mistral Model)
         rotary_interleave (bool): Interleave the head dimensions when rotary embeddings are applied
         rotary_theta (int): rotary base theta
+        rotary_dim (int): in some cases the rotary dim is lower than head dim
+        num_experts (int): Number of experts for MoE
+        num_experts_per_tok (int): Number of experts choice per token
     """
 
     def __init__(
@@ -598,6 +609,7 @@ class TransformerDecoder(TransformerDecoderBase):
         sliding_window=0,
         rotary_interleave=True,
         rotary_theta=1e4,
+        rotary_dim=0,
         num_experts=0,
         num_experts_per_tok=2,
     ):
@@ -632,6 +644,7 @@ class TransformerDecoder(TransformerDecoderBase):
                     sliding_window=sliding_window,
                     rotary_interleave=rotary_interleave,
                     rotary_theta=rotary_theta,
+                    rotary_dim=rotary_dim,
                     num_experts=num_experts,
                     num_experts_per_tok=num_experts_per_tok,
                 )
@@ -842,6 +855,9 @@ class TransformerLMDecoder(TransformerDecoderBase):
         sliding_window (int): Width of the band mask and KV cache (cf Mistral Model)
         rotary_interleave (bool): Interleave the head dimensions when rotary embeddings are applied
         rotary_theta (int): rotary base theta
+        rotary_dim (int): in some cases the rotary dim is lower than head dim
+        num_experts (int): Number of experts for MoE
+        num_experts_per_tok (int): Number of experts choice per token
     """
 
     def __init__(
@@ -874,6 +890,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
         sliding_window=0,
         rotary_interleave=True,
         rotary_theta=1e4,
+        rotary_dim=0,
         num_experts=0,
         num_experts_per_tok=2,
     ):
@@ -907,6 +924,7 @@ class TransformerLMDecoder(TransformerDecoderBase):
                     sliding_window=sliding_window,
                     rotary_interleave=rotary_interleave,
                     rotary_theta=rotary_theta,
+                    rotary_dim=rotary_dim,
                     num_experts=num_experts,
                     num_experts_per_tok=num_experts_per_tok,
                 )
