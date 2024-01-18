@@ -136,8 +136,8 @@ class PrefixTransform(Transform):
         prefix_dict = cls.get_prefix_dict(opts)
         src_specials, tgt_specials = set(), set()
         for _, prefix in prefix_dict.items():
-            src_specials.update(prefix["src"].split())
-            tgt_specials.update(prefix["tgt"].split())
+            src_specials.update(prefix["src"].split(" "))
+            tgt_specials.update(prefix["tgt"].split(" "))
         return (src_specials, tgt_specials)
 
     def warm_up(self, vocabs=None):
@@ -149,9 +149,9 @@ class PrefixTransform(Transform):
         """Prepend `prefix` to `tokens`."""
         for side, side_prefix in prefix.items():
             if example.get(side) is not None:
-                example[side] = side_prefix.split() + example[side]
+                example[side] = side_prefix.split(" ") + example[side]
             elif len(side_prefix) > 0:
-                example[side] = side_prefix.split()
+                example[side] = side_prefix.split(" ")
         return example
 
     def apply(self, example, is_train=False, stats=None, **kwargs):
@@ -250,8 +250,8 @@ class SuffixTransform(Transform):
         suffix_dict = cls.get_suffix_dict(opts)
         src_specials, tgt_specials = set(), set()
         for _, suffix in suffix_dict.items():
-            src_specials.update(suffix["src"].split())
-            tgt_specials.update(suffix["tgt"].split())
+            src_specials.update(suffix["src"].split(" "))
+            tgt_specials.update(suffix["tgt"].split(" "))
         return (src_specials, tgt_specials)
 
     def warm_up(self, vocabs=None):
@@ -263,9 +263,9 @@ class SuffixTransform(Transform):
         """Prepend `suffix` to `tokens`."""
         for side, side_suffix in suffix.items():
             if example.get(side) is not None:
-                example[side] = example[side] + side_suffix.split()
+                example[side] = example[side] + side_suffix.split(" ")
             elif len(side_suffix) > 0:
-                example[side] = side_suffix.split()
+                example[side] = side_suffix.split(" ")
         return example
 
     def apply(self, example, is_train=False, stats=None, **kwargs):

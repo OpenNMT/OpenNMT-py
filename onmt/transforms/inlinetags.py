@@ -73,8 +73,8 @@ class InlineTagger(object):
             maybe_augmented[1].strip() if len(maybe_augmented) > 1 else None
         )
 
-        tokenized_source_string = source_only.split()
-        tokenized_target_string = tgt_example.split()
+        tokenized_source_string = source_only.split(" ")
+        tokenized_target_string = tgt_example.split(" ")
 
         src_offset, tgt_offset = 0, 0
         src_with_tags, tgt_with_tags = list(), list()
@@ -140,12 +140,12 @@ class InlineTagger(object):
 
                 src_term = " ".join(
                     tokenized_source_string[
-                        source_index : source_index + len(pair[0].split())
+                        source_index : source_index + len(pair[0].split(" "))
                     ]
                 )
                 tgt_term = " ".join(
                     tokenized_target_string[
-                        target_index : target_index + len(pair[1].split())
+                        target_index : target_index + len(pair[1].split(" "))
                     ]
                 )
 
@@ -210,11 +210,11 @@ class InlineTagger(object):
             tgt_with_tags.append(tgt_example[tgt_offset:])
 
             return (
-                "".join(src_with_tags).replace("∥", " ").split(),
-                "".join(tgt_with_tags).replace("∥", " ").split(),
+                "".join(src_with_tags).replace("∥", " ").split(" "),
+                "".join(tgt_with_tags).replace("∥", " ").split(" "),
             ), is_match
         else:
-            return (src_example.split(), tgt_example.split()), is_match
+            return (src_example.split(" "), tgt_example.split(" ")), is_match
 
 
 @register_transform(name="inlinetags")

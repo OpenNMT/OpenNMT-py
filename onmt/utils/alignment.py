@@ -115,14 +115,14 @@ def to_word_align(
     assert m_src in ["joiner", "spacer"], "Invalid value for argument m_src!"
     assert m_tgt in ["joiner", "spacer"], "Invalid value for argument m_tgt!"
 
-    src, tgt = src.strip().split(), tgt.strip().split()
+    src, tgt = src.strip().split(" "), tgt.strip().split(" ")
     subword_align = {
-        (int(a), int(b)) for a, b in (x.split("-") for x in subword_align.split())
+        (int(a), int(b)) for a, b in (x.split("-") for x in subword_align.split(" "))
     }
 
     subword_align_scores = dict(
         (int(a), float(b))
-        for a, b in (x.split("-") for x in subword_align_scores.split())
+        for a, b in (x.split("-") for x in subword_align_scores.split(" "))
     )
 
     src_map = (

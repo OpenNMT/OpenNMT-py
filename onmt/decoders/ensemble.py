@@ -65,7 +65,10 @@ class EnsembleDecoder(DecoderBase):
                 for i, model_decoder in enumerate(self.model_decoders)
             ]
         )
-        mean_attns = self.combine_attns(attns)
+        if attns[0]["std"] is not None:
+            mean_attns = self.combine_attns(attns)
+        else:
+            mean_attns = attns
         return EnsembleDecoderOutput(dec_outs), mean_attns
 
     def combine_attns(self, attns):

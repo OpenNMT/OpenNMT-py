@@ -283,7 +283,7 @@ class SentencePieceTransform(TokenizerTransform):
         if isinstance(translated, list):
             return self._detokenize(translated, "tgt")
         else:
-            return self._detokenize(translated.split(), "tgt")
+            return self._detokenize(translated.split(" "), "tgt")
 
     def _repr_args(self):
         """Return str represent key arguments for class."""
@@ -353,7 +353,7 @@ class BPETransform(TokenizerTransform):
         if isinstance(translated, list):
             return self._detokenize(translated, "tgt")
         else:
-            return self._detokenize(translated.split(), "tgt")
+            return self._detokenize(translated.split(" "), "tgt")
 
 
 @register_transform(name="onmt_tokenize")
@@ -550,7 +550,14 @@ class ONMTTokenizerTransform(TokenizerTransform):
                 self.maptable[b]
                 for b in sentence.replace(DefaultTokens.SEP, "\n").encode("utf-8")
             )
-            segmented = tokenizer(sentence)
+            segmented1 = tokenizer(sentence)
+            segmented = []
+            # ugly patch to make sure "\n\n" is split in two items
+            for s in segmented1:
+                if s == "ĊĊ":
+                    segmented.extend(["Ċ", "Ċ"])
+                else:
+                    segmented.append(s)
         else:
             segmented = tokenizer(sentence)
         return segmented
@@ -572,7 +579,7 @@ class ONMTTokenizerTransform(TokenizerTransform):
         if isinstance(translated, list):
             return self._detokenize(translated, "tgt")
         else:
-            return self._detokenize(translated.split(), "tgt")
+            return self._detokenize(translated.split(" "), "tgt")
 
     def _repr_args(self):
         """Return str represent key arguments for class."""

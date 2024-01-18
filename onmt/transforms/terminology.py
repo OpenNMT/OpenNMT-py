@@ -57,7 +57,7 @@ class TermMatcher(object):
             for pair in pairs:
                 src_term, tgt_term = map(str, pair.split("\t"))
                 src_lemma = " ".join(
-                    "∥".join(tok.lemma_.split()) for tok in self.src_nlp(src_term)
+                    "∥".join(tok.lemma_.split(" ")) for tok in self.src_nlp(src_term)
                 ).strip()
                 tgt_lemma = " ".join(
                     tok.lemma_ for tok in self.tgt_nlp(tgt_term)
@@ -93,7 +93,7 @@ class TermMatcher(object):
 
         # Perform tokenization with spacy for consistency.
         tokenized_source = [tok.text for tok in doc_src]
-        lemmatized_source = ["∥".join(tok.lemma_.lower().split()) for tok in doc_src]
+        lemmatized_source = ["∥".join(tok.lemma_.lower().split(" ")) for tok in doc_src]
         lemmatized_target = [tok.lemma_.lower() for tok in doc_tgt]
 
         lemmatized_source_string = " ".join(lemmatized_source)
@@ -143,7 +143,7 @@ class TermMatcher(object):
                         lemma_list_index += len(w) + 1
 
                 # We need to know if the term is multiword
-                num_words_in_src_term = len(src_entry.split())
+                num_words_in_src_term = len(src_entry.split(" "))
                 src_term = " ".join(
                     tokenized_source[
                         lemma_list_index : lemma_list_index + num_words_in_src_term
@@ -164,7 +164,7 @@ class TermMatcher(object):
 
         if is_match:
             source_with_terms.append(lemmatized_source_string[offset:])
-            tokenized_source_with_terms = "".join(source_with_terms).split()
+            tokenized_source_with_terms = "".join(source_with_terms).split(" ")
 
             if not (
                 len(tokenized_source)
@@ -173,7 +173,7 @@ class TermMatcher(object):
             ):
                 final_string = " ".join(tokenized_source)
                 fixed_punct = re.sub(r" ([^\w\s｟\-\–])", r"\1", final_string)
-                return fixed_punct.split(), not is_match
+                return fixed_punct.split(" "), not is_match
 
             # Construct the final source from the lemmatized list
             # that contains the terms. We compare the tokens in the
@@ -195,17 +195,17 @@ class TermMatcher(object):
                 final_string = " ".join(
                     completed_tokenized_source
                     + [self.delimiter]
-                    + augmented_part.split()
+                    + augmented_part.split(" ")
                 )
             else:
                 final_string = " ".join(completed_tokenized_source)
 
             fixed_punct = re.sub(r" ([^\w\s｟\-\–])", r"\1", final_string)
-            return fixed_punct.split(), is_match
+            return fixed_punct.split(" "), is_match
         else:
             final_string = " ".join(tokenized_source)
             fixed_punct = re.sub(r" ([^\w\s｟\-\–])", r"\1", final_string)
-            return fixed_punct.split(), not is_match
+            return fixed_punct.split(" "), not is_match
 
 
 @register_transform(name="terminology")

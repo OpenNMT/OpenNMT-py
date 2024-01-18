@@ -216,6 +216,6 @@ class FuzzyMatchTransform(Transform):
         assert len(src_segments) == len(fuzzied_src)
         for idx, (example, _, _) in enumerate(batch):
             if fuzzied_src[idx] != "":
-                example["src"] = fuzzied_src[idx].split()
+                example["src"] = fuzzied_src[idx].split(" ")
 
         return batch

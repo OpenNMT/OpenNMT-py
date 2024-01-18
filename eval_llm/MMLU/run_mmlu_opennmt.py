@@ -167,12 +167,12 @@ def evaluate(opt):
             prompt_end = format_example(test_df, i, include_answer=False)
             train_prompt = gen_prompt(dev_df, task, k)
             prompt = train_prompt + prompt_end
-            """
-            while len(prompt.split()) > 768:
+
+            while len(prompt.split(" ")) > 768:
                 prompt_split = prompt.split("\n\n")
                 prompt_split.pop(1)
                 prompt = "\n\n".join(prompt_split)
-            """
+
             label = test_df.iloc[i, test_df.shape[1] - 1]
             records.append({"prompt": prompt, "answer": label})
             src.append(prompt.replace("\n", "｟newline｠"))
