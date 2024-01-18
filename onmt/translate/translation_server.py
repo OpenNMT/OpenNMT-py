@@ -937,7 +937,7 @@ class ServerModel(object):
         """De-tokenize the sequence (or not)
         Same args/returns as :func:``tokenize()``"""
 
-        if self.tokenizers_opt is not None and "".join(sequence.split()) != "":
+        if self.tokenizers_opt is not None and "".join(sequence.split(" ")) != "":
             return self.detokenize(sequence, side)
         return sequence
 
@@ -950,9 +950,9 @@ class ServerModel(object):
             raise ValueError("No tokenizer loaded")
 
         if self.tokenizers_opt[side]["type"] == "sentencepiece":
-            detok = self.tokenizers[side].DecodePieces(sequence.split())
+            detok = self.tokenizers[side].DecodePieces(sequence.split(" "))
         elif self.tokenizers_opt[side]["type"] == "pyonmttok":
-            detok = self.tokenizers[side].detokenize(sequence.split())
+            detok = self.tokenizers[side].detokenize(sequence.split(" "))
 
         return detok
 
@@ -976,7 +976,7 @@ class ServerModel(object):
                     "To get decoded alignment, joiner/spacer "
                     "should be used in both side's tokenizer."
                 )
-            elif "".join(tgt.split()) != "":
+            elif "".join(tgt.split(" ")) != "":
                 align = to_word_align(
                     src, tgt, align, align_scores, src_marker, tgt_marker
                 )

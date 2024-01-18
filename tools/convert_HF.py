@@ -74,29 +74,20 @@ key_maps["MixtralForCausalLM"] = {
     ".feed_forward.experts.7.layer_norm.weight": ".post_attention_layernorm.weight",
 }
 key_maps["PhiForCausalLM"] = {
-    "layer_prefix": "transformer.h.",
-    "decoder.embeddings.make_embedding.emb_luts.0.weight": "transformer.embd.wte.weight",
-    "decoder.layer_norm.weight": "lm_head.ln.weight",
-    "decoder.layer_norm.bias": "lm_head.ln.bias",
-    "generator.weight": "lm_head.linear.weight",
-    "generator.bias": "lm_head.linear.bias",
-    ".self_attn.linear_query.": (
-        ".mixer.Wqkv.",
-        "[:hidden_size]",  # noqa E501
-    ),
-    ".self_attn.linear_keys.": (
-        ".mixer.Wqkv.",
-        "[hidden_size:2*hidden_size]",  # noqa E501
-    ),
-    ".self_attn.linear_values.": (
-        ".mixer.Wqkv.",
-        "[-hidden_size:]",  # noqa E501
-    ),
-    ".self_attn.final_linear.": ".mixer.out_proj.",
+    "layer_prefix": "model.layers.",
+    "decoder.embeddings.make_embedding.emb_luts.0.weight": "model.embed_tokens.weight",
+    "decoder.layer_norm.weight": "model.final_layernorm.weight",
+    "decoder.layer_norm.bias": "model.final_layernorm.bias",
+    "generator.weight": "lm_head.weight",
+    "generator.bias": "lm_head.bias",
+    ".self_attn.linear_query.": ".self_attn.q_proj.",
+    ".self_attn.linear_keys.": ".self_attn.k_proj.",
+    ".self_attn.linear_values.": ".self_attn.v_proj.",
+    ".self_attn.final_linear.": ".self_attn.dense.",
     ".feed_forward.w_1.": ".mlp.fc1.",
     ".feed_forward.w_2.": ".mlp.fc2.",
-    ".layer_norm_1.weight": (".ln.weight", ""),
-    ".layer_norm_1.bias": (".ln.bias", ""),
+    ".layer_norm_1.weight": (".input_layernorm.weight", ""),
+    ".layer_norm_1.bias": (".input_layernorm.bias", ""),
 }
 ln_table = {
     "LlamaForCausalLM": "rms",
@@ -190,6 +181,10 @@ if __name__ == "__main__":
                     "You used a local directory but tokenizer.model",
                     " and/or tokenizer.json are missing",
                 )
+        if os.path.exists(os.path.join(opt.model_dir, "tokenizer_config.json")):
+            tokenizer_config_json = os.path.join(opt.model_dir, "tokenizer_config.json")
+        else:
+            tokenizer_config_json = None
     else:
         directory_path, _ = os.path.split(opt.output)
         os.makedirs(directory_path, exist_ok=True)
@@ -223,6 +218,17 @@ if __name__ == "__main__":
         except huggingface_hub.utils.EntryNotFoundError:
             raise huggingface_hub.utils.EntryNotFoundError(
                 "Something went wrong the repo does not contain any config.json file"
+            )
+        try:
+            tokenizer_config_json = huggingface_hub.hf_hub_download(
+                repo_id=opt.model_dir,
+                filename="tokenizer_config.json",
+                local_dir=directory_path,
+                token=opt.token,
+            )
+        except huggingface_hub.utils.EntryNotFoundError:
+            raise huggingface_hub.utils.EntryNotFoundError(
+                "Something went wrong the repo does not contain any tokenizer_config.json file"
             )
         try:
             wmap_path = huggingface_hub.hf_hub_download(
@@ -325,6 +331,8 @@ if __name__ == "__main__":
         norm_eps = config["rms_norm_eps"]
     elif "layer_norm_epsilon" in config.keys():
         norm_eps = config["layer_norm_epsilon"]
+    elif "layer_norm_eps" in config.keys():
+        norm_eps = config["layer_norm_eps"]
     else:
         norm_eps = 1e-6
     if "rope_theta" in config.keys():
@@ -333,6 +341,8 @@ if __name__ == "__main__":
         rope_theta = 1e4
     if "rotary_dim" in config.keys():
         rotary_dim = config["rotary_dim"]
+    elif "partial_rotary_factor" in config.keys():
+        rotary_dim = int(config["partial_rotary_factor"] * (hidden_size // heads))
     else:
         rotary_dim = 0
     if "sliding_window" in config.keys():
@@ -404,7 +414,7 @@ if __name__ == "__main__":
         params = ["weight", "bias"]
 
     add_qkvbias = False
-    aff_ffnbias = False
+    add_ffnbias = False
     rotary_interleave = False
     if arch == "PhiForCausalLM":
         parallel_residual = True
@@ -689,11 +699,28 @@ if __name__ == "__main__":
 
     directory_path, _ = os.path.split(opt.output)
     os.makedirs(directory_path, exist_ok=True)
+    if tokenizer_config_json is not None:
+        with open(tokenizer_config_json, encoding="utf-8") as f:
+            data = json.load(f)
+            if "add_bos_token" in data.keys():
+                add_bos_token = data["add_bos_token"]
+            else:
+                add_bos_token = False
+    else:
+        add_bos_token = True
     vocabs = {}
     if tokenizer_model is not None:
         tokenizer = Tokenizer(model_path=tokenizer_model)
         vocab = tokenizer.vocab
-        vocab[3] = DefaultTokens.PAD
+        if "<|startoftext|>" in vocab:
+            index = vocab.index("<|startoftext|>")
+            vocab[index] = DefaultTokens.BOS
+        if "<|endoftext|>" in vocab:
+            index = vocab.index("<|endoftext|>")
+            vocab[index] = DefaultTokens.EOS
+        if "<0x00>" in vocab:
+            index = vocab.index("<0x00>")
+            vocab[index] = DefaultTokens.PAD
         src_vocab = pyonmttok.build_vocab_from_tokens(
             vocab,
             maximum_size=tokenizer.n_words,
@@ -722,7 +749,10 @@ if __name__ == "__main__":
     vocabs["src"] = src_vocab
     vocabs["tgt"] = src_vocab
     vocabs["data_task"] = "lm"
-    vocabs["decoder_start_token"] = decoder_start_table[arch]
+    if add_bos_token:
+        vocabs["decoder_start_token"] = decoder_start_table[arch]
+    else:
+        vocabs["decoder_start_token"] = ""
     onmt_cp["vocab"] = {}
     onmt_cp["vocab"] = vocabs_to_dict(vocabs)
 

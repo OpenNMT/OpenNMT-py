@@ -174,20 +174,20 @@ class ParallelCorpusIterator(object):
 
     def _process(self, stream):
         for i, example in enumerate(stream):
-            example["src"] = example["src"].strip("\n").split()
-            example["src_original"] = example["src_original"].strip("\n").split()
+            example["src"] = example["src"].strip().split(" ")
+            example["src_original"] = example["src_original"].strip().split(" ")
             if "src_feats" in example:
                 example["src_feats"] = [
-                    feat.strip("\n").split() for feat in example["src_feats"]
+                    feat.strip().split(" ") for feat in example["src_feats"]
                 ]
             line_number = i * self.stride + self.offset
             example["cid_line_number"] = line_number
             example["cid"] = self.cid
             if "align" in example:
-                example["align"] = example["align"].strip("\n").split()
+                example["align"] = example["align"].strip().split(" ")
             if example["tgt"] is not None:
-                example["tgt"] = example["tgt"].strip("\n").split()
-                example["tgt_original"] = example["tgt_original"].strip("\n").split()
+                example["tgt"] = example["tgt"].strip().split(" ")
+                example["tgt_original"] = example["tgt_original"].strip().split(" ")
                 if (
                     len(example["src"]) == 0
                     or len(example["tgt"]) == 0

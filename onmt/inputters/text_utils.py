@@ -121,31 +121,33 @@ def numericalize(vocabs, example):
     numeric = example
     numeric["src"]["src_ids"] = []
     if vocabs["data_task"] == ModelTask.SEQ2SEQ:
-        src_text = example["src"]["src"].split()
+        src_text = example["src"]["src"].split(" ")
         numeric["src"]["src_ids"] = vocabs["src"](src_text)
         if example["tgt"] is not None:
             numeric["tgt"]["tgt_ids"] = []
-            tgt_text = example["tgt"]["tgt"].split()
+            tgt_text = example["tgt"]["tgt"].split(" ")
             numeric["tgt"]["tgt_ids"] = vocabs["tgt"](
                 [decoder_start_token] + tgt_text + [DefaultTokens.EOS]
             )
 
     elif vocabs["data_task"] == ModelTask.LANGUAGE_MODEL:
-        src_text = example["src"]["src"].split()
+        src_text = example["src"]["src"].split(" ")
         if decoder_start_token != "":
             src_text = [decoder_start_token] + src_text
         numeric["src"]["src_ids"] = vocabs["src"](src_text)
         if example["tgt"] is not None:
             numeric["tgt"]["tgt_ids"] = []
-            tgt_text = example["tgt"]["tgt"].split()
+            tgt_text = example["tgt"]["tgt"].split(" ")
             numeric["tgt"]["tgt_ids"] = vocabs["tgt"](tgt_text + [DefaultTokens.EOS])
+            if decoder_start_token == "":
+                numeric["tgt"]["tgt_ids"] = numeric["tgt"]["tgt_ids"][1:]
     else:
         raise ValueError(f"Something went wrong with task {vocabs['data_task']}")
 
     if "feats" in example["src"]:
         numeric_feats = []
         for fv, feat in zip(vocabs["src_feats"], example["src"]["feats"]):
-            numeric_feats.append(fv(feat.split()))
+            numeric_feats.append(fv(feat.split(" ")))
         numeric["src"]["feats"] = numeric_feats
 
     return numeric
@@ -329,7 +331,7 @@ def textbatch_to_tensor(vocabs, batch, device, is_train=False):
     infer_iter = []
     for i, ex in enumerate(batch):
         # Keep it consistent with dynamic data
-        ex["srclen"] = len(ex["src"]["src"].split())
+        ex["srclen"] = len(ex["src"]["src"].split(" "))
         ex["in_in_bucket"] = i
         ex["cid"] = "text"
         ex["cid_line_number"] = i
@@ -354,7 +356,7 @@ def _addcopykeys(vocabs, example):
     Returns:
         ``example``, changed as described.
     """
-    src = example["src"]["src"].split()
+    src = example["src"]["src"].split(" ")
     src_ex_vocab = pyonmttok.build_vocab_from_tokens(
         Counter(src),
         maximum_size=0,
@@ -377,10 +379,10 @@ def _addcopykeys(vocabs, example):
         if vocabs["data_task"] == ModelTask.SEQ2SEQ:
             tgt = (
                 [DefaultTokens.UNK]
-                + example["tgt"]["tgt"].split()
+                + example["tgt"]["tgt"].split(" ")
                 + [DefaultTokens.UNK]
             )
         elif vocabs["data_task"] == ModelTask.LANGUAGE_MODEL:
-            tgt = example["tgt"]["tgt"].split() + [DefaultTokens.UNK]
+            tgt = example["tgt"]["tgt"].split(" ") + [DefaultTokens.UNK]
         example["alignment"] = src_ex_vocab(tgt)
     return example

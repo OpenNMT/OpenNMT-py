@@ -329,7 +329,7 @@ class NormalizeTransform(Transform):
             self.pre_dict[corpus_name],
             self.post_dict[corpus_name],
         )
-        example["src"] = src_str.split()
+        example["src"] = src_str.split(" ")
 
         if example["tgt"] is not None:
             tgt_str = self.mpn.normalize(
@@ -341,6 +341,6 @@ class NormalizeTransform(Transform):
                 self.pre_dict[corpus_name],
                 self.post_dict[corpus_name],
             )
-            example["tgt"] = tgt_str.split()
+            example["tgt"] = tgt_str.split(" ")
 
         return example

@@ -119,7 +119,7 @@ def evaluate(opt):
     engine = InferenceEnginePY(engine_opt)
 
     # Tokenize the dataset.
-    opt.src = "wikitext-2-raw-v1/wikitext-2-raw/wiki.test.raw"
+    opt.src = "eval_llm/WIKITEXT2/wikitext-2-raw-v1/wikitext-2-raw/wiki.test.raw"
     tokenize_dataset(opt, context_length=512)
 
     # Score the tokeznized dataset
@@ -140,8 +140,7 @@ def evaluate(opt):
 
 def _get_parser():
     parser = ArgumentParser(description="run_wikitext-2_benchmark.py")
-    opts.config_opts(parser)
-    opts.translate_opts(parser, dynamic=True)
+    opts.translate_opts(parser)
     return parser
 
 
