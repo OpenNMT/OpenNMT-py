@@ -9,15 +9,17 @@
           users of this library) for the strategy things we do.
 """
 
-import time
 import sys
-import torch
+import time
 import traceback
+
+import torch
+
 import onmt.utils
-from onmt.utils.loss import LossCompute
+from onmt.scorers import build_scorers, get_scorers_cls
 from onmt.utils.logging import logger
+from onmt.utils.loss import LossCompute
 from onmt.utils.scoring_utils import ScoringPreparator
-from onmt.scorers import get_scorers_cls, build_scorers
 
 
 def build_trainer(opt, device_id, model, vocabs, optim, model_saver=None):
@@ -305,9 +307,7 @@ class Trainer(object):
         # Let's clean the GPUs before training loop
         torch.cuda.empty_cache()
 
-        while self.optim.training_step < train_steps:
-            batches, normalization = next(self._accum_batches(train_iter))
-
+        for i, (batches, normalization) in enumerate(self._accum_batches(train_iter)):
             step = self.optim.training_step
             # UPDATE DROPOUT
             self._maybe_update_dropout(step)
@@ -317,14 +317,11 @@ class Trainer(object):
                     onmt.utils.distributed.all_gather_list(normalization)
                 )
 
-            oom_occured = self._gradient_accumulation(
+            self._gradient_accumulation(
                 batches, normalization, total_stats, report_stats
             )
 
-            if oom_occured:  # An OOM error occured, retry with a new batch
-                continue
-
-            if self.average_decay > 0 and step % self.average_every == 0:
+            if self.average_decay > 0 and i % self.average_every == 0:
                 self._update_average(step)
 
             report_stats = self._maybe_report_training(
@@ -531,8 +528,6 @@ class Trainer(object):
                         if self.n_gpu > 1 and self.parallel_mode == "tensor_parallel":
                             torch.distributed.destroy_process_group()
                             sys.exit()
-                        else:
-                            return True
                     else:
                         traceback.print_exc()
                         raise exc
@@ -546,15 +541,16 @@ class Trainer(object):
         if self.n_gpu > 1 and self.parallel_mode == "data_parallel":
             grads = [
                 p.grad.data
+                if p.grad is not None
+                else torch.zeros(p.shape).cuda(p.device)
                 for p in self.model.parameters()
-                if p.requires_grad and p.grad is not None
+                if p.requires_grad
             ]
             onmt.utils.distributed.all_reduce_and_rescale_tensors(
                 grads, float(self.n_gpu)
             )
 
         self.optim.step()
-        return False
 
     def _start_report_manager(self, start_time=None):
         """Simple function to start report manager (if any)"""
