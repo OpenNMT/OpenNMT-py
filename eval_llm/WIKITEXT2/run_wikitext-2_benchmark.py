@@ -47,7 +47,7 @@ def evaluate(opt):
     # Score the dataset.
     stride = 512
     max_seq_length = 4096
-    max_seq_length = 1000
+    max_seq_length = 2048
     seq_len = len(tokens)
     print("seq_len: ", seq_len)
     score_results = []
@@ -67,9 +67,9 @@ def evaluate(opt):
     end_time = time.time()
     logger.info("total run time %.2f" % (end_time - start_time))
     logger.info(
-        "wikitext-2 perplexity with rolling likelihood and sliding window size 1000 and stride 512 %.2f"
+        "wikitext-2 perplexity with rolling likelihood and sliding window size 1000 and stride 512 %.2f"  # noqa: E501
         % (ppl)
-    )  # noqa: E501
+    )
 
 
 def _get_parser():
