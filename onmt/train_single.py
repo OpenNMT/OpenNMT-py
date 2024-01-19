@@ -240,6 +240,7 @@ def main(opt, device_id):
         save_checkpoint_steps=opt.save_checkpoint_steps,
         valid_iter=valid_iter,
         valid_steps=opt.valid_steps,
+        max_consecutive_oom_errors=opt.max_consecutive_oom_errors,
     )
 
     if trainer.report_manager.tensorboard_writer is not None:

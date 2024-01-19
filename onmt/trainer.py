@@ -151,6 +151,7 @@ class Trainer(object):
         scoring_preparator,
         valid_scorers,
         optim,
+        max_consecutive_oom_errors,
         trunc_size=0,
         norm_method="sents",
         accum_count=[1],
@@ -179,6 +180,7 @@ class Trainer(object):
         self.scoring_preparator = scoring_preparator
         self.valid_scorers = valid_scorers
         self.optim = optim
+        self.max_consecutive_oom_errors = max_consecutive_oom_errors
         self.trunc_size = trunc_size
         self.norm_method = norm_method
         self.accum_count_l = accum_count
@@ -199,6 +201,7 @@ class Trainer(object):
         self.attention_dropout = attention_dropout
         self.dropout_steps = dropout_steps
         self.zero_out_prompt_loss = zero_out_prompt_loss
+        self.current_nb_oom_errors = 0
 
         for i in range(len(self.accum_count_l)):
             assert self.accum_count_l[i] > 0
@@ -516,6 +519,7 @@ class Trainer(object):
 
                     total_stats.update(batch_stats)
                     report_stats.update(batch_stats)
+                    self.max_consecutive_oom_errors = 0
 
                 except Exception as exc:
                     trace_content = traceback.format_exc()
@@ -525,7 +529,12 @@ class Trainer(object):
                             self.optim.training_step,
                         )
                         torch.cuda.empty_cache()
-                        if self.n_gpu > 1 and self.parallel_mode == "tensor_parallel":
+                        self.current_nb_oom_errors += 1
+                        if (
+                            self.n_gpu > 1 and self.parallel_mode == "tensor_parallel"
+                        ) or (
+                            self.current_nb_oom_errors > self.max_consecutive_oom_errors
+                        ):
                             torch.distributed.destroy_process_group()
                             sys.exit()
                     else:
@@ -539,13 +548,12 @@ class Trainer(object):
         # in case of multi step gradient accumulation,
         # update only after accum batches
         if self.n_gpu > 1 and self.parallel_mode == "data_parallel":
-            grads = [
-                p.grad.data
-                if p.grad is not None
-                else torch.zeros(p.shape).cuda(p.device)
-                for p in self.model.parameters()
-                if p.requires_grad
-            ]
+            grads = []
+            for p in self.model.parameters():
+                if p.requires_grad:
+                    if p.grad is None:
+                        p.grad = torch.zeros(p.shape).cuda(p.device)
+                    grads.append(p.grad.data)
             onmt.utils.distributed.all_reduce_and_rescale_tensors(
                 grads, float(self.n_gpu)
             )

@@ -1459,6 +1459,14 @@ def _add_train_general_opts(parser):
         "Default is every update, "
         "if -average_decay is set.",
     )
+    group.add(
+        "--max_consecutive_oom_errors",
+        "-max_consecutive_oom_errors",
+        type=int,
+        default=3,
+        help="Maximum consecutive out of memory errors before"
+        "shutting down training.",
+    )
 
     # learning rate
     group = parser.add_argument_group("Optimization- Rate")
