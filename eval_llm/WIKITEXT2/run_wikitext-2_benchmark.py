@@ -10,19 +10,15 @@ from onmt.utils.misc import use_gpu, set_random_seed
 
 def tokenize_dataset(opt, context_length):
     print("Tokenization...")
-
     # Clean and Concat the dataset
     x = open(opt.src, "r").readlines()
     xx = [_x for _x in x if _x != " \n"]
-    print(xx[:2])
     from onmt.transforms.tokenize import SentencePieceTransform
 
     tokenizer = SentencePieceTransform(opt)
     tokenizer.warm_up()
     tokens = tokenizer._tokenize(xx)
     print("Done !")
-    print(len(tokens))
-    print(tokens[:100])
     return tokens
 
 
@@ -46,23 +42,21 @@ def evaluate(opt):
 
     # Score the dataset.
     stride = 512
-    max_seq_length = 4096
     max_seq_length = 2048
+    engine_opt.batch_type = "sents"
+    engine_opt.batch_size = 1
     seq_len = len(tokens)
-    print("seq_len: ", seq_len)
     score_results = []
     nlls = []
     src = []
     for begin_loc in range(0, seq_len, stride):
-        end_loc = min(begin_loc + max_seq_length - 1, seq_len)
+        end_loc = min(begin_loc + max_seq_length, seq_len)
         src.append(" ".join(tokens[begin_loc:end_loc]))
-
     start_time = time.time()
     score_results = engine.score_list(src=src)
     nlls = [_score for (_score, _length) in score_results]
     lengths = [_length for (_score, _length) in score_results]
     ppl = np.exp(-np.sum(nlls) / np.sum(lengths))
-    print(ppl)
     engine.terminate()
     end_time = time.time()
     logger.info("total run time %.2f" % (end_time - start_time))

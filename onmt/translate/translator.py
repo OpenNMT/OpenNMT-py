@@ -584,7 +584,7 @@ class Inference(object):
         self.with_scores = True
         scored_bucket = {}
         for batch, bucket_idx in infer_iter:
-            batch_data = self.translate_batch(batch, attn_debug=False)
+            batch_data = self.translate_batch(batch, attn_debug=False, scoring=True)
             batch_gold_scores = batch_data["gold_score"].cpu().numpy().tolist()
             batch_tgt_lengths = batch["tgtlen"].cpu().numpy().tolist()
             batch_inds_in_bucket = batch["ind_in_bucket"]
@@ -1001,8 +1001,9 @@ class GeneratorLM(Inference):
         """
         raise NotImplementedError
 
-    def translate_batch(self, batch, attn_debug):
+    def translate_batch(self, batch, attn_debug, scoring=False):
         """Translate a batch of sentences."""
+        max_length = 0 if scoring else self.max_length
         with torch.no_grad():
             if self.sample_from_topk != 0 or self.sample_from_topp != 0:
                 decode_strategy = GreedySearchLM(
@@ -1015,7 +1016,7 @@ class GeneratorLM(Inference):
                     batch_size=len(batch["srclen"]),
                     global_scorer=self.global_scorer,
                     min_length=self.min_length,
-                    max_length=self.max_length,
+                    max_length=max_length,
                     block_ngram_repeat=self.block_ngram_repeat,
                     exclusion_tokens=self._exclusion_idxs,
                     return_attention=attn_debug or self.replace_unk,
@@ -1039,7 +1040,7 @@ class GeneratorLM(Inference):
                     n_best=self.n_best,
                     global_scorer=self.global_scorer,
                     min_length=self.min_length,
-                    max_length=self.max_length,
+                    max_length=max_length,
                     return_attention=attn_debug or self.replace_unk,
                     block_ngram_repeat=self.block_ngram_repeat,
                     exclusion_tokens=self._exclusion_idxs,
