@@ -25,7 +25,7 @@ def tokenize_dataset(opt, context_length):
 def evaluate(opt):
     """Score the wikitext2 testset
 
-    The perplexity of the file is calculated with a window size of max_seq_length = 2048 tokens.
+    The perplexity of the file is calculated with a window size of max_seq_length = 4096 tokens.
     At each step, the window shifts by 512 tokens, and its first max_seq_length - stride
         tokens are considered context tokens. This means that their logits are not
     taken into account, allowing this rolling perplexity to be calculated without overlap."""
@@ -48,7 +48,7 @@ def evaluate(opt):
 
     # Score the dataset.
     stride = 512
-    max_seq_length = 2048
+    max_seq_length = 4096
 
     seq_len = len(tokens)
     src = []

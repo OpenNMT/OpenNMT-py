@@ -292,6 +292,7 @@ class Inference(object):
             self.model.decoder.init_state(src, enc_out, enc_final_hs)
         else:
             gs = [0] * batch_size
+            glp = None
         return gs, glp
 
     def _translate(
