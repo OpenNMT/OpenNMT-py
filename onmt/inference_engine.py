@@ -163,6 +163,7 @@ class InferenceEnginePY(InferenceEngine):
 
     def _score(self, infer_iter):
         self.translator.with_scores = True
+        self.return_gold_log_probs = True
         return self.translator._score(infer_iter)
 
     def score_list_parallel(self, src):

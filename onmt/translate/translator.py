@@ -133,6 +133,7 @@ class Inference(object):
         logger=None,
         seed=-1,
         with_score=False,
+        return_gold_log_probs=False,
     ):
         self.model = model
         self.vocabs = vocabs
@@ -204,6 +205,8 @@ class Inference(object):
 
         set_random_seed(seed, self._use_cuda)
         self.with_score = with_score
+
+        self.return_gold_log_probs = return_gold_log_probs
 
     @classmethod
     def from_opt(
@@ -280,26 +283,17 @@ class Inference(object):
             print(msg)
 
     def _gold_score(
-        self,
-        batch,
-        enc_out,
-        src_len,
-        use_src_map,
-        enc_final_hs,
-        batch_size,
-        src,
+        self, batch, enc_out, src_len, use_src_map, enc_final_hs, batch_size, src
     ):
         if "tgt" in batch.keys() and not self.tgt_file_prefix:
-            gs = self._score_target(
-                batch,
-                enc_out,
-                src_len,
-                batch["src_map"] if use_src_map else None,
+            gs, glp = self._score_target(
+                batch, enc_out, src_len, batch["src_map"] if use_src_map else None
             )
             self.model.decoder.init_state(src, enc_out, enc_final_hs)
         else:
             gs = [0] * batch_size
-        return gs
+            glp = None
+        return gs, glp
 
     def _translate(
         self,
@@ -584,12 +578,25 @@ class Inference(object):
         self.with_scores = True
         scored_bucket = {}
         for batch, bucket_idx in infer_iter:
-            batch_data = self.translate_batch(batch, attn_debug=False)
+            batch_data = self.translate_batch(batch, attn_debug=False, scoring=True)
             batch_gold_scores = batch_data["gold_score"].cpu().numpy().tolist()
+            if self.return_gold_log_probs:
+                batch_gold_log_probs = (
+                    batch_data["gold_log_probs"].cpu().numpy().tolist()
+                )
+            else:
+                batch_gold_log_probs = None
             batch_tgt_lengths = batch["tgtlen"].cpu().numpy().tolist()
             batch_inds_in_bucket = batch["ind_in_bucket"]
             for i, _score in enumerate(batch_gold_scores):
-                scored_bucket[batch_inds_in_bucket[i]] = (_score, batch_tgt_lengths[i])
+                log_probs = (
+                    batch_gold_log_probs[i] if self.return_gold_log_probs else None
+                )
+                scored_bucket[batch_inds_in_bucket[i]] = (
+                    _score,
+                    log_probs,
+                    batch_tgt_lengths[i],
+                )
         score_results = [scored_bucket[i] for i in range(len(scored_bucket))]
         return score_results
 
@@ -720,6 +727,7 @@ class Inference(object):
     def report_results(
         self,
         gold_score,
+        gold_log_probs,
         batch,
         batch_size,
         decode_strategy,
@@ -730,6 +738,7 @@ class Inference(object):
             "attention": None,
             "batch": batch,
             "gold_score": gold_score,
+            "gold_log_probs": gold_log_probs,
         }
 
         results["scores"] = decode_strategy.scores
@@ -900,7 +909,7 @@ class Translator(Inference):
 
         self.model.decoder.init_state(src, enc_out, enc_final_hs)
 
-        gold_score = self._gold_score(
+        gold_score, gold_log_probs = self._gold_score(
             batch,
             enc_out,
             src_len,
@@ -961,6 +970,7 @@ class Translator(Inference):
 
         return self.report_results(
             gold_score,
+            gold_log_probs,
             batch,
             batch_size,
             decode_strategy,
@@ -982,7 +992,7 @@ class Translator(Inference):
         gold = tgt[:, 1:, :]
         gold_scores = log_probs.gather(2, gold)
         gold_scores = gold_scores.sum(dim=1).view(-1)
-        return gold_scores
+        return gold_scores, None
 
 
 class GeneratorLM(Inference):
@@ -1001,8 +1011,9 @@ class GeneratorLM(Inference):
         """
         raise NotImplementedError
 
-    def translate_batch(self, batch, attn_debug):
+    def translate_batch(self, batch, attn_debug, scoring=False):
         """Translate a batch of sentences."""
+        max_length = 0 if scoring else self.max_length
         with torch.no_grad():
             if self.sample_from_topk != 0 or self.sample_from_topp != 0:
                 decode_strategy = GreedySearchLM(
@@ -1015,7 +1026,7 @@ class GeneratorLM(Inference):
                     batch_size=len(batch["srclen"]),
                     global_scorer=self.global_scorer,
                     min_length=self.min_length,
-                    max_length=self.max_length,
+                    max_length=max_length,
                     block_ngram_repeat=self.block_ngram_repeat,
                     exclusion_tokens=self._exclusion_idxs,
                     return_attention=attn_debug or self.replace_unk,
@@ -1039,7 +1050,7 @@ class GeneratorLM(Inference):
                     n_best=self.n_best,
                     global_scorer=self.global_scorer,
                     min_length=self.min_length,
-                    max_length=self.max_length,
+                    max_length=max_length,
                     return_attention=attn_debug or self.replace_unk,
                     block_ngram_repeat=self.block_ngram_repeat,
                     exclusion_tokens=self._exclusion_idxs,
@@ -1095,14 +1106,8 @@ class GeneratorLM(Inference):
 
         # (2) init decoder
         self.model.decoder.init_state(src, None, None)
-        gold_score = self._gold_score(
-            batch,
-            None,
-            src_len,
-            use_src_map,
-            None,
-            batch_size,
-            src,
+        gold_score, gold_log_probs = self._gold_score(
+            batch, None, src_len, use_src_map, None, batch_size, src
         )
 
         # (3) prep decode_strategy. Possibly repeat src objects.
@@ -1158,6 +1163,7 @@ class GeneratorLM(Inference):
 
         return self.report_results(
             gold_score,
+            gold_log_probs,
             batch,
             batch_size,
             decode_strategy,
@@ -1177,7 +1183,10 @@ class GeneratorLM(Inference):
         )
 
         log_probs[:, :, self._tgt_pad_idx] = 0
-        gold_scores = log_probs.gather(2, tgt)
-        gold_scores = gold_scores.sum(dim=1).view(-1)
+        gold_log_probs = log_probs.gather(2, tgt)
+        gold_scores = gold_log_probs.sum(dim=1).view(-1)
 
-        return gold_scores
+        if self.return_gold_log_probs:
+            return gold_scores, gold_log_probs
+
+        return gold_scores, None
