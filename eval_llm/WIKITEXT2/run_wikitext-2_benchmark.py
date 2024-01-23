@@ -27,7 +27,7 @@ def evaluate(opt):
 
     The perplexity of the file is calculated with a window size of max_seq_length = 4096 tokens.
     At each step, the window shifts by 512 tokens, and its first max_seq_length - stride
-        tokens are considered context tokens. This means that their logits are not
+        tokens are considered as context tokens. This means that their logits are not
     taken into account, allowing this rolling perplexity to be calculated without overlap."""
 
     ArgumentParser.validate_translate_opts(opt)
@@ -62,7 +62,7 @@ def evaluate(opt):
     nlls = []
     lengths = []
     for _, log_probs, _ in score_results:
-        lengths.append(512)
+        lengths.append(stride)
         # zero out the context tokens
         nlls += [
             log_probs[i][0]
