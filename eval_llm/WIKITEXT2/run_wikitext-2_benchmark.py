@@ -23,7 +23,13 @@ def tokenize_dataset(opt, context_length):
 
 
 def evaluate(opt):
-    """Score the wikitext2 testset"""
+    """Score the wikitext2 testset
+
+    The perplexity of the file is calculated with a window size of max_seq_length = 2048 tokens.
+    At each step, the window shifts by 512 tokens, and its first max_seq_length - stride
+        tokens are considered context tokens. This means that their logits are not
+    taken into account, allowing this rolling perplexity to be calculated without overlap."""
+
     ArgumentParser.validate_translate_opts(opt)
     ArgumentParser._get_all_transform_translate(opt)
     ArgumentParser._validate_transforms_opts(opt)
@@ -43,20 +49,28 @@ def evaluate(opt):
     # Score the dataset.
     stride = 512
     max_seq_length = 2048
-    engine_opt.batch_type = "sents"
-    engine_opt.batch_size = 1
+
     seq_len = len(tokens)
-    score_results = []
-    nlls = []
     src = []
     for begin_loc in range(0, seq_len, stride):
         end_loc = min(begin_loc + max_seq_length, seq_len)
         src.append(" ".join(tokens[begin_loc:end_loc]))
+
     start_time = time.time()
+    engine.translator.return_gold_log_probs = True
     score_results = engine.score_list(src=src)
-    nlls = [_score for (_score, _length) in score_results]
-    lengths = [_length for (_score, _length) in score_results]
+    nlls = []
+    lengths = []
+    for _, log_probs, _ in score_results:
+        lengths.append(512)
+        # zero out the context tokens
+        nlls += [
+            log_probs[i][0]
+            for i, _ in enumerate(log_probs)
+            if i > (max_seq_length - stride)
+        ]
     ppl = np.exp(-np.sum(nlls) / np.sum(lengths))
+
     engine.terminate()
     end_time = time.time()
     logger.info("total run time %.2f" % (end_time - start_time))
