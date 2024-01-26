@@ -576,28 +576,29 @@ class Inference(object):
 
     def _score(self, infer_iter):
         self.with_scores = True
-        scored_bucket = {}
+        score_results = []
         for batch, bucket_idx in infer_iter:
             batch_data = self.translate_batch(batch, attn_debug=False, scoring=True)
             batch_gold_scores = batch_data["gold_score"].cpu().numpy().tolist()
+            batch_tgt_lengths = batch["tgtlen"].cpu().numpy().tolist()
+            batch_inds_in_bucket = batch["ind_in_bucket"]
             if self.return_gold_log_probs:
                 batch_gold_log_probs = (
                     batch_data["gold_log_probs"].cpu().numpy().tolist()
                 )
             else:
-                batch_gold_log_probs = None
-            batch_tgt_lengths = batch["tgtlen"].cpu().numpy().tolist()
-            batch_inds_in_bucket = batch["ind_in_bucket"]
-            for i, _score in enumerate(batch_gold_scores):
-                log_probs = (
-                    batch_gold_log_probs[i] if self.return_gold_log_probs else None
+                batch_gold_log_probs = [
+                    None for i, _ in enumerate(batch_inds_in_bucket)
+                ]
+
+            for i, _ in enumerate(batch_inds_in_bucket):
+                score_results.append(
+                    (
+                        batch_gold_scores[i],
+                        batch_gold_log_probs[i],
+                        batch_tgt_lengths[i],
+                    ),
                 )
-                scored_bucket[batch_inds_in_bucket[i]] = (
-                    _score,
-                    log_probs,
-                    batch_tgt_lengths[i],
-                )
-        score_results = [scored_bucket[i] for i in range(len(scored_bucket))]
         return score_results
 
     def _align_pad_prediction(self, predictions, bos, pad):
