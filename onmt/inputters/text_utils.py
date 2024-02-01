@@ -14,7 +14,7 @@ def parse_features(line, n_feats=0, defaults=None):
     text, feats = [], [[] for _ in range(n_feats)]
     check, count = 0, 0
     for token in line.split(" "):
-        tok, *fts = token.strip().split("￨")
+        tok, *fts = token.strip("\n").split("￨")
         check += len(fts)
         count += 1
         if not fts and defaults is not None:
