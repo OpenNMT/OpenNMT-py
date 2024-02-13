@@ -18,7 +18,7 @@ from importlib import import_module
 # are both < 2048 tokens.
 
 
-def rotaryembeddings(dim: int, maxseqlen=4096, base=10000):
+def rotaryembeddings(dim: int, maxseqlen=2048, base=10000):
     inv_freq = 1.0 / (base ** (torch.arange(0, dim, 2).float() / dim))
     tmax = torch.arange(maxseqlen, device=inv_freq.device)
     rope = torch.outer(tmax, inv_freq).float()
@@ -467,7 +467,7 @@ class MultiHeadedAttention(torch.nn.Module):
                         if seqlen > self.rope.size(0):
                             self.rope = rotaryembeddings(
                                 self.rotary_dim,
-                                maxseqlen=(seqlen + 4096),
+                                maxseqlen=(seqlen + 2048),
                                 base=self.rotary_theta,
                             ).to(self.rope.device)
                         rope = self.rope[start_pos : start_pos + seqlen]
@@ -486,23 +486,6 @@ class MultiHeadedAttention(torch.nn.Module):
                     self.layer_cache[1]["values"] = value
 
                 else:
-                    if self.max_relative_positions == -1:  # Rotary Embeddings
-                        if seqlen > self.rope.size(0):
-                            self.rope = rotaryembeddings(
-                                self.rotary_dim,
-                                maxseqlen=(seqlen + 4096),
-                                base=self.rotary_theta,
-                            ).to(self.rope.device)
-                            self.cos = (
-                                self.rope[:, : self.rope.size(1) // 2]
-                                .real.contiguous()
-                                .half()
-                            )
-                            self.sin = (
-                                self.rope[:, : self.rope.size(1) // 2]
-                                .imag.contiguous()
-                                .half()
-                            )
                     if start_pos >= self.layer_cache[1]["keys"].size(2):
                         self.layer_cache[1]["keys"] = torch.cat(
                             [
@@ -528,6 +511,24 @@ class MultiHeadedAttention(torch.nn.Module):
                             ],
                             dim=-2,
                         )
+                        seqlen = self.layer_cache[1]["keys"].size(2)
+                    if self.max_relative_positions == -1:  # Rotary Embeddings
+                        if seqlen > self.rope.size(0):
+                            self.rope = rotaryembeddings(
+                                self.rotary_dim,
+                                maxseqlen=(seqlen + 2048),
+                                base=self.rotary_theta,
+                            ).to(self.rope.device)
+                            self.cos = (
+                                self.rope[:, : self.rope.size(1) // 2]
+                                .real.contiguous()
+                                .half()
+                            )
+                            self.sin = (
+                                self.rope[:, : self.rope.size(1) // 2]
+                                .imag.contiguous()
+                                .half()
+                            )
                     if sliding_window > 0 and key.size(2) > sliding_window:
                         self.layer_cache[1]["keys"] = self.layer_cache[1]["keys"][
                             :, :, 1:, :
