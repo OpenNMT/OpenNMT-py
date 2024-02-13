@@ -18,7 +18,7 @@ from importlib import import_module
 # are both < 2048 tokens.
 
 
-def rotaryembeddings(dim: int, maxseqlen=2048, base=10000):
+def rotaryembeddings(dim: int, maxseqlen=4096, base=10000):
     inv_freq = 1.0 / (base ** (torch.arange(0, dim, 2).float() / dim))
     tmax = torch.arange(maxseqlen, device=inv_freq.device)
     rope = torch.outer(tmax, inv_freq).float()
@@ -467,7 +467,7 @@ class MultiHeadedAttention(torch.nn.Module):
                         if seqlen > self.rope.size(0):
                             self.rope = rotaryembeddings(
                                 self.rotary_dim,
-                                maxseqlen=(seqlen + 2048),
+                                maxseqlen=(seqlen + 4096),
                                 base=self.rotary_theta,
                             ).to(self.rope.device)
                         rope = self.rope[start_pos : start_pos + seqlen]
@@ -490,7 +490,7 @@ class MultiHeadedAttention(torch.nn.Module):
                         if seqlen > self.rope.size(0):
                             self.rope = rotaryembeddings(
                                 self.rotary_dim,
-                                maxseqlen=(seqlen + 2048),
+                                maxseqlen=(seqlen + 4096),
                                 base=self.rotary_theta,
                             ).to(self.rope.device)
                             self.cos = (
