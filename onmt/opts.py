@@ -872,8 +872,7 @@ def model_opts(parser):
     group.add(
         "--rotary_interleave",
         "-rotary_interleave",
-        type=bool,
-        default=True,
+        action="store_true",
         help="Interleave the head dimensions when rotary"
         " embeddings are applied."
         "    Otherwise the head dimensions are sliced in half."

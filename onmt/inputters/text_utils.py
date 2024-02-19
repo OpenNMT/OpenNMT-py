@@ -149,7 +149,6 @@ def numericalize(vocabs, example):
         for fv, feat in zip(vocabs["src_feats"], example["src"]["feats"]):
             numeric_feats.append(fv(feat.split(" ")))
         numeric["src"]["feats"] = numeric_feats
-
     return numeric
 
 
