@@ -464,7 +464,7 @@ class MultiHeadedAttention(torch.nn.Module):
                     if self.max_relative_positions == -1:  # Rotary Embeddings
                         if seqlen > self.rope.size(0):
 
-                            self.rope, self.cos, self.sin = rotaryembeddings(
+                            self.rope, _, _ = rotaryembeddings(
                                 self.rotary_dim,
                                 maxseqlen=(seqlen + 2048),
                                 base=self.rotary_theta,
@@ -513,11 +513,15 @@ class MultiHeadedAttention(torch.nn.Module):
                         )
                         if self.max_relative_positions == -1:  # Rotary
                             # Resize rotary embeddings.
-                            self.rope, self.cos, self.sin = rotaryembeddings(
-                                self.rotary_dim,
-                                maxseqlen=(start_pos + 2048),
-                                base=self.rotary_theta,
-                            )
+                            if start_pos + 32 >= self.rope.size(0):
+                                # We take a margin of 32 tokens as the kv_cache
+                                # is incremented by 32 tokens every 32 tokens
+
+                                self.rope, self.cos, self.sin = rotaryembeddings(
+                                    self.rotary_dim,
+                                    maxseqlen=(start_pos + 2048),
+                                    base=self.rotary_theta,
+                                )
                             self.rope = self.rope.to(self.rope.device)
 
                     if sliding_window > 0 and key.size(2) > sliding_window:
