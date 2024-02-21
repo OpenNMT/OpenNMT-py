@@ -38,6 +38,63 @@ def exfile_open(filename, *args, **kwargs):
         _file.close()
 
 
+class BlockwiseCorpus(object):
+    """A corpus class for reading a single file block by block."""
+
+    def __init__(self, name, file_path, block_size=4096):
+        """Initialize file path and block size."""
+        self.id = name
+        self.file_path = file_path
+        self.block_size = block_size
+
+    def load(self, offset=0, stride=1):
+        """
+        Load file and iterate by blocks.
+        `offset` and `stride` allow iterating only on every
+        `stride` block, starting from `offset`.
+        """
+
+        def make_ex(block_content):
+            example = {
+                "src": block_content,
+                "tgt": block_content,
+                "src_original": block_content,
+                "tgt_original": block_content,
+            }
+            return example
+
+        with open(self.file_path, mode="r", encoding="utf-8") as file:
+            block_content = ""
+            block_index = 0
+
+            while True:
+                chunk = file.read(self.block_size)
+                if not chunk:
+                    break
+
+                if (block_index // stride) % stride == offset:
+                    block_content += chunk
+
+                    if len(chunk) < self.block_size:
+                        # Reached end of file
+                        yield make_ex(block_content)
+                        break
+
+                    if len(block_content) >= self.block_size:
+                        yield make_ex(block_content)
+                block_content = ""
+                block_index += 1
+
+    def __str__(self):
+        cls_name = type(self).__name__
+        return (
+            f"{cls_name}({self.id}, {self.file_path}, {self.file_path}"
+            f"align={None}, "
+            f"n_src_feats={0}, "
+            f'src_feats_defaults="{None}")'
+        )
+
+
 class ParallelCorpus(object):
     """A parallel corpus file pair that can be loaded to iterate."""
 
@@ -117,14 +174,21 @@ def get_corpora(opts, task=CorpusTask.TRAIN, src=None, tgt=None, align=None):
     if task == CorpusTask.TRAIN:
         for corpus_id, corpus_dict in opts.data.items():
             if corpus_id != CorpusName.VALID:
-                corpora_dict[corpus_id] = ParallelCorpus(
-                    corpus_id,
-                    corpus_dict["path_src"],
-                    corpus_dict["path_tgt"],
-                    corpus_dict["path_align"],
-                    n_src_feats=opts.n_src_feats,
-                    src_feats_defaults=opts.src_feats_defaults,
-                )
+                if corpus_dict.get("path_txt", None) is None:
+                    corpora_dict[corpus_id] = ParallelCorpus(
+                        corpus_id,
+                        corpus_dict["path_src"],
+                        corpus_dict["path_tgt"],
+                        corpus_dict["path_align"],
+                        n_src_feats=opts.n_src_feats,
+                        src_feats_defaults=opts.src_feats_defaults,
+                    )
+                else:
+                    corpora_dict[corpus_id] = BlockwiseCorpus(
+                        corpus_id,
+                        corpus_dict["path_txt"],
+                        block_size=8192,  # number of characters
+                    )
     elif task == CorpusTask.VALID:
         if CorpusName.VALID in opts.data.keys():
             corpora_dict[CorpusName.VALID] = ParallelCorpus(

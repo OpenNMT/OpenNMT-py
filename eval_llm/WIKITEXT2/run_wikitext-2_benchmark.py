@@ -1,6 +1,7 @@
 import copy
 import numpy as np
 import time
+import re
 from onmt.inference_engine import InferenceEnginePY
 import onmt.opts as opts
 from onmt.utils.logging import init_logger
@@ -8,17 +9,62 @@ from onmt.utils.parse import ArgumentParser
 from onmt.utils.misc import use_gpu, set_random_seed
 
 
+def wikitext_detokenizer(line):
+    string = line
+    # contractions
+    string = string.replace("s '", "s'")
+    string = re.sub(r"/' [0-9]/", r"/'[0-9]/", string)
+    # number separators
+    string = string.replace(" @-@ ", "-")
+    string = string.replace(" @,@ ", ",")
+    string = string.replace(" @.@ ", ".")
+    # punctuation
+    string = string.replace(" : ", ": ")
+    string = string.replace(" ; ", "; ")
+    string = string.replace(" . ", ". ")
+    string = string.replace(" ! ", "! ")
+    string = string.replace(" ? ", "? ")
+    string = string.replace(" , ", ", ")
+    # double brackets
+    string = re.sub(r"\(\s*([^\)]*?)\s*\)", r"(\1)", string)
+    string = re.sub(r"\[\s*([^\]]*?)\s*\]", r"[\1]", string)
+    string = re.sub(r"{\s*([^}]*?)\s*}", r"{\1}", string)
+    string = re.sub(r"\"\s*([^\"]*?)\s*\"", r'"\1"', string)
+    string = re.sub(r"'\s*([^']*?)\s*'", r"'\1'", string)
+    # miscellaneous
+    string = string.replace("= = = =", "====")
+    string = string.replace("= = =", "===")
+    string = string.replace("= =", "==")
+    string = string.replace(" " + chr(176) + " ", chr(176))
+    string = string.replace(" \n", "\n")
+    string = string.replace("\n ", "\n")
+    string = string.replace(" N ", " 1 ")
+    string = string.replace(" 's", "'s")
+    return string
+
+
 def tokenize_dataset(opt, context_length):
     print("Tokenization...")
     # Clean and Concat the dataset
-    x = open(opt.src, "r").readlines()
-    xx = [_x for _x in x if _x != " \n"]
-    from onmt.transforms.tokenize import SentencePieceTransform
+    xx = open(opt.src, "r").readlines()
+    if "sentencepiece" in opt.transforms:
+        from onmt.transforms.tokenize import SentencePieceTransform
 
-    tokenizer = SentencePieceTransform(opt)
+        tokenizer = SentencePieceTransform(opt)
+    elif "onmt_tokenize" in opt.transforms:
+        from onmt.transforms.tokenize import ONMTTokenizerTransform
+
+        tokenizer = ONMTTokenizerTransform(opt)
+    else:
+        raise ValueError("No valid tokenizer found")
     tokenizer.warm_up()
-    tokens = tokenizer._tokenize(xx)
-    print("Done !")
+    print("warmup done")
+    # joiner = tokenizer._tokenize("\n")
+    tokens = []
+    for x in xx:
+        tokens += tokenizer._tokenize([wikitext_detokenizer(x)])
+        # tokens += tokenizer._tokenize([x])
+    print("Tokenization Done !")
     return tokens
 
 
@@ -38,7 +84,7 @@ def evaluate(opt):
     set_random_seed(opt.seed, use_gpu(opt))
 
     # Tokenize the dataset.
-    opt.src = "wikitext-2-raw-v1/wikitext-2-raw/wiki.test.raw"
+    opt.src = "eval_llm/WIKITEXT2/wikitext-2-raw-v1/wikitext-2-raw/wiki.test.raw"
     tokens = tokenize_dataset(opt, context_length=512)
 
     # Build the translator (along with the model.
@@ -47,8 +93,8 @@ def evaluate(opt):
     engine = InferenceEnginePY(engine_opt)
 
     # Score the dataset.
-    stride = 512
-    max_seq_length = 4096
+    stride = 256
+    max_seq_length = 512
 
     seq_len = len(tokens)
     src = []
@@ -75,8 +121,7 @@ def evaluate(opt):
     end_time = time.time()
     logger.info("total run time %.2f" % (end_time - start_time))
     logger.info(
-        "wikitext-2 perplexity with rolling likelihood and sliding window size 1000 and stride 512 %.2f"  # noqa: E501
-        % (ppl)
+        "wikitext-2 perplexity with rolling likelihood:  %.2f" % (ppl)  # noqa: E501
     )
 
 
