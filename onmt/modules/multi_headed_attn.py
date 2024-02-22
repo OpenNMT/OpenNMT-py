@@ -464,11 +464,11 @@ class MultiHeadedAttention(torch.nn.Module):
                     or query.dtype != torch.float16
                 ):
                     if self.max_relative_positions == -1:  # Rotary Embeddings
-                        if seqlen > self.rope.size(0):
-
+                        if seqlen + start_pos > self.rope.size(0):
+                            # Resize rotary embeddings.
                             self.rope, _, _ = rotaryembeddings(
                                 self.rotary_dim,
-                                maxseqlen=(seqlen + 2048),
+                                maxseqlen=(seqlen + start_pos + 2048),
                                 base=self.rotary_theta,
                                 device=self.rope.device,
                             )
