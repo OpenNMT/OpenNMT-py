@@ -25,7 +25,7 @@ Otherwise you can just have a look at the [Quickstart](https://opennmt.net/OpenN
 ----
 ## New:
 
-* You will need Pytorch v2 preferably v2.1 which fixes some `scaled_dot_product_attention` issues
+* You will need Pytorch v2 preferably v2.2 which fixes some `scaled_dot_product_attention` issues
 * LLM support with converters for: Llama (+ Mistral), OpenLlama, Redpajama, MPT-7B, Falcon.
 * Support for 8bit and 4bit quantization along with LoRA adapters, with or without checkpointing.
 * You can finetune 7B and 13B models on a single RTX 24GB with 4-bit quantization.

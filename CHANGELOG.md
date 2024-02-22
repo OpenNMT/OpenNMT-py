@@ -3,6 +3,17 @@
 
 ## [Unreleased]
 
+## [3.5.0](https://github.com/OpenNMT/OpenNMT-py/tree/3.5.0) (2024-02-22)
+
+* Further improvements and fixes
+* Suport for AWQ models
+* Add n_best for topp/topk generation
+* Support MoE (MIxtral) inference
+* Extend HF models converter
+* use flash_attn_with_kvcache for faster inference
+* Add wikitext2 PPL computation
+* Support for Phi-2 models
+
 ## [3.4.3](https://github.com/OpenNMT/OpenNMT-py/tree/3.4.3) (2023-11-2)
 
 * Further improvements to beam search and decoding
