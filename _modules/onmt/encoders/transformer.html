@@ -232,6 +232,19 @@
 <span class="sd">        dropout (float): dropout probability(0-1.0).</span>
 <span class="sd">        pos_ffn_activation_fn (ActivationFunction):</span>
 <span class="sd">            activation function choice for PositionwiseFeedForward layer</span>
+<span class="sd">        add_qkvbias (bool): whether to add bias to the Key/Value nn.Linear</span>
+<span class="sd">        num_kv (int): number of heads for KV when different vs Q (multiquery)</span>
+<span class="sd">        add_ffnbias (bool): whether to add bias to the FF nn.Linear</span>
+<span class="sd">        parallel_residual (bool): Use parallel residual connections in each layer block, as used</span>
+<span class="sd">            by the GPT-J and GPT-NeoX models</span>
+<span class="sd">        layer_norm (string): type of layer normalization standard/rms</span>
+<span class="sd">        norm_eps (float): layer norm epsilon</span>
+<span class="sd">        use_ckpting (List): layers for which we checkpoint for backward</span>
+<span class="sd">        parallel_gpu (int): Number of gpu for tensor parallelism</span>
+<span class="sd">        rotary_interleave (bool): Interleave the head dimensions when rotary</span>
+<span class="sd">            embeddings are applied</span>
+<span class="sd">        rotary_theta (int): rotary base theta</span>
+<span class="sd">        rotary_dim (int): rotary dim when different to dim per head</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
@@ -252,6 +265,9 @@
         <span class="n">norm_eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">,</span>
         <span class="n">use_ckpting</span><span class="o">=</span><span class="p">[],</span>
         <span class="n">parallel_gpu</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">rotary_interleave</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">rotary_theta</span><span class="o">=</span><span class="mf">1e4</span><span class="p">,</span>
+        <span class="n">rotary_dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">TransformerEncoderLayer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
@@ -262,6 +278,9 @@
             <span class="n">is_decoder</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">max_relative_positions</span><span class="o">=</span><span class="n">max_relative_positions</span><span class="p">,</span>
             <span class="n">relative_positions_buckets</span><span class="o">=</span><span class="n">relative_positions_buckets</span><span class="p">,</span>
+            <span class="n">rotary_interleave</span><span class="o">=</span><span class="n">rotary_interleave</span><span class="p">,</span>
+            <span class="n">rotary_theta</span><span class="o">=</span><span class="n">rotary_theta</span><span class="p">,</span>
+            <span class="n">rotary_dim</span><span class="o">=</span><span class="n">rotary_dim</span><span class="p">,</span>
             <span class="n">attn_type</span><span class="o">=</span><span class="s2">&quot;self&quot;</span><span class="p">,</span>
             <span class="n">add_qkvbias</span><span class="o">=</span><span class="n">add_qkvbias</span><span class="p">,</span>
             <span class="n">num_kv</span><span class="o">=</span><span class="n">num_kv</span><span class="p">,</span>
@@ -366,6 +385,9 @@
         <span class="n">norm_eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">,</span>
         <span class="n">use_ckpting</span><span class="o">=</span><span class="p">[],</span>
         <span class="n">parallel_gpu</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">rotary_interleave</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">rotary_theta</span><span class="o">=</span><span class="mf">1e4</span><span class="p">,</span>
+        <span class="n">rotary_dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">TransformerEncoder</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
@@ -389,6 +411,9 @@
                     <span class="n">norm_eps</span><span class="o">=</span><span class="n">norm_eps</span><span class="p">,</span>
                     <span class="n">use_ckpting</span><span class="o">=</span><span class="n">use_ckpting</span><span class="p">,</span>
                     <span class="n">parallel_gpu</span><span class="o">=</span><span class="n">parallel_gpu</span><span class="p">,</span>
+                    <span class="n">rotary_interleave</span><span class="o">=</span><span class="n">rotary_interleave</span><span class="p">,</span>
+                    <span class="n">rotary_theta</span><span class="o">=</span><span class="n">rotary_theta</span><span class="p">,</span>
+                    <span class="n">rotary_dim</span><span class="o">=</span><span class="n">rotary_dim</span><span class="p">,</span>
                 <span class="p">)</span>
                 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_layers</span><span class="p">)</span>
             <span class="p">]</span>
@@ -426,6 +451,9 @@
             <span class="n">parallel_gpu</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">world_size</span>
             <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">parallel_mode</span> <span class="o">==</span> <span class="s2">&quot;tensor_parallel&quot;</span>
             <span class="k">else</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">rotary_interleave</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">rotary_interleave</span><span class="p">,</span>
+            <span class="n">rotary_theta</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">rotary_theta</span><span class="p">,</span>
+            <span class="n">rotary_dim</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">rotary_dim</span><span class="p">,</span>
         <span class="p">)</span></div>
 
 <div class="viewcode-block" id="TransformerEncoder.forward"><a class="viewcode-back" href="../../../onmt.modules.html#onmt.encoders.TransformerEncoder.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">src_len</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>

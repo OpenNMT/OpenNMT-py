@@ -205,9 +205,7 @@
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
 
 
-<span class="k">def</span> <span class="nf">collapse_copy_scores</span><span class="p">(</span>
-    <span class="n">scores</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">tgt_vocab</span><span class="p">,</span> <span class="n">src_vocabs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">batch_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">batch_offset</span><span class="o">=</span><span class="kc">None</span>
-<span class="p">):</span>
+<span class="k">def</span> <span class="nf">collapse_copy_scores</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">tgt_vocab</span><span class="p">,</span> <span class="n">batch_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Given scores from an expanded dictionary</span>
 <span class="sd">    corresponeding to a batch, sums together copies,</span>
@@ -218,12 +216,7 @@
         <span class="n">blank</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">fill</span> <span class="o">=</span> <span class="p">[]</span>
 
-        <span class="k">if</span> <span class="n">src_vocabs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">src_vocab</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;src_ex_vocab&quot;</span><span class="p">][</span><span class="n">b</span><span class="p">]</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">batch_id</span> <span class="o">=</span> <span class="n">batch_offset</span><span class="p">[</span><span class="n">b</span><span class="p">]</span> <span class="k">if</span> <span class="n">batch_offset</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">b</span>
-            <span class="n">index</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;ind_in_bucket&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">batch_id</span><span class="p">]</span>
-            <span class="n">src_vocab</span> <span class="o">=</span> <span class="n">src_vocabs</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+        <span class="n">src_vocab</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;src_ex_vocab&quot;</span><span class="p">][</span><span class="n">b</span><span class="p">]</span>
 
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">src_vocab</span><span class="p">)):</span>
             <span class="n">sw</span> <span class="o">=</span> <span class="n">src_vocab</span><span class="o">.</span><span class="n">ids_to_tokens</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
@@ -232,8 +225,8 @@
                 <span class="n">blank</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">offset</span> <span class="o">+</span> <span class="n">i</span><span class="p">)</span>
                 <span class="n">fill</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ti</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">blank</span><span class="p">:</span>
-            <span class="n">blank</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">blank</span><span class="p">)</span><span class="o">.</span><span class="n">type_as</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;ind_in_bucket&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
-            <span class="n">fill</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">fill</span><span class="p">)</span><span class="o">.</span><span class="n">type_as</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;ind_in_bucket&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">blank</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">blank</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+            <span class="n">fill</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">fill</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
             <span class="n">score</span> <span class="o">=</span> <span class="n">scores</span><span class="p">[:,</span> <span class="n">b</span><span class="p">]</span> <span class="k">if</span> <span class="n">batch_dim</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">scores</span><span class="p">[</span><span class="n">b</span><span class="p">]</span>
             <span class="n">score</span><span class="o">.</span><span class="n">index_add_</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">fill</span><span class="p">,</span> <span class="n">score</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">blank</span><span class="p">))</span>
             <span class="n">score</span><span class="o">.</span><span class="n">index_fill_</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">blank</span><span class="p">,</span> <span class="mf">1e-10</span><span class="p">)</span>

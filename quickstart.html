@@ -409,6 +409,10 @@ The command line to convert a model to OpenNMT-py is:</p>
 </pre></div>
 </div>
 <p>In this second example, we used <code class="docutils literal notranslate"><span class="pre">max_length:</span> <span class="pre">1</span></code> and <code class="docutils literal notranslate"><span class="pre">src:</span> <span class="pre">None</span></code> <code class="docutils literal notranslate"><span class="pre">tgt:</span> <span class="pre">None</span></code> which is typically the configuration to be used in a scoring script like MMLU where it expects only 1 token as the answer.</p>
+<p><strong>WARNING</strong>
+For inhomogeneous batches with many examples, the potentially high number of tokens inserted in the shortest examples leads to degraded results when attention layer quantization and flash attention are activated.
+In practice, in the inference configuration file, when <code class="docutils literal notranslate"><span class="pre">batch_size</span></code> is greater than 1,
+delete ‘linear_values’, ‘linear_query’, ‘linear_keys’, ‘final_linear’ from <code class="docutils literal notranslate"><span class="pre">quant_layers</span></code> and specify <code class="docutils literal notranslate"><span class="pre">self_attn_type:</span> <span class="pre">scaled-dot</span></code>.</p>
 <p>You can run this script with the following command line:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">eval_llm</span><span class="o">/</span><span class="n">MMLU</span><span class="o">/</span><span class="n">run_mmlu_opennmt</span><span class="o">.</span><span class="n">py</span> <span class="o">--</span><span class="n">config</span> <span class="n">myinference</span><span class="o">.</span><span class="n">yaml</span>
 </pre></div>

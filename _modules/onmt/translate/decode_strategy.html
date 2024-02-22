@@ -386,18 +386,16 @@
 
     <span class="k">def</span> <span class="nf">ensure_min_length</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log_probs</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_length</span><span class="p">:</span>
-            <span class="n">log_probs</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">eos</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1e20</span>
+            <span class="n">log_probs</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">eos</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">65504</span>  <span class="c1"># -1e20</span>
 
     <span class="k">def</span> <span class="nf">ensure_unk_removed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log_probs</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ban_unk_token</span><span class="p">:</span>
-            <span class="n">log_probs</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unk</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1e20</span>
+            <span class="n">log_probs</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unk</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">65504</span>  <span class="c1"># -1e20</span>
 
     <span class="k">def</span> <span class="nf">ensure_max_length</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># add one to account for BOS. Don&#39;t account for EOS because hitting</span>
         <span class="c1"># this implies it hasn&#39;t been found.</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_length</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;is_finished&quot;</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span><span class="o">.</span><span class="n">fill_</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">is_finished_list</span> <span class="o">=</span> <span class="p">[</span>
                 <span class="p">[</span><span class="kc">True</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parallel_paths</span><span class="p">)]</span>
                 <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">is_finished_list</span><span class="p">))</span>

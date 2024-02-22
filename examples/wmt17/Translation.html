@@ -271,7 +271,6 @@ bash<span class="w"> </span>wmt17/prepare_wmt_ende_data.sh
 <p>Training the following big transformer for 50K steps takes less than 10 hours on a single RTX 4090</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>../../../onmt/bin/build_vocab.py<span class="w"> </span>--config<span class="w"> </span>wmt17/wmt17_ende.yaml<span class="w"> </span>--n_sample<span class="w"> </span>-1
 python3<span class="w"> </span>../../../onmt/bin/train.py<span class="w"> </span>--config<span class="w"> </span>wmt17/wmt17_ende.yaml
-bash<span class="w"> </span>scripts/onmt/train.sh
 </pre></div>
 </div>
 <p>Translate test sets with various settings on local GPU and CPUs.</p>

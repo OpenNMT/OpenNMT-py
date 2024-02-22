@@ -202,18 +202,17 @@
             
   <h1>Source code for onmt.modules.multi_headed_attn</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot; Multi-Head Attention module &quot;&quot;&quot;</span>
-<span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">log</span><span class="p">,</span> <span class="n">sqrt</span>
 <span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
-<span class="kn">from</span> <span class="nn">torch.nn</span> <span class="kn">import</span> <span class="n">functional</span> <span class="k">as</span> <span class="n">F</span>
-<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">from</span> <span class="nn">torch.nn.functional</span> <span class="kn">import</span> <span class="n">scaled_dot_product_attention</span>
 <span class="kn">from</span> <span class="nn">torch.utils.checkpoint</span> <span class="kn">import</span> <span class="n">checkpoint</span>
 <span class="kn">from</span> <span class="nn">torch.nn.utils</span> <span class="kn">import</span> <span class="n">skip_init</span>
 <span class="kn">from</span> <span class="nn">.alibi_position_bias</span> <span class="kn">import</span> <span class="n">AlibiPositionalBias</span>
-<span class="kn">import</span> <span class="nn">torch.distributed</span> <span class="k">as</span> <span class="nn">dist</span>
-<span class="kn">import</span> <span class="nn">importlib</span>
-
+<span class="kn">from</span> <span class="nn">torch.distributed</span> <span class="kn">import</span> <span class="n">all_reduce</span>
+<span class="kn">from</span> <span class="nn">importlib</span> <span class="kn">import</span> <span class="n">import_module</span>
 
 <span class="c1"># Help functions for Rotary Embeddings</span>
 <span class="c1"># https://arxiv.org/pdf/2104.09864.pdf</span>
@@ -222,28 +221,58 @@
 <span class="c1"># are both &lt; 2048 tokens.</span>
 
 
-<span class="k">def</span> <span class="nf">rotaryembeddings</span><span class="p">(</span><span class="n">dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">maxseqlen</span><span class="o">=</span><span class="mi">8192</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="mi">10000</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">rotaryembeddings</span><span class="p">(</span><span class="n">dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">maxseqlen</span><span class="o">=</span><span class="mi">2048</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="n">inv_freq</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">base</span> <span class="o">**</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span> <span class="o">/</span> <span class="n">dim</span><span class="p">))</span>
     <span class="n">tmax</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">maxseqlen</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">inv_freq</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
     <span class="n">rope</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">tmax</span><span class="p">,</span> <span class="n">inv_freq</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
     <span class="c1"># rope is now matrix [maxseqlen, dim/2]</span>
     <span class="n">rope</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">polar</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">rope</span><span class="p">),</span> <span class="n">rope</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">rope</span>
+    <span class="n">rope</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">rope</span><span class="p">,</span> <span class="n">rope</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">device</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">rope</span> <span class="o">=</span> <span class="n">rope</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">cos</span> <span class="o">=</span> <span class="n">rope</span><span class="p">[:,</span> <span class="p">:</span> <span class="n">rope</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">real</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span><span class="o">.</span><span class="n">half</span><span class="p">()</span>
+    <span class="n">sin</span> <span class="o">=</span> <span class="n">rope</span><span class="p">[:,</span> <span class="p">:</span> <span class="n">rope</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">imag</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span><span class="o">.</span><span class="n">half</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">rope</span><span class="p">,</span> <span class="n">cos</span><span class="p">,</span> <span class="n">sin</span>
 
 
-<span class="k">def</span> <span class="nf">apply_rotary_emb</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">rope</span><span class="p">):</span>
-    <span class="n">query</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-    <span class="n">key</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-    <span class="n">query_</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">float</span><span class="p">()</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">*</span><span class="n">query</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-    <span class="n">query_</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">view_as_complex</span><span class="p">(</span><span class="n">query_</span><span class="p">)</span>
-    <span class="n">key_</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">float</span><span class="p">()</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">*</span><span class="n">key</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-    <span class="n">key_</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">view_as_complex</span><span class="p">(</span><span class="n">key_</span><span class="p">)</span>
-    <span class="n">rope</span> <span class="o">=</span> <span class="n">rope</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">query_</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="n">query_</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
-    <span class="n">query_out</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">view_as_real</span><span class="p">(</span><span class="n">query_</span> <span class="o">*</span> <span class="n">rope</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
-    <span class="n">key_out</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">view_as_real</span><span class="p">(</span><span class="n">key_</span> <span class="o">*</span> <span class="n">rope</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">query_out</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">type_as</span><span class="p">(</span><span class="n">query</span><span class="p">),</span> <span class="n">key_out</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">type_as</span><span class="p">(</span>
-        <span class="n">key</span>
-    <span class="p">)</span>
+<span class="k">def</span> <span class="nf">rotate_half</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Rotates half the hidden dims of the input.&quot;&quot;&quot;</span>
+    <span class="n">x1</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">]</span>
+    <span class="n">x2</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span> <span class="p">:]</span>
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="o">-</span><span class="n">x2</span><span class="p">,</span> <span class="n">x1</span><span class="p">),</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">apply_rotary_emb</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">rope</span><span class="p">,</span> <span class="n">interleave</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">interleave</span><span class="p">:</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">query_</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">float</span><span class="p">()</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">*</span><span class="n">query</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">query_</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">view_as_complex</span><span class="p">(</span><span class="n">query_</span><span class="p">)</span>
+        <span class="n">key_</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">float</span><span class="p">()</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">*</span><span class="n">key</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">key_</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">view_as_complex</span><span class="p">(</span><span class="n">key_</span><span class="p">)</span>
+        <span class="n">rope</span> <span class="o">=</span> <span class="n">rope</span><span class="p">[:,</span> <span class="p">:</span> <span class="n">rope</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">query_</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="n">query_</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+        <span class="n">query_out</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">view_as_real</span><span class="p">(</span><span class="n">query_</span> <span class="o">*</span> <span class="n">rope</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">key_out</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">view_as_real</span><span class="p">(</span><span class="n">key_</span> <span class="o">*</span> <span class="n">rope</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">query_out</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">type_as</span><span class="p">(</span><span class="n">query</span><span class="p">),</span> <span class="n">key_out</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span>
+            <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">type_as</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">cos</span><span class="p">,</span> <span class="n">sin</span> <span class="o">=</span> <span class="n">rope</span><span class="o">.</span><span class="n">real</span><span class="p">,</span> <span class="n">rope</span><span class="o">.</span><span class="n">imag</span>
+        <span class="n">rotary_dim</span> <span class="o">=</span> <span class="n">cos</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">head_dim</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">rotary_dim</span> <span class="o">&lt;</span> <span class="n">head_dim</span><span class="p">:</span>
+            <span class="n">q_embed</span> <span class="o">=</span> <span class="p">(</span><span class="n">query</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:</span><span class="n">rotary_dim</span><span class="p">]</span> <span class="o">*</span> <span class="n">cos</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span>
+                <span class="n">rotate_half</span><span class="p">(</span><span class="n">query</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:</span><span class="n">rotary_dim</span><span class="p">])</span> <span class="o">*</span> <span class="n">sin</span>
+            <span class="p">)</span>
+            <span class="n">k_embed</span> <span class="o">=</span> <span class="p">(</span><span class="n">key</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:</span><span class="n">rotary_dim</span><span class="p">]</span> <span class="o">*</span> <span class="n">cos</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span>
+                <span class="n">rotate_half</span><span class="p">(</span><span class="n">key</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:</span><span class="n">rotary_dim</span><span class="p">])</span> <span class="o">*</span> <span class="n">sin</span>
+            <span class="p">)</span>
+            <span class="n">q_embed</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">q_embed</span><span class="p">,</span> <span class="n">query</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">rotary_dim</span><span class="p">:]],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">k_embed</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">k_embed</span><span class="p">,</span> <span class="n">key</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">rotary_dim</span><span class="p">:]],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">q_embed</span> <span class="o">=</span> <span class="p">(</span><span class="n">query</span> <span class="o">*</span> <span class="n">cos</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">rotate_half</span><span class="p">(</span><span class="n">query</span><span class="p">)</span> <span class="o">*</span> <span class="n">sin</span><span class="p">)</span>
+            <span class="n">k_embed</span> <span class="o">=</span> <span class="p">(</span><span class="n">key</span> <span class="o">*</span> <span class="n">cos</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">rotate_half</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="o">*</span> <span class="n">sin</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">q_embed</span><span class="o">.</span><span class="n">type_as</span><span class="p">(</span><span class="n">query</span><span class="p">),</span> <span class="n">k_embed</span><span class="o">.</span><span class="n">type_as</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
 
 
 <span class="c1"># Help functions for max_relative positions</span>
@@ -334,7 +363,7 @@
     <span class="c1"># up to max_distance</span>
     <span class="n">relative_position_if_large</span> <span class="o">=</span> <span class="n">max_exact</span> <span class="o">+</span> <span class="p">(</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">relative_position</span><span class="o">.</span><span class="n">float</span><span class="p">()</span> <span class="o">/</span> <span class="n">max_exact</span><span class="p">)</span>
-        <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">max_distance</span> <span class="o">/</span> <span class="n">max_exact</span><span class="p">)</span>
+        <span class="o">/</span> <span class="n">log</span><span class="p">(</span><span class="n">max_distance</span> <span class="o">/</span> <span class="n">max_exact</span><span class="p">)</span>
         <span class="o">*</span> <span class="p">(</span><span class="n">num_buckets</span> <span class="o">-</span> <span class="n">max_exact</span><span class="p">)</span>
     <span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
     <span class="n">relative_position_if_large</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">min</span><span class="p">(</span>
@@ -446,7 +475,11 @@
         <span class="n">is_decoder</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">max_relative_positions</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
         <span class="n">relative_positions_buckets</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="n">rotary_interleave</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">rotary_theta</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mf">1e4</span><span class="p">,</span>
+        <span class="n">rotary_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
         <span class="n">attn_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">self_attn_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">add_qkvbias</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">num_kv</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
         <span class="n">use_ckpting</span><span class="o">=</span><span class="p">[],</span>
@@ -513,6 +546,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">max_relative_positions</span> <span class="o">=</span> <span class="n">max_relative_positions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">relative_positions_buckets</span> <span class="o">=</span> <span class="n">relative_positions_buckets</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">attn_type</span> <span class="o">=</span> <span class="n">attn_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">self_attn_type</span> <span class="o">=</span> <span class="n">self_attn_type</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span> <span class="o">=</span> <span class="p">(</span>
             <span class="kc">False</span><span class="p">,</span>
             <span class="p">{</span><span class="s2">&quot;keys&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([]),</span> <span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([])},</span>
@@ -538,21 +572,37 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">relative_attention_bias</span> <span class="o">=</span> <span class="kc">None</span>
 
             <span class="k">if</span> <span class="n">max_relative_positions</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>  <span class="c1"># rotary embeddings</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">rope</span> <span class="o">=</span> <span class="n">rotaryembeddings</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">)</span>
-
+                <span class="k">if</span> <span class="n">rotary_dim</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">rotary_dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">rotary_dim</span> <span class="o">=</span> <span class="n">rotary_dim</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rope</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cos</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin</span> <span class="o">=</span> <span class="n">rotaryembeddings</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">rotary_dim</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="n">rotary_theta</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rotary_interleave</span> <span class="o">=</span> <span class="n">rotary_interleave</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rotary_theta</span> <span class="o">=</span> <span class="n">rotary_theta</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cos</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sin</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rotary_interleave</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="k">if</span> <span class="n">max_relative_positions</span> <span class="o">==</span> <span class="o">-</span><span class="mi">2</span><span class="p">:</span>  <span class="c1"># alibi positional bias</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">alibi</span> <span class="o">=</span> <span class="n">AlibiPositionalBias</span><span class="p">(</span><span class="n">head_count</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">maybe_ckpt</span> <span class="o">=</span> <span class="n">checkpoint</span> <span class="k">if</span> <span class="s2">&quot;mha&quot;</span> <span class="ow">in</span> <span class="n">use_ckpting</span> <span class="k">else</span> <span class="k">lambda</span> <span class="n">f</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">flash_pack</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s2">&quot;flash_attn&quot;</span><span class="p">)</span>
+            <span class="n">flash_pack</span> <span class="o">=</span> <span class="n">import_module</span><span class="p">(</span><span class="s2">&quot;flash_attn&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="p">(</span>
                 <span class="nb">hasattr</span><span class="p">(</span><span class="n">flash_pack</span><span class="p">,</span> <span class="s2">&quot;flash_attn_func&quot;</span><span class="p">)</span>
                 <span class="ow">and</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">get_device_capability</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">8</span>
             <span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">flash_attn_func</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">flash_pack</span><span class="p">,</span> <span class="s2">&quot;flash_attn_func&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">flash_attn_with_kvcache</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span>
+                    <span class="n">flash_pack</span><span class="p">,</span> <span class="s2">&quot;flash_attn_with_kvcache&quot;</span>
+                <span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">flash2</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">flash2</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">flash2</span> <span class="o">=</span> <span class="kc">False</span>
 
@@ -569,6 +619,7 @@
         <span class="n">sliding_window</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
         <span class="n">step</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
         <span class="n">return_attn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">self_attn_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compute the context vector and the attention vectors.</span>
@@ -591,32 +642,117 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># 1) Project key, value, and query.</span>
         <span class="c1"># as a reminder at training layer_cache[0] remains False</span>
+        <span class="n">key_pad_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;key_pad_mask&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="c1"># Retrieve keys and values from the KV cache (decoding mode only).</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">attn_type</span> <span class="o">==</span> <span class="s2">&quot;self&quot;</span><span class="p">:</span>
                 <span class="n">query</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="p">(</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">linear_query</span><span class="p">(</span><span class="n">query</span><span class="p">),</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">linear_keys</span><span class="p">(</span><span class="n">query</span><span class="p">),</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">linear_values</span><span class="p">(</span><span class="n">query</span><span class="p">),</span>
                 <span class="p">)</span>
+
                 <span class="n">query</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">)</span>
                 <span class="n">key</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">)</span>
                 <span class="n">value</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">)</span>
+                <span class="n">start_pos</span> <span class="o">=</span> <span class="n">step</span>
+                <span class="n">seqlen</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
 
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_relative_positions</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>  <span class="c1"># Rotary Embeddings</span>
-                    <span class="n">start_pos</span> <span class="o">=</span> <span class="n">step</span>
-                    <span class="n">seqlen</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-                    <span class="n">rope</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rope</span><span class="p">[</span><span class="n">start_pos</span> <span class="p">:</span> <span class="n">start_pos</span> <span class="o">+</span> <span class="n">seqlen</span><span class="p">]</span>
-                    <span class="n">query</span><span class="p">,</span> <span class="n">key</span> <span class="o">=</span> <span class="n">apply_rotary_emb</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">rope</span><span class="o">=</span><span class="n">rope</span><span class="p">)</span>
+                <span class="k">if</span> <span class="p">(</span>
+                    <span class="n">step</span> <span class="o">==</span> <span class="mi">0</span>
+                    <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">flash2</span>
+                    <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">self_attn_type</span> <span class="o">!=</span> <span class="s2">&quot;scaled-dot-flash&quot;</span>
+                    <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_relative_positions</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="ow">or</span> <span class="n">query</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">128</span>
+                    <span class="ow">or</span> <span class="n">query</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="n">torch</span><span class="o">.</span><span class="n">float16</span>
+                <span class="p">):</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_relative_positions</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>  <span class="c1"># Rotary Embeddings</span>
+                        <span class="k">if</span> <span class="n">seqlen</span> <span class="o">+</span> <span class="n">start_pos</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">rope</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">):</span>
+                            <span class="c1"># Resize rotary embeddings.</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">rope</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">rotaryembeddings</span><span class="p">(</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">rotary_dim</span><span class="p">,</span>
+                                <span class="n">maxseqlen</span><span class="o">=</span><span class="p">(</span><span class="n">seqlen</span> <span class="o">+</span> <span class="n">start_pos</span> <span class="o">+</span> <span class="mi">2048</span><span class="p">),</span>
+                                <span class="n">base</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rotary_theta</span><span class="p">,</span>
+                                <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rope</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
+                            <span class="p">)</span>
+                        <span class="n">rope</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rope</span><span class="p">[</span><span class="n">start_pos</span> <span class="p">:</span> <span class="n">start_pos</span> <span class="o">+</span> <span class="n">seqlen</span><span class="p">]</span>
+                        <span class="n">query</span><span class="p">,</span> <span class="n">key</span> <span class="o">=</span> <span class="n">apply_rotary_emb</span><span class="p">(</span>
+                            <span class="n">query</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">rope</span><span class="p">,</span> <span class="n">interleave</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rotary_interleave</span>
+                        <span class="p">)</span>
 
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;keys&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">key</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;keys&quot;</span><span class="p">],</span> <span class="n">key</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-                    <span class="n">value</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;values&quot;</span><span class="p">],</span> <span class="n">value</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;keys&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">key</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;keys&quot;</span><span class="p">],</span> <span class="n">key</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+                        <span class="n">value</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;values&quot;</span><span class="p">],</span> <span class="n">value</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">sliding_window</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">key</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">sliding_window</span><span class="p">:</span>
+                            <span class="n">key</span> <span class="o">=</span> <span class="n">key</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">:,</span> <span class="p">:]</span>
+                            <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">:,</span> <span class="p">:]</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;keys&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">key</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;values&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">start_pos</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;keys&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;keys&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
+                            <span class="p">[</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;keys&quot;</span><span class="p">],</span>
+                                <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;keys&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+                                    <span class="o">+</span> <span class="p">(</span><span class="mi">32</span><span class="p">,)</span>
+                                    <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;keys&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">:],</span>
+                                    <span class="n">device</span><span class="o">=</span><span class="n">query</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
+                                <span class="p">)</span><span class="o">.</span><span class="n">half</span><span class="p">(),</span>
+                            <span class="p">],</span>
+                            <span class="n">dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">,</span>
+                        <span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;values&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
+                            <span class="p">[</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;values&quot;</span><span class="p">],</span>
+                                <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;values&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+                                    <span class="o">+</span> <span class="p">(</span><span class="mi">32</span><span class="p">,)</span>
+                                    <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;values&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">:],</span>
+                                    <span class="n">device</span><span class="o">=</span><span class="n">query</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
+                                <span class="p">)</span><span class="o">.</span><span class="n">half</span><span class="p">(),</span>
+                            <span class="p">],</span>
+                            <span class="n">dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">,</span>
+                        <span class="p">)</span>
+                        <span class="k">if</span> <span class="p">(</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">max_relative_positions</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span>
+                            <span class="ow">and</span> <span class="n">start_pos</span> <span class="o">+</span> <span class="mi">32</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rope</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                        <span class="p">):</span>
+                            <span class="c1"># Resize rotary embeddings.</span>
+                            <span class="c1"># We take a margin of 32 tokens as the kv_cache</span>
+                            <span class="c1">#   is incremented by 32 tokens every 32 tokens.</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">rope</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cos</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin</span> <span class="o">=</span> <span class="n">rotaryembeddings</span><span class="p">(</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">rotary_dim</span><span class="p">,</span>
+                                <span class="n">maxseqlen</span><span class="o">=</span><span class="p">(</span><span class="n">start_pos</span> <span class="o">+</span> <span class="mi">2048</span><span class="p">),</span>
+                                <span class="n">base</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rotary_theta</span><span class="p">,</span>
+                                <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rope</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
+                            <span class="p">)</span>
+
                     <span class="k">if</span> <span class="n">sliding_window</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">key</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">sliding_window</span><span class="p">:</span>
-                        <span class="n">key</span> <span class="o">=</span> <span class="n">key</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">:,</span> <span class="p">:]</span>
-                        <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">:,</span> <span class="p">:]</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;keys&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;keys&quot;</span><span class="p">][</span>
+                            <span class="p">:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">:,</span> <span class="p">:</span>
+                        <span class="p">]</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;values&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;values&quot;</span><span class="p">][</span>
+                            <span class="p">:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">:,</span> <span class="p">:</span>
+                        <span class="p">]</span>
+                    <span class="n">context</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">flash_attn_with_kvcache</span><span class="p">(</span>
+                        <span class="n">query</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;keys&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;values&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+                        <span class="n">key</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+                        <span class="n">value</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+                        <span class="n">rotary_cos</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cos</span><span class="p">,</span>
+                        <span class="n">rotary_sin</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sin</span><span class="p">,</span>
+                        <span class="n">cache_seqlens</span><span class="o">=</span><span class="n">step</span><span class="p">,</span>
+                        <span class="n">rotary_interleaved</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rotary_interleave</span><span class="p">,</span>
+                    <span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+                    <span class="n">attn_output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">final_linear</span><span class="p">(</span><span class="n">unshape</span><span class="p">(</span><span class="n">context</span><span class="p">))</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parallel_gpu</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="n">all_reduce</span><span class="p">(</span><span class="n">attn_output</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="n">attn_output</span><span class="p">,</span> <span class="kc">None</span>
 
-                <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;keys&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">key</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;values&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">attn_type</span> <span class="o">==</span> <span class="s2">&quot;context&quot;</span><span class="p">:</span>
                 <span class="n">query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear_query</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
                 <span class="n">query</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">)</span>
@@ -631,10 +767,26 @@
                     <span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;keys&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">key</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;values&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+            <span class="k">if</span> <span class="n">key_pad_mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># Increase the cached key pad mask by concatenation.</span>
+                <span class="c1"># For decoding only.</span>
+                <span class="k">if</span> <span class="n">step</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">y</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+                        <span class="p">(</span><span class="n">key_pad_mask</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">key_pad_mask</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="mi">1</span><span class="p">),</span>
+                        <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">,</span>
+                        <span class="n">device</span><span class="o">=</span><span class="n">key_pad_mask</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
+                    <span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;key_pad_mask&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
+                        <span class="p">(</span><span class="n">key_pad_mask</span><span class="p">,</span> <span class="n">y</span><span class="p">),</span> <span class="mi">2</span>
+                    <span class="p">)</span>
+                    <span class="n">key_pad_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;key_pad_mask&quot;</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Retrieve keys and values from linear layers (training mode).</span>
             <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maybe_ckpt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">linear_keys</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
             <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maybe_ckpt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">linear_values</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
             <span class="n">query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maybe_ckpt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">linear_query</span><span class="p">,</span> <span class="n">query</span><span class="p">)</span>
+
             <span class="n">key</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">)</span>
             <span class="n">value</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">)</span>
             <span class="n">query</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">)</span>
@@ -642,8 +794,18 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_relative_positions</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>  <span class="c1"># Rotary Embeddings</span>
                 <span class="n">start_pos</span> <span class="o">=</span> <span class="mi">0</span>
                 <span class="n">seqlen</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-                <span class="n">rope</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rope</span><span class="p">[</span><span class="n">start_pos</span> <span class="p">:</span> <span class="n">start_pos</span> <span class="o">+</span> <span class="n">seqlen</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">query</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
-                <span class="n">query</span><span class="p">,</span> <span class="n">key</span> <span class="o">=</span> <span class="n">apply_rotary_emb</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">rope</span><span class="o">=</span><span class="n">rope</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">seqlen</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">rope</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">):</span>
+                    <span class="c1"># Resize rotary embeddings.</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">rope</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cos</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin</span> <span class="o">=</span> <span class="n">rotaryembeddings</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">rotary_dim</span><span class="p">,</span>
+                        <span class="n">maxseqlen</span><span class="o">=</span><span class="p">(</span><span class="n">seqlen</span> <span class="o">+</span> <span class="mi">2048</span><span class="p">),</span>
+                        <span class="n">base</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rotary_theta</span><span class="p">,</span>
+                        <span class="n">device</span><span class="o">=</span><span class="n">query</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="n">rope</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rope</span><span class="p">[</span><span class="n">start_pos</span> <span class="p">:</span> <span class="n">start_pos</span> <span class="o">+</span> <span class="n">seqlen</span><span class="p">]</span>
+                <span class="n">query</span><span class="p">,</span> <span class="n">key</span> <span class="o">=</span> <span class="n">apply_rotary_emb</span><span class="p">(</span>
+                    <span class="n">query</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">rope</span><span class="p">,</span> <span class="n">interleave</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rotary_interleave</span>
+                <span class="p">)</span>
 
         <span class="n">b</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_kv</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -661,7 +823,6 @@
         <span class="c1"># Ultimately flashv2 will be part of pytorch https://github.com/pytorch/pytorch/pull/105602</span>
         <span class="c1"># In the meantime: if vanilla tranformer or Rotary embeddings (not rel_pos, not alibi)</span>
         <span class="c1"># then use flash2 if seq len &gt; 256 otherwise use xtransformer from pt2 uptream</span>
-
         <span class="n">flash2</span> <span class="o">=</span> <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">flash2</span>
             <span class="ow">and</span> <span class="n">l</span> <span class="o">&gt;</span> <span class="mi">256</span>  <span class="c1"># https://github.com/Dao-AILab/flash-attention/issues/591</span>
@@ -671,7 +832,9 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">max_relative_positions</span> <span class="ow">in</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
             <span class="ow">and</span> <span class="ow">not</span> <span class="n">return_attn</span>
             <span class="ow">and</span> <span class="n">query</span><span class="o">.</span><span class="n">device</span> <span class="o">!=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">self_attn_type</span> <span class="o">==</span> <span class="s2">&quot;scaled-dot-flash&quot;</span>
         <span class="p">):</span>
+            <span class="c1"># Apply flash2 attention.</span>
             <span class="n">causal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_decoder</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">attn_type</span> <span class="o">==</span> <span class="s2">&quot;self&quot;</span> <span class="ow">and</span> <span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_decoder</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">attn_type</span> <span class="o">==</span> <span class="s2">&quot;self&quot;</span> <span class="ow">and</span> <span class="n">flash2</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">causal</span><span class="p">:</span>
@@ -689,10 +852,11 @@
                     <span class="n">window_size</span><span class="o">=</span><span class="n">window_size</span><span class="p">,</span>
                 <span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Apply scaled dot product attention.</span>
                 <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">backends</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">sdp_kernel</span><span class="p">(</span>
                     <span class="n">enable_flash</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">enable_math</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">enable_mem_efficient</span><span class="o">=</span><span class="kc">True</span>
                 <span class="p">):</span>
-                    <span class="n">attn_output</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">scaled_dot_product_attention</span><span class="p">(</span>
+                    <span class="n">attn_output</span> <span class="o">=</span> <span class="n">scaled_dot_product_attention</span><span class="p">(</span>
                         <span class="n">query</span><span class="p">,</span>
                         <span class="n">key</span><span class="p">,</span>
                         <span class="n">value</span><span class="p">,</span>
@@ -700,18 +864,10 @@
                         <span class="bp">self</span><span class="o">.</span><span class="n">dropout_p</span><span class="p">,</span>
                         <span class="n">is_causal</span><span class="o">=</span><span class="n">causal</span><span class="p">,</span>
                     <span class="p">)</span>
-
-            <span class="n">x</span> <span class="o">=</span> <span class="n">unshape</span><span class="p">(</span><span class="n">attn_output</span><span class="p">)</span>
-
-            <span class="n">attn_output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maybe_ckpt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">final_linear</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
-
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parallel_gpu</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">dist</span><span class="o">.</span><span class="n">all_reduce</span><span class="p">(</span><span class="n">attn_output</span><span class="p">)</span>
-
-            <span class="k">return</span> <span class="n">attn_output</span><span class="p">,</span> <span class="kc">None</span>
+            <span class="n">attn</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">query</span> <span class="o">/=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">)</span>
+            <span class="n">query</span> <span class="o">/=</span> <span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim_per_head</span><span class="p">)</span>
             <span class="c1"># batch x num_heads x query_len x key_len</span>
             <span class="n">scores</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">key</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
 
@@ -753,6 +909,8 @@
                 <span class="n">scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">alibi</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span>
 
             <span class="n">scores</span> <span class="o">=</span> <span class="n">scores</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">key_pad_mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">mask</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">mask</span> <span class="o">=</span> <span class="n">key_pad_mask</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="c1"># not 100% necessary but expand to nb of heads</span>
@@ -764,23 +922,28 @@
             <span class="n">attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">query</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
             <span class="n">drop_attn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">attn</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout_p</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">attn</span>
 
-            <span class="n">context_original</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">drop_attn</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+            <span class="n">attn_output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">drop_attn</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">relative_positions_embeddings</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="c1"># We use the same embeddings for key and value</span>
                 <span class="n">relations_values</span> <span class="o">=</span> <span class="n">relations_keys</span>
-                <span class="n">context_original</span><span class="o">.</span><span class="n">add_</span><span class="p">(</span>
-                    <span class="n">relative_matmul</span><span class="p">(</span><span class="n">drop_attn</span><span class="p">,</span> <span class="n">relations_values</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
-                <span class="p">)</span>
+                <span class="n">attn_output</span><span class="o">.</span><span class="n">add_</span><span class="p">(</span><span class="n">relative_matmul</span><span class="p">(</span><span class="n">drop_attn</span><span class="p">,</span> <span class="n">relations_values</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
 
-            <span class="n">context</span> <span class="o">=</span> <span class="n">unshape</span><span class="p">(</span><span class="n">context_original</span><span class="p">)</span>
+        <span class="n">context</span> <span class="o">=</span> <span class="n">unshape</span><span class="p">(</span><span class="n">attn_output</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">key_pad_mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">key_pad_mask</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">context</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">key_pad_mask</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">context</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+                <span class="n">context</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">masked_fill</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_cache</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="n">attn_output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">final_linear</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
             <span class="n">attn_output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maybe_ckpt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">final_linear</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
 
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parallel_gpu</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">dist</span><span class="o">.</span><span class="n">all_reduce</span><span class="p">(</span><span class="n">attn_output</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parallel_gpu</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">all_reduce</span><span class="p">(</span><span class="n">attn_output</span><span class="p">)</span>
 
-            <span class="k">return</span> <span class="n">attn_output</span><span class="p">,</span> <span class="n">attn</span></div></div>
+        <span class="k">return</span> <span class="n">attn_output</span><span class="p">,</span> <span class="n">attn</span></div></div>
 </pre></div>
 
            </div>

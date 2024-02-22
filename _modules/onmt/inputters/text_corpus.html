@@ -241,6 +241,63 @@
         <span class="n">_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
 
+<span class="k">class</span> <span class="nc">BlockwiseCorpus</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A corpus class for reading a single file block by block.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">file_path</span><span class="p">,</span> <span class="n">block_size</span><span class="o">=</span><span class="mi">4096</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize file path and block size.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file_path</span> <span class="o">=</span> <span class="n">file_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">block_size</span> <span class="o">=</span> <span class="n">block_size</span>
+
+    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Load file and iterate by blocks.</span>
+<span class="sd">        `offset` and `stride` allow iterating only on every</span>
+<span class="sd">        `stride` block, starting from `offset`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="nf">make_ex</span><span class="p">(</span><span class="n">block_content</span><span class="p">):</span>
+            <span class="n">example</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;src&quot;</span><span class="p">:</span> <span class="n">block_content</span><span class="p">,</span>
+                <span class="s2">&quot;tgt&quot;</span><span class="p">:</span> <span class="n">block_content</span><span class="p">,</span>
+                <span class="s2">&quot;src_original&quot;</span><span class="p">:</span> <span class="n">block_content</span><span class="p">,</span>
+                <span class="s2">&quot;tgt_original&quot;</span><span class="p">:</span> <span class="n">block_content</span><span class="p">,</span>
+            <span class="p">}</span>
+            <span class="k">return</span> <span class="n">example</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+            <span class="n">block_content</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+            <span class="n">block_index</span> <span class="o">=</span> <span class="mi">0</span>
+
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">chunk</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">block_size</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">chunk</span><span class="p">:</span>
+                    <span class="k">break</span>
+
+                <span class="k">if</span> <span class="p">(</span><span class="n">block_index</span> <span class="o">//</span> <span class="n">stride</span><span class="p">)</span> <span class="o">%</span> <span class="n">stride</span> <span class="o">==</span> <span class="n">offset</span><span class="p">:</span>
+                    <span class="n">block_content</span> <span class="o">+=</span> <span class="n">chunk</span>
+
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_size</span><span class="p">:</span>
+                        <span class="c1"># Reached end of file</span>
+                        <span class="k">yield</span> <span class="n">make_ex</span><span class="p">(</span><span class="n">block_content</span><span class="p">)</span>
+                        <span class="k">break</span>
+
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">block_content</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_size</span><span class="p">:</span>
+                        <span class="k">yield</span> <span class="n">make_ex</span><span class="p">(</span><span class="n">block_content</span><span class="p">)</span>
+                <span class="n">block_content</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+                <span class="n">block_index</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">cls_name</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">cls_name</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">file_path</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">file_path</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;align=</span><span class="si">{</span><span class="kc">None</span><span class="si">}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;n_src_feats=</span><span class="si">{</span><span class="mi">0</span><span class="si">}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s1">&#39;src_feats_defaults=&quot;</span><span class="si">{</span><span class="kc">None</span><span class="si">}</span><span class="s1">&quot;)&#39;</span>
+        <span class="p">)</span>
+
+
 <div class="viewcode-block" id="ParallelCorpus"><a class="viewcode-back" href="../../../onmt.inputters.html#onmt.inputters.ParallelCorpus">[docs]</a><span class="k">class</span> <span class="nc">ParallelCorpus</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A parallel corpus file pair that can be loaded to iterate.&quot;&quot;&quot;</span>
 
@@ -320,20 +377,27 @@
     <span class="k">if</span> <span class="n">task</span> <span class="o">==</span> <span class="n">CorpusTask</span><span class="o">.</span><span class="n">TRAIN</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">corpus_id</span><span class="p">,</span> <span class="n">corpus_dict</span> <span class="ow">in</span> <span class="n">opts</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">if</span> <span class="n">corpus_id</span> <span class="o">!=</span> <span class="n">CorpusName</span><span class="o">.</span><span class="n">VALID</span><span class="p">:</span>
-                <span class="n">corpora_dict</span><span class="p">[</span><span class="n">corpus_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">ParallelCorpus</span><span class="p">(</span>
-                    <span class="n">corpus_id</span><span class="p">,</span>
-                    <span class="n">corpus_dict</span><span class="p">[</span><span class="s2">&quot;path_src&quot;</span><span class="p">],</span>
-                    <span class="n">corpus_dict</span><span class="p">[</span><span class="s2">&quot;path_tgt&quot;</span><span class="p">],</span>
-                    <span class="n">corpus_dict</span><span class="p">[</span><span class="s2">&quot;path_align&quot;</span><span class="p">],</span>
-                    <span class="n">n_src_feats</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">n_src_feats</span><span class="p">,</span>
-                    <span class="n">src_feats_defaults</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">src_feats_defaults</span><span class="p">,</span>
-                <span class="p">)</span>
+                <span class="k">if</span> <span class="n">corpus_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;path_txt&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">corpora_dict</span><span class="p">[</span><span class="n">corpus_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">ParallelCorpus</span><span class="p">(</span>
+                        <span class="n">corpus_id</span><span class="p">,</span>
+                        <span class="n">corpus_dict</span><span class="p">[</span><span class="s2">&quot;path_src&quot;</span><span class="p">],</span>
+                        <span class="n">corpus_dict</span><span class="p">[</span><span class="s2">&quot;path_tgt&quot;</span><span class="p">],</span>
+                        <span class="n">corpus_dict</span><span class="p">[</span><span class="s2">&quot;path_align&quot;</span><span class="p">],</span>
+                        <span class="n">n_src_feats</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">n_src_feats</span><span class="p">,</span>
+                        <span class="n">src_feats_defaults</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">src_feats_defaults</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">corpora_dict</span><span class="p">[</span><span class="n">corpus_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">BlockwiseCorpus</span><span class="p">(</span>
+                        <span class="n">corpus_id</span><span class="p">,</span>
+                        <span class="n">corpus_dict</span><span class="p">[</span><span class="s2">&quot;path_txt&quot;</span><span class="p">],</span>
+                        <span class="n">block_size</span><span class="o">=</span><span class="mi">8192</span><span class="p">,</span>  <span class="c1"># number of characters</span>
+                    <span class="p">)</span>
     <span class="k">elif</span> <span class="n">task</span> <span class="o">==</span> <span class="n">CorpusTask</span><span class="o">.</span><span class="n">VALID</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">CorpusName</span><span class="o">.</span><span class="n">VALID</span> <span class="ow">in</span> <span class="n">opts</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="n">corpora_dict</span><span class="p">[</span><span class="n">CorpusName</span><span class="o">.</span><span class="n">VALID</span><span class="p">]</span> <span class="o">=</span> <span class="n">ParallelCorpus</span><span class="p">(</span>
                 <span class="n">CorpusName</span><span class="o">.</span><span class="n">VALID</span><span class="p">,</span>
                 <span class="n">opts</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">CorpusName</span><span class="o">.</span><span class="n">VALID</span><span class="p">][</span><span class="s2">&quot;path_src&quot;</span><span class="p">],</span>
-                <span class="n">opts</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">CorpusName</span><span class="o">.</span><span class="n">VALID</span><span class="p">][</span><span class="s2">&quot;path_tgt&quot;</span><span class="p">],</span>
+                <span class="n">opts</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">CorpusName</span><span class="o">.</span><span class="n">VALID</span><span class="p">][</span><span class="s2">&quot;path_tgt&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">tgt</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
                 <span class="n">opts</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">CorpusName</span><span class="o">.</span><span class="n">VALID</span><span class="p">][</span><span class="s2">&quot;path_align&quot;</span><span class="p">],</span>
                 <span class="n">n_src_feats</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">n_src_feats</span><span class="p">,</span>
                 <span class="n">src_feats_defaults</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">src_feats_defaults</span><span class="p">,</span>
@@ -377,20 +441,20 @@
 
     <span class="k">def</span> <span class="nf">_process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">example</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">stream</span><span class="p">):</span>
-            <span class="n">example</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">example</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
-            <span class="n">example</span><span class="p">[</span><span class="s2">&quot;src_original&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">example</span><span class="p">[</span><span class="s2">&quot;src_original&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="n">example</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">example</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
+            <span class="n">example</span><span class="p">[</span><span class="s2">&quot;src_original&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">example</span><span class="p">[</span><span class="s2">&quot;src_original&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="s2">&quot;src_feats&quot;</span> <span class="ow">in</span> <span class="n">example</span><span class="p">:</span>
                 <span class="n">example</span><span class="p">[</span><span class="s2">&quot;src_feats&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
-                    <span class="n">feat</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">()</span> <span class="k">for</span> <span class="n">feat</span> <span class="ow">in</span> <span class="n">example</span><span class="p">[</span><span class="s2">&quot;src_feats&quot;</span><span class="p">]</span>
+                    <span class="n">feat</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">feat</span> <span class="ow">in</span> <span class="n">example</span><span class="p">[</span><span class="s2">&quot;src_feats&quot;</span><span class="p">]</span>
                 <span class="p">]</span>
             <span class="n">line_number</span> <span class="o">=</span> <span class="n">i</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">stride</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span>
             <span class="n">example</span><span class="p">[</span><span class="s2">&quot;cid_line_number&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">line_number</span>
             <span class="n">example</span><span class="p">[</span><span class="s2">&quot;cid&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cid</span>
             <span class="k">if</span> <span class="s2">&quot;align&quot;</span> <span class="ow">in</span> <span class="n">example</span><span class="p">:</span>
-                <span class="n">example</span><span class="p">[</span><span class="s2">&quot;align&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">example</span><span class="p">[</span><span class="s2">&quot;align&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                <span class="n">example</span><span class="p">[</span><span class="s2">&quot;align&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">example</span><span class="p">[</span><span class="s2">&quot;align&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">example</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">example</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">example</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
-                <span class="n">example</span><span class="p">[</span><span class="s2">&quot;tgt_original&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">example</span><span class="p">[</span><span class="s2">&quot;tgt_original&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                <span class="n">example</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">example</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
+                <span class="n">example</span><span class="p">[</span><span class="s2">&quot;tgt_original&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">example</span><span class="p">[</span><span class="s2">&quot;tgt_original&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
                 <span class="k">if</span> <span class="p">(</span>
                     <span class="nb">len</span><span class="p">(</span><span class="n">example</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span>
                     <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">example</span><span class="p">[</span><span class="s2">&quot;tgt&quot;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span>

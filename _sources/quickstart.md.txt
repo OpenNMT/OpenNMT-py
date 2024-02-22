@@ -218,6 +218,12 @@ tgt: None
 
 In this second example, we used `max_length: 1` and `src: None` `tgt: None` which is typically the configuration to be used in a scoring script like MMLU where it expects only 1 token as the answer.
 
+
+**WARNING**
+For inhomogeneous batches with many examples, the potentially high number of tokens inserted in the shortest examples leads to degraded results when attention layer quantization and flash attention are activated. 
+In practice, in the inference configuration file, when `batch_size` is greater than 1,
+delete 'linear_values', 'linear_query', 'linear_keys', 'final_linear' from `quant_layers` and specify `self_attn_type: scaled-dot`.
+
 You can run this script with the following command line:
 
 ```
