@@ -27,20 +27,6 @@ from onmt.modules.embeddings import prepare_pretrained_embeddings
 
 def prepare_transforms_vocabs(opt, transforms_cls):
     """Prepare or dump transforms before training."""
-    # if transform + options set in 'valid' we need to copy in main
-    # transform / options for scoring considered as inference
-    validset_transforms = opt.data.get("valid", {}).get("transforms", None)
-    if validset_transforms:
-        opt.transforms = validset_transforms
-        if opt.data.get("valid", {}).get("tgt_prefix", None):
-            opt.tgt_prefix = opt.data.get("valid", {}).get("tgt_prefix", None)
-            opt.tgt_file_prefix = True
-        if opt.data.get("valid", {}).get("src_prefix", None):
-            opt.src_prefix = opt.data.get("valid", {}).get("src_prefix", None)
-        if opt.data.get("valid", {}).get("tgt_suffix", None):
-            opt.tgt_suffix = opt.data.get("valid", {}).get("tgt_suffix", None)
-        if opt.data.get("valid", {}).get("src_suffix", None):
-            opt.src_suffix = opt.data.get("valid", {}).get("src_suffix", None)
     specials = get_specials(opt, transforms_cls)
 
     vocabs = build_vocab(opt, specials)
@@ -77,6 +63,20 @@ def _init_train(opt):
     """
     ArgumentParser.validate_prepare_opts(opt)
     transforms_cls = get_transforms_cls(opt._all_transform)
+    # if transform + options set in 'valid' we need to copy in main
+    # transform / options for scoring considered as inference
+    validset_transforms = opt.data.get("valid", {}).get("transforms", None)
+    if validset_transforms:
+        opt.transforms = validset_transforms
+        if opt.data.get("valid", {}).get("tgt_prefix", None):
+            opt.tgt_prefix = opt.data.get("valid", {}).get("tgt_prefix", None)
+            opt.tgt_file_prefix = True
+        if opt.data.get("valid", {}).get("src_prefix", None):
+            opt.src_prefix = opt.data.get("valid", {}).get("src_prefix", None)
+        if opt.data.get("valid", {}).get("tgt_suffix", None):
+            opt.tgt_suffix = opt.data.get("valid", {}).get("tgt_suffix", None)
+        if opt.data.get("valid", {}).get("src_suffix", None):
+            opt.src_suffix = opt.data.get("valid", {}).get("src_suffix", None)
     if opt.train_from:
         # Load checkpoint if we resume from a previous training.
         checkpoint = load_checkpoint(ckpt_path=opt.train_from)
