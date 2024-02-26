@@ -157,7 +157,9 @@ class BaseModel(nn.Module):
                         )
                         param.data = checkpoint["generator"][keyname]
                         del checkpoint["generator"][keyname]
-                    elif strict and "lora" not in param_name:
+                    elif strict and (
+                        "lora" not in param_name and "slopes" not in param_name
+                    ):
                         raise ValueError(
                             "Missing key in checkpoint: %s" % name + "." + param_name
                         )
@@ -234,7 +236,9 @@ class BaseModel(nn.Module):
                             name, module, param_name, param, buf_list, ckpt_t, offset
                         )
                         keyfound[name + "." + param_name] = True
-                    elif strict and "lora" not in param_name:
+                    elif strict and (
+                        "lora" not in param_name and "slopes" not in param_name
+                    ):
                         raise ValueError(
                             "Missing key in safetensors checkpoint: %s" % name
                             + "."
