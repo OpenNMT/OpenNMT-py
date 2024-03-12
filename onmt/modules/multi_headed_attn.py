@@ -466,7 +466,7 @@ class MultiHeadedAttention(torch.nn.Module):
                     if self.max_relative_positions == -1:  # Rotary Embeddings
                         if seqlen + start_pos > self.rope.size(0):
                             # Resize rotary embeddings.
-                            self.rope, _, _ = rotaryembeddings(
+                            self.rope, self.cos, self.sin = rotaryembeddings(
                                 self.rotary_dim,
                                 maxseqlen=(seqlen + start_pos + 2048),
                                 base=self.rotary_theta,

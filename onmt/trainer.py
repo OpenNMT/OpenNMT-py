@@ -297,7 +297,7 @@ class Trainer(object):
             logger.info(
                 "Start training loop and validate every %d steps...", valid_steps
             )
-        logger.info("Scoring with: {}".format(self.scoring_preparator.transform))
+        logger.info("Scoring with: {}".format(self.scoring_preparator.transforms))
 
         total_stats = onmt.utils.Statistics()
         report_stats = onmt.utils.Statistics()
