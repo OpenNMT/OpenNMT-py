@@ -788,7 +788,7 @@ class TestInsertMaskBeforePlaceholder(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.base_opts = {
-            "response_pattern": "Response : ｟newline｠",
+            "response_patterns": ["Response : ｟newline｠"],
         }
 
     def test_insert_mask_before_placeholder(self):
