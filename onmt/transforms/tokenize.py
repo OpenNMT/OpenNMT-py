@@ -157,7 +157,7 @@ class TokenizerTransform(Transform):
         """Tokenize a list of words."""
         # This method embeds a custom logic to correctly handle certain placeholders
         # in case the tokenizer doesn't preserve them.
-        sentence = " ".join(tokens).replace(DefaultTokens.SEP, "\n")
+        sentence = " ".join(tokens)
         # Locate the end-of-sentence placeholders.
         sent_list = sentence.split(DefaultTokens.EOS)
         # Tokenize each sentence separately.
@@ -257,6 +257,7 @@ class SentencePieceTransform(TokenizerTransform):
         """Apply subword sampling or deterministic subwording"""
         sp_model = self.load_models[side]
         nbest_size = self.tgt_subword_nbest if side == "tgt" else self.src_subword_nbest
+        string = string.replace(DefaultTokens.SEP, "\n")
         if is_train is False or nbest_size in [0, 1]:
             # derterministic subwording
             tokens = sp_model.encode(string, out_type=str)
@@ -441,6 +442,9 @@ class ONMTTokenizerTransform(TokenizerTransform):
         self.src_other_kwargs = self.opts.src_onmttok_kwargs
         self.tgt_other_kwargs = self.opts.tgt_onmttok_kwargs
         self.gpt2_pretok = self.opts.gpt2_pretok
+        self.preserve_placeholders = self.opts.tgt_onmttok_kwargs.get(
+            "preserve_placeholders", False
+        )
 
     @classmethod
     def get_specials(cls, opts):
@@ -558,6 +562,11 @@ class ONMTTokenizerTransform(TokenizerTransform):
                     segmented.extend(["Ċ", "Ċ"])
                 else:
                     segmented.append(s)
+        elif (
+            self.src_subword_type == "sentencepiece" and not self.preserve_placeholders
+        ):
+            sentence = sentence.replace(DefaultTokens.SEP, "\n")
+            segmented = tokenizer(sentence)
         else:
             segmented = tokenizer(sentence)
         return segmented

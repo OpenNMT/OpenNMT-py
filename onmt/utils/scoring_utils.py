@@ -19,16 +19,10 @@ class ScoringPreparator:
         if self.opt.dump_preds is not None:
             if not os.path.exists(self.opt.dump_preds):
                 os.makedirs(self.opt.dump_preds)
-        self.transforms = opt.transforms
-        transforms_cls = get_transforms_cls(self.transforms)
-        transforms = make_transforms(self.opt, transforms_cls, self.vocabs)
-        self.transform = TransformPipe.build_from(transforms.values())
 
     def warm_up(self, transforms):
         self.transforms = transforms
-        transforms_cls = get_transforms_cls(self.transforms)
-        transforms = make_transforms(self.opt, transforms_cls, self.vocabs)
-        self.transform = TransformPipe.build_from(transforms.values())
+        self.transforms_cls = get_transforms_cls(transforms)
 
     def translate(self, model, gpu_rank, step):
         """Compute and save the sentences predicted by the
@@ -84,7 +78,7 @@ class ScoringPreparator:
 
         # Reinstantiate the validation iterator
 
-        transforms_cls = get_transforms_cls(model_opt._all_transform)
+        #transforms_cls = get_transforms_cls(model_opt._all_transform)
         model_opt.num_workers = 0
         model_opt.tgt = None
 
@@ -100,7 +94,7 @@ class ScoringPreparator:
 
         valid_iter = build_dynamic_dataset_iter(
             model_opt,
-            transforms_cls,
+            self.transforms_cls,
             translator.vocabs,
             task=CorpusTask.VALID,
             tgt="",  # This force to clear the target side (needed when using tgt_file_prefix)
@@ -125,12 +119,11 @@ class ScoringPreparator:
 
         # Flatten predictions
         preds = [x.lstrip() for sublist in preds for x in sublist]
-
         # Save results
         if len(preds) > 0 and self.opt.scoring_debug:
             path = os.path.join(self.opt.dump_preds, f"preds.valid_step_{step}.txt")
             with open(path, "a") as file:
-                for i in range(len(preds)):
+                for i in range(len(raw_srcs)):
                     file.write("SOURCE: {}\n".format(raw_srcs[i]))
                     file.write("REF: {}\n".format(raw_refs[i]))
                     file.write("PRED: {}\n\n".format(preds[i]))
