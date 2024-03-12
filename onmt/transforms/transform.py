@@ -264,13 +264,16 @@ class TransformPipe(Transform):
 def make_transforms(opts, transforms_cls, vocabs):
     """Build transforms in `transforms_cls` with vocab of `fields`."""
     transforms = {}
-    for name, transform_cls in transforms_cls.items():
-        if transform_cls.require_vocab() and vocabs is None:
-            logger.warning(f"{transform_cls.__name__} require vocab to apply, skip it.")
-            continue
-        transform_obj = transform_cls(opts)
-        transform_obj.warm_up(vocabs)
-        transforms[name] = transform_obj
+    if transforms_cls:
+        for name, transform_cls in transforms_cls.items():
+            if transform_cls.require_vocab() and vocabs is None:
+                logger.warning(
+                    f"{transform_cls.__name__} require vocab to apply, skip it."
+                )
+                continue
+            transform_obj = transform_cls(opts)
+            transform_obj.warm_up(vocabs)
+            transforms[name] = transform_obj
     return transforms
 
 

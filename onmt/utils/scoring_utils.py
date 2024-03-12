@@ -5,7 +5,7 @@ from onmt.translate import GNMTGlobalScorer, Translator
 from onmt.opts import translate_opts
 from onmt.constants import CorpusTask
 from onmt.inputters.dynamic_iterator import build_dynamic_dataset_iter
-from onmt.transforms import get_transforms_cls, make_transforms, TransformPipe
+from onmt.transforms import get_transforms_cls
 
 
 class ScoringPreparator:
@@ -19,6 +19,8 @@ class ScoringPreparator:
         if self.opt.dump_preds is not None:
             if not os.path.exists(self.opt.dump_preds):
                 os.makedirs(self.opt.dump_preds)
+        self.transforms = None
+        self.transforms_cls = None
 
     def warm_up(self, transforms):
         self.transforms = transforms
@@ -78,7 +80,7 @@ class ScoringPreparator:
 
         # Reinstantiate the validation iterator
 
-        #transforms_cls = get_transforms_cls(model_opt._all_transform)
+        # transforms_cls = get_transforms_cls(model_opt._all_transform)
         model_opt.num_workers = 0
         model_opt.tgt = None
 
