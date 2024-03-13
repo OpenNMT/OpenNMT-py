@@ -401,6 +401,8 @@ class Trainer(object):
                     )
 
                     # Compute loss.
+                    if self.zero_out_prompt_loss:
+                        batch = self.valid_loss.ignore_prompt(batch)
                     _, batch_stats = self.valid_loss(batch, model_out, attns)
 
                     stats.update(batch_stats)
