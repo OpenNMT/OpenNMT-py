@@ -3,6 +3,11 @@
 
 ## [Unreleased]
 
+## [3.5.1](https://github.com/OpenNMT/OpenNMT-py/tree/3.5.1) (2024-03-13)
+
+* Further fixes
+* added wikitext runs
+
 ## [3.5.0](https://github.com/OpenNMT/OpenNMT-py/tree/3.5.0) (2024-02-22)
 
 * Further improvements and fixes
