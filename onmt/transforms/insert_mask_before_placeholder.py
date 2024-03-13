@@ -22,24 +22,28 @@ class InsertMaskBeforePlaceholdersTransform(Transform):
             "Transform/InsertMaskBeforePlaceholdersTransform"
         )
         group.add(
-            "--response_pattern",
-            "-response_pattern",
-            type=str,
+            "--response_patterns",
+            "-response_patterns",
             help="Response patten to locate the end of the prompt",
-            default="Response : ｟newline｠",
+            default=["Response : ｟newline｠"],
+            nargs="+",
         )
 
     def _parse_opts(self):
-        self.response_pattern = self.opts.response_pattern
+        self.response_patterns = self.opts.response_patterns
 
     def apply(self, example, is_train=False, stats=None, **kwargs):
         _src = " ".join(example["src"])
-        if len(_src.split(self.response_pattern)) != 2:
+        response = None
+        for _pattern in self.response_patterns:
+            if len(_src.split(_pattern)) == 2:
+                prompt, response = _src.split(_pattern)
+                response = DefaultTokens.MASK_BEFORE.join([_pattern, response])
+        if response is not None:
+            _src = "".join([prompt, response])
+            example["src"] = _src.split(" ")
+            example["tgt"] = _src.split(" ")
+        else:
             logger.info("The mask_before could not be inserted")
             return example
-        prompt, response = _src.split(self.response_pattern)
-        response = DefaultTokens.MASK_BEFORE.join([self.response_pattern, response])
-        _src = "".join([prompt, response])
-        example["src"] = _src.split(" ")
-        example["tgt"] = _src.split(" ")
         return example
