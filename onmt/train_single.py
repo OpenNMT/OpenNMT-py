@@ -17,7 +17,7 @@ from onmt.inputters.inputter import dict_to_vocabs, vocabs_to_dict
 from onmt.inputters.dynamic_iterator import build_dynamic_dataset_iter
 from onmt.inputters.text_corpus import save_transformed_sample
 from onmt.model_builder import build_model
-from onmt.models.model_saver import load_checkpoint
+from onmt.models.model_saver import load_checkpoint, load_corpora_info
 from onmt.utils.optimizers import Optimizer
 from onmt.utils.misc import set_random_seed
 from onmt.trainer import build_trainer
@@ -80,6 +80,7 @@ def _init_train(opt):
     if opt.train_from:
         # Load checkpoint if we resume from a previous training.
         checkpoint = load_checkpoint(ckpt_path=opt.train_from)
+        resume_corpora_info = load_corpora_info(opt, checkpoint)
         vocabs = dict_to_vocabs(checkpoint["vocab"])
         if (
             hasattr(checkpoint["opt"], "_all_transform")
@@ -105,8 +106,9 @@ def _init_train(opt):
     else:
         checkpoint = None
         vocabs = prepare_transforms_vocabs(opt, transforms_cls)
+        resume_corpora_info = {}
 
-    return checkpoint, vocabs, transforms_cls
+    return checkpoint, resume_corpora_info, vocabs, transforms_cls
 
 
 def configure_process(opt, device_id):
@@ -159,7 +161,7 @@ def main(opt, device_id):
 
     configure_process(opt, device_id)
     init_logger(opt.log_file)
-    checkpoint, vocabs, transforms_cls = _init_train(opt)
+    checkpoint, resume_corpora_info, vocabs, transforms_cls = _init_train(opt)
     model_opt = _get_model_opts(opt, checkpoint=checkpoint)
 
     # Build model.
@@ -197,7 +199,9 @@ def main(opt, device_id):
     del checkpoint
 
     # Build model saver
-    model_saver = build_model_saver(model_opt, opt, model, vocabs, optim, device_id)
+    model_saver = build_model_saver(
+        model_opt, opt, model, vocabs, optim, resume_corpora_info, device_id
+    )
 
     trainer = build_trainer(
         opt, device_id, model, vocabs, optim, model_saver=model_saver
@@ -211,6 +215,7 @@ def main(opt, device_id):
         transforms_cls,
         vocabs,
         task=CorpusTask.TRAIN,
+        resume_corpora_info=resume_corpora_info,
         copy=opt.copy_attn,
         stride=stride,
         offset=offset,
