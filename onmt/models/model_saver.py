@@ -1,6 +1,7 @@
 import os
 import torch
 import re
+import subprocess
 from collections import deque
 from onmt.utils.logging import logger
 from onmt.inputters.inputter import vocabs_to_dict
@@ -12,6 +13,7 @@ def build_model_saver(model_opt, opt, model, vocabs, optim, device_id):
     save_model_path = os.path.abspath(opt.save_model)
     os.makedirs(os.path.dirname(save_model_path), exist_ok=True)
 
+    corpora_info_updater = CorpusInfoUpdater(opts=opt)
     model_saver = ModelSaver(
         opt.save_model,
         model,
@@ -21,6 +23,7 @@ def build_model_saver(model_opt, opt, model, vocabs, optim, device_id):
         opt.keep_checkpoint,
         opt.save_format,
         device_id,
+        corpora_info_updater
     )
     return model_saver
 
@@ -81,6 +84,97 @@ def load_checkpoint(ckpt_path):
     return checkpoint
 
 
+def load_corpora_info(opts, checkpoint):
+    message_resume_from_beginning = \
+        "The training will resume from the beginning of each corpus."
+    # Check if resume_from_corpora is True
+    if not opts.resume_from_corpora:
+        logger.info(
+            "No resume from corpora is specified. " + \
+                message_resume_from_beginning
+        )
+        return {}
+
+    # Check if the corpus list from the last training
+    # and in the new training are identical.    
+    checkpoint_corpora = checkpoint.get("data", None)
+    if (checkpoint_corpora is None):
+        logger.info(
+            "Incoherent info: Some corpora in the last training " + \
+            "and in the new list do not match. " + \
+            message_resume_from_beginning
+        )
+        return {}
+
+    checkpoint_corpus_names = [name for name in checkpoint_corpora]
+    new_corpus_names = [name for name in opts.data]
+    if (set(checkpoint_corpus_names) != set(new_corpus_names)):
+        logger.info(
+            "Incoherent info: Some corpora in the last training " + \
+            "and in the new list do not match. " + \
+            message_resume_from_beginning
+        )
+        return {}
+    
+    # For each corpus, check if the last line number to resume
+    # is smaller than or equal to the number of text lines.
+    message_incoherent_line_number = "Incoherent info: Some text line numbers " + \
+        "to resume do not exist or are greater than the total numbers of text lines. " + \
+        message_resume_from_beginning
+    corpora_info = {}
+    for c_name, corpus in checkpoint_corpora.items():
+        new_corpora_info = {}
+        if ("cid_line_number" not in corpus):
+            logger.info(message_incoherent_line_number)
+            return {}
+
+        new_corpora_info["cid_line_number"] = corpus["cid_line_number"]
+        number_of_text_lines = int(
+            subprocess.getoutput(
+                "wc -l " + \
+                    opts.data[c_name]["path_src"] + \
+                    " | awk '{print $1}'"
+            )
+        )
+        if (new_corpora_info["cid_line_number"] > number_of_text_lines-1):
+            logger.info(message_incoherent_line_number)
+            return {}
+
+        corpora_info[c_name] = new_corpora_info
+
+    logger.info(
+        "The training will resume from the saved text line in each corpus."
+    )
+    return corpora_info
+
+
+class CorpusInfoUpdater(object):
+    def __init__(
+        self,
+        opts=None
+    ):
+        self.opts = opts
+    
+    def update_corpus_info_from_batches(self, batches):
+        # Update the last text line of each corpus
+        new_corpus_info = {}
+        for batch in batches:
+            for c_name, cid_line_number in zip(batch["cid"], batch["cid_line_number"]):
+                if (c_name not in new_corpus_info):
+                    new_corpus_info[c_name] = cid_line_number
+                else:
+                    new_corpus_info[c_name] = max(
+                        new_corpus_info[c_name],
+                        cid_line_number
+                    )
+        for c_name, corpus in self.opts.data.items():
+            if (c_name in new_corpus_info):
+                corpus["cid_line_number"] = new_corpus_info[c_name]
+
+    def get_corpus_info_dict(self):
+        return {"data": self.opts.data}
+
+
 class ModelSaverBase(object):
     """Base class for model saving operations
 
@@ -99,6 +193,7 @@ class ModelSaverBase(object):
         keep_checkpoint=-1,
         save_format="pytorch",
         device_id=0,
+        corpora_info_updater=None
     ):
         self.base_path = base_path
         self.model = model
@@ -109,6 +204,7 @@ class ModelSaverBase(object):
         self.keep_checkpoint = keep_checkpoint
         self.save_format = save_format
         self.device_id = device_id
+        self.corpora_info_updater = corpora_info_updater
 
         if keep_checkpoint > 0:
             self.checkpoint_queue = deque([], maxlen=keep_checkpoint)
@@ -170,6 +266,15 @@ class ModelSaverBase(object):
         """
 
         raise NotImplementedError()
+
+    def update_corpora_info(self, batches):
+        if (self.corpora_info_updater is not None):
+            self.corpora_info_updater.update_corpus_info_from_batches(batches)
+
+    def get_corpora_info_to_save(self):
+        if (self.corpora_info_updater is not None):
+            return self.corpora_info_updater.get_corpus_info_dict()
+        return {}
 
     def _rm_checkpoint(self, name):
         """Remove a checkpoint
@@ -267,6 +372,7 @@ class ModelSaver(ModelSaverBase):
             "opt": self.model_opt,
             "optim": self.optim.state_dict(),
         }
+        checkpoint = {**checkpoint, **self.get_corpora_info_to_save()}
         if not torch.distributed.is_initialized() or torch.distributed.get_rank() == 0:
             logger.info("Saving checkpoint %s_step_%d.pt" % (self.base_path, step))
             ckpt_path = "%s_step_%d.pt" % (self.base_path, step)
@@ -356,6 +462,7 @@ class ModelSaver(ModelSaverBase):
             "opt": self.model_opt,
             "optim": self.optim.state_dict(),
         }
+        checkpoint = {**checkpoint, **self.get_corpora_info_to_save()}
 
         if not torch.distributed.is_initialized() or torch.distributed.get_rank() == 0:
             logger.info("Saving checkpoint %s_step_%d.pt" % (self.base_path, step))

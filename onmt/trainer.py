@@ -320,6 +320,8 @@ class Trainer(object):
                 batches, normalization, total_stats, report_stats
             )
 
+            self.model_saver.update_corpora_info(batches)
+
             if self.average_decay > 0 and i % self.average_every == 0:
                 self._update_average(step)
 

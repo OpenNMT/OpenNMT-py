@@ -1264,6 +1264,13 @@ def _add_train_general_opts(parser):
         "path to the pretrained model's state_dict.",
     )
     group.add(
+        "--resume_from_corpora",
+        "-resume_from_corpora",
+        action="store_true",
+        help="If training from a checkpoint and this is set to True "
+        " then the data generator will resume from the last line of each corpora.",
+    )
+    group.add(
         "--reset_optim",
         "-reset_optim",
         default="none",
