@@ -60,7 +60,9 @@ class MoE(nn.Module):
         y = torch.empty_like(x)
         for i, expert in enumerate(self.experts):
             if torch.any(flat_expert_indices == i):
-                y[flat_expert_indices == i] = expert(x[flat_expert_indices == i])
+                y[flat_expert_indices == i] = expert(
+                    x[flat_expert_indices == i].unsqueeze(0)
+                )
         y = (y.view(*expert_weights.shape, -1) * expert_weights.unsqueeze(-1)).sum(
             dim=1
         )

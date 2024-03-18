@@ -4,11 +4,11 @@ import torch
 import torch.nn as nn
 
 try:
-    import awq_inference_engine
+    import awq_ext
 
-    AWQ_INFERENCE_ENGINE = True
+    AWQ_EXT = True
 except ImportError:
-    AWQ_INFERENCE_ENGINE = False
+    AWQ_EXT = False
 
 
 class RMSNorm(torch.nn.Module):
@@ -24,12 +24,12 @@ class RMSNorm(torch.nn.Module):
         self.weight = nn.Parameter(torch.ones(hidden_size))
 
     def forward(self, hidden_states):
-        if AWQ_INFERENCE_ENGINE and not self.training:
+        if AWQ_EXT and not self.training:
             inp_type = hidden_states.dtype
             output = torch.empty_like(hidden_states).to(inp_type)
             if hidden_states.dim() == 2:  # patch for multi experts
                 hidden_states = hidden_states.unsqueeze(0)
-            awq_inference_engine.layernorm_forward_cuda(
+            awq_ext.layernorm_forward_cuda(
                 hidden_states.half(), self.weight.half(), output.half(), self.eps
             )
             if hidden_states.dim() == 2:  # patch for multi experts
