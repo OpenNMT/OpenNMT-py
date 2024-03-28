@@ -6,6 +6,8 @@ multi-bleu.perl
 .idea
 *.sublime-*
 .DS_Store
+.env
+model/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
