@@ -160,6 +160,7 @@ class GreedySearch(DecodeStrategy):
         self.topk_scores = None
         self.beam_size = beam_size
         self.n_best = n_best
+        self.parallel_paths = 1
 
     def initialize(
         self, enc_out, src_len, src_map=None, device=None, target_prefix=None

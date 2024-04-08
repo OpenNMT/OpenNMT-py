@@ -1793,6 +1793,13 @@ def _add_decoding_opts(parser):
         "(or the identified source token does not exist in "
         "the table), then it will copy the source token.",
     )
+    group.add(
+        "--stop_token",
+        "-stop_token",
+        type=str,
+        default="",
+        help="Stop token to be used instead of the EOS token.",
+    )
 
 
 def translate_opts(parser):

@@ -46,6 +46,8 @@ def build_translator(opt, device_id=0, report_score=True, logger=None, out_file=
             report_score=report_score,
             logger=logger,
         )
+        if opt.stop_token is DefaultTokens.SEP:
+            translator.eos = translator.vocabs["tgt"].lookup_token("<0x0A>")
     else:
         translator = Translator.from_opt(
             model,
@@ -142,7 +144,7 @@ class Inference(object):
         self._tgt_pad_idx = vocabs["tgt"].lookup_token(DefaultTokens.PAD)
         self._tgt_bos_idx = vocabs["tgt"].lookup_token(DefaultTokens.BOS)
         self._tgt_unk_idx = vocabs["tgt"].lookup_token(DefaultTokens.UNK)
-        self._tgt_sep_idx = vocabs["tgt"].lookup_token(DefaultTokens.SEP)
+        self._tgt_sep_idx = vocabs["tgt"].lookup_token("<0x0A>")
         self._tgt_start_with = vocabs["tgt"].lookup_token(vocabs["decoder_start_token"])
         self._tgt_vocab_len = len(self._tgt_vocab)
 
@@ -907,7 +909,6 @@ class Translator(Inference):
         # (0) Prep the components of the search.
         use_src_map = self.copy_attn
         parallel_paths = decode_strategy.parallel_paths  # beam_size
-
         batch_size = len(batch["srclen"])
 
         # (1) Run the encoder on the src.
@@ -1022,6 +1023,7 @@ class GeneratorLM(Inference):
         max_length = 0 if scoring else self.max_length
         with torch.no_grad():
             if self.sample_from_topk != 0 or self.sample_from_topp != 0:
+                self.beam_size = 1
                 decode_strategy = GreedySearchLM(
                     pad=self._tgt_pad_idx,
                     bos=self._tgt_bos_idx,
@@ -1128,6 +1130,7 @@ class GeneratorLM(Inference):
         # (4) Begin decoding step by step:
         # beg_time = time()
         for step in range(decode_strategy.max_length):
+            print("# step", step)
             decoder_input = (
                 src if step == 0 else decode_strategy.current_predictions.view(-1, 1, 1)
             )
