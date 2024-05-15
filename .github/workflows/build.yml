@@ -23,7 +23,7 @@ jobs:
     strategy:
       matrix:
         cuda_version: [11.8.0, 12.1.0]
-        fail-fast: false
+        fail-fast: 'false'
     permissions: write-all
     steps:
     - name: Maximize build space
