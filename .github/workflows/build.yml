@@ -35,8 +35,6 @@ jobs:
         remove-android: 'true'
         remove-haskell: 'true'
         overprovision-lvm: 'true'
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
     - name: Checkout opennmt repo
       uses: actions/checkout@v4
     - name: Login to ghcr
