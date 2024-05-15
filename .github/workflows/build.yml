@@ -23,8 +23,20 @@ jobs:
     strategy:
       matrix:
         cuda_version: [11.8.0, 12.1.0]
+        fail-fast: false
     permissions: write-all
     steps:
+    - name: Maximize build space
+      uses: easimon/maximize-build-space@master
+      with:
+        root-reserve-mb: 512
+        swap-size-mb: 10
+        remove-dotnet: 'true'
+        remove-android: 'true'
+        remove-haskell: 'true'
+        overprovision-lvm: 'true'
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
     - name: Checkout opennmt repo
       uses: actions/checkout@v4
     - name: Login to ghcr
