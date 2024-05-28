@@ -733,10 +733,6 @@ class MultiHeadedAttention(torch.nn.Module):
                 attn_output.add_(relative_matmul(drop_attn, relations_values, False))
 
         context = unshape(attn_output)
-        if key_pad_mask is not None:
-            if key_pad_mask.size(0) > 1 and context.size(1) > 1:
-                x = key_pad_mask.squeeze(1).unsqueeze(2).expand(-1, -1, context.size(2))
-                context = context.masked_fill(x, 0)
 
         if self.layer_cache[0]:
             attn_output = self.final_linear(context)
