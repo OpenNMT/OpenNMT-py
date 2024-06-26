@@ -73,7 +73,7 @@ class BLEUScorer(Scorer):
 
 class TERScorer(Scorer):
     def __init__(self):
-        super(TERScorer, self).__init__(float("-inf"), "bleu")
+        super(TERScorer, self).__init__(float("inf"), "bleu")
 
     def is_improving(self, stats):
         return stats.computed_metric("TER") > self.best_score
