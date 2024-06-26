@@ -57,10 +57,39 @@ class AccuracyScorer(Scorer):
         return stats.accuracy()
 
 
+class BLEUScorer(Scorer):
+    def __init__(self):
+        super(BLEUScorer, self).__init__(float("-inf"), "bleu")
+
+    def is_improving(self, stats):
+        return stats.computed_metric("BLEU") > self.best_score
+
+    def is_decreasing(self, stats):
+        return stats.computed_metric("BLEU") < self.best_score
+
+    def _caller(self, stats):
+        return stats.computed_metric("BLEU")
+
+
+class TERScorer(Scorer):
+    def __init__(self):
+        super(TERScorer, self).__init__(float("-inf"), "bleu")
+
+    def is_improving(self, stats):
+        return stats.computed_metric("TER") > self.best_score
+
+    def is_decreasing(self, stats):
+        return stats.computed_metric("TER") < self.best_score
+
+    def _caller(self, stats):
+        return stats.computed_metric("TER")
+
+
 DEFAULT_SCORERS = [PPLScorer(), AccuracyScorer()]
 
 
 SCORER_BUILDER = {"ppl": PPLScorer, "accuracy": AccuracyScorer}
+OPTIONAL_SCORER_BUILDER = {"BLEU": BLEUScorer, "TER": TERScorer}
 
 
 def scorers_from_opts(opt):
@@ -69,10 +98,16 @@ def scorers_from_opts(opt):
     else:
         scorers = []
         for criterion in set(opt.early_stopping_criteria):
-            assert criterion in SCORER_BUILDER.keys(), "Criterion {} not found".format(
-                criterion
-            )
-            scorers.append(SCORER_BUILDER[criterion]())
+            if criterion in opt.valid_metrics:
+                assert (
+                    criterion in OPTIONAL_SCORER_BUILDER.keys()
+                ), "Criterion {} not found".format(criterion)
+                scorers.append(OPTIONAL_SCORER_BUILDER[criterion]())
+            else:
+                assert (
+                    criterion in SCORER_BUILDER.keys()
+                ), "Criterion {} not found".format(criterion)
+                scorers.append(SCORER_BUILDER[criterion]())
         return scorers
 
 

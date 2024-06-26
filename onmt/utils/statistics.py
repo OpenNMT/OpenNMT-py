@@ -1,4 +1,5 @@
 """ Statistics calculation utility """
+
 import time
 import math
 import sys
@@ -91,6 +92,11 @@ class Statistics(object):
 
         if update_n_src_words:
             self.n_src_words += stat.n_src_words
+
+    def computed_metric(self, metric):
+        """check if metric is computed and return it"""
+        assert metric in self.computed_metrics, "Metric {} not found".format(metric)
+        return self.computed_metrics[metric]
 
     def accuracy(self):
         """compute accuracy"""
