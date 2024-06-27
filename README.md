@@ -2,7 +2,7 @@
 
 We started a new project [Eole](https://eole-nlp.github.io/eole/) available on [Github](https://github.com/eole-nlp/eole)
 
-It is a spin-off of OpenNMT-py in termes of features but we revamped a lot of stuff.
+It is a spin-off of OpenNMT-py in terms of features but we revamped a lot of stuff.
 
 Eole handles NMT, LLM, Encoders as well as a new concept of Estimator within a NMT Model See this [post](https://medium.com/p/05b00b271a47) and this [news](https://www.linkedin.com/posts/vincentnguyenngoc_embarrassingly-small-english-to-german-model-activity-7203400634727841792-FCre?utm_source=share&utm_medium=member_desktop)
 
