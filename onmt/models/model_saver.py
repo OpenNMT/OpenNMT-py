@@ -1,13 +1,17 @@
 import os
 import torch
 import re
+import subprocess
 from collections import deque
+import onmt.utils
 from onmt.utils.logging import logger
 from onmt.inputters.inputter import vocabs_to_dict
 from onmt.modules.lora import lora_state_dict
 
 
-def build_model_saver(model_opt, opt, model, vocabs, optim, device_id):
+def build_model_saver(
+    model_opt, opt, model, vocabs, optim, resume_corpora_info, device_id
+):
     # _check_save_model_path
     save_model_path = os.path.abspath(opt.save_model)
     os.makedirs(os.path.dirname(save_model_path), exist_ok=True)
@@ -20,6 +24,7 @@ def build_model_saver(model_opt, opt, model, vocabs, optim, device_id):
         optim,
         opt.keep_checkpoint,
         opt.save_format,
+        resume_corpora_info,
         device_id,
     )
     return model_saver
@@ -81,6 +86,65 @@ def load_checkpoint(ckpt_path):
     return checkpoint
 
 
+def load_corpora_info(opts, checkpoint):
+    message_resume_from_beginning = (
+        "The training will resume from the beginning of each corpus."
+    )
+    # Check if resume_from_corpora is True
+    if not opts.resume_from_corpora:
+        logger.info(
+            "No resume from corpora is specified. " + message_resume_from_beginning
+        )
+        return {}
+
+    # Check if the corpus list from the last training
+    # and in the new training are identical.
+    checkpoint_corpora = checkpoint.get("corpus_info", None)
+    if checkpoint_corpora is None:
+        logger.info(
+            "Incoherent info: Some corpora in the last training "
+            + "and in the new list do not match. "
+            + message_resume_from_beginning
+        )
+        return {}
+
+    checkpoint_corpus_names = [name for name in checkpoint_corpora]
+    new_corpus_names = [name for name in opts.data]
+    if set(checkpoint_corpus_names) != set(new_corpus_names):
+        logger.info(
+            "Incoherent info: Some corpora in the last training "
+            + "and in the new list do not match. "
+            + message_resume_from_beginning
+        )
+        return {}
+
+    # For each corpus, check if the last line number to resume
+    # is smaller than or equal to the number of text lines.
+    message_incoherent_line_number = (
+        "Incoherent info: text line numbers "
+        + "to resume in some corpora exceed their total numbers of lines. "
+        + message_resume_from_beginning
+    )
+    for c_name in checkpoint_corpora:
+        number_of_text_lines = int(
+            subprocess.getoutput(
+                "wc -l " + opts.data[c_name]["path_src"] + " | awk '{print $1}'"
+            )
+        )
+        if checkpoint_corpora[c_name] > number_of_text_lines - 1:
+            logger.info(message_incoherent_line_number)
+            return {}
+
+        # To set the text lines to resume, we increase all text lines by 1
+        # (and return to the beginning if the end is reached)
+        checkpoint_corpora[c_name] = (
+            checkpoint_corpora[c_name] + 1
+        ) % number_of_text_lines
+
+    logger.info("The training will resume from the saved text line in each corpus.")
+    return checkpoint_corpora
+
+
 class ModelSaverBase(object):
     """Base class for model saving operations
 
@@ -98,6 +162,7 @@ class ModelSaverBase(object):
         optim,
         keep_checkpoint=-1,
         save_format="pytorch",
+        resume_corpora_info={},
         device_id=0,
     ):
         self.base_path = base_path
@@ -108,6 +173,7 @@ class ModelSaverBase(object):
         self.last_saved_step = None
         self.keep_checkpoint = keep_checkpoint
         self.save_format = save_format
+        self.corpus_info = resume_corpora_info
         self.device_id = device_id
 
         if keep_checkpoint > 0:
@@ -115,7 +181,27 @@ class ModelSaverBase(object):
             if save_format == "safetensors":
                 self.model_queue = deque([], maxlen=keep_checkpoint)
 
-    def save(self, step, moving_average=None):
+    def update_corpus_info_from_batches(self, batches, distributed=False):
+        # Update the last text line of each corpus
+        if batches is not None:
+            # Gather corpus line numbers to save to checkpoints
+            batch_cids = sum([batch["cid"] for batch in batches], [])
+            batch_cid_line_numbers = sum(
+                [batch["cid_line_number"] for batch in batches], []
+            )
+            if distributed:
+                batch_cids = sum(onmt.utils.distributed.all_gather_list(batch_cids), [])
+                batch_cid_line_numbers = sum(
+                    onmt.utils.distributed.all_gather_list(batch_cid_line_numbers), []
+                )
+            # Save the last processed line number of each corpus
+            new_corpus_info = {
+                c_name: cid_line_number
+                for c_name, cid_line_number in zip(batch_cids, batch_cid_line_numbers)
+            }
+            self.corpus_info = {**self.corpus_info, **new_corpus_info}
+
+    def save(self, step, moving_average=None, batches=None, distributed=False):
         """Main entry point for model saver
 
         It wraps the `_save` method with checks and apply `keep_checkpoint`
@@ -266,6 +352,7 @@ class ModelSaver(ModelSaverBase):
             "vocab": vocabs_to_dict(self.vocabs),
             "opt": self.model_opt,
             "optim": self.optim.state_dict(),
+            "corpus_info": self.corpus_info,
         }
         if not torch.distributed.is_initialized() or torch.distributed.get_rank() == 0:
             logger.info("Saving checkpoint %s_step_%d.pt" % (self.base_path, step))
@@ -355,6 +442,7 @@ class ModelSaver(ModelSaverBase):
             "vocab": vocabs_to_dict(self.vocabs),
             "opt": self.model_opt,
             "optim": self.optim.state_dict(),
+            "corpus_info": self.corpus_info,
         }
 
         if not torch.distributed.is_initialized() or torch.distributed.get_rank() == 0:

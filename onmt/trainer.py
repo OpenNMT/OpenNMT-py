@@ -349,6 +349,11 @@ class Trainer(object):
                         logger.info("earlystopper has_stopped!")
                         break
 
+            self.model_saver.update_corpus_info_from_batches(
+                batches,
+                distributed=(self.n_gpu > 1 and self.parallel_mode == "data_parallel"),
+            )
+
             if self.model_saver is not None and (
                 save_checkpoint_steps != 0 and step % save_checkpoint_steps == 0
             ):

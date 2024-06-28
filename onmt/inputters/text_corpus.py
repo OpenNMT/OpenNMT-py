@@ -99,7 +99,14 @@ class ParallelCorpus(object):
     """A parallel corpus file pair that can be loaded to iterate."""
 
     def __init__(
-        self, name, src, tgt, align=None, n_src_feats=0, src_feats_defaults=None
+        self,
+        name,
+        src,
+        tgt,
+        align=None,
+        n_src_feats=0,
+        src_feats_defaults=None,
+        line_number_to_resume=0,
     ):
         """Initialize src & tgt side file path."""
         self.id = name
@@ -108,6 +115,12 @@ class ParallelCorpus(object):
         self.align = align
         self.n_src_feats = n_src_feats
         self.src_feats_defaults = src_feats_defaults
+        self.line_number_to_resume = line_number_to_resume
+        self.can_read_file = False
+
+    def activate_reading_mode(self, line_number):
+        if line_number >= self.line_number_to_resume:
+            self.can_read_file = True
 
     def load(self, offset=0, stride=1):
         """
@@ -116,7 +129,7 @@ class ParallelCorpus(object):
         `stride` example, starting from `offset`.
         """
 
-        def make_ex(sline, tline, align):
+        def make_ex(sline, tline, align, line_number):
             sline, sfeats = parse_features(
                 sline,
                 n_feats=self.n_src_feats,
@@ -131,6 +144,7 @@ class ParallelCorpus(object):
                 "tgt": tline,
                 "src_original": sline,
                 "tgt_original": tline,
+                "cid_line_number": line_number,
             }
             if align is not None:
                 example["align"] = align
@@ -145,19 +159,25 @@ class ParallelCorpus(object):
             for i, (sline, tline, align) in enumerate(
                 itertools.zip_longest(fs, ft, fa)
             ):
+                self.activate_reading_mode(line_number=i)
+                if not self.can_read_file:
+                    continue
                 if (i // stride) % stride == offset:
-                    yield make_ex(sline, tline, align)
+                    yield make_ex(sline, tline, align, i)
         else:
             with exfile_open(self.src, mode="rb") as fs, exfile_open(
                 self.tgt, mode="rb"
             ) as ft, exfile_open(self.align, mode="rb") as fa:
                 for i, (sline, tline, align) in enumerate(zip(fs, ft, fa)):
+                    self.activate_reading_mode(line_number=i)
+                    if not self.can_read_file:
+                        continue
                     if (i // stride) % stride == offset:
                         if tline is not None:
                             tline = tline.decode("utf-8")
                         if align is not None:
                             align = align.decode("utf-8")
-                        yield make_ex(sline.decode("utf-8"), tline, align)
+                        yield make_ex(sline.decode("utf-8"), tline, align, i)
 
     def __str__(self):
         cls_name = type(self).__name__
@@ -169,12 +189,17 @@ class ParallelCorpus(object):
         )
 
 
-def get_corpora(opts, task=CorpusTask.TRAIN, src=None, tgt=None, align=None):
+def get_corpora(
+    opts, task=CorpusTask.TRAIN, src=None, tgt=None, align=None, resume_corpora_info={}
+):
     corpora_dict = {}
     if task == CorpusTask.TRAIN:
         for corpus_id, corpus_dict in opts.data.items():
             if corpus_id != CorpusName.VALID:
                 if corpus_dict.get("path_txt", None) is None:
+                    resume_line = 0
+                    if corpus_id in resume_corpora_info:
+                        resume_line = resume_corpora_info[corpus_id]
                     corpora_dict[corpus_id] = ParallelCorpus(
                         corpus_id,
                         corpus_dict["path_src"],
@@ -182,6 +207,7 @@ def get_corpora(opts, task=CorpusTask.TRAIN, src=None, tgt=None, align=None):
                         corpus_dict["path_align"],
                         n_src_feats=opts.n_src_feats,
                         src_feats_defaults=opts.src_feats_defaults,
+                        line_number_to_resume=resume_line,
                     )
                 else:
                     corpora_dict[corpus_id] = BlockwiseCorpus(
@@ -244,8 +270,6 @@ class ParallelCorpusIterator(object):
                 example["src_feats"] = [
                     feat.strip().split(" ") for feat in example["src_feats"]
                 ]
-            line_number = i * self.stride + self.offset
-            example["cid_line_number"] = line_number
             example["cid"] = self.cid
             if "align" in example:
                 example["align"] = example["align"].strip().split(" ")
@@ -258,6 +282,7 @@ class ParallelCorpusIterator(object):
                     or ("align" in example and example["align"] == 0)
                 ):
                     # empty example: skip
+                    line_number = example["cid_line_number"]
                     empty_msg = f"Empty line  in {self.cid}#{line_number}."
                     if self.skip_empty_level == "error":
                         raise IOError(empty_msg)
@@ -282,7 +307,12 @@ class ParallelCorpusIterator(object):
 
 
 def build_corpora_iters(
-    corpora, transforms, corpora_info, skip_empty_level="warning", stride=1, offset=0
+    corpora,
+    transforms,
+    corpora_info,
+    skip_empty_level="warning",
+    stride=1,
+    offset=0,
 ):
     """Return `ParallelCorpusIterator` for all corpora defined in opts."""
     corpora_iters = dict()

@@ -129,6 +129,7 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
         batch_type,
         batch_size,
         batch_size_multiple,
+        resume_corpora_info={},
         data_type="text",
         bucket_size=2048,
         bucket_size_init=-1,
@@ -144,6 +145,7 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
         self.transforms = transforms
         self.vocabs = vocabs
         self.corpora_info = corpora_info
+        self.resume_corpora_info = resume_corpora_info
         self.task = task
         self.init_iterators = False
         self.batch_size = batch_size
@@ -171,7 +173,17 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
 
     @classmethod
     def from_opt(
-        cls, corpora, transforms, vocabs, opt, task, copy, device, stride=1, offset=0
+        cls,
+        corpora,
+        transforms,
+        vocabs,
+        opt,
+        task,
+        copy,
+        device,
+        resume_corpora_info={},
+        stride=1,
+        offset=0,
     ):
         """Initilize `DynamicDatasetIter` with options parsed from `opt`."""
         corpora_info = {}
@@ -206,6 +218,7 @@ class DynamicDatasetIter(torch.utils.data.IterableDataset):
             opt.batch_type,
             batch_size,
             batch_size_multiple,
+            resume_corpora_info=resume_corpora_info,
             data_type=opt.data_type,
             bucket_size=bucket_size,
             bucket_size_init=bucket_size_init,
@@ -388,6 +401,7 @@ def build_dynamic_dataset_iter(
     vocabs,
     copy=False,
     task=CorpusTask.TRAIN,
+    resume_corpora_info={},
     stride=1,
     offset=0,
     src=None,
@@ -412,7 +426,14 @@ def build_dynamic_dataset_iter(
     advance to avoid the GPU waiting during the refilling of the bucket.
     """
     transforms = make_transforms(opt, transforms_cls, vocabs)
-    corpora = get_corpora(opt, task, src=src, tgt=tgt, align=align)
+    corpora = get_corpora(
+        opt,
+        task,
+        src=src,
+        tgt=tgt,
+        align=align,
+        resume_corpora_info=resume_corpora_info,
+    )
     if corpora is None:
         assert task != CorpusTask.TRAIN, "only valid corpus is ignorable."
         return None
@@ -442,6 +463,7 @@ def build_dynamic_dataset_iter(
             vocabs,
             opt,
             task,
+            resume_corpora_info=resume_corpora_info,
             copy=copy,
             stride=stride,
             offset=offset,
