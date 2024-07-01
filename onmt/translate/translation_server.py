@@ -596,7 +596,7 @@ class ServerModel(object):
         if len(examples) > 0:
             try:
                 if isinstance(self.translator, CTranslate2Translator):
-                    scores, predictions = self.translator.translate(examples)
+                    scores, predictions = self.translator.translate(examples, tgt=[item["tgt"]["tgt"] if item["tgt"] is not None else "" for item in examples])
                 else:
                     device_id = (
                         self.translator._dev.index if self.translator._use_cuda else -1
