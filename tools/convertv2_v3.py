@@ -1,6 +1,8 @@
 #!/usr/bin/env python
+import importlib.util
+import sys
+
 import torch
-import imp
 import argparse
 import pyonmttok
 from onmt.constants import DefaultTokens
@@ -32,6 +34,19 @@ class Field(RawField):
         pass
 
 
+def _load_as_module(name):
+    """Register this file under an alias module name (imp.load_source replacement).
+
+    The old checkpoints reference classes by these legacy module paths, so the
+    aliases must exist in sys.modules before torch.load unpickles them.
+    """
+    spec = importlib.util.spec_from_file_location(name, __file__)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    sys.modules[name] = module
+    return module
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -51,8 +66,8 @@ if __name__ == "__main__":
 
     opt = parser.parse_args()
     print(opt)
-    module1 = imp.load_source("torchtext.data.field", "tools/convertv2_v3.py")
-    module2 = imp.load_source("onmt.inputters.text_dataset", "tools/convertv2_v3.py")
+    module1 = _load_as_module("torchtext.data.field")
+    module2 = _load_as_module("onmt.inputters.text_dataset")
     # module3 = imp.load_source("Vocab", "tools/convertv2_v3.py")
     checkpoint = torch.load(opt.v2model)
     vocabs = {}
