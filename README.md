@@ -22,7 +22,7 @@ We love contributions! Please look at issues marked with the [contributions welc
 
 Before raising an issue, make sure you read the requirements and the [Full Documentation](https://opennmt.net/OpenNMT-py/) examples.
 
-Unless there is a bug, please use the [Forum](https://forum.opennmt.net) or [Gitter](https://gitter.im/OpenNMT/OpenNMT-py) to ask questions.
+Unless there is a bug, please use the [Forum](https://forum.opennmt.net) or Gitter to ask questions.
 
 ----
 ## For beginners:
